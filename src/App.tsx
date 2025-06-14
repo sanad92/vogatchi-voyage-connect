@@ -13,7 +13,6 @@ import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
 import PaymentOrders from "./pages/PaymentOrders";
-import CustomerPricing from "./pages/CustomerPricing";
 import CustomerService from "./pages/CustomerService";
 import DailyOperations from "./pages/DailyOperations";
 import AdminSettings from "./pages/AdminSettings";
@@ -117,16 +116,6 @@ const App = () => (
                 <Navbar />
                 <main className="pt-16">
                   <PaymentOrders />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/customer-pricing" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <CustomerPricing />
                 </main>
               </div>
             </ProtectedRoute>

@@ -44,11 +44,6 @@ export const businessNavItems = [
     href: "/payment-orders",
     icon: CreditCard,
   },
-  {
-    name: "تسعير العملاء",
-    href: "/customer-pricing",
-    icon: CreditCard,
-  },
 ];
 
 export const communicationNavItems = [
