@@ -26,15 +26,15 @@ const LoginForm = () => {
 
   return (
     <Card className="shadow-xl border-0">
-      <CardHeader>
-        <CardTitle className="text-center text-xl text-gray-800">
+      <CardHeader className="text-center">
+        <CardTitle className="text-lg sm:text-xl text-gray-800">
           تسجيل الدخول
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">البريد الإلكتروني</Label>
+            <Label htmlFor="email" className="text-sm sm:text-base">البريد الإلكتروني</Label>
             <Input
               id="email"
               type="email"
@@ -43,11 +43,12 @@ const LoginForm = () => {
               placeholder="admin@vogatchi.com"
               required
               dir="ltr"
+              className="text-sm sm:text-base"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">كلمة المرور</Label>
+            <Label htmlFor="password" className="text-sm sm:text-base">كلمة المرور</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -57,6 +58,7 @@ const LoginForm = () => {
                 placeholder="••••••••"
                 required
                 dir="ltr"
+                className="text-sm sm:text-base pr-10"
               />
               <Button
                 type="button"
@@ -76,7 +78,7 @@ const LoginForm = () => {
 
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base"
             disabled={isLoading}
           >
             {isLoading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}

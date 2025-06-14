@@ -14,23 +14,25 @@ const Reports = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-blue-50">
       <Navbar />
-      <div className="container py-8">
-        <h2 className="text-2xl font-bold mb-6 text-orange-900 flex items-center gap-2">
-          <FileText /> تقارير الأعمال
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-orange-900 flex items-center gap-2">
+          <FileText className="h-5 w-5 sm:h-6 sm:w-6" /> تقارير الأعمال
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+        {/* بطاقات الإحصائيات */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5 mb-6 sm:mb-10">
           {stats.map((s, idx) => (
-            <div key={idx} className="bg-white rounded shadow text-center p-6 hover:bg-orange-50 transition text-lg">
-              <span className="font-extrabold text-blue-700">{s.value}</span>
-              <div className="text-gray-600 mt-2">{s.label}</div>
+            <div key={idx} className="bg-white rounded-lg shadow text-center p-4 sm:p-6 hover:bg-orange-50 transition">
+              <div className="font-extrabold text-lg sm:text-xl text-blue-700 mb-2">{s.value}</div>
+              <div className="text-gray-600 text-sm sm:text-base">{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="bg-white shadow rounded p-8 text-gray-700">
-          <h3 className="font-bold text-xl mb-3 text-blue-600">ملخص الأعمال</h3>
-          <ul className="list-disc list-inside leading-loose text-right">
+        {/* ملخص الأعمال */}
+        <div className="bg-white shadow rounded-lg p-4 sm:p-8 text-gray-700">
+          <h3 className="font-bold text-lg sm:text-xl mb-3 sm:mb-4 text-blue-600">ملخص الأعمال</h3>
+          <ul className="list-disc list-inside leading-relaxed sm:leading-loose text-right space-y-2 text-sm sm:text-base">
             <li>زيادة بنسبة 25% في عدد العملاء خلال هذا الشهر.</li>
             <li>أعلى حجم رحلات تم بيعه في شهر 5.</li>
             <li>متوسط فاتورة الرحلة: 11,200 ج.م</li>
