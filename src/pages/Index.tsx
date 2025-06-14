@@ -1,10 +1,12 @@
 
 import Navbar from "@/components/Navbar";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Users, User, Receipt, MessageCircle, Building, Calendar } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Users, Building, Calendar, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import StatsCard from "@/components/dashboard/StatsCard";
+import QuickActions from "@/components/dashboard/QuickActions";
+import TodayOverview from "@/components/dashboard/TodayOverview";
+import RecentActivity from "@/components/dashboard/RecentActivity";
 
 const Index = () => {
   const { data: stats } = useQuery({
@@ -27,69 +29,97 @@ const Index = () => {
   });
 
   const statsData = [
-    { label: "إجمالي العملاء", value: stats?.customers || 0, icon: <User className="text-blue-600" /> },
-    { label: "عدد الموردين", value: stats?.suppliers || 0, icon: <Building className="text-orange-500" /> },
-    { label: "الحجوزات النشطة", value: stats?.bookings || 0, icon: <Calendar className="text-green-600" /> },
-    { label: "جلسات واتساب", value: stats?.conversations || 0, icon: <MessageCircle className="text-[#25d366]" /> },
+    { 
+      title: "إجمالي العملاء", 
+      value: stats?.customers || 0, 
+      icon: Users, 
+      color: "bg-blue-600",
+      description: "عميل مسجل"
+    },
+    { 
+      title: "عدد الموردين", 
+      value: stats?.suppliers || 0, 
+      icon: Building, 
+      color: "bg-orange-500",
+      description: "مورد نشط"
+    },
+    { 
+      title: "الحجوزات النشطة", 
+      value: stats?.bookings || 0, 
+      icon: Calendar, 
+      color: "bg-green-600",
+      description: "حجز فعال"
+    },
+    { 
+      title: "جلسات واتساب", 
+      value: stats?.conversations || 0, 
+      icon: MessageCircle, 
+      color: "bg-[#25d366]",
+      description: "محادثة نشطة"
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50">
       <Navbar />
-      <div className="container py-10 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-8 text-blue-700 text-center">لوحة التحكم - Vogatchi Tourism</h1>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {statsData.map((s) => (
-            <Card key={s.label} className="flex flex-col items-center justify-center p-6 hover:shadow-2xl transition-all group">
-              <div className="mb-2 group-hover:scale-110 transition">{s.icon}</div>
-              <CardTitle className="text-2xl font-extrabold">{s.value}</CardTitle>
-              <span className="text-gray-500">{s.label}</span>
-            </Card>
+      <div className="container mx-auto px-4 py-6 sm:py-10 space-y-6 sm:space-y-8">
+        
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-700">
+            مرحباً بك في Vogatchi Tourism
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            نظام إدارة شامل للرحلات السياحية وخدمة العملاء
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {statsData.map((stat) => (
+            <StatsCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+              description={stat.description}
+            />
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link to="/bookings">
-            <Card className="p-5 text-center hover:bg-green-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-green-800 mb-1">إدارة الحجوزات</h2>
-              <p className="text-gray-500">إنشاء وإدارة حجوزات الفنادق والطيران والجولات السياحية.</p>
-            </Card>
-          </Link>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
           
-          <Link to="/suppliers">
-            <Card className="p-5 text-center hover:bg-orange-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-orange-700 mb-1">إدارة الموردين</h2>
-              <p className="text-gray-500">إضافة وإدارة الفنادق وشركات الطيران والنقل.</p>
-            </Card>
-          </Link>
+          {/* Left Column - Today Overview & Quick Actions */}
+          <div className="xl:col-span-2 space-y-6">
+            <TodayOverview />
+            <QuickActions />
+          </div>
 
-          <Link to="/customers">
-            <Card className="p-5 text-center hover:bg-blue-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-blue-800 mb-1">إدارة العملاء</h2>
-              <p className="text-gray-500">سجل وحرر واطّلع على كل عملائك بسهولة.</p>
-            </Card>
-          </Link>
-          
-          <Link to="/invoices">
-            <Card className="p-5 text-center hover:bg-purple-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-purple-700 mb-1">الفواتير والمدفوعات</h2>
-              <p className="text-gray-500">أنشئ فواتير العملاء وأوامر دفع الموردين.</p>
-            </Card>
-          </Link>
-          
-          <Link to="/whatsapp">
-            <Card className="p-5 text-center hover:bg-green-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-[#25d366] mb-1">محادثات واتساب</h2>
-              <p className="text-gray-500">تابع تواصلك مع العملاء عبر الواتساب.</p>
-            </Card>
-          </Link>
+          {/* Right Column - Recent Activity */}
+          <div className="xl:col-span-1">
+            <RecentActivity />
+          </div>
+        </div>
 
-          <Link to="/reports">
-            <Card className="p-5 text-center hover:bg-red-50 transition shadow hover:-translate-y-1">
-              <h2 className="font-bold text-lg text-red-700 mb-1">تقارير الأرباح</h2>
-              <p className="text-gray-500">تقارير مفصلة عن الأرباح والخسائر والأداء.</p>
-            </Card>
-          </Link>
+        {/* Footer Info */}
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center">
+          <h3 className="font-semibold text-gray-800 mb-2">نصائح للاستخدام الأمثل</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              <span>تابع مهام اليوم في قسم خدمة العملاء</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-green-600" />
+              <span>سجل العملاء الجدد فور وصولهم</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-orange-600" />
+              <span>استخدم الواتساب للتواصل السريع</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
