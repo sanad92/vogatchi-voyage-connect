@@ -28,7 +28,7 @@ interface UseCustomerFormProps {
 
 export const useCustomerForm = ({ onCustomerAdded, initialData }: UseCustomerFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
 
   const { register, handleSubmit, formState: { errors } } = useForm<CustomerData>({
     defaultValues: {
@@ -44,6 +44,7 @@ export const useCustomerForm = ({ onCustomerAdded, initialData }: UseCustomerFor
     if (!phone || phone.length < 10) return false;
     
     try {
+      console.log('🔍 فحص تكرار رقم الهاتف:', phone);
       const { data, error } = await supabase
         .from('customers')
         .select('id, name')
@@ -51,32 +52,62 @@ export const useCustomerForm = ({ onCustomerAdded, initialData }: UseCustomerFor
         .limit(1);
       
       if (error) {
-        console.error('Error checking duplicate phone:', error);
+        console.error('❌ خطأ في فحص تكرار الهاتف:', error);
         return false;
       }
-      return data && data.length > 0 ? data[0] : false;
+      
+      const isDuplicate = data && data.length > 0;
+      console.log('✅ نتيجة فحص التكرار:', { isDuplicate, existingCustomer: isDuplicate ? data[0] : null });
+      
+      return isDuplicate ? data[0] : false;
     } catch (error) {
-      console.error('Error in checkDuplicatePhone:', error);
+      console.error('❌ خطأ عام في فحص تكرار الهاتف:', error);
       return false;
     }
   };
 
   const onSubmit = async (data: CustomerData) => {
-    console.log('بدء عملية إضافة عميل جديد...');
-    console.log('دور المستخدم الحالي:', userRole);
+    console.log('🚀 بدء عملية إضافة عميل جديد...');
+    console.log('👤 معلومات المستخدم:', { 
+      userEmail: user?.email, 
+      userRole, 
+      userId: user?.id 
+    });
+    console.log('📋 بيانات العميل:', data);
     
     setIsSubmitting(true);
     try {
-      // التحقق من تكرار رقم الهاتف
-      console.log('التحقق من تكرار رقم الهاتف:', data.phone);
-      const existingCustomer = await checkDuplicatePhone(data.phone);
-      if (existingCustomer) {
-        toast.error(`رقم الهاتف ${data.phone} مُسجل بالفعل للعميل: ${existingCustomer.name}`);
-        setIsSubmitting(false);
+      // التحقق من صلاحيات المستخدم
+      console.log('🔐 التحقق من الصلاحيات...');
+      const { data: permissionCheck, error: permissionError } = await supabase
+        .rpc('can_manage_customers');
+      
+      console.log('✅ نتيجة فحص الصلاحيات:', { 
+        canManage: permissionCheck, 
+        error: permissionError 
+      });
+      
+      if (permissionError) {
+        console.error('❌ خطأ في فحص الصلاحيات:', permissionError);
+        toast.error('خطأ في التحقق من الصلاحيات');
+        return;
+      }
+      
+      if (!permissionCheck) {
+        console.warn('⚠️ المستخدم ليس لديه صلاحية إضافة العملاء');
+        toast.error('ليس لديك صلاحية إضافة العملاء');
         return;
       }
 
-      console.log('محاولة إدراج العميل الجديد...');
+      // التحقق من تكرار رقم الهاتف
+      console.log('🔍 التحقق من تكرار رقم الهاتف:', data.phone);
+      const existingCustomer = await checkDuplicatePhone(data.phone);
+      if (existingCustomer) {
+        toast.error(`رقم الهاتف ${data.phone} مُسجل بالفعل للعميل: ${existingCustomer.name}`);
+        return;
+      }
+
+      console.log('💾 محاولة إدراج العميل الجديد...');
       const customerData = {
         name: data.name.trim(),
         phone: data.phone.trim(),
@@ -85,7 +116,7 @@ export const useCustomerForm = ({ onCustomerAdded, initialData }: UseCustomerFor
         address: data.address?.trim() || null,
       };
       
-      console.log('بيانات العميل المراد إدراجها:', customerData);
+      console.log('📝 البيانات النهائية للإدراج:', customerData);
 
       const { data: newCustomer, error } = await supabase
         .from('customers')
@@ -94,31 +125,32 @@ export const useCustomerForm = ({ onCustomerAdded, initialData }: UseCustomerFor
         .single();
 
       if (error) {
-        console.error('خطأ في قاعدة البيانات:', error);
+        console.error('❌ خطأ في قاعدة البيانات:', error);
+        console.error('تفاصيل الخطأ:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         
         // معالجة أنواع الأخطاء المختلفة
         if (error.code === '42501') {
           toast.error('ليس لديك صلاحية إضافة العملاء. يرجى التواصل مع الإدارة.');
         } else if (error.code === '23505') {
           toast.error('هذا العميل موجود بالفعل في النظام.');
-        } else if (error.message.includes('RLS')) {
-          toast.error('مشكلة في الصلاحيات. يرجى التواصل مع الدعم الفني.');
+        } else if (error.message.includes('RLS') || error.message.includes('row-level security')) {
+          toast.error('مشكلة في الصلاحيات. يرجى إعادة تسجيل الدخول والمحاولة مرة أخرى.');
         } else {
           toast.error(`خطأ في إضافة العميل: ${error.message}`);
         }
         throw error;
       }
 
-      console.log('تم إضافة العميل بنجاح:', newCustomer);
-      toast.success('تم إضافة العميل بنجاح');
+      console.log('✅ تم إضافة العميل بنجاح:', newCustomer);
+      toast.success(`تم إضافة العميل "${newCustomer.name}" بنجاح`);
       onCustomerAdded(newCustomer);
     } catch (error) {
-      console.error('خطأ عام في إضافة العميل:', error);
-      
-      // إذا لم يتم التعامل مع الخطأ أعلاه
-      if (!error.code) {
-        toast.error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-      }
+      console.error('❌ خطأ عام في إضافة العميل:', error);
     } finally {
       setIsSubmitting(false);
     }

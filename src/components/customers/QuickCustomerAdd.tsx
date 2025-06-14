@@ -28,20 +28,13 @@ interface QuickCustomerAddProps {
 const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCustomerAddProps) => {
   const { userRole, hasRole, loading, user, profile } = useAuth();
 
-  console.log('🧩 QuickCustomerAdd - معلومات تشخيصية مفصلة:', {
+  console.log('🎯 QuickCustomerAdd - حالة المصادقة الحالية:', {
     loading,
-    user: {
-      exists: !!user,
-      email: user?.email,
-      id: user?.id
-    },
-    profile: {
-      exists: !!profile,
-      email: profile?.email,
-      fullName: profile?.full_name,
-      isActive: profile?.is_active
-    },
+    hasUser: !!user,
+    hasProfile: !!profile,
+    userEmail: user?.email,
     userRole,
+    isActive: profile?.is_active,
     permissionChecks: {
       super_admin: hasRole('super_admin'),
       admin: hasRole('admin'),
@@ -76,6 +69,7 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     return (
       <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded">
         <p className="text-yellow-600">حسابك قيد المراجعة أو غير مكتمل</p>
+        <p className="text-sm text-yellow-500 mt-1">المستخدم: {user.email}</p>
       </div>
     );
   }
@@ -86,6 +80,9 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     return (
       <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded">
         <p className="text-orange-600">حسابك غير مفعل حالياً</p>
+        <p className="text-sm text-orange-500 mt-1">
+          المستخدم: {profile.email} | الاسم: {profile.full_name}
+        </p>
       </div>
     );
   }
@@ -106,7 +103,7 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
   // التحقق من الصلاحيات - السماح للأدوار المخولة بإضافة العملاء
   const canAddCustomers = hasRole('super_admin') || hasRole('admin') || hasRole('manager') || hasRole('sales_agent');
   
-  console.log('🔐 نتيجة فحص صلاحية إضافة العملاء:', {
+  console.log('🎯 نتيجة فحص صلاحية إضافة العملاء:', {
     canAddCustomers,
     userRole,
     userEmail: user.email,
@@ -129,7 +126,7 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     );
   }
 
-  console.log('✅ المستخدم لديه صلاحية إضافة العملاء');
+  console.log('✅ المستخدم لديه صلاحية إضافة العملاء - عرض النموذج');
   return (
     <CustomerForm 
       onCustomerAdded={onCustomerAdded}

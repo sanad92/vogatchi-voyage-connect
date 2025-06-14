@@ -2038,6 +2038,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_delete_customers: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_manage_customers: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       generate_booking_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2053,6 +2061,10 @@ export type Database = {
           status_name_ar: string
           color: string
         }[]
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
       }
       get_system_setting: {
         Args: { setting_key_param: string }
