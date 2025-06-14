@@ -1,14 +1,14 @@
 
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Users, User, Invoice, Whatsapp } from "lucide-react";
+import { Users, User, Receipt, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const stats = [
   { label: "إجمالي العملاء", value: 120, icon: <User className="text-blue-600" /> },
   { label: "عدد الموظفين", value: 18, icon: <Users className="text-orange-500" /> },
-  { label: "الفواتير هذا الشهر", value: 53, icon: <Invoice className="text-green-600" /> },
-  { label: "جلسات واتساب", value: 31, icon: <Whatsapp className="text-[#25d366]" /> },
+  { label: "الفواتير هذا الشهر", value: 53, icon: <Receipt className="text-green-600" /> },
+  { label: "جلسات واتساب", value: 31, icon: <MessageCircle className="text-[#25d366]" /> },
 ];
 
 const Index = () => {

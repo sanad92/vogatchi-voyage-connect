@@ -1,7 +1,6 @@
-
 import Navbar from "@/components/Navbar";
 import { useState } from "react";
-import { Invoice } from "lucide-react";
+import { Receipt } from "lucide-react";
 
 type InvoiceType = {
   id: number;
@@ -47,7 +46,7 @@ const Invoices = () => {
       <Navbar />
       <div className="container py-8">
         <h2 className="text-2xl font-bold mb-6 text-green-800 flex items-center gap-2">
-          <Invoice /> الفواتير
+          <Receipt /> الفواتير
         </h2>
         <form
           onSubmit={handleAddInvoice}

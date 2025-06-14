@@ -1,6 +1,6 @@
 
 import Navbar from "@/components/Navbar";
-import { Whatsapp } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 const WhatsApp = () => {
   return (
@@ -8,7 +8,7 @@ const WhatsApp = () => {
       <Navbar />
       <div className="container py-8">
         <h2 className="text-2xl font-bold mb-6 text-[#25d366] flex items-center gap-2">
-          <Whatsapp /> محادثات الواتساب
+          <MessageCircle /> محادثات الواتساب
         </h2>
         <div className="bg-white rounded-lg shadow p-6 mb-8 text-center">
           <p className="text-lg text-gray-600 mb-2">هذه الصفحة مخصصة لعرض ودمج محادثات الواتساب (WhatsApp Cloud API) مع العملاء.</p>

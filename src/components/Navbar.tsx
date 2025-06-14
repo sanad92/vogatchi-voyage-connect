@@ -1,13 +1,13 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { User, Users, FileText, Whatsapp, Invoice } from "lucide-react";
+import { User, Users, FileText, MessageCircle, Receipt } from "lucide-react";
 
 const menu = [
   { name: "لوحة التحكم", route: "/", icon: <FileText size={18} /> },
   { name: "العملاء", route: "/customers", icon: <User size={18} /> },
   { name: "الموظفون", route: "/employees", icon: <Users size={18} /> },
-  { name: "الفواتير", route: "/invoices", icon: <Invoice size={18} /> },
-  { name: "محادثات الواتساب", route: "/whatsapp", icon: <Whatsapp size={18} color="#25d366" /> },
+  { name: "الفواتير", route: "/invoices", icon: <Receipt size={18} /> },
+  { name: "محادثات الواتساب", route: "/whatsapp", icon: <MessageCircle size={18} color="#25d366" /> },
   { name: "تقارير", route: "/reports", icon: <FileText size={18} /> },
   { name: "أرشيف الرحلات", route: "/trips", icon: <FileText size={18} /> },
 ]
