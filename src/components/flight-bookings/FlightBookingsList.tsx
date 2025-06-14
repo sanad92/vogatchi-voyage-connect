@@ -70,7 +70,16 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as FlightBooking[];
+      
+      // Transform the data to match our FlightBooking interface
+      return (data || []).map(booking => ({
+        ...booking,
+        passenger_details: booking.passenger_details ? 
+          (Array.isArray(booking.passenger_details) ? booking.passenger_details : []) : 
+          [],
+        baggage_info: booking.baggage_info || {},
+        ticket_numbers: booking.ticket_numbers || []
+      })) as FlightBooking[];
     }
   });
 

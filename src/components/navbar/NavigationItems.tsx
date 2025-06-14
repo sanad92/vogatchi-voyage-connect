@@ -1,7 +1,6 @@
-
 import { Home, Calendar, Users, Package, CreditCard, FileText, Settings, MessageSquare, Hotel, Plane } from "lucide-react";
 
-export const navigationItems = [
+export const mainNavItems = [
   {
     name: "الرئيسية",
     href: "/",
@@ -12,6 +11,9 @@ export const navigationItems = [
     href: "/daily-operations",
     icon: Calendar,
   },
+];
+
+export const businessNavItems = [
   {
     name: "العملاء",
     href: "/customers",
@@ -57,6 +59,9 @@ export const navigationItems = [
     href: "/customer-pricing",
     icon: CreditCard,
   },
+];
+
+export const communicationNavItems = [
   {
     name: "خدمة العملاء",
     href: "/customer-service",
@@ -72,6 +77,9 @@ export const navigationItems = [
     href: "/whatsapp",
     icon: MessageSquare,
   },
+];
+
+export const adminNavItems = [
   {
     name: "الموظفين",
     href: "/employees",
@@ -82,4 +90,12 @@ export const navigationItems = [
     href: "/admin-settings",
     icon: Settings,
   },
+];
+
+// Keep the original navigationItems for backwards compatibility
+export const navigationItems = [
+  ...mainNavItems,
+  ...businessNavItems,
+  ...communicationNavItems,
+  ...adminNavItems,
 ];
