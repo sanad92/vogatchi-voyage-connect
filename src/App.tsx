@@ -15,6 +15,7 @@ import Reports from "@/pages/Reports";
 import Suppliers from "@/pages/Suppliers";
 import Trips from "@/pages/Trips";
 import WhatsApp from "@/pages/WhatsApp";
+import CustomerService from "@/pages/CustomerService";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import "./App.css";
@@ -58,6 +59,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Customers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer-service"
+                element={
+                  <ProtectedRoute>
+                    <CustomerService />
                   </ProtectedRoute>
                 }
               />

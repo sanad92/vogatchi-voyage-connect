@@ -119,6 +119,208 @@ export type Database = {
           },
         ]
       }
+      customer_communications: {
+        Row: {
+          booking_id: string | null
+          communication_type: string
+          completed_at: string | null
+          content: string | null
+          created_at: string
+          customer_id: string
+          direction: string
+          duration_minutes: number | null
+          follow_up_id: string | null
+          handled_by: string
+          id: string
+          scheduled_at: string | null
+          status: string
+        }
+        Insert: {
+          booking_id?: string | null
+          communication_type: string
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string
+          customer_id: string
+          direction: string
+          duration_minutes?: number | null
+          follow_up_id?: string | null
+          handled_by: string
+          id?: string
+          scheduled_at?: string | null
+          status: string
+        }
+        Update: {
+          booking_id?: string | null
+          communication_type?: string
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string
+          customer_id?: string
+          direction?: string
+          duration_minutes?: number | null
+          follow_up_id?: string | null
+          handled_by?: string
+          id?: string
+          scheduled_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_communications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_communications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_communications_follow_up_id_fkey"
+            columns: ["follow_up_id"]
+            isOneToOne: false
+            referencedRelation: "customer_follow_ups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_communications_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_follow_ups: {
+        Row: {
+          assigned_to: string | null
+          booking_id: string
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          follow_up_type: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          booking_id: string
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          follow_up_type: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          booking_id?: string
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          follow_up_type?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_follow_ups_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_follow_ups_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_follow_ups_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_notes: {
+        Row: {
+          booking_id: string | null
+          content: string
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          is_private: boolean
+          note_type: string
+          priority: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          content: string
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          is_private?: boolean
+          note_type: string
+          priority?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          priority?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_pricing: {
         Row: {
           created_at: string
@@ -169,6 +371,60 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_satisfaction: {
+        Row: {
+          booking_id: string
+          communication_rating: number | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          feedback: string | null
+          id: string
+          overall_rating: number | null
+          service_rating: number | null
+          survey_sent_at: string | null
+        }
+        Insert: {
+          booking_id: string
+          communication_rating?: number | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          feedback?: string | null
+          id?: string
+          overall_rating?: number | null
+          service_rating?: number | null
+          survey_sent_at?: string | null
+        }
+        Update: {
+          booking_id?: string
+          communication_rating?: number | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          feedback?: string | null
+          id?: string
+          overall_rating?: number | null
+          service_rating?: number | null
+          survey_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_satisfaction_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_satisfaction_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
