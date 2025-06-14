@@ -1,257 +1,215 @@
 
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import {
-  Home,
-  Calendar,
-  Users,
-  Receipt,
-  BarChart3,
-  Building,
-  Plane,
-  MessageSquare,
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  Menu, 
+  X, 
+  Home, 
+  Users, 
+  Calendar, 
+  MessageSquare, 
+  FileText, 
+  Settings,
   LogOut,
-  Menu,
-  X,
-  DollarSign,
+  Building,
   CreditCard,
-  UserCheck
+  BarChart3,
+  ClipboardList
 } from "lucide-react";
 
 const Navbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { profile, signOut } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-      toast({
-        title: "تم تسجيل الخروج بنجاح",
-        description: "شكراً لاستخدام نظام إدارة الرحلات",
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ في تسجيل الخروج",
-        variant: "destructive",
-      });
-    }
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
-  const navItems = [
+  const mainNavItems = [
     { name: "الرئيسية", href: "/", icon: Home },
-    { name: "الحجوزات", href: "/bookings", icon: Calendar },
+    { name: "العمليات اليومية", href: "/daily-operations", icon: ClipboardList },
     { name: "العملاء", href: "/customers", icon: Users },
-    { name: "الفواتير", href: "/invoices", icon: Receipt },
-    { name: "الأسعار المرنة", href: "/customer-pricing", icon: DollarSign },
+    { name: "الحجوزات", href: "/bookings", icon: Calendar },
+    { name: "خدمة العملاء", href: "/customer-service", icon: MessageSquare },
+  ];
+
+  const businessNavItems = [
+    { name: "الموردين", href: "/suppliers", icon: Building },
+    { name: "الرحلات", href: "/trips", icon: Calendar },
+    { name: "الفواتير", href: "/invoices", icon: FileText },
     { name: "أوامر الدفع", href: "/payment-orders", icon: CreditCard },
+    { name: "تسعير العملاء", href: "/customer-pricing", icon: BarChart3 },
+  ];
+
+  const communicationNavItems = [
+    { name: "واتساب", href: "/whatsapp", icon: MessageSquare },
     { name: "التقارير", href: "/reports", icon: BarChart3 },
-    { name: "الموردين", href: "/suppliers", icon: Building },
-    { name: "الرحلات", href: "/trips", icon: Plane },
-    { name: "الموظفين", href: "/employees", icon: UserCheck },
-    { name: "واتساب", href: "/whatsapp", icon: MessageSquare },
+    { name: "الموظفين", href: "/employees", icon: Users },
   ];
 
-  const financialItems = [
-    { name: "الفواتير", href: "/invoices", icon: Receipt },
-    { name: "الأسعار المرنة", href: "/customer-pricing", icon: DollarSign },
-    { name: "أوامر الدفع", href: "/payment-orders", icon: CreditCard },
-  ];
+  const isActiveLink = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
+  };
 
-  const managementItems = [
-    { name: "العملاء", href: "/customers", icon: Users },
-    { name: "الموردين", href: "/suppliers", icon: Building },
-    { name: "الموظفين", href: "/employees", icon: UserCheck },
-  ];
-
-  const operationsItems = [
-    { name: "الحجوزات", href: "/bookings", icon: Calendar },
-    { name: "الرحلات", href: "/trips", icon: Plane },
-    { name: "واتساب", href: "/whatsapp", icon: MessageSquare },
-  ];
-
-  const isActive = (href: string) => location.pathname === href;
+  const NavLink = ({ item, onClick }: { item: any; onClick?: () => void }) => (
+    <Link
+      to={item.href}
+      onClick={onClick}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+        isActiveLink(item.href)
+          ? 'bg-blue-100 text-blue-700 font-medium'
+          : 'text-gray-700 hover:bg-gray-100'
+      }`}
+    >
+      <item.icon className="h-5 w-5" />
+      {item.name}
+    </Link>
+  );
 
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-lg border-b sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-600">
-              Vogatchi Travel
-            </Link>
-          </div>
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 text-xl font-bold text-blue-700"
+          >
+            <Calendar className="h-8 w-8" />
+            <span className="hidden sm:block">Vogatchi Tourism</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4 space-x-reverse">
-            <NavigationMenu>
-              <NavigationMenuList className="flex space-x-2 space-x-reverse">
-                <NavigationMenuItem>
-                  <Link
-                    to="/"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive("/") ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:text-blue-600"
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    الرئيسية
-                  </Link>
-                </NavigationMenuItem>
+          <div className="hidden lg:flex items-center gap-6">
+            {/* Main Actions */}
+            <div className="flex items-center gap-1">
+              {mainNavItems.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </div>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-gray-600 hover:text-blue-600">
-                    العمليات
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid w-[400px] gap-3 p-4">
-                      {operationsItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className={`flex items-center gap-3 p-3 rounded-md transition-colors ${
-                              isActive(item.href) ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span className="font-medium">{item.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+            {/* Divider */}
+            <div className="h-6 w-px bg-gray-300"></div>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-gray-600 hover:text-blue-600">
-                    النظام المالي
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid w-[400px] gap-3 p-4">
-                      {financialItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className={`flex items-center gap-3 p-3 rounded-md transition-colors ${
-                              isActive(item.href) ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span className="font-medium">{item.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+            {/* Business Actions */}
+            <div className="flex items-center gap-1">
+              {businessNavItems.slice(0, 3).map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </div>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-gray-600 hover:text-blue-600">
-                    الإدارة
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid w-[400px] gap-3 p-4">
-                      {managementItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className={`flex items-center gap-3 p-3 rounded-md transition-colors ${
-                              isActive(item.href) ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span className="font-medium">{item.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <Link
-                    to="/reports"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive("/reports") ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:text-blue-600"
-                    }`}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    التقارير
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4" />
-              خروج
-            </Button>
+            {/* Communication */}
+            <div className="flex items-center gap-1">
+              <NavLink item={communicationNavItems[0]} />
+            </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="lg:hidden">
+          {/* User Menu & Mobile Toggle */}
+          <div className="flex items-center gap-4">
+            {/* User Info */}
+            {profile && (
+              <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+                <span>مرحباً، {profile.full_name}</span>
+              </div>
+            )}
+
+            {/* Sign Out */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={handleSignOut}
+              className="hidden sm:flex items-center gap-2"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <LogOut className="h-4 w-4" />
+              تسجيل خروج
+            </Button>
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200">
-            <div className="grid grid-cols-2 gap-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`flex items-center gap-2 p-3 rounded-md text-sm font-medium transition-colors ${
-                      isActive(item.href) ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:text-blue-600"
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="w-4 h-4" />
-                خروج
-              </Button>
+        {isOpen && (
+          <div className="lg:hidden py-4 border-t bg-white">
+            <div className="space-y-2">
+              {/* User Info */}
+              {profile && (
+                <div className="px-3 py-2 text-sm text-gray-600 border-b">
+                  مرحباً، {profile.full_name}
+                </div>
+              )}
+
+              {/* Main Navigation */}
+              <div className="space-y-1">
+                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
+                  العمليات الرئيسية
+                </div>
+                {mainNavItems.map((item) => (
+                  <NavLink 
+                    key={item.href} 
+                    item={item} 
+                    onClick={() => setIsOpen(false)} 
+                  />
+                ))}
+              </div>
+
+              {/* Business Navigation */}
+              <div className="space-y-1 border-t pt-2">
+                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
+                  إدارة الأعمال
+                </div>
+                {businessNavItems.map((item) => (
+                  <NavLink 
+                    key={item.href} 
+                    item={item} 
+                    onClick={() => setIsOpen(false)} 
+                  />
+                ))}
+              </div>
+
+              {/* Communication Navigation */}
+              <div className="space-y-1 border-t pt-2">
+                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
+                  التواصل والتقارير
+                </div>
+                {communicationNavItems.map((item) => (
+                  <NavLink 
+                    key={item.href} 
+                    item={item} 
+                    onClick={() => setIsOpen(false)} 
+                  />
+                ))}
+              </div>
+
+              {/* Sign Out */}
+              <div className="border-t pt-2">
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full"
+                >
+                  <LogOut className="h-5 w-5" />
+                  تسجيل خروج
+                </button>
+              </div>
             </div>
           </div>
         )}

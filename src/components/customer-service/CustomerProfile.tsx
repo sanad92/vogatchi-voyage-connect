@@ -8,6 +8,7 @@ import { User, Phone, Mail, MapPin, Calendar, MessageSquare, FileText, Star } fr
 import { useState } from 'react';
 import { useCustomerService } from '@/hooks/useCustomerService';
 import { useAuth } from '@/hooks/useAuth';
+import { CustomerNote, CustomerCommunication } from '@/types/customerService';
 
 interface CustomerProfileProps {
   customer: any;
@@ -18,8 +19,8 @@ const CustomerProfile = ({ customer, onUpdate }: CustomerProfileProps) => {
   const { profile } = useAuth();
   const { addNote, addCommunication } = useCustomerService();
   const [newNote, setNewNote] = useState('');
-  const [noteType, setNoteType] = useState('general');
-  const [priority, setPriority] = useState('normal');
+  const [noteType, setNoteType] = useState<CustomerNote['note_type']>('general');
+  const [priority, setPriority] = useState<CustomerNote['priority']>('normal');
   const [isAddingNote, setIsAddingNote] = useState(false);
 
   const handleAddNote = async () => {
@@ -39,7 +40,7 @@ const CustomerProfile = ({ customer, onUpdate }: CustomerProfileProps) => {
     onUpdate?.();
   };
 
-  const handleCommunicate = (type: string) => {
+  const handleCommunicate = (type: CustomerCommunication['communication_type']) => {
     if (!profile?.id) return;
 
     addCommunication({
@@ -138,7 +139,7 @@ const CustomerProfile = ({ customer, onUpdate }: CustomerProfileProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">نوع الملاحظة</label>
-                  <Select value={noteType} onValueChange={setNoteType}>
+                  <Select value={noteType} onValueChange={(value: CustomerNote['note_type']) => setNoteType(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -154,7 +155,7 @@ const CustomerProfile = ({ customer, onUpdate }: CustomerProfileProps) => {
                 </div>
                 <div>
                   <label className="text-sm font-medium">الأولوية</label>
-                  <Select value={priority} onValueChange={setPriority}>
+                  <Select value={priority} onValueChange={(value: CustomerNote['priority']) => setPriority(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
