@@ -27,10 +27,12 @@ export const hasRoleAccess = (userRole: string | null, requiredRole: string): bo
   }
   
   const roleHierarchy = {
-    'super_admin': ['super_admin', 'admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
-    'admin': ['admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
-    'manager': ['manager', 'sales_agent', 'accountant', 'viewer'],
+    'super_admin': ['super_admin', 'admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
+    'admin': ['admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
+    'manager': ['manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
     'sales_agent': ['sales_agent', 'viewer'],
+    'customer_service': ['customer_service', 'viewer'],
+    'booking_agent': ['booking_agent', 'viewer'],
     'accountant': ['accountant', 'viewer'],
     'viewer': ['viewer']
   };

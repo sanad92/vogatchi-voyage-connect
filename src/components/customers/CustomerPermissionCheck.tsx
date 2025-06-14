@@ -36,9 +36,9 @@ const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheck
       </CardHeader>
       <CardContent>
         <div className="text-center py-4">
-          <p className="text-orange-700 mb-2">ليس لديك صلاحية إضافة العملاء.</p>
+          <p className="text-orange-700 mb-2">ليس لديك صلاحية إدارة العملاء.</p>
           <p className="text-orange-600 text-sm mb-2">
-            الأدوار المسموح لها: سوبر أدمن، مدير، مدير مبيعات، أو مندوب مبيعات
+            الأدوار المسموح لها: سوبر أدمن، مدير، مدير مبيعات، مندوب مبيعات، خدمة عملاء، موظف حجوزات، أو محاسب
           </p>
           
           <div className="bg-orange-100 p-3 rounded mt-3 space-y-2">
@@ -52,11 +52,14 @@ const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheck
             
             <div className="mt-2 pt-2 border-t border-orange-200">
               <p className="text-xs text-gray-500 mb-1">فحص الصلاحيات:</p>
-              <div className="text-xs text-gray-500 space-y-1">
+              <div className="text-xs text-gray-500 space-y-1 grid grid-cols-2 gap-1">
                 <p>سوبر أدمن: {hasRole('super_admin') ? '✅' : '❌'}</p>
                 <p>أدمن: {hasRole('admin') ? '✅' : '❌'}</p>
                 <p>مدير: {hasRole('manager') ? '✅' : '❌'}</p>
-                <p>مندوب مبيعات: {hasRole('sales_agent') ? '✅' : '❌'}</p>
+                <p>مبيعات: {hasRole('sales_agent') ? '✅' : '❌'}</p>
+                <p>خدمة عملاء: {hasRole('customer_service') ? '✅' : '❌'}</p>
+                <p>حجوزات: {hasRole('booking_agent') ? '✅' : '❌'}</p>
+                <p>محاسب: {hasRole('accountant') ? '✅' : '❌'}</p>
               </div>
             </div>
           </div>

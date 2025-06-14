@@ -9,6 +9,7 @@ interface CustomerData {
   email?: string;
   nationality?: string;
   address?: string;
+  segment_id?: string;
 }
 
 interface Customer {
@@ -17,6 +18,7 @@ interface Customer {
   phone: string;
   email?: string;
   nationality?: string;
+  segment_id?: string;
 }
 
 interface QuickCustomerAddProps {
@@ -39,7 +41,10 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
       super_admin: hasRole('super_admin'),
       admin: hasRole('admin'),
       manager: hasRole('manager'),
-      sales_agent: hasRole('sales_agent')
+      sales_agent: hasRole('sales_agent'),
+      customer_service: hasRole('customer_service'),
+      booking_agent: hasRole('booking_agent'),
+      accountant: hasRole('accountant')
     }
   });
 
@@ -100,8 +105,10 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     );
   }
 
-  // التحقق من الصلاحيات - السماح للأدوار المخولة بإضافة العملاء
-  const canAddCustomers = hasRole('super_admin') || hasRole('admin') || hasRole('manager') || hasRole('sales_agent');
+  // التحقق من الصلاحيات - السماح لجميع الموظفين بإضافة العملاء
+  const canAddCustomers = hasRole('super_admin') || hasRole('admin') || hasRole('manager') || 
+                          hasRole('sales_agent') || hasRole('customer_service') || 
+                          hasRole('booking_agent') || hasRole('accountant');
   
   console.log('🎯 نتيجة فحص صلاحية إضافة العملاء:', {
     canAddCustomers,
@@ -111,7 +118,10 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
       super_admin: hasRole('super_admin'),
       admin: hasRole('admin'),
       manager: hasRole('manager'),
-      sales_agent: hasRole('sales_agent')
+      sales_agent: hasRole('sales_agent'),
+      customer_service: hasRole('customer_service'),
+      booking_agent: hasRole('booking_agent'),
+      accountant: hasRole('accountant')
     }
   });
 

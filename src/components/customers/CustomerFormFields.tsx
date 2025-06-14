@@ -1,7 +1,8 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import { UseFormRegister, FieldErrors, Control } from "react-hook-form";
+import CustomerSegmentSelector from "./CustomerSegmentSelector";
 
 interface CustomerData {
   name: string;
@@ -9,14 +10,16 @@ interface CustomerData {
   email?: string;
   nationality?: string;
   address?: string;
+  segment_id?: string;
 }
 
 interface CustomerFormFieldsProps {
   register: UseFormRegister<CustomerData>;
   errors: FieldErrors<CustomerData>;
+  control: Control<CustomerData>;
 }
 
-const CustomerFormFields = ({ register, errors }: CustomerFormFieldsProps) => {
+const CustomerFormFields = ({ register, errors, control }: CustomerFormFieldsProps) => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -81,13 +84,20 @@ const CustomerFormFields = ({ register, errors }: CustomerFormFieldsProps) => {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="address">العنوان</Label>
-        <Input
-          id="address"
-          {...register('address')}
-          placeholder="العنوان التفصيلي"
-          className="bg-white"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="address">العنوان</Label>
+          <Input
+            id="address"
+            {...register('address')}
+            placeholder="العنوان التفصيلي"
+            className="bg-white"
+          />
+        </div>
+
+        <CustomerSegmentSelector 
+          control={control}
+          error={errors.segment_id?.message}
         />
       </div>
     </>
