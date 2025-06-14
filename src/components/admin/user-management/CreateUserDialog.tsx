@@ -17,6 +17,9 @@ interface CreateUserDialogProps {
   onSuccess: () => void;
 }
 
+// Valid database roles (excluding no_role)
+type DatabaseUserRole = Exclude<UserRole, "no_role">;
+
 const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogProps) => {
   const queryClient = useQueryClient();
   const [newUser, setNewUser] = useState<NewUser>({
@@ -29,6 +32,11 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
 
   const createUserRequestMutation = useMutation({
     mutationFn: async (userData: NewUser) => {
+      // Only allow valid database roles
+      if (userData.role === "no_role") {
+        throw new Error("يجب تحديد دور صالح للمستخدم");
+      }
+
       const { error } = await supabase
         .from('user_creation_requests')
         .insert({
@@ -36,7 +44,7 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
           full_name: userData.full_name,
           phone: userData.phone,
           department: userData.department,
-          requested_role: userData.role,
+          requested_role: userData.role as DatabaseUserRole,
           created_by: (await supabase.auth.getUser()).data.user?.id
         });
       
@@ -50,6 +58,13 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
       onSuccess();
       setNewUser({ email: "", full_name: "", phone: "", department: "", role: "viewer" });
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في إنشاء الطلب",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 

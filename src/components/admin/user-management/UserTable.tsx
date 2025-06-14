@@ -16,6 +16,9 @@ interface UserTableProps {
   onUpdate: () => void;
 }
 
+// Valid database roles (excluding no_role)
+type DatabaseUserRole = Exclude<UserRole, "no_role">;
+
 const UserTable = ({ users, onUpdate }: UserTableProps) => {
   const queryClient = useQueryClient();
 
@@ -45,7 +48,7 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
   });
 
   const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: DatabaseUserRole }) => {
       // حذف الدور القديم إن وجد
       await supabase.from('user_roles').delete().eq('user_id', userId);
       
@@ -130,6 +133,13 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
     }
   };
 
+  const handleRoleChange = (userId: string, newRole: string, currentRole: string | undefined) => {
+    // Don't allow changing to no_role, and only update if it's a valid database role and different
+    if (newRole !== 'no_role' && newRole !== currentRole) {
+      updateUserRoleMutation.mutate({ userId, role: newRole as DatabaseUserRole });
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -162,11 +172,7 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
                 <div className="flex items-center gap-2">
                   <Select
                     value={user.role || 'no_role'}
-                    onValueChange={(value: string) => {
-                      if (value !== 'no_role' && value !== user.role) {
-                        updateUserRoleMutation.mutate({ userId: user.id, role: value as UserRole });
-                      }
-                    }}
+                    onValueChange={(value: string) => handleRoleChange(user.id, value, user.role)}
                     disabled={updateUserRoleMutation.isPending}
                   >
                     <SelectTrigger className="w-auto border-0 p-0 h-auto">
