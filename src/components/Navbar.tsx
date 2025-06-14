@@ -1,27 +1,14 @@
 
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Users, 
-  Calendar, 
-  MessageSquare, 
-  FileText, 
-  Settings,
-  LogOut,
-  Building,
-  CreditCard,
-  BarChart3,
-  ClipboardList
-} from "lucide-react";
+import { Menu, X, Calendar, LogOut } from "lucide-react";
+import DesktopNavigation from "./navbar/DesktopNavigation";
+import MobileNavigation from "./navbar/MobileNavigation";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
 
@@ -29,50 +16,6 @@ const Navbar = () => {
     await signOut();
     navigate('/auth');
   };
-
-  const mainNavItems = [
-    { name: "الرئيسية", href: "/", icon: Home },
-    { name: "العمليات اليومية", href: "/daily-operations", icon: ClipboardList },
-    { name: "العملاء", href: "/customers", icon: Users },
-    { name: "الحجوزات", href: "/bookings", icon: Calendar },
-    { name: "خدمة العملاء", href: "/customer-service", icon: MessageSquare },
-  ];
-
-  const businessNavItems = [
-    { name: "الموردين", href: "/suppliers", icon: Building },
-    { name: "الرحلات", href: "/trips", icon: Calendar },
-    { name: "الفواتير", href: "/invoices", icon: FileText },
-    { name: "أوامر الدفع", href: "/payment-orders", icon: CreditCard },
-    { name: "تسعير العملاء", href: "/customer-pricing", icon: BarChart3 },
-  ];
-
-  const communicationNavItems = [
-    { name: "واتساب", href: "/whatsapp", icon: MessageSquare },
-    { name: "التقارير", href: "/reports", icon: BarChart3 },
-    { name: "الموظفين", href: "/employees", icon: Users },
-  ];
-
-  const isActiveLink = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(href);
-  };
-
-  const NavLink = ({ item, onClick }: { item: any; onClick?: () => void }) => (
-    <Link
-      to={item.href}
-      onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-        isActiveLink(item.href)
-          ? 'bg-blue-100 text-blue-700 font-medium'
-          : 'text-gray-700 hover:bg-gray-100'
-      }`}
-    >
-      <item.icon className="h-5 w-5" />
-      {item.name}
-    </Link>
-  );
 
   return (
     <nav className="bg-white shadow-lg border-b sticky top-0 z-50">
@@ -88,29 +31,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-6">
-            {/* Main Actions */}
-            <div className="flex items-center gap-1">
-              {mainNavItems.map((item) => (
-                <NavLink key={item.href} item={item} />
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="h-6 w-px bg-gray-300"></div>
-
-            {/* Business Actions */}
-            <div className="flex items-center gap-1">
-              {businessNavItems.slice(0, 3).map((item) => (
-                <NavLink key={item.href} item={item} />
-              ))}
-            </div>
-
-            {/* Communication */}
-            <div className="flex items-center gap-1">
-              <NavLink item={communicationNavItems[0]} />
-            </div>
-          </div>
+          <DesktopNavigation />
 
           {/* User Menu & Mobile Toggle */}
           <div className="flex items-center gap-4">
@@ -145,74 +66,12 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="lg:hidden py-4 border-t bg-white">
-            <div className="space-y-2">
-              {/* User Info */}
-              {profile && (
-                <div className="px-3 py-2 text-sm text-gray-600 border-b">
-                  مرحباً، {profile.full_name}
-                </div>
-              )}
-
-              {/* Main Navigation */}
-              <div className="space-y-1">
-                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-                  العمليات الرئيسية
-                </div>
-                {mainNavItems.map((item) => (
-                  <NavLink 
-                    key={item.href} 
-                    item={item} 
-                    onClick={() => setIsOpen(false)} 
-                  />
-                ))}
-              </div>
-
-              {/* Business Navigation */}
-              <div className="space-y-1 border-t pt-2">
-                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-                  إدارة الأعمال
-                </div>
-                {businessNavItems.map((item) => (
-                  <NavLink 
-                    key={item.href} 
-                    item={item} 
-                    onClick={() => setIsOpen(false)} 
-                  />
-                ))}
-              </div>
-
-              {/* Communication Navigation */}
-              <div className="space-y-1 border-t pt-2">
-                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-                  التواصل والتقارير
-                </div>
-                {communicationNavItems.map((item) => (
-                  <NavLink 
-                    key={item.href} 
-                    item={item} 
-                    onClick={() => setIsOpen(false)} 
-                  />
-                ))}
-              </div>
-
-              {/* Sign Out */}
-              <div className="border-t pt-2">
-                <button
-                  onClick={() => {
-                    handleSignOut();
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full"
-                >
-                  <LogOut className="h-5 w-5" />
-                  تسجيل خروج
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <MobileNavigation 
+          isOpen={isOpen}
+          profile={profile}
+          onSignOut={handleSignOut}
+          onLinkClick={() => setIsOpen(false)}
+        />
       </div>
     </nav>
   );

@@ -1,9 +1,11 @@
 
 import Navbar from "@/components/Navbar";
+import DailyStats from "@/components/daily-operations/DailyStats";
+import QuickActions from "@/components/daily-operations/QuickActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, MessageSquare, AlertCircle, CheckCircle2, Plus, Phone, Mail } from "lucide-react";
+import { Calendar, MessageSquare, Users, Phone, Mail } from "lucide-react";
 import { useCustomerService } from "@/hooks/useCustomerService";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,55 +66,12 @@ const DailyOperations = () => {
           </div>
 
           {/* الإحصائيات السريعة */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">مهام عالقة</p>
-                    <p className="text-2xl font-bold text-yellow-600">{pendingTasks}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">قيد التنفيذ</p>
-                    <p className="text-2xl font-bold text-blue-600">{inProgressTasks}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">مكتملة</p>
-                    <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-                  </div>
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-orange-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">وصول اليوم</p>
-                    <p className="text-2xl font-bold text-orange-600">{todayBookingsCount}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <DailyStats
+            pendingTasks={pendingTasks}
+            inProgressTasks={inProgressTasks}
+            completedTasks={completedTasks}
+            todayBookingsCount={todayBookingsCount}
+          />
         </div>
 
         {/* المحتوى الرئيسي */}
@@ -206,31 +165,7 @@ const DailyOperations = () => {
         </div>
 
         {/* Actions سريعة */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>إجراءات سريعة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <Button className="h-20 flex-col">
-                <Plus className="h-6 w-6 mb-2" />
-                عميل جديد
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Calendar className="h-6 w-6 mb-2" />
-                حجز جديد
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <MessageSquare className="h-6 w-6 mb-2" />
-                رسالة جماعية
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Users className="h-6 w-6 mb-2" />
-                إدارة العملاء
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <QuickActions />
       </div>
     </div>
   );
