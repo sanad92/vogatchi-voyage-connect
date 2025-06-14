@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          description: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_reference: string
@@ -118,6 +168,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      custom_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_key: string
+          permission_value: boolean
+          role_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_key: string
+          permission_value?: boolean
+          role_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_key?: string
+          permission_value?: boolean
+          role_name?: string
+        }
+        Relationships: []
       }
       customer_communications: {
         Row: {
@@ -912,6 +986,53 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          setting_key: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_creation_requests: {
         Row: {
           created_at: string
@@ -920,11 +1041,14 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          password_expires_at: string | null
           phone: string | null
           processed_at: string | null
           processed_by: string | null
+          rejection_reason: string | null
           requested_role: Database["public"]["Enums"]["user_role"]
           status: string | null
+          temporary_password: string | null
         }
         Insert: {
           created_at?: string
@@ -933,11 +1057,14 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          password_expires_at?: string | null
           phone?: string | null
           processed_at?: string | null
           processed_by?: string | null
+          rejection_reason?: string | null
           requested_role: Database["public"]["Enums"]["user_role"]
           status?: string | null
+          temporary_password?: string | null
         }
         Update: {
           created_at?: string
@@ -946,11 +1073,14 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          password_expires_at?: string | null
           phone?: string | null
           processed_at?: string | null
           processed_by?: string | null
+          rejection_reason?: string | null
           requested_role?: Database["public"]["Enums"]["user_role"]
           status?: string | null
+          temporary_password?: string | null
         }
         Relationships: []
       }
@@ -984,6 +1114,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_system_setting: {
+        Args: { setting_key_param: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1001,6 +1135,21 @@ export type Database = {
           required_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          p_action_type: string
+          p_target_table?: string
+          p_target_id?: string
+          p_old_values?: Json
+          p_new_values?: Json
+          p_description?: string
+        }
+        Returns: undefined
+      }
+      update_system_setting: {
+        Args: { setting_key_param: string; setting_value_param: string }
+        Returns: undefined
       }
     }
     Enums: {

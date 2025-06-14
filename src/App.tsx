@@ -20,6 +20,7 @@ import Employees from "@/pages/Employees";
 import WhatsApp from "@/pages/WhatsApp";
 import CustomerService from "@/pages/CustomerService";
 import DailyOperations from "@/pages/DailyOperations";
+import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
             <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
             <Route path="/customer-service" element={<ProtectedRoute><CustomerService /></ProtectedRoute>} />
+            <Route path="/admin-settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
