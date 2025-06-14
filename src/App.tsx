@@ -10,6 +10,7 @@ import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Customers from "@/pages/Customers";
 import Bookings from "@/pages/Bookings";
+import HotelBookings from "@/pages/HotelBookings";
 import Suppliers from "@/pages/Suppliers";
 import Trips from "@/pages/Trips";
 import Invoices from "@/pages/Invoices";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/daily-operations" element={<ProtectedRoute><DailyOperations /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
             <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
+            <Route path="/hotel-bookings" element={<ProtectedRoute><HotelBookings /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
             <Route path="/trips" element={<ProtectedRoute><Trips /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
