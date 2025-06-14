@@ -40,7 +40,6 @@ export const useCustomerService = () => {
           bookings(booking_reference, check_in_date)
         `)
         .eq('scheduled_date', today)
-        .eq('status', 'pending')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -120,13 +119,28 @@ export const useCustomerService = () => {
     },
   });
 
+  // دالة مساعدة لتحديث المتابعة بطريقة مبسطة
+  const updateFollowUp = (id: string, updates: Partial<CustomerFollowUp>) => {
+    updateFollowUpMutation.mutate({ id, updates });
+  };
+
+  // دالة مساعدة لإضافة التواصل بطريقة مبسطة
+  const addCommunication = (data: Omit<CustomerCommunication, 'id' | 'created_at'>) => {
+    addCommunicationMutation.mutate(data);
+  };
+
+  // دالة مساعدة لإضافة الملاحظة بطريقة مبسطة
+  const addNote = (data: Omit<CustomerNote, 'id' | 'created_at' | 'updated_at'>) => {
+    addNoteMutation.mutate(data);
+  };
+
   return {
     followUps,
     followUpsLoading,
     todayTasks,
-    updateFollowUp: updateFollowUpMutation.mutate,
-    addCommunication: addCommunicationMutation.mutate,
-    addNote: addNoteMutation.mutate,
+    updateFollowUp,
+    addCommunication,
+    addNote,
     isUpdating: updateFollowUpMutation.isPending,
   };
 };
