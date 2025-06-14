@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Building, Plus, Edit, Eye } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Building, Plus, Edit, Eye, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Supplier = {
@@ -18,7 +19,11 @@ type Supplier = {
   contact_person: string | null;
   email: string | null;
   phone: string | null;
-  commission_rate: number | null;
+  bank_name: string | null;
+  bank_account: string | null;
+  tax_number: string | null;
+  rating: number | null;
+  notes: string | null;
   is_active: boolean | null;
 };
 
@@ -29,7 +34,11 @@ const Suppliers = () => {
     contact_person: "",
     email: "",
     phone: "",
-    commission_rate: 0
+    bank_name: "",
+    bank_account: "",
+    tax_number: "",
+    rating: 0,
+    notes: ""
   });
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
@@ -67,7 +76,11 @@ const Suppliers = () => {
         contact_person: "",
         email: "",
         phone: "",
-        commission_rate: 0
+        bank_name: "",
+        bank_account: "",
+        tax_number: "",
+        rating: 0,
+        notes: ""
       });
       setShowForm(false);
       toast({
@@ -104,6 +117,20 @@ const Suppliers = () => {
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
+  const renderStars = (rating: number | null) => {
+    const stars = [];
+    const ratingValue = rating || 0;
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star
+          key={i}
+          className={`w-4 h-4 ${i <= ratingValue ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+        />
+      );
+    }
+    return <div className="flex">{stars}</div>;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSupplier.name.trim()) {
@@ -122,7 +149,7 @@ const Suppliers = () => {
       <div className="container py-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-            <Building /> إدارة الموردين
+            <Building /> إدارة الموردين المتقدمة
           </h2>
           <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 ml-2" />
@@ -172,12 +199,41 @@ const Suppliers = () => {
                   onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
                 />
                 <Input
-                  type="number"
-                  placeholder="نسبة العمولة %"
-                  value={newSupplier.commission_rate}
-                  onChange={e => setNewSupplier({...newSupplier, commission_rate: parseFloat(e.target.value) || 0})}
-                  step="0.01"
+                  placeholder="اسم البنك"
+                  value={newSupplier.bank_name}
+                  onChange={e => setNewSupplier({...newSupplier, bank_name: e.target.value})}
                 />
+                <Input
+                  placeholder="رقم الحساب البنكي"
+                  value={newSupplier.bank_account}
+                  onChange={e => setNewSupplier({...newSupplier, bank_account: e.target.value})}
+                />
+                <Input
+                  placeholder="الرقم الضريبي"
+                  value={newSupplier.tax_number}
+                  onChange={e => setNewSupplier({...newSupplier, tax_number: e.target.value})}
+                />
+                <Select value={newSupplier.rating.toString()} onValueChange={(value) => setNewSupplier({...newSupplier, rating: parseInt(value)})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="التقييم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">بدون تقييم</SelectItem>
+                    <SelectItem value="1">⭐</SelectItem>
+                    <SelectItem value="2">⭐⭐</SelectItem>
+                    <SelectItem value="3">⭐⭐⭐</SelectItem>
+                    <SelectItem value="4">⭐⭐⭐⭐</SelectItem>
+                    <SelectItem value="5">⭐⭐⭐⭐⭐</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="md:col-span-2">
+                  <Textarea
+                    placeholder="ملاحظات إضافية"
+                    value={newSupplier.notes}
+                    onChange={e => setNewSupplier({...newSupplier, notes: e.target.value})}
+                    rows={3}
+                  />
+                </div>
                 <div className="md:col-span-2 flex gap-2">
                   <Button type="submit" disabled={addSupplierMutation.isPending}>
                     {addSupplierMutation.isPending ? "جاري الحفظ..." : "حفظ المورد"}
@@ -206,6 +262,12 @@ const Suppliers = () => {
                       {getTypeLabel(supplier.type)}
                     </Badge>
                   </div>
+                  {supplier.rating && supplier.rating > 0 && (
+                    <div className="flex items-center gap-2">
+                      {renderStars(supplier.rating)}
+                      <span className="text-sm text-gray-600">({supplier.rating}/5)</span>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
@@ -218,8 +280,17 @@ const Suppliers = () => {
                     {supplier.email && (
                       <p><span className="font-medium">البريد:</span> {supplier.email}</p>
                     )}
-                    {supplier.commission_rate && (
-                      <p><span className="font-medium">العمولة:</span> {supplier.commission_rate}%</p>
+                    {supplier.bank_name && (
+                      <p><span className="font-medium">البنك:</span> {supplier.bank_name}</p>
+                    )}
+                    {supplier.bank_account && (
+                      <p><span className="font-medium">رقم الحساب:</span> {supplier.bank_account}</p>
+                    )}
+                    {supplier.tax_number && (
+                      <p><span className="font-medium">الرقم الضريبي:</span> {supplier.tax_number}</p>
+                    )}
+                    {supplier.notes && (
+                      <p><span className="font-medium">ملاحظات:</span> {supplier.notes}</p>
                     )}
                     <div className="flex items-center gap-2 pt-2">
                       <Badge variant={supplier.is_active ? "default" : "secondary"}>

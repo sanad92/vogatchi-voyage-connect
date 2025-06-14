@@ -119,6 +119,60 @@ export type Database = {
           },
         ]
       }
+      customer_pricing: {
+        Row: {
+          created_at: string
+          custom_price: number
+          customer_id: string
+          id: string
+          is_active: boolean | null
+          profit_margin: number | null
+          service_id: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_price: number
+          customer_id: string
+          id?: string
+          is_active?: boolean | null
+          profit_margin?: number | null
+          service_id: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_price?: number
+          customer_id?: string
+          id?: string
+          is_active?: boolean | null
+          profit_margin?: number | null
+          service_id?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_pricing_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pricing_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -155,6 +209,75 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number | null
+          service_id: string | null
+          total_price: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number | null
+          service_id?: string | null
+          total_price?: number | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number | null
+          service_id?: string | null
+          total_price?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_sequences: {
+        Row: {
+          id: string
+          last_number: number | null
+          prefix: string | null
+          year: number
+        }
+        Insert: {
+          id?: string
+          last_number?: number | null
+          prefix?: string | null
+          year: number
+        }
+        Update: {
+          id?: string
+          last_number?: number | null
+          prefix?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           booking_id: string
@@ -167,11 +290,16 @@ export type Database = {
           id: string
           invoice_number: string
           issued_date: string | null
+          notes: string | null
           paid_date: string | null
+          payment_terms: string | null
           status: string | null
+          subtotal: number | null
           tax_amount: number | null
           total_amount: number
           updated_at: string
+          vat_amount: number | null
+          vat_rate: number | null
         }
         Insert: {
           booking_id: string
@@ -184,11 +312,16 @@ export type Database = {
           id?: string
           invoice_number: string
           issued_date?: string | null
+          notes?: string | null
           paid_date?: string | null
+          payment_terms?: string | null
           status?: string | null
+          subtotal?: number | null
           tax_amount?: number | null
           total_amount: number
           updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number | null
         }
         Update: {
           booking_id?: string
@@ -201,11 +334,16 @@ export type Database = {
           id?: string
           invoice_number?: string
           issued_date?: string | null
+          notes?: string | null
           paid_date?: string | null
+          payment_terms?: string | null
           status?: string | null
+          subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number
           updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number | null
         }
         Relationships: [
           {
@@ -262,6 +400,59 @@ export type Database = {
           },
         ]
       }
+      payment_orders: {
+        Row: {
+          amount: number
+          bank_reference: string | null
+          created_at: string
+          due_date: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          order_number: string
+          payment_date: string | null
+          payment_method: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_reference?: string | null
+          created_at?: string
+          due_date: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          order_number?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_reference?: string | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          order_number?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -297,7 +488,6 @@ export type Database = {
       }
       services: {
         Row: {
-          base_price: number
           created_at: string
           currency: string | null
           description: string | null
@@ -305,12 +495,12 @@ export type Database = {
           is_active: boolean | null
           location: string | null
           name: string
+          service_category: string | null
           supplier_id: string
           type: string
           updated_at: string
         }
         Insert: {
-          base_price: number
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -318,12 +508,12 @@ export type Database = {
           is_active?: boolean | null
           location?: string | null
           name: string
+          service_category?: string | null
           supplier_id: string
           type: string
           updated_at?: string
         }
         Update: {
-          base_price?: number
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -331,6 +521,7 @@ export type Database = {
           is_active?: boolean | null
           location?: string | null
           name?: string
+          service_category?: string | null
           supplier_id?: string
           type?: string
           updated_at?: string
@@ -411,43 +602,55 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
-          commission_rate: number | null
+          bank_account: string | null
+          bank_name: string | null
           contact_person: string | null
           created_at: string
           email: string | null
           id: string
           is_active: boolean | null
           name: string
+          notes: string | null
           payment_terms: string | null
           phone: string | null
+          rating: number | null
+          tax_number: string | null
           type: string
           updated_at: string
         }
         Insert: {
           address?: string | null
-          commission_rate?: number | null
+          bank_account?: string | null
+          bank_name?: string | null
           contact_person?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean | null
           name: string
+          notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating?: number | null
+          tax_number?: string | null
           type: string
           updated_at?: string
         }
         Update: {
           address?: string | null
-          commission_rate?: number | null
+          bank_account?: string | null
+          bank_name?: string | null
           contact_person?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
+          notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating?: number | null
+          tax_number?: string | null
           type?: string
           updated_at?: string
         }
@@ -521,6 +724,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
