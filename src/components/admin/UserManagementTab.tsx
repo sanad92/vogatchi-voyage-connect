@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@/components/ui/use-toast";
 import { UserPlus, Edit, Trash2, CheckCircle, XCircle, Search } from "lucide-react";
 
+type UserRole = "admin" | "manager" | "sales_agent" | "accountant" | "viewer" | "super_admin";
+
 interface User {
   id: string;
   email: string;
@@ -21,7 +23,7 @@ interface User {
   department: string;
   is_active: boolean;
   created_at: string;
-  role?: string;
+  role?: UserRole;
 }
 
 const UserManagementTab = () => {
@@ -33,7 +35,7 @@ const UserManagementTab = () => {
     full_name: "",
     phone: "",
     department: "",
-    role: "viewer"
+    role: "viewer" as UserRole
   });
 
   // جلب جميع المستخدمين مع أدوارهم
@@ -51,7 +53,7 @@ const UserManagementTab = () => {
       
       return data.map(user => ({
         ...user,
-        role: user.user_roles?.[0]?.role || 'no_role'
+        role: (user.user_roles as any)?.[0]?.role || 'no_role'
       })) as User[];
     }
   });
@@ -104,7 +106,7 @@ const UserManagementTab = () => {
 
   // تحديث دور المستخدم
   const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       // حذف الدور الحالي
       await supabase.from('user_roles').delete().eq('user_id', userId);
       
@@ -219,7 +221,7 @@ const UserManagementTab = () => {
               </div>
               <div>
                 <Label htmlFor="role">الدور</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <Select value={newUser.role} onValueChange={(value: UserRole) => setNewUser({ ...newUser, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -275,11 +277,11 @@ const UserManagementTab = () => {
                   <TableCell>
                     <Select
                       value={user.role}
-                      onValueChange={(value) => updateUserRoleMutation.mutate({ userId: user.id, role: value })}
+                      onValueChange={(value: UserRole) => updateUserRoleMutation.mutate({ userId: user.id, role: value })}
                     >
                       <SelectTrigger className="w-auto">
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {getRoleLabel(user.role)}
+                        <Badge className={getRoleBadgeColor(user.role || 'no_role')}>
+                          {getRoleLabel(user.role || 'no_role')}
                         </Badge>
                       </SelectTrigger>
                       <SelectContent>
