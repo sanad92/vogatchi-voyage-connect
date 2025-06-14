@@ -155,12 +155,18 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
   };
 
   const onSubmit = async (data: NewHotelBooking) => {
+    // التحقق من اختيار العميل
+    if (!selectedCustomer) {
+      toast.error('يجب اختيار عميل أو إضافة عميل جديد قبل إتمام الحجز');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const submitData = {
         ...data,
-        customer_id: selectedCustomer?.id || null,
-        customer_name: selectedCustomer?.name || data.customer_name
+        customer_id: selectedCustomer.id,
+        customer_name: selectedCustomer.name
       };
 
       let bookingId: string;
@@ -237,13 +243,21 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
       />
 
       <div className="flex gap-4">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || !selectedCustomer}
+          className={`${!selectedCustomer ? 'bg-gray-400 cursor-not-allowed' : ''}`}
+        >
           {isSubmitting ? 'جاري الحفظ...' : booking ? 'تحديث الحجز' : 'إنشاء الحجز'}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>
           إلغاء
         </Button>
       </div>
+      
+      {!selectedCustomer && (
+        <p className="text-red-500 text-sm">* يجب اختيار عميل لتفعيل زر الحفظ</p>
+      )}
     </form>
   );
 };

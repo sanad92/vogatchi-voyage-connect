@@ -4,9 +4,11 @@ import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NewHotelBooking, Customer } from "@/types/hotelBooking";
 import CustomerSearch from "@/components/customers/CustomerSearch";
 import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
+import { AlertTriangle } from "lucide-react";
 
 interface CustomerSectionProps {
   register: UseFormRegister<NewHotelBooking>;
@@ -47,34 +49,32 @@ const CustomerSection = ({
         <CardTitle>معلومات العميل</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!selectedCustomer && !showQuickAdd && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              يجب اختيار عميل من القائمة أو إضافة عميل جديد لمتابعة الحجز
+            </AlertDescription>
+          </Alert>
+        )}
+
         {showQuickAdd ? (
           <QuickCustomerAdd
             onCustomerAdded={handleCustomerAdded}
             onCancel={() => setShowQuickAdd(false)}
           />
         ) : (
-          <>
-            <div>
-              <Label>العميل *</Label>
-              <CustomerSearch
-                onCustomerSelect={handleCustomerSelect}
-                onNewCustomer={handleNewCustomer}
-                selectedCustomer={selectedCustomer}
-              />
-            </div>
-            
+          <div>
+            <Label>البحث عن العميل أو إضافة عميل جديد *</Label>
+            <CustomerSearch
+              onCustomerSelect={handleCustomerSelect}
+              onNewCustomer={handleNewCustomer}
+              selectedCustomer={selectedCustomer}
+            />
             {!selectedCustomer && (
-              <div>
-                <Label htmlFor="customer_name">اسم العميل (نص حر) *</Label>
-                <Input 
-                  id="customer_name"
-                  {...register('customer_name', { required: 'اسم العميل مطلوب' })}
-                  placeholder="أدخل اسم العميل"
-                />
-                {errors.customer_name && <p className="text-red-500 text-sm">{errors.customer_name.message}</p>}
-              </div>
+              <p className="text-red-500 text-sm mt-1">يجب اختيار عميل أو إضافة عميل جديد</p>
             )}
-          </>
+          </div>
         )}
         
         <div>

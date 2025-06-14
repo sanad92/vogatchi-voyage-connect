@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Plus, User, Phone, Mail } from "lucide-react";
+import { Search, Plus, User, Phone, Mail, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Customer {
@@ -62,46 +62,76 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
   }, [selectedCustomer]);
 
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="ابحث عن عميل بالاسم أو الهاتف أو البريد الإلكتروني..."
-          value={searchTerm}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-10 pr-4"
-        />
-      </div>
+    <div className="space-y-3">
+      {!selectedCustomer && (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="ابحث بالاسم أو رقم الهاتف أو البريد الإلكتروني (اكتب حرفين على الأقل)..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10 pr-4"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={onNewCustomer} 
+              variant="outline" 
+              className="flex-1 bg-green-50 border-green-200 hover:bg-green-100"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              إضافة عميل جديد
+            </Button>
+          </div>
+        </>
+      )}
 
       {selectedCustomer && (
         <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-3">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-green-600" />
+                <User className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="font-medium text-green-800">{selectedCustomer.name}</p>
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <Phone className="h-3 w-3" />
-                    <span>{selectedCustomer.phone}</span>
+                  <div className="flex items-center gap-3 text-sm text-green-600">
+                    <div className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      <span>{selectedCustomer.phone}</span>
+                    </div>
                     {selectedCustomer.email && (
-                      <>
-                        <Mail className="h-3 w-3 ml-2" />
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
                         <span>{selectedCustomer.email}</span>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-              {selectedCustomer.nationality && (
-                <Badge variant="secondary">{selectedCustomer.nationality}</Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {selectedCustomer.nationality && (
+                  <Badge variant="secondary">{selectedCustomer.nationality}</Badge>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    onCustomerSelect(null as any);
+                    setSearchTerm("");
+                  }}
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  تغيير
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {isSearching && (
+      {isSearching && !selectedCustomer && (
         <Card className="border shadow-lg">
           <CardContent className="p-2">
             {isLoading ? (
@@ -112,19 +142,21 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
                   <div
                     key={customer.id}
                     onClick={() => handleCustomerSelect(customer)}
-                    className="p-3 hover:bg-gray-50 cursor-pointer rounded-md border-b last:border-b-0"
+                    className="p-3 hover:bg-gray-50 cursor-pointer rounded-md border-b last:border-b-0 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{customer.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Phone className="h-3 w-3" />
-                          <span>{customer.phone}</span>
+                        <div className="flex items-center gap-3 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            <span>{customer.phone}</span>
+                          </div>
                           {customer.email && (
-                            <>
-                              <Mail className="h-3 w-3 ml-2" />
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
                               <span>{customer.email}</span>
-                            </>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -137,19 +169,10 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
               </div>
             ) : (
               <div className="p-4 text-center">
-                <p className="text-gray-500 mb-2">لا توجد نتائج للبحث</p>
-                <Button onClick={onNewCustomer} variant="outline" size="sm">
+                <p className="text-gray-500 mb-3">لا توجد نتائج للبحث "{searchTerm}"</p>
+                <Button onClick={onNewCustomer} variant="outline" size="sm" className="w-full">
                   <Plus className="h-4 w-4 mr-2" />
-                  إضافة عميل جديد
-                </Button>
-              </div>
-            )}
-            
-            {!isLoading && (
-              <div className="border-t pt-2 mt-2">
-                <Button onClick={onNewCustomer} variant="ghost" size="sm" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  إضافة عميل جديد
+                  إضافة "{searchTerm}" كعميل جديد
                 </Button>
               </div>
             )}
