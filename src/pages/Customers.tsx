@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Search, Plus } from "lucide-react";
+import { Users, Search, Plus, MessageSquare } from "lucide-react";
 import CustomerServiceTabs from "@/components/customer-service/CustomerServiceTabs";
 import { useCustomerData } from "@/hooks/useCustomerData";
 
