@@ -1,17 +1,10 @@
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "@/components/ui/use-toast";
-import { Settings, Users, Shield, Activity, Building2 } from "lucide-react";
+import { Settings, Users, Shield, Activity, Building2, Database, Bell } from "lucide-react";
 import SystemSettingsTab from "@/components/admin/SystemSettingsTab";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import AuditLogTab from "@/components/admin/AuditLogTab";
@@ -31,6 +24,7 @@ const AdminSettings = () => {
               <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-gray-900 mb-2">غير مصرح</h2>
               <p className="text-gray-600">هذه الصفحة متاحة للسوبر أدمن فقط</p>
+              <p className="text-sm text-gray-500 mt-2">دورك الحالي: {userRole}</p>
             </CardContent>
           </Card>
         </div>
@@ -44,48 +38,113 @@ const AdminSettings = () => {
       <div className="container mx-auto px-4 py-8">
         {/* العنوان الرئيسي */}
         <div className="flex items-center gap-3 mb-8">
-          <Settings className="h-8 w-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">إعدادات النظام</h1>
-            <p className="text-gray-600">إدارة شاملة لجميع إعدادات النظام</p>
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Settings className="h-6 w-6 text-white" />
           </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">لوحة تحكم السوبر أدمن</h1>
+            <p className="text-gray-600">إدارة شاملة لجميع إعدادات النظام والمستخدمين والصلاحيات</p>
+          </div>
+        </div>
+
+        {/* معلومات سريعة */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">إعدادات النظام</p>
+                  <p className="text-lg font-bold">تخصيص كامل</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">إدارة المستخدمين</p>
+                  <p className="text-lg font-bold">تحكم كامل</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Shield className="h-8 w-8 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">إدارة الصلاحيات</p>
+                  <p className="text-lg font-bold">مرونة عالية</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-orange-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Activity className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="text-sm text-gray-600">مراقبة العمليات</p>
+                  <p className="text-lg font-bold">أمان عالي</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* علامات التبويب */}
         <Tabs defaultValue="system" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="system" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4 h-12">
+            <TabsTrigger value="system" className="flex items-center gap-2 h-10">
               <Building2 className="h-4 w-4" />
-              إعدادات النظام
+              <span className="hidden sm:inline">إعدادات النظام</span>
+              <span className="sm:hidden">النظام</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger value="users" className="flex items-center gap-2 h-10">
               <Users className="h-4 w-4" />
-              إدارة المستخدمين
+              <span className="hidden sm:inline">إدارة المستخدمين</span>
+              <span className="sm:hidden">المستخدمين</span>
             </TabsTrigger>
-            <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <TabsTrigger value="permissions" className="flex items-center gap-2 h-10">
               <Shield className="h-4 w-4" />
-              الصلاحيات
+              <span className="hidden sm:inline">الصلاحيات</span>
+              <span className="sm:hidden">الصلاحيات</span>
             </TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2">
+            <TabsTrigger value="audit" className="flex items-center gap-2 h-10">
               <Activity className="h-4 w-4" />
-              سجل العمليات
+              <span className="hidden sm:inline">سجل العمليات</span>
+              <span className="sm:hidden">السجل</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="system">
-            <SystemSettingsTab />
+          <TabsContent value="system" className="space-y-6">
+            <div className="bg-white rounded-lg shadow">
+              <SystemSettingsTab />
+            </div>
           </TabsContent>
 
-          <TabsContent value="users">
-            <UserManagementTab />
+          <TabsContent value="users" className="space-y-6">
+            <div className="bg-white rounded-lg shadow">
+              <UserManagementTab />
+            </div>
           </TabsContent>
 
-          <TabsContent value="permissions">
-            <PermissionsTab />
+          <TabsContent value="permissions" className="space-y-6">
+            <div className="bg-white rounded-lg shadow">
+              <PermissionsTab />
+            </div>
           </TabsContent>
 
-          <TabsContent value="audit">
-            <AuditLogTab />
+          <TabsContent value="audit" className="space-y-6">
+            <div className="bg-white rounded-lg shadow">
+              <AuditLogTab />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

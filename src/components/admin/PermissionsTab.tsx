@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
-import { Shield, Plus, Edit } from "lucide-react";
+import { Shield, Plus, Edit, Save, Settings, Users, Eye, DollarSign } from "lucide-react";
 
 interface Permission {
   id: string;
@@ -21,6 +22,7 @@ interface Permission {
 const PermissionsTab = () => {
   const queryClient = useQueryClient();
   const [isAddPermissionOpen, setIsAddPermissionOpen] = useState(false);
+  const [editingPermissions, setEditingPermissions] = useState<Record<string, boolean>>({});
   const [newPermission, setNewPermission] = useState({
     role_name: "",
     permission_key: "",
@@ -80,6 +82,32 @@ const PermissionsTab = () => {
     }
   });
 
+  // تحديث مجموعة من الصلاحيات
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (updates: { id: string; value: boolean }[]) => {
+      const promises = updates.map(({ id, value }) =>
+        supabase
+          .from('custom_permissions')
+          .update({ permission_value: value })
+          .eq('id', id)
+      );
+      
+      const results = await Promise.all(promises);
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error('فشل في تحديث بعض الصلاحيات');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom-permissions'] });
+      setEditingPermissions({});
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث الصلاحيات بنجاح",
+      });
+    }
+  });
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return 'سوبر أدمن';
@@ -115,8 +143,31 @@ const PermissionsTab = () => {
     return labels[permission] || permission;
   };
 
+  const getCategoryIcon = (permission: string) => {
+    if (permission.includes('user') || permission.includes('role')) return <Users className="h-4 w-4" />;
+    if (permission.includes('financial') || permission.includes('payment') || permission.includes('invoice')) return <DollarSign className="h-4 w-4" />;
+    if (permission.includes('setting')) return <Settings className="h-4 w-4" />;
+    if (permission.includes('view')) return <Eye className="h-4 w-4" />;
+    return <Shield className="h-4 w-4" />;
+  };
+
+  const handleBulkSave = () => {
+    const updates = Object.entries(editingPermissions).map(([id, value]) => ({
+      id,
+      value
+    }));
+    bulkUpdateMutation.mutate(updates);
+  };
+
   if (isLoading) {
-    return <div className="text-center py-8">جاري تحميل الصلاحيات...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل الصلاحيات...</p>
+        </div>
+      </div>
+    );
   }
 
   // تجميع الصلاحيات حسب الدور
@@ -128,15 +179,30 @@ const PermissionsTab = () => {
     return acc;
   }, {} as Record<string, Permission[]>) || {};
 
+  const roles = Object.keys(permissionsByRole);
+
   return (
     <div className="space-y-6">
-      {/* إضافة صلاحية جديدة */}
-      <div className="flex justify-end">
+      {/* شريط الإجراءات */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          {Object.keys(editingPermissions).length > 0 && (
+            <Button 
+              onClick={handleBulkSave}
+              disabled={bulkUpdateMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              حفظ التغييرات ({Object.keys(editingPermissions).length})
+            </Button>
+          )}
+        </div>
+
         <Dialog open={isAddPermissionOpen} onOpenChange={setIsAddPermissionOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              إضافة صلاحية
+              إضافة صلاحية جديدة
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -146,12 +212,19 @@ const PermissionsTab = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="role_name">الدور</Label>
-                <Input
+                <select
                   id="role_name"
                   value={newPermission.role_name}
                   onChange={(e) => setNewPermission({ ...newPermission, role_name: e.target.value })}
-                  placeholder="مثل: manager"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">اختر الدور</option>
+                  <option value="admin">أدمن</option>
+                  <option value="manager">مدير</option>
+                  <option value="sales_agent">مندوب مبيعات</option>
+                  <option value="accountant">محاسب</option>
+                  <option value="viewer">مشاهد</option>
+                </select>
               </div>
               <div>
                 <Label htmlFor="permission_key">مفتاح الصلاحية</Label>
@@ -171,7 +244,7 @@ const PermissionsTab = () => {
               </div>
               <Button
                 onClick={() => addPermissionMutation.mutate(newPermission)}
-                disabled={addPermissionMutation.isPending}
+                disabled={addPermissionMutation.isPending || !newPermission.role_name || !newPermission.permission_key}
                 className="w-full"
               >
                 إضافة الصلاحية
@@ -181,48 +254,91 @@ const PermissionsTab = () => {
         </Dialog>
       </div>
 
-      {/* عرض الصلاحيات مجمعة حسب الدور */}
-      <div className="space-y-6">
-        {Object.entries(permissionsByRole).map(([roleName, rolePermissions]) => (
-          <Card key={roleName}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                {getRoleLabel(roleName)}
-                <span className="text-sm text-gray-500">({rolePermissions.length} صلاحية)</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rolePermissions.map((permission) => (
-                  <div
-                    key={permission.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        {getPermissionLabel(permission.permission_key)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {permission.permission_key}
-                      </div>
-                    </div>
-                    <Switch
-                      checked={permission.permission_value}
-                      onCheckedChange={(checked) =>
-                        updatePermissionMutation.mutate({
-                          id: permission.id,
-                          value: checked
-                        })
-                      }
-                    />
+      {/* عرض الصلاحيات */}
+      {roles.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد صلاحيات</h3>
+            <p className="text-gray-600 mb-4">لم يتم تعيين أي صلاحيات بعد</p>
+            <Button onClick={() => setIsAddPermissionOpen(true)}>
+              إضافة صلاحية جديدة
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue={roles[0]} className="space-y-6">
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${roles.length}, 1fr)` }}>
+            {roles.map((role) => (
+              <TabsTrigger key={role} value={role} className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                {getRoleLabel(role)}
+                <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                  {permissionsByRole[role].length}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {roles.map((role) => (
+            <TabsContent key={role} value={role}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    صلاحيات {getRoleLabel(role)}
+                    <span className="text-sm text-gray-500">({permissionsByRole[role].length} صلاحية)</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {permissionsByRole[role].map((permission) => {
+                      const isEdited = editingPermissions.hasOwnProperty(permission.id);
+                      const currentValue = isEdited ? editingPermissions[permission.id] : permission.permission_value;
+                      
+                      return (
+                        <div
+                          key={permission.id}
+                          className={`p-4 border rounded-lg transition-all ${
+                            isEdited ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {getCategoryIcon(permission.permission_key)}
+                              <div className="font-medium text-sm">
+                                {getPermissionLabel(permission.permission_key)}
+                              </div>
+                            </div>
+                            <Switch
+                              checked={currentValue}
+                              onCheckedChange={(checked) => {
+                                setEditingPermissions(prev => ({
+                                  ...prev,
+                                  [permission.id]: checked
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {permission.permission_key}
+                          </div>
+                          {isEdited && (
+                            <div className="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                              <Edit className="h-3 w-3" />
+                              تم التعديل
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 };
