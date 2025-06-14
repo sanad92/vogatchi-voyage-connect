@@ -10,7 +10,19 @@ export const useCustomerData = (customerId: string) => {
         .from('customers')
         .select(`
           *,
-          bookings(
+          segment:customer_segments(
+            id,
+            name,
+            name_ar,
+            color,
+            minimum_bookings,
+            minimum_total_spent
+          ),
+          loyalty_transactions:customer_loyalty_points(
+            *,
+            booking:hotel_bookings(internal_booking_number)
+          ),
+          bookings:hotel_bookings(
             *,
             follow_ups:customer_follow_ups(*)
           ),
@@ -24,7 +36,7 @@ export const useCustomerData = (customerId: string) => {
           ),
           follow_ups:customer_follow_ups(
             *,
-            bookings(booking_reference),
+            bookings:hotel_bookings(internal_booking_number),
             assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(full_name)
           )
         `)

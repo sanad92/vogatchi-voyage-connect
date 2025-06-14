@@ -1,127 +1,161 @@
 
-import Navbar from "@/components/Navbar";
-import { Users, Building, Calendar, MessageCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthState } from "@/hooks/useAuthState";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, DollarSign, TrendingUp, Bell, Star, Target, Award } from "lucide-react";
 import StatsCard from "@/components/dashboard/StatsCard";
-import QuickActions from "@/components/dashboard/QuickActions";
 import TodayOverview from "@/components/dashboard/TodayOverview";
+import QuickActions from "@/components/dashboard/QuickActions";
 import RecentActivity from "@/components/dashboard/RecentActivity";
+import NotificationCenter from "@/components/crm/NotificationCenter";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useCRM } from "@/hooks/useCRM";
 
 const Index = () => {
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const [customers, employees, bookings, conversations] = await Promise.all([
-        supabase.from('customers').select('id', { count: 'exact' }),
-        supabase.from('suppliers').select('id', { count: 'exact' }),
-        supabase.from('bookings').select('id', { count: 'exact' }),
-        supabase.from('conversations').select('id', { count: 'exact' })
-      ]);
+  const { user } = useAuthState();
+  const { unreadCount } = useNotifications();
+  const { customerSegments } = useCRM();
 
-      return {
-        customers: customers.count || 0,
-        suppliers: employees.count || 0,
-        bookings: bookings.count || 0,
-        conversations: conversations.count || 0
-      };
-    }
-  });
+  const mockStats = {
+    totalBookings: 156,
+    totalRevenue: 2450000,
+    activeCustomers: 89,
+    monthlyGrowth: 15.2
+  };
 
-  const statsData = [
-    { 
-      title: "إجمالي العملاء", 
-      value: stats?.customers || 0, 
-      icon: Users, 
-      color: "bg-blue-600",
-      description: "عميل مسجل"
-    },
-    { 
-      title: "عدد الموردين", 
-      value: stats?.suppliers || 0, 
-      icon: Building, 
-      color: "bg-orange-500",
-      description: "مورد نشط"
-    },
-    { 
-      title: "الحجوزات النشطة", 
-      value: stats?.bookings || 0, 
-      icon: Calendar, 
-      color: "bg-green-600",
-      description: "حجز فعال"
-    },
-    { 
-      title: "جلسات واتساب", 
-      value: stats?.conversations || 0, 
-      icon: MessageCircle, 
-      color: "bg-[#25d366]",
-      description: "محادثة نشطة"
-    },
-  ];
+  const vipCustomers = customerSegments?.find(s => s.name === 'VIP')?.minimum_bookings || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50">
-      <Navbar />
-      <div className="container mx-auto px-4 py-6 sm:py-10 space-y-6 sm:space-y-8">
-        
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-blue-700">
-            مرحباً بك في Vogatchi Tourism
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            نظام إدارة شامل للرحلات السياحية وخدمة العملاء
-          </p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">مرحباً بعودتك!</h1>
+          <p className="text-gray-600">نظرة عامة على أداء شركتك اليوم</p>
         </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {statsData.map((stat) => (
-            <StatsCard
-              key={stat.title}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              color={stat.color}
-              description={stat.description}
-            />
-          ))}
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-          
-          {/* Left Column - Today Overview & Quick Actions */}
-          <div className="xl:col-span-2 space-y-6">
-            <TodayOverview />
-            <QuickActions />
-          </div>
-
-          {/* Right Column - Recent Activity */}
-          <div className="xl:col-span-1">
-            <RecentActivity />
-          </div>
-        </div>
-
-        {/* Footer Info */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center">
-          <h3 className="font-semibold text-gray-800 mb-2">نصائح للاستخدام الأمثل</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
-              <span>تابع مهام اليوم في قسم خدمة العملاء</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-green-600" />
-              <span>سجل العملاء الجدد فور وصولهم</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-orange-600" />
-              <span>استخدم الواتساب للتواصل السريع</span>
-            </div>
+        <div className="flex items-center gap-4">
+          <NotificationCenter />
+          <div className="text-sm text-gray-600">
+            {new Date().toLocaleDateString('ar-EG', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
           </div>
         </div>
       </div>
+
+      {/* المؤشرات الرئيسية المحدثة */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          title="إجمالي الحجوزات"
+          value={mockStats.totalBookings.toString()}
+          icon={Calendar}
+          change="+12%"
+          changeType="positive"
+        />
+        <StatsCard
+          title="الإيرادات الشهرية"
+          value={`${(mockStats.totalRevenue / 1000000).toFixed(1)}م ج.م`}
+          icon={DollarSign}
+          change="+8.2%"
+          changeType="positive"
+        />
+        <StatsCard
+          title="العملاء النشطين"
+          value={mockStats.activeCustomers.toString()}
+          icon={Users}
+          change="+5.1%"
+          changeType="positive"
+        />
+        <StatsCard
+          title="معدل النمو"
+          value={`${mockStats.monthlyGrowth}%`}
+          icon={TrendingUp}
+          change="+2.3%"
+          changeType="positive"
+        />
+      </div>
+
+      {/* مؤشرات CRM الجديدة */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">عملاء VIP</CardTitle>
+            <Star className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">24</div>
+            <p className="text-xs text-muted-foreground">+3 هذا الشهر</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">نقاط الولاء المسترد</CardTitle>
+            <Award className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12,450</div>
+            <p className="text-xs text-muted-foreground">نقطة هذا الشهر</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">الحملات النشطة</CardTitle>
+            <Target className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">حملة تسويقية</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">الإشعارات</CardTitle>
+            <Bell className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{unreadCount || 0}</div>
+            <p className="text-xs text-muted-foreground">إشعار غير مقروء</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodayOverview />
+        <QuickActions />
+      </div>
+
+      {/* قسم التحليلات السريعة */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            تحليلات سريعة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-semibold text-green-600 mb-2">أفضل أداء</h4>
+              <p className="text-sm text-gray-600">حجوزات الفنادق تمثل 65% من الإيرادات</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-semibold text-blue-600 mb-2">فرصة تحسين</h4>
+              <p className="text-sm text-gray-600">زيادة استخدام نقاط الولاء بنسبة 23%</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-semibold text-purple-600 mb-2">توصية</h4>
+              <p className="text-sm text-gray-600">استهداف العملاء غير النشطين بحملة تسويقية</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <RecentActivity />
     </div>
   );
 };

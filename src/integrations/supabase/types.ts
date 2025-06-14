@@ -128,6 +128,42 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_logs: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_by: string | null
+          error_message: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          backup_type: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          started_at?: string
+          status: string
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       booking_special_requests: {
         Row: {
           booking_id: string
@@ -296,6 +332,51 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sends: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          response: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          response?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          response?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_sends_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -506,6 +587,57 @@ export type Database = {
           },
         ]
       }
+      customer_loyalty_points: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          current_balance: number
+          customer_id: string
+          description: string | null
+          id: string
+          points_earned: number
+          points_used: number
+          transaction_type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          current_balance?: number
+          customer_id: string
+          description?: string | null
+          id?: string
+          points_earned?: number
+          points_used?: number
+          transaction_type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          current_balance?: number
+          customer_id?: string
+          description?: string | null
+          id?: string
+          points_earned?: number
+          points_used?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_loyalty_points_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_loyalty_points_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_notes: {
         Row: {
           booking_id: string | null
@@ -675,41 +807,109 @@ export type Database = {
           },
         ]
       }
+      customer_segments: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          minimum_bookings: number | null
+          minimum_total_spent: number | null
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_bookings?: number | null
+          minimum_total_spent?: number | null
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_bookings?: number | null
+          minimum_total_spent?: number | null
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
+          communication_preferences: Json | null
           created_at: string
           email: string | null
           id: string
+          last_booking_date: string | null
+          loyalty_points: number | null
           name: string
           nationality: string | null
           passport_number: string | null
           phone: string
+          preferences: Json | null
+          segment_id: string | null
+          total_bookings: number | null
+          total_spent: number | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          communication_preferences?: Json | null
           created_at?: string
           email?: string | null
           id?: string
+          last_booking_date?: string | null
+          loyalty_points?: number | null
           name: string
           nationality?: string | null
           passport_number?: string | null
           phone: string
+          preferences?: Json | null
+          segment_id?: string | null
+          total_bookings?: number | null
+          total_spent?: number | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          communication_preferences?: Json | null
           created_at?: string
           email?: string | null
           id?: string
+          last_booking_date?: string | null
+          loyalty_points?: number | null
           name?: string
           nationality?: string | null
           passport_number?: string | null
           phone?: string
+          preferences?: Json | null
+          segment_id?: string | null
+          total_bookings?: number | null
+          total_spent?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flight_bookings: {
         Row: {
@@ -1262,6 +1462,95 @@ export type Database = {
           },
         ]
       }
+      loyalty_rewards: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          points_required: number
+          reward_type: string
+          reward_value: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          points_required: number
+          reward_type: string
+          reward_value: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          points_required?: number
+          reward_type?: string
+          reward_value?: number
+        }
+        Relationships: []
+      }
+      marketing_campaigns: {
+        Row: {
+          campaign_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          message_template: string
+          name: string
+          start_date: string
+          status: string | null
+          target_segment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          message_template: string
+          name: string
+          start_date: string
+          status?: string | null
+          target_segment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          message_template?: string
+          name?: string
+          start_date?: string
+          status?: string | null
+          target_segment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_target_segment_id_fkey"
+            columns: ["target_segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           conversation_id: string
@@ -1299,6 +1588,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          priority: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          priority?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          priority?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       payment_orders: {
         Row: {

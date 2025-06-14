@@ -1,146 +1,235 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/Navbar";
-import CustomerStats from "@/components/customers/CustomerStats";
-import CustomerCard from "@/components/customers/CustomerCard";
+import { Plus, Search, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Search, Plus, MessageSquare } from "lucide-react";
-import CustomerServiceTabs from "@/components/customer-service/CustomerServiceTabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CustomerCard from "@/components/customers/CustomerCard";
+import CustomerStats from "@/components/customers/CustomerStats";
+import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
+import CustomerSearch from "@/components/customers/CustomerSearch";
+import CustomerSegmentBadge from "@/components/crm/CustomerSegmentBadge";
+import LoyaltyPointsDisplay from "@/components/crm/LoyaltyPointsDisplay";
 import { useCustomerData } from "@/hooks/useCustomerData";
+import { useCRM } from "@/hooks/useCRM";
 
 const Customers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-
-  const { data: customers, isLoading, refetch } = useQuery({
-    queryKey: ['customers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select(`
-          *,
-          bookings(id, status, check_in_date),
-          follow_ups:customer_follow_ups(id, status),
-          communications:customer_communications(id, created_at)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { customerData, refetch: refetchCustomerData } = useCustomerData(selectedCustomer?.id);
-
-  const filteredCustomers = customers?.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
-
-  const handleOpenCustomerService = (customer: any) => {
-    setSelectedCustomer(customer);
-    setIsServiceDialogOpen(true);
-  };
-
-  // إحصائيات العملاء
-  const totalCustomers = customers?.length || 0;
-  const activeCustomers = customers?.filter(c => c.bookings?.some((b: any) => b.status === 'confirmed')).length || 0;
-  const needsFollowUp = customers?.filter(c => c.follow_ups?.some((f: any) => f.status === 'pending')).length || 0;
-  const noCommunication = customers?.filter(c => !c.communications || c.communications.length === 0).length || 0;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">جاري تحميل بيانات العملاء...</div>
-        </div>
-      </div>
-    );
-  }
+  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [activeSegment, setActiveSegment] = useState<string | null>(null);
+  
+  const { customerSegments } = useCRM();
+  const { customerData } = useCustomerData(selectedCustomer || '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <Navbar />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* العنوان والبحث */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl sm:text-2xl font-bold">إدارة العملاء</h2>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="البحث عن عميل..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 w-full sm:w-64"
-              />
-            </div>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              عميل جديد
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Users className="h-8 w-8" />
+          إدارة العملاء
+        </h1>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              إضافة عميل جديد
             </Button>
-          </div>
-        </div>
-
-        {/* الإحصائيات السريعة */}
-        <CustomerStats
-          totalCustomers={totalCustomers}
-          activeCustomers={activeCustomers}
-          needsFollowUp={needsFollowUp}
-          noCommunication={noCommunication}
-        />
-
-        {/* قائمة العملاء */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {filteredCustomers.map((customer) => (
-            <CustomerCard
-              key={customer.id}
-              customer={customer}
-              onServiceClick={handleOpenCustomerService}
-            />
-          ))}
-        </div>
-
-        {/* Dialog خدمة العملاء */}
-        <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          </DialogTrigger>
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                خدمة العملاء - {selectedCustomer?.name}
-              </DialogTitle>
+              <DialogTitle>إضافة عميل جديد</DialogTitle>
             </DialogHeader>
-            {customerData && (
-              <CustomerServiceTabs 
-                customer={customerData} 
-                onUpdate={() => {
-                  refetchCustomerData();
-                  refetch();
-                }} 
-              />
-            )}
+            <QuickCustomerAdd onSuccess={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
-
-        {filteredCustomers.length === 0 && (
-          <Card className="mt-8">
-            <CardContent className="py-8 text-center text-gray-500">
-              {searchTerm ? "لا توجد نتائج للبحث" : "لا يوجد عملاء مسجلين"}
-            </CardContent>
-          </Card>
-        )}
       </div>
+
+      {/* إحصائيات العملاء */}
+      <CustomerStats />
+
+      {/* فلاتر تقسيم العملاء */}
+      <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg">
+        <Button
+          variant={activeSegment === null ? "default" : "outline"}
+          onClick={() => setActiveSegment(null)}
+          size="sm"
+        >
+          جميع العملاء
+        </Button>
+        {customerSegments?.map((segment) => (
+          <Button
+            key={segment.id}
+            variant={activeSegment === segment.id ? "default" : "outline"}
+            onClick={() => setActiveSegment(segment.id)}
+            size="sm"
+            style={{
+              backgroundColor: activeSegment === segment.id ? segment.color : 'transparent',
+              borderColor: segment.color,
+              color: activeSegment === segment.id ? 'white' : segment.color
+            }}
+          >
+            {segment.name_ar}
+          </Button>
+        ))}
+      </div>
+
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all">جميع العملاء</TabsTrigger>
+          <TabsTrigger value="vip" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            VIP
+          </TabsTrigger>
+          <TabsTrigger value="new">عملاء جدد</TabsTrigger>
+          <TabsTrigger value="inactive">غير نشطين</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          {/* شريط البحث */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="ابحث عن عميل باسم أو رقم الهاتف..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <CustomerSearch onCustomerSelect={(customer) => setSelectedCustomer(customer.id)} />
+          </div>
+
+          {/* قائمة العملاء */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* عملاء تجريبيون مع ميزات CRM */}
+            <CustomerCard
+              customer={{
+                id: '1',
+                name: 'أحمد محمد علي',
+                phone: '+201234567890',
+                email: 'ahmed@example.com',
+                total_bookings: 8,
+                total_spent: 45000,
+                loyalty_points: 450,
+                last_booking_date: '2024-01-15',
+                segment_id: customerSegments?.find(s => s.name === 'VIP')?.id
+              }}
+              onSelect={() => setSelectedCustomer('1')}
+            />
+            
+            <CustomerCard
+              customer={{
+                id: '2',
+                name: 'فاطمة حسن',
+                phone: '+201987654321',
+                email: 'fatma@example.com',
+                total_bookings: 3,
+                total_spent: 18000,
+                loyalty_points: 180,
+                last_booking_date: '2024-01-10',
+                segment_id: customerSegments?.find(s => s.name === 'Premium')?.id
+              }}
+              onSelect={() => setSelectedCustomer('2')}
+            />
+
+            <CustomerCard
+              customer={{
+                id: '3',
+                name: 'محمد أحمد',
+                phone: '+201567890123',
+                email: 'mohamed@example.com',
+                total_bookings: 1,
+                total_spent: 8500,
+                loyalty_points: 85,
+                last_booking_date: '2024-01-20',
+                segment_id: customerSegments?.find(s => s.name === 'Regular')?.id
+              }}
+              onSelect={() => setSelectedCustomer('3')}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="vip" className="space-y-4">
+          <div className="text-center py-8">
+            <Star className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">عملاء كبار الشخصيات</h3>
+            <p className="text-gray-600">العملاء الذين أنفقوا أكثر من 50,000 جنيه أو لديهم أكثر من 10 حجوزات</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="new" className="space-y-4">
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">العملاء الجدد</h3>
+            <p className="text-gray-600">العملاء الذين انضموا خلال آخر 30 يوم</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="inactive" className="space-y-4">
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">العملاء غير النشطين</h3>
+            <p className="text-gray-600">العملاء الذين لم يقوموا بحجز خلال آخر 6 أشهر</p>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* عرض تفاصيل العميل المحدد */}
+      {selectedCustomer && customerData && (
+        <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                تفاصيل العميل - {customerData.name}
+                <CustomerSegmentBadge segment={customerSegments?.find(s => s.id === customerData.segment_id)} />
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                {/* معلومات العميل الأساسية */}
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-semibold mb-2">معلومات الاتصال</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>الهاتف:</strong> {customerData.phone}</p>
+                    <p><strong>البريد الإلكتروني:</strong> {customerData.email || 'غير محدد'}</p>
+                    <p><strong>العنوان:</strong> {customerData.address || 'غير محدد'}</p>
+                  </div>
+                </div>
+
+                {/* إحصائيات العميل */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-600">{customerData.total_bookings || 0}</div>
+                    <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
+                  </div>
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {(customerData.total_spent || 0).toLocaleString()} ج.م
+                    </div>
+                    <div className="text-sm text-gray-600">إجمالي المنفق</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* نقاط الولاء */}
+              <div>
+                <LoyaltyPointsDisplay 
+                  customerId={selectedCustomer}
+                  loyaltyPoints={customerData.loyalty_points || 0}
+                  onRedeemPoints={() => {
+                    // تحديث البيانات بعد استرداد النقاط
+                  }}
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

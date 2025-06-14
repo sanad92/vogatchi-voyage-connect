@@ -1,78 +1,83 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useAuthState } from "@/hooks/useAuthState";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { Menu, X, Calendar, LogOut } from "lucide-react";
-import DesktopNavigation from "./navbar/DesktopNavigation";
-import MobileNavigation from "./navbar/MobileNavigation";
+import { supabase } from "@/integrations/supabase/client";
+import { NavigationItems } from "./navbar/NavigationItems";
+import { DesktopNavigation } from "./navbar/DesktopNavigation";
+import { MobileNavigation } from "./navbar/MobileNavigation";
+import NotificationCenter from "./crm/NotificationCenter";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { user } = useAuthState();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
+    await supabase.auth.signOut();
   };
 
+  if (!user) return null;
+
   return (
-    <nav className="bg-white shadow-lg border-b sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link 
-            to="/" 
-            className="flex items-center gap-2 text-xl font-bold text-blue-700"
-          >
-            <Calendar className="h-8 w-8" />
-            <span className="hidden sm:block">Vogatchi Tourism</span>
-          </Link>
+    <nav className="bg-white shadow-lg border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <h1 className="text-xl font-bold text-gray-900">نظام إدارة السياحة</h1>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <DesktopNavigation />
+          </div>
 
-          {/* Desktop Navigation */}
-          <DesktopNavigation />
-
-          {/* User Menu & Mobile Toggle */}
-          <div className="flex items-center gap-4">
-            {/* User Info */}
-            {profile && (
-              <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                <span>مرحباً، {profile.full_name}</span>
-              </div>
-            )}
-
-            {/* Sign Out */}
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-4 space-x-reverse">
+            <NotificationCenter />
+            <div className="text-sm text-gray-700">
+              مرحباً، {user.email}
+            </div>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
               onClick={handleSignOut}
-              className="hidden sm:flex items-center gap-2"
+              className="text-red-600 border-red-600 hover:bg-red-50"
             >
-              <LogOut className="h-4 w-4" />
               تسجيل خروج
             </Button>
+          </div>
 
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setIsOpen(!isOpen)}
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center space-x-2 space-x-reverse">
+            <NotificationCenter />
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+              <svg
+                className="h-6 w-6"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                />
+              </svg>
+            </button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        <MobileNavigation 
-          isOpen={isOpen}
-          profile={profile}
-          onSignOut={handleSignOut}
-          onLinkClick={() => setIsOpen(false)}
-        />
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        isOpen={isMobileMenuOpen} 
+        onClose={() => setIsMobileMenuOpen(false)}
+        onSignOut={handleSignOut}
+        userEmail={user.email || ''}
+      />
     </nav>
   );
 };

@@ -1,219 +1,183 @@
 
-import Navbar from "@/components/Navbar";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, TrendingUp, Users, DollarSign } from "lucide-react";
 import ReportsChart from "@/components/reports/ReportsChart";
 import PerformanceMetrics from "@/components/reports/PerformanceMetrics";
-import AutomationTasks from "@/components/reports/AutomationTasks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Filter, Calendar } from "lucide-react";
+import AdvancedReportsFilters from "@/components/reports/AdvancedReportsFilters";
+import FinancialReports from "@/components/reports/FinancialReports";
+import { DateRange } from "react-day-picker";
+
+interface ReportFilters {
+  dateRange?: DateRange;
+  customerName?: string;
+  serviceType?: string;
+  status?: string;
+  supplier?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 const Reports = () => {
-  // بيانات وهمية للرسوم البيانية
-  const salesData = [
-    { name: 'يناير', value: 400000 },
-    { name: 'فبراير', value: 300000 },
-    { name: 'مارس', value: 600000 },
-    { name: 'أبريل', value: 800000 },
-    { name: 'مايو', value: 500000 },
-    { name: 'يونيو', value: 700000 },
-  ];
+  const [filters, setFilters] = useState<ReportFilters>({});
 
-  const customerSourceData = [
-    { name: 'واتساب', value: 45 },
-    { name: 'الموقع الإلكتروني', value: 25 },
-    { name: 'إحالات', value: 20 },
-    { name: 'فيسبوك', value: 10 },
-  ];
+  // بيانات تجريبية للتقارير المالية
+  const mockFinancialData = {
+    revenue: 2500000,
+    profit: 750000,
+    expenses: 1750000,
+    profitMargin: 30,
+    monthlyData: [
+      { month: 'يناير', revenue: 180000, profit: 54000, expenses: 126000 },
+      { month: 'فبراير', revenue: 220000, profit: 66000, expenses: 154000 },
+      { month: 'مارس', revenue: 280000, profit: 84000, expenses: 196000 },
+      { month: 'أبريل', revenue: 320000, profit: 96000, expenses: 224000 },
+      { month: 'مايو', revenue: 290000, profit: 87000, expenses: 203000 },
+      { month: 'يونيو', revenue: 350000, profit: 105000, expenses: 245000 },
+    ],
+    serviceBreakdown: [
+      { name: 'فنادق', value: 1200000, color: '#0088FE' },
+      { name: 'طيران', value: 800000, color: '#00C49F' },
+      { name: 'باقات سياحية', value: 400000, color: '#FFBB28' },
+      { name: 'تأشيرات', value: 100000, color: '#FF8042' },
+    ]
+  };
 
-  const bookingTrendData = [
-    { name: 'الأسبوع 1', value: 32 },
-    { name: 'الأسبوع 2', value: 45 },
-    { name: 'الأسبوع 3', value: 38 },
-    { name: 'الأسبوع 4', value: 52 },
-  ];
+  const handleExport = (format: 'pdf' | 'excel') => {
+    console.log(`Exporting report as ${format}`);
+    // يمكن تنفيذ منطق التصدير هنا
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-blue-50">
-      <Navbar />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* العنوان والفلاتر */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-orange-600" />
-            <h2 className="text-xl sm:text-2xl font-bold text-orange-900">
-              التقارير والتحليلات المتقدمة
-            </h2>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select defaultValue="month">
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="الفترة الزمنية" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">هذا الأسبوع</SelectItem>
-                <SelectItem value="month">هذا الشهر</SelectItem>
-                <SelectItem value="quarter">هذا الربع</SelectItem>
-                <SelectItem value="year">هذا العام</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              فلاتر متقدمة
-            </Button>
-            
-            <Button>
-              <Download className="h-4 w-4 mr-2" />
-              تصدير التقرير
-            </Button>
-          </div>
-        </div>
-
-        {/* مؤشرات الأداء */}
-        <div className="mb-8">
-          <PerformanceMetrics />
-        </div>
-
-        {/* الرسوم البيانية */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ReportsChart
-            type="bar"
-            data={salesData}
-            title="المبيعات الشهرية"
-            dataKey="value"
-            xAxisKey="name"
-          />
-          
-          <ReportsChart
-            type="pie"
-            data={customerSourceData}
-            title="مصادر العملاء"
-            dataKey="value"
-          />
-          
-          <ReportsChart
-            type="line"
-            data={bookingTrendData}
-            title="اتجاه الحجوزات الأسبوعية"
-            dataKey="value"
-            xAxisKey="name"
-          />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">ملخص مالي سريع</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">إجمالي الإيرادات:</span>
-                  <span className="font-bold text-green-600">2,450,000 ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">إجمالي التكاليف:</span>
-                  <span className="font-bold text-red-600">1,890,000 ج.م</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-gray-800 font-medium">صافي الربح:</span>
-                  <span className="font-bold text-blue-600">560,000 ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">هامش الربح:</span>
-                  <span className="font-bold">22.9%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* مهام الأتمتة */}
-        <div className="mb-8">
-          <AutomationTasks />
-        </div>
-
-        {/* تقارير سريعة */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">تقرير العملاء</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>عملاء جدد هذا الشهر:</span>
-                  <span className="font-bold">89</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>عملاء نشطين:</span>
-                  <span className="font-bold">245</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>معدل العودة:</span>
-                  <span className="font-bold">68%</span>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  عرض التفاصيل
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">تقرير الحجوزات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>حجوزات مؤكدة:</span>
-                  <span className="font-bold text-green-600">156</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>حجوزات معلقة:</span>
-                  <span className="font-bold text-yellow-600">23</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>حجوزات ملغية:</span>
-                  <span className="font-bold text-red-600">8</span>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  عرض التفاصيل
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">تقرير المدفوعات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>مدفوعات مكتملة:</span>
-                  <span className="font-bold text-green-600">134</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>مدفوعات معلقة:</span>
-                  <span className="font-bold text-yellow-600">45</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>مدفوعات متأخرة:</span>
-                  <span className="font-bold text-red-600">12</span>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  عرض التفاصيل
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">التقارير والتحليلات</h1>
       </div>
+
+      {/* فلاتر التقارير المتقدمة */}
+      <AdvancedReportsFilters 
+        filters={filters}
+        onFiltersChange={setFilters}
+        onExport={handleExport}
+      />
+
+      <Tabs defaultValue="financial" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="financial" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            التقارير المالية
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            الأداء
+          </TabsTrigger>
+          <TabsTrigger value="customers" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            العملاء
+          </TabsTrigger>
+          <TabsTrigger value="operations" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            العمليات
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="financial" className="space-y-4">
+          <FinancialReports data={mockFinancialData} period="آخر 6 أشهر" />
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ReportsChart />
+            <PerformanceMetrics />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="customers" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">إجمالي العملاء</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,234</div>
+                <p className="text-xs text-muted-foreground">+12% عن الشهر السابق</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">عملاء جدد</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">89</div>
+                <p className="text-xs text-muted-foreground">هذا الشهر</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">عملاء VIP</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">45</div>
+                <p className="text-xs text-muted-foreground">3.6% من إجمالي العملاء</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">متوسط قيمة العميل</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">15,420 ج.م</div>
+                <p className="text-xs text-muted-foreground">+8% عن الشهر السابق</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="operations" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">إجمالي الحجوزات</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2,156</div>
+                <p className="text-xs text-muted-foreground">+18% عن الشهر السابق</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">معدل النجاح</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">94.2%</div>
+                <p className="text-xs text-muted-foreground">من الحجوزات المؤكدة</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">متوسط وقت المعالجة</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2.3 ساعة</div>
+                <p className="text-xs text-muted-foreground">-15% عن الشهر السابق</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
