@@ -12,6 +12,23 @@ export interface CustomerSegment {
   is_active: boolean;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  nationality?: string;
+  address?: string;
+  segment_id?: string;
+  segment?: CustomerSegment;
+  loyalty_points?: number;
+  total_bookings?: number;
+  total_spent?: number;
+  last_booking_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LoyaltyPoints {
   id: string;
   customer_id: string;

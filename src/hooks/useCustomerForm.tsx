@@ -83,21 +83,6 @@ export const useCustomerForm = ({
     }
   };
 
-  const logCustomerEdit = async (customerId: string, fieldName: string, oldValue: any, newValue: any) => {
-    try {
-      await supabase
-        .from('customer_edit_history')
-        .insert([{
-          customer_id: customerId,
-          field_name: fieldName,
-          old_value: oldValue ? String(oldValue) : null,
-          new_value: newValue ? String(newValue) : null,
-        }]);
-    } catch (error) {
-      console.error('خطأ في تسجيل تاريخ التعديل:', error);
-    }
-  };
-
   const onSubmit = async (data: CustomerData) => {
     console.log(`🚀 بدء عملية ${isEditMode ? 'تحديث' : 'إضافة'} العميل...`);
     console.log('👤 معلومات المستخدم:', { 
@@ -162,17 +147,6 @@ export const useCustomerForm = ({
             toast.error(`خطأ في تحديث العميل: ${error.message}`);
           }
           throw error;
-        }
-
-        // تسجيل التعديلات
-        if (initialData) {
-          Object.keys(customerData).forEach(key => {
-            const oldValue = initialData[key as keyof CustomerData];
-            const newValue = customerData[key as keyof typeof customerData];
-            if (oldValue !== newValue) {
-              logCustomerEdit(customerId, key, oldValue, newValue);
-            }
-          });
         }
 
         console.log('✅ تم تحديث العميل بنجاح:', updatedCustomer);
