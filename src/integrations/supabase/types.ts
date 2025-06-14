@@ -539,6 +539,153 @@ export type Database = {
         }
         Relationships: []
       }
+      hotel_bookings: {
+        Row: {
+          booking_agent_name: string
+          booking_date: string
+          booking_reference_supplier: string | null
+          cancellation_policy: string | null
+          check_in_date: string
+          check_out_date: string
+          children_ages: string | null
+          cost_per_night: number
+          created_at: string
+          customer_name: string
+          destination_city: string
+          hotel_name: string
+          hotel_star_rating: number | null
+          id: string
+          internal_booking_number: string
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          meal_plan: string
+          number_of_adults: number
+          number_of_children: number
+          number_of_nights: number | null
+          paid_amount: number | null
+          payment_due_date: string | null
+          payment_method: string | null
+          remaining_amount: number | null
+          room_type: string
+          selling_price_per_night: number
+          supplier_name: string
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          total_cost_customer: number | null
+          total_profit: number | null
+          updated_at: string
+          voucher_sent: boolean | null
+          voucher_sent_date: string | null
+        }
+        Insert: {
+          booking_agent_name: string
+          booking_date?: string
+          booking_reference_supplier?: string | null
+          cancellation_policy?: string | null
+          check_in_date: string
+          check_out_date: string
+          children_ages?: string | null
+          cost_per_night: number
+          created_at?: string
+          customer_name: string
+          destination_city: string
+          hotel_name: string
+          hotel_star_rating?: number | null
+          id?: string
+          internal_booking_number?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          meal_plan: string
+          number_of_adults?: number
+          number_of_children?: number
+          number_of_nights?: number | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          remaining_amount?: number | null
+          room_type: string
+          selling_price_per_night: number
+          supplier_name: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          total_cost_customer?: number | null
+          total_profit?: number | null
+          updated_at?: string
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Update: {
+          booking_agent_name?: string
+          booking_date?: string
+          booking_reference_supplier?: string | null
+          cancellation_policy?: string | null
+          check_in_date?: string
+          check_out_date?: string
+          children_ages?: string | null
+          cost_per_night?: number
+          created_at?: string
+          customer_name?: string
+          destination_city?: string
+          hotel_name?: string
+          hotel_star_rating?: number | null
+          id?: string
+          internal_booking_number?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          meal_plan?: string
+          number_of_adults?: number
+          number_of_children?: number
+          number_of_nights?: number | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          remaining_amount?: number | null
+          room_type?: string
+          selling_price_per_night?: number
+          supplier_name?: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          total_cost_customer?: number | null
+          total_profit?: number | null
+          updated_at?: string
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Relationships: []
+      }
+      hotel_suppliers: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_direct_hotel: boolean | null
+          name: string
+          payment_terms: string | null
+          phone: string | null
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_direct_hotel?: boolean | null
+          name: string
+          payment_terms?: string | null
+          phone?: string | null
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_direct_hotel?: boolean | null
+          name?: string
+          payment_terms?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -1110,6 +1257,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_booking_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
