@@ -1,6 +1,7 @@
 
 export interface HotelBooking {
   id: string;
+  customer_id?: string;
   customer_name: string;
   internal_booking_number: string;
   booking_date: string;
