@@ -23,6 +23,14 @@ const Customers = () => {
   const { customerSegments } = useCRM();
   const { customerData } = useCustomerData(selectedCustomer || '');
 
+  // بيانات إحصائية تجريبية
+  const mockStats = {
+    totalCustomers: 1234,
+    activeCustomers: 89,
+    needsFollowUp: 15,
+    noCommunication: 8
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -41,13 +49,18 @@ const Customers = () => {
             <DialogHeader>
               <DialogTitle>إضافة عميل جديد</DialogTitle>
             </DialogHeader>
-            <QuickCustomerAdd onSuccess={() => setIsAddDialogOpen(false)} />
+            <QuickCustomerAdd />
           </DialogContent>
         </Dialog>
       </div>
 
       {/* إحصائيات العملاء */}
-      <CustomerStats />
+      <CustomerStats 
+        totalCustomers={mockStats.totalCustomers}
+        activeCustomers={mockStats.activeCustomers}
+        needsFollowUp={mockStats.needsFollowUp}
+        noCommunication={mockStats.noCommunication}
+      />
 
       {/* فلاتر تقسيم العملاء */}
       <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg">
@@ -100,7 +113,10 @@ const Customers = () => {
                 />
               </div>
             </div>
-            <CustomerSearch onCustomerSelect={(customer) => setSelectedCustomer(customer.id)} />
+            <CustomerSearch 
+              onCustomerSelect={(customer) => setSelectedCustomer(customer.id)}
+              onNewCustomer={() => setIsAddDialogOpen(true)}
+            />
           </div>
 
           {/* قائمة العملاء */}

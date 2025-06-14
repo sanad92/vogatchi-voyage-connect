@@ -51,29 +51,21 @@ const Index = () => {
           title="إجمالي الحجوزات"
           value={mockStats.totalBookings.toString()}
           icon={Calendar}
-          change="+12%"
-          changeType="positive"
         />
         <StatsCard
           title="الإيرادات الشهرية"
           value={`${(mockStats.totalRevenue / 1000000).toFixed(1)}م ج.م`}
           icon={DollarSign}
-          change="+8.2%"
-          changeType="positive"
         />
         <StatsCard
           title="العملاء النشطين"
           value={mockStats.activeCustomers.toString()}
           icon={Users}
-          change="+5.1%"
-          changeType="positive"
         />
         <StatsCard
           title="معدل النمو"
           value={`${mockStats.monthlyGrowth}%`}
           icon={TrendingUp}
-          change="+2.3%"
-          changeType="positive"
         />
       </div>
 

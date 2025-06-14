@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useAuthState } from "@/hooks/useAuthState";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { NavigationItems } from "./navbar/NavigationItems";
-import { DesktopNavigation } from "./navbar/DesktopNavigation";
-import { MobileNavigation } from "./navbar/MobileNavigation";
+import { navigationItems } from "./navbar/NavigationItems";
+import DesktopNavigation from "./navbar/DesktopNavigation";
+import MobileNavigation from "./navbar/MobileNavigation";
 import NotificationCenter from "./crm/NotificationCenter";
 
 const Navbar = () => {

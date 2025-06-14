@@ -3,16 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
 interface ReportsChartProps {
-  type: 'bar' | 'line' | 'pie';
-  data: any[];
-  title: string;
+  type?: 'bar' | 'line' | 'pie';
+  data?: any[];
+  title?: string;
   dataKey?: string;
   xAxisKey?: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-const ReportsChart = ({ type, data, title, dataKey = 'value', xAxisKey = 'name' }: ReportsChartProps) => {
+const ReportsChart = ({ 
+  type = 'bar', 
+  data = [], 
+  title = 'تقرير', 
+  dataKey = 'value', 
+  xAxisKey = 'name' 
+}: ReportsChartProps) => {
   const renderChart = () => {
     switch (type) {
       case 'bar':

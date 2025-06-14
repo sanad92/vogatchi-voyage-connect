@@ -82,13 +82,24 @@ export const useCRM = () => {
       rewardId: string; 
       pointsToRedeem: number; 
     }) => {
-      // تحديث نقاط العميل
-      const { error: customerError } = await supabase
+      // First get the current points
+      const { data: customer, error: customerError } = await supabase
         .from('customers')
-        .update({ loyalty_points: supabase.sql`loyalty_points - ${pointsToRedeem}` })
-        .eq('id', customerId);
+        .select('loyalty_points')
+        .eq('id', customerId)
+        .single();
       
       if (customerError) throw customerError;
+      
+      const newPoints = (customer.loyalty_points || 0) - pointsToRedeem;
+      
+      // تحديث نقاط العميل
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({ loyalty_points: newPoints })
+        .eq('id', customerId);
+      
+      if (updateError) throw updateError;
 
       // تسجيل عملية الاسترداد
       const { data, error } = await supabase

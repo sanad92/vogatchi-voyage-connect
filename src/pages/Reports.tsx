@@ -44,6 +44,16 @@ const Reports = () => {
     ]
   };
 
+  // بيانات تجريبية للرسوم البيانية
+  const mockChartData = [
+    { name: 'يناير', value: 180000 },
+    { name: 'فبراير', value: 220000 },
+    { name: 'مارس', value: 280000 },
+    { name: 'أبريل', value: 320000 },
+    { name: 'مايو', value: 290000 },
+    { name: 'يونيو', value: 350000 },
+  ];
+
   const handleExport = (format: 'pdf' | 'excel') => {
     console.log(`Exporting report as ${format}`);
     // يمكن تنفيذ منطق التصدير هنا
@@ -88,7 +98,13 @@ const Reports = () => {
 
         <TabsContent value="performance" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ReportsChart />
+            <ReportsChart 
+              type="line"
+              data={mockChartData}
+              title="إيرادات الأشهر الماضية"
+              dataKey="value"
+              xAxisKey="name"
+            />
             <PerformanceMetrics />
           </div>
         </TabsContent>

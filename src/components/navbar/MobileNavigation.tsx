@@ -2,27 +2,24 @@
 import { LogOut } from "lucide-react";
 import { mainNavItems, businessNavItems, communicationNavItems } from "./NavigationItems";
 import NavLink from "./NavLink";
-import { Profile } from "@/types/auth";
 
 interface MobileNavigationProps {
   isOpen: boolean;
-  profile: Profile | null;
+  onClose: () => void;
   onSignOut: () => void;
-  onLinkClick: () => void;
+  userEmail: string;
 }
 
-const MobileNavigation = ({ isOpen, profile, onSignOut, onLinkClick }: MobileNavigationProps) => {
+const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavigationProps) => {
   if (!isOpen) return null;
 
   return (
     <div className="lg:hidden py-4 border-t bg-white">
       <div className="space-y-2">
         {/* User Info */}
-        {profile && (
-          <div className="px-3 py-2 text-sm text-gray-600 border-b">
-            مرحباً، {profile.full_name}
-          </div>
-        )}
+        <div className="px-3 py-2 text-sm text-gray-600 border-b">
+          مرحباً، {userEmail}
+        </div>
 
         {/* Main Navigation */}
         <div className="space-y-1">
@@ -33,7 +30,7 @@ const MobileNavigation = ({ isOpen, profile, onSignOut, onLinkClick }: MobileNav
             <NavLink 
               key={item.href} 
               item={item} 
-              onClick={onLinkClick} 
+              onClick={onClose} 
             />
           ))}
         </div>
@@ -47,7 +44,7 @@ const MobileNavigation = ({ isOpen, profile, onSignOut, onLinkClick }: MobileNav
             <NavLink 
               key={item.href} 
               item={item} 
-              onClick={onLinkClick} 
+              onClick={onClose} 
             />
           ))}
         </div>
@@ -61,7 +58,7 @@ const MobileNavigation = ({ isOpen, profile, onSignOut, onLinkClick }: MobileNav
             <NavLink 
               key={item.href} 
               item={item} 
-              onClick={onLinkClick} 
+              onClick={onClose} 
             />
           ))}
         </div>
@@ -71,7 +68,7 @@ const MobileNavigation = ({ isOpen, profile, onSignOut, onLinkClick }: MobileNav
           <button
             onClick={() => {
               onSignOut();
-              onLinkClick();
+              onClose();
             }}
             className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full"
           >
