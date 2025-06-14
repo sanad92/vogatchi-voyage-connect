@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { HotelBooking, NewHotelBooking, MealPlan, HotelSupplier } from "@/types/hotelBooking";
+import { HotelBooking, NewHotelBooking, MealPlan, HotelSupplier, Customer } from "@/types/hotelBooking";
+import CustomerSearch from "@/components/customers/CustomerSearch";
+import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
 
 interface HotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -20,6 +22,8 @@ interface HotelBookingFormProps {
 const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProps) => {
   const [suppliers, setSuppliers] = useState<HotelSupplier[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {
@@ -57,6 +61,23 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
     fetchSuppliers();
   }, []);
 
+  // Fetch existing customer if editing
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      if (booking?.customer_id) {
+        const { data } = await supabase
+          .from('customers')
+          .select('id, name, phone, email, nationality')
+          .eq('id', booking.customer_id)
+          .single();
+        if (data) {
+          setSelectedCustomer(data);
+        }
+      }
+    };
+    fetchCustomer();
+  }, [booking]);
+
   const checkInDate = watch('check_in_date');
   const checkOutDate = watch('check_out_date');
   const costPerNight = watch('cost_per_night');
@@ -69,20 +90,42 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
   const totalCostCustomer = sellingPricePerNight ? sellingPricePerNight * numberOfNights : 0;
   const totalProfit = (sellingPricePerNight && costPerNight) ? (sellingPricePerNight - costPerNight) * numberOfNights : 0;
 
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setValue('customer_name', customer.name);
+    setValue('customer_id', customer.id);
+    setShowQuickAdd(false);
+  };
+
+  const handleNewCustomer = () => {
+    setShowQuickAdd(true);
+  };
+
+  const handleCustomerAdded = (customer: Customer) => {
+    handleCustomerSelect(customer);
+    setShowQuickAdd(false);
+  };
+
   const onSubmit = async (data: NewHotelBooking) => {
     setIsSubmitting(true);
     try {
+      const submitData = {
+        ...data,
+        customer_id: selectedCustomer?.id || null,
+        customer_name: selectedCustomer?.name || data.customer_name
+      };
+
       if (booking) {
         const { error } = await supabase
           .from('hotel_bookings')
-          .update(data)
+          .update(submitData)
           .eq('id', booking.id);
         if (error) throw error;
         toast.success('تم تحديث الحجز بنجاح');
       } else {
         const { error } = await supabase
           .from('hotel_bookings')
-          .insert([data]);
+          .insert([submitData]);
         if (error) throw error;
         toast.success('تم إنشاء الحجز بنجاح');
       }
@@ -107,20 +150,41 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Booking Details */}
+      {/* Customer Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>تفاصيل الحجز</CardTitle>
+          <CardTitle>معلومات العميل</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="customer_name">اسم العميل *</Label>
-            <Input 
-              id="customer_name"
-              {...register('customer_name', { required: 'اسم العميل مطلوب' })}
+        <CardContent className="space-y-4">
+          {showQuickAdd ? (
+            <QuickCustomerAdd
+              onCustomerAdded={handleCustomerAdded}
+              onCancel={() => setShowQuickAdd(false)}
             />
-            {errors.customer_name && <p className="text-red-500 text-sm">{errors.customer_name.message}</p>}
-          </div>
+          ) : (
+            <>
+              <div>
+                <Label>العميل *</Label>
+                <CustomerSearch
+                  onCustomerSelect={handleCustomerSelect}
+                  onNewCustomer={handleNewCustomer}
+                  selectedCustomer={selectedCustomer}
+                />
+              </div>
+              
+              {!selectedCustomer && (
+                <div>
+                  <Label htmlFor="customer_name">اسم العميل (نص حر) *</Label>
+                  <Input 
+                    id="customer_name"
+                    {...register('customer_name', { required: 'اسم العميل مطلوب' })}
+                    placeholder="أدخل اسم العميل"
+                  />
+                  {errors.customer_name && <p className="text-red-500 text-sm">{errors.customer_name.message}</p>}
+                </div>
+              )}
+            </>
+          )}
           
           <div>
             <Label htmlFor="booking_agent_name">اسم موظف الحجز *</Label>

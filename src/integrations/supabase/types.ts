@@ -550,6 +550,7 @@ export type Database = {
           children_ages: string | null
           cost_per_night: number
           created_at: string
+          customer_id: string | null
           customer_name: string
           destination_city: string
           hotel_name: string
@@ -587,6 +588,7 @@ export type Database = {
           children_ages?: string | null
           cost_per_night: number
           created_at?: string
+          customer_id?: string | null
           customer_name: string
           destination_city: string
           hotel_name: string
@@ -624,6 +626,7 @@ export type Database = {
           children_ages?: string | null
           cost_per_night?: number
           created_at?: string
+          customer_id?: string | null
           customer_name?: string
           destination_city?: string
           hotel_name?: string
@@ -651,7 +654,15 @@ export type Database = {
           voucher_sent?: boolean | null
           voucher_sent_date?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hotel_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hotel_suppliers: {
         Row: {

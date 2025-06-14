@@ -50,7 +50,16 @@ export interface HotelSupplier {
 
 export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'ALL' | 'UAI' | 'SAL';
 
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  nationality?: string;
+}
+
 export interface NewHotelBooking {
+  customer_id?: string;
   customer_name: string;
   booking_agent_name: string;
   hotel_name: string;
