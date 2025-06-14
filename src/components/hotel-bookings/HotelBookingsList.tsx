@@ -1,15 +1,19 @@
-
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit, FileText, Send, Printer, CheckCircle } from "lucide-react";
+import { Edit, FileText, Send, Printer, CheckCircle, History } from "lucide-react";
 import { toast } from "sonner";
-import { HotelBooking } from "@/types/hotelBooking";
+import { HotelBooking, BookingStatus } from "@/types/hotelBooking";
 import HotelInvoiceGenerator from "./HotelInvoiceGenerator";
 import HotelVoucherGenerator from "./HotelVoucherGenerator";
 import HotelSupplierPaymentGenerator from "./HotelSupplierPaymentGenerator";
+import BookingStatusBadge from "./BookingStatusBadge";
+import BookingStatusSelector from "./BookingStatusSelector";
+import BookingStatusHistory from "./BookingStatusHistory";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface HotelBookingsListProps {
   bookings: HotelBooking[];
@@ -20,6 +24,25 @@ interface HotelBookingsListProps {
 const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListProps) => {
   const [selectedBooking, setSelectedBooking] = useState<HotelBooking | null>(null);
   const [documentType, setDocumentType] = useState<'invoice' | 'voucher' | 'payment' | null>(null);
+  const [showStatusHistory, setShowStatusHistory] = useState<string | null>(null);
+
+  // Get booking statuses for display
+  const { data: statuses = [] } = useQuery({
+    queryKey: ['booking-statuses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('booking_statuses')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data as BookingStatus[];
+    }
+  });
+
+  const getBookingStatus = (statusId?: string) => {
+    return statuses.find(status => status.id === statusId);
+  };
 
   const updateDocumentStatus = async (bookingId: string, field: string, value: boolean) => {
     try {
@@ -58,15 +81,40 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
         <Card key={booking.id}>
           <CardHeader>
             <div className="flex justify-between items-start">
-              <div>
+              <div className="space-y-2">
                 <CardTitle className="text-lg">
                   {booking.customer_name} - {booking.hotel_name}
                 </CardTitle>
                 <p className="text-sm text-gray-600">
                   رقم الحجز: {booking.internal_booking_number}
                 </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">حالة الحجز:</span>
+                  <BookingStatusSelector 
+                    bookingId={booking.id}
+                    currentStatus={getBookingStatus(booking.status_id)}
+                    onStatusUpdate={onRefresh}
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
+                <Dialog 
+                  open={showStatusHistory === booking.id} 
+                  onOpenChange={(open) => setShowStatusHistory(open ? booking.id : null)}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>تاريخ حالات الحجز - {booking.internal_booking_number}</DialogTitle>
+                    </DialogHeader>
+                    <BookingStatusHistory bookingId={booking.id} />
+                  </DialogContent>
+                </Dialog>
+                
                 <Button
                   variant="outline"
                   size="sm"

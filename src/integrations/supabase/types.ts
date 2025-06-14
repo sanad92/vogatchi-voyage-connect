@@ -94,6 +94,74 @@ export type Database = {
           },
         ]
       }
+      booking_status_history: {
+        Row: {
+          booking_id: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status_id: string
+        }
+        Insert: {
+          booking_id: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status_id: string
+        }
+        Update: {
+          booking_id?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_status_history_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_statuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          sort_order: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          sort_order?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_reference: string
@@ -604,6 +672,7 @@ export type Database = {
           remaining_amount: number | null
           room_type: string
           selling_price_per_night: number
+          status_id: string | null
           supplier_name: string
           supplier_payment_sent: boolean | null
           supplier_payment_sent_date: string | null
@@ -642,6 +711,7 @@ export type Database = {
           remaining_amount?: number | null
           room_type: string
           selling_price_per_night: number
+          status_id?: string | null
           supplier_name: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -680,6 +750,7 @@ export type Database = {
           remaining_amount?: number | null
           room_type?: string
           selling_price_per_night?: number
+          status_id?: string | null
           supplier_name?: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -695,6 +766,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
             referencedColumns: ["id"]
           },
         ]
@@ -1341,6 +1419,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_booking_status: {
+        Args: { p_booking_id: string }
+        Returns: {
+          status_name: string
+          status_name_ar: string
+          color: string
+        }[]
+      }
       get_system_setting: {
         Args: { setting_key_param: string }
         Returns: string
@@ -1373,6 +1459,15 @@ export type Database = {
           p_description?: string
         }
         Returns: undefined
+      }
+      update_booking_status: {
+        Args: {
+          p_booking_id: string
+          p_status_id: string
+          p_changed_by?: string
+          p_notes?: string
+        }
+        Returns: boolean
       }
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }

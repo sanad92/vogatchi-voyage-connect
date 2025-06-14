@@ -1,4 +1,3 @@
-
 export interface HotelBooking {
   id: string;
   customer_id?: string;
@@ -34,8 +33,30 @@ export interface HotelBooking {
   invoice_sent_date?: string;
   supplier_payment_sent_date?: string;
   voucher_sent_date?: string;
+  status_id?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BookingStatus {
+  id: string;
+  name: string;
+  name_ar: string;
+  description?: string;
+  color: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BookingStatusHistory {
+  id: string;
+  booking_id: string;
+  status_id: string;
+  changed_by?: string;
+  notes?: string;
+  created_at: string;
+  booking_status?: BookingStatus;
 }
 
 export interface HotelSupplier {
