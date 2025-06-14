@@ -59,6 +59,41 @@ export type Database = {
           },
         ]
       }
+      booking_special_requests: {
+        Row: {
+          booking_id: string
+          created_at: string
+          custom_request_text: string | null
+          id: string
+          notes: string | null
+          special_request_type_id: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          custom_request_text?: string | null
+          id?: string
+          notes?: string | null
+          special_request_type_id?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          custom_request_text?: string | null
+          id?: string
+          notes?: string | null
+          special_request_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_special_requests_special_request_type_id_fkey"
+            columns: ["special_request_type_id"]
+            isOneToOne: false
+            referencedRelation: "special_request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_reference: string
@@ -1023,6 +1058,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      special_request_types: {
+        Row: {
+          category: string
+          created_at: string
+          extra_cost_amount: number | null
+          has_extra_cost: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          extra_cost_amount?: number | null
+          has_extra_cost?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          extra_cost_amount?: number | null
+          has_extra_cost?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
       }
       supplier_payments: {
         Row: {

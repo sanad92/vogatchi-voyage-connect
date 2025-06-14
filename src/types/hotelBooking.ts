@@ -59,6 +59,26 @@ export interface Customer {
   nationality?: string;
 }
 
+export interface SpecialRequestType {
+  id: string;
+  name: string;
+  category: 'bed_type' | 'room_type' | 'amenities' | 'accessibility' | 'other';
+  has_extra_cost: boolean;
+  extra_cost_amount: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BookingSpecialRequest {
+  id: string;
+  booking_id: string;
+  special_request_type_id?: string;
+  custom_request_text?: string;
+  notes?: string;
+  created_at: string;
+  special_request_type?: SpecialRequestType;
+}
+
 export interface NewHotelBooking {
   customer_id?: string;
   customer_name: string;
@@ -81,4 +101,6 @@ export interface NewHotelBooking {
   payment_method?: string;
   paid_amount?: number;
   payment_due_date?: string;
+  special_requests?: string[]; // IDs of selected special request types
+  custom_request?: string; // Free text for custom requests
 }

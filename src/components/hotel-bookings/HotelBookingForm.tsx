@@ -9,6 +9,7 @@ import { useBookingCalculations } from "@/hooks/useBookingCalculations";
 import CustomerSection from "./sections/CustomerSection";
 import HotelInfoSection from "./sections/HotelInfoSection";
 import RoomDetailsSection from "./sections/RoomDetailsSection";
+import SpecialRequestsSection from "./sections/SpecialRequestsSection";
 import SupplierCostSection from "./sections/SupplierCostSection";
 
 interface HotelBookingFormProps {
@@ -21,6 +22,7 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
   const [suppliers, setSuppliers] = useState<HotelSupplier[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {
@@ -87,8 +89,69 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
     fetchCustomer();
   }, [booking]);
 
+  // Fetch existing special requests if editing
+  useEffect(() => {
+    const fetchExistingRequests = async () => {
+      if (booking?.id) {
+        const { data } = await supabase
+          .from('booking_special_requests')
+          .select('special_request_type_id, custom_request_text')
+          .eq('booking_id', booking.id);
+        
+        if (data) {
+          const requestIds = data
+            .filter(req => req.special_request_type_id)
+            .map(req => req.special_request_type_id!);
+          setSelectedRequests(requestIds);
+          
+          const customRequest = data.find(req => req.custom_request_text)?.custom_request_text;
+          if (customRequest) {
+            setValue('custom_request', customRequest);
+          }
+        }
+      }
+    };
+    fetchExistingRequests();
+  }, [booking, setValue]);
+
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
+  };
+
+  const saveSpecialRequests = async (bookingId: string, formData: NewHotelBooking) => {
+    // Delete existing special requests
+    if (booking?.id) {
+      await supabase
+        .from('booking_special_requests')
+        .delete()
+        .eq('booking_id', bookingId);
+    }
+
+    // Save selected special request types
+    if (selectedRequests.length > 0) {
+      const requestsToInsert = selectedRequests.map(requestId => ({
+        booking_id: bookingId,
+        special_request_type_id: requestId
+      }));
+
+      const { error } = await supabase
+        .from('booking_special_requests')
+        .insert(requestsToInsert);
+      
+      if (error) throw error;
+    }
+
+    // Save custom request if provided
+    if (formData.custom_request?.trim()) {
+      const { error } = await supabase
+        .from('booking_special_requests')
+        .insert({
+          booking_id: bookingId,
+          custom_request_text: formData.custom_request.trim()
+        });
+      
+      if (error) throw error;
+    }
   };
 
   const onSubmit = async (data: NewHotelBooking) => {
@@ -100,20 +163,30 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
         customer_name: selectedCustomer?.name || data.customer_name
       };
 
+      let bookingId: string;
+
       if (booking) {
         const { error } = await supabase
           .from('hotel_bookings')
           .update(submitData)
           .eq('id', booking.id);
         if (error) throw error;
+        bookingId = booking.id;
         toast.success('تم تحديث الحجز بنجاح');
       } else {
-        const { error } = await supabase
+        const { data: newBooking, error } = await supabase
           .from('hotel_bookings')
-          .insert([submitData]);
+          .insert([submitData])
+          .select()
+          .single();
         if (error) throw error;
+        bookingId = newBooking.id;
         toast.success('تم إنشاء الحجز بنجاح');
       }
+
+      // Save special requests
+      await saveSpecialRequests(bookingId, data);
+
       onSuccess();
     } catch (error) {
       console.error('Error saving booking:', error);
@@ -144,6 +217,14 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
         register={register}
         setValue={setValue}
         errors={errors}
+      />
+
+      <SpecialRequestsSection
+        register={register}
+        setValue={setValue}
+        errors={errors}
+        selectedRequests={selectedRequests}
+        onRequestsChange={setSelectedRequests}
       />
 
       <SupplierCostSection
