@@ -43,7 +43,7 @@ const UserManagementTab = () => {
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.department?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = selectedRole === "all" || user.role === selectedRole;
+    const matchesRole = selectedRole === "all" || (user.role || 'no_role') === selectedRole;
     
     return matchesSearch && matchesRole;
   }) || [];

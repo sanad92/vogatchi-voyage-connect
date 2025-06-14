@@ -102,6 +102,7 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
       case 'sales_agent': return 'bg-green-100 text-green-800 border-green-200';
       case 'accountant': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'viewer': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'no_role': 
       default: return 'bg-red-50 text-red-600 border-red-200';
     }
   };
@@ -114,6 +115,7 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
       case 'sales_agent': return 'مندوب مبيعات';
       case 'accountant': return 'محاسب';
       case 'viewer': return 'مشاهد';
+      case 'no_role':
       default: return 'بدون دور';
     }
   };
@@ -160,9 +162,9 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
                 <div className="flex items-center gap-2">
                   <Select
                     value={user.role || 'no_role'}
-                    onValueChange={(value: UserRole) => {
-                      if (value !== 'no_role') {
-                        updateUserRoleMutation.mutate({ userId: user.id, role: value });
+                    onValueChange={(value: string) => {
+                      if (value !== 'no_role' && value !== user.role) {
+                        updateUserRoleMutation.mutate({ userId: user.id, role: value as UserRole });
                       }
                     }}
                     disabled={updateUserRoleMutation.isPending}
