@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Shield, Activity, Building2, Database, Bell, AlertTriangle } from "lucide-react";
+import { Settings, Users, Shield, Activity, Building2, Database, Bell } from "lucide-react";
 import SystemSettingsTab from "@/components/admin/SystemSettingsTab";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import AuditLogTab from "@/components/admin/AuditLogTab";
@@ -13,12 +13,8 @@ import PermissionsTab from "@/components/admin/PermissionsTab";
 const AdminSettings = () => {
   const { userRole, isSuperAdmin } = useAuth();
 
-  // رسالة تطوير للمستخدمين غير السوبر أدمن في وضع التطوير
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const showDevWarning = !isSuperAdmin() && isDevelopment;
-
   // التحقق من صلاحيات السوبر أدمن
-  if (!isSuperAdmin() && !isDevelopment) {
+  if (!isSuperAdmin()) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
         <Navbar />
@@ -27,8 +23,11 @@ const AdminSettings = () => {
             <CardContent className="pt-6 text-center">
               <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-gray-900 mb-2">غير مصرح</h2>
-              <p className="text-gray-600">هذه الصفحة متاحة للسوبر أدمن فقط</p>
-              <p className="text-sm text-gray-500 mt-2">دورك الحالي: {userRole}</p>
+              <p className="text-gray-600 mb-4">هذه الصفحة متاحة للسوبر أدمن فقط</p>
+              <p className="text-sm text-gray-500">دورك الحالي: {userRole}</p>
+              <p className="text-xs text-gray-400 mt-2">
+                يرجى التواصل مع السوبر أدمن للحصول على الصلاحيات المطلوبة
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -40,32 +39,13 @@ const AdminSettings = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        {/* تحذير للتطوير */}
-        {showDevWarning && (
-          <Card className="mb-6 border-orange-200 bg-orange-50">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-orange-800 font-medium">وضع التطوير</p>
-                  <p className="text-orange-700 text-sm">
-                    هذه الصفحة متاحة حالياً لجميع المستخدمين في وضع التطوير. دورك الحالي: {userRole}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* العنوان الرئيسي */}
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 bg-blue-600 rounded-lg">
             <Settings className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {isSuperAdmin() ? 'لوحة تحكم السوبر أدمن' : 'إعدادات النظام (تطوير)'}
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">لوحة تحكم السوبر أدمن</h1>
             <p className="text-gray-600">إدارة شاملة لجميع إعدادات النظام والمستخدمين والصلاحيات</p>
           </div>
         </div>

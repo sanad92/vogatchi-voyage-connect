@@ -4,7 +4,7 @@ import NavLink from "./NavLink";
 import { useAuth } from "@/hooks/useAuth";
 
 const DesktopNavigation = () => {
-  const { isSuperAdmin, userRole } = useAuth();
+  const { isSuperAdmin } = useAuth();
 
   return (
     <div className="hidden lg:flex items-center gap-6">
@@ -30,19 +30,14 @@ const DesktopNavigation = () => {
         <NavLink item={communicationNavItems[0]} />
       </div>
 
-      {/* Admin Settings - For Super Admin or temporary development access */}
-      {(isSuperAdmin() || process.env.NODE_ENV === 'development') && (
+      {/* Admin Settings - Only for Super Admin */}
+      {isSuperAdmin() && (
         <>
           <div className="h-6 w-px bg-gray-300"></div>
           <div className="flex items-center gap-1">
             {adminNavItems.map((item) => (
               <NavLink key={item.href} item={item} />
             ))}
-            {!isSuperAdmin() && process.env.NODE_ENV === 'development' && (
-              <span className="text-xs text-orange-500 ml-2">
-                (تطوير - دورك: {userRole})
-              </span>
-            )}
           </div>
         </>
       )}
