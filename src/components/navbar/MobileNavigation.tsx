@@ -1,7 +1,8 @@
 
 import { LogOut } from "lucide-react";
-import { mainNavItems, businessNavItems, communicationNavItems } from "./NavigationItems";
+import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
 import NavLink from "./NavLink";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MobileNavigationProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface MobileNavigationProps {
 }
 
 const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavigationProps) => {
+  const { isSuperAdmin } = useAuth();
+
   if (!isOpen) return null;
 
   return (
@@ -62,6 +65,22 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
             />
           ))}
         </div>
+
+        {/* Admin Settings - Only for Super Admin */}
+        {isSuperAdmin() && (
+          <div className="space-y-1 border-t pt-2">
+            <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
+              إعدادات النظام
+            </div>
+            {adminNavItems.map((item) => (
+              <NavLink 
+                key={item.href} 
+                item={item} 
+                onClick={onClose} 
+              />
+            ))}
+          </div>
+        )}
 
         {/* Sign Out */}
         <div className="border-t pt-2">
