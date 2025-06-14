@@ -13,7 +13,8 @@ import {
   UserCheck, 
   MessageSquare, 
   Headphones,
-  Settings
+  Settings,
+  Hotel
 } from "lucide-react";
 
 export const mainNavItems = [
@@ -24,6 +25,7 @@ export const mainNavItems = [
 export const businessNavItems = [
   { name: "العملاء", href: "/customers", icon: Users },
   { name: "الحجوزات", href: "/bookings", icon: BookingIcon },
+  { name: "حجوزات الفنادق", href: "/hotel-bookings", icon: Hotel },
   { name: "الموردين", href: "/suppliers", icon: Truck },
   { name: "الرحلات", href: "/trips", icon: MapPin },
   { name: "الفواتير", href: "/invoices", icon: FileText },
