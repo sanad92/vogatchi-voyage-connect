@@ -51,21 +51,25 @@ const Index = () => {
           title="إجمالي الحجوزات"
           value={mockStats.totalBookings.toString()}
           icon={Calendar}
+          color="bg-blue-500"
         />
         <StatsCard
           title="الإيرادات الشهرية"
           value={`${(mockStats.totalRevenue / 1000000).toFixed(1)}م ج.م`}
           icon={DollarSign}
+          color="bg-green-500"
         />
         <StatsCard
           title="العملاء النشطين"
           value={mockStats.activeCustomers.toString()}
           icon={Users}
+          color="bg-purple-500"
         />
         <StatsCard
           title="معدل النمو"
           value={`${mockStats.monthlyGrowth}%`}
           icon={TrendingUp}
+          color="bg-orange-500"
         />
       </div>
 

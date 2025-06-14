@@ -31,6 +31,15 @@ const Customers = () => {
     noCommunication: 8
   };
 
+  const handleCustomerAdded = (customer: any) => {
+    console.log('Customer added:', customer);
+    setIsAddDialogOpen(false);
+  };
+
+  const handleCancelAdd = () => {
+    setIsAddDialogOpen(false);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -49,7 +58,10 @@ const Customers = () => {
             <DialogHeader>
               <DialogTitle>إضافة عميل جديد</DialogTitle>
             </DialogHeader>
-            <QuickCustomerAdd />
+            <QuickCustomerAdd 
+              onCustomerAdded={handleCustomerAdded}
+              onCancel={handleCancelAdd}
+            />
           </DialogContent>
         </Dialog>
       </div>
