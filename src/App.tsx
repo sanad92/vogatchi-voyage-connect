@@ -8,16 +8,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Bookings from "./pages/Bookings";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
 import PaymentOrders from "./pages/PaymentOrders";
 import CustomerPricing from "./pages/CustomerPricing";
-import Trips from "./pages/Trips";
-import Employees from "./pages/Employees";
-import WhatsApp from "./pages/WhatsApp";
 import CustomerService from "./pages/CustomerService";
 import DailyOperations from "./pages/DailyOperations";
 import AdminSettings from "./pages/AdminSettings";
@@ -85,16 +81,6 @@ const App = () => (
               </div>
             </ProtectedRoute>
           } />
-          <Route path="/bookings" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <Bookings />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
           <Route path="/suppliers" element={
             <ProtectedRoute>
               <div className="min-h-screen bg-gray-50">
@@ -141,36 +127,6 @@ const App = () => (
                 <Navbar />
                 <main className="pt-16">
                   <CustomerPricing />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/trips" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <Trips />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/employees" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <Employees />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/whatsapp" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <WhatsApp />
                 </main>
               </div>
             </ProtectedRoute>

@@ -30,16 +30,6 @@ export const businessNavItems = [
     icon: Plane,
   },
   {
-    name: "الحجوزات",
-    href: "/bookings",
-    icon: Calendar,
-  },
-  {
-    name: "الرحلات",
-    href: "/trips",
-    icon: Package,
-  },
-  {
     name: "الموردين",
     href: "/suppliers",
     icon: Package,
@@ -72,19 +62,9 @@ export const communicationNavItems = [
     href: "/reports",
     icon: FileText,
   },
-  {
-    name: "واتساب",
-    href: "/whatsapp",
-    icon: MessageSquare,
-  },
 ];
 
 export const adminNavItems = [
-  {
-    name: "الموظفين",
-    href: "/employees",
-    icon: Users,
-  },
   {
     name: "إعدادات النظام",
     href: "/admin-settings",
