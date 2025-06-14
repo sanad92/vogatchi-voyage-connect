@@ -1,7 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X, RefreshCw } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CustomerPermissionCheckProps {
   userRole: string | null;
@@ -9,7 +10,18 @@ interface CustomerPermissionCheckProps {
 }
 
 const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheckProps) => {
-  console.log('🚫 عرض رسالة عدم وجود صلاحيات:', { userRole });
+  const { user, profile, hasRole } = useAuth();
+  
+  console.log('🚫 عرض رسالة عدم وجود صلاحيات:', { 
+    userRole,
+    userEmail: user?.email,
+    profileEmail: profile?.email
+  });
+
+  const handleRefresh = () => {
+    console.log('🔄 إعادة تحميل الصفحة لتحديث الصلاحيات');
+    window.location.reload();
+  };
   
   return (
     <Card className="w-full border-orange-200 bg-orange-50">
@@ -28,10 +40,36 @@ const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheck
           <p className="text-orange-600 text-sm mb-2">
             الأدوار المسموح لها: سوبر أدمن، مدير، مدير مبيعات، أو مندوب مبيعات
           </p>
-          <div className="bg-orange-100 p-3 rounded mt-3">
+          
+          <div className="bg-orange-100 p-3 rounded mt-3 space-y-2">
             <p className="text-gray-700 text-sm font-medium">معلومات المستخدم الحالي:</p>
-            <p className="text-gray-600 text-sm">الدور: {userRole || 'غير محدد'}</p>
+            <div className="text-gray-600 text-sm space-y-1">
+              <p>الإيميل: {user?.email || 'غير محدد'}</p>
+              <p>الاسم: {profile?.full_name || 'غير محدد'}</p>
+              <p>الدور: {userRole || 'غير محدد'}</p>
+              <p>الحساب مفعل: {profile?.is_active ? 'نعم' : 'لا'}</p>
+            </div>
+            
+            <div className="mt-2 pt-2 border-t border-orange-200">
+              <p className="text-xs text-gray-500 mb-1">فحص الصلاحيات:</p>
+              <div className="text-xs text-gray-500 space-y-1">
+                <p>سوبر أدمن: {hasRole('super_admin') ? '✅' : '❌'}</p>
+                <p>أدمن: {hasRole('admin') ? '✅' : '❌'}</p>
+                <p>مدير: {hasRole('manager') ? '✅' : '❌'}</p>
+                <p>مندوب مبيعات: {hasRole('sales_agent') ? '✅' : '❌'}</p>
+              </div>
+            </div>
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            className="mt-3 text-orange-600 border-orange-300 hover:bg-orange-100"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            إعادة تحميل الصلاحيات
+          </Button>
         </div>
       </CardContent>
     </Card>

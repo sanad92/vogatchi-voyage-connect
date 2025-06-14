@@ -28,6 +28,7 @@ export const useAuthState = (): AuthStateType => {
     console.log('📊 جاري تحميل بيانات المستخدم:', userId);
     
     try {
+      // البحث عن المستخدم بمعرف المستخدم (غير حساس للأحرف)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -36,7 +37,43 @@ export const useAuthState = (): AuthStateType => {
 
       if (profileError) {
         console.error('❌ خطأ في تحميل الملف الشخصي:', profileError);
-        throw profileError;
+        
+        // إذا لم نجد المستخدم بالمعرف، نحاول البحث بالإيميل
+        const currentUser = await supabase.auth.getUser();
+        if (currentUser.data.user?.email) {
+          console.log('🔍 محاولة البحث بالإيميل:', currentUser.data.user.email);
+          
+          const { data: profileByEmail, error: emailError } = await supabase
+            .from('profiles')
+            .select('*')
+            .ilike('email', currentUser.data.user.email)
+            .single();
+            
+          if (!emailError && profileByEmail) {
+            console.log('✅ تم العثور على المستخدم بالإيميل:', profileByEmail);
+            setProfile(profileByEmail);
+            
+            // البحث عن الدور
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', profileByEmail.id)
+              .single();
+
+            if (!roleError && roleData) {
+              console.log('✅ تم تحميل دور المستخدم:', roleData.role);
+              setUserRole(roleData.role);
+            } else {
+              console.log('⚠️ لم يتم العثور على دور للمستخدم');
+              setUserRole(null);
+            }
+            return;
+          }
+        }
+        
+        setProfile(null);
+        setUserRole(null);
+        return;
       }
 
       console.log('✅ تم تحميل الملف الشخصي:', profileData);
@@ -69,13 +106,20 @@ export const useAuthState = (): AuthStateType => {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔔 تغيير في حالة المصادقة:', { event, session: session?.user?.email });
+        console.log('🔔 تغيير في حالة المصادقة:', { 
+          event, 
+          userEmail: session?.user?.email,
+          userId: session?.user?.id 
+        });
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           console.log('👤 مستخدم مسجل دخول، جاري تحميل البيانات...');
+          console.log('📧 إيميل المستخدم:', session.user.email);
+          console.log('🆔 معرف المستخدم:', session.user.id);
+          
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
@@ -91,18 +135,23 @@ export const useAuthState = (): AuthStateType => {
 
     // التحقق من الجلسة الحالية
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔍 فحص الجلسة الحالية:', session?.user?.email);
+      console.log('🔍 فحص الجلسة الحالية:', {
+        exists: !!session,
+        userEmail: session?.user?.email,
+        userId: session?.user?.id
+      });
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log('📧 إيميل المستخدم من الجلسة:', session.user.email);
         setTimeout(() => {
           fetchProfile(session.user.id);
         }, 0);
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

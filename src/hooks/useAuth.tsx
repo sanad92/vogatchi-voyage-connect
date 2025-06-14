@@ -96,16 +96,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const hasRole = (role: string): boolean => {
+    console.log(`🔍 hasRole('${role}') - فحص الصلاحيات:`, {
+      userRole,
+      requestedRole: role,
+      user: user?.email,
+      profile: profile?.email
+    });
+    
     const result = hasRoleAccess(userRole, role);
-    console.log(`🔍 hasRole('${role}'):`, { userRole, result });
+    console.log(`✅ نتيجة hasRole('${role}'):`, result);
     return result;
   };
 
   const isSuperAdmin = (): boolean => {
     const result = userRole === 'super_admin';
-    console.log('🔍 isSuperAdmin():', { userRole, result });
+    console.log('🔍 isSuperAdmin() - فحص السوبر أدمن:', { 
+      userRole, 
+      result,
+      user: user?.email 
+    });
     return result;
   };
+
+  // تشخيص حالة المصادقة الحالية
+  console.log('🧩 حالة المصادقة الحالية:', {
+    loading,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    hasRole: !!userRole,
+    userEmail: user?.email,
+    profileEmail: profile?.email,
+    userRole,
+    isActive: profile?.is_active
+  });
 
   const value = {
     user,
