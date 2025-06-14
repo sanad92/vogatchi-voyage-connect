@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Plane, Calendar, MapPin, Users, DollarSign } from "lucide-react";
-import { FlightBooking } from "@/types/flightBooking";
+import { FlightBooking, PassengerDetail, BaggageInfo } from "@/types/flightBooking";
 import BookingStatusBadge from "@/components/hotel-bookings/BookingStatusBadge";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -71,15 +70,48 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
       const { data, error } = await query;
       if (error) throw error;
       
-      // Transform the data to match our FlightBooking interface
-      return (data || []).map(booking => ({
-        ...booking,
-        passenger_details: booking.passenger_details ? 
-          (Array.isArray(booking.passenger_details) ? booking.passenger_details : []) : 
-          [],
-        baggage_info: booking.baggage_info || {},
-        ticket_numbers: booking.ticket_numbers || []
-      })) as FlightBooking[];
+      // Transform the data to match our FlightBooking interface with proper type conversion
+      return (data || []).map(booking => {
+        // Safely parse passenger_details from Json to PassengerDetail[]
+        let passengerDetails: PassengerDetail[] = [];
+        if (booking.passenger_details) {
+          try {
+            if (Array.isArray(booking.passenger_details)) {
+              passengerDetails = booking.passenger_details.map((passenger: any) => ({
+                name: passenger?.name || '',
+                passport: passenger?.passport || '',
+                date_of_birth: passenger?.date_of_birth || '',
+                nationality: passenger?.nationality || ''
+              }));
+            }
+          } catch (e) {
+            console.warn('Error parsing passenger details:', e);
+            passengerDetails = [];
+          }
+        }
+
+        // Safely parse baggage_info from Json to BaggageInfo
+        let baggageInfo: BaggageInfo = {};
+        if (booking.baggage_info && typeof booking.baggage_info === 'object') {
+          try {
+            baggageInfo = {
+              checked: (booking.baggage_info as any)?.checked || '',
+              carry_on: (booking.baggage_info as any)?.carry_on || '',
+              extra_baggage: (booking.baggage_info as any)?.extra_baggage || ''
+            };
+          } catch (e) {
+            console.warn('Error parsing baggage info:', e);
+            baggageInfo = {};
+          }
+        }
+
+        return {
+          ...booking,
+          passenger_details: passengerDetails,
+          baggage_info: baggageInfo,
+          ticket_numbers: Array.isArray(booking.ticket_numbers) ? booking.ticket_numbers : []
+        } as FlightBooking;
+      });
     }
   });
 
