@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,7 +72,7 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
       if (error) throw error;
       
       // Transform the data to match our FlightBooking interface with proper type conversion
-      return (data || []).map(booking => {
+      return (data || []).map((booking: any): FlightBooking => {
         // Safely parse passenger_details from Json to PassengerDetail[]
         let passengerDetails: PassengerDetail[] = [];
         if (booking.passenger_details) {
@@ -106,11 +107,58 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
         }
 
         return {
-          ...booking,
+          id: booking.id,
+          booking_reference: booking.booking_reference,
+          customer_id: booking.customer_id,
+          customer_name: booking.customer_name,
+          booking_agent_name: booking.booking_agent_name,
+          booking_date: booking.booking_date,
+          departure_airport_id: booking.departure_airport_id,
+          arrival_airport_id: booking.arrival_airport_id,
+          departure_date: booking.departure_date,
+          departure_time: booking.departure_time,
+          arrival_date: booking.arrival_date,
+          arrival_time: booking.arrival_time,
+          flight_number: booking.flight_number,
+          airline_id: booking.airline_id,
+          flight_class_id: booking.flight_class_id,
+          number_of_passengers: booking.number_of_passengers,
           passenger_details: passengerDetails,
           baggage_info: baggageInfo,
-          ticket_numbers: Array.isArray(booking.ticket_numbers) ? booking.ticket_numbers : []
-        } as FlightBooking;
+          special_requests: booking.special_requests,
+          meal_preferences: booking.meal_preferences,
+          seat_preferences: booking.seat_preferences,
+          ticket_price_per_person: booking.ticket_price_per_person,
+          taxes_and_fees: booking.taxes_and_fees,
+          total_cost: booking.total_cost,
+          supplier_cost: booking.supplier_cost,
+          total_profit: booking.total_profit,
+          currency: booking.currency,
+          payment_method: booking.payment_method,
+          paid_amount: booking.paid_amount,
+          remaining_amount: booking.remaining_amount,
+          payment_due_date: booking.payment_due_date,
+          status_id: booking.status_id,
+          confirmation_number: booking.confirmation_number,
+          ticket_numbers: Array.isArray(booking.ticket_numbers) ? booking.ticket_numbers : [],
+          is_round_trip: booking.is_round_trip,
+          return_flight_id: booking.return_flight_id,
+          supplier_name: booking.supplier_name,
+          supplier_reference: booking.supplier_reference,
+          invoice_sent: booking.invoice_sent,
+          invoice_sent_date: booking.invoice_sent_date,
+          voucher_sent: booking.voucher_sent,
+          voucher_sent_date: booking.voucher_sent_date,
+          supplier_payment_sent: booking.supplier_payment_sent,
+          supplier_payment_sent_date: booking.supplier_payment_sent_date,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+          departure_airport: booking.departure_airport,
+          arrival_airport: booking.arrival_airport,
+          airline: booking.airline,
+          flight_class: booking.flight_class,
+          booking_status: booking.booking_status
+        };
       });
     }
   });
