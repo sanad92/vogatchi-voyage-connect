@@ -4,24 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Save, UserPlus, Edit } from "lucide-react";
 import { useCustomerForm } from "@/hooks/useCustomerForm";
 import CustomerFormFields from "./CustomerFormFields";
-
-interface CustomerData {
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  address?: string;
-  segment_id?: string;
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  segment_id?: string;
-}
+import { Customer, CustomerData } from "@/types/customer";
 
 interface CustomerFormProps {
   onCustomerAdded?: (customer: Customer) => void;

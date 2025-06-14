@@ -2,16 +2,8 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCustomerSegments } from "@/hooks/useCustomerSegments";
-import { UseFormRegister, Controller, Control } from "react-hook-form";
-
-interface CustomerData {
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  address?: string;
-  segment_id?: string;
-}
+import { Controller, Control } from "react-hook-form";
+import { CustomerData } from "@/types/customer";
 
 interface CustomerSegmentSelectorProps {
   control: Control<CustomerData>;

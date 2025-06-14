@@ -3,15 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UseFormRegister, FieldErrors, Control } from "react-hook-form";
 import CustomerSegmentSelector from "./CustomerSegmentSelector";
-
-interface CustomerData {
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  address?: string;
-  segment_id?: string;
-}
+import { CustomerData } from "@/types/customer";
 
 interface CustomerFormFieldsProps {
   register: UseFormRegister<CustomerData>;

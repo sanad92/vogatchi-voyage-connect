@@ -2,15 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCustomerData } from "@/hooks/useCustomerData";
 import CustomerForm from "./CustomerForm";
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  segment_id?: string;
-}
+import { Customer } from "@/types/customer";
 
 interface CustomerEditDialogProps {
   customerId: string | null;

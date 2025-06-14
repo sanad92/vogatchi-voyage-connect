@@ -1,9 +1,9 @@
 
-import { Customer } from "@/types/crm";
 import CustomerCard from "./CustomerCard";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { useCustomers } from "@/hooks/useCustomers";
+import { Customer } from "@/types/customer";
 
 interface CustomerGridProps {
   customers: Customer[];

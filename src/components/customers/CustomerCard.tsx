@@ -5,26 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { User, Phone, Mail, MapPin, Flag, Edit, Eye, Star } from "lucide-react";
 import { useState } from "react";
 import CustomerEditDialog from "./CustomerEditDialog";
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-  address?: string;
-  total_bookings: number;
-  total_spent: number;
-  loyalty_points: number;
-  last_booking_date?: string;
-  segment?: {
-    id: string;
-    name: string;
-    name_ar: string;
-    color: string;
-  };
-  segment_id?: string;
-}
+import { Customer } from "@/types/customer";
 
 interface CustomerCardProps {
   customer: Customer;
@@ -125,7 +106,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
                   {customer.segment.name_ar || customer.segment.name}
                 </Badge>
               )}
-              {customer.loyalty_points > 0 && (
+              {customer.loyalty_points && customer.loyalty_points > 0 && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Star className="h-3 w-3 fill-current" />
                   <span>{customer.loyalty_points}</span>
@@ -136,11 +117,11 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
 
           <div className="grid grid-cols-2 gap-4 text-center text-xs">
             <div>
-              <div className="font-medium text-blue-600">{customer.total_bookings}</div>
+              <div className="font-medium text-blue-600">{customer.total_bookings || 0}</div>
               <div className="text-gray-500">حجز</div>
             </div>
             <div>
-              <div className="font-medium text-green-600">{formatCurrency(customer.total_spent)}</div>
+              <div className="font-medium text-green-600">{formatCurrency(customer.total_spent || 0)}</div>
               <div className="text-gray-500">إجمالي</div>
             </div>
           </div>
