@@ -9,9 +9,10 @@ import { toast } from "sonner";
 
 interface HotelVoucherGeneratorProps {
   booking: HotelBooking;
+  onClose?: () => void;
 }
 
-const HotelVoucherGenerator = ({ booking }: HotelVoucherGeneratorProps) => {
+const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps) => {
   const [specialRequests, setSpecialRequests] = useState<BookingSpecialRequest[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 

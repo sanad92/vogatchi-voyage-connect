@@ -97,7 +97,7 @@ const SpecialRequestsSection = ({
         {Object.entries(groupedRequests).map(([category, requests]) => (
           <div key={category} className="space-y-3">
             <Label className="text-base font-semibold text-blue-800">
-              {categoryLabels[category as keyof typeof categoryLabels]}
+              {categoryLabels[category as keyof typeof categoryLabels] || category}
             </Label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {requests.map((request) => (

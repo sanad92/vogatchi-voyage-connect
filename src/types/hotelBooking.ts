@@ -62,7 +62,7 @@ export interface Customer {
 export interface SpecialRequestType {
   id: string;
   name: string;
-  category: 'bed_type' | 'room_type' | 'amenities' | 'accessibility' | 'other';
+  category: string; // Changed from union type to string to match database
   has_extra_cost: boolean;
   extra_cost_amount: number;
   is_active: boolean;
