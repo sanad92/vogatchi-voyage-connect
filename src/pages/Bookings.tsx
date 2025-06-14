@@ -22,12 +22,11 @@ type Service = {
   id: string;
   name: string;
   type: string;
-  base_price: number;
   location: string | null;
   supplier_id: string;
+  service_category: string | null;
   suppliers: {
     name: string;
-    commission_rate: number | null;
   };
 };
 
@@ -80,8 +79,8 @@ const Bookings = () => {
       const { data, error } = await supabase
         .from('services')
         .select(`
-          id, name, type, base_price, location, supplier_id,
-          suppliers!inner(name, commission_rate)
+          id, name, type, location, supplier_id, service_category,
+          suppliers!inner(name)
         `)
         .eq('is_active', true)
         .order('name');
@@ -101,7 +100,7 @@ const Bookings = () => {
           number_of_nights, number_of_guests, supplier_cost,
           selling_price, profit_margin, status,
           customers!inner(id, name, phone, email),
-          services!inner(id, name, type, base_price, location, supplier_id, suppliers!inner(name, commission_rate))
+          services!inner(id, name, type, location, supplier_id, service_category, suppliers!inner(name))
         `)
         .order('created_at', { ascending: false });
       
@@ -109,6 +108,22 @@ const Bookings = () => {
       return data as Booking[];
     }
   });
+
+  // Get customer pricing for a specific service
+  const getCustomerPrice = async (customerId: string, serviceId: string) => {
+    const { data, error } = await supabase
+      .from('customer_pricing')
+      .select('custom_price')
+      .eq('customer_id', customerId)
+      .eq('service_id', serviceId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (error || !data) return 0;
+    return data.custom_price;
+  };
 
   const calculateNights = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return 0;
@@ -130,7 +145,8 @@ const Bookings = () => {
         booking_reference: generateBookingReference(),
         number_of_nights: nights,
         supplier_cost: parseFloat(booking.supplier_cost.toString()),
-        selling_price: parseFloat(booking.selling_price.toString())
+        selling_price: parseFloat(booking.selling_price.toString()),
+        profit_margin: parseFloat(booking.selling_price.toString()) - parseFloat(booking.supplier_cost.toString())
       };
 
       const { data, error } = await supabase
@@ -189,6 +205,54 @@ const Bookings = () => {
     return labels[status as keyof typeof labels] || status || "غير محدد";
   };
 
+  const getServiceCategoryLabel = (category: string | null) => {
+    const labels = {
+      hotel: "فندق",
+      flight: "طيران",
+      transfer: "انتقالات",
+      car_rental: "إيجار سيارة",
+      local_tour: "رحلة داخلية",
+      other: "أخرى"
+    };
+    return labels[category as keyof typeof labels] || "غير محدد";
+  };
+
+  const handleServiceSelection = async (serviceId: string) => {
+    if (!newBooking.customer_id) {
+      toast({
+        title: "يرجى اختيار العميل أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const customPrice = await getCustomerPrice(newBooking.customer_id, serviceId);
+      const supplierCost = customPrice * 0.8; // افتراض أن تكلفة المورد 80% من السعر المخصص
+
+      setNewBooking({
+        ...newBooking,
+        service_id: serviceId,
+        supplier_cost: supplierCost,
+        selling_price: customPrice
+      });
+    } catch (error) {
+      console.error('Error getting customer price:', error);
+      // إذا لم نجد سعر مخصص، نضع قيم افتراضية
+      setNewBooking({
+        ...newBooking,
+        service_id: serviceId,
+        supplier_cost: 0,
+        selling_price: 0
+      });
+      toast({
+        title: "تنبيه",
+        description: "لم يتم العثور على سعر مخصص لهذا العميل. يرجى إدخال الأسعار يدوياً.",
+        variant: "default",
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBooking.customer_id || !newBooking.service_id || !newBooking.selling_price) {
@@ -235,22 +299,14 @@ const Bookings = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={newBooking.service_id} onValueChange={(value) => {
-                  const service = services.find(s => s.id === value);
-                  setNewBooking({
-                    ...newBooking, 
-                    service_id: value,
-                    supplier_cost: service?.base_price || 0,
-                    selling_price: service ? service.base_price * 1.2 : 0
-                  });
-                }}>
+                <Select value={newBooking.service_id} onValueChange={handleServiceSelection}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الخدمة" />
                   </SelectTrigger>
                   <SelectContent>
                     {services.map(service => (
                       <SelectItem key={service.id} value={service.id}>
-                        {service.name} - {service.base_price} جنيه
+                        {service.name} - {getServiceCategoryLabel(service.service_category)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -333,9 +389,12 @@ const Bookings = () => {
                     
                     <div>
                       <p className="font-medium">{booking.services.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {getServiceCategoryLabel(booking.services.service_category)}
+                      </p>
                       <p className="text-sm text-gray-600 flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        {booking.services.location}
+                        {booking.services.location || "غير محدد"}
                       </p>
                       <p className="text-sm text-gray-600 flex items-center gap-1">
                         <Users className="w-4 h-4" />
