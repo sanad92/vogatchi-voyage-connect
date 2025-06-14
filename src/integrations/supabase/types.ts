@@ -1178,6 +1178,7 @@ export type Database = {
       invoices: {
         Row: {
           booking_id: string
+          booking_type: string
           created_at: string
           currency: string | null
           customer_id: string
@@ -1200,6 +1201,7 @@ export type Database = {
         }
         Insert: {
           booking_id: string
+          booking_type: string
           created_at?: string
           currency?: string | null
           customer_id: string
@@ -1222,6 +1224,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string
+          booking_type?: string
           created_at?: string
           currency?: string | null
           customer_id?: string

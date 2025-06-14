@@ -23,14 +23,15 @@ type PaymentOrder = {
   bank_reference: string | null;
   notes: string | null;
   created_at: string;
-  invoices: {
+  invoice: {
     invoice_number: string;
+    booking_type: 'hotel' | 'flight';
     customers: { name: string };
-    hotel_bookings?: {
+    hotel_booking?: {
       internal_booking_number: string;
       hotel_name: string;
     };
-    flight_bookings?: {
+    flight_booking?: {
       booking_reference: string;
     };
   };
@@ -41,12 +42,13 @@ type Invoice = {
   invoice_number: string;
   final_amount: number;
   status: string;
+  booking_type: 'hotel' | 'flight';
   customers: { name: string };
-  hotel_bookings?: {
+  hotel_booking?: {
     internal_booking_number: string;
     hotel_name: string;
   };
-  flight_bookings?: {
+  flight_booking?: {
     booking_reference: string;
   };
 };
@@ -74,17 +76,55 @@ const PaymentOrders = () => {
         .from('payment_orders')
         .select(`
           *,
-          invoices(
+          invoices!inner(
             invoice_number,
-            customers(name),
-            hotel_bookings(internal_booking_number, hotel_name),
-            flight_bookings(booking_reference)
+            booking_type,
+            customers(name)
           )
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as PaymentOrder[];
+
+      // جلب تفاصيل الحجوزات
+      const ordersWithBookings = await Promise.all(
+        data.map(async (order) => {
+          const invoice = order.invoices;
+          let bookingDetails = {};
+
+          if (invoice.booking_type === 'hotel') {
+            const { data: hotelData } = await supabase
+              .from('hotel_bookings')
+              .select('internal_booking_number, hotel_name')
+              .eq('id', order.invoice_id)
+              .single();
+            
+            if (hotelData) {
+              bookingDetails = { hotel_booking: hotelData };
+            }
+          } else if (invoice.booking_type === 'flight') {
+            const { data: flightData } = await supabase
+              .from('flight_bookings')
+              .select('booking_reference')
+              .eq('id', order.invoice_id)
+              .single();
+            
+            if (flightData) {
+              bookingDetails = { flight_booking: flightData };
+            }
+          }
+
+          return {
+            ...order,
+            invoice: {
+              ...invoice,
+              ...bookingDetails
+            }
+          };
+        })
+      );
+
+      return ordersWithBookings as PaymentOrder[];
     }
   });
 
@@ -99,15 +139,50 @@ const PaymentOrders = () => {
           invoice_number,
           final_amount,
           status,
-          customers(name),
-          hotel_bookings(internal_booking_number, hotel_name),
-          flight_bookings(booking_reference)
+          booking_type,
+          booking_id,
+          customers(name)
         `)
         .in('status', ['sent'])
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Invoice[];
+
+      // جلب تفاصيل الحجوزات
+      const invoicesWithBookings = await Promise.all(
+        data.map(async (invoice) => {
+          let bookingDetails = {};
+
+          if (invoice.booking_type === 'hotel') {
+            const { data: hotelData } = await supabase
+              .from('hotel_bookings')
+              .select('internal_booking_number, hotel_name')
+              .eq('id', invoice.booking_id)
+              .single();
+            
+            if (hotelData) {
+              bookingDetails = { hotel_booking: hotelData };
+            }
+          } else if (invoice.booking_type === 'flight') {
+            const { data: flightData } = await supabase
+              .from('flight_bookings')
+              .select('booking_reference')
+              .eq('id', invoice.booking_id)
+              .single();
+            
+            if (flightData) {
+              bookingDetails = { flight_booking: flightData };
+            }
+          }
+
+          return {
+            ...invoice,
+            ...bookingDetails
+          };
+        })
+      );
+
+      return invoicesWithBookings as Invoice[];
     }
   });
 
@@ -281,8 +356,8 @@ const PaymentOrders = () => {
   const filteredPaymentOrders = paymentOrders.filter(order => {
     const matchesSearch = searchTerm === "" || 
       order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.invoices.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.invoices.customers.name.toLowerCase().includes(searchTerm.toLowerCase());
+      order.invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.invoice.customers.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
@@ -414,8 +489,8 @@ const PaymentOrders = () => {
                   {availableInvoices.map(invoice => (
                     <SelectItem key={invoice.id} value={invoice.id}>
                       {invoice.invoice_number} - {invoice.customers.name} - {invoice.final_amount.toFixed(2)} ر.س
-                      {invoice.hotel_bookings && ` - ${invoice.hotel_bookings.hotel_name}`}
-                      {invoice.flight_bookings && ` - ${invoice.flight_bookings.booking_reference}`}
+                      {invoice.hotel_booking && ` - ${invoice.hotel_booking.hotel_name}`}
+                      {invoice.flight_booking && ` - ${invoice.flight_booking.booking_reference}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -498,16 +573,16 @@ const PaymentOrders = () => {
                       <CreditCard className="w-5 h-5" />
                       أمر دفع #{order.order_number}
                     </h3>
-                    <p className="text-gray-600">فاتورة: {order.invoices.invoice_number}</p>
-                    <p className="text-gray-600">العميل: {order.invoices.customers.name}</p>
-                    {order.invoices.hotel_bookings && (
+                    <p className="text-gray-600">فاتورة: {order.invoice.invoice_number}</p>
+                    <p className="text-gray-600">العميل: {order.invoice.customers.name}</p>
+                    {order.invoice.hotel_booking && (
                       <p className="text-sm text-gray-500">
-                        حجز فندق: {order.invoices.hotel_bookings.internal_booking_number} - {order.invoices.hotel_bookings.hotel_name}
+                        حجز فندق: {order.invoice.hotel_booking.internal_booking_number} - {order.invoice.hotel_booking.hotel_name}
                       </p>
                     )}
-                    {order.invoices.flight_bookings && (
+                    {order.invoice.flight_booking && (
                       <p className="text-sm text-gray-500">
-                        حجز طيران: {order.invoices.flight_bookings.booking_reference}
+                        حجز طيران: {order.invoice.flight_booking.booking_reference}
                       </p>
                     )}
                   </div>

@@ -14,6 +14,7 @@ type Invoice = {
   invoice_number: string;
   customer_id: string;
   booking_id: string;
+  booking_type: 'hotel' | 'flight';
   status: string;
   total_amount: number;
   subtotal: number | null;
@@ -33,12 +34,12 @@ type Invoice = {
     phone: string;
     email: string | null;
   };
-  hotel_bookings?: {
+  hotel_booking?: {
     internal_booking_number: string;
     hotel_name: string;
     destination_city: string;
   };
-  flight_bookings?: {
+  flight_booking?: {
     booking_reference: string;
     departure_airport_id: string;
     arrival_airport_id: string;
@@ -57,14 +58,43 @@ const Invoices = () => {
         .from('invoices')
         .select(`
           *,
-          customers(name, phone, email),
-          hotel_bookings(internal_booking_number, hotel_name, destination_city),
-          flight_bookings(booking_reference, departure_airport_id, arrival_airport_id)
+          customers(name, phone, email)
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Invoice[];
+
+      // جلب تفاصيل الحجوزات بناءً على نوع الحجز
+      const invoicesWithBookings = await Promise.all(
+        data.map(async (invoice) => {
+          if (invoice.booking_type === 'hotel') {
+            const { data: hotelData } = await supabase
+              .from('hotel_bookings')
+              .select('internal_booking_number, hotel_name, destination_city')
+              .eq('id', invoice.booking_id)
+              .single();
+            
+            return {
+              ...invoice,
+              hotel_booking: hotelData,
+            };
+          } else if (invoice.booking_type === 'flight') {
+            const { data: flightData } = await supabase
+              .from('flight_bookings')
+              .select('booking_reference, departure_airport_id, arrival_airport_id')
+              .eq('id', invoice.booking_id)
+              .single();
+            
+            return {
+              ...invoice,
+              flight_booking: flightData,
+            };
+          }
+          return invoice;
+        })
+      );
+
+      return invoicesWithBookings as Invoice[];
     }
   });
 
@@ -229,14 +259,14 @@ const Invoices = () => {
                     </h3>
                     <p className="text-gray-600">العميل: {invoice.customers.name}</p>
                     <p className="text-gray-600">الهاتف: {invoice.customers.phone}</p>
-                    {invoice.hotel_bookings && (
+                    {invoice.hotel_booking && (
                       <p className="text-sm text-gray-500">
-                        حجز فندق: {invoice.hotel_bookings.internal_booking_number} - {invoice.hotel_bookings.hotel_name}
+                        حجز فندق: {invoice.hotel_booking.internal_booking_number} - {invoice.hotel_booking.hotel_name}
                       </p>
                     )}
-                    {invoice.flight_bookings && (
+                    {invoice.flight_booking && (
                       <p className="text-sm text-gray-500">
-                        حجز طيران: {invoice.flight_bookings.booking_reference}
+                        حجز طيران: {invoice.flight_booking.booking_reference}
                       </p>
                     )}
                   </div>

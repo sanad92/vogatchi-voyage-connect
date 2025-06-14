@@ -46,6 +46,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           invoice_number: invoiceNumber,
           customer_id: booking.customer_id,
           booking_id: booking.id,
+          booking_type: 'hotel', // تحديد نوع الحجز
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
           vat_amount: vatAmount,
