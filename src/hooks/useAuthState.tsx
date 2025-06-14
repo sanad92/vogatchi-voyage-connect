@@ -25,6 +25,8 @@ export const useAuthState = (): AuthStateType => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
+    console.log('📊 جاري تحميل بيانات المستخدم:', userId);
+    
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -32,7 +34,12 @@ export const useAuthState = (): AuthStateType => {
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('❌ خطأ في تحميل الملف الشخصي:', profileError);
+        throw profileError;
+      }
+
+      console.log('✅ تم تحميل الملف الشخصي:', profileData);
 
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
@@ -41,30 +48,39 @@ export const useAuthState = (): AuthStateType => {
         .single();
 
       if (roleError) {
-        console.error('No role found for user:', roleError);
+        console.error('⚠️ لم يتم العثور على دور للمستخدم:', roleError);
         setProfile(profileData);
         setUserRole(null);
         return;
       }
 
+      console.log('✅ تم تحميل دور المستخدم:', roleData.role);
       setProfile(profileData);
       setUserRole(roleData.role);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('❌ خطأ في تحميل بيانات المستخدم:', error);
+      setProfile(null);
+      setUserRole(null);
     }
   };
 
   useEffect(() => {
+    console.log('🔄 إعداد مراقب حالة المصادقة...');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔔 تغيير في حالة المصادقة:', { event, session: session?.user?.email });
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('👤 مستخدم مسجل دخول، جاري تحميل البيانات...');
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
         } else {
+          console.log('👋 لا يوجد مستخدم مسجل');
           setProfile(null);
           setUserRole(null);
         }
@@ -73,7 +89,10 @@ export const useAuthState = (): AuthStateType => {
       }
     );
 
+    // التحقق من الجلسة الحالية
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 فحص الجلسة الحالية:', session?.user?.email);
+      
       setSession(session);
       setUser(session?.user ?? null);
       

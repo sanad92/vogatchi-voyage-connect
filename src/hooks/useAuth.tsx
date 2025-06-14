@@ -40,12 +40,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) {
+        console.error('❌ خطأ في تسجيل الدخول:', error);
         toast({
           title: "خطأ في تسجيل الدخول",
           description: error.message,
           variant: "destructive",
         });
       } else {
+        console.log('✅ تم تسجيل الدخول بنجاح');
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في نظام Vogatchi CRM",
@@ -55,6 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error };
     } catch (error) {
+      console.error('❌ خطأ عام في تسجيل الدخول:', error);
       return { error };
     } finally {
       setLoading(false);
@@ -64,12 +67,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log('👋 جاري تسجيل الخروج...');
+      
       cleanupAuthState();
       
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (error) {
-        console.error('Error signing out:', error);
+        console.error('خطأ في تسجيل الخروج:', error);
       }
       
       setUser(null);
@@ -84,18 +89,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       window.location.href = '/auth';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('خطأ في تسجيل الخروج:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const hasRole = (role: string): boolean => {
-    return hasRoleAccess(userRole, role);
+    const result = hasRoleAccess(userRole, role);
+    console.log(`🔍 hasRole('${role}'):`, { userRole, result });
+    return result;
   };
 
   const isSuperAdmin = (): boolean => {
-    return userRole === 'super_admin';
+    const result = userRole === 'super_admin';
+    console.log('🔍 isSuperAdmin():', { userRole, result });
+    return result;
   };
 
   const value = {

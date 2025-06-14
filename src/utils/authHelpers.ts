@@ -19,7 +19,12 @@ export const cleanupAuthState = () => {
 };
 
 export const hasRoleAccess = (userRole: string | null, requiredRole: string): boolean => {
-  if (!userRole) return false;
+  console.log('🔍 فحص الصلاحيات:', { userRole, requiredRole });
+  
+  if (!userRole) {
+    console.log('❌ لا يوجد دور للمستخدم');
+    return false;
+  }
   
   const roleHierarchy = {
     'super_admin': ['super_admin', 'admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
@@ -30,5 +35,15 @@ export const hasRoleAccess = (userRole: string | null, requiredRole: string): bo
     'viewer': ['viewer']
   };
   
-  return roleHierarchy[userRole as keyof typeof roleHierarchy]?.includes(requiredRole) || false;
+  const allowedRoles = roleHierarchy[userRole as keyof typeof roleHierarchy];
+  const hasAccess = allowedRoles?.includes(requiredRole) || false;
+  
+  console.log('✅ نتيجة فحص الصلاحيات:', { 
+    userRole, 
+    requiredRole, 
+    allowedRoles, 
+    hasAccess 
+  });
+  
+  return hasAccess;
 };

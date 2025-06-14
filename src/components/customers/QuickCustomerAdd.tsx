@@ -26,13 +26,46 @@ interface QuickCustomerAddProps {
 }
 
 const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCustomerAddProps) => {
-  const { userRole, hasRole } = useAuth();
+  const { userRole, hasRole, loading } = useAuth();
 
-  // التحقق من الصلاحيات
-  const canAddCustomers = hasRole('admin') || hasRole('manager') || hasRole('sales_agent') || hasRole('super_admin');
+  console.log('🧩 QuickCustomerAdd - حالة المستخدم:', {
+    userRole,
+    loading,
+    hasRole: {
+      super_admin: hasRole('super_admin'),
+      admin: hasRole('admin'),
+      manager: hasRole('manager'),
+      sales_agent: hasRole('sales_agent')
+    }
+  });
+
+  // عرض تحميل أثناء فحص الصلاحيات
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p className="mr-2 text-gray-600">جاري التحقق من الصلاحيات...</p>
+      </div>
+    );
+  }
+
+  // التحقق من الصلاحيات - السماح للأدوار المخولة بإضافة العملاء
+  const canAddCustomers = hasRole('super_admin') || hasRole('admin') || hasRole('manager') || hasRole('sales_agent');
+  
+  console.log('🔐 نتيجة فحص صلاحية إضافة العملاء:', {
+    canAddCustomers,
+    userRole,
+    checks: {
+      super_admin: hasRole('super_admin'),
+      admin: hasRole('admin'),
+      manager: hasRole('manager'),
+      sales_agent: hasRole('sales_agent')
+    }
+  });
 
   // عرض رسالة عدم وجود صلاحيات
   if (!canAddCustomers) {
+    console.log('❌ المستخدم ليس لديه صلاحية إضافة العملاء');
     return (
       <CustomerPermissionCheck 
         userRole={userRole}
@@ -41,6 +74,7 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     );
   }
 
+  console.log('✅ المستخدم لديه صلاحية إضافة العملاء');
   return (
     <CustomerForm 
       onCustomerAdded={onCustomerAdded}

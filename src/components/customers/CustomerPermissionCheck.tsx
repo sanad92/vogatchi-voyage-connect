@@ -9,6 +9,8 @@ interface CustomerPermissionCheckProps {
 }
 
 const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheckProps) => {
+  console.log('🚫 عرض رسالة عدم وجود صلاحيات:', { userRole });
+  
   return (
     <Card className="w-full border-orange-200 bg-orange-50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -23,10 +25,13 @@ const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheck
       <CardContent>
         <div className="text-center py-4">
           <p className="text-orange-700 mb-2">ليس لديك صلاحية إضافة العملاء.</p>
-          <p className="text-orange-600 text-sm">
-            الأدوار المسموح لها: مدير، مدير مبيعات، أو مندوب مبيعات
+          <p className="text-orange-600 text-sm mb-2">
+            الأدوار المسموح لها: سوبر أدمن، مدير، مدير مبيعات، أو مندوب مبيعات
           </p>
-          <p className="text-gray-600 text-sm mt-2">دورك الحالي: {userRole || 'غير محدد'}</p>
+          <div className="bg-orange-100 p-3 rounded mt-3">
+            <p className="text-gray-700 text-sm font-medium">معلومات المستخدم الحالي:</p>
+            <p className="text-gray-600 text-sm">الدور: {userRole || 'غير محدد'}</p>
+          </div>
         </div>
       </CardContent>
     </Card>
