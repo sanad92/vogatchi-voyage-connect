@@ -453,6 +453,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_creation_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          department: string | null
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          requested_role: Database["public"]["Enums"]["user_role"]
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          department?: string | null
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_role: Database["public"]["Enums"]["user_role"]
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          department?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_role?: Database["public"]["Enums"]["user_role"]
+          status?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -484,6 +526,13 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       has_role: {
+        Args: {
+          user_id: string
+          required_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
+      has_role_or_higher: {
         Args: {
           user_id: string
           required_role: Database["public"]["Enums"]["user_role"]

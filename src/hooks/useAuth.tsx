@@ -14,7 +14,7 @@ interface Profile {
 }
 
 interface UserRole {
-  role: 'admin' | 'manager' | 'sales_agent' | 'accountant' | 'viewer';
+  role: 'admin' | 'manager' | 'sales_agent' | 'accountant' | 'viewer' | 'super_admin';
 }
 
 interface AuthContextType {
@@ -24,9 +24,9 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  isSuperAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +54,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('user_id', userId)
         .single();
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error('No role found for user:', roleError);
+        // المستخدم ليس له دور - ربما حساب جديد في انتظار التفعيل
+        setProfile(profileData);
+        setUserRole(null);
+        return;
+      }
 
       setProfile(profileData);
       setUserRole(roleData.role);
@@ -132,43 +138,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      setLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-          }
-        }
-      });
-      
-      if (error) {
-        toast({
-          title: "خطأ في إنشاء الحساب",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "تم إنشاء الحساب بنجاح",
-          description: "يرجى تسجيل الدخول للمتابعة",
-        });
-      }
-      
-      return { error };
-    } catch (error) {
-      return { error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
     try {
       setLoading(true);
@@ -196,6 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!userRole) return false;
     
     const roleHierarchy = {
+      'super_admin': ['super_admin', 'admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
       'admin': ['admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
       'manager': ['manager', 'sales_agent', 'accountant', 'viewer'],
       'sales_agent': ['sales_agent', 'viewer'],
@@ -206,6 +176,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return roleHierarchy[userRole as keyof typeof roleHierarchy]?.includes(role) || false;
   };
 
+  const isSuperAdmin = (): boolean => {
+    return userRole === 'super_admin';
+  };
+
   const value = {
     user,
     profile,
@@ -213,9 +187,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     loading,
     signIn,
-    signUp,
     signOut,
-    hasRole
+    hasRole,
+    isSuperAdmin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
