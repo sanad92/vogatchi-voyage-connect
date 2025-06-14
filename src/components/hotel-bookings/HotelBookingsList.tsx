@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit, FileText, Send, Printer, CheckCircle, History } from "lucide-react";
+import { Edit, FileText, Send, Printer, CheckCircle, History, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { HotelBooking, BookingStatus } from "@/types/hotelBooking";
 import HotelInvoiceGenerator from "./HotelInvoiceGenerator";
 import HotelVoucherGenerator from "./HotelVoucherGenerator";
 import HotelSupplierPaymentGenerator from "./HotelSupplierPaymentGenerator";
+import HotelInvoiceCreator from "./HotelInvoiceCreator";
 import BookingStatusBadge from "./BookingStatusBadge";
 import BookingStatusSelector from "./BookingStatusSelector";
 import BookingStatusHistory from "./BookingStatusHistory";
@@ -25,6 +26,7 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
   const [selectedBooking, setSelectedBooking] = useState<HotelBooking | null>(null);
   const [documentType, setDocumentType] = useState<'invoice' | 'voucher' | 'payment' | null>(null);
   const [showStatusHistory, setShowStatusHistory] = useState<string | null>(null);
+  const [showInvoiceCreator, setShowInvoiceCreator] = useState<HotelBooking | null>(null);
 
   // Get booking statuses for display
   const { data: statuses = [] } = useQuery({
@@ -70,9 +72,18 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
     setDocumentType(type);
   };
 
+  const handleCreateInvoice = (booking: HotelBooking) => {
+    setShowInvoiceCreator(booking);
+  };
+
   const closePrintModal = () => {
     setSelectedBooking(null);
     setDocumentType(null);
+  };
+
+  const closeInvoiceCreator = () => {
+    setShowInvoiceCreator(null);
+    onRefresh();
   };
 
   return (
@@ -190,6 +201,17 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
                     {booking.invoice_sent && <CheckCircle className="h-4 w-4 text-green-500" />}
                   </div>
                   <div className="flex gap-1">
+                    {!booking.invoice_sent && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleCreateInvoice(booking)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Receipt className="h-3 w-3 mr-1" />
+                        إصدار
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -261,6 +283,15 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
           </CardContent>
         </Card>
       ))}
+
+      {/* Invoice Creator Modal */}
+      {showInvoiceCreator && (
+        <HotelInvoiceCreator 
+          booking={showInvoiceCreator} 
+          open={!!showInvoiceCreator}
+          onClose={closeInvoiceCreator}
+        />
+      )}
 
       {/* Document Generation Modals */}
       {selectedBooking && documentType === 'invoice' && (
