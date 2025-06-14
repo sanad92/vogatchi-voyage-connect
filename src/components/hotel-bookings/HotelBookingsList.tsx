@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit, FileText, Send, Printer, CheckCircle, History, Receipt } from "lucide-react";
+import { Edit, FileText, Send, Printer, CheckCircle, History, Receipt, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { HotelBooking, BookingStatus } from "@/types/hotelBooking";
 import HotelInvoiceGenerator from "./HotelInvoiceGenerator";
@@ -27,6 +27,7 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
   const [documentType, setDocumentType] = useState<'invoice' | 'voucher' | 'payment' | null>(null);
   const [showStatusHistory, setShowStatusHistory] = useState<string | null>(null);
   const [showInvoiceCreator, setShowInvoiceCreator] = useState<HotelBooking | null>(null);
+  const [showVoucherGenerator, setShowVoucherGenerator] = useState<HotelBooking | null>(null);
 
   // Get booking statuses for display
   const { data: statuses = [] } = useQuery({
@@ -76,6 +77,10 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
     setShowInvoiceCreator(booking);
   };
 
+  const handleCreateVoucher = (booking: HotelBooking) => {
+    setShowVoucherGenerator(booking);
+  };
+
   const closePrintModal = () => {
     setSelectedBooking(null);
     setDocumentType(null);
@@ -83,6 +88,11 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
 
   const closeInvoiceCreator = () => {
     setShowInvoiceCreator(null);
+    onRefresh();
+  };
+
+  const closeVoucherGenerator = () => {
+    setShowVoucherGenerator(null);
     onRefresh();
   };
 
@@ -232,11 +242,22 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
                 {/* Voucher */}
                 <div className="flex items-center justify-between p-3 border rounded">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
+                    <Ticket className="h-4 w-4" />
                     <span className="text-sm">فاوتشر الحجز</span>
                     {booking.voucher_sent && <CheckCircle className="h-4 w-4 text-green-500" />}
                   </div>
                   <div className="flex gap-1">
+                    {!booking.voucher_sent && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleCreateVoucher(booking)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Ticket className="h-3 w-3 mr-1" />
+                        إصدار فاوتشر
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -291,6 +312,24 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
           open={!!showInvoiceCreator}
           onClose={closeInvoiceCreator}
         />
+      )}
+
+      {/* Voucher Generator Modal */}
+      {showVoucherGenerator && (
+        <Dialog open={!!showVoucherGenerator} onOpenChange={closeVoucherGenerator}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ticket className="h-5 w-5" />
+                إصدار فاوتشر الحجز - {showVoucherGenerator.internal_booking_number}
+              </DialogTitle>
+            </DialogHeader>
+            <HotelVoucherGenerator 
+              booking={showVoucherGenerator} 
+              onClose={closeVoucherGenerator}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Document Generation Modals */}
