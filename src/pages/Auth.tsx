@@ -6,9 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
-import { Eye, EyeOff, Building2, Shield } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { Eye, EyeOff, Building2 } from 'lucide-react';
 
 const Auth = () => {
   const { signIn, user, loading } = useAuth();
@@ -16,7 +14,6 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingSuperAdmin, setIsCreatingSuperAdmin] = useState(false);
 
   // إعادة توجيه المستخدمين المسجلين
   if (user && !loading) {
@@ -30,88 +27,6 @@ const Auth = () => {
     setIsLoading(true);
     await signIn(email, password);
     setIsLoading(false);
-  };
-
-  const createSuperAdmin = async () => {
-    setIsCreatingSuperAdmin(true);
-    
-    try {
-      // إنشاء المستخدم
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: 'Res@vogatchitrips.com',
-        password: 'Voga@12345@',
-        options: {
-          data: {
-            full_name: 'Super Admin'
-          }
-        }
-      });
-
-      if (authError) {
-        // إذا كان المستخدم موجود بالفعل، نحاول تسجيل الدخول
-        if (authError.message.includes('already registered')) {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: 'Res@vogatchitrips.com',
-            password: 'Voga@12345@'
-          });
-          
-          if (signInError) {
-            toast({
-              title: "خطأ",
-              description: "فشل في تسجيل الدخول للسوبر أدمن",
-              variant: "destructive",
-            });
-            return;
-          }
-        } else {
-          throw authError;
-        }
-      }
-
-      // الحصول على المستخدم الحالي
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (currentUser) {
-        // تحديث الملف الشخصي ليكون نشط
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ is_active: true })
-          .eq('id', currentUser.id);
-
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-        }
-
-        // إضافة دور السوبر أدمن
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({
-            user_id: currentUser.id,
-            role: 'super_admin'
-          });
-
-        if (roleError) {
-          console.error('Role assignment error:', roleError);
-        }
-
-        toast({
-          title: "تم إنشاء السوبر أدمن بنجاح",
-          description: "مرحباً بك في نظام Vogatchi CRM",
-        });
-
-        // إعادة تحميل الصفحة للحصول على الصلاحيات الجديدة
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Super admin creation error:', error);
-      toast({
-        title: "خطأ في إنشاء السوبر أدمن",
-        description: "حدث خطأ أثناء إنشاء حساب السوبر أدمن",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingSuperAdmin(false);
-    }
   };
 
   if (loading) {
@@ -194,26 +109,13 @@ const Auth = () => {
               </Button>
             </form>
 
-            <div className="mt-4">
-              <Button
-                onClick={createSuperAdmin}
-                disabled={isCreatingSuperAdmin}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                variant="outline"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                {isCreatingSuperAdmin ? 'جارٍ إنشاء السوبر أدمن...' : 'إنشاء حساب السوبر أدمن'}
-              </Button>
-            </div>
-
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-amber-800 mb-2">ملاحظة مهمة:</h3>
-              <p className="text-sm text-amber-700 mb-2">
-                تم إلغاء التسجيل الذاتي. يتم إنشاء الحسابات الجديدة فقط من خلال السوبر أدمن.
-                إذا كنت بحاجة لحساب جديد، يرجى التواصل مع الإدارة.
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">بيانات تسجيل الدخول:</h3>
+              <p className="text-sm text-blue-700 mb-1">
+                البريد الإلكتروني: <span className="font-mono">Res@vogatchitrips.com</span>
               </p>
-              <p className="text-xs text-amber-600">
-                للمرة الأولى فقط: اضغط على زر "إنشاء حساب السوبر أدمن" لإنشاء الحساب الأول.
+              <p className="text-sm text-blue-700">
+                كلمة المرور: <span className="font-mono">Voga@12345@</span>
               </p>
             </div>
           </CardContent>
