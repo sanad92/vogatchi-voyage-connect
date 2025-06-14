@@ -59,6 +59,75 @@ export type Database = {
           },
         ]
       }
+      airlines: {
+        Row: {
+          country: string | null
+          created_at: string
+          iata_code: string | null
+          icao_code: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          iata_code?: string | null
+          icao_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          iata_code?: string | null
+          icao_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      airports: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          iata_code: string
+          icao_code: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          timezone: string | null
+        }
+        Insert: {
+          city: string
+          country: string
+          created_at?: string
+          iata_code: string
+          icao_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          timezone?: string | null
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          iata_code?: string
+          icao_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          timezone?: string | null
+        }
+        Relationships: []
+      }
       booking_special_requests: {
         Row: {
           booking_id: string
@@ -639,6 +708,233 @@ export type Database = {
           passport_number?: string | null
           phone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      flight_bookings: {
+        Row: {
+          airline_id: string
+          arrival_airport_id: string
+          arrival_date: string
+          arrival_time: string | null
+          baggage_info: Json | null
+          booking_agent_name: string
+          booking_date: string
+          booking_reference: string
+          confirmation_number: string | null
+          created_at: string
+          currency: string | null
+          customer_id: string | null
+          customer_name: string
+          departure_airport_id: string
+          departure_date: string
+          departure_time: string | null
+          flight_class_id: string
+          flight_number: string | null
+          id: string
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          is_round_trip: boolean | null
+          meal_preferences: string | null
+          number_of_passengers: number
+          paid_amount: number | null
+          passenger_details: Json | null
+          payment_due_date: string | null
+          payment_method: string | null
+          remaining_amount: number | null
+          return_flight_id: string | null
+          seat_preferences: string | null
+          special_requests: string | null
+          status_id: string | null
+          supplier_cost: number
+          supplier_name: string
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          supplier_reference: string | null
+          taxes_and_fees: number | null
+          ticket_numbers: string[] | null
+          ticket_price_per_person: number
+          total_cost: number
+          total_profit: number | null
+          updated_at: string
+          voucher_sent: boolean | null
+          voucher_sent_date: string | null
+        }
+        Insert: {
+          airline_id: string
+          arrival_airport_id: string
+          arrival_date: string
+          arrival_time?: string | null
+          baggage_info?: Json | null
+          booking_agent_name: string
+          booking_date?: string
+          booking_reference?: string
+          confirmation_number?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name: string
+          departure_airport_id: string
+          departure_date: string
+          departure_time?: string | null
+          flight_class_id: string
+          flight_number?: string | null
+          id?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          is_round_trip?: boolean | null
+          meal_preferences?: string | null
+          number_of_passengers?: number
+          paid_amount?: number | null
+          passenger_details?: Json | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          remaining_amount?: number | null
+          return_flight_id?: string | null
+          seat_preferences?: string | null
+          special_requests?: string | null
+          status_id?: string | null
+          supplier_cost: number
+          supplier_name: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          supplier_reference?: string | null
+          taxes_and_fees?: number | null
+          ticket_numbers?: string[] | null
+          ticket_price_per_person: number
+          total_cost: number
+          total_profit?: number | null
+          updated_at?: string
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Update: {
+          airline_id?: string
+          arrival_airport_id?: string
+          arrival_date?: string
+          arrival_time?: string | null
+          baggage_info?: Json | null
+          booking_agent_name?: string
+          booking_date?: string
+          booking_reference?: string
+          confirmation_number?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          departure_airport_id?: string
+          departure_date?: string
+          departure_time?: string | null
+          flight_class_id?: string
+          flight_number?: string | null
+          id?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          is_round_trip?: boolean | null
+          meal_preferences?: string | null
+          number_of_passengers?: number
+          paid_amount?: number | null
+          passenger_details?: Json | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          remaining_amount?: number | null
+          return_flight_id?: string | null
+          seat_preferences?: string | null
+          special_requests?: string | null
+          status_id?: string | null
+          supplier_cost?: number
+          supplier_name?: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          supplier_reference?: string | null
+          taxes_and_fees?: number | null
+          ticket_numbers?: string[] | null
+          ticket_price_per_person?: number
+          total_cost?: number
+          total_profit?: number | null
+          updated_at?: string
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_bookings_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_arrival_airport_id_fkey"
+            columns: ["arrival_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_departure_airport_id_fkey"
+            columns: ["departure_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_flight_class_id_fkey"
+            columns: ["flight_class_id"]
+            isOneToOne: false
+            referencedRelation: "flight_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_return_flight_id_fkey"
+            columns: ["return_flight_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_classes: {
+        Row: {
+          baggage_allowance: string | null
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          name_ar: string
+        }
+        Insert: {
+          baggage_allowance?: string | null
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          name_ar: string
+        }
+        Update: {
+          baggage_allowance?: string | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          name_ar?: string
         }
         Relationships: []
       }

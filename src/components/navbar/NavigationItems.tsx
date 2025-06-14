@@ -1,45 +1,85 @@
 
-import { 
-  Home, 
-  Calendar, 
-  Users, 
-  Calendar as BookingIcon, 
-  Truck, 
-  MapPin, 
-  FileText, 
-  CreditCard, 
-  DollarSign, 
-  BarChart3, 
-  UserCheck, 
-  MessageSquare, 
-  Headphones,
-  Settings,
-  Hotel
-} from "lucide-react";
+import { Home, Calendar, Users, Package, CreditCard, FileText, Settings, MessageSquare, Hotel, Plane } from "lucide-react";
 
-export const mainNavItems = [
-  { name: "الرئيسية", href: "/", icon: Home },
-  { name: "العمليات اليومية", href: "/daily-operations", icon: Calendar },
-];
-
-export const businessNavItems = [
-  { name: "العملاء", href: "/customers", icon: Users },
-  { name: "الحجوزات", href: "/bookings", icon: BookingIcon },
-  { name: "حجوزات الفنادق", href: "/hotel-bookings", icon: Hotel },
-  { name: "الموردين", href: "/suppliers", icon: Truck },
-  { name: "الرحلات", href: "/trips", icon: MapPin },
-  { name: "الفواتير", href: "/invoices", icon: FileText },
-  { name: "أوامر الدفع", href: "/payment-orders", icon: CreditCard },
-  { name: "تسعير العملاء", href: "/customer-pricing", icon: DollarSign },
-  { name: "التقارير", href: "/reports", icon: BarChart3 },
-  { name: "الموظفين", href: "/employees", icon: UserCheck },
-];
-
-export const communicationNavItems = [
-  { name: "WhatsApp", href: "/whatsapp", icon: MessageSquare },
-  { name: "خدمة العملاء", href: "/customer-service", icon: Headphones },
-];
-
-export const adminNavItems = [
-  { name: "إعدادات النظام", href: "/admin-settings", icon: Settings },
+export const navigationItems = [
+  {
+    name: "الرئيسية",
+    href: "/",
+    icon: Home,
+  },
+  {
+    name: "العمليات اليومية",
+    href: "/daily-operations",
+    icon: Calendar,
+  },
+  {
+    name: "العملاء",
+    href: "/customers",
+    icon: Users,
+  },
+  {
+    name: "حجوزات الفنادق",
+    href: "/hotel-bookings",
+    icon: Hotel,
+  },
+  {
+    name: "حجوزات الطيران",
+    href: "/flight-bookings",
+    icon: Plane,
+  },
+  {
+    name: "الحجوزات",
+    href: "/bookings",
+    icon: Calendar,
+  },
+  {
+    name: "الرحلات",
+    href: "/trips",
+    icon: Package,
+  },
+  {
+    name: "الموردين",
+    href: "/suppliers",
+    icon: Package,
+  },
+  {
+    name: "الفواتير",
+    href: "/invoices",
+    icon: FileText,
+  },
+  {
+    name: "أوامر الدفع",
+    href: "/payment-orders",
+    icon: CreditCard,
+  },
+  {
+    name: "تسعير العملاء",
+    href: "/customer-pricing",
+    icon: CreditCard,
+  },
+  {
+    name: "خدمة العملاء",
+    href: "/customer-service",
+    icon: MessageSquare,
+  },
+  {
+    name: "التقارير",
+    href: "/reports",
+    icon: FileText,
+  },
+  {
+    name: "واتساب",
+    href: "/whatsapp",
+    icon: MessageSquare,
+  },
+  {
+    name: "الموظفين",
+    href: "/employees",
+    icon: Users,
+  },
+  {
+    name: "إعدادات النظام",
+    href: "/admin-settings",
+    icon: Settings,
+  },
 ];
