@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { HotelBooking, NewHotelBooking, Customer } from "@/types/hotelBooking";
+import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
+import { Customer } from "@/types/customer";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;

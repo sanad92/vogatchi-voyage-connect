@@ -1,7 +1,8 @@
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { HotelBooking, NewHotelBooking, Customer } from "@/types/hotelBooking";
+import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
+import { Customer } from "@/types/customer";
 import { useBookingCalculations } from "@/hooks/useBookingCalculations";
 import { useHotelBookingData } from "@/hooks/useHotelBookingData";
 import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";

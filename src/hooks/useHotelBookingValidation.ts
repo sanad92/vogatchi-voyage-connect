@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
-import { NewHotelBooking, Customer } from "@/types/hotelBooking";
+import { NewHotelBooking } from "@/types/hotelBooking";
+import { Customer } from "@/types/customer";
 
 export const useHotelBookingValidation = () => {
   const validateBookingData = (data: NewHotelBooking, selectedCustomer: Customer | null): boolean => {

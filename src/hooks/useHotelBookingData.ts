@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { HotelBooking, HotelSupplier, Customer } from "@/types/hotelBooking";
+import { HotelBooking, HotelSupplier } from "@/types/hotelBooking";
+import { Customer } from "@/types/customer";
 
 interface UseHotelBookingDataProps {
   booking?: HotelBooking | null;

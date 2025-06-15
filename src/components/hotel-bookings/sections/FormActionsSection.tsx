@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { HotelBooking, Customer } from "@/types/hotelBooking";
+import { HotelBooking } from "@/types/hotelBooking";
+import { Customer } from "@/types/customer";
 
 interface FormActionsSectionProps {
   isSubmitting: boolean;

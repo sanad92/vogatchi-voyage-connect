@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Calendar, CreditCard, Plus, AlertTriangle, CheckCircle } from 'lucide-r
 import { useRentPayments } from '@/hooks/useRentPayments';
 import { useRentContracts } from '@/hooks/useRentContracts';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { SupportedCurrency } from '@/types/currency';
 
 const RentPaymentManagement = () => {
   const { rentPayments, paymentsLoading, addRentPayment, isAddingPayment, updatePaymentStatus, generateMonthlyPayments } = useRentPayments();
@@ -23,7 +23,7 @@ const RentPaymentManagement = () => {
     contract_id: '',
     payment_month: new Date().toISOString().slice(0, 7),
     amount: 0,
-    currency: 'SAR',
+    currency: 'SAR' as SupportedCurrency,
     due_date: '',
     payment_method: 'bank_transfer',
     bank_account_id: '',
@@ -45,7 +45,7 @@ const RentPaymentManagement = () => {
       contract_id: '',
       payment_month: new Date().toISOString().slice(0, 7),
       amount: 0,
-      currency: 'SAR',
+      currency: 'SAR' as SupportedCurrency,
       due_date: '',
       payment_method: 'bank_transfer',
       bank_account_id: '',
@@ -206,20 +206,34 @@ const RentPaymentManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>الحساب البنكي</Label>
-                  <Select value={paymentData.bank_account_id} onValueChange={(value) => setPaymentData({...paymentData, bank_account_id: value})}>
+                  <Label>العملة</Label>
+                  <Select value={paymentData.currency} onValueChange={(value: SupportedCurrency) => setPaymentData({...paymentData, currency: value})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="اختر الحساب" />
+                      <SelectValue placeholder="اختر العملة" />
                     </SelectTrigger>
                     <SelectContent>
-                      {bankAccounts?.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.account_name} - {account.bank_name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="EGP">جنيه مصري (EGP)</SelectItem>
+                      <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                      <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>الحساب البنكي</Label>
+                <Select value={paymentData.bank_account_id} onValueChange={(value) => setPaymentData({...paymentData, bank_account_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الحساب" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts?.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.account_name} - {account.bank_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex justify-end gap-2">
