@@ -33,7 +33,8 @@ const RentManagement = () => {
     renewal_period_months: 12,
     annual_increase_percentage: 0,
     security_deposit: 0,
-    contract_terms: ''
+    contract_terms: '',
+    is_active: true
   });
 
   const handleAddContract = () => {
@@ -52,7 +53,8 @@ const RentManagement = () => {
       renewal_period_months: 12,
       annual_increase_percentage: 0,
       security_deposit: 0,
-      contract_terms: ''
+      contract_terms: '',
+      is_active: true
     });
   };
 
