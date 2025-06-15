@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Users, Shield, Check, AlertTriangle, TrendingUp, Calendar } from 'lucide-react';
+import { Users, Shield, Check, AlertTriangle, TrendingUp, Calendar, Eye } from 'lucide-react';
 import { useDetailedPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 
