@@ -1,7 +1,5 @@
+
 import React, { useState } from "react";
-import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
-import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,16 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Printer, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Printer, Search, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useInitialInvoices } from "@/hooks/useInitialInvoices";
+import InvoicesHeader from "@/components/invoices/InvoicesHeader";
+import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
+import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
+import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
 
 const Invoices = () => {
+  // Initialize with sample invoices if none exist
+  useInitialInvoices();
+
   const [selectedHotelBooking, setSelectedHotelBooking] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -56,9 +64,7 @@ const Invoices = () => {
       if (debouncedSearchTerm) {
         query = query.or(`
           invoice_number.ilike.%${debouncedSearchTerm}%,
-          customer.name.ilike.%${debouncedSearchTerm}%,
-          hotel_booking.hotel_name.ilike.%${debouncedSearchTerm}%,
-          flight_booking.airline_name.ilike.%${debouncedSearchTerm}%
+          notes.ilike.%${debouncedSearchTerm}%
         `);
       }
 
@@ -83,36 +89,42 @@ const Invoices = () => {
     },
   });
 
+  // Calculate statistics
+  const totalInvoices = invoices?.length || 0;
+  const paidInvoices = invoices?.filter(inv => inv.status === 'paid').length || 0;
+  const overdueInvoices = invoices?.filter(inv => inv.status === 'overdue').length || 0;
+  const pendingInvoices = invoices?.filter(inv => inv.status === 'sent').length || 0;
+
   const getBookingDetails = (invoice) => {
     switch (invoice.booking_type) {
       case "hotel":
         return {
           booking: invoice.hotel_booking,
-          title: invoice.hotel_booking?.hotel_name,
-          subtitle: invoice.hotel_booking?.destination_city,
+          title: invoice.hotel_booking?.hotel_name || "فندق غير محدد",
+          subtitle: invoice.hotel_booking?.destination_city || "مدينة غير محددة",
           date: invoice.hotel_booking?.check_in_date,
           reference: invoice.hotel_booking?.internal_booking_number,
         };
       case "flight":
         return {
           booking: invoice.flight_booking,
-          title: invoice.flight_booking?.airline_name,
-          subtitle: `${invoice.flight_booking?.departure_city} → ${invoice.flight_booking?.arrival_city}`,
+          title: invoice.flight_booking?.airline_name || "شركة طيران غير محددة",
+          subtitle: `طيران`,
           date: invoice.flight_booking?.departure_date,
           reference: invoice.flight_booking?.booking_reference,
         };
       case "transport":
         return {
           booking: invoice.transport_booking,
-          title: invoice.transport_booking?.service_type,
-          subtitle: `${invoice.transport_booking?.pickup_location} → ${invoice.transport_booking?.dropoff_location}`,
+          title: "خدمة نقل",
+          subtitle: "نقل",
           date: invoice.transport_booking?.service_date,
           reference: invoice.transport_booking?.booking_reference,
         };
       case "car_rental":
         return {
           booking: invoice.car_rental,
-          title: `${invoice.car_rental?.vehicle_make} ${invoice.car_rental?.vehicle_model}`,
+          title: "إيجار سيارة",
           subtitle: "إيجار سيارة",
           date: invoice.car_rental?.pickup_date,
           reference: invoice.car_rental?.rental_reference,
@@ -120,10 +132,10 @@ const Invoices = () => {
       default:
         return {
           booking: null,
-          title: "غير معروف",
-          subtitle: "",
-          date: null,
-          reference: "",
+          title: invoice.notes || "خدمة عامة",
+          subtitle: "فاتورة مستقلة",
+          date: invoice.issued_date,
+          reference: invoice.invoice_number,
         };
     }
   };
@@ -162,9 +174,13 @@ const Invoices = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">الفواتير</h1>
-      </div>
+      <InvoicesHeader
+        totalInvoices={totalInvoices}
+        paidInvoices={paidInvoices}
+        overdueInvoices={overdueInvoices}
+        pendingInvoices={pendingInvoices}
+        onCreateInvoice={() => setShowCreateDialog(true)}
+      />
 
       <Card>
         <CardHeader>
@@ -179,7 +195,7 @@ const Invoices = () => {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   id="search"
-                  placeholder="رقم الفاتورة، اسم العميل..."
+                  placeholder="رقم الفاتورة، ملاحظات..."
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -247,8 +263,13 @@ const Invoices = () => {
                 ))}
             </div>
           ) : invoices?.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              لا توجد فواتير تطابق معايير البحث
+            <div className="text-center py-10 space-y-4">
+              <div className="text-gray-500">
+                لا توجد فواتير تطابق معايير البحث
+              </div>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                إنشاء أول فاتورة
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -256,7 +277,6 @@ const Invoices = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-right py-3 px-4 font-medium">رقم الفاتورة</th>
-                    <th className="text-right py-3 px-4 font-medium">العميل</th>
                     <th className="text-right py-3 px-4 font-medium">نوع الحجز</th>
                     <th className="text-right py-3 px-4 font-medium">التفاصيل</th>
                     <th className="text-right py-3 px-4 font-medium">المبلغ</th>
@@ -269,10 +289,7 @@ const Invoices = () => {
                     const bookingDetails = getBookingDetails(invoice);
                     return (
                       <tr key={invoice.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4">{invoice.invoice_number}</td>
-                        <td className="py-3 px-4">
-                          {invoice.customer?.name || bookingDetails.booking?.customer_name || "غير معروف"}
-                        </td>
+                        <td className="py-3 px-4 font-medium">{invoice.invoice_number}</td>
                         <td className="py-3 px-4">
                           {getBookingTypeLabel(invoice.booking_type)}
                         </td>
@@ -290,7 +307,7 @@ const Invoices = () => {
                           )}
                         </td>
                         <td className="py-3 px-4 font-medium">
-                          {invoice.final_amount?.toLocaleString()} ج.م
+                          {invoice.final_amount?.toLocaleString()} {invoice.currency}
                         </td>
                         <td className="py-3 px-4">
                           <span
@@ -303,6 +320,13 @@ const Invoices = () => {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              عرض
+                            </Button>
                             {invoice.booking_type === "hotel" && bookingDetails.booking && (
                               <>
                                 <Button
@@ -342,6 +366,12 @@ const Invoices = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <CreateInvoiceDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+      />
 
       {showInvoiceModal && selectedHotelBooking && (
         <HotelInvoiceGenerator
