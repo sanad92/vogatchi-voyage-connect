@@ -9,11 +9,13 @@ import { Customer } from '@/types/customer';
 interface TransportCustomerAgentSectionProps {
   customerId: string;
   customerName: string;
+  supplierId?: string;
   supplierName: string;
   bookingAgentId: string;
   selectedCustomer: Customer | null;
   onCustomerSelect: (customer: Customer | null) => void;
   onCustomerNameChange: (name: string) => void;
+  onSupplierSelect: (id: string, name: string) => void;
   onSupplierNameChange: (name: string) => void;
   onBookingAgentChange: (agentId: string) => void;
   employees?: Array<{ id: string; full_name: string; employee_code: string }>;
@@ -25,11 +27,13 @@ interface TransportCustomerAgentSectionProps {
 const TransportCustomerAgentSection = ({
   customerId,
   customerName,
+  supplierId,
   supplierName,
   bookingAgentId,
   selectedCustomer,
   onCustomerSelect,
   onCustomerNameChange,
+  onSupplierSelect,
   onSupplierNameChange,
   onBookingAgentChange,
   employees = [],
@@ -66,11 +70,11 @@ const TransportCustomerAgentSection = ({
         
         <div>
           <SupplierSelection
-            selectedSupplierId=""
+            selectedSupplierId={supplierId}
             selectedSupplierName={supplierName}
-            onSupplierSelect={(id, name) => onSupplierNameChange(name)}
-            onSupplierNameChange={onSupplierNameChange}
+            onSupplierSelect={onSupplierSelect}
             label="مورد النقل"
+            supplierType="transport"
             required
           />
           {errors.supplier_name && (

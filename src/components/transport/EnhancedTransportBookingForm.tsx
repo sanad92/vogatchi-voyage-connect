@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +26,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
   const [formData, setFormData] = useState({
     customer_id: '',
     customer_name: '',
+    supplier_id: '',
     supplier_name: '',
     booking_agent_id: '',
     route_id: '',
@@ -136,6 +136,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     setFormData({
       customer_id: '',
       customer_name: '',
+      supplier_id: '',
       supplier_name: '',
       booking_agent_id: '',
       route_id: '',
@@ -176,6 +177,11 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     }
   };
 
+  const handleSupplierSelect = (supplierId: string, supplierName: string) => {
+    updateField('supplier_id', supplierId);
+    updateField('supplier_name', supplierName);
+  };
+
   const totalCost = formData.selling_price_per_trip * formData.number_of_passengers;
 
   return (
@@ -193,11 +199,13 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
           <TransportCustomerAgentSection
             customerId={formData.customer_id}
             customerName={formData.customer_name}
+            supplierId={formData.supplier_id}
             supplierName={formData.supplier_name}
             bookingAgentId={formData.booking_agent_id}
             selectedCustomer={selectedCustomer}
             onCustomerSelect={handleCustomerSelect}
             onCustomerNameChange={(name) => updateField('customer_name', name)}
+            onSupplierSelect={handleSupplierSelect}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
             onBookingAgentChange={(agentId) => updateField('booking_agent_id', agentId)}
             employees={employees}
@@ -305,6 +313,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
                 setFormData({
                   customer_id: '',
                   customer_name: '',
+                  supplier_id: '',
                   supplier_name: '',
                   booking_agent_id: '',
                   route_id: '',

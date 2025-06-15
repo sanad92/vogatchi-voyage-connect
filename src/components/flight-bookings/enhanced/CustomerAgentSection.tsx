@@ -73,8 +73,8 @@ const CustomerAgentSection = ({
             selectedSupplierId={supplierId}
             selectedSupplierName={supplierName}
             onSupplierSelect={onSupplierSelect}
-            onSupplierNameChange={onSupplierNameChange}
             label="مورد الطيران"
+            supplierType="flight"
             required
           />
           {errors.supplier_name && (

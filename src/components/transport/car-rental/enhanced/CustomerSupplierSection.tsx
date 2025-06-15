@@ -61,7 +61,8 @@ const CustomerSupplierSection = ({
             selectedSupplierId={supplierId}
             selectedSupplierName={supplierName}
             onSupplierSelect={onSupplierSelect}
-            onSupplierNameChange={onSupplierNameChange}
+            label="مورد تأجير السيارات"
+            supplierType="car_rental"
             required
           />
           {errors.supplier_name && (

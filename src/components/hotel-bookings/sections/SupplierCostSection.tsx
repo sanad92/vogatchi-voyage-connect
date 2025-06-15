@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NewHotelBooking, HotelSupplier, CURRENCY_OPTIONS, getCurrencySymbol } from "@/types/hotelBooking";
-import SearchableSelect from "@/components/ui/SearchableSelect";
+import SupplierSelection from "@/components/shared/SupplierSelection";
 import CurrencySelector from "@/components/currency/CurrencySelector";
 import { SupportedCurrency } from "@/types/currency";
 
@@ -28,15 +28,14 @@ const SupplierCostSection = ({
   totalCostCustomer,
   totalProfit
 }: SupplierCostSectionProps) => {
-  const selectedSupplier = watch('supplier_name');
+  const selectedSupplierName = watch('supplier_name');
   const selectedCurrency = watch('currency') || 'EGP';
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
-  // تجهيز بيانات الموردين بطريقة تناسب مكون SearchableSelect
-  const supplierOptions = suppliers.map((s) => ({
-    value: s.name,
-    label: s.name,
-  }));
+  const handleSupplierSelect = (supplierId: string, supplierName: string) => {
+    setValue('supplier_id', supplierId);
+    setValue('supplier_name', supplierName);
+  };
 
   return (
     <Card>
@@ -53,12 +52,13 @@ const SupplierCostSection = ({
         </div>
 
         <div>
-          <Label htmlFor="supplier_name">اسم المورد</Label>
-          <SearchableSelect
-            options={supplierOptions}
-            value={selectedSupplier || ''}
-            onChange={(val) => setValue('supplier_name', String(val))}
-            placeholder="اختر المورد..."
+          <SupplierSelection
+            selectedSupplierId={watch('supplier_id')}
+            selectedSupplierName={selectedSupplierName}
+            onSupplierSelect={handleSupplierSelect}
+            label="مورد الفندق"
+            supplierType="hotel"
+            required
           />
           {errors.supplier_name && <p className="text-red-500 text-sm">{errors.supplier_name.message}</p>}
         </div>

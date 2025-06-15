@@ -1,4 +1,3 @@
-
 import { SupportedCurrency } from './currency';
 import { BookingStatus } from './common';
 
@@ -88,11 +87,11 @@ export interface BookingSpecialRequest {
 }
 
 export interface NewHotelBooking {
-  customer_id?: string;
   customer_name: string;
   booking_agent_name: string;
+  booking_agent_id?: string;
   hotel_name: string;
-  hotel_star_rating: number;
+  hotel_star_rating?: number;
   destination_city: string;
   check_in_date: string;
   check_out_date: string;
@@ -100,17 +99,17 @@ export interface NewHotelBooking {
   number_of_adults: number;
   number_of_children: number;
   children_ages?: string;
-  meal_plan: MealPlan;
+  meal_plan: string;
   booking_reference_supplier?: string;
   cancellation_policy?: string;
+  supplier_id?: string; // إضافة supplier_id
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;
-  currency: SupportedCurrency;
+  currency?: SupportedCurrency;
   payment_method?: string;
   paid_amount?: number;
   payment_due_date?: string;
-  special_requests?: string[];
   custom_request?: string;
 }
 

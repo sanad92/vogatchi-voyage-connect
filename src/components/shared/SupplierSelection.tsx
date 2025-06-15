@@ -15,6 +15,7 @@ interface SupplierSelectionProps {
   allowNewSupplier?: boolean;
   required?: boolean;
   label?: string;
+  supplierType?: string;
 }
 
 const SupplierSelection = ({
@@ -24,10 +25,12 @@ const SupplierSelection = ({
   onSupplierNameChange,
   allowNewSupplier = true,
   required = true,
-  label = "المورد"
+  label = "المورد",
+  supplierType
 }: SupplierSelectionProps) => {
-  const { suppliers, suppliersLoading } = useSuppliers();
+  const { suppliers, suppliersLoading, addSupplier, isAddingSupplier } = useSuppliers(supplierType);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
 
   const handleSupplierChange = (supplierId: string) => {
     const supplier = suppliers?.find(s => s.id === supplierId);
@@ -36,24 +39,46 @@ const SupplierSelection = ({
     }
   };
 
+  const handleAddNewSupplier = () => {
+    if (newSupplierName.trim()) {
+      addSupplier({
+        name: newSupplierName.trim(),
+        supplier_type: supplierType || 'general',
+        is_active: true
+      });
+      setNewSupplierName('');
+      setShowNewSupplier(false);
+    }
+  };
+
   if (showNewSupplier) {
     return (
       <div className="space-y-2">
-        <Label htmlFor="supplier_name">اسم المورد الجديد</Label>
+        <Label htmlFor="new_supplier_name">اسم المورد الجديد</Label>
         <div className="flex gap-2">
           <Input
             type="text"
-            id="supplier_name"
-            value={selectedSupplierName || ''}
-            onChange={(e) => onSupplierNameChange?.(e.target.value)}
+            id="new_supplier_name"
+            value={newSupplierName}
+            onChange={(e) => setNewSupplierName(e.target.value)}
             placeholder="أدخل اسم المورد"
             required={required}
             className="flex-1"
           />
           <Button
             type="button"
+            onClick={handleAddNewSupplier}
+            disabled={isAddingSupplier || !newSupplierName.trim()}
+          >
+            {isAddingSupplier ? 'جاري الإضافة...' : 'إضافة'}
+          </Button>
+          <Button
+            type="button"
             variant="outline"
-            onClick={() => setShowNewSupplier(false)}
+            onClick={() => {
+              setShowNewSupplier(false);
+              setNewSupplierName('');
+            }}
           >
             إلغاء
           </Button>
