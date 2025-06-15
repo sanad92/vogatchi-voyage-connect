@@ -31,7 +31,7 @@ const CustomerSelection = ({
 
   const handleCustomerSelect = (customer: Customer) => {
     onCustomerSelect(customer);
-    setValue('customer_name', customer.full_name);
+    setValue('customer_name', customer.full_name || customer.name);
     setValue('customer_id', customer.id);
     setIsSearchOpen(false);
   };
@@ -39,6 +39,11 @@ const CustomerSelection = ({
   const handleQuickAdd = (customer: Customer) => {
     handleCustomerSelect(customer);
     setIsAddOpen(false);
+  };
+
+  const handleNewCustomer = () => {
+    setIsSearchOpen(false);
+    setIsAddOpen(true);
   };
 
   return (
@@ -63,7 +68,11 @@ const CustomerSelection = ({
               <DialogHeader>
                 <DialogTitle>البحث عن عميل</DialogTitle>
               </DialogHeader>
-              <CustomerSearch onSelectCustomer={handleCustomerSelect} />
+              <CustomerSearch 
+                onCustomerSelect={handleCustomerSelect} 
+                onNewCustomer={handleNewCustomer}
+                selectedCustomer={selectedCustomer}
+              />
             </DialogContent>
           </Dialog>
           
@@ -77,12 +86,17 @@ const CustomerSelection = ({
               <DialogHeader>
                 <DialogTitle>إضافة عميل جديد</DialogTitle>
               </DialogHeader>
-              <QuickCustomerAdd onSuccess={handleQuickAdd} />
+              <QuickCustomerAdd 
+                onCustomerAdded={handleQuickAdd}
+                onCancel={() => setIsAddOpen(false)}
+              />
             </DialogContent>
           </Dialog>
         </div>
         {errors.customer_name && (
-          <p className="text-red-500 text-sm mt-1">{errors.customer_name.message}</p>
+          <p className="text-red-500 text-sm mt-1">
+            {typeof errors.customer_name.message === 'string' ? errors.customer_name.message : 'اسم العميل مطلوب'}
+          </p>
         )}
       </div>
 
@@ -108,7 +122,7 @@ const CustomerSelection = ({
           </div>
           <div className="mt-2 space-y-1">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{selectedCustomer.full_name}</Badge>
+              <Badge variant="outline">{selectedCustomer.full_name || selectedCustomer.name}</Badge>
               {selectedCustomer.phone && (
                 <Badge variant="outline" className="text-xs">{selectedCustomer.phone}</Badge>
               )}

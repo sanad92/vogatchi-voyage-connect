@@ -35,7 +35,12 @@ export const useHotelBookingData = ({ booking }: UseHotelBookingDataProps) => {
           .eq('id', booking.customer_id)
           .single();
         if (data) {
-          setSelectedCustomer(data);
+          // إضافة full_name للتوافق مع باقي الكود
+          const customerWithFullName = {
+            ...data,
+            full_name: data.name
+          };
+          setSelectedCustomer(customerWithFullName);
         }
       }
     };

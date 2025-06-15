@@ -13,6 +13,7 @@ export interface CustomerData {
 export interface Customer {
   id: string;
   name: string;
+  full_name?: string; // إضافة full_name كخاصية اختيارية للتوافق
   phone: string;
   email?: string;
   nationality?: string;
