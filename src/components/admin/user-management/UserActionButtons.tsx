@@ -31,6 +31,8 @@ interface UserActionButtonsProps {
 }
 
 const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
+  console.log('🔄 UserActionButtons تم تحميل المكون للمستخدم:', user.email);
+  
   const { loginAsUser, resetUserPassword, updateUserProfile, isLoading } = useSuperAdminActions();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -44,34 +46,79 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
     phone: user.phone || ''
   });
 
-  console.log('🎛️ UserActionButtons rendered for user:', user.email, 'Loading:', isLoading);
+  console.log('📊 حالة المكون:', {
+    isLoading,
+    showPasswordDialog,
+    showLoginDialog,
+    showEditDialog,
+    userId: user.id,
+    userEmail: user.email
+  });
+
+  // التحقق من توفر الوظائف
+  console.log('🔧 فحص الوظائف المتوفرة:', {
+    loginAsUser: typeof loginAsUser,
+    resetUserPassword: typeof resetUserPassword,
+    updateUserProfile: typeof updateUserProfile,
+    isLoading: typeof isLoading
+  });
 
   const handleLoginAsUser = async () => {
-    console.log('🔐 بدء تسجيل دخول كمستخدم:', user.email);
+    console.log('🚀 بدء عملية تسجيل الدخول كمستخدم:', user.email);
+    
+    if (!loginAsUser) {
+      console.error('❌ وظيفة loginAsUser غير متوفرة');
+      toast.error('خطأ: وظيفة تسجيل الدخول غير متوفرة');
+      return;
+    }
+
     try {
+      console.log('📝 إرسال طلب تسجيل الدخول مع البيانات:', {
+        userId: user.id,
+        reason: loginReason
+      });
+      
       const result = await loginAsUser(user.id, loginReason);
+      console.log('📋 نتيجة تسجيل الدخول:', result);
+      
       if (result.success) {
         setShowLoginDialog(false);
         setLoginReason('');
         console.log('✅ تم تسجيل الدخول بنجاح');
       } else {
         console.error('❌ فشل تسجيل الدخول:', result.error);
+        toast.error(result.error || 'فشل في تسجيل الدخول');
       }
     } catch (error) {
-      console.error('❌ خطأ في تسجيل الدخول:', error);
+      console.error('💥 خطأ في تسجيل الدخول:', error);
       toast.error('حدث خطأ أثناء تسجيل الدخول');
     }
   };
 
   const handleResetPassword = async () => {
+    console.log('🔑 بدء عملية إعادة تعيين كلمة المرور للمستخدم:', user.email);
+    
     if (!newPassword.trim()) {
+      console.warn('⚠️ كلمة المرور فارغة');
       toast.error('يرجى إدخال كلمة المرور الجديدة');
       return;
     }
 
-    console.log('🔑 بدء إعادة تعيين كلمة مرور المستخدم:', user.email);
+    if (!resetUserPassword) {
+      console.error('❌ وظيفة resetUserPassword غير متوفرة');
+      toast.error('خطأ: وظيفة إعادة تعيين كلمة المرور غير متوفرة');
+      return;
+    }
+
     try {
+      console.log('📝 إرسال طلب إعادة تعيين كلمة المرور:', {
+        userId: user.id,
+        passwordLength: newPassword.length
+      });
+      
       const result = await resetUserPassword(user.id, newPassword);
+      console.log('📋 نتيجة إعادة تعيين كلمة المرور:', result);
+      
       if (result.success) {
         setShowPasswordDialog(false);
         setNewPassword('');
@@ -79,55 +126,121 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
         console.log('✅ تم إعادة تعيين كلمة المرور بنجاح');
       } else {
         console.error('❌ فشل إعادة تعيين كلمة المرور:', result.error);
+        toast.error(result.error || 'فشل في إعادة تعيين كلمة المرور');
       }
     } catch (error) {
-      console.error('❌ خطأ في إعادة تعيين كلمة المرور:', error);
+      console.error('💥 خطأ في إعادة تعيين كلمة المرور:', error);
       toast.error('حدث خطأ أثناء إعادة تعيين كلمة المرور');
     }
   };
 
   const handleToggleActive = async () => {
-    console.log('⚡ تبديل حالة تفعيل المستخدم:', user.email, 'من', user.is_active, 'إلى', !user.is_active);
+    console.log('🔄 بدء عملية تبديل حالة التفعيل للمستخدم:', user.email, 'من', user.is_active, 'إلى', !user.is_active);
+    
+    if (!updateUserProfile) {
+      console.error('❌ وظيفة updateUserProfile غير متوفرة');
+      toast.error('خطأ: وظيفة تحديث المستخدم غير متوفرة');
+      return;
+    }
+
     try {
+      console.log('📝 إرسال طلب تحديث حالة التفعيل:', {
+        userId: user.id,
+        newActiveState: !user.is_active
+      });
+      
       const result = await updateUserProfile(user.id, {
         is_active: !user.is_active
       });
+      console.log('📋 نتيجة تحديث حالة التفعيل:', result);
+      
       if (result.success) {
         onUpdate();
         console.log('✅ تم تحديث حالة التفعيل بنجاح');
+        toast.success(`تم ${!user.is_active ? 'تفعيل' : 'تعطيل'} المستخدم بنجاح`);
       } else {
         console.error('❌ فشل تحديث حالة التفعيل:', result.error);
+        toast.error(result.error || 'فشل في تحديث حالة المستخدم');
       }
     } catch (error) {
-      console.error('❌ خطأ في تحديث حالة التفعيل:', error);
+      console.error('💥 خطأ في تحديث حالة التفعيل:', error);
       toast.error('حدث خطأ أثناء تحديث حالة المستخدم');
     }
   };
 
   const handleUpdateProfile = async () => {
-    console.log('📝 بدء تحديث ملف المستخدم:', user.email, editForm);
+    console.log('📝 بدء عملية تحديث ملف المستخدم:', user.email, editForm);
+    
+    if (!updateUserProfile) {
+      console.error('❌ وظيفة updateUserProfile غير متوفرة');
+      toast.error('خطأ: وظيفة تحديث المستخدم غير متوفرة');
+      return;
+    }
+
     try {
+      console.log('📝 إرسال طلب تحديث ملف المستخدم:', {
+        userId: user.id,
+        updates: editForm
+      });
+      
       const result = await updateUserProfile(user.id, editForm);
+      console.log('📋 نتيجة تحديث ملف المستخدم:', result);
+      
       if (result.success) {
         setShowEditDialog(false);
         onUpdate();
         console.log('✅ تم تحديث ملف المستخدم بنجاح');
       } else {
         console.error('❌ فشل تحديث ملف المستخدم:', result.error);
+        toast.error(result.error || 'فشل في تحديث ملف المستخدم');
       }
     } catch (error) {
-      console.error('❌ خطأ في تحديث ملف المستخدم:', error);
+      console.error('💥 خطأ في تحديث ملف المستخدم:', error);
       toast.error('حدث خطأ أثناء تحديث ملف المستخدم');
     }
   };
 
   const handleDropdownClick = (e: React.MouseEvent) => {
-    console.log('🖱️ تم النقر على القائمة المنسدلة للمستخدم:', user.email);
+    console.log('🖱️ تم النقر على زر القائمة المنسدلة للمستخدم:', user.email);
+    console.log('🔍 تفاصيل الحدث:', {
+      type: e.type,
+      target: e.target,
+      currentTarget: e.currentTarget,
+      button: e.button,
+      buttons: e.buttons
+    });
     e.stopPropagation();
   };
 
+  const handleDropdownItemClick = (action: string, e: React.MouseEvent) => {
+    console.log('🎯 تم النقر على عنصر في القائمة المنسدلة:', action, 'للمستخدم:', user.email);
+    e.stopPropagation();
+    e.preventDefault();
+    
+    switch (action) {
+      case 'login':
+        console.log('🔐 فتح نافذة تسجيل الدخول');
+        setShowLoginDialog(true);
+        break;
+      case 'edit':
+        console.log('📝 فتح نافذة التعديل');
+        setShowEditDialog(true);
+        break;
+      case 'password':
+        console.log('🔑 فتح نافذة إعادة تعيين كلمة المرور');
+        setShowPasswordDialog(true);
+        break;
+      case 'toggle-active':
+        console.log('⚡ تنفيذ تبديل حالة التفعيل');
+        handleToggleActive();
+        break;
+      default:
+        console.warn('❓ إجراء غير معروف:', action);
+    }
+  };
+
   return (
-    <>
+    <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 
@@ -135,7 +248,7 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
             size="sm" 
             disabled={isLoading}
             onClick={handleDropdownClick}
-            className="data-[state=open]:bg-muted"
+            className="data-[state=open]:bg-muted h-8 w-8 p-0"
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
@@ -146,33 +259,21 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('🔐 تم اختيار تسجيل دخول كمستخدم');
-              setShowLoginDialog(true);
-            }}
+            onClick={(e) => handleDropdownItemClick('login', e)}
           >
             <LogIn className="h-4 w-4 mr-2" />
             تسجيل دخول كمستخدم
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('📝 تم اختيار تعديل البيانات');
-              setShowEditDialog(true);
-            }}
+            onClick={(e) => handleDropdownItemClick('edit', e)}
           >
             <Edit className="h-4 w-4 mr-2" />
             تعديل البيانات
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('🔑 تم اختيار إعادة تعيين كلمة المرور');
-              setShowPasswordDialog(true);
-            }}
+            onClick={(e) => handleDropdownItemClick('password', e)}
           >
             <KeyRound className="h-4 w-4 mr-2" />
             إعادة تعيين كلمة المرور
@@ -181,11 +282,7 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
           <DropdownMenuSeparator />
           
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('⚡ تم اختيار تبديل حالة التفعيل');
-              handleToggleActive();
-            }}
+            onClick={(e) => handleDropdownItemClick('toggle-active', e)}
             className={user.is_active ? "text-red-600" : "text-green-600"}
           >
             {user.is_active ? (
@@ -337,7 +434,7 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 
