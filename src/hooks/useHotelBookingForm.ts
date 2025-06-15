@@ -103,47 +103,34 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   }, [booking, setValue, fetchExistingRequests]);
 
   const sanitizeBookingData = (data: NewHotelBooking) => {
-    // Numeric fields: make empty string --> null or default
-    const parsedHotelStarRating = data.hotel_star_rating === "" || data.hotel_star_rating == null
-      ? null
-      : typeof data.hotel_star_rating === "string"
-        ? parseInt(data.hotel_star_rating)
-        : data.hotel_star_rating;
+    // التحقق من الأنواع بشكل صحيح لمنع الأخطاء
+    const parseOptionalNumber = (val: unknown, fallback: number | null = null) => {
+      if (typeof val === "number") return val;
+      if (typeof val === "string" && val.trim() !== "") {
+        const n = Number(val);
+        return isNaN(n) ? fallback : n;
+      }
+      return fallback;
+    };
 
-    const parsedNumAdults = data.number_of_adults === "" || data.number_of_adults == null
-      ? 1
-      : typeof data.number_of_adults === "string"
-        ? parseInt(data.number_of_adults)
-        : data.number_of_adults;
+    const parsedHotelStarRating = parseOptionalNumber(data.hotel_star_rating, null);
 
-    const parsedNumChildren = data.number_of_children === "" || data.number_of_children == null
-      ? 0
-      : typeof data.number_of_children === "string"
-        ? parseInt(data.number_of_children)
-        : data.number_of_children;
+    const parsedNumAdults = parseOptionalNumber(data.number_of_adults, 1);
 
-    const parsedCostPerNight = data.cost_per_night === "" || data.cost_per_night == null
-      ? 0
-      : typeof data.cost_per_night === "string"
-        ? parseFloat(data.cost_per_night)
-        : data.cost_per_night;
+    const parsedNumChildren = parseOptionalNumber(data.number_of_children, 0);
 
-    const parsedSellingPrice = data.selling_price_per_night === "" || data.selling_price_per_night == null
-      ? 0
-      : typeof data.selling_price_per_night === "string"
-        ? parseFloat(data.selling_price_per_night)
-        : data.selling_price_per_night;
+    const parsedCostPerNight = parseOptionalNumber(data.cost_per_night, 0);
 
-    const parsedPaidAmount = data.paid_amount === "" || data.paid_amount == null
-      ? 0
-      : typeof data.paid_amount === "string"
-        ? parseFloat(data.paid_amount)
-        : data.paid_amount;
+    const parsedSellingPrice = parseOptionalNumber(data.selling_price_per_night, 0);
+
+    const parsedPaidAmount = parseOptionalNumber(data.paid_amount, 0);
 
     // Handle supplier_id: allow custom supplier name if ID not present
     let outSupplierId = data.supplier_id;
-    if ((!data.supplier_id || data.supplier_id === "") && data.supplier_name && data.supplier_name.trim() !== "") {
-      outSupplierId = null;
+    if ((typeof data.supplier_id === "string" && data.supplier_id.trim() === "") || !data.supplier_id) {
+      if (data.supplier_name && data.supplier_name.trim() !== "") {
+        outSupplierId = null;
+      }
     }
 
     // Return the sanitized object
