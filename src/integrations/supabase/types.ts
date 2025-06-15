@@ -3741,6 +3741,89 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          bookings_read: boolean | null
+          bookings_write: boolean | null
+          created_at: string | null
+          customers_read: boolean | null
+          customers_write: boolean | null
+          employees_read: boolean | null
+          employees_write: boolean | null
+          expenses_read: boolean | null
+          expenses_write: boolean | null
+          id: string
+          invoices_read: boolean | null
+          invoices_write: boolean | null
+          reports_read: boolean | null
+          reports_write: boolean | null
+          settings_read: boolean | null
+          settings_write: boolean | null
+          suppliers_read: boolean | null
+          suppliers_write: boolean | null
+          updated_at: string | null
+          user_id: string
+          users_read: boolean | null
+          users_write: boolean | null
+        }
+        Insert: {
+          bookings_read?: boolean | null
+          bookings_write?: boolean | null
+          created_at?: string | null
+          customers_read?: boolean | null
+          customers_write?: boolean | null
+          employees_read?: boolean | null
+          employees_write?: boolean | null
+          expenses_read?: boolean | null
+          expenses_write?: boolean | null
+          id?: string
+          invoices_read?: boolean | null
+          invoices_write?: boolean | null
+          reports_read?: boolean | null
+          reports_write?: boolean | null
+          settings_read?: boolean | null
+          settings_write?: boolean | null
+          suppliers_read?: boolean | null
+          suppliers_write?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          users_read?: boolean | null
+          users_write?: boolean | null
+        }
+        Update: {
+          bookings_read?: boolean | null
+          bookings_write?: boolean | null
+          created_at?: string | null
+          customers_read?: boolean | null
+          customers_write?: boolean | null
+          employees_read?: boolean | null
+          employees_write?: boolean | null
+          expenses_read?: boolean | null
+          expenses_write?: boolean | null
+          id?: string
+          invoices_read?: boolean | null
+          invoices_write?: boolean | null
+          reports_read?: boolean | null
+          reports_write?: boolean | null
+          settings_read?: boolean | null
+          settings_write?: boolean | null
+          suppliers_read?: boolean | null
+          suppliers_write?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          users_read?: boolean | null
+          users_write?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3867,6 +3950,14 @@ export type Database = {
       }
       cancel_commission: {
         Args: { p_commission_id: string; p_reason?: string }
+        Returns: boolean
+      }
+      check_user_permission: {
+        Args: {
+          p_user_id: string
+          p_permission_type: string
+          p_access_type: string
+        }
         Returns: boolean
       }
       end_impersonation: {
