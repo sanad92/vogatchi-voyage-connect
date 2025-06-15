@@ -12,10 +12,6 @@ const NewFlightBooking = () => {
     navigate('/flight-bookings');
   };
 
-  const handleCancel = () => {
-    navigate(-1);
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -34,10 +30,7 @@ const NewFlightBooking = () => {
           <CardTitle>معلومات حجز الطيران</CardTitle>
         </CardHeader>
         <CardContent>
-          <FlightBookingForm 
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
-          />
+          <FlightBookingForm onSuccess={handleSuccess} />
         </CardContent>
       </Card>
     </div>

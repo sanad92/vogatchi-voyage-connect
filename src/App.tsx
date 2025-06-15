@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ import AdminSettings from "./pages/AdminSettings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NewFlightBooking from "./pages/NewFlightBooking";
+import ProfitLossReports from "./pages/ProfitLossReports";
 
 const queryClient = new QueryClient();
 
@@ -53,24 +55,18 @@ function App() {
                           <Route path="/hotel-bookings" element={<HotelBookings />} />
                           <Route path="/hotel-bookings/new" element={<NewHotelBooking />} />
                           <Route path="/flight-bookings" element={<FlightBookings />} />
+                          <Route path="/flight-bookings/new" element={<NewFlightBooking />} />
                           <Route path="/suppliers" element={<Suppliers />} />
                           <Route path="/invoices" element={<Invoices />} />
                           <Route path="/payment-orders" element={<PaymentOrders />} />
                           <Route path="/bank-accounts" element={<BankAccounts />} />
                           <Route path="/expense-management" element={<ExpenseManagement />} />
                           <Route path="/reports" element={<Reports />} />
+                          <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
                           <Route path="/bookings-calendar" element={<BookingsCalendar />} />
                           <Route path="/crm" element={<CRMDashboard />} />
                           <Route path="/customer-service" element={<CustomerService />} />
                           <Route path="/admin" element={<AdminSettings />} />
-                          <Route
-                            path="/new-flight-booking"
-                            element={
-                              <ProtectedRoute>
-                                <NewFlightBooking />
-                              </ProtectedRoute>
-                            }
-                          />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </main>

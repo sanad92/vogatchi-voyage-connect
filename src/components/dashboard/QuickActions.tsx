@@ -13,7 +13,8 @@ import {
   RefreshCw,
   CreditCard,
   Truck,
-  Calculator
+  Calculator,
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -23,7 +24,7 @@ const QuickActions = () => {
     {
       title: 'حجز فندق جديد',
       icon: Hotel,
-      href: '/new-hotel-booking',
+      href: '/hotel-bookings/new',
       color: 'bg-blue-600 hover:bg-blue-700',
       description: 'إضافة حجز فندق جديد',
       priority: 'high'
@@ -31,7 +32,7 @@ const QuickActions = () => {
     {
       title: 'عميل جديد',
       icon: Users,
-      href: '/new-customer',
+      href: '/customers/new',
       color: 'bg-green-600 hover:bg-green-700',
       description: 'تسجيل عميل جديد',
       priority: 'high'
@@ -39,7 +40,7 @@ const QuickActions = () => {
     {
       title: 'حجز طيران جديد',
       icon: Plane,
-      href: '/new-flight-booking',
+      href: '/flight-bookings/new',
       color: 'bg-sky-600 hover:bg-sky-700',
       description: 'إضافة حجز طيران',
       priority: 'high'
@@ -63,6 +64,14 @@ const QuickActions = () => {
       priority: 'medium'
     },
     {
+      title: 'تقرير الأرباح والخسائر',
+      icon: TrendingUp,
+      href: '/profit-loss-reports',
+      color: 'bg-emerald-600 hover:bg-emerald-700',
+      description: 'تحليل الوضع المالي',
+      priority: 'medium'
+    },
+    {
       title: 'تقويم الحجوزات',
       icon: Calendar,
       href: '/bookings-calendar',
@@ -78,16 +87,16 @@ const QuickActions = () => {
       description: 'عرض وإدارة العملاء',
       priority: 'medium'
     },
+
+    // العمليات المالية والإدارية
     {
       title: 'التقارير',
       icon: FileText,
       href: '/reports',
       color: 'bg-red-600 hover:bg-red-700',
       description: 'عرض التقارير والإحصائيات',
-      priority: 'medium'
+      priority: 'low'
     },
-
-    // العمليات المالية والإدارية
     {
       title: 'الحسابات البنكية',
       icon: Building2,
@@ -110,14 +119,6 @@ const QuickActions = () => {
       href: '/expense-management',
       color: 'bg-rose-600 hover:bg-rose-700',
       description: 'تتبع وإدارة المصروفات',
-      priority: 'low'
-    },
-    {
-      title: 'إدارة الموردين',
-      icon: Truck,
-      href: '/suppliers',
-      color: 'bg-cyan-600 hover:bg-cyan-700',
-      description: 'إدارة الموردين والمقاولين',
       priority: 'low'
     }
   ];
