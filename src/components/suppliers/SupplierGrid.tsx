@@ -118,15 +118,15 @@ const SupplierGrid = ({
     setSelectedIds([]);
   };
 
+  // Loader state
   if (isLoading) {
     return (
       <div className="col-span-full text-center py-8">جاري تحميل الموردين...</div>
     );
   }
 
-  // FIX: TS1345 "expression of type 'void' cannot be tested for truthiness"
-  // There was: if (suppliers.length === 0) {
-  // Now with additional check:
+  // Fix TS1345: never check the result of a setter or void function
+  // Ensure suppliers is an array before accessing .length
   if (!Array.isArray(suppliers) || suppliers.length === 0) {
     return (
       <div className="col-span-full text-center py-8 text-gray-500">لا يوجد موردون مطابقون للبحث</div>
@@ -135,6 +135,7 @@ const SupplierGrid = ({
 
   return (
     <>
+      {/* Bulk delete header */}
       <div className="flex gap-2 mb-3 items-center">
         <button onClick={selectAll} className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-blue-100">كل الصفوف</button>
         <button onClick={clearAll} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-orange-100">إلغاء الكل</button>
@@ -269,7 +270,7 @@ const SupplierGrid = ({
             <AlertDialogCancel onClick={() => setShowDelete(null)}>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (showDelete && deleteSupplier) deleteSupplier(showDelete);
+                if (showDelete && deleteSupplier) { deleteSupplier(showDelete); }
                 setShowDelete(null);
               }}
               className="bg-red-600 hover:bg-red-700"
