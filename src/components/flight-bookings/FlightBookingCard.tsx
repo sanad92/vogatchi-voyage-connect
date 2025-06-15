@@ -5,13 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Plane } from "lucide-react";
 import { FlightBooking } from "@/types/flightBooking";
-import BookingStatusBadge from "@/components/hotel-bookings/BookingStatusBadge";
+import { BookingStatus } from "@/types/common";
 import { format } from "date-fns";
 
 interface FlightBookingCardProps {
   booking: FlightBooking;
   onEdit: (booking: FlightBooking) => void;
 }
+
+interface BookingStatusBadgeProps {
+  status: BookingStatus;
+}
+
+const BookingStatusBadge = ({ status }: BookingStatusBadgeProps) => {
+  return (
+    <Badge
+      variant="outline"
+      style={{ 
+        backgroundColor: `${status.color}20`,
+        borderColor: status.color,
+        color: status.color
+      }}
+    >
+      {status.name_ar || status.name}
+    </Badge>
+  );
+};
 
 const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
   const formatCurrency = (amount: number) => {

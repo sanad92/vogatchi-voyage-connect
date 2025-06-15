@@ -1,4 +1,6 @@
 
+import { CustomerSegment } from './common';
+
 export interface CustomerData {
   name: string;
   phone: string;
@@ -19,15 +21,13 @@ export interface Customer {
   total_spent?: number;
   loyalty_points?: number;
   last_booking_date?: string;
-  segment?: {
-    id: string;
-    name: string;
-    name_ar: string;
-    color: string;
-  };
+  segment?: CustomerSegment;
   created_at?: string;
   updated_at?: string;
   address?: string;
+  passport_number?: string;
+  preferences?: any;
+  communication_preferences?: any;
 }
 
 export interface UseCustomerFormProps {

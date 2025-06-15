@@ -1,4 +1,7 @@
 
+import { SupportedCurrency } from './currency';
+import { BookingStatus } from './common';
+
 export interface Airport {
   id: string;
   name: string;
@@ -23,16 +26,6 @@ export interface FlightClass {
   name_ar: string;
   code: string;
   baggage_allowance?: string;
-}
-
-export interface BookingStatus {
-  id: string;
-  name: string;
-  name_ar: string;
-  color: string;
-  sort_order?: number;
-  is_active?: boolean;
-  created_at?: string;
 }
 
 export interface PassengerDetail {
@@ -72,7 +65,7 @@ export interface FlightBooking {
   ticket_price_per_person: number;
   taxes_and_fees?: number;
   total_cost: number;
-  currency: string;
+  currency: SupportedCurrency;
   supplier_cost: number;
   supplier_name: string;
   booking_agent_id?: string;
@@ -123,7 +116,7 @@ export interface NewFlightBooking {
   passenger_details?: PassengerDetail[];
   ticket_price_per_person: number;
   taxes_and_fees?: number;
-  currency?: string;
+  currency?: SupportedCurrency;
   supplier_cost: number;
   supplier_name: string;
   booking_agent_id?: string;

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { Customer } from '@/types/customer';
 
 export const useCustomers = () => {
   const queryClient = useQueryClient();
@@ -13,12 +14,12 @@ export const useCustomers = () => {
         .from('customers')
         .select(`
           *,
-          segment:customer_segments(name, name_ar, color)
+          segment:customer_segments(id, name, name_ar, color, description, minimum_bookings, minimum_total_spent, is_active, created_at, updated_at)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Customer[];
     },
   });
 
@@ -59,6 +60,7 @@ export const useCustomers = () => {
     isLoading,
     customersLoading: isLoading, // إضافة alias للتوافق
     error,
+    customersError: error, // إضافة alias للتوافق
     refetch,
     addCustomer,
     isAddingCustomer: addCustomerMutation.isPending,

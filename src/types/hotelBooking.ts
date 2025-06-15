@@ -1,5 +1,6 @@
 
 import { SupportedCurrency } from './currency';
+import { BookingStatus } from './common';
 
 export interface HotelBooking {
   id: string;
@@ -38,19 +39,9 @@ export interface HotelBooking {
   supplier_payment_sent_date?: string;
   voucher_sent_date?: string;
   status_id?: string;
+  booking_status?: BookingStatus;
   created_at: string;
   updated_at: string;
-}
-
-export interface BookingStatus {
-  id: string;
-  name: string;
-  name_ar: string;
-  description?: string;
-  color: string;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
 }
 
 export interface BookingStatusHistory {
@@ -75,9 +66,6 @@ export interface HotelSupplier {
 }
 
 export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'ALL' | 'UAI' | 'SAL';
-
-// إزالة تعريف Customer المكرر - سيتم استخدام التعريف من customer.ts
-// إزالة تعريف Currency المكرر - يتم استخدام SupportedCurrency من currency.ts
 
 export interface SpecialRequestType {
   id: string;
