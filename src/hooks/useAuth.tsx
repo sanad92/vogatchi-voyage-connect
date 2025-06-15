@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { AuthContextType } from '@/types/auth';
 import { useAuthState } from './useAuthState';
-import { cleanupAuthState, hasRoleAccess } from '@/utils/authHelpers';
+import { cleanupAuthState, hasRoleAccess, isSuperAdmin, canDeleteData, canEditAllData, canManageSystem } from '@/utils/authHelpers';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -108,14 +108,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return result;
   };
 
-  const isSuperAdmin = (): boolean => {
-    const result = userRole === 'super_admin';
+  const isSuperAdminUser = (): boolean => {
+    const result = isSuperAdmin(userRole);
     console.log('🔍 isSuperAdmin() - فحص السوبر أدمن:', { 
       userRole, 
       result,
       user: user?.email 
     });
     return result;
+  };
+
+  // وظائف جديدة للسوبر أدمن
+  const canDelete = (): boolean => {
+    return canDeleteData(userRole);
+  };
+
+  const canEditAll = (): boolean => {
+    return canEditAllData(userRole);
+  };
+
+  const canManageSystemSettings = (): boolean => {
+    return canManageSystem(userRole);
   };
 
   // تشخيص حالة المصادقة الحالية
@@ -127,7 +140,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userEmail: user?.email,
     profileEmail: profile?.email,
     userRole,
-    isActive: profile?.is_active
+    isActive: profile?.is_active,
+    isSuperAdmin: isSuperAdminUser()
   });
 
   const value = {
@@ -139,7 +153,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     hasRole,
-    isSuperAdmin
+    isSuperAdmin: isSuperAdminUser,
+    canDelete,
+    canEditAll,
+    canManageSystemSettings
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

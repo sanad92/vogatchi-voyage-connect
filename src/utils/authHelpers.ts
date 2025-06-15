@@ -26,8 +26,13 @@ export const hasRoleAccess = (userRole: string | null, requiredRole: string): bo
     return false;
   }
   
+  // السوبر أدمن له صلاحية كاملة على كل شيء
+  if (userRole === 'super_admin') {
+    console.log('✅ السوبر أدمن: صلاحية كاملة');
+    return true;
+  }
+  
   const roleHierarchy = {
-    'super_admin': ['super_admin', 'admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
     'admin': ['admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
     'manager': ['manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
     'sales_agent': ['sales_agent', 'viewer'],
@@ -50,4 +55,24 @@ export const hasRoleAccess = (userRole: string | null, requiredRole: string): bo
   });
   
   return hasAccess;
+};
+
+// دالة جديدة للتحقق من صلاحيات السوبر أدمن
+export const isSuperAdmin = (userRole: string | null): boolean => {
+  return userRole === 'super_admin';
+};
+
+// دالة للتحقق من صلاحيات الحذف
+export const canDeleteData = (userRole: string | null): boolean => {
+  return userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager';
+};
+
+// دالة للتحقق من صلاحيات التعديل الكاملة
+export const canEditAllData = (userRole: string | null): boolean => {
+  return userRole === 'super_admin' || userRole === 'admin';
+};
+
+// دالة للتحقق من صلاحيات إدارة النظام
+export const canManageSystem = (userRole: string | null): boolean => {
+  return userRole === 'super_admin';
 };

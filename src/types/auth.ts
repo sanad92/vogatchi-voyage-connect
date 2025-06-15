@@ -24,4 +24,7 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isSuperAdmin: () => boolean;
+  canDelete: () => boolean;
+  canEditAll: () => boolean;
+  canManageSystemSettings: () => boolean;
 }

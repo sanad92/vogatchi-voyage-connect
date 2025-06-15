@@ -28,7 +28,7 @@ interface QuickCustomerAddProps {
 }
 
 const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCustomerAddProps) => {
-  const { userRole, hasRole, loading, user, profile } = useAuth();
+  const { userRole, hasRole, loading, user, profile, isSuperAdmin } = useAuth();
 
   console.log('🎯 QuickCustomerAdd - حالة المصادقة الحالية:', {
     loading,
@@ -37,8 +37,9 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     userEmail: user?.email,
     userRole,
     isActive: profile?.is_active,
+    isSuperAdmin: isSuperAdmin(),
     permissionChecks: {
-      super_admin: hasRole('super_admin'),
+      super_admin: isSuperAdmin(),
       admin: hasRole('admin'),
       manager: hasRole('manager'),
       sales_agent: hasRole('sales_agent'),
@@ -105,8 +106,9 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     );
   }
 
-  // التحقق من الصلاحيات - السماح لجميع الموظفين بإضافة العملاء
-  const canAddCustomers = hasRole('super_admin') || hasRole('admin') || hasRole('manager') || 
+  // التحقق من الصلاحيات - السوبر أدمن له صلاحية كاملة
+  const canAddCustomers = isSuperAdmin() || 
+                          hasRole('admin') || hasRole('manager') || 
                           hasRole('sales_agent') || hasRole('customer_service') || 
                           hasRole('booking_agent') || hasRole('accountant');
   
@@ -114,8 +116,9 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     canAddCustomers,
     userRole,
     userEmail: user.email,
+    isSuperAdmin: isSuperAdmin(),
     detailedChecks: {
-      super_admin: hasRole('super_admin'),
+      super_admin: isSuperAdmin(),
       admin: hasRole('admin'),
       manager: hasRole('manager'),
       sales_agent: hasRole('sales_agent'),
@@ -125,7 +128,7 @@ const QuickCustomerAdd = ({ onCustomerAdded, onCancel, initialData }: QuickCusto
     }
   });
 
-  // عرض رسالة عدم وجود صلاحيات
+  // عرض رسالة عدم وجود صلاحيات (لن تظهر للسوبر أدمن)
   if (!canAddCustomers) {
     console.log('❌ المستخدم ليس لديه صلاحية إضافة العملاء');
     return (
