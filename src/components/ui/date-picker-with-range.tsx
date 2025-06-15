@@ -18,14 +18,25 @@ import {
 interface DatePickerWithRangeProps {
   value?: DateRange
   onChange?: (range: DateRange | undefined) => void
+  date?: DateRange
+  onDateChange?: (range: DateRange | undefined) => void
+  placeholder?: string
+  locale?: any
   className?: string
 }
 
 export function DatePickerWithRange({
   value,
   onChange,
+  date,
+  onDateChange,
+  placeholder = "اختر نطاق التاريخ",
+  locale,
   className,
 }: DatePickerWithRangeProps) {
+  const dateValue = value || date;
+  const dateOnChange = onChange || onDateChange;
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -35,21 +46,21 @@ export function DatePickerWithRange({
             variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !value && "text-muted-foreground"
+              !dateValue && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value?.from ? (
-              value.to ? (
+            {dateValue?.from ? (
+              dateValue.to ? (
                 <>
-                  {format(value.from, "dd/MM/yyyy")} -{" "}
-                  {format(value.to, "dd/MM/yyyy")}
+                  {format(dateValue.from, "dd/MM/yyyy")} -{" "}
+                  {format(dateValue.to, "dd/MM/yyyy")}
                 </>
               ) : (
-                format(value.from, "dd/MM/yyyy")
+                format(dateValue.from, "dd/MM/yyyy")
               )
             ) : (
-              <span>اختر نطاق التاريخ</span>
+              <span>{placeholder}</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -57,10 +68,11 @@ export function DatePickerWithRange({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={value?.from}
-            selected={value}
-            onSelect={onChange}
+            defaultMonth={dateValue?.from}
+            selected={dateValue}
+            onSelect={dateOnChange}
             numberOfMonths={2}
+            locale={locale}
           />
         </PopoverContent>
       </Popover>

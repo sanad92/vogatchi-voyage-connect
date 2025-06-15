@@ -73,8 +73,8 @@ const ProfitLossReport = () => {
             </CardHeader>
             <CardContent>
               <DatePickerWithRange
-                date={dateRange}
-                onDateChange={setDateRange}
+                value={dateRange}
+                onChange={setDateRange}
                 placeholder="اختر الفترة الزمنية"
                 locale={ar}
               />
