@@ -1,30 +1,13 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  LogIn, 
-  KeyRound, 
-  Edit, 
-  Trash2, 
-  UserX, 
-  UserCheck,
-  MoreHorizontal,
-  TestTube
-} from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { useSuperAdminActions } from "@/hooks/useSuperAdminActions";
 import { User } from "@/types/userManagement";
 import { toast } from "sonner";
+import UserActionDropdown from "./UserActionDropdown";
+import LoginAsUserDialog from "./LoginAsUserDialog";
+import ResetPasswordDialog from "./ResetPasswordDialog";
+import EditUserDialog, { EditFormData } from "./EditUserDialog";
+import TestButtons from "./TestButtons";
 
 interface UserActionButtonsProps {
   user: User;
@@ -41,7 +24,7 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
   const [showTestMode, setShowTestMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [loginReason, setLoginReason] = useState('');
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<EditFormData>({
     email: user.email,
     full_name: user.full_name,
     department: user.department || '',
@@ -227,301 +210,55 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Dropdown Menu الأصلي مع تحسينات */}
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={isLoading}
-            className="h-8 w-8 p-0 hover:bg-gray-100 focus:bg-gray-100 data-[state=open]:bg-gray-100"
-            onClick={(e) => {
-              console.log('🖱️ تم النقر على زر DropdownMenu:', {
-                event: e.type,
-                target: e.target,
-                userId: user.id,
-                timestamp: new Date().toISOString()
-              });
-              e.stopPropagation();
-              toast.info('تم النقر على زر القائمة');
-            }}
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
-            ) : (
-              <MoreHorizontal className="h-4 w-4" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end" 
-          className="w-48 bg-white border shadow-lg z-50"
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
-          <DropdownMenuItem 
-            onClick={(e) => {
-              console.log('🎯 تم النقر على: تسجيل دخول كمستخدم');
-              e.preventDefault();
-              e.stopPropagation();
-              setShowLoginDialog(true);
-              toast.info('فتح نافذة تسجيل الدخول');
-            }}
-            className="cursor-pointer hover:bg-gray-100"
-          >
-            <LogIn className="h-4 w-4 mr-2" />
-            تسجيل دخول كمستخدم
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem 
-            onClick={(e) => {
-              console.log('🎯 تم النقر على: تعديل البيانات');
-              e.preventDefault();
-              e.stopPropagation();
-              setShowEditDialog(true);
-              toast.info('فتح نافذة التعديل');
-            }}
-            className="cursor-pointer hover:bg-gray-100"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            تعديل البيانات
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem 
-            onClick={(e) => {
-              console.log('🎯 تم النقر على: إعادة تعيين كلمة المرور');
-              e.preventDefault();
-              e.stopPropagation();
-              setShowPasswordDialog(true);
-              toast.info('فتح نافذة إعادة تعيين كلمة المرور');
-            }}
-            className="cursor-pointer hover:bg-gray-100"
-          >
-            <KeyRound className="h-4 w-4 mr-2" />
-            إعادة تعيين كلمة المرور
-          </DropdownMenuItem>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
-            onClick={(e) => {
-              console.log('🎯 تم النقر على: تبديل حالة التفعيل');
-              e.preventDefault();
-              e.stopPropagation();
-              handleToggleActive();
-            }}
-            className={`cursor-pointer hover:bg-gray-100 ${user.is_active ? "text-red-600" : "text-green-600"}`}
-          >
-            {user.is_active ? (
-              <>
-                <UserX className="h-4 w-4 mr-2" />
-                تعطيل الحساب
-              </>
-            ) : (
-              <>
-                <UserCheck className="h-4 w-4 mr-2" />
-                تفعيل الحساب
-              </>
-            )}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <UserActionDropdown
+        user={user}
+        isLoading={isLoading}
+        onLoginClick={() => setShowLoginDialog(true)}
+        onEditClick={() => setShowEditDialog(true)}
+        onPasswordClick={() => setShowPasswordDialog(true)}
+        onToggleActive={handleToggleActive}
+      />
 
-      {/* أزرار الاختبار المباشر */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={testButtonDirectly}
-        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
-        title="اختبار النقر المباشر"
-      >
-        <TestTube className="h-4 w-4" />
-      </Button>
+      <TestButtons
+        user={user}
+        showTestMode={showTestMode}
+        onToggleTestMode={() => setShowTestMode(!showTestMode)}
+        onTestButton={testButtonDirectly}
+        onTestLogin={testLoginFunction}
+        onShowPassword={() => setShowPasswordDialog(true)}
+        onShowEdit={() => setShowEditDialog(true)}
+        onToggleActive={handleToggleActive}
+      />
 
-      {/* زر اختبار تسجيل الدخول المباشر */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={testLoginFunction}
-        className="h-8 px-2 text-green-600 hover:bg-green-50 text-xs"
-        title="اختبار تسجيل الدخول المباشر"
-      >
-        اختبار
-      </Button>
+      <LoginAsUserDialog
+        user={user}
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        onConfirm={handleLoginAsUser}
+        isLoading={isLoading}
+        reason={loginReason}
+        onReasonChange={setLoginReason}
+      />
 
-      {/* زر تبديل وضع الاختبار */}
-      <Button
-        variant={showTestMode ? "default" : "outline"}
-        size="sm"
-        onClick={() => setShowTestMode(!showTestMode)}
-        className="h-8 px-2 text-xs"
-      >
-        {showTestMode ? 'إخفاء الاختبار' : 'إظهار الاختبار'}
-      </Button>
+      <ResetPasswordDialog
+        user={user}
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onConfirm={handleResetPassword}
+        isLoading={isLoading}
+        newPassword={newPassword}
+        onPasswordChange={setNewPassword}
+      />
 
-      {/* أزرار الاختبار الإضافية (تظهر فقط في وضع الاختبار) */}
-      {showTestMode && (
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowPasswordDialog(true)}
-            className="h-8 px-2 text-xs text-orange-600 hover:bg-orange-50"
-          >
-            كلمة المرور
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowEditDialog(true)}
-            className="h-8 px-2 text-xs text-purple-600 hover:bg-purple-50"
-          >
-            تعديل
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleActive}
-            className="h-8 px-2 text-xs text-red-600 hover:bg-red-50"
-          >
-            تفعيل/تعطيل
-          </Button>
-        </div>
-      )}
-
-      {/* Login As User Dialog */}
-      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <LogIn className="h-5 w-5" />
-              تسجيل دخول كـ {user.full_name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>تحذير:</strong> ستقوم بتسجيل الدخول كهذا المستخدم وسيتم تسجيل هذه العملية في سجل النظام.
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="reason">سبب تسجيل الدخول (اختياري)</Label>
-              <Textarea
-                id="reason"
-                value={loginReason}
-                onChange={(e) => setLoginReason(e.target.value)}
-                placeholder="مثال: مساعدة المستخدم في حل مشكلة تقنية"
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowLoginDialog(false)}>
-                إلغاء
-              </Button>
-              <Button onClick={handleLoginAsUser} disabled={isLoading}>
-                {isLoading ? 'جاري التحميل...' : 'تسجيل الدخول'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reset Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              إعادة تعيين كلمة المرور
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              إعادة تعيين كلمة المرور لـ <strong>{user.full_name}</strong>
-            </p>
-            
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="أدخل كلمة المرور الجديدة"
-              />
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-                إلغاء
-              </Button>
-              <Button onClick={handleResetPassword} disabled={isLoading}>
-                {isLoading ? 'جاري التحميل...' : 'إعادة تعيين'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" />
-              تعديل بيانات المستخدم
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editEmail">البريد الإلكتروني</Label>
-              <Input
-                id="editEmail"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editFullName">الاسم الكامل</Label>
-              <Input
-                id="editFullName"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editDepartment">القسم</Label>
-              <Input
-                id="editDepartment"
-                value={editForm.department}
-                onChange={(e) => setEditForm({...editForm, department: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editPhone">رقم الهاتف</Label>
-              <Input
-                id="editPhone"
-                value={editForm.phone}
-                onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-              />
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                إلغاء
-              </Button>
-              <Button onClick={handleUpdateProfile} disabled={isLoading}>
-                {isLoading ? 'جاري التحميل...' : 'حفظ التغييرات'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EditUserDialog
+        user={user}
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        onConfirm={handleUpdateProfile}
+        isLoading={isLoading}
+        formData={editForm}
+        onFormChange={setEditForm}
+      />
     </div>
   );
 };
