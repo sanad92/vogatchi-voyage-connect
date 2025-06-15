@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import {
@@ -41,7 +42,7 @@ const SupplierAdvancedFilters = ({
   onFilterChange,
   currentFilters,
 }: SupplierAdvancedFiltersProps) => {
-  // Ensure minRating is number | undefined, never string
+  // استخدام "all" كنص لتمثيل الكل، وundefined للإرسال
   const [filters, setFilters] = useState<{
     type?: string;
     status?: string;
@@ -61,31 +62,44 @@ const SupplierAdvancedFilters = ({
     if (key === 'type' || key === 'status') {
       updatedFilters[key] = value === 'all' ? undefined : value;
     } else if (key === 'minRating') {
-      // The Select always provides string. Convert to number if possible, else undefined.
-      updatedFilters.minRating = value === '' ? undefined : Number(value);
+      // عند اختيار "all" نرجعها undefined
+      updatedFilters.minRating = value === 'all' ? undefined : Number(value);
     } else if (key === 'search') {
       updatedFilters.search = value;
     }
     setFilters({
       ...filters,
       ...updatedFilters,
-      // For controlled Select: keep string values for type/status in the state if needed for UI
+      // أبقي "all" في الحالة الداخلية حتى تبقى القائمة منضبطة
       type: key === 'type' ? value : (filters.type ?? 'all'),
       status: key === 'status' ? value : (filters.status ?? 'all'),
+      minRating:
+        key === 'minRating'
+          ? value
+          : filters.minRating !== undefined
+          ? String(filters.minRating)
+          : 'all',
     });
-    // Only pass numeric or undefined for minRating:
+
+    // أرسل فقط القيم المناسبة للفلترة للخارج (undefined عندما تكون all)
     const outgoingFilters = {
       ...updatedFilters,
       type: updatedFilters.type ?? undefined,
       status: updatedFilters.status ?? undefined,
-      minRating: updatedFilters.minRating,
+      minRating:
+        updatedFilters.minRating === undefined
+          ? undefined
+          : updatedFilters.minRating,
       search: updatedFilters.search ?? '',
     };
     onFilterChange(outgoingFilters);
   };
 
-  // For the selects: value must be string always.
-  const minRatingValue = filters.minRating !== undefined ? String(filters.minRating) : '';
+  // قيمة الفلتر دائما نص، "all" أو قيمة رقمية كنص
+  const minRatingValue =
+    filters.minRating === undefined || filters.minRating === 'all'
+      ? 'all'
+      : String(filters.minRating);
 
   return (
     <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-50 rounded-md mb-3">
@@ -128,9 +142,11 @@ const SupplierAdvancedFilters = ({
       >
         <SelectTrigger className="w-32">الحد الأدنى للتقييم</SelectTrigger>
         <SelectContent>
-          <SelectItem value="">الكل</SelectItem>
-          {[1,2,3,4,5].map(num => (
-            <SelectItem key={num} value={String(num)}>{num} نجوم+</SelectItem>
+          <SelectItem value="all">الكل</SelectItem>
+          {[1, 2, 3, 4, 5].map(num => (
+            <SelectItem key={num} value={String(num)}>
+              {num} نجوم+
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
