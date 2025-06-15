@@ -73,12 +73,7 @@ function App() {
                           <Route path="/customer-service" element={<CustomerService />} />
                           <Route path="/admin" element={<AdminSettings />} />
                           <Route path="/admin/database" element={<DatabaseManager />} />
-                          <Route path="/employees" element={
-                            <ProtectedRoute>
-                              <Navbar />
-                              <EmployeesPage />
-                            </ProtectedRoute>
-                          } />
+                          <Route path="/employees" element={<EmployeesPage />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </main>

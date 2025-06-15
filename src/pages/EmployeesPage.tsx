@@ -2,8 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import EmployeeManagement from '@/components/expenses/EmployeeManagement';
+import { useInitialEmployees } from '@/hooks/useInitialEmployees';
 
 const EmployeesPage = () => {
+  // Initialize with sample employees if none exist
+  useInitialEmployees();
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center gap-3">

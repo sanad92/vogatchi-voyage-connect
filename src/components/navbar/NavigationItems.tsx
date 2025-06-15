@@ -1,3 +1,4 @@
+
 import { 
   Home, 
   Users, 
@@ -30,6 +31,14 @@ export interface NavigationItem {
   href: string;
   icon: any;
   children?: NavigationItem[];
+}
+
+// Simple navigation item type for new structure
+export interface SimpleNavItem {
+  to: string;
+  icon: any;
+  label: string;
+  allowedRoles: string[];
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -165,4 +174,107 @@ export const navigationItems: NavigationItem[] = [
       },
     ],
   },
+];
+
+// Export grouped navigation items for enhanced navigation
+export const mainNavItems: SimpleNavItem[] = [
+  {
+    to: "/",
+    icon: Home,
+    label: "الرئيسية",
+    allowedRoles: []
+  },
+  {
+    to: "/daily-operations",
+    icon: Calendar,
+    label: "العمليات اليومية",
+    allowedRoles: []
+  }
+];
+
+export const businessNavItems: SimpleNavItem[] = [
+  {
+    to: "/customers",
+    icon: UserCheck,
+    label: "العملاء",
+    allowedRoles: []
+  },
+  {
+    to: "/hotel-bookings",
+    icon: Hotel,
+    label: "حجوزات الفنادق",
+    allowedRoles: []
+  },
+  {
+    to: "/flight-bookings",
+    icon: Plane,
+    label: "حجوزات الطيران",
+    allowedRoles: []
+  },
+  {
+    to: "/transport-bookings",
+    icon: MapPin,
+    label: "حجوزات النقل",
+    allowedRoles: []
+  },
+  {
+    to: "/car-rentals",
+    icon: Car,
+    label: "تأجير السيارات",
+    allowedRoles: []
+  },
+  {
+    to: "/suppliers",
+    icon: Building2,
+    label: "الموردين",
+    allowedRoles: []
+  },
+  {
+    to: "/employees",
+    icon: Users,
+    label: "الموظفين",
+    allowedRoles: []
+  },
+  {
+    to: "/expense-management",
+    icon: Receipt,
+    label: "إدارة المصروفات",
+    allowedRoles: []
+  },
+  {
+    to: "/invoices",
+    icon: FileText,
+    label: "الفواتير",
+    allowedRoles: []
+  }
+];
+
+export const communicationNavItems: SimpleNavItem[] = [
+  {
+    to: "/reports",
+    icon: BarChart3,
+    label: "التقارير",
+    allowedRoles: []
+  },
+  {
+    to: "/crm",
+    icon: Target,
+    label: "إدارة العملاء",
+    allowedRoles: []
+  },
+  {
+    to: "/customer-service",
+    icon: Phone,
+    label: "خدمة العملاء",
+    allowedRoles: []
+  }
+];
+
+export const adminNavItems: SimpleNavItem[] = [
+  {
+    to: "/admin",
+    icon: Settings,
+    label: "إعدادات النظام",
+    allowedRoles: ['super_admin']
+  }
 ];
