@@ -9,9 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Database as DBType } from "@/integrations/supabase/types";
 
+// Derive TableName type safely from Database['tables']
+type TableName = keyof DBType['tables'];
+
 const DatabaseManager = () => {
   const { isSuperAdmin } = useAuth();
-  const [selectedTable, setSelectedTable] = useState<keyof DBType["Tables"] | null>(null);
+  const [selectedTable, setSelectedTable] = useState<TableName | null>(null);
   const [showSqlEditor, setShowSqlEditor] = useState(false);
 
   if (!isSuperAdmin()) {
@@ -32,7 +35,7 @@ const DatabaseManager = () => {
   }
 
   // List of main tables: update typing
-  const availableTables: { name: keyof DBType["Tables"]; rowCount?: number; description: string }[] = [
+  const availableTables: { name: TableName; rowCount?: number; description: string }[] = [
     { name: "customers", rowCount: 112, description: "عملاء النظام" },
     { name: "suppliers", rowCount: 32, description: "الموردين" },
     { name: "hotel_bookings", rowCount: 224, description: "الحجوزات الفندقية" },
@@ -70,8 +73,8 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={tbl.name} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{tbl.name}</td>
+                <tr key={tbl.name.toString()} className="border-b hover:bg-blue-50 transition">
+                  <td className="p-3 font-mono text-blue-800">{tbl.name.toString()}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
                   <td className="p-3 text-gray-600">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">

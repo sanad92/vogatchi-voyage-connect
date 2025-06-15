@@ -6,16 +6,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
-// Use capitalized Tables and only string keys for everything
+// Explicitly enumerate table names using keyof Database['tables']
+type TableName = keyof Database['tables'];
+
 interface TableViewerProps {
-  table: keyof Database["Tables"];
+  table: TableName;
   onBack: () => void;
 }
 
 // Only use string keys for columns
 function getColumns(obj: Record<string, any>): string[] {
-  // Object.keys always returns string[], avoid symbol keys
-  return Object.keys(obj) as string[];
+  return Object.keys(obj);
 }
 
 const TableViewer = ({ table, onBack }: TableViewerProps) => {
@@ -25,6 +26,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
+    // Table is type TableName: string union of DB table names
     supabase
       .from(table)
       .select("*")
@@ -80,7 +82,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
             <thead>
               <tr>
                 {cols.map(col => (
-                  <th className="py-2 px-2 border-b bg-gray-50" key={col}>
+                  <th className="py-2 px-2 border-b bg-gray-50" key={col.toString()}>
                     {col}
                   </th>
                 ))}
@@ -90,8 +92,10 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
               {data.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50 transition">
                   {cols.map(col => (
-                    <td className="py-2 px-2 border-b" key={col}>
-                      {String(row[col])}
+                    <td className="py-2 px-2 border-b" key={col.toString()}>
+                      {typeof row[col] === "symbol"
+                        ? String(row[col])
+                        : String(row[col] ?? "")}
                     </td>
                   ))}
                 </tr>
