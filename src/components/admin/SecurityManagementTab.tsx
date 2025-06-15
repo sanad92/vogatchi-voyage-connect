@@ -26,9 +26,9 @@ import {
 
 interface SecurityEvent {
   id: string;
-  event_type: string;
+  action_type: string;
   severity: string;
-  user_id?: string;
+  admin_id?: string;
   ip_address?: string;
   user_agent?: string;
   description: string;
@@ -37,9 +37,8 @@ interface SecurityEvent {
 
 interface ActiveSession {
   id: string;
-  user_id: string;
-  ip_address: string;
-  user_agent: string;
+  admin_id: string;
+  impersonated_user_id?: string;
   last_activity: string;
   is_current: boolean;
 }
@@ -70,7 +69,18 @@ const SecurityManagementTab = () => {
         .limit(50);
       
       if (error) throw error;
-      return data as SecurityEvent[];
+      
+      // تحويل البيانات للنسق المطلوب
+      return (data || []).map(item => ({
+        id: item.id,
+        action_type: item.action_type,
+        severity: getSeverityFromAction(item.action_type),
+        admin_id: item.admin_id,
+        ip_address: item.ip_address?.toString(),
+        user_agent: item.user_agent,
+        description: item.description || '',
+        created_at: item.created_at
+      })) as SecurityEvent[];
     }
   });
 
@@ -84,9 +94,28 @@ const SecurityManagementTab = () => {
         .order('last_activity', { ascending: false });
       
       if (error) throw error;
-      return data as ActiveSession[];
+      
+      // تحويل البيانات للنسق المطلوب
+      return (data || []).map(session => ({
+        id: session.id,
+        admin_id: session.admin_id,
+        impersonated_user_id: session.impersonated_user_id,
+        last_activity: session.last_activity,
+        is_current: false // افتراضياً
+      })) as ActiveSession[];
     }
   });
+
+  // تحديد مستوى الخطورة بناءً على نوع العملية
+  const getSeverityFromAction = (actionType: string): string => {
+    if (actionType.includes('password_reset') || actionType.includes('user_created')) {
+      return 'high';
+    }
+    if (actionType.includes('impersonation') || actionType.includes('login')) {
+      return 'medium';
+    }
+    return 'low';
+  };
 
   // تحديث إعدادات الأمان
   const updateSecurityMutation = useMutation({
@@ -300,7 +329,7 @@ const SecurityManagementTab = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">{session.ip_address}</span>
+                      <span className="font-medium">جلسة إدارية</span>
                       {session.is_current && (
                         <Badge className="bg-green-100 text-green-800">الجلسة الحالية</Badge>
                       )}
@@ -323,8 +352,13 @@ const SecurityManagementTab = () => {
                       )}
                     </div>
                   </div>
-                  <div className="text-sm text-gray-600 truncate">
-                    {session.user_agent}
+                  <div className="text-sm text-gray-600">
+                    المسؤول: {session.admin_id}
+                    {session.impersonated_user_id && (
+                      <span className="ml-2">
+                        | ينتحل شخصية: {session.impersonated_user_id}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -357,7 +391,7 @@ const SecurityManagementTab = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {getSeverityIcon(event.severity)}
-                      <span className="font-medium">{event.event_type}</span>
+                      <span className="font-medium">{event.action_type}</span>
                       {getSeverityBadge(event.severity)}
                     </div>
                     <div className="text-sm text-gray-500">
@@ -371,9 +405,9 @@ const SecurityManagementTab = () => {
                         <span className="font-medium">IP:</span> {event.ip_address}
                       </div>
                     )}
-                    {event.user_id && (
+                    {event.admin_id && (
                       <div>
-                        <span className="font-medium">المستخدم:</span> {event.user_id}
+                        <span className="font-medium">المسؤول:</span> {event.admin_id}
                       </div>
                     )}
                     {event.user_agent && (
