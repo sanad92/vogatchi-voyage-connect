@@ -26,9 +26,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
-    // Use type assertion to ensure TypeScript knows this is a valid table name
+    // Use the table name directly without type assertion
     supabase
-      .from(table as string)
+      .from(table)
       .select("*")
       .limit(30)
       .then(({ data, error }) => {
