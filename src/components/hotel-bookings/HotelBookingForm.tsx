@@ -43,10 +43,13 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
       supplier_name: booking.supplier_name,
       cost_per_night: booking.cost_per_night,
       selling_price_per_night: booking.selling_price_per_night,
+      currency: booking.currency || 'SAR',
       payment_method: booking.payment_method,
       paid_amount: booking.paid_amount,
       payment_due_date: booking.payment_due_date,
-    } : {}
+    } : {
+      currency: 'SAR'
+    }
   });
 
   const checkInDate = watch('check_in_date');
@@ -161,6 +164,22 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
       return;
     }
 
+    // التحقق من صحة البيانات المالية
+    if (!data.cost_per_night || data.cost_per_night <= 0) {
+      toast.error('يجب إدخال تكلفة صحيحة للليلة');
+      return;
+    }
+
+    if (!data.selling_price_per_night || data.selling_price_per_night <= 0) {
+      toast.error('يجب إدخال سعر بيع صحيح للليلة');
+      return;
+    }
+
+    if (!data.supplier_name) {
+      toast.error('يجب اختيار مورد للحجز');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const submitData = {
@@ -236,6 +255,7 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
       <SupplierCostSection
         register={register}
         setValue={setValue}
+        watch={watch}
         errors={errors}
         suppliers={suppliers}
         totalCostCustomer={totalCostCustomer}

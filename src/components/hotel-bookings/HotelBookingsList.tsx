@@ -162,8 +162,12 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
               </div>
               <div>
                 <p className="text-sm text-gray-600">إجمالي التكلفة</p>
-                <p className="font-medium text-lg">{booking.total_cost_customer?.toFixed(2)} جنيه</p>
-                <p className="text-sm text-green-600">ربح: {booking.total_profit?.toFixed(2)} جنيه</p>
+                <p className="font-medium text-lg">
+                  {booking.total_cost_customer?.toFixed(2)} {booking.currency || 'SAR'}
+                </p>
+                <p className="text-sm text-green-600">
+                  ربح: {booking.total_profit?.toFixed(2)} {booking.currency || 'SAR'}
+                </p>
               </div>
             </div>
 
@@ -189,8 +193,8 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh }: HotelBookingsListPro
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-sm text-gray-600">حالة الدفع</p>
-                <p>مدفوع: {booking.paid_amount?.toFixed(2) || '0.00'} جنيه</p>
-                <p>متبقي: {booking.remaining_amount?.toFixed(2) || '0.00'} جنيه</p>
+                <p>مدفوع: {booking.paid_amount?.toFixed(2) || '0.00'} {booking.currency || 'SAR'}</p>
+                <p>متبقي: {booking.remaining_amount?.toFixed(2) || '0.00'} {booking.currency || 'SAR'}</p>
                 {booking.payment_due_date && (
                   <p className="text-sm text-red-600">
                     تاريخ الاستحقاق: {new Date(booking.payment_due_date).toLocaleDateString('ar')}

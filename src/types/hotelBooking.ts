@@ -1,3 +1,4 @@
+
 export interface HotelBooking {
   id: string;
   customer_id?: string;
@@ -27,6 +28,7 @@ export interface HotelBooking {
   paid_amount: number;
   remaining_amount: number;
   payment_due_date?: string;
+  currency: Currency;
   invoice_sent: boolean;
   supplier_payment_sent: boolean;
   voucher_sent: boolean;
@@ -71,6 +73,8 @@ export interface HotelSupplier {
 }
 
 export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'ALL' | 'UAI' | 'SAL';
+
+export type Currency = 'SAR' | 'EGP' | 'USD' | 'EUR';
 
 export interface Customer {
   id: string;
@@ -119,9 +123,22 @@ export interface NewHotelBooking {
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;
+  currency: Currency;
   payment_method?: string;
   paid_amount?: number;
   payment_due_date?: string;
   special_requests?: string[]; // IDs of selected special request types
   custom_request?: string; // Free text for custom requests
 }
+
+export const CURRENCY_OPTIONS = [
+  { value: 'SAR', label: 'ريال سعودي (SAR)', symbol: 'ر.س' },
+  { value: 'EGP', label: 'جنيه مصري (EGP)', symbol: 'ج.م' },
+  { value: 'USD', label: 'دولار أمريكي (USD)', symbol: '$' },
+  { value: 'EUR', label: 'يورو (EUR)', symbol: '€' }
+] as const;
+
+export const getCurrencySymbol = (currency: Currency): string => {
+  const currencyOption = CURRENCY_OPTIONS.find(option => option.value === currency);
+  return currencyOption?.symbol || currency;
+};

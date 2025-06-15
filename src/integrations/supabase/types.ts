@@ -1149,6 +1149,7 @@ export type Database = {
           children_ages: string | null
           cost_per_night: number
           created_at: string
+          currency: string | null
           customer_id: string | null
           customer_name: string
           destination_city: string
@@ -1188,6 +1189,7 @@ export type Database = {
           children_ages?: string | null
           cost_per_night: number
           created_at?: string
+          currency?: string | null
           customer_id?: string | null
           customer_name: string
           destination_city: string
@@ -1227,6 +1229,7 @@ export type Database = {
           children_ages?: string | null
           cost_per_night?: number
           created_at?: string
+          currency?: string | null
           customer_id?: string | null
           customer_name?: string
           destination_city?: string
