@@ -92,6 +92,7 @@ export interface ExpenseTransaction {
   approved_at?: string;
   created_at: string;
   updated_at: string;
+  category?: ExpenseCategory;
 }
 
 export interface RentContract {
@@ -114,6 +115,9 @@ export interface RentContract {
   created_by: string;
   created_at: string;
   updated_at: string;
+  contract_number?: string;
+  property_address?: string;
+  end_date?: string;
 }
 
 export interface RentPayment {

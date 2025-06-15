@@ -191,7 +191,7 @@ const CommissionCalculation = () => {
                   <TableCell>
                     <MultiCurrencyDisplay 
                       amount={commission.booking_amount} 
-                      currency={commission.currency} 
+                      currency={commission.currency as "EGP" | "USD" | "SAR"} 
                       showInEGP={false} 
                     />
                   </TableCell>
@@ -199,7 +199,7 @@ const CommissionCalculation = () => {
                   <TableCell className="font-semibold text-green-600">
                     <MultiCurrencyDisplay 
                       amount={commission.commission_amount} 
-                      currency={commission.currency} 
+                      currency={commission.currency as "EGP" | "USD" | "SAR"} 
                       showInEGP={false} 
                     />
                   </TableCell>

@@ -1,238 +1,343 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { BarChart, LineChart, PieChart, DollarSign, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
-import { useFlightBookings } from '@/hooks/useFlightBookings';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
 
 const FinancialDashboard = () => {
-  const { expenseTransactions, monthlySalaries } = useExpenses();
-  const { flightBookings } = useFlightBookings();
-  const { convertToPrimaryCurrency } = useExchangeRates();
-  const [selectedPeriod, setSelectedPeriod] = useState('6months');
-  const [dashboardData, setDashboardData] = useState({
-    totalRevenue: 0,
-    totalExpenses: 0,
-    totalProfit: 0,
-    monthlyData: [],
-    expensesByCategory: [],
-    topServices: []
-  });
-
-  const calculateDashboardData = async () => {
-    // حساب الإيرادات من حجوزات الطيران
-    let totalRevenue = 0;
-    if (flightBookings) {
-      for (const booking of flightBookings) {
-        const profit = booking.total_cost - booking.supplier_cost;
-        if (booking.currency && booking.currency !== 'EGP') {
-          const profitInEGP = await convertToPrimaryCurrency(profit, booking.currency);
-          totalRevenue += profitInEGP;
-        } else {
-          totalRevenue += profit;
-        }
-      }
-    }
-
-    // حساب إجمالي المصروفات بالجنيه المصري
-    let totalExpenses = 0;
+  const { 
+    expenseTransactions, 
+    monthlySalaries, 
+    rentPayments,
+    expenseCategories,
+    commissions
+  } = useExpenses();
+  
+  const [selectedPeriod, setSelectedPeriod] = useState('thisMonth');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  
+  // Prepare data for charts
+  const expenses = expenseTransactions || [];
+  const salaries = monthlySalaries || [];
+  const rentals = rentPayments || [];
+  const categories = expenseCategories || [];
+  
+  // Filter data based on selected period
+  const filterByPeriod = (date: string) => {
+    const itemDate = new Date(date);
+    const currentDate = new Date();
     
-    // مصروفات عامة
-    if (expenseTransactions) {
-      for (const transaction of expenseTransactions) {
-        if (transaction.currency && transaction.currency !== 'EGP') {
-          const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency);
-          totalExpenses += amountInEGP;
-        } else {
-          totalExpenses += transaction.amount;
-        }
-      }
+    switch (selectedPeriod) {
+      case 'thisMonth':
+        return itemDate.getMonth() === currentDate.getMonth() && 
+               itemDate.getFullYear() === currentDate.getFullYear();
+      case 'lastMonth':
+        return itemDate.getMonth() === (currentDate.getMonth() - 1 + 12) % 12 && 
+               (itemDate.getMonth() === 11 ? 
+                 itemDate.getFullYear() === currentDate.getFullYear() - 1 : 
+                 itemDate.getFullYear() === currentDate.getFullYear());
+      case 'thisYear':
+        return itemDate.getFullYear() === currentDate.getFullYear();
+      case 'custom':
+        return itemDate.getFullYear() === parseInt(selectedYear);
+      default:
+        return true;
     }
-
-    // رواتب
-    if (monthlySalaries) {
-      for (const salary of monthlySalaries) {
-        if (salary.net_salary_egp) {
-          totalExpenses += salary.net_salary_egp;
-        } else if (salary.currency && salary.currency !== 'EGP') {
-          const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency);
-          totalExpenses += amountInEGP;
-        } else {
-          totalExpenses += salary.net_salary;
-        }
-      }
-    }
-
-    // ملاحظة: سيتم إضافة الإيجارات لاحقاً
-
-    setDashboardData({
-      totalRevenue,
-      totalExpenses,
-      totalProfit: totalRevenue - totalExpenses,
-      monthlyData: [],
-      expensesByCategory: [],
-      topServices: []
-    });
   };
-
-  useEffect(() => {
-    if (expenseTransactions && monthlySalaries && flightBookings) {
-      calculateDashboardData();
-    }
-  }, [selectedPeriod, expenseTransactions, monthlySalaries, flightBookings]);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
+  
+  const filteredExpenses = expenses.filter(exp => filterByPeriod(exp.transaction_date));
+  const filteredSalaries = salaries.filter(sal => filterByPeriod(sal.salary_month));
+  const filteredRentals = rentals.filter(rent => filterByPeriod(rent.payment_month));
+  
   return (
     <div className="space-y-6">
+      {/* فلاتر التقارير */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">لوحة المعلومات المالية</h2>
-        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3months">آخر 3 شهور</SelectItem>
-            <SelectItem value="6months">آخر 6 شهور</SelectItem>
-            <SelectItem value="year">هذا العام</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="thisMonth">هذا الشهر</SelectItem>
+              <SelectItem value="lastMonth">الشهر الماضي</SelectItem>
+              <SelectItem value="thisYear">هذا العام</SelectItem>
+              <SelectItem value="custom">سنة محددة</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {selectedPeriod === 'custom' && (
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
-
-      {/* بطاقات الملخص */}
+      
+      {/* ملخص المصروفات */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">إجمالي الإيرادات</p>
-                <p className="text-2xl font-bold text-green-600">
-                  <EgyptianPoundDisplay amount={dashboardData.totalRevenue} />
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">إجمالي المصروفات</p>
-                <p className="text-2xl font-bold text-red-600">
-                  <EgyptianPoundDisplay amount={dashboardData.totalExpenses} />
-                </p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">صافي الربح</p>
-                <p className={`text-2xl font-bold ${dashboardData.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  <EgyptianPoundDisplay amount={dashboardData.totalProfit} />
-                </p>
-              </div>
-              <DollarSign className={`h-8 w-8 ${dashboardData.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* الرسوم البيانية */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>الأداء المالي الشهري</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-red-600" />
+              المصروفات العامة
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dashboardData.monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${Number(value).toLocaleString()} ج.م`, '']} />
-                <Line type="monotone" dataKey="revenue" stroke="#00C49F" name="الإيرادات" />
-                <Line type="monotone" dataKey="expenses" stroke="#FF8042" name="المصروفات" />
-                <Line type="monotone" dataKey="profit" stroke="#0088FE" name="الربح" />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="text-3xl font-bold text-red-600">
+              <MultiCurrencyDisplay 
+                amount={filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0)} 
+                currency="EGP" 
+                showInEGP={false} 
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-1">{filteredExpenses.length} معاملة</p>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader>
-            <CardTitle>توزيع المصروفات حسب الفئة</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              الرواتب
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={dashboardData.expensesByCategory}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {dashboardData.expensesByCategory.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [`${Number(value).toLocaleString()} ج.م`, 'المبلغ']} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="text-3xl font-bold text-blue-600">
+              <MultiCurrencyDisplay 
+                amount={filteredSalaries.reduce((sum, sal) => sum + sal.net_salary, 0)} 
+                currency="EGP" 
+                showInEGP={false} 
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-1">{filteredSalaries.length} راتب</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              الإجمالي
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">
+              <EgyptianPoundDisplay 
+                amount={
+                  filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0) +
+                  filteredSalaries.reduce((sum, sal) => sum + sal.net_salary, 0) +
+                  filteredRentals.reduce((sum, rent) => rent.amount_egp || rent.amount, 0)
+                } 
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-1">إجمالي المصروفات</p>
           </CardContent>
         </Card>
       </div>
-
-      {/* إحصائيات إضافية */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {flightBookings?.length || 0}
-            </p>
-            <p className="text-sm text-gray-600">حجوزات طيران</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {expenseTransactions?.length || 0}
-            </p>
-            <p className="text-sm text-gray-600">معاملة مصروفات</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {monthlySalaries?.length || 0}
-            </p>
-            <p className="text-sm text-gray-600">راتب شهري</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">0</p>
-            <p className="text-sm text-gray-600">دفعة إيجار</p>
-          </CardContent>
-        </Card>
-      </div>
+      
+      {/* تبويبات التقارير */}
+      <Tabs defaultValue="expenses" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="expenses" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            المصروفات
+          </TabsTrigger>
+          <TabsTrigger value="salaries" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            الرواتب
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <PieChart className="h-4 w-4" />
+            الفئات
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="flex items-center gap-2">
+            <LineChart className="h-4 w-4" />
+            الاتجاهات
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="expenses" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>تفاصيل المصروفات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredExpenses.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">لا توجد بيانات للعرض</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">أعلى 5 مصروفات</h3>
+                      <div className="space-y-2">
+                        {filteredExpenses
+                          .sort((a, b) => b.amount - a.amount)
+                          .slice(0, 5)
+                          .map((expense, index) => (
+                            <div key={expense.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                              <span className="text-sm">{expense.description}</span>
+                              <span className="font-medium text-red-600">
+                                <EgyptianPoundDisplay amount={expense.amount} />
+                              </span>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">حسب طريقة الدفع</h3>
+                      <div className="space-y-2">
+                        {Object.entries(
+                          filteredExpenses.reduce((acc, expense) => {
+                            const method = expense.payment_method;
+                            acc[method] = (acc[method] || 0) + expense.amount;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([method, amount]) => (
+                          <div key={method} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <span className="text-sm">
+                              {method === 'cash' ? 'نقداً' : 
+                               method === 'bank_transfer' ? 'تحويل بنكي' : 
+                               method === 'credit_card' ? 'بطاقة ائتمان' : method}
+                            </span>
+                            <span className="font-medium text-blue-600">
+                              <EgyptianPoundDisplay amount={amount} />
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="salaries" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>تحليل الرواتب</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredSalaries.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">لا توجد بيانات للعرض</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h3 className="text-lg font-medium text-blue-800 mb-2">متوسط الراتب</h3>
+                      <p className="text-2xl font-bold text-blue-600">
+                        <EgyptianPoundDisplay 
+                          amount={filteredSalaries.reduce((sum, sal) => sum + sal.net_salary, 0) / filteredSalaries.length} 
+                        />
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <h3 className="text-lg font-medium text-green-800 mb-2">أعلى راتب</h3>
+                      <p className="text-2xl font-bold text-green-600">
+                        <EgyptianPoundDisplay 
+                          amount={Math.max(...filteredSalaries.map(sal => sal.net_salary))} 
+                        />
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <h3 className="text-lg font-medium text-orange-800 mb-2">أدنى راتب</h3>
+                      <p className="text-2xl font-bold text-orange-600">
+                        <EgyptianPoundDisplay 
+                          amount={Math.min(...filteredSalaries.map(sal => sal.net_salary))} 
+                        />
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>المصروفات حسب الفئة</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredExpenses.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">لا توجد بيانات للعرض</p>
+              ) : (
+                <div className="space-y-4">
+                  {categories.map(category => {
+                    const categoryExpenses = filteredExpenses.filter(exp => exp.category_id === category.id);
+                    const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                    const percentage = filteredExpenses.length > 0 
+                      ? (categoryExpenses.length / filteredExpenses.length) * 100 
+                      : 0;
+                    
+                    return categoryExpenses.length > 0 ? (
+                      <div key={category.id} className="flex items-center p-3 rounded-lg" style={{ backgroundColor: `${category.color}20` }}>
+                        <div 
+                          className="w-4 h-4 rounded-full mr-3" 
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{category.name_ar}</span>
+                            <span className="font-bold">
+                              <EgyptianPoundDisplay amount={totalAmount} />
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div 
+                              className="h-2 rounded-full" 
+                              style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: category.color
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>{categoryExpenses.length} معاملة</span>
+                            <span>{percentage.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="trends" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>اتجاهات المصروفات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-8">
+                سيتم إضافة رسوم بيانية للاتجاهات قريباً
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

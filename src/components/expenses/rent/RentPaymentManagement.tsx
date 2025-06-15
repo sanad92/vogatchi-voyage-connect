@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,12 +33,22 @@ const RentPaymentManagement = () => {
   const handleAddPayment = async () => {
     if (!paymentData.contract_id || !paymentData.due_date) return;
 
-    await addRentPayment({
-      ...paymentData,
-      payment_month: paymentData.payment_month + '-01',
+    const contract = rentContracts?.find((c) => c.id === paymentData.contract_id);
+    const payment = {
+      payment_month: paymentData.payment_month,
       status: 'pending',
-      late_fee: 0
-    });
+      late_fee: 0,
+      contract_id: paymentData.contract_id,
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      due_date: paymentData.due_date,
+      payment_method: paymentData.payment_method,
+      bank_account_id: paymentData.bank_account_id,
+      notes: paymentData.notes,
+      created_by: 'current-user-id'
+    };
+
+    await addRentPayment(payment);
     
     setIsDialogOpen(false);
     setPaymentData({

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,8 +88,9 @@ const CommissionPayments = () => {
     }
   };
 
-  const handleCommissionSelect = (commissionId: string, checked: boolean) => {
-    if (checked) {
+  const handleCommissionSelect = (commissionId: string, checked: boolean | string) => {
+    const isChecked = typeof checked === 'boolean' ? checked : checked === 'true';
+    if (isChecked) {
       setSelectedCommissions(prev => [...prev, commissionId]);
     } else {
       setSelectedCommissions(prev => prev.filter(id => id !== commissionId));
@@ -179,14 +179,14 @@ const CommissionPayments = () => {
                             <TableCell>
                               <MultiCurrencyDisplay 
                                 amount={commission.booking_amount} 
-                                currency={commission.currency} 
+                                currency={commission.currency as "EGP" | "USD" | "SAR"} 
                                 showInEGP={false} 
                               />
                             </TableCell>
                             <TableCell className="font-semibold text-green-600">
                               <MultiCurrencyDisplay 
                                 amount={commission.commission_amount} 
-                                currency={commission.currency} 
+                                currency={commission.currency as "EGP" | "USD" | "SAR"} 
                                 showInEGP={false} 
                               />
                             </TableCell>
@@ -319,7 +319,7 @@ const CommissionPayments = () => {
                   <TableCell className="font-semibold text-green-600">
                     <MultiCurrencyDisplay 
                       amount={payment.total_commission_amount} 
-                      currency={payment.currency} 
+                      currency={payment.currency as "EGP" | "USD" | "SAR"} 
                       showInEGP={false} 
                     />
                   </TableCell>

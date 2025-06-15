@@ -13,13 +13,14 @@ import {
   TrendingUp,
   Headphones,
   Settings,
-  Car as CarIcon
+  Car as CarIcon,
+  type LucideIcon
 } from "lucide-react";
 
 interface NavigationItem {
   title: string;
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   label?: string;
   allowedRoles?: string[];
 }

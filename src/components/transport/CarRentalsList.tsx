@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,21 +126,21 @@ const CarRentalsList = () => {
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>المعدل اليومي:</span>
                 <span className="font-medium">
-                  <MultiCurrencyDisplay amount={rental.daily_rate} currency={rental.currency} />
+                  <MultiCurrencyDisplay amount={rental.daily_rate} currency={rental.currency as "EGP" | "USD" | "SAR"} />
                 </span>
               </div>
               
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>التكلفة الإجمالية:</span>
                 <span className="font-bold text-green-600">
-                  <MultiCurrencyDisplay amount={rental.total_rental_cost} currency={rental.currency} />
+                  <MultiCurrencyDisplay amount={rental.total_rental_cost} currency={rental.currency as "EGP" | "USD" | "SAR"} />
                 </span>
               </div>
               
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>المبلغ المدفوع:</span>
                 <span className="text-blue-600">
-                  <MultiCurrencyDisplay amount={rental.paid_amount} currency={rental.currency} />
+                  <MultiCurrencyDisplay amount={rental.paid_amount} currency={rental.currency as "EGP" | "USD" | "SAR"} />
                 </span>
               </div>
               
@@ -149,7 +148,7 @@ const CarRentalsList = () => {
                 <div className="flex items-center justify-between text-sm">
                   <span>المبلغ المتبقي:</span>
                   <span className="text-red-600 font-medium">
-                    <MultiCurrencyDisplay amount={rental.remaining_amount} currency={rental.currency} />
+                    <MultiCurrencyDisplay amount={rental.remaining_amount} currency={rental.currency as "EGP" | "USD" | "SAR"} />
                   </span>
                 </div>
               )}
@@ -158,7 +157,7 @@ const CarRentalsList = () => {
                 <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
                   <span>العربون:</span>
                   <span className="text-orange-600">
-                    <MultiCurrencyDisplay amount={rental.security_deposit} currency={rental.currency} />
+                    <MultiCurrencyDisplay amount={rental.security_deposit} currency={rental.currency as "EGP" | "USD" | "SAR"} />
                   </span>
                 </div>
               )}

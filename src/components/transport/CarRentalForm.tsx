@@ -1,572 +1,485 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import SearchableSelect from '@/components/ui/SearchableSelect';
-import { useCustomers } from '@/hooks/useCustomers';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from 'lucide-react';
 import { useCarRentals } from '@/hooks/useCarRentals';
-import { useExpenses } from '@/hooks/useExpenses';
-import { useTransportBookings } from '@/hooks/useTransportBookings';
-import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
-import { toast } from 'sonner';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { useVehicleTypes } from '@/hooks/useVehicleTypes';
+import { useEmployees } from '@/hooks/useEmployees';
+import { toast } from '@/hooks/use-toast';
 
-interface CarRentalFormProps {
-  onSuccess: () => void;
-}
-
-const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
-  const { customers, isLoading: customersLoading } = useCustomers();
-  const { employees } = useExpenses();
-  const { vehicleTypes } = useTransportBookings();
+const CarRentalForm = () => {
   const { addCarRental, isAddingRental } = useCarRentals();
+  const { suppliers, suppliersLoading } = useSuppliers();
+  const { vehicleTypes, vehicleTypesLoading } = useVehicleTypes();
+  const { employees, employeesLoading } = useEmployees();
 
   const [formData, setFormData] = useState({
-    customer_id: '',
     customer_name: '',
-    supplier_name: '',
+    supplier_id: '',
     vehicle_type_id: '',
-    booking_agent_id: '',
-    rental_start_date: '',
-    rental_end_date: '',
+    rental_start_date: new Date().toISOString().slice(0, 10),
+    rental_end_date: new Date().toISOString().slice(0, 10),
+    rental_duration_days: '1',
     pickup_location: '',
     return_location: '',
-    vehicle_make: '',
-    vehicle_model: '',
-    vehicle_year: new Date().getFullYear(),
-    vehicle_plate_number: '',
-    vehicle_color: '',
-    fuel_level_pickup: 'full',
-    currency: 'EGP' as const,
-    daily_rate: 0,
-    supplier_daily_cost: 0,
-    insurance_cost: 0,
-    additional_fees: 0,
-    security_deposit: 0,
-    paid_amount: 0,
-    deposit_paid: 0,
-    payment_method: '',
-    booking_agent_name: '',
+    daily_rate: '0',
+    total_rental_cost: '0',
+    supplier_daily_cost: '0',
+    supplier_total_cost: '0',
+    insurance_cost: '0',
+    additional_fees: '0',
+    security_deposit: '0',
+    paid_amount: '0',
+    deposit_paid: '0',
+    payment_method: 'cash',
+    booking_agent_id: '',
     driver_license_number: '',
-    driver_license_expiry: '',
-    insurance_included: true,
+    driver_license_expiry: new Date().toISOString().slice(0, 10),
+    insurance_included: false,
     gps_included: false,
-    additional_driver_count: 0,
+    additional_driver_count: '0',
     pickup_notes: '',
-    special_requirements: ''
+    return_notes: '',
+    damage_notes: '',
+    special_requirements: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const rentalDays = Math.ceil(
-      (new Date(formData.rental_end_date).getTime() - new Date(formData.rental_start_date).getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
+
+    if (!formData.customer_name || !formData.supplier_id || !formData.vehicle_type_id) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const rentalData = {
-      ...formData,
-      rental_duration_days: rentalDays,
-      total_rental_cost: formData.daily_rate * rentalDays,
-      supplier_total_cost: formData.supplier_daily_cost * rentalDays,
-      exchange_rate_to_egp: 1.00,
+      customer_name: formData.customer_name,
+      supplier_id: formData.supplier_id,
+      vehicle_type_id: formData.vehicle_type_id,
+      rental_start_date: formData.rental_start_date,
+      rental_end_date: formData.rental_end_date,
+      rental_duration_days: parseInt(formData.rental_duration_days),
+      pickup_location: formData.pickup_location,
+      return_location: formData.return_location,
+      daily_rate: parseFloat(formData.daily_rate),
+      total_rental_cost: parseFloat(formData.total_rental_cost),
+      supplier_daily_cost: parseFloat(formData.supplier_daily_cost),
+      supplier_total_cost: parseFloat(formData.supplier_total_cost),
+      insurance_cost: parseFloat(formData.insurance_cost),
+      additional_fees: parseFloat(formData.additional_fees),
+      security_deposit: parseFloat(formData.security_deposit),
+      paid_amount: parseFloat(formData.paid_amount),
+      deposit_paid: parseFloat(formData.deposit_paid),
+      payment_method: formData.payment_method,
+      booking_agent_id: formData.booking_agent_id,
+      driver_license_number: formData.driver_license_number,
+      driver_license_expiry: formData.driver_license_expiry,
+      insurance_included: formData.insurance_included,
+      gps_included: formData.gps_included,
+      additional_driver_count: parseInt(formData.additional_driver_count),
+      pickup_notes: formData.pickup_notes,
+      return_notes: formData.return_notes,
+      damage_notes: formData.damage_notes,
+      special_requirements: formData.special_requirements,
+      currency: 'EGP',
+      exchange_rate_to_egp: 1.0,
       contract_sent: false,
       invoice_sent: false,
       supplier_payment_sent: false,
-      currency: formData.currency as string
+      deposit_returned: 0, // إضافة الحقل المفقود
     };
 
-    addCarRental(rentalData);
-    onSuccess();
-  };
-
-  const customerOptions = customers?.map(customer => ({
-    value: customer.id,
-    label: `${customer.name} - ${customer.phone}`
-  })) || [];
-
-  const vehicleTypeOptions = vehicleTypes?.map(type => ({
-    value: type.id,
-    label: `${type.name} - ${type.capacity_passengers} راكب`
-  })) || [];
-
-  const employeeOptions = employees?.map(employee => ({
-    value: employee.id,
-    label: `${employee.full_name} - ${employee.employee_code}`
-  })) || [];
-
-  const handleCustomerSelect = (customerId: string) => {
-    const customer = customers?.find(c => c.id === customerId);
-    if (customer) {
-      setFormData(prev => ({
-        ...prev,
-        customer_id: customerId,
-        customer_name: customer.name
-      }));
+    try {
+      await addCarRental(rentalData);
+      toast({
+        title: "تمت الإضافة بنجاح",
+        description: "تمت إضافة عقد إيجار سيارة جديد بنجاح.",
+      });
+    } catch (error) {
+      console.error("Failed to add car rental:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة عقد إيجار سيارة جديد.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleEmployeeSelect = (employeeId: string) => {
-    const employee = employees?.find(e => e.id === employeeId);
-    if (employee) {
-      setFormData(prev => ({
-        ...prev,
-        booking_agent_id: employeeId,
-        booking_agent_name: employee.full_name
-      }));
-    }
-  };
-
-  const rentalDays = formData.rental_start_date && formData.rental_end_date
-    ? Math.ceil((new Date(formData.rental_end_date).getTime() - new Date(formData.rental_start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 0;
-
-  const totalCost = formData.daily_rate * rentalDays + formData.insurance_cost + formData.additional_fees;
-  const supplierTotalCost = formData.supplier_daily_cost * rentalDays;
-  const expectedProfit = totalCost - supplierTotalCost;
+  if (suppliersLoading || vehicleTypesLoading || employeesLoading) {
+    return <div>جاري التحميل...</div>;
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* معلومات العميل والموظف */}
-      <Card>
-        <CardHeader>
-          <CardTitle>معلومات العميل والموظف المسؤول</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>إضافة عقد إيجار سيارة</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* معلومات أساسية */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>العميل *</Label>
-              <SearchableSelect
-                options={customerOptions}
-                value={formData.customer_id}
-                onChange={handleCustomerSelect}
-                placeholder="اختر عميل"
-                emptyText="لا توجد عملاء"
-                loading={customersLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>اسم العميل</Label>
+            <div>
+              <Label htmlFor="customer_name">اسم العميل</Label>
               <Input
+                type="text"
+                id="customer_name"
+                name="customer_name"
                 value={formData.customer_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                placeholder="اسم العميل"
+                onChange={handleChange}
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label>الموظف المسؤول *</Label>
-              <SearchableSelect
-                options={employeeOptions}
-                value={formData.booking_agent_id}
-                onChange={handleEmployeeSelect}
-                placeholder="اختر موظف"
-                emptyText="لا توجد موظفين"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>اسم المورد *</Label>
-              <Input
-                value={formData.supplier_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, supplier_name: e.target.value }))}
-                placeholder="اسم المورد"
-                required
-              />
+            <div>
+              <Label htmlFor="supplier_id">المورد</Label>
+              <Select
+                id="supplier_id"
+                name="supplier_id"
+                value={formData.supplier_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر مورد" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers?.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.supplier_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* تفاصيل الإيجار */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تفاصيل الإيجار</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          {/* تفاصيل السيارة */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>نوع المركبة</Label>
-              <SearchableSelect
-                options={vehicleTypeOptions}
+            <div>
+              <Label htmlFor="vehicle_type_id">نوع السيارة</Label>
+              <Select
+                id="vehicle_type_id"
+                name="vehicle_type_id"
                 value={formData.vehicle_type_id}
-                onChange={(value) => setFormData(prev => ({ ...prev, vehicle_type_id: value }))}
-                placeholder="اختر نوع المركبة"
-                emptyText="لا توجد أنواع مركبات"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>ماركة السيارة</Label>
-              <Input
-                value={formData.vehicle_make}
-                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_make: e.target.value }))}
-                placeholder="تويوتا، هوندا، نيسان..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>موديل السيارة</Label>
-              <Input
-                value={formData.vehicle_model}
-                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_model: e.target.value }))}
-                placeholder="كامري، أكورد، التيما..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>سنة الصنع</Label>
-              <Input
-                type="number"
-                min="1990"
-                max={new Date().getFullYear() + 1}
-                value={formData.vehicle_year}
-                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_year: parseInt(e.target.value) || new Date().getFullYear() }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>رقم اللوحة</Label>
-              <Input
-                value={formData.vehicle_plate_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_plate_number: e.target.value }))}
-                placeholder="رقم لوحة السيارة"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>لون السيارة</Label>
-              <Input
-                value={formData.vehicle_color}
-                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_color: e.target.value }))}
-                placeholder="أبيض، أسود، فضي..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تاريخ بداية الإيجار *</Label>
-              <Input
-                type="date"
-                value={formData.rental_start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, rental_start_date: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تاريخ نهاية الإيجار *</Label>
-              <Input
-                type="date"
-                value={formData.rental_end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, rental_end_date: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>مكان الاستلام *</Label>
-              <Input
-                value={formData.pickup_location}
-                onChange={(e) => setFormData(prev => ({ ...prev, pickup_location: e.target.value }))}
-                placeholder="مكان استلام السيارة"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>مكان الإرجاع *</Label>
-              <Input
-                value={formData.return_location}
-                onChange={(e) => setFormData(prev => ({ ...prev, return_location: e.target.value }))}
-                placeholder="مكان إرجاع السيارة"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>مستوى الوقود عند الاستلام</Label>
-              <Select value={formData.fuel_level_pickup} onValueChange={(value) => setFormData(prev => ({ ...prev, fuel_level_pickup: value }))}>
+                onValueChange={(value) => setFormData(prev => ({ ...prev, vehicle_type_id: value }))}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="اختر نوع السيارة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="full">ممتلئ</SelectItem>
-                  <SelectItem value="three_quarters">ثلاثة أرباع</SelectItem>
-                  <SelectItem value="half">نصف</SelectItem>
-                  <SelectItem value="quarter">ربع</SelectItem>
-                  <SelectItem value="empty">فارغ</SelectItem>
+                  {vehicleTypes?.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name_ar}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label>عدد السائقين الإضافيين</Label>
-              <Input
-                type="number"
-                min="0"
-                value={formData.additional_driver_count}
-                onChange={(e) => setFormData(prev => ({ ...prev, additional_driver_count: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
           </div>
 
-          {rentalDays > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <span className="text-blue-800 font-medium">
-                عدد أيام الإيجار: {rentalDays} يوم
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* التكاليف والأسعار */}
-      <Card>
-        <CardHeader>
-          <CardTitle>التكاليف والأسعار</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>العملة *</Label>
-              <Select value={formData.currency} onValueChange={(value: any) => setFormData(prev => ({ ...prev, currency: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EGP">جنيه مصري (EGP)</SelectItem>
-                  <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
-                  <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>السعر اليومي *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.daily_rate}
-                onChange={(e) => setFormData(prev => ({ ...prev, daily_rate: parseFloat(e.target.value) || 0 }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تكلفة المورد اليومية *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.supplier_daily_cost}
-                onChange={(e) => setFormData(prev => ({ ...prev, supplier_daily_cost: parseFloat(e.target.value) || 0 }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تكلفة التأمين</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.insurance_cost}
-                onChange={(e) => setFormData(prev => ({ ...prev, insurance_cost: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>رسوم إضافية</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.additional_fees}
-                onChange={(e) => setFormData(prev => ({ ...prev, additional_fees: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>مبلغ التأمين</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.security_deposit}
-                onChange={(e) => setFormData(prev => ({ ...prev, security_deposit: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>المبلغ المدفوع</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.paid_amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, paid_amount: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>التأمين المدفوع</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.deposit_paid}
-                onChange={(e) => setFormData(prev => ({ ...prev, deposit_paid: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>طريقة الدفع</Label>
-              <Input
-                value={formData.payment_method}
-                onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
-                placeholder="طريقة الدفع"
-              />
-            </div>
-          </div>
-
-          {/* الخدمات المضمنة */}
-          <div className="space-y-4">
-            <h4 className="font-medium">الخدمات المضمنة:</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="insurance"
-                  checked={formData.insurance_included}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, insurance_included: checked as boolean }))}
-                />
-                <Label htmlFor="insurance">التأمين مشمول</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="gps"
-                  checked={formData.gps_included}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, gps_included: checked as boolean }))}
-                />
-                <Label htmlFor="gps">نظام GPS مشمول</Label>
-              </div>
-            </div>
-          </div>
-
-          {/* ملخص التكاليف */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-3">ملخص التكاليف:</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">إجمالي السعر:</span>
-                <div className="font-semibold">
-                  <MultiCurrencyDisplay 
-                    amount={totalCost} 
-                    currency={formData.currency as any} 
-                    showInEGP={false} 
-                  />
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-600">تكلفة المورد:</span>
-                <div className="font-semibold">
-                  <MultiCurrencyDisplay 
-                    amount={supplierTotalCost} 
-                    currency={formData.currency as any} 
-                    showInEGP={false} 
-                  />
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-600">الربح المتوقع:</span>
-                <div className="font-semibold text-green-600">
-                  <MultiCurrencyDisplay 
-                    amount={expectedProfit} 
-                    currency={formData.currency as any} 
-                    showInEGP={false} 
-                  />
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-600">المبلغ المتبقي:</span>
-                <div className="font-semibold text-orange-600">
-                  <MultiCurrencyDisplay 
-                    amount={totalCost - formData.paid_amount} 
-                    currency={formData.currency as any} 
-                    showInEGP={false} 
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* معلومات السائق */}
-      <Card>
-        <CardHeader>
-          <CardTitle>معلومات السائق والملاحظات</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          {/* تواريخ ومواقع الإيجار */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>رقم رخصة القيادة</Label>
-              <Input
-                value={formData.driver_license_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, driver_license_number: e.target.value }))}
-                placeholder="رقم رخصة القيادة"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تاريخ انتهاء الرخصة</Label>
+            <div>
+              <Label htmlFor="rental_start_date">تاريخ بداية الإيجار</Label>
               <Input
                 type="date"
-                value={formData.driver_license_expiry}
-                onChange={(e) => setFormData(prev => ({ ...prev, driver_license_expiry: e.target.value }))}
+                id="rental_start_date"
+                name="rental_start_date"
+                value={formData.rental_start_date}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="rental_end_date">تاريخ نهاية الإيجار</Label>
+              <Input
+                type="date"
+                id="rental_end_date"
+                name="rental_end_date"
+                value={formData.rental_end_date}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="rental_duration_days">مدة الإيجار (أيام)</Label>
+              <Input
+                type="number"
+                id="rental_duration_days"
+                name="rental_duration_days"
+                value={formData.rental_duration_days}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pickup_location">مكان الاستلام</Label>
+              <Input
+                type="text"
+                id="pickup_location"
+                name="pickup_location"
+                value={formData.pickup_location}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="return_location">مكان التسليم</Label>
+              <Input
+                type="text"
+                id="return_location"
+                name="return_location"
+                value={formData.return_location}
+                onChange={handleChange}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>ملاحظات الاستلام</Label>
-            <Textarea
-              value={formData.pickup_notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, pickup_notes: e.target.value }))}
-              placeholder="ملاحظات عند استلام السيارة"
-              rows={3}
+          {/* التكاليف والمدفوعات */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="daily_rate">السعر اليومي</Label>
+              <Input
+                type="number"
+                id="daily_rate"
+                name="daily_rate"
+                value={formData.daily_rate}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="total_rental_cost">إجمالي تكلفة الإيجار</Label>
+              <Input
+                type="number"
+                id="total_rental_cost"
+                name="total_rental_cost"
+                value={formData.total_rental_cost}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="supplier_daily_cost">تكلفة المورد اليومية</Label>
+              <Input
+                type="number"
+                id="supplier_daily_cost"
+                name="supplier_daily_cost"
+                value={formData.supplier_daily_cost}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="supplier_total_cost">إجمالي تكلفة المورد</Label>
+              <Input
+                type="number"
+                id="supplier_total_cost"
+                name="supplier_total_cost"
+                value={formData.supplier_total_cost}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="insurance_cost">تكلفة التأمين</Label>
+              <Input
+                type="number"
+                id="insurance_cost"
+                name="insurance_cost"
+                value={formData.insurance_cost}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="additional_fees">رسوم إضافية</Label>
+              <Input
+                type="number"
+                id="additional_fees"
+                name="additional_fees"
+                value={formData.additional_fees}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="security_deposit">مبلغ التأمين</Label>
+              <Input
+                type="number"
+                id="security_deposit"
+                name="security_deposit"
+                value={formData.security_deposit}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="paid_amount">المبلغ المدفوع</Label>
+              <Input
+                type="number"
+                id="paid_amount"
+                name="paid_amount"
+                value={formData.paid_amount}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="deposit_paid">التأمين المدفوع</Label>
+              <Input
+                type="number"
+                id="deposit_paid"
+                name="deposit_paid"
+                value={formData.deposit_paid}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment_method">طريقة الدفع</Label>
+              <Select
+                id="payment_method"
+                name="payment_method"
+                value={formData.payment_method}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر طريقة الدفع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">نقداً</SelectItem>
+                  <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                  <SelectItem value="credit_card">بطاقة ائتمانية</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* معلومات إضافية */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="booking_agent_id">وكيل الحجز</Label>
+              <Select
+                id="booking_agent_id"
+                name="booking_agent_id"
+                value={formData.booking_agent_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, booking_agent_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر وكيل الحجز" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees?.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="driver_license_number">رقم رخصة القيادة</Label>
+              <Input
+                type="text"
+                id="driver_license_number"
+                name="driver_license_number"
+                value={formData.driver_license_number}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="driver_license_expiry">تاريخ انتهاء رخصة القيادة</Label>
+              <Input
+                type="date"
+                id="driver_license_expiry"
+                name="driver_license_expiry"
+                value={formData.driver_license_expiry}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          {/* خيارات */}
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="insurance_included">تأمين مشمول؟</Label>
+            <Input
+              type="checkbox"
+              id="insurance_included"
+              name="insurance_included"
+              checked={formData.insurance_included}
+              onChange={handleChange}
+            />
+            <Label htmlFor="gps_included">GPS مشمول؟</Label>
+            <Input
+              type="checkbox"
+              id="gps_included"
+              name="gps_included"
+              checked={formData.gps_included}
+              onChange={handleChange}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>متطلبات خاصة</Label>
-            <Textarea
-              value={formData.special_requirements}
-              onChange={(e) => setFormData(prev => ({ ...prev, special_requirements: e.target.value }))}
-              placeholder="أي متطلبات خاصة أو ملاحظات"
-              rows={3}
+          {/* عدد السائقين الإضافيين */}
+          <div>
+            <Label htmlFor="additional_driver_count">عدد السائقين الإضافيين</Label>
+            <Input
+              type="number"
+              id="additional_driver_count"
+              name="additional_driver_count"
+              value={formData.additional_driver_count}
+              onChange={handleChange}
             />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* أزرار العمليات */}
-      <div className="flex gap-2 justify-end">
-        <Button 
-          type="submit" 
-          disabled={isAddingRental}
-          className="min-w-32"
-        >
-          {isAddingRental ? 'جاري الحفظ...' : 'حفظ العقد'}
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onSuccess}
-        >
-          إلغاء
-        </Button>
-      </div>
-    </form>
+          {/* ملاحظات */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="pickup_notes">ملاحظات الاستلام</Label>
+              <Textarea
+                id="pickup_notes"
+                name="pickup_notes"
+                value={formData.pickup_notes}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="return_notes">ملاحظات التسليم</Label>
+              <Textarea
+                id="return_notes"
+                name="return_notes"
+                value={formData.return_notes}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="damage_notes">ملاحظات الأضرار</Label>
+              <Textarea
+                id="damage_notes"
+                name="damage_notes"
+                value={formData.damage_notes}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="special_requirements">متطلبات خاصة</Label>
+              <Textarea
+                id="special_requirements"
+                name="special_requirements"
+                value={formData.special_requirements}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <Button type="submit" disabled={isAddingRental}>
+            {isAddingRental ? "يتم الإرسال..." : "إضافة عقد الإيجار"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

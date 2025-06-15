@@ -1,245 +1,246 @@
-
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Eye } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
-import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
+import SalaryBarChart from './SalaryBarChart';
+import SalaryDistributionChart from './SalaryDistributionChart';
 
 const SalaryReports = () => {
-  const { monthlySalaries, employees, salariesLoading } = useExpenses();
-  const { convertToPrimaryCurrency } = useExchangeRates();
-  const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [totals, setTotals] = useState({ totalNet: 0, totalGross: 0, totalDeductions: 0 });
-
-  const filteredSalaries = monthlySalaries?.filter(salary => 
-    salary.salary_month.startsWith(filterMonth)
-  );
-
-  // حساب الإجماليات بالجنيه المصري
-  const calculateTotalsInEGP = async () => {
-    if (!filteredSalaries) return { totalNet: 0, totalGross: 0, totalDeductions: 0 };
-
-    let totalNet = 0;
-    let totalGross = 0;
-    let totalDeductions = 0;
-
-    for (const salary of filteredSalaries) {
-      // تحويل الرواتب إلى الجنيه المصري إذا لزم الأمر
-      const netInEGP = salary.currency && salary.currency !== 'EGP' 
-        ? await convertToPrimaryCurrency(salary.net_salary, salary.currency)
-        : salary.net_salary;
-      
-      const grossInEGP = salary.currency && salary.currency !== 'EGP'
-        ? await convertToPrimaryCurrency(salary.gross_salary, salary.currency)
-        : salary.gross_salary;
-
-      const deductionsInEGP = salary.currency && salary.currency !== 'EGP'
-        ? await convertToPrimaryCurrency(salary.tax_amount + salary.insurance_deduction + salary.deductions, salary.currency)
-        : salary.tax_amount + salary.insurance_deduction + salary.deductions;
-
-      totalNet += netInEGP;
-      totalGross += grossInEGP;
-      totalDeductions += deductionsInEGP;
-    }
-
-    return { totalNet, totalGross, totalDeductions };
-  };
-
-  // حساب الإجماليات عند تغيير البيانات
-  useEffect(() => {
-    if (filteredSalaries) {
-      calculateTotalsInEGP().then(setTotals);
-    }
-  }, [filteredSalaries]);
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { label: 'معلق', variant: 'secondary' as const },
-      paid: { label: 'مدفوع', variant: 'default' as const },
-      cancelled: { label: 'ملغي', variant: 'destructive' as const }
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
+  const { monthlySalaries, salariesLoading, employees } = useExpenses();
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  
   if (salariesLoading) {
     return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
   }
 
+  const years = [...new Set(monthlySalaries?.map(salary => 
+    new Date(salary.salary_month).getFullYear()
+  ))].sort((a, b) => b - a);
+
+  const filteredSalaries = monthlySalaries?.filter(salary => 
+    new Date(salary.salary_month).getFullYear().toString() === selectedYear
+  ) || [];
+
+  const totalPaid = filteredSalaries.reduce((sum, salary) => 
+    sum + (salary.net_salary_egp || salary.net_salary), 0
+  );
+
+  const totalPending = filteredSalaries
+    .filter(salary => salary.status === 'pending')
+    .reduce((sum, salary) => sum + (salary.net_salary_egp || salary.net_salary), 0);
+
+  const averageSalary = filteredSalaries.length > 0 
+    ? totalPaid / filteredSalaries.length 
+    : 0;
+
   return (
     <div className="space-y-6">
-      {/* فلاتر التقرير */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            تقارير الرواتب - العملة الأساسية: الجنيه المصري
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="space-y-2">
-              <Label>شهر التقرير</Label>
-              <Input
-                type="month"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-              />
-            </div>
-            <Button>
-              <Download className="h-4 w-4 mr-2" />
-              تصدير التقرير
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">تقارير الرواتب</h2>
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="اختر السنة" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map(year => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* ملخص الرواتب بالجنيه المصري */}
+      {/* ملخص الرواتب */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">إجمالي الرواتب الصافية</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                <EgyptianPoundDisplay amount={totals.totalNet} />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">إجمالي الرواتب المدفوعة</p>
+                <p className="text-2xl font-bold text-green-600">
+                  <MultiCurrencyDisplay amount={totalPaid} currency="EGP" />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{selectedYear}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">إجمالي الرواتب الإجمالية</h3>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                <EgyptianPoundDisplay amount={totals.totalGross} />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">الرواتب المعلقة</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  <MultiCurrencyDisplay amount={totalPending} currency="EGP" />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{selectedYear}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">إجمالي الاستقطاعات</h3>
-              <p className="text-3xl font-bold text-red-600 mt-2">
-                <EgyptianPoundDisplay amount={totals.totalDeductions} />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">متوسط الراتب</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  <MultiCurrencyDisplay amount={averageSalary} currency="EGP" />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{selectedYear}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* جدول تفاصيل الرواتب */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تفاصيل رواتب الموظفين - {filterMonth} (المبالغ بالجنيه المصري)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الموظف</TableHead>
-                <TableHead>الراتب الأساسي</TableHead>
-                <TableHead>البدلات</TableHead>
-                <TableHead>الساعات الإضافية</TableHead>
-                <TableHead>المكافآت</TableHead>
-                <TableHead>الإجمالي</TableHead>
-                <TableHead>الاستقطاعات</TableHead>
-                <TableHead>الصافي</TableHead>
-                <TableHead>العملة الأصلية</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>العمليات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSalaries?.map((salary) => {
-                const employee = employees?.find(emp => emp.id === salary.employee_id);
-                const originalCurrency = salary.currency || 'EGP';
-                
-                return (
-                  <TableRow key={salary.id}>
-                    <TableCell className="font-medium">
-                      {employee?.full_name || 'غير محدد'}
-                    </TableCell>
-                    <TableCell>
-                      <MultiCurrencyDisplay 
-                        amount={salary.base_salary} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <MultiCurrencyDisplay 
-                        amount={salary.allowances} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <MultiCurrencyDisplay 
-                        amount={salary.overtime_amount} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <MultiCurrencyDisplay 
-                        amount={salary.bonus} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell className="font-semibold text-blue-600">
-                      <MultiCurrencyDisplay 
-                        amount={salary.gross_salary} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell className="text-red-600">
-                      <MultiCurrencyDisplay 
-                        amount={salary.tax_amount + salary.insurance_deduction + salary.deductions} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell className="font-semibold text-green-600">
-                      <MultiCurrencyDisplay 
-                        amount={salary.net_salary} 
-                        currency="EGP"
-                        showInEGP={false}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {originalCurrency}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(salary.status)}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+      {/* تبويبات التقارير */}
+      <Tabs defaultValue="monthly" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="monthly">تقرير شهري</TabsTrigger>
+          <TabsTrigger value="employee">حسب الموظف</TabsTrigger>
+          <TabsTrigger value="charts">رسوم بيانية</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="monthly" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>الرواتب الشهرية - {selectedYear}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الشهر</TableHead>
+                    <TableHead>عدد الموظفين</TableHead>
+                    <TableHead>إجمالي الرواتب</TableHead>
+                    <TableHead>متوسط الراتب</TableHead>
+                    <TableHead>الحالة</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const month = i + 1;
+                    const monthSalaries = filteredSalaries.filter(salary => 
+                      new Date(salary.salary_month).getMonth() + 1 === month
+                    );
+                    const monthTotal = monthSalaries.reduce((sum, salary) => 
+                      sum + (salary.net_salary_egp || salary.net_salary), 0
+                    );
+                    const monthAvg = monthSalaries.length > 0 ? monthTotal / monthSalaries.length : 0;
+                    
+                    return (
+                      <TableRow key={month}>
+                        <TableCell>{month}/{ selectedYear}</TableCell>
+                        <TableCell>{monthSalaries.length}</TableCell>
+                        <TableCell className="font-medium">
+                          <MultiCurrencyDisplay amount={monthTotal} currency="EGP" showInEGP={false} />
+                        </TableCell>
+                        <TableCell>
+                          <MultiCurrencyDisplay amount={monthAvg} currency="EGP" showInEGP={false} />
+                        </TableCell>
+                        <TableCell>
+                          {monthSalaries.length > 0 ? (
+                            monthSalaries.every(s => s.status === 'paid') ? (
+                              <Badge variant="default">مدفوع</Badge>
+                            ) : monthSalaries.every(s => s.status === 'pending') ? (
+                              <Badge variant="secondary">معلق</Badge>
+                            ) : (
+                              <Badge variant="outline">مدفوع جزئياً</Badge>
+                            )
+                          ) : (
+                            <Badge variant="secondary">لا يوجد بيانات</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="employee" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>الرواتب حسب الموظف - {selectedYear}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>المنصب</TableHead>
+                    <TableHead>الراتب الأساسي</TableHead>
+                    <TableHead>متوسط الراتب الشهري</TableHead>
+                    <TableHead>إجمالي المدفوع</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employees?.map(employee => {
+                    const employeeSalaries = filteredSalaries.filter(salary => 
+                      salary.employee_id === employee.id
+                    );
+                    const totalPaid = employeeSalaries.reduce((sum, salary) => 
+                      sum + (salary.net_salary_egp || salary.net_salary), 0
+                    );
+                    const avgSalary = employeeSalaries.length > 0 ? totalPaid / employeeSalaries.length : 0;
+                    
+                    return (
+                      <TableRow key={employee.id}>
+                        <TableCell className="font-medium">{employee.full_name}</TableCell>
+                        <TableCell>{employee.position}</TableCell>
+                        <TableCell>
+                          <MultiCurrencyDisplay amount={employee.base_salary} currency="EGP" showInEGP={false} />
+                        </TableCell>
+                        <TableCell>
+                          <MultiCurrencyDisplay amount={avgSalary} currency="EGP" showInEGP={false} />
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          <MultiCurrencyDisplay amount={totalPaid} currency="EGP" showInEGP={false} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="charts" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>توزيع الرواتب الشهرية</CardTitle>
+              </CardHeader>
+              <CardContent className="h-80">
+                <SalaryBarChart salaries={filteredSalaries} />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>توزيع الرواتب حسب المنصب</CardTitle>
+              </CardHeader>
+              <CardContent className="h-80">
+                <SalaryDistributionChart salaries={filteredSalaries} employees={employees || []} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

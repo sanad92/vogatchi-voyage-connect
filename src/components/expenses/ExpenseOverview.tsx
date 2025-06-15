@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,20 +96,6 @@ const ExpenseOverview = () => {
       calculateSummary();
     }
   }, [selectedPeriod, expenseTransactions, monthlySalaries]);
-
-  if (showFinancialDashboard) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">لوحة المعلومات المالية الشاملة</h2>
-          <Button variant="outline" onClick={() => setShowFinancialDashboard(false)}>
-            العودة للملخص
-          </Button>
-        </div>
-        <FinancialDashboard />
-      </div>
-    );
-  }
 
   if (transactionsLoading) {
     return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
