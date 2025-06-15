@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ExchangeRate, SupportedCurrency, PRIMARY_CURRENCY } from "@/types/currency";
@@ -101,12 +100,15 @@ export const useExchangeRates = () => {
     }
   });
 
-  // Update exchange rate
+  // Update exchange rate (for manual edits - keeps same effective_date)
   const updateExchangeRateMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ExchangeRate> & { id: string }) => {
+      // Remove effective_date from updates if not explicitly provided to keep original date
+      const updateData = { ...updates };
+      
       const { data, error } = await supabase
         .from('exchange_rates')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -116,9 +118,6 @@ export const useExchangeRates = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
-      toast({
-        title: "تم تحديث سعر الصرف بنجاح",
-      });
     }
   });
 

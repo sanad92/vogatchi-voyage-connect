@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Download, AlertCircle } from 'lucide-react';
+import { RefreshCw, Download, AlertCircle, Calendar } from 'lucide-react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { SUPPORTED_CURRENCIES } from '@/types/currency';
 import { useToast } from '@/hooks/use-toast';
 
 const GoogleExchangeRateSync = () => {
-  const { addExchangeRate } = useExchangeRates();
+  const { addExchangeRate, exchangeRates } = useExchangeRates();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
@@ -19,6 +19,7 @@ const GoogleExchangeRateSync = () => {
     try {
       setIsSyncing(true);
       const newRates: any[] = [];
+      const today = new Date().toISOString().split('T')[0];
 
       // جلب أسعار الصرف لجميع العملات المدعومة
       for (const fromCurrency of SUPPORTED_CURRENCIES) {
@@ -30,18 +31,26 @@ const GoogleExchangeRateSync = () => {
 
           for (const toCurrency of SUPPORTED_CURRENCIES) {
             if (fromCurrency !== toCurrency && data.rates[toCurrency]) {
-              const rate = {
-                from_currency: fromCurrency,
-                to_currency: toCurrency,
-                rate: data.rates[toCurrency],
-                effective_date: new Date().toISOString().split('T')[0],
-                is_active: true
-              };
-              
-              newRates.push(rate);
-              
-              // إضافة السعر للقاعدة
-              await addExchangeRate(rate);
+              // التحقق من وجود سعر لليوم الحالي
+              const existingTodayRate = exchangeRates.find(rate => 
+                rate.from_currency === fromCurrency && 
+                rate.to_currency === toCurrency && 
+                rate.effective_date === today
+              );
+
+              // إذا لم يكن هناك سعر لليوم، أضف سعر جديد
+              if (!existingTodayRate) {
+                const rate = {
+                  from_currency: fromCurrency,
+                  to_currency: toCurrency,
+                  rate: data.rates[toCurrency],
+                  effective_date: today,
+                  is_active: true
+                };
+                
+                newRates.push(rate);
+                await addExchangeRate(rate);
+              }
             }
           }
         } catch (error) {
@@ -54,7 +63,7 @@ const GoogleExchangeRateSync = () => {
       
       toast({
         title: "تم تحديث أسعار الصرف",
-        description: `تم تحديث ${newRates.length} سعر صرف من Google`,
+        description: `تم إضافة ${newRates.length} سعر صرف جديد لليوم`,
       });
     } catch (error) {
       toast({
@@ -67,6 +76,13 @@ const GoogleExchangeRateSync = () => {
     }
   };
 
+  const getTodayRatesCount = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return exchangeRates.filter(rate => rate.effective_date === today).length;
+  };
+
+  const todayRatesCount = getTodayRatesCount();
+
   return (
     <Card>
       <CardHeader>
@@ -75,9 +91,17 @@ const GoogleExchangeRateSync = () => {
             <Download className="h-5 w-5" />
             مزامنة أسعار الصرف من Google
           </CardTitle>
-          <Badge variant={lastSync ? "default" : "secondary"}>
-            {lastSync ? "تم التحديث" : "لم يتم التحديث"}
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant={lastSync ? "default" : "secondary"}>
+              {lastSync ? "تم التحديث" : "لم يتم التحديث"}
+            </Badge>
+            {todayRatesCount > 0 && (
+              <Badge variant="outline" className="bg-green-50">
+                <Calendar className="h-3 w-3 mr-1" />
+                {todayRatesCount} سعر لليوم
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -88,7 +112,7 @@ const GoogleExchangeRateSync = () => {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'جاري التحديث...' : 'تحديث جميع الأسعار'}
+            {isSyncing ? 'جاري التحديث...' : 'تحديث أسعار اليوم'}
           </Button>
           
           {lastSync && (
@@ -115,6 +139,16 @@ const GoogleExchangeRateSync = () => {
             </div>
           </div>
         )}
+
+        <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div className="text-xs text-blue-800">
+            <p className="font-medium">كيف يعمل التحديث:</p>
+            <p>• ينشئ أسعار جديدة لليوم الحالي فقط</p>
+            <p>• لا يحذف أو يعدل الأسعار السابقة</p>
+            <p>• يتجاهل الأزواج التي لها أسعار لليوم بالفعل</p>
+          </div>
+        </div>
 
         <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded-lg">
           <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
