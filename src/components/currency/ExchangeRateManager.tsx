@@ -12,6 +12,7 @@ import RateAlerts from './exchange-rate-analytics/RateAlerts';
 import AdvancedStats from './exchange-rate-analytics/AdvancedStats';
 import DataExporter from './exchange-rate-analytics/DataExporter';
 import RateComparison from './exchange-rate-analytics/RateComparison';
+import type { ExchangeRate } from '@/types/currency';
 
 const ExchangeRateManager = () => {
   const { exchangeRates, isLoading, addExchangeRate } = useExchangeRates();
@@ -23,14 +24,14 @@ const ExchangeRateManager = () => {
   };
 
   // تجميع أسعار الصرف حسب زوج العملات
-  const groupedRates = exchangeRates.reduce((acc, rate) => {
+  const groupedRates = (exchangeRates as ExchangeRate[]).reduce((acc, rate) => {
     const pair = `${rate.from_currency}-${rate.to_currency}`;
     if (!acc[pair]) {
       acc[pair] = [];
     }
     acc[pair].push(rate);
     return acc;
-  }, {} as Record<string, typeof exchangeRates>);
+  }, {} as Record<string, ExchangeRate[]>);
 
   // الحصول على أحدث سعر صرف لكل زوج
   const latestRates = Object.entries(groupedRates).map(([pair, rates]) => {
@@ -102,7 +103,7 @@ const ExchangeRateManager = () => {
         <TabsContent value="analytics" className="space-y-6">
           <AdvancedStats 
             latestRates={latestRates} 
-            exchangeRates={exchangeRates}
+            exchangeRates={exchangeRates as ExchangeRate[]}
           />
           
           {latestRates.length > 0 && (
@@ -120,7 +121,7 @@ const ExchangeRateManager = () => {
 
         <TabsContent value="export">
           <DataExporter 
-            exchangeRates={exchangeRates}
+            exchangeRates={exchangeRates as ExchangeRate[]}
             latestRates={latestRates}
           />
         </TabsContent>

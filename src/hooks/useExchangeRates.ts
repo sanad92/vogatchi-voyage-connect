@@ -77,7 +77,7 @@ export const useExchangeRates = () => {
     mutationFn: async (newRate: Omit<ExchangeRate, 'id' | 'created_at'>) => {
       const { data, error } = await supabase
         .from('exchange_rates')
-        .insert([newRate])
+        .insert(newRate)
         .select()
         .single();
       

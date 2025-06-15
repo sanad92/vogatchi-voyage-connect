@@ -11,12 +11,14 @@ import { useSuppliers } from '@/hooks/useSuppliers';
 import { useVehicleTypes } from '@/hooks/useVehicleTypes';
 import { useEmployees } from '@/hooks/useEmployees';
 import { toast } from '@/hooks/use-toast';
+import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 
 const CarRentalForm = () => {
   const { addCarRental, isAddingRental } = useCarRentals();
   const { suppliers, suppliersLoading } = useSuppliers();
   const { vehicleTypes, vehicleTypesLoading } = useVehicleTypes();
   const { employees, employeesLoading } = useEmployees();
+  const { getCurrentEmployeeName } = useUserEmployeeMapping();
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -49,11 +51,20 @@ const CarRentalForm = () => {
     special_requirements: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -69,9 +80,13 @@ const CarRentalForm = () => {
       return;
     }
 
+    const selectedSupplier = suppliers?.find(s => s.id === formData.supplier_id);
+    const currentEmployee = getCurrentEmployeeName();
+
     const rentalData = {
       customer_name: formData.customer_name,
       supplier_id: formData.supplier_id,
+      supplier_name: selectedSupplier?.name || 'غير محدد',
       vehicle_type_id: formData.vehicle_type_id,
       rental_start_date: formData.rental_start_date,
       rental_end_date: formData.rental_end_date,
@@ -87,8 +102,10 @@ const CarRentalForm = () => {
       security_deposit: parseFloat(formData.security_deposit),
       paid_amount: parseFloat(formData.paid_amount),
       deposit_paid: parseFloat(formData.deposit_paid),
+      deposit_returned: 0,
       payment_method: formData.payment_method,
       booking_agent_id: formData.booking_agent_id,
+      booking_agent_name: currentEmployee,
       driver_license_number: formData.driver_license_number,
       driver_license_expiry: formData.driver_license_expiry,
       insurance_included: formData.insurance_included,
@@ -103,7 +120,7 @@ const CarRentalForm = () => {
       contract_sent: false,
       invoice_sent: false,
       supplier_payment_sent: false,
-      deposit_returned: 0, // إضافة الحقل المفقود
+      fuel_level_pickup: 'full',
     };
 
     try {
@@ -149,10 +166,8 @@ const CarRentalForm = () => {
             <div>
               <Label htmlFor="supplier_id">المورد</Label>
               <Select
-                id="supplier_id"
-                name="supplier_id"
                 value={formData.supplier_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
+                onValueChange={(value) => handleSelectChange('supplier_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر مورد" />
@@ -160,7 +175,7 @@ const CarRentalForm = () => {
                 <SelectContent>
                   {suppliers?.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.supplier_name}
+                      {supplier.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -173,10 +188,8 @@ const CarRentalForm = () => {
             <div>
               <Label htmlFor="vehicle_type_id">نوع السيارة</Label>
               <Select
-                id="vehicle_type_id"
-                name="vehicle_type_id"
                 value={formData.vehicle_type_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, vehicle_type_id: value }))}
+                onValueChange={(value) => handleSelectChange('vehicle_type_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر نوع السيارة" />

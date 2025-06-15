@@ -2,6 +2,9 @@
 // تحديث نوع العملة ليشمل العملات الإضافية
 export type SupportedCurrency = 'EGP' | 'USD' | 'SAR' | 'EUR' | 'GBP' | 'AED';
 
+// العملة الأساسية للنظام
+export const PRIMARY_CURRENCY: SupportedCurrency = 'EGP';
+
 // قائمة العملات المدعومة
 export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ['EGP', 'USD', 'SAR', 'EUR', 'GBP', 'AED'];
 
@@ -38,4 +41,58 @@ export interface BankAccount {
   notes?: string;
   created_at: string;
   updated_at: string;
+}
+
+// نوع معاملة الحساب البنكي
+export interface BankAccountTransaction {
+  id: string;
+  bank_account_id: string;
+  transaction_type: string;
+  amount: number;
+  description?: string;
+  transaction_date: string;
+  reference_number?: string;
+  related_invoice_id?: string;
+  related_payment_order_id?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+// نوع سعر الصرف
+export interface ExchangeRate {
+  id: string;
+  from_currency: SupportedCurrency;
+  to_currency: SupportedCurrency;
+  rate: number;
+  effective_date: string;
+  created_at: string;
+  created_by?: string;
+  is_active: boolean;
+}
+
+// نوع عقد المورد
+export interface SupplierContract {
+  id: string;
+  supplier_id: string;
+  contract_number: string;
+  contract_type: string;
+  start_date: string;
+  end_date: string;
+  terms: string;
+  value: number;
+  currency: SupportedCurrency;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// نوع تقييم المورد
+export interface SupplierRating {
+  id: string;
+  supplier_id: string;
+  rating: number;
+  comment?: string;
+  rated_by: string;
+  rated_at: string;
+  service_type: string;
 }

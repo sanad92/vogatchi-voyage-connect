@@ -72,7 +72,7 @@ export const useBankAccounts = () => {
     mutationFn: async (transaction: Omit<BankAccountTransaction, 'id' | 'created_at'>) => {
       const { data, error } = await supabase
         .from('bank_account_transactions')
-        .insert([transaction])
+        .insert(transaction)
         .select()
         .single();
       
