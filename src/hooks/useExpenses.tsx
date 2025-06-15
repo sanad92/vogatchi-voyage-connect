@@ -4,6 +4,7 @@ import { useRentContracts } from './useRentContracts';
 import { useExpenseTransactions } from './useExpenseTransactions';
 import { useSalaries } from './useSalaries';
 import { useExpenseCategories } from './useExpenseCategories';
+import { useRentPayments } from './useRentPayments';
 
 export const useExpenses = () => {
   const {
@@ -39,6 +40,16 @@ export const useExpenses = () => {
     categoriesLoading,
   } = useExpenseCategories();
 
+  const {
+    rentPayments,
+    paymentsLoading,
+    addRentPayment,
+    isAddingPayment,
+    updatePaymentStatus,
+    isUpdatingPayment,
+    calculateTotalPaymentsInEGP,
+  } = useRentPayments();
+
   return {
     // Categories
     expenseCategories,
@@ -67,5 +78,14 @@ export const useExpenses = () => {
     salariesLoading,
     calculateMonthlySalary,
     isCalculatingSalary,
+
+    // Rent Payments
+    rentPayments,
+    paymentsLoading,
+    addRentPayment,
+    isAddingPayment,
+    updatePaymentStatus,
+    isUpdatingPayment,
+    calculateTotalPaymentsInEGP,
   };
 };

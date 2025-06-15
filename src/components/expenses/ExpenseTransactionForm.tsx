@@ -62,7 +62,7 @@ const ExpenseTransactionForm = ({
                 placeholder="أدخل وصف المعاملة"
               />
               {errors.description && (
-                <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                <p className="text-red-500 text-sm mt-1">{errors.description.message as string}</p>
               )}
             </div>
 
@@ -99,7 +99,7 @@ const ExpenseTransactionForm = ({
                 placeholder="أدخل المبلغ"
               />
               {errors.amount && (
-                <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>
+                <p className="text-red-500 text-sm mt-1">{errors.amount.message as string}</p>
               )}
             </div>
 
@@ -119,7 +119,7 @@ const ExpenseTransactionForm = ({
                 {...register('transaction_date', { required: 'تاريخ المعاملة مطلوب' })}
               />
               {errors.transaction_date && (
-                <p className="text-red-500 text-sm mt-1">{errors.transaction_date.message}</p>
+                <p className="text-red-500 text-sm mt-1">{errors.transaction_date.message as string}</p>
               )}
             </div>
 
@@ -127,7 +127,7 @@ const ExpenseTransactionForm = ({
               <Label htmlFor="payment_method">طريقة الدفع</Label>
               <PaymentMethodSelector
                 value={watch('payment_method')}
-                onValueChange={(value) => setValue('payment_method', value)}
+                onChange={(value) => setValue('payment_method', value)}
               />
             </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ interface BankAccountFormValues {
 }
 
 const BankAccountManagement = () => {
-  const { bankAccounts, addBankAccount, updateBankAccount, isAddingAccount, isUpdatingAccount } = useBankAccounts();
+  const { bankAccounts, addBankAccount, isAddingAccount } = useBankAccounts();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
 
@@ -41,6 +42,7 @@ const BankAccountManagement = () => {
   });
 
   const selectedCurrency = watch('currency');
+  const selectedAccountType = watch('account_type');
 
   const handleEdit = (account: BankAccount) => {
     setEditingAccount(account);
@@ -48,28 +50,18 @@ const BankAccountManagement = () => {
     setValue('account_name', account.account_name);
     setValue('bank_name', account.bank_name);
     setValue('account_number', account.account_number);
-    setValue('currency', account.currency);
-    setValue('account_type', account.account_type);
+    setValue('currency', account.currency as SupportedCurrency);
+    setValue('account_type', account.account_type as 'checking' | 'savings' | 'business');
     setValue('current_balance', account.current_balance);
     setValue('notes', account.notes || '');
   };
 
   const onSubmit = async (data: any) => {
     try {
-      if (editingAccount) {
-        await updateBankAccount({ 
-          id: editingAccount.id, 
-          updates: {
-            ...data,
-            currency: selectedCurrency
-          }
-        });
-      } else {
-        await addBankAccount({
-          ...data,
-          currency: selectedCurrency
-        });
-      }
+      await addBankAccount({
+        ...data,
+        currency: selectedCurrency
+      });
       
       setShowForm(false);
       setEditingAccount(null);
@@ -152,7 +144,7 @@ const BankAccountManagement = () => {
 
                 <div>
                   <Label htmlFor="account_type">نوع الحساب</Label>
-                  <Select onValueChange={(value) => setValue('account_type', value)}>
+                  <Select value={selectedAccountType} onValueChange={(value: 'checking' | 'savings' | 'business') => setValue('account_type', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر نوع الحساب" />
                     </SelectTrigger>
@@ -187,8 +179,8 @@ const BankAccountManagement = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" disabled={isAddingAccount || isUpdatingAccount}>
-                  {(isAddingAccount || isUpdatingAccount) ? 'جاري الحفظ...' : editingAccount ? 'تحديث' : 'إضافة'}
+                <Button type="submit" disabled={isAddingAccount}>
+                  {isAddingAccount ? 'جاري الحفظ...' : editingAccount ? 'تحديث' : 'إضافة'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => {
                   setShowForm(false);
@@ -226,7 +218,7 @@ const BankAccountManagement = () => {
                 <p><strong>الرصيد:</strong> 
                   <MultiCurrencyDisplay 
                     amount={account.current_balance} 
-                    currency={account.currency}
+                    currency={account.currency as SupportedCurrency}
                     showInEGP={account.currency !== 'EGP'}
                   />
                 </p>

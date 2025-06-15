@@ -14,9 +14,9 @@ interface FlightBookingsListProps {
 
 const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: bookings = [], isLoading } = useFlightBookings(searchTerm);
+  const { flightBookings, bookingsLoading } = useFlightBookings();
 
-  if (isLoading) {
+  if (bookingsLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="text-center">جاري تحميل حجوزات الطيران...</div>
@@ -32,13 +32,13 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
         onCreateNew={onCreateNew || (() => {})}
       />
 
-      <FlightBookingStats bookings={bookings} />
+      <FlightBookingStats bookings={flightBookings || []} />
 
-      {bookings.length === 0 ? (
+      {!flightBookings || flightBookings.length === 0 ? (
         <FlightBookingEmptyState onCreateNew={onCreateNew || (() => {})} />
       ) : (
         <div className="grid gap-4">
-          {bookings.map((booking) => (
+          {flightBookings.map((booking) => (
             <FlightBookingCard
               key={booking.id}
               booking={booking}

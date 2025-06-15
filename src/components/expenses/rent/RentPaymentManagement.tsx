@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { SupportedCurrency } from '@/types/currency';
 
 const RentPaymentManagement = () => {
-  const { rentPayments, paymentsLoading, addRentPayment, isAddingPayment, updatePaymentStatus, generateMonthlyPayments } = useRentPayments();
+  const { rentPayments, paymentsLoading, addRentPayment, isAddingPayment, updatePaymentStatus } = useRentPayments();
   const { rentContracts } = useRentContracts();
   const { bankAccounts } = useBankAccounts();
   
@@ -23,7 +24,7 @@ const RentPaymentManagement = () => {
     contract_id: '',
     payment_month: new Date().toISOString().slice(0, 7),
     amount: 0,
-    currency: 'SAR' as SupportedCurrency,
+    currency: 'EGP' as SupportedCurrency,
     due_date: '',
     payment_method: 'bank_transfer',
     bank_account_id: '',
@@ -45,7 +46,7 @@ const RentPaymentManagement = () => {
       contract_id: '',
       payment_month: new Date().toISOString().slice(0, 7),
       amount: 0,
-      currency: 'SAR' as SupportedCurrency,
+      currency: 'EGP' as SupportedCurrency,
       due_date: '',
       payment_method: 'bank_transfer',
       bank_account_id: '',
@@ -123,7 +124,7 @@ const RentPaymentManagement = () => {
               <CreditCard className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">إجمالي المعلق</p>
-                <p className="text-2xl font-bold">{totalPending.toLocaleString()} ريال</p>
+                <p className="text-2xl font-bold">{totalPending.toLocaleString()} ج.م</p>
               </div>
             </div>
           </CardContent>
@@ -139,7 +140,7 @@ const RentPaymentManagement = () => {
                   {rentPayments?.filter(p => 
                     p.status === 'paid' && 
                     new Date(p.payment_date || '').getMonth() === new Date().getMonth()
-                  ).reduce((sum, p) => sum + p.amount, 0).toLocaleString() || 0} ريال
+                  ).reduce((sum, p) => sum + p.amount, 0).toLocaleString() || 0} ج.م
                 </p>
               </div>
             </div>

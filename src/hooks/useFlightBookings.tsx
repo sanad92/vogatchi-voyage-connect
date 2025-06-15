@@ -34,14 +34,17 @@ export const useFlightBookings = () => {
   // إضافة حجز طيران جديد مع دعم العملات المتعددة
   const { mutateAsync: addFlightBooking, isPending: isAddingBooking } = useMutation({
     mutationFn: async (bookingData: NewFlightBooking) => {
+      // حساب التكلفة الإجمالية
+      const totalCost = bookingData.ticket_price_per_person * bookingData.number_of_passengers + (bookingData.taxes_and_fees || 0);
+      
       // حساب أسعار الصرف والقيم بالجنيه المصري
       let exchangeRateToEGP = 1;
-      let totalCostEGP = bookingData.ticket_price_per_person * bookingData.number_of_passengers + (bookingData.taxes_and_fees || 0);
+      let totalCostEGP = totalCost;
       let supplierCostEGP = bookingData.supplier_cost;
 
       if (bookingData.currency && bookingData.currency !== 'EGP') {
         exchangeRateToEGP = await getCurrentRate(bookingData.currency, 'EGP');
-        totalCostEGP = await convertToPrimaryCurrency(totalCostEGP, bookingData.currency);
+        totalCostEGP = await convertToPrimaryCurrency(totalCost, bookingData.currency);
         supplierCostEGP = await convertToPrimaryCurrency(bookingData.supplier_cost, bookingData.currency);
       }
 
@@ -49,6 +52,7 @@ export const useFlightBookings = () => {
         .from('flight_bookings')
         .insert({
           ...bookingData,
+          total_cost: totalCost,
           currency: bookingData.currency || 'EGP',
           exchange_rate_to_egp: exchangeRateToEGP,
           total_cost_egp: totalCostEGP,

@@ -13,7 +13,6 @@ import ExpenseTransactionEmptyState from './ExpenseTransactionEmptyState';
 const ExpenseTransactions = () => {
   const { 
     expenseTransactions, 
-    expenseCategories, 
     addExpenseTransaction, 
     isAddingTransaction 
   } = useExpenses();
@@ -59,7 +58,6 @@ const ExpenseTransactions = () => {
             </DialogHeader>
             
             <ExpenseTransactionForm
-              expenseCategories={expenseCategories}
               onSubmit={handleAddTransaction}
               isSubmitting={isAddingTransaction}
               onCancel={() => setIsAddDialogOpen(false)}
