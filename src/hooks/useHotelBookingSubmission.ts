@@ -61,10 +61,18 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
       const submitData = {
         ...bookingDataForTable,
         customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.name
+        customer_name: selectedCustomer.name,
+        supplier_id: bookingDataForTable.supplier_id || null, // الجديد: الحقل الإجباري
       };
 
       let bookingId: string;
+
+      // تحقق من وجود قيم ضرورية
+      if (!submitData.supplier_id || !submitData.supplier_name) {
+        setIsSubmitting(false);
+        toast.error("يجب اختيار مورد وحفظ اسمه.");
+        return;
+      }
 
       if (booking) {
         const { error } = await supabase
@@ -89,9 +97,10 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
       await saveSpecialRequests(bookingId, data, selectedRequests);
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving booking:', error);
-      toast.error('حدث خطأ في حفظ الحجز');
+      const message = error?.message || 'حدث خطأ في حفظ الحجز، تحقق من البيانات المطلوبة';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

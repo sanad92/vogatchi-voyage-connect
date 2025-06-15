@@ -102,7 +102,7 @@ export interface NewHotelBooking {
   meal_plan: string;
   booking_reference_supplier?: string;
   cancellation_policy?: string;
-  supplier_id?: string; // إضافة supplier_id
+  supplier_id?: string; // أصبحت مطلوبة فعليا
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;

@@ -2072,6 +2072,7 @@ export type Database = {
           room_type: string
           selling_price_per_night: number
           status_id: string | null
+          supplier_id: string | null
           supplier_name: string
           supplier_payment_sent: boolean | null
           supplier_payment_sent_date: string | null
@@ -2116,6 +2117,7 @@ export type Database = {
           room_type: string
           selling_price_per_night: number
           status_id?: string | null
+          supplier_id?: string | null
           supplier_name: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -2160,6 +2162,7 @@ export type Database = {
           room_type?: string
           selling_price_per_night?: number
           status_id?: string | null
+          supplier_id?: string | null
           supplier_name?: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -2190,6 +2193,13 @@ export type Database = {
             columns: ["status_id"]
             isOneToOne: false
             referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

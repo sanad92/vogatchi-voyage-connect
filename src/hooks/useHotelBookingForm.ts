@@ -7,6 +7,7 @@ import { useHotelBookingData } from "@/hooks/useHotelBookingData";
 import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";
 import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
+import { toast } from "sonner";
 
 interface UseHotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -39,6 +40,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       payment_method: booking.payment_method,
       paid_amount: booking.paid_amount,
       payment_due_date: booking.payment_due_date,
+      supplier_id: (booking as any).supplier_id || '', // مبدئياً لأي حجوزات قديمة، سيأخذ القيمة أو فارغ
     } : {
       currency: 'EGP',
       booking_agent_name: currentEmployee?.full_name || 'مستخدم غير محدد'
@@ -68,6 +70,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     }
   }, [watch('booking_agent_name'), currentEmployee, booking, setValue]);
 
+  // التحقق من أن المورد معرف
   const checkInDate = watch('check_in_date');
   const checkOutDate = watch('check_out_date');
   const costPerNight = watch('cost_per_night');
@@ -100,12 +103,21 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   }, [booking, setValue, fetchExistingRequests]);
 
   const onSubmit = async (data: NewHotelBooking) => {
-    // التأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
+    //التأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
     const bookingData = {
       ...data,
       booking_agent_id: currentEmployee?.id,
       booking_agent_name: currentEmployee?.full_name || data.booking_agent_name
     };
+
+    // تحقق من أن المورد تم اختياره (supplier_id/name)
+    if (!bookingData.supplier_id || !bookingData.supplier_name) {
+      toast({
+        title: "يجب اختيار مورد الفندق.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     if (!validateBookingData(bookingData, selectedCustomer)) {
       return;
