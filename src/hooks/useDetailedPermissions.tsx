@@ -6,9 +6,12 @@ import { usePermissionTemplates } from './usePermissionTemplates';
 export type {
   DetailedUserPermissions,
   AllUserPermissions,
+} from './useUserPermissionsManagement';
+
+export type {
   PermissionGroup,
   PermissionDetail,
-} from './useUserPermissionsManagement';
+} from './usePermissionsData';
 
 export const useDetailedPermissions = () => {
   const { permissionGroups, permissionDetails } = usePermissionsData();
