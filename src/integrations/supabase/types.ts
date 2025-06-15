@@ -3165,6 +3165,47 @@ export type Database = {
           },
         ]
       }
+      supplier_currencies: {
+        Row: {
+          created_at: string
+          currency: string
+          exchange_rate: number | null
+          id: string
+          is_primary: boolean | null
+          notes: string | null
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency: string
+          exchange_rate?: number | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          exchange_rate?: number | null
+          id?: string
+          is_primary?: boolean | null
+          notes?: string | null
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_currencies_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_payments: {
         Row: {
           amount: number

@@ -15,19 +15,33 @@ export interface Supplier {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  currencies?: Array<{
+    id: string;
+    currency: string;
+    is_primary: boolean;
+    exchange_rate?: number;
+  }>;
 }
 
 export const useSuppliers = (supplierType?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get all suppliers with optional filtering by type
+  // Get all suppliers with their currencies
   const suppliersQuery = useQuery({
     queryKey: ['suppliers', supplierType],
     queryFn: async (): Promise<Supplier[]> => {
       let query = supabase
         .from('suppliers')
-        .select('*')
+        .select(`
+          *,
+          supplier_currencies(
+            id,
+            currency,
+            is_primary,
+            exchange_rate
+          )
+        `)
         .eq('is_active', true)
         .order('name', { ascending: true });
       
@@ -51,22 +65,22 @@ export const useSuppliers = (supplierType?: string) => {
         payment_terms: item.payment_terms,
         is_active: item.is_active,
         created_at: item.created_at,
-        updated_at: item.updated_at
+        updated_at: item.updated_at,
+        currencies: item.supplier_currencies || []
       }));
     }
   });
 
   // Add new supplier
   const addSupplierMutation = useMutation({
-    mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
-      // Map our interface to database structure
+    mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'currencies'>) => {
       const supplierData = {
         name: newSupplier.name,
         contact_person: newSupplier.contact_person,
         email: newSupplier.email,
         phone: newSupplier.phone,
         address: newSupplier.address,
-        type: newSupplier.supplier_type, // Map supplier_type to type
+        type: newSupplier.supplier_type,
         payment_terms: newSupplier.payment_terms,
         is_active: newSupplier.is_active
       };

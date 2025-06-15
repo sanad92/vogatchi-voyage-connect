@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +16,7 @@ import SupplierContracts from './SupplierContracts';
 import SupplierPayments from './SupplierPayments';
 import SupplierRatings from './SupplierRatings';
 import SupplierAnalytics from './SupplierAnalytics';
+import SupplierCurrencyManager from './SupplierCurrencyManager';
 
 interface Supplier {
   id: string;
@@ -214,10 +214,14 @@ const AdvancedSupplierManagement = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             نظرة عامة
+          </TabsTrigger>
+          <TabsTrigger value="currencies" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            العملات
           </TabsTrigger>
           <TabsTrigger value="contracts" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -377,6 +381,18 @@ const AdvancedSupplierManagement = () => {
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="currencies">
+          {selectedSupplier ? (
+            <SupplierCurrencyManager supplierId={selectedSupplier} />
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">يرجى اختيار مورد لإدارة العملات المدعومة</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="contracts">
