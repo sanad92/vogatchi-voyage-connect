@@ -5,15 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Car, BarChart3 } from 'lucide-react';
 import TransportBookingForm from '@/components/transport/TransportBookingForm';
+import EnhancedTransportBookingForm from '@/components/transport/EnhancedTransportBookingForm';
 import TransportBookingsList from '@/components/transport/TransportBookingsList';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
 
 const TransportBookings = () => {
-  const [showForm, setShowForm] = useState(false);
+  const [activeTab, setActiveTab] = useState("list");
   const { transportBookings } = useTransportBookings();
 
   const handleFormSuccess = () => {
-    setShowForm(false);
+    setActiveTab("list");
+  };
+
+  const handleCreateNew = () => {
+    setActiveTab("enhanced-form");
   };
 
   // حساب الإحصائيات
@@ -32,9 +37,9 @@ const TransportBookings = () => {
           </h1>
           <p className="text-gray-600">إدارة حجوزات النقل والانتقالات والرحلات الداخلية</p>
         </div>
-        <Button onClick={() => setShowForm(true)} disabled={showForm}>
+        <Button onClick={handleCreateNew}>
           <Plus className="h-4 w-4 mr-2" />
-          حجز جديد
+          حجز جديد محسن
         </Button>
       </div>
 
@@ -93,23 +98,19 @@ const TransportBookings = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue={showForm ? "form" : "list"} value={showForm ? "form" : "list"}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger 
-            value="list" 
-            onClick={() => setShowForm(false)}
-            className="flex items-center gap-2"
-          >
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="list" className="flex items-center gap-2">
             <Car className="h-4 w-4" />
             قائمة الحجوزات
           </TabsTrigger>
-          <TabsTrigger 
-            value="form"
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2"
-          >
+          <TabsTrigger value="enhanced-form" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            حجز جديد
+            حجز محسن
+          </TabsTrigger>
+          <TabsTrigger value="basic-form" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            حجز أساسي
           </TabsTrigger>
         </TabsList>
 
@@ -117,10 +118,14 @@ const TransportBookings = () => {
           <TransportBookingsList />
         </TabsContent>
 
-        <TabsContent value="form" className="space-y-6">
+        <TabsContent value="enhanced-form" className="space-y-6">
+          <EnhancedTransportBookingForm onSuccess={handleFormSuccess} />
+        </TabsContent>
+
+        <TabsContent value="basic-form" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>إضافة حجز نقل جديد</CardTitle>
+              <CardTitle>إضافة حجز نقل أساسي</CardTitle>
             </CardHeader>
             <CardContent>
               <TransportBookingForm onSuccess={handleFormSuccess} />

@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane } from "lucide-react";
 import FlightBookingForm from "@/components/flight-bookings/FlightBookingForm";
+import EnhancedFlightBookingForm from "@/components/flight-bookings/EnhancedFlightBookingForm";
 import FlightBookingsList from "@/components/flight-bookings/FlightBookingsList";
 import { FlightBooking } from "@/types/flightBooking";
 
@@ -39,7 +39,7 @@ const FlightBookings = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">قائمة الحجوزات</TabsTrigger>
-          <TabsTrigger value="form">حجز جديد</TabsTrigger>
+          <TabsTrigger value="form">حجز جديد محسن</TabsTrigger>
           <TabsTrigger value="details" disabled={!selectedBooking}>
             تفاصيل الحجز
           </TabsTrigger>
@@ -53,19 +53,9 @@ const FlightBookings = () => {
         </TabsContent>
 
         <TabsContent value="form">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plane className="h-5 w-5" />
-                إنشاء حجز طيران جديد
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FlightBookingForm 
-                onSuccess={handleFormSuccess}
-              />
-            </CardContent>
-          </Card>
+          <EnhancedFlightBookingForm 
+            onSuccess={handleFormSuccess}
+          />
         </TabsContent>
 
         <TabsContent value="details">

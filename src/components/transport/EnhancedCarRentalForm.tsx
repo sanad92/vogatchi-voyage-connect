@@ -35,6 +35,16 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    updateField(name as any, type === 'checkbox' ? checked : value);
+  };
+
+  const handleSelectChange = (name: string, value: any) => {
+    updateField(name as any, value);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -156,11 +166,8 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
             }}
             employees={employees || []}
             employeesLoading={false}
-            onInputChange={(e) => {
-              const { name, value, type, checked } = e.target;
-              updateField(name, type === 'checkbox' ? checked : value);
-            }}
-            onSelectChange={(name, value) => updateField(name, value)}
+            onInputChange={handleInputChange}
+            onSelectChange={handleSelectChange}
           />
 
           <Separator />
