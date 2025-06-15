@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './useAuth';
+import { UserRole } from '@/types/userManagement';
 
 export interface UnifiedUser {
   id: string;
@@ -11,7 +12,7 @@ export interface UnifiedUser {
   phone?: string;
   department?: string;
   is_active: boolean;
-  role?: string;
+  role?: UserRole; // تغيير من string إلى UserRole
   created_at: string;
   updated_at: string;
   employee?: {
