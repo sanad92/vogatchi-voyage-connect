@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { ShieldOff, Database } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -6,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import TableViewer from "@/components/database/TableViewer";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog"; // fixed import
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import type { Database as DBType } from "@/integrations/supabase/types";
 
 const DatabaseManager = () => {
   const { isSuperAdmin } = useAuth();
-  const [selectedTable, setSelectedTable] = useState<keyof import("@/integrations/supabase/types").Database["Tables"] | null>(null);
+  const [selectedTable, setSelectedTable] = useState<keyof DBType["tables"] | null>(null);
   const [showSqlEditor, setShowSqlEditor] = useState(false);
 
   if (!isSuperAdmin()) {
@@ -30,8 +30,8 @@ const DatabaseManager = () => {
     );
   }
 
-  // List of main tables: Feel free to extend as needed!
-  const availableTables: { name: keyof import("@/integrations/supabase/types").Database["Tables"]; rowCount?: number, description: string }[] = [
+  // List of main tables: update typing
+  const availableTables: { name: keyof DBType["tables"]; rowCount?: number; description: string }[] = [
     { name: "customers", rowCount: 112, description: "عملاء النظام" },
     { name: "suppliers", rowCount: 32, description: "الموردين" },
     { name: "hotel_bookings", rowCount: 224, description: "الحجوزات الفندقية" },
@@ -69,8 +69,8 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={tbl.name} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{tbl.name}</td>
+                <tr key={String(tbl.name)} className="border-b hover:bg-blue-50 transition">
+                  <td className="p-3 font-mono text-blue-800">{String(tbl.name)}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
                   <td className="p-3 text-gray-600">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">
@@ -84,7 +84,6 @@ const DatabaseManager = () => {
       ) : (
         <TableViewer table={selectedTable} onBack={() => setSelectedTable(null)} />
       )}
-      {/* محرر SQL البسيط (placeholder فقط كبداية) */}
       <Dialog open={showSqlEditor} onOpenChange={setShowSqlEditor}>
         <DialogContent>
           <div className="p-4">

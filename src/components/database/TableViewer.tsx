@@ -7,8 +7,14 @@ import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 interface TableViewerProps {
-  table: keyof Database["Tables"]; // Restrict to valid table names
+  table: keyof Database["tables"];
   onBack: () => void;
+}
+
+// Only use string keys for columns!
+function getColumns(obj: Record<string, any>): string[] {
+  // Object.keys always returns string[]
+  return Object.keys(obj);
 }
 
 const TableViewer = ({ table, onBack }: TableViewerProps) => {
@@ -25,9 +31,12 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
       .then(({ data, error }) => {
         if (error) {
           toast({ title: "حدث خطأ", description: error.message, variant: "destructive" });
-        } else if (data) {
-          setData(data as any[]);
-          if (data.length > 0) setCols(Object.keys(data[0]));
+        } else if (data && data.length > 0) {
+          setData(data);
+          setCols(getColumns(data[0]));
+        } else {
+          setData([]);
+          setCols([]);
         }
         setLoading(false);
       });
@@ -37,7 +46,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
     if (data.length === 0) return;
     const csvRows = [
       cols.join(","),
-      ...data.map(row => cols.map(col => JSON.stringify(row[col] ?? "")).join(","))
+      ...data.map(row =>
+        cols.map(col => JSON.stringify(row[col] ?? "")).join(",")
+      ),
     ];
     const csvString = csvRows.join("\n");
     const a = document.createElement("a");
@@ -53,7 +64,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
         <Button variant="ghost" size="icon" onClick={onBack} title="رجوع للقائمة">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="font-bold text-lg flex-1">{table}</h2>
+        <h2 className="font-bold text-lg flex-1">{String(table)}</h2>
         <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex gap-1 items-center">
           <Download className="h-4 w-4" /> تصدير CSV
         </Button>
@@ -68,7 +79,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
             <thead>
               <tr>
                 {cols.map(col => (
-                  <th className="py-2 px-2 border-b bg-gray-50" key={col}>{col}</th>
+                  <th className="py-2 px-2 border-b bg-gray-50" key={String(col)}>
+                    {String(col)}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -76,7 +89,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
               {data.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50 transition">
                   {cols.map(col => (
-                    <td className="py-2 px-2 border-b" key={col}>{String(row[col])}</td>
+                    <td className="py-2 px-2 border-b" key={String(col)}>
+                      {String(row[col])}
+                    </td>
                   ))}
                 </tr>
               ))}
@@ -91,3 +106,4 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 };
 
 export default TableViewer;
+
