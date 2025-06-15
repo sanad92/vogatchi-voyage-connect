@@ -28,7 +28,7 @@ export const useSuperAdminOperations = () => {
 
       // تنفيذ عملية الحذف
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .delete()
         .eq('id', id);
 
@@ -39,10 +39,10 @@ export const useSuperAdminOperations = () => {
       }
 
       // تسجيل العملية في audit log
-      await supabase.rpc('log_super_admin_action', {
+      await supabase.rpc('log_admin_action' as any, {
         p_action_type: 'delete',
-        p_table_name: table,
-        p_record_id: id,
+        p_target_table: table,
+        p_target_id: id,
         p_description: `حذف ${itemType}: ${itemName}`
       });
 
@@ -141,7 +141,7 @@ export const useSuperAdminOperations = () => {
       console.log(`✏️ بدء تعديل ${itemType}:`, { table, id, updates });
 
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -154,10 +154,10 @@ export const useSuperAdminOperations = () => {
       }
 
       // تسجيل العملية في audit log
-      await supabase.rpc('log_super_admin_action', {
+      await supabase.rpc('log_admin_action' as any, {
         p_action_type: 'update',
-        p_table_name: table,
-        p_record_id: id,
+        p_target_table: table,
+        p_target_id: id,
         p_description: `تعديل ${itemType}`
       });
 
