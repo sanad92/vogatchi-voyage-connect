@@ -1,7 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import type { MonthlySalary } from '@/types/expenses';
 
 export const useSalaries = () => {
@@ -15,46 +14,24 @@ export const useSalaries = () => {
         .from('monthly_salaries')
         .select(`
           *,
-          employee:employees(full_name, position, employee_code)
+          employee:employees(full_name, employee_code, position)
         `)
-        .order('salary_month', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as MonthlySalary[];
+      return data as (MonthlySalary & { employee?: any })[];
     },
   });
 
-  // حساب الراتب الشهري
-  const calculateMonthlySalaryMutation = useMutation({
-    mutationFn: async (salaryData: {
-      employee_id: string;
-      salary_month: string;
-      base_salary: number;
-      allowances?: number;
-      overtime_hours?: number;
-      overtime_rate?: number;
-      deductions?: number;
-      bonus?: number;
-      tax_amount?: number;
-      insurance_deduction?: number;
-      payment_method?: string;
-      bank_account_id?: string;
-      status?: 'pending' | 'paid' | 'cancelled';
-      notes?: string;
-      created_by?: string;
-    }) => {
-      // إضافة القيم المطلوبة للراتب الإجمالي والصافي (سيتم حسابها في قاعدة البيانات)
-      const dataToInsert = {
-        ...salaryData,
-        gross_salary: 0, // سيتم حسابها في trigger
-        net_salary: 0,   // سيتم حسابها في trigger
-        overtime_amount: 0 // سيتم حسابها في trigger
-      };
-
+  // حساب راتب شهري جديد
+  const { mutateAsync: calculateMonthlySalary, isPending: isCalculatingSalary } = useMutation({
+    mutationFn: async (salaryData: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('monthly_salaries')
-        .insert(dataToInsert)
+        .insert({
+          ...salaryData,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
         .select()
         .single();
 
@@ -63,44 +40,37 @@ export const useSalaries = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
-      toast({
-        title: "تم الحساب بنجاح",
-        description: "تم حساب الراتب الشهري بنجاح",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "خطأ في الحساب",
-        description: "حدث خطأ أثناء حساب الراتب",
-        variant: "destructive",
-      });
     },
   });
 
-  const calculateMonthlySalary = (salaryData: {
-    employee_id: string;
-    salary_month: string;
-    base_salary: number;
-    allowances?: number;
-    overtime_hours?: number;
-    overtime_rate?: number;
-    deductions?: number;
-    bonus?: number;
-    tax_amount?: number;
-    insurance_deduction?: number;
-    payment_method?: string;
-    bank_account_id?: string;
-    status?: 'pending' | 'paid' | 'cancelled';
-    notes?: string;
-    created_by?: string;
-  }) => {
-    calculateMonthlySalaryMutation.mutate(salaryData);
-  };
+  // تحديث حالة راتب
+  const { mutateAsync: updateSalaryStatus, isPending: isUpdatingSalary } = useMutation({
+    mutationFn: async ({ id, status, payment_date }: { 
+      id: string; 
+      status: 'pending' | 'paid' | 'cancelled';
+      payment_date?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('monthly_salaries')
+        .update({ status, payment_date })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
+    },
+  });
 
   return {
     monthlySalaries,
     salariesLoading,
     calculateMonthlySalary,
-    isCalculatingSalary: calculateMonthlySalaryMutation.isPending,
+    isCalculatingSalary,
+    updateSalaryStatus,
+    isUpdatingSalary,
   };
 };
