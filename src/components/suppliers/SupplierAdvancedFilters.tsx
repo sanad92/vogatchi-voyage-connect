@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,64 +41,40 @@ const SupplierAdvancedFilters = ({
   onFilterChange,
   currentFilters,
 }: SupplierAdvancedFiltersProps) => {
-  // استخدام "all" كنص لتمثيل الكل، وundefined للإرسال
+  // Use string for minRating in state always ('all' or '1' ... '5')
   const [filters, setFilters] = useState<{
-    type?: string;
-    status?: string;
-    minRating?: number;
-    search?: string;
+    type: string;
+    status: string;
+    minRating: string;
+    search: string;
   }>({
-    ...currentFilters,
     type: currentFilters.type ?? 'all',
     status: currentFilters.status ?? 'all',
-    minRating: currentFilters.minRating ?? undefined,
+    minRating:
+      currentFilters.minRating !== undefined
+        ? String(currentFilters.minRating)
+        : 'all',
     search: currentFilters.search ?? '',
   });
 
   const handleChange = (key: string, value: string) => {
-    let updatedFilters = { ...filters };
+    let updatedFilters = { ...filters, [key]: value };
 
-    if (key === 'type' || key === 'status') {
-      updatedFilters[key] = value === 'all' ? undefined : value;
-    } else if (key === 'minRating') {
-      // عند اختيار "all" نرجعها undefined
-      updatedFilters.minRating = value === 'all' ? undefined : Number(value);
-    } else if (key === 'search') {
-      updatedFilters.search = value;
-    }
-    setFilters({
-      ...filters,
-      ...updatedFilters,
-      // أبقي "all" في الحالة الداخلية حتى تبقى القائمة منضبطة
-      type: key === 'type' ? value : (filters.type ?? 'all'),
-      status: key === 'status' ? value : (filters.status ?? 'all'),
-      minRating:
-        key === 'minRating'
-          ? value
-          : filters.minRating !== undefined
-          ? String(filters.minRating)
-          : 'all',
-    });
+    setFilters(updatedFilters);
 
-    // أرسل فقط القيم المناسبة للفلترة للخارج (undefined عندما تكون all)
+    // Prepare value types for parent callback
     const outgoingFilters = {
       ...updatedFilters,
-      type: updatedFilters.type ?? undefined,
-      status: updatedFilters.status ?? undefined,
+      type: updatedFilters.type === 'all' ? undefined : updatedFilters.type,
+      status: updatedFilters.status === 'all' ? undefined : updatedFilters.status,
       minRating:
-        updatedFilters.minRating === undefined
+        updatedFilters.minRating === 'all'
           ? undefined
-          : updatedFilters.minRating,
+          : Number(updatedFilters.minRating),
       search: updatedFilters.search ?? '',
     };
     onFilterChange(outgoingFilters);
   };
-
-  // قيمة الفلتر دائما نص، "all" أو قيمة رقمية كنص
-  const minRatingValue =
-    filters.minRating === undefined || filters.minRating === 'all'
-      ? 'all'
-      : String(filters.minRating);
 
   return (
     <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-50 rounded-md mb-3">
@@ -111,7 +86,7 @@ const SupplierAdvancedFilters = ({
         onChange={e => handleChange('search', e.target.value)}
       />
       <Select
-        value={filters.type || 'all'}
+        value={filters.type}
         onValueChange={v => handleChange('type', v)}
       >
         <SelectTrigger className="w-32">نوع المورد</SelectTrigger>
@@ -124,7 +99,7 @@ const SupplierAdvancedFilters = ({
         </SelectContent>
       </Select>
       <Select
-        value={filters.status || 'all'}
+        value={filters.status}
         onValueChange={v => handleChange('status', v)}
       >
         <SelectTrigger className="w-32">الحالة</SelectTrigger>
@@ -137,7 +112,7 @@ const SupplierAdvancedFilters = ({
         </SelectContent>
       </Select>
       <Select
-        value={minRatingValue}
+        value={filters.minRating}
         onValueChange={v => handleChange('minRating', v)}
       >
         <SelectTrigger className="w-32">الحد الأدنى للتقييم</SelectTrigger>
