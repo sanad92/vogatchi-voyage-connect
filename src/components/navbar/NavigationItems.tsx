@@ -1,76 +1,100 @@
-import { Home, Calendar, Users, Package, CreditCard, FileText, Settings, MessageSquare, Hotel, Plane } from "lucide-react";
+import {
+  Home,
+  Calendar,
+  Building,
+  Plane,
+  Users,
+  Headphones as HeadphonesIcon,
+  Truck,
+  FileText,
+  CreditCard,
+  BarChart,
+  Settings,
+  Building2
+} from "lucide-react";
 
-export const mainNavItems = [
-  {
-    name: "الرئيسية",
-    href: "/",
-    icon: Home,
-  },
-  {
-    name: "العمليات اليومية",
-    href: "/daily-operations",
-    icon: Calendar,
-  },
-];
+interface NavItem {
+  to: string;
+  icon: any;
+  label: string;
+  allowedRoles: string[];
+}
 
-export const businessNavItems = [
-  {
-    name: "العملاء",
-    href: "/customers",
-    icon: Users,
-  },
-  {
-    name: "حجوزات الفنادق",
-    href: "/hotel-bookings",
-    icon: Hotel,
-  },
-  {
-    name: "حجوزات الطيران",
-    href: "/flight-bookings",
-    icon: Plane,
-  },
-  {
-    name: "الموردين",
-    href: "/suppliers",
-    icon: Package,
-  },
-  {
-    name: "الفواتير",
-    href: "/invoices",
-    icon: FileText,
-  },
-  {
-    name: "أوامر الدفع",
-    href: "/payment-orders",
-    icon: CreditCard,
-  },
-];
+export const getNavigationItems = (userRole: string | undefined) => {
+  const items = [
+    {
+      to: "/",
+      icon: Home,
+      label: "الرئيسية",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent", "accountant", "viewer"]
+    },
+    {
+      to: "/daily-operations",
+      icon: Calendar,
+      label: "العمليات اليومية",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    },
+    {
+      to: "/hotel-bookings",
+      icon: Building,
+      label: "حجوزات الفنادق",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    },
+    {
+      to: "/flight-bookings",
+      icon: Plane,
+      label: "حجوزات الطيران",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    },
+    {
+      to: "/customers",
+      icon: Users,
+      label: "العملاء",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    },
+    {
+      to: "/customer-service",
+      icon: HeadphonesIcon,
+      label: "خدمة العملاء",
+      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    },
+    {
+      to: "/suppliers",
+      icon: Truck,
+      label: "الموردين",
+      allowedRoles: ["super_admin", "admin", "manager"]
+    },
+    {
+      to: "/invoices",
+      icon: FileText,
+      label: "الفواتير",
+      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    },
+    {
+      to: "/payment-orders",
+      icon: CreditCard,
+      label: "أوامر الدفع",
+      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    },
+    {
+      to: "/bank-accounts",
+      icon: Building2,
+      label: "الحسابات البنكية",
+      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    },
+    {
+      to: "/reports",
+      icon: BarChart,
+      label: "التقارير",
+      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    },
+    {
+      to: "/admin-settings",
+      icon: Settings,
+      label: "إعدادات النظام",
+      allowedRoles: ["super_admin"]
+    }
+  ];
 
-export const communicationNavItems = [
-  {
-    name: "خدمة العملاء",
-    href: "/customer-service",
-    icon: MessageSquare,
-  },
-  {
-    name: "التقارير",
-    href: "/reports",
-    icon: FileText,
-  },
-];
-
-export const adminNavItems = [
-  {
-    name: "إعدادات النظام",
-    href: "/admin-settings",
-    icon: Settings,
-  },
-];
-
-// Keep the original navigationItems for backwards compatibility
-export const navigationItems = [
-  ...mainNavItems,
-  ...businessNavItems,
-  ...communicationNavItems,
-  ...adminNavItems,
-];
+  return items.filter(item => item.allowedRoles.includes(userRole || "viewer"));
+};

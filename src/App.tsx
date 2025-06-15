@@ -1,40 +1,34 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
+import Auth from "@/pages/Auth";
+import Index from "@/pages/Index";
+import DailyOperations from "@/pages/DailyOperations";
+import HotelBookings from "@/pages/HotelBookings";
+import FlightBookings from "@/pages/FlightBookings";
+import Customers from "@/pages/Customers";
+import CustomerService from "@/pages/CustomerService";
+import Suppliers from "@/pages/Suppliers";
+import Invoices from "@/pages/Invoices";
+import PaymentOrders from "@/pages/PaymentOrders";
+import Reports from "@/pages/Reports";
+import AdminSettings from "@/pages/AdminSettings";
+import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import Navbar from "@/components/navbar/Navbar";
+import BankAccounts from "@/pages/BankAccounts";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Customers from "./pages/Customers";
-import Suppliers from "./pages/Suppliers";
-import Reports from "./pages/Reports";
-import Invoices from "./pages/Invoices";
-import PaymentOrders from "./pages/PaymentOrders";
-import CustomerService from "./pages/CustomerService";
-import DailyOperations from "./pages/DailyOperations";
-import AdminSettings from "./pages/AdminSettings";
-import HotelBookings from "./pages/HotelBookings";
-import FlightBookings from "./pages/FlightBookings";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <Index />
                 </main>
               </div>
@@ -42,29 +36,19 @@ const App = () => (
           } />
           <Route path="/daily-operations" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <DailyOperations />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/customers" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <Customers />
                 </main>
               </div>
             </ProtectedRoute>
           } />
           <Route path="/hotel-bookings" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <HotelBookings />
                 </main>
               </div>
@@ -72,39 +56,49 @@ const App = () => (
           } />
           <Route path="/flight-bookings" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <FlightBookings />
+                </main>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/customers" element={
+            <ProtectedRoute>
+              <div className="flex">
+                <Navbar />
+                <main className="flex-1">
+                  <Customers />
+                </main>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/customer-service" element={
+            <ProtectedRoute>
+              <div className="flex">
+                <Navbar />
+                <main className="flex-1">
+                  <CustomerService />
                 </main>
               </div>
             </ProtectedRoute>
           } />
           <Route path="/suppliers" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <Suppliers />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                <main className="pt-16">
-                  <Reports />
                 </main>
               </div>
             </ProtectedRoute>
           } />
           <Route path="/invoices" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <Invoices />
                 </main>
               </div>
@@ -112,29 +106,39 @@ const App = () => (
           } />
           <Route path="/payment-orders" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <PaymentOrders />
                 </main>
               </div>
             </ProtectedRoute>
           } />
-          <Route path="/customer-service" element={
+          <Route path="/bank-accounts" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
-                  <CustomerService />
+                <main className="flex-1">
+                  <BankAccounts />
+                </main>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <div className="flex">
+                <Navbar />
+                <main className="flex-1">
+                  <Reports />
                 </main>
               </div>
             </ProtectedRoute>
           } />
           <Route path="/admin-settings" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div className="flex">
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex-1">
                   <AdminSettings />
                 </main>
               </div>
@@ -142,9 +146,10 @@ const App = () => (
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        <Toaster />
+      </div>
+    </Router>
+  );
+}
 
 export default App;

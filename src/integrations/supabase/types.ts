@@ -164,6 +164,112 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_account_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          reference_number: string | null
+          related_invoice_id: string | null
+          related_payment_order_id: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          related_invoice_id?: string | null
+          related_payment_order_id?: string | null
+          transaction_date?: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          related_invoice_id?: string | null
+          related_payment_order_id?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_account_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_account_transactions_related_invoice_id_fkey"
+            columns: ["related_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_account_transactions_related_payment_order_id_fkey"
+            columns: ["related_payment_order_id"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          account_type: string | null
+          bank_name: string
+          created_at: string
+          currency: string
+          current_balance: number | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          account_type?: string | null
+          bank_name: string
+          created_at?: string
+          currency: string
+          current_balance?: number | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          account_type?: string | null
+          bank_name?: string
+          created_at?: string
+          currency?: string
+          current_balance?: number | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_special_requests: {
         Row: {
           booking_id: string
@@ -911,6 +1017,39 @@ export type Database = {
           },
         ]
       }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          from_currency: string
+          id: string
+          is_active: boolean | null
+          rate: number
+          to_currency: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency: string
+          id?: string
+          is_active?: boolean | null
+          rate: number
+          to_currency: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency?: string
+          id?: string
+          is_active?: boolean | null
+          rate?: number
+          to_currency?: string
+        }
+        Relationships: []
+      }
       flight_bookings: {
         Row: {
           airline_id: string
@@ -1387,6 +1526,8 @@ export type Database = {
           customer_id: string
           discount_amount: number | null
           due_date: string | null
+          exchange_rate_to_egp: number | null
+          exchange_rate_to_usd: number | null
           final_amount: number
           id: string
           invoice_number: string
@@ -1398,6 +1539,8 @@ export type Database = {
           subtotal: number | null
           tax_amount: number | null
           total_amount: number
+          total_amount_egp: number | null
+          total_amount_usd: number | null
           updated_at: string
           vat_amount: number | null
           vat_rate: number | null
@@ -1410,6 +1553,8 @@ export type Database = {
           customer_id: string
           discount_amount?: number | null
           due_date?: string | null
+          exchange_rate_to_egp?: number | null
+          exchange_rate_to_usd?: number | null
           final_amount: number
           id?: string
           invoice_number: string
@@ -1421,6 +1566,8 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           total_amount: number
+          total_amount_egp?: number | null
+          total_amount_usd?: number | null
           updated_at?: string
           vat_amount?: number | null
           vat_rate?: number | null
@@ -1433,6 +1580,8 @@ export type Database = {
           customer_id?: string
           discount_amount?: number | null
           due_date?: string | null
+          exchange_rate_to_egp?: number | null
+          exchange_rate_to_usd?: number | null
           final_amount?: number
           id?: string
           invoice_number?: string
@@ -1444,6 +1593,8 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number
+          total_amount_egp?: number | null
+          total_amount_usd?: number | null
           updated_at?: string
           vat_amount?: number | null
           vat_rate?: number | null
@@ -1634,9 +1785,12 @@ export type Database = {
       payment_orders: {
         Row: {
           amount: number
+          amount_in_account_currency: number | null
+          bank_account_id: string | null
           bank_reference: string | null
           created_at: string
           due_date: string
+          exchange_rate: number | null
           id: string
           invoice_id: string
           notes: string | null
@@ -1648,9 +1802,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_in_account_currency?: number | null
+          bank_account_id?: string | null
           bank_reference?: string | null
           created_at?: string
           due_date: string
+          exchange_rate?: number | null
           id?: string
           invoice_id: string
           notes?: string | null
@@ -1662,9 +1819,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_in_account_currency?: number | null
+          bank_account_id?: string | null
           bank_reference?: string | null
           created_at?: string
           due_date?: string
+          exchange_rate?: number | null
           id?: string
           invoice_id?: string
           notes?: string | null
@@ -1675,6 +1835,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_orders_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_orders_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -2064,6 +2231,10 @@ export type Database = {
           status_name_ar: string
           color: string
         }[]
+      }
+      get_current_exchange_rate: {
+        Args: { from_curr: string; to_curr: string }
+        Returns: number
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>

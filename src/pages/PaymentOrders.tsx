@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CreditCard, Plus, Eye, Edit, CheckCircle, XCircle, Clock, Search, Filter } from "lucide-react";
+import { CreditCard, Plus, Eye, Edit, CheckCircle, XCircle, Clock, Search, Filter, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useExchangeRates } from "@/hooks/useExchangeRates";
+import { CURRENCY_SYMBOLS } from "@/types/currency";
+import CurrencyConverter from "@/components/currency/CurrencyConverter";
 
 type PaymentOrder = {
   id: string;
@@ -23,9 +26,13 @@ type PaymentOrder = {
   bank_reference: string | null;
   notes: string | null;
   created_at: string;
+  bank_account_id: string | null;
+  exchange_rate: number;
+  amount_in_account_currency: number | null;
   invoice: {
     invoice_number: string;
     booking_type: 'hotel' | 'flight';
+    currency: string;
     customers: { name: string };
     hotel_booking?: {
       internal_booking_number: string;
@@ -35,21 +42,10 @@ type PaymentOrder = {
       booking_reference: string;
     };
   };
-};
-
-type Invoice = {
-  id: string;
-  invoice_number: string;
-  final_amount: number;
-  status: string;
-  booking_type: 'hotel' | 'flight';
-  customers: { name: string };
-  hotel_booking?: {
-    internal_booking_number: string;
-    hotel_name: string;
-  };
-  flight_booking?: {
-    booking_reference: string;
+  bank_account?: {
+    account_name: string;
+    currency: string;
+    bank_name: string;
   };
 };
 
@@ -60,15 +56,20 @@ const PaymentOrders = () => {
     payment_method: "bank_transfer",
     due_date: "",
     bank_reference: "",
-    notes: ""
+    notes: "",
+    bank_account_id: ""
   });
   const [showForm, setShowForm] = useState(false);
+  const [showConverter, setShowConverter] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { bankAccounts } = useBankAccounts();
+  const { convertCurrency } = useExchangeRates();
 
-  // استعلام أوامر الدفع
+  // استعلام أوامر الدفع مع معلومات الحسابات البنكية
   const { data: paymentOrders = [], isLoading } = useQuery({
     queryKey: ['payment-orders'],
     queryFn: async () => {
@@ -79,7 +80,13 @@ const PaymentOrders = () => {
           invoices!inner(
             invoice_number,
             booking_type,
+            currency,
             customers(name)
+          ),
+          bank_accounts(
+            account_name,
+            currency,
+            bank_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -128,7 +135,7 @@ const PaymentOrders = () => {
     }
   });
 
-  // استعلام الفواتير المتاحة للدفع (المرسلة وغير المدفوعة)
+  // استعلام الفواتير المتاحة للدفع
   const { data: availableInvoices = [] } = useQuery({
     queryKey: ['available-invoices'],
     queryFn: async () => {
@@ -138,6 +145,7 @@ const PaymentOrders = () => {
           id,
           invoice_number,
           final_amount,
+          currency,
           status,
           booking_type,
           booking_id,
@@ -147,42 +155,7 @@ const PaymentOrders = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-
-      // جلب تفاصيل الحجوزات
-      const invoicesWithBookings = await Promise.all(
-        data.map(async (invoice) => {
-          let bookingDetails = {};
-
-          if (invoice.booking_type === 'hotel') {
-            const { data: hotelData } = await supabase
-              .from('hotel_bookings')
-              .select('internal_booking_number, hotel_name')
-              .eq('id', invoice.booking_id)
-              .single();
-            
-            if (hotelData) {
-              bookingDetails = { hotel_booking: hotelData };
-            }
-          } else if (invoice.booking_type === 'flight') {
-            const { data: flightData } = await supabase
-              .from('flight_bookings')
-              .select('booking_reference')
-              .eq('id', invoice.booking_id)
-              .single();
-            
-            if (flightData) {
-              bookingDetails = { flight_booking: flightData };
-            }
-          }
-
-          return {
-            ...invoice,
-            ...bookingDetails
-          };
-        })
-      );
-
-      return invoicesWithBookings as Invoice[];
+      return data;
     }
   });
 
@@ -197,7 +170,8 @@ const PaymentOrders = () => {
           payment_method: paymentOrder.payment_method,
           due_date: paymentOrder.due_date,
           bank_reference: paymentOrder.bank_reference || null,
-          notes: paymentOrder.notes || null
+          notes: paymentOrder.notes || null,
+          bank_account_id: paymentOrder.bank_account_id || null
         }])
         .select()
         .single();
@@ -214,12 +188,13 @@ const PaymentOrders = () => {
         payment_method: "bank_transfer",
         due_date: "",
         bank_reference: "",
-        notes: ""
+        notes: "",
+        bank_account_id: ""
       });
       setShowForm(false);
       toast({
         title: "تم إنشاء أمر الدفع بنجاح",
-        description: "تم إنشاء أمر الدفع الجديد",
+        description: "تم إنشاء أمر الدفع الجديد مع ربطه بالحساب البنكي المناسب",
       });
     },
     onError: (error) => {
@@ -248,7 +223,7 @@ const PaymentOrders = () => {
       
       if (error) throw error;
 
-      // إذا تم الدفع، تحديث حالة الفاتورة أيضاً
+      // إذا تم الدفع، تحديث حالة الفاتورة وإضافة حركة بنكية
       if (status === 'completed') {
         const order = paymentOrders.find(po => po.id === id);
         if (order) {
@@ -259,6 +234,21 @@ const PaymentOrders = () => {
               paid_date: payment_date || new Date().toISOString().split('T')[0]
             })
             .eq('id', order.invoice_id);
+
+          // إضافة حركة بنكية إذا كان هناك حساب بنكي مرتبط
+          if (order.bank_account_id && order.amount_in_account_currency) {
+            await supabase
+              .from('bank_account_transactions')
+              .insert([{
+                bank_account_id: order.bank_account_id,
+                transaction_type: 'debit',
+                amount: order.amount_in_account_currency,
+                description: `دفع أمر رقم ${order.order_number}`,
+                reference_number: order.bank_reference,
+                related_payment_order_id: order.id,
+                transaction_date: payment_date || new Date().toISOString().split('T')[0]
+              }]);
+          }
         }
       }
       
@@ -267,16 +257,11 @@ const PaymentOrders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-orders'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-transactions'] });
       toast({
         title: "تم تحديث حالة الدفع",
-        description: "تم تحديث حالة أمر الدفع بنجاح",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "خطأ في تحديث الحالة",
-        description: error.message,
-        variant: "destructive",
+        description: "تم تحديث حالة أمر الدفع وتسجيل الحركة البنكية",
       });
     }
   });
@@ -360,8 +345,9 @@ const PaymentOrders = () => {
       order.invoice.customers.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesCurrency = currencyFilter === "all" || order.invoice.currency === currencyFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesCurrency;
   });
 
   // إحصائيات
@@ -382,13 +368,29 @@ const PaymentOrders = () => {
             <CreditCard className="h-8 w-8" />
             أوامر الدفع
           </h1>
-          <p className="text-gray-600 mt-1">إدارة ومتابعة أوامر الدفع للفواتير المصدرة</p>
+          <p className="text-gray-600 mt-1">إدارة ومتابعة أوامر الدفع متعددة العملات</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-orange-600 hover:bg-orange-700">
-          <Plus className="w-4 h-4 ml-2" />
-          إنشاء أمر دفع جديد
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowConverter(!showConverter)}
+            className="bg-blue-50 hover:bg-blue-100"
+          >
+            <Building2 className="w-4 h-4 ml-2" />
+            محول العملات
+          </Button>
+          <Button onClick={() => setShowForm(!showForm)} className="bg-orange-600 hover:bg-orange-700">
+            <Plus className="w-4 h-4 ml-2" />
+            إنشاء أمر دفع جديد
+          </Button>
+        </div>
       </div>
+
+      {showConverter && (
+        <div className="flex justify-center">
+          <CurrencyConverter />
+        </div>
+      )}
 
       {/* إحصائيات سريعة */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -410,7 +412,7 @@ const PaymentOrders = () => {
               <CreditCard className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">إجمالي المبلغ</p>
-                <p className="text-2xl font-bold">{totalAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold">{totalAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -422,7 +424,7 @@ const PaymentOrders = () => {
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">المكتمل</p>
-                <p className="text-2xl font-bold text-green-600">{completedAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold text-green-600">{completedAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -434,7 +436,7 @@ const PaymentOrders = () => {
               <Clock className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">المعلق</p>
-                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -470,6 +472,17 @@ const PaymentOrders = () => {
                 <SelectItem value="cancelled">ملغي</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="فلترة حسب العملة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع العملات</SelectItem>
+                <SelectItem value="EGP">جنيه مصري</SelectItem>
+                <SelectItem value="USD">دولار أمريكي</SelectItem>
+                <SelectItem value="SAR">ريال سعودي</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -488,9 +501,7 @@ const PaymentOrders = () => {
                 <SelectContent>
                   {availableInvoices.map(invoice => (
                     <SelectItem key={invoice.id} value={invoice.id}>
-                      {invoice.invoice_number} - {invoice.customers.name} - {invoice.final_amount.toFixed(2)} ر.س
-                      {invoice.hotel_booking && ` - ${invoice.hotel_booking.hotel_name}`}
-                      {invoice.flight_booking && ` - ${invoice.flight_booking.booking_reference}`}
+                      {invoice.invoice_number} - {invoice.customers.name} - {invoice.final_amount.toFixed(2)} {CURRENCY_SYMBOLS[invoice.currency as keyof typeof CURRENCY_SYMBOLS]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -514,6 +525,19 @@ const PaymentOrders = () => {
                   <SelectItem value="cash">نقدي</SelectItem>
                   <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>
                   <SelectItem value="check">شيك</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={newPaymentOrder.bank_account_id} onValueChange={(value) => setNewPaymentOrder({...newPaymentOrder, bank_account_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الحساب البنكي" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bankAccounts.map(account => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.account_name} - {account.bank_name} ({account.currency})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -575,14 +599,9 @@ const PaymentOrders = () => {
                     </h3>
                     <p className="text-gray-600">فاتورة: {order.invoice.invoice_number}</p>
                     <p className="text-gray-600">العميل: {order.invoice.customers.name}</p>
-                    {order.invoice.hotel_booking && (
-                      <p className="text-sm text-gray-500">
-                        حجز فندق: {order.invoice.hotel_booking.internal_booking_number} - {order.invoice.hotel_booking.hotel_name}
-                      </p>
-                    )}
-                    {order.invoice.flight_booking && (
-                      <p className="text-sm text-gray-500">
-                        حجز طيران: {order.invoice.flight_booking.booking_reference}
+                    {order.bank_account && (
+                      <p className="text-sm text-blue-600">
+                        حساب: {order.bank_account.account_name} ({order.bank_account.currency})
                       </p>
                     )}
                   </div>
@@ -593,8 +612,15 @@ const PaymentOrders = () => {
                         {getStatusLabel(order.status)}
                       </span>
                     </Badge>
-                    <div className="mt-2 text-lg font-bold">
-                      {order.amount.toFixed(2)} ر.س
+                    <div className="mt-2">
+                      <div className="text-lg font-bold">
+                        {order.amount.toFixed(2)} {CURRENCY_SYMBOLS[order.invoice.currency as keyof typeof CURRENCY_SYMBOLS]}
+                      </div>
+                      {order.amount_in_account_currency && order.bank_account && order.invoice.currency !== order.bank_account.currency && (
+                        <div className="text-sm text-gray-600">
+                          ≈ {order.amount_in_account_currency.toFixed(2)} {CURRENCY_SYMBOLS[order.bank_account.currency as keyof typeof CURRENCY_SYMBOLS]}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -625,6 +651,15 @@ const PaymentOrders = () => {
                     <p>{order.bank_reference || 'غير محدد'}</p>
                   </div>
                 </div>
+
+                {order.exchange_rate !== 1.0 && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded">
+                    <span className="font-medium text-blue-800">سعر الصرف:</span>
+                    <p className="text-sm text-blue-700">
+                      1 {order.invoice.currency} = {order.exchange_rate.toFixed(4)} {order.bank_account?.currency}
+                    </p>
+                  </div>
+                )}
 
                 {order.notes && (
                   <div className="mb-4 p-3 bg-gray-50 rounded">
