@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Shield, Save, Users, Eye, Plus, X, Copy } from 'lucide-react';
+import { Search, Shield, Save, Users, Plus, X } from 'lucide-react';
 import { useDetailedPermissions, DetailedUserPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import { toast } from 'sonner';
@@ -148,7 +148,7 @@ const DetailedPermissionsMatrix = () => {
 
   // الحصول على صلاحيات مستخدم معين
   const getUserPermissions = (userId: string) => {
-    return allUserPermissions?.find(perm => perm.user_id === userId);
+    return allUserPermissions?.find((perm: any) => perm.user_id === userId);
   };
 
   // بدء تعديل صلاحيات مستخدم

@@ -87,31 +87,21 @@ export const useDetailedPermissions = () => {
   const { isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
 
-  // جلب مجموعات الصلاحيات
+  // جلب مجموعات الصلاحيات باستخدام Raw SQL
   const { data: permissionGroups } = useQuery({
     queryKey: ['permission-groups'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('permission_groups')
-        .select('*')
-        .eq('is_active', true)
-        .order('name_ar');
-      
+      const { data, error } = await supabase.rpc('get_permission_groups');
       if (error) throw error;
       return data as PermissionGroup[];
     },
   });
 
-  // جلب تفاصيل الصلاحيات
+  // جلب تفاصيل الصلاحيات باستخدام Raw SQL
   const { data: permissionDetails } = useQuery({
     queryKey: ['permission-details'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('detailed_permissions')
-        .select('*')
-        .eq('is_active', true)
-        .order('permission_name_ar');
-      
+      const { data, error } = await supabase.rpc('get_detailed_permissions');
       if (error) throw error;
       return data as PermissionDetail[];
     },
@@ -121,19 +111,7 @@ export const useDetailedPermissions = () => {
   const { data: allUserPermissions, isLoading, error } = useQuery({
     queryKey: ['detailed-user-permissions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('detailed_user_permissions')
-        .select(`
-          *,
-          profiles!detailed_user_permissions_user_id_fkey(
-            id,
-            email,
-            full_name,
-            is_active
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
+      const { data, error } = await supabase.rpc('get_all_user_permissions');
       if (error) throw error;
       return data;
     },
@@ -145,12 +123,9 @@ export const useDetailedPermissions = () => {
     return useQuery({
       queryKey: ['detailed-user-permissions', userId],
       queryFn: async () => {
-        const { data, error } = await supabase
-          .from('detailed_user_permissions')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-        
+        const { data, error } = await supabase.rpc('get_user_permissions', { 
+          p_user_id: userId 
+        });
         if (error) throw error;
         return data as DetailedUserPermissions;
       },
@@ -167,15 +142,10 @@ export const useDetailedPermissions = () => {
       userId: string; 
       permissions: Partial<DetailedUserPermissions> 
     }) => {
-      const { data, error } = await supabase
-        .from('detailed_user_permissions')
-        .upsert({
-          user_id: userId,
-          ...permissions,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('update_user_permissions', {
+        p_user_id: userId,
+        p_permissions: permissions
+      });
       
       if (error) throw error;
       return data;
@@ -193,15 +163,9 @@ export const useDetailedPermissions = () => {
   // إنشاء صلاحيات افتراضية لمستخدم جديد
   const createPermissionsMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase
-        .from('detailed_user_permissions')
-        .insert([{ 
-          user_id: userId,
-          customers_view: true,
-          bookings_view: true
-        }])
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_default_permissions', {
+        p_user_id: userId
+      });
       
       if (error) throw error;
       return data;
