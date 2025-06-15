@@ -2390,13 +2390,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "invoices_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -3851,6 +3844,10 @@ export type Database = {
           success: boolean
           message: string
         }[]
+      }
+      booking_exists: {
+        Args: { booking: string; bookingtype: string }
+        Returns: boolean
       }
       calculate_employee_commission: {
         Args: {
