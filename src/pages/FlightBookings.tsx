@@ -6,10 +6,22 @@ import FlightBookingForm from "@/components/flight-bookings/FlightBookingForm";
 import EnhancedFlightBookingForm from "@/components/flight-bookings/EnhancedFlightBookingForm";
 import FlightBookingsList from "@/components/flight-bookings/FlightBookingsList";
 import { FlightBooking } from "@/types/flightBooking";
+import FlightBookingActions from "@/components/flight-bookings/details/FlightBookingActions";
+import FlightInvoiceDialog from "@/components/flight-bookings/dialogs/FlightInvoiceDialog";
+import FlightPrintDialog from "@/components/flight-bookings/dialogs/FlightPrintDialog";
+import FlightVoucherDialog from "@/components/flight-bookings/dialogs/FlightVoucherDialog";
+import { useFlightBookingsPage } from "@/components/flight-bookings/hooks/useFlightBookingsPage";
 
 const FlightBookings = () => {
   const [activeTab, setActiveTab] = useState("list");
   const [selectedBooking, setSelectedBooking] = useState<FlightBooking | null>(null);
+
+  // إدارة حوارات الطباعة والفاتورة والفاوتشر
+  const {
+    showPrintInvoice, setShowPrintInvoice,
+    showCreateInvoice, setShowCreateInvoice,
+    showVoucher, setShowVoucher
+  } = useFlightBookingsPage();
 
   const handleCreateNew = () => {
     setSelectedBooking(null);
@@ -147,6 +159,33 @@ const FlightBookings = () => {
                     </div>
                   </div>
                 )}
+
+                {/* إجراءات الحجوزات - أزرار الإجراءات الجديدة */}
+                <FlightBookingActions
+                  booking={selectedBooking}
+                  onBack={() => setActiveTab("list")}
+                  onEdit={() => setActiveTab("form")}
+                  onInvoice={() => setShowCreateInvoice(true)}
+                  onPrint={() => setShowPrintInvoice(true)}
+                  onVoucher={() => setShowVoucher(true)}
+                />
+
+                {/* الحوارات المناسبة */}
+                <FlightInvoiceDialog
+                  open={showCreateInvoice}
+                  booking={selectedBooking}
+                  onClose={() => setShowCreateInvoice(false)}
+                />
+                <FlightPrintDialog
+                  open={showPrintInvoice}
+                  booking={selectedBooking}
+                  onClose={() => setShowPrintInvoice(false)}
+                />
+                <FlightVoucherDialog
+                  open={showVoucher}
+                  booking={selectedBooking}
+                  onClose={() => setShowVoucher(false)}
+                />
               </CardContent>
             </Card>
           )}
