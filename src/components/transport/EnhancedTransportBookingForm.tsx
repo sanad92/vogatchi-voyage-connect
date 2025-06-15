@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -6,6 +7,7 @@ import { useState } from 'react';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
 import { useExpenses } from '@/hooks/useExpenses';
 import { toast } from '@/hooks/use-toast';
+import { Customer } from '@/types/customer';
 import TransportCustomerAgentSection from './enhanced/TransportCustomerAgentSection';
 import TransportTripDetailsSection from './enhanced/TransportTripDetailsSection';
 import CostCalculationSection from '@/components/shared/CostCalculationSection';
