@@ -76,13 +76,13 @@ const PermissionsMatrix = () => {
   };
 
   // الحصول على قيمة صلاحية
-  const getPermissionValue = (userId: string, permissionKey: string) => {
+  const getPermissionValue = (userId: string, permissionKey: string): boolean => {
     if (editingUser === userId) {
-      return tempPermissions[permissionKey as keyof UserPermissions] || false;
+      return Boolean(tempPermissions[permissionKey as keyof UserPermissions]);
     }
     
     const userPerms = getUserPermissions(userId);
-    return userPerms?.[permissionKey as keyof UserPermissions] || false;
+    return Boolean(userPerms?.[permissionKey as keyof UserPermissions]);
   };
 
   if (usersLoading) {
@@ -185,7 +185,7 @@ const PermissionsMatrix = () => {
                             checked={getPermissionValue(user.id, `${module.key}_read`)}
                             onCheckedChange={(checked) => {
                               if (editingUser === user.id) {
-                                updatePermission(`${module.key}_read`, checked as boolean);
+                                updatePermission(`${module.key}_read`, Boolean(checked));
                               }
                             }}
                             disabled={editingUser !== user.id}
@@ -196,7 +196,7 @@ const PermissionsMatrix = () => {
                             checked={getPermissionValue(user.id, `${module.key}_write`)}
                             onCheckedChange={(checked) => {
                               if (editingUser === user.id) {
-                                updatePermission(`${module.key}_write`, checked as boolean);
+                                updatePermission(`${module.key}_write`, Boolean(checked));
                               }
                             }}
                             disabled={editingUser !== user.id}

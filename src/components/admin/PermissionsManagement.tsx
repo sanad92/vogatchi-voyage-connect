@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Template, BarChart3 } from 'lucide-react';
+import { Shield, Users, FileTemplate, BarChart3 } from 'lucide-react';
 import PermissionsMatrix from './permissions/PermissionsMatrix';
 import PermissionTemplates from './permissions/PermissionTemplates';
 import PermissionsOverview from './permissions/PermissionsOverview';
@@ -30,7 +30,7 @@ const PermissionsManagement = () => {
             مصفوفة الصلاحيات
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Template className="h-4 w-4" />
+            <FileTemplate className="h-4 w-4" />
             القوالب الجاهزة
           </TabsTrigger>
         </TabsList>
