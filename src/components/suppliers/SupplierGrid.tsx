@@ -29,6 +29,8 @@ const SupplierGrid = ({
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   const getTypeLabel = (type: string) => {
     const types = {
@@ -97,6 +99,25 @@ const SupplierGrid = ({
     return [];
   };
 
+  const toggleSupplierSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id)
+      ? prev.filter(v => v !== id)
+      : [...prev, id]);
+  };
+
+  const selectAll = () => setSelectedIds(suppliers.map(s => s.id));
+  const clearAll = () => setSelectedIds([]);
+
+  const handleBulkDelete = async () => {
+    if (!deleteSupplier) return;
+    setBulkDeleteLoading(true);
+    for (const id of selectedIds) {
+      await new Promise(res => deleteSupplier(id) || setTimeout(res, 300));
+    }
+    setBulkDeleteLoading(false);
+    setSelectedIds([]);
+  };
+
   if (isLoading) {
     return (
       <div className="col-span-full text-center py-8">جاري تحميل الموردين...</div>
@@ -111,12 +132,41 @@ const SupplierGrid = ({
 
   return (
     <>
+      <div className="flex gap-2 mb-3 items-center">
+        <button onClick={selectAll} className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-blue-100">كل الصفوف</button>
+        <button onClick={clearAll} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-orange-100">إلغاء الكل</button>
+        {selectedIds.length > 0 && (
+          <button
+            onClick={handleBulkDelete}
+            className="text-xs px-3 py-1 bg-red-600 text-white rounded hover:bg-red-800 duration-100"
+            disabled={bulkDeleteLoading}
+          >
+            حذف المحدد ({selectedIds.length})
+          </button>
+        )}
+        {bulkDeleteLoading && <span className="ml-2 text-sm text-gray-500 animate-pulse">جاري حذف الموردين...</span>}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {suppliers.map((supplier) => {
           const paymentMethods = getPaymentMethods(supplier.payment_method_options);
 
           return (
-            <Card key={supplier.id} className="hover:shadow-lg transition-shadow cursor-pointer relative group" onClick={() => onSupplierSelect(supplier.id)}>
+            <Card
+              key={supplier.id}
+              className={`hover:shadow-lg transition-shadow cursor-pointer relative group ${selectedIds.includes(supplier.id) ? 'ring-2 ring-blue-400' : ''}`}
+              onClick={() => onSupplierSelect(supplier.id)}
+            >
+              {/* CheckBox للتحديد */}
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(supplier.id)}
+                onChange={e => {
+                  e.stopPropagation();
+                  toggleSupplierSelect(supplier.id);
+                }}
+                className="absolute left-3 top-3 w-4 h-4 accent-blue-600 z-20"
+                title="تحديد المورد"
+              />
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{supplier.name}</CardTitle>

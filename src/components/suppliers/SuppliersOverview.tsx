@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import SupplierStatsCards from './SupplierStatsCards';
 import SupplierPermissionCheck from './SupplierPermissionCheck';
 import SupplierSearchAndAdd from './SupplierSearchAndAdd';
 import SupplierForm from './SupplierForm';
 import SupplierGrid from './SupplierGrid';
+import SupplierAdvancedFilters from './SupplierAdvancedFilters';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useSupplierCurrencies } from '@/hooks/useSupplierCurrencies';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,12 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
+  const [advancedFilters, setAdvancedFilters] = useState({
+    type: '',
+    status: '',
+    minRating: undefined as number | undefined,
+    search: '',
+  });
   const { 
     suppliers: suppliersList, 
     suppliersLoading: isLoading, 
@@ -32,11 +38,29 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
   } = useSuppliers();
   const suppliers = suppliersList as Supplier[];
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // فلترة متقدمة:
+  const filteredSuppliers = suppliers.filter(supplier => {
+    // نص البحث بالاسم أو المسؤول/الإيميل
+    const searchMatch =
+      (advancedFilters.search || searchTerm)
+        ? (
+            supplier.name?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase()) ||
+            supplier.contact_person?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase()) ||
+            supplier.email?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase())
+          )
+        : true;
+    // النوع
+    const typeMatch = advancedFilters.type ? supplier.supplier_type === advancedFilters.type : true;
+    // الحالة
+    const statusMatch = advancedFilters.status
+      ? (advancedFilters.status === 'active' ? supplier.is_active : !supplier.is_active)
+      : true;
+    // الحد الأدنى للتقييم
+    const minRatingMatch =
+      advancedFilters.minRating ? (supplier.rating || 0) >= advancedFilters.minRating : true;
+
+    return searchMatch && typeMatch && statusMatch && minRatingMatch;
+  });
 
   const { addCurrency } = useSupplierCurrencies();
 
@@ -91,6 +115,11 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
         totalSuppliers={totalSuppliers}
         activeSuppliers={activeSuppliers}
         avgRating={avgRating}
+      />
+      {/* شريط الفلاتر المتقدمة */}
+      <SupplierAdvancedFilters
+        onFilterChange={setAdvancedFilters}
+        currentFilters={advancedFilters}
       />
       <SupplierPermissionCheck action="create">
         <SupplierSearchAndAdd
