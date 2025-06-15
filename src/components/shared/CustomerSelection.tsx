@@ -1,105 +1,124 @@
 
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, User } from 'lucide-react';
-import { useCustomers } from '@/hooks/useCustomers';
-import { useState } from 'react';
+import { useState } from "react";
+import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
+import { Customer } from "@/types/customer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import CustomerSearch from "@/components/customers/CustomerSearch";
+import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
 
 interface CustomerSelectionProps {
-  selectedCustomerId?: string;
-  selectedCustomerName?: string;
-  onCustomerSelect: (customerId: string, customerName: string) => void;
-  onCustomerNameChange?: (name: string) => void;
-  allowNewCustomer?: boolean;
-  required?: boolean;
+  selectedCustomer: Customer | null;
+  onCustomerSelect: (customer: Customer | null) => void;
+  register: UseFormRegister<any>;
+  setValue: UseFormSetValue<any>;
+  errors: FieldErrors<any>;
 }
 
 const CustomerSelection = ({
-  selectedCustomerId,
-  selectedCustomerName,
+  selectedCustomer,
   onCustomerSelect,
-  onCustomerNameChange,
-  allowNewCustomer = true,
-  required = true
+  register,
+  setValue,
+  errors
 }: CustomerSelectionProps) => {
-  const { customers, isLoading } = useCustomers();
-  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const handleCustomerChange = (customerId: string) => {
-    const customer = customers?.find(c => c.id === customerId);
-    if (customer) {
-      onCustomerSelect(customerId, customer.name);
-    }
+  const handleCustomerSelect = (customer: Customer) => {
+    onCustomerSelect(customer);
+    setValue('customer_name', customer.full_name);
+    setValue('customer_id', customer.id);
+    setIsSearchOpen(false);
   };
 
-  if (showNewCustomer) {
-    return (
-      <div className="space-y-2">
-        <Label htmlFor="customer_name">اسم العميل الجديد</Label>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            id="customer_name"
-            value={selectedCustomerName || ''}
-            onChange={(e) => onCustomerNameChange?.(e.target.value)}
-            placeholder="أدخل اسم العميل"
-            required={required}
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowNewCustomer(false)}
-          >
-            إلغاء
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleQuickAdd = (customer: Customer) => {
+    handleCustomerSelect(customer);
+    setIsAddOpen(false);
+  };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="customer_id">العميل</Label>
-      <div className="flex gap-2">
-        <Select
-          value={selectedCustomerId || ''}
-          onValueChange={handleCustomerChange}
-        >
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="اختر عميل موجود" />
-          </SelectTrigger>
-          <SelectContent>
-            {isLoading ? (
-              <SelectItem value="" disabled>جاري التحميل...</SelectItem>
-            ) : (
-              customers?.map((customer) => (
-                <SelectItem key={customer.id} value={customer.id}>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span>{customer.name}</span>
-                    {customer.phone && (
-                      <span className="text-xs text-gray-500">({customer.phone})</span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-        {allowNewCustomer && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowNewCustomer(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            جديد
-          </Button>
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="customer_name">اسم العميل *</Label>
+        <div className="flex gap-2 mt-1">
+          <Input
+            id="customer_name"
+            {...register("customer_name", { required: "اسم العميل مطلوب" })}
+            placeholder="اسم العميل"
+            readOnly={!!selectedCustomer}
+            className={selectedCustomer ? "bg-gray-50" : ""}
+          />
+          <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" type="button">
+                <Search className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>البحث عن عميل</DialogTitle>
+              </DialogHeader>
+              <CustomerSearch onSelectCustomer={handleCustomerSelect} />
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" type="button">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>إضافة عميل جديد</DialogTitle>
+              </DialogHeader>
+              <QuickCustomerAdd onSuccess={handleQuickAdd} />
+            </DialogContent>
+          </Dialog>
+        </div>
+        {errors.customer_name && (
+          <p className="text-red-500 text-sm mt-1">{errors.customer_name.message}</p>
         )}
       </div>
+
+      {selectedCustomer && (
+        <div className="bg-blue-50 p-3 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">العميل المحدد</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onCustomerSelect(null);
+                setValue('customer_name', '');
+                setValue('customer_id', '');
+              }}
+              type="button"
+            >
+              إلغاء التحديد
+            </Button>
+          </div>
+          <div className="mt-2 space-y-1">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{selectedCustomer.full_name}</Badge>
+              {selectedCustomer.phone && (
+                <Badge variant="outline" className="text-xs">{selectedCustomer.phone}</Badge>
+              )}
+              {selectedCustomer.email && (
+                <Badge variant="outline" className="text-xs">{selectedCustomer.email}</Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

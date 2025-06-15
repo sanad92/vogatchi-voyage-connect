@@ -40,20 +40,33 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       paid_amount: booking.paid_amount,
       payment_due_date: booking.payment_due_date,
     } : {
-      currency: 'EGP'
+      currency: 'EGP',
+      booking_agent_name: currentEmployee?.full_name || 'مستخدم غير محدد'
     }
   });
 
-  // تعيين بيانات موظف الحجز تلقائياً
+  // تعيين بيانات موظف الحجز تلقائياً ومنع تغييرها
   useEffect(() => {
     if (currentEmployee && !booking) {
       setValue('booking_agent_name', currentEmployee.full_name);
-      // إضافة booking_agent_id إذا كان متاحاً في النموذج
-      if (currentEmployee.id) {
-        setValue('booking_agent_id' as any, currentEmployee.id);
+      // قفل الحقل ضد التغيير
+      const agentNameField = document.getElementById('booking_agent_name') as HTMLInputElement;
+      if (agentNameField) {
+        agentNameField.readOnly = true;
+        agentNameField.disabled = true;
       }
     }
   }, [currentEmployee, booking, setValue]);
+
+  // منع تغيير اسم موظف الحجز في أي وقت
+  useEffect(() => {
+    const currentAgentName = watch('booking_agent_name');
+    const expectedAgentName = currentEmployee?.full_name || 'مستخدم غير محدد';
+    
+    if (currentAgentName !== expectedAgentName && !booking) {
+      setValue('booking_agent_name', expectedAgentName);
+    }
+  }, [watch('booking_agent_name'), currentEmployee, booking, setValue]);
 
   const checkInDate = watch('check_in_date');
   const checkOutDate = watch('check_out_date');
@@ -87,7 +100,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   }, [booking, setValue, fetchExistingRequests]);
 
   const onSubmit = async (data: NewHotelBooking) => {
-    // إضافة بيانات موظف الحجز للبيانات المرسلة
+    // التأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
     const bookingData = {
       ...data,
       booking_agent_id: currentEmployee?.id,
@@ -117,6 +130,6 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     totalProfit,
     handleCustomerSelect,
     onSubmit,
-    currentEmployee // إضافة بيانات الموظف الحالي
+    currentEmployee
   };
 };

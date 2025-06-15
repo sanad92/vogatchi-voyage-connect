@@ -1,22 +1,20 @@
 
-import { useState } from "react";
 import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NewHotelBooking } from "@/types/hotelBooking";
 import { Customer } from "@/types/customer";
-import CustomerSearch from "@/components/customers/CustomerSearch";
-import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
-import { AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { User } from "lucide-react";
+import CustomerSelection from "@/components/shared/CustomerSelection";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 
 interface CustomerSectionProps {
   register: UseFormRegister<NewHotelBooking>;
   setValue: UseFormSetValue<NewHotelBooking>;
   errors: FieldErrors<NewHotelBooking>;
   selectedCustomer: Customer | null;
-  onCustomerSelect: (customer: Customer) => void;
+  onCustomerSelect: (customer: Customer | null) => void;
 }
 
 const CustomerSection = ({ 
@@ -26,68 +24,49 @@ const CustomerSection = ({
   selectedCustomer, 
   onCustomerSelect 
 }: CustomerSectionProps) => {
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-
-  const handleCustomerSelect = (customer: Customer) => {
-    onCustomerSelect(customer);
-    setValue('customer_name', customer.name);
-    setValue('customer_id', customer.id);
-    setShowQuickAdd(false);
-  };
-
-  const handleNewCustomer = () => {
-    setShowQuickAdd(true);
-  };
-
-  const handleCustomerAdded = (customer: Customer) => {
-    handleCustomerSelect(customer);
-    setShowQuickAdd(false);
-  };
+  const { currentEmployee } = useCurrentEmployee();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>معلومات العميل</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!selectedCustomer && !showQuickAdd && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              يجب اختيار عميل من القائمة أو إضافة عميل جديد لمتابعة الحجز
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-4">
+        <User className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-semibold">معلومات العميل وموظف الحجز</h3>
+      </div>
 
-        {showQuickAdd ? (
-          <QuickCustomerAdd
-            onCustomerAdded={handleCustomerAdded}
-            onCancel={() => setShowQuickAdd(false)}
-          />
-        ) : (
-          <div>
-            <Label>البحث عن العميل أو إضافة عميل جديد *</Label>
-            <CustomerSearch
-              onCustomerSelect={handleCustomerSelect}
-              onNewCustomer={handleNewCustomer}
-              selectedCustomer={selectedCustomer}
-            />
-            {!selectedCustomer && (
-              <p className="text-red-500 text-sm mt-1">يجب اختيار عميل أو إضافة عميل جديد</p>
-            )}
-          </div>
-        )}
-        
-        <div>
-          <Label htmlFor="booking_agent_name">اسم موظف الحجز *</Label>
-          <Input 
+      {/* Customer Selection */}
+      <CustomerSelection
+        selectedCustomer={selectedCustomer}
+        onCustomerSelect={onCustomerSelect}
+        register={register}
+        setValue={setValue}
+        errors={errors}
+      />
+
+      {/* Booking Agent Information - Read Only */}
+      <div className="bg-gray-50 p-4 rounded-lg border">
+        <Label htmlFor="booking_agent_name" className="text-sm font-medium text-gray-700 mb-2 block">
+          موظف الحجز
+        </Label>
+        <div className="flex items-center gap-2">
+          <Input
             id="booking_agent_name"
-            {...register('booking_agent_name', { required: 'اسم موظف الحجز مطلوب' })}
+            {...register("booking_agent_name")}
+            value={currentEmployee?.full_name || "مستخدم غير محدد"}
+            readOnly
+            className="bg-gray-100 cursor-not-allowed"
+            disabled
           />
-          {errors.booking_agent_name && <p className="text-red-500 text-sm">{errors.booking_agent_name.message}</p>}
+          {currentEmployee?.employee_code && (
+            <Badge variant="outline" className="text-xs">
+              {currentEmployee.employee_code}
+            </Badge>
+          )}
         </div>
-      </CardContent>
-    </Card>
+        <p className="text-xs text-gray-500 mt-1">
+          يتم تعيين موظف الحجز تلقائياً من المستخدم المُسجل حالياً
+        </p>
+      </div>
+    </div>
   );
 };
 
