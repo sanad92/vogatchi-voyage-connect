@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCarRentals } from '@/hooks/useCarRentals';
 import { toast } from 'sonner';
 import { SupportedCurrency } from '@/types/currency';
@@ -50,8 +51,9 @@ const CarRentalForm = () => {
     currency: 'EGP' as SupportedCurrency
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prevData => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value
@@ -62,8 +64,34 @@ const CarRentalForm = () => {
     e.preventDefault();
     
     try {
+      // Calculate rental duration in days
+      const startDate = new Date(formData.rental_start_date);
+      const endDate = new Date(formData.rental_end_date);
+      const rentalDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate totals
+      const totalRentalCost = formData.daily_rate * rentalDurationDays;
+      const supplierTotalCost = formData.supplier_daily_cost * rentalDurationDays;
+      const remainingAmount = totalRentalCost - formData.paid_amount;
+      
       await addCarRental({
         ...formData,
+        rental_duration_days: rentalDurationDays,
+        total_rental_cost: totalRentalCost,
+        supplier_total_cost: supplierTotalCost,
+        remaining_amount: remainingAmount,
+        total_profit: totalRentalCost - supplierTotalCost,
+        contract_sent: false,
+        contract_sent_date: null,
+        invoice_sent: false,
+        invoice_sent_date: null,
+        supplier_payment_sent: false,
+        supplier_payment_sent_date: null,
+        exchange_rate_to_egp: 1.0,
+        total_cost_egp: totalRentalCost,
+        supplier_cost_egp: supplierTotalCost,
+        status_id: null,
+        payment_due_date: null,
         currency: formData.currency || 'EGP',
       });
       
@@ -452,25 +480,21 @@ const CarRentalForm = () => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Label htmlFor="insurance_included">تأمين مشمول</Label>
-            <Input
-              type="checkbox"
+            <Checkbox
               id="insurance_included"
-              name="insurance_included"
               checked={formData.insurance_included}
-              onChange={handleChange}
+              onCheckedChange={(checked) => setFormData(prevData => ({ ...prevData, insurance_included: !!checked }))}
             />
+            <Label htmlFor="insurance_included">تأمين مشمول</Label>
           </div>
 
           <div className="flex items-center space-x-2">
-            <Label htmlFor="gps_included">نظام تحديد المواقع مشمول</Label>
-            <Input
-              type="checkbox"
+            <Checkbox
               id="gps_included"
-              name="gps_included"
               checked={formData.gps_included}
-              onChange={handleChange}
+              onCheckedChange={(checked) => setFormData(prevData => ({ ...prevData, gps_included: !!checked }))}
             />
+            <Label htmlFor="gps_included">نظام تحديد المواقع مشمول</Label>
           </div>
 
           <div>

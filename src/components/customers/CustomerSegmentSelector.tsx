@@ -25,9 +25,9 @@ const CustomerSegmentSelector = ({ control, error }: CustomerSegmentSelectorProp
               <SelectValue placeholder="اختر تبويب العميل..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">بدون تبويب</SelectItem>
+              <SelectItem value="none">بدون تبويب</SelectItem>
               {isLoading ? (
-                <SelectItem value="" disabled>جاري التحميل...</SelectItem>
+                <SelectItem value="loading" disabled>جاري التحميل...</SelectItem>
               ) : (
                 segments?.map((segment) => (
                   <SelectItem key={segment.id} value={segment.id}>
