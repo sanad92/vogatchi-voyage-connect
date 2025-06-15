@@ -14,31 +14,35 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
   const [showCancel, setShowCancel] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
 
-  // شروط ظهور الأزرار
+  // always get status name_ar correctly, fallback to ""
+  const statusNameAr = booking?.booking_status?.name_ar || "";
+
+  // شروط ظهور الأزرار بشكل محسّن
   const isCancellable =
-    !["ملغي", "مسترد"].includes(booking.booking_status?.name_ar || "") &&
+    !["ملغي", "مسترد"].includes(statusNameAr) &&
     !booking.invoice_sent;
   const isRefundable =
-    (booking.booking_status?.name_ar === "ملغي" ||
-      booking.booking_status?.name_ar?.toLowerCase() === "cancelled") &&
+    (statusNameAr === "ملغي" ||
+      statusNameAr.toLowerCase() === "cancelled") &&
     (booking.paid_amount || 0) > 0 &&
-    booking.booking_status?.name_ar !== "مسترد";
+    statusNameAr !== "مسترد";
 
   if (!booking) return null;
 
   return (
-    <div>
-      {/* أزرار الإلغاء والاسترداد أعلى التفاصيل */}
-      <div className="flex flex-wrap gap-3 justify-end mb-6 border-b pb-4">
+    <div className="relative">
+      {/* أزرار الإجراءات البارزة أعلى التفاصيل */}
+      <div className="w-full flex flex-col md:flex-row gap-3 justify-start items-stretch mb-7">
         {isCancellable && (
           <>
             <Button
               variant="destructive"
-              className="flex items-center gap-2 shadow hover:scale-105 transition-transform"
+              size="lg"
+              className="flex items-center gap-2 shadow-md text-lg px-8 py-4 hover:scale-105 transition-transform"
               onClick={() => setShowCancel(true)}
             >
-              <Ban className="h-4 w-4" />
-              إلغاء الحجز
+              <Ban className="h-5 w-5" />
+              <span>إلغاء الحجز</span>
             </Button>
             <CancelBookingDialog
               open={showCancel}
@@ -51,11 +55,12 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
           <>
             <Button
               variant="secondary"
-              className="flex items-center gap-2 bg-yellow-400 text-black border-yellow-500 shadow hover:bg-yellow-500 hover:scale-105 transition-all"
+              size="lg"
+              className="flex items-center gap-2 bg-yellow-400 text-black border-yellow-500 shadow-md text-lg px-8 py-4 hover:bg-yellow-500 hover:scale-105 transition-all"
               onClick={() => setShowRefund(true)}
             >
-              <RotateCcw className="h-4 w-4" />
-              استرداد الحجز
+              <RotateCcw className="h-5 w-5" />
+              <span>استرداد الحجز</span>
             </Button>
             <RefundBookingDialog
               open={showRefund}
@@ -66,7 +71,7 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
         )}
       </div>
 
-      {/* باقي تفاصيل الحجز */}
+      {/* تفاصيل الحجز */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* معلومات العميل */}
         <div>
@@ -118,4 +123,3 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
 };
 
 export default HotelBookingDetails;
-

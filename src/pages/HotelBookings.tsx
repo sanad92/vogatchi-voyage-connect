@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,12 +30,20 @@ const HotelBookings = () => {
     showVoucher, setShowVoucher
   } = useHotelBookingsPage();
 
+  // تعديل الاستعلام ليجلب بيانات الحالة join مع booking_statuses
   const { data: bookings = [], isLoading, refetch } = useQuery({
     queryKey: ['hotel-bookings'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('hotel_bookings')
-        .select('*')
+        .select(`
+          *,
+          booking_status:status_id (
+            id,
+            name,
+            name_ar
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -166,3 +175,4 @@ const HotelBookings = () => {
 };
 
 export default HotelBookings;
+
