@@ -47,6 +47,8 @@ export interface MultiCurrencyInvoice {
   total_amount_egp: number;
   exchange_rate_to_usd?: number;
   total_amount_usd?: number;
+  exchange_rate_to_sar?: number;
+  total_amount_sar?: number;
 }
 
 export interface MultiCurrencyPaymentOrder {
@@ -59,17 +61,67 @@ export interface MultiCurrencyPaymentOrder {
   amount_in_account_currency?: number;
 }
 
-export const SUPPORTED_CURRENCIES = ['EGP', 'USD', 'SAR'] as const;
+// الجنيه المصري كعملة أساسية
+export const SUPPORTED_CURRENCIES = ['EGP', 'USD', 'SAR', 'EUR'] as const;
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
+
+export const PRIMARY_CURRENCY: SupportedCurrency = 'EGP';
 
 export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   EGP: 'ج.م',
   USD: '$',
-  SAR: 'ر.س'
+  SAR: 'ر.س',
+  EUR: '€'
 };
 
 export const CURRENCY_NAMES: Record<SupportedCurrency, string> = {
   EGP: 'جنيه مصري',
   USD: 'دولار أمريكي',
-  SAR: 'ريال سعودي'
+  SAR: 'ريال سعودي',
+  EUR: 'يورو'
 };
+
+export interface SupplierContract {
+  id: string;
+  supplier_id: string;
+  contract_number: string;
+  contract_type: 'service' | 'supply' | 'maintenance';
+  start_date: string;
+  end_date: string;
+  contract_value: number;
+  currency: SupportedCurrency;
+  payment_terms: string;
+  terms_and_conditions: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupplierPayment {
+  id: string;
+  supplier_id: string;
+  contract_id?: string;
+  amount: number;
+  currency: SupportedCurrency;
+  payment_date: string;
+  payment_method: string;
+  reference_number: string;
+  exchange_rate: number;
+  amount_in_egp: number;
+  status: 'pending' | 'paid' | 'cancelled';
+  notes?: string;
+  created_at: string;
+}
+
+export interface SupplierRating {
+  id: string;
+  supplier_id: string;
+  service_quality: number;
+  delivery_time: number;
+  price_competitiveness: number;
+  communication: number;
+  overall_rating: number;
+  feedback: string;
+  rated_by: string;
+  rating_date: string;
+}

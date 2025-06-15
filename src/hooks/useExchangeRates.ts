@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExchangeRate, SupportedCurrency } from "@/types/currency";
+import { ExchangeRate, SupportedCurrency, PRIMARY_CURRENCY } from "@/types/currency";
 import { useToast } from "@/hooks/use-toast";
 
 export const useExchangeRates = () => {
@@ -27,18 +27,31 @@ export const useExchangeRates = () => {
   const getCurrentRate = async (fromCurrency: string, toCurrency: string): Promise<number> => {
     if (fromCurrency === toCurrency) return 1.0;
     
-    const { data, error } = await supabase
-      .rpc('get_current_exchange_rate', {
-        from_curr: fromCurrency,
-        to_curr: toCurrency
-      });
-    
-    if (error) {
-      console.error('Error getting exchange rate:', error);
-      return 1.0;
+    // إذا كانت إحدى العملات هي الجنيه المصري (العملة الأساسية)
+    if (fromCurrency === PRIMARY_CURRENCY || toCurrency === PRIMARY_CURRENCY) {
+      const { data, error } = await supabase
+        .rpc('get_current_exchange_rate', {
+          from_curr: fromCurrency,
+          to_curr: toCurrency
+        });
+      
+      if (error) {
+        console.error('Error getting exchange rate:', error);
+        return 1.0;
+      }
+      
+      return data || 1.0;
     }
     
-    return data || 1.0;
+    // إذا كانت كلا العملتين ليستا الجنيه المصري، نحول عبر الجنيه المصري
+    try {
+      const fromToEgp = await getCurrentRate(fromCurrency, PRIMARY_CURRENCY);
+      const egpToTarget = await getCurrentRate(PRIMARY_CURRENCY, toCurrency);
+      return fromToEgp * egpToTarget;
+    } catch (error) {
+      console.error('Error calculating cross rate:', error);
+      return 1.0;
+    }
   };
 
   // Convert amount between currencies
@@ -49,6 +62,22 @@ export const useExchangeRates = () => {
   ): Promise<number> => {
     const rate = await getCurrentRate(fromCurrency, toCurrency);
     return amount * rate;
+  };
+
+  // Convert amount to primary currency (EGP)
+  const convertToPrimaryCurrency = async (
+    amount: number,
+    fromCurrency: string
+  ): Promise<number> => {
+    return convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
+  };
+
+  // Convert amount from primary currency (EGP)
+  const convertFromPrimaryCurrency = async (
+    amount: number,
+    toCurrency: string
+  ): Promise<number> => {
+    return convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
   };
 
   // Add new exchange rate
@@ -105,6 +134,8 @@ export const useExchangeRates = () => {
     isLoading,
     getCurrentRate,
     convertCurrency,
+    convertToPrimaryCurrency,
+    convertFromPrimaryCurrency,
     addExchangeRate: addExchangeRateMutation.mutate,
     updateExchangeRate: updateExchangeRateMutation.mutate,
     isAddingRate: addExchangeRateMutation.isPending,
