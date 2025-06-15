@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, User, Phone, Mail, Calendar, DollarSign, Link } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Calendar, DollarSign, Link, Users } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 import type { Employee } from '@/types/expenses';
@@ -86,6 +86,24 @@ const EmployeeManagement = () => {
               </span>
             </div>
           )}
+          
+          {/* إشعار حول النظام الموحد */}
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Users className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div className="text-blue-800 text-sm">
+                <strong>ملاحظة:</strong> تم دمج إدارة الموظفين مع نظام المستخدمين. 
+                للحصول على تجربة كاملة وإدارة موحدة، يرجى استخدام{' '}
+                <button 
+                  onClick={() => window.location.href = '/admin-settings'}
+                  className="underline font-medium hover:text-blue-900"
+                >
+                  نظام الإدارة الموحد
+                </button>
+                {' '}في إعدادات الأدمن.
+              </div>
+            </div>
+          </div>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

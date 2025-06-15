@@ -11,25 +11,56 @@ export const useUserEmployeeMapping = () => {
 
   // جلب بيانات الموظف المرتبط بالمستخدم الحالي
   const fetchCurrentEmployee = async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('email', user.email)
-        .eq('is_active', true)
+      // جلب بيانات المستخدم مع الموظف المرتبط (إن وجد)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          employees(*)
+        `)
+        .eq('id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error fetching employee:', error);
+      if (profileError) {
+        console.error('Error fetching profile with employee:', profileError);
         return;
       }
 
-      setCurrentEmployee(data);
+      // إذا كان هناك موظف مرتبط، استخدمه
+      if (profileData?.employees) {
+        setCurrentEmployee(profileData.employees);
+      } else {
+        // البحث عن موظف بنفس البريد الإلكتروني (للتوافق مع النظام القديم)
+        if (user.email) {
+          const { data: employeeData, error: employeeError } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('email', user.email)
+            .eq('is_active', true)
+            .single();
+
+          if (!employeeError && employeeData) {
+            setCurrentEmployee(employeeData);
+            
+            // محاولة ربط تلقائي
+            try {
+              await supabase.rpc('link_user_to_employee', {
+                p_user_id: user.id,
+                p_employee_id: employeeData.id
+              });
+              console.log('✅ تم الربط التلقائي بنجاح');
+            } catch (linkError) {
+              console.warn('تحذير: فشل الربط التلقائي:', linkError);
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error in fetchCurrentEmployee:', error);
     } finally {
@@ -37,18 +68,18 @@ export const useUserEmployeeMapping = () => {
     }
   };
 
-  // ربط مستخدم بموظف
+  // ربط مستخدم بموظف (تحديث للاستخدام مع النظام الجديد)
   const linkUserToEmployee = async (employeeId: string) => {
-    if (!user?.email) {
+    if (!user?.id) {
       toast.error('المستخدم غير مسجل الدخول');
       return false;
     }
 
     try {
-      const { error } = await supabase
-        .from('employees')
-        .update({ email: user.email })
-        .eq('id', employeeId);
+      const { data, error } = await supabase.rpc('link_user_to_employee', {
+        p_user_id: user.id,
+        p_employee_id: employeeId
+      });
 
       if (error) {
         console.error('Error linking user to employee:', error);
@@ -78,7 +109,7 @@ export const useUserEmployeeMapping = () => {
 
   useEffect(() => {
     fetchCurrentEmployee();
-  }, [user?.email]);
+  }, [user?.id]);
 
   return {
     currentEmployee,

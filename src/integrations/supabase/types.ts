@@ -2774,6 +2774,7 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
+          employee_id: string | null
           full_name: string
           id: string
           is_active: boolean | null
@@ -2784,6 +2785,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email: string
+          employee_id?: string | null
           full_name: string
           id: string
           is_active?: boolean | null
@@ -2794,13 +2796,22 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          employee_id?: string | null
           full_name?: string
           id?: string
           is_active?: boolean | null
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rent_contracts: {
         Row: {
@@ -3857,6 +3868,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      link_user_to_employee: {
+        Args: { p_user_id: string; p_employee_id: string }
+        Returns: boolean
+      }
       log_admin_action: {
         Args: {
           p_action_type: string
@@ -3875,6 +3890,10 @@ export type Database = {
           message: string
           session_token: string
         }[]
+      }
+      unlink_user_from_employee: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
       update_booking_status: {
         Args: {

@@ -1,133 +1,141 @@
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UserManagementTab from "@/components/admin/UserManagementTab";
-import SystemSettingsTab from "@/components/admin/SystemSettingsTab";
-import PermissionsTab from "@/components/admin/PermissionsTab";
-import AuditLogTab from "@/components/admin/AuditLogTab";
-import BackupManagementTab from "@/components/admin/BackupManagementTab";
-import PerformanceMonitorTab from "@/components/admin/PerformanceMonitorTab";
-import SecurityManagementTab from "@/components/admin/SecurityManagementTab";
-import AdvancedUserManagementTab from "@/components/admin/AdvancedUserManagementTab";
-import SuperAdminBanner from "@/components/admin/SuperAdminBanner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
+import UserManagementTab from '@/components/admin/UserManagementTab';
+import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
+import SuperAdminActions from '@/components/admin/SuperAdminActions';
+import SiteSettings from '@/components/admin/SiteSettings';
+import AuditLogTab from '@/components/admin/AuditLogTab';
+import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
+import BackupManagementTab from '@/components/admin/BackupManagementTab';
+import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
+import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
+import PermissionsTab from '@/components/admin/PermissionsTab';
 import { 
-  Users, 
   Settings, 
+  Users, 
+  UserCog, 
   Shield, 
-  FileText, 
   Database, 
-  Activity,
+  Activity, 
+  Archive,
   Lock,
-  UserCog
-} from "lucide-react";
+  Cog,
+  KeyRound,
+  Palette
+} from 'lucide-react';
 
 const AdminSettings = () => {
-  const [activeTab, setActiveTab] = useState("users");
+  const { hasRole, isSuperAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState('unified-management');
+
+  if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">ليس لديك صلاحية</h1>
+          <p className="text-gray-600">هذه الصفحة متاحة للأدمن والمديرين فقط</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <SuperAdminBanner />
-      
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">إعدادات الإدارة المتقدمة</h1>
-        <p className="text-gray-600">
-          لوحة تحكم شاملة لإدارة النظام والمستخدمين والأمان والأداء
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">إعدادات الإدارة</h1>
+          <p className="text-gray-600">إدارة شاملة لجميع جوانب النظام والمستخدمين</p>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border p-2">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1">
-            <TabsTrigger value="users" className="flex items-center gap-2 text-xs lg:text-sm">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-10">
+            <TabsTrigger value="unified-management" className="flex items-center gap-2 text-xs">
+              <UserCog className="h-4 w-4" />
+              <span className="hidden sm:inline">الإدارة الموحدة</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2 text-xs">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">المستخدمين</span>
             </TabsTrigger>
-            <TabsTrigger value="advanced-users" className="flex items-center gap-2 text-xs lg:text-sm">
-              <UserCog className="h-4 w-4" />
-              <span className="hidden sm:inline">إدارة متقدمة</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">الإعدادات</span>
-            </TabsTrigger>
-            <TabsTrigger value="permissions" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="super-admin" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">الصلاحيات</span>
+              <span className="hidden sm:inline">سوبر أدمن</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">الأمان</span>
+            <TabsTrigger value="site" className="flex items-center gap-2 text-xs">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">الموقع</span>
             </TabsTrigger>
-            <TabsTrigger value="performance" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="audit" className="flex items-center gap-2 text-xs">
+              <Database className="h-4 w-4" />
+              <span className="hidden sm:inline">السجلات</span>
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex items-center gap-2 text-xs">
               <Activity className="h-4 w-4" />
               <span className="hidden sm:inline">الأداء</span>
             </TabsTrigger>
-            <TabsTrigger value="backups" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">النسخ الاحتياطية</span>
+            <TabsTrigger value="backup" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
+              <Archive className="h-4 w-4" />
+              <span className="hidden sm:inline">النسخ الاحتياطي</span>
             </TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2 text-xs lg:text-sm">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">سجل العمليات</span>
+            <TabsTrigger value="security" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">الأمان</span>
+            </TabsTrigger>
+            <TabsTrigger value="system" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
+              <Cog className="h-4 w-4" />
+              <span className="hidden sm:inline">النظام</span>
+            </TabsTrigger>
+            <TabsTrigger value="permissions" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
+              <KeyRound className="h-4 w-4" />
+              <span className="hidden sm:inline">الصلاحيات</span>
             </TabsTrigger>
           </TabsList>
-        </div>
 
-        <div className="min-h-[600px]">
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  إدارة المستخدمين الأساسية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <UserManagementTab />
-              </CardContent>
-            </Card>
+          <TabsContent value="unified-management">
+            <UnifiedUserEmployeeManagement />
           </TabsContent>
 
-          <TabsContent value="advanced-users" className="space-y-6">
-            <AdvancedUserManagementTab />
+          <TabsContent value="users">
+            <UserManagementTab />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <SystemSettingsTab />
+          <TabsContent value="super-admin">
+            <SuperAdminActions />
           </TabsContent>
 
-          <TabsContent value="permissions" className="space-y-6">
-            <PermissionsTab />
+          <TabsContent value="site">
+            <SiteSettings />
           </TabsContent>
 
-          <TabsContent value="security" className="space-y-6">
-            <SecurityManagementTab />
+          <TabsContent value="audit">
+            <AuditLogTab />
           </TabsContent>
 
-          <TabsContent value="performance" className="space-y-6">
+          <TabsContent value="performance">
             <PerformanceMonitorTab />
           </TabsContent>
 
-          <TabsContent value="backups" className="space-y-6">
+          <TabsContent value="backup">
             <BackupManagementTab />
           </TabsContent>
 
-          <TabsContent value="audit" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  سجل عمليات النظام
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AuditLogTab />
-              </CardContent>
-            </Card>
+          <TabsContent value="security">
+            <SecurityManagementTab />
           </TabsContent>
-        </div>
-      </Tabs>
+
+          <TabsContent value="system">
+            <SystemSettingsTab />
+          </TabsContent>
+
+          <TabsContent value="permissions">
+            <PermissionsTab />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
