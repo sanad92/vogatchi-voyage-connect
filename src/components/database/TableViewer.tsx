@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
+// Use capitalized Tables, and only string keys!
 interface TableViewerProps {
-  table: keyof Database["tables"];
+  table: keyof Database["Tables"];
   onBack: () => void;
 }
 
-// Only use string keys for columns!
+// Only use string keys for columns
 function getColumns(obj: Record<string, any>): string[] {
-  // Object.keys always returns string[]
-  return Object.keys(obj);
+  // object keys may also include symbol, but we only accept string
+  return Object.keys(obj) as string[];
 }
 
 const TableViewer = ({ table, onBack }: TableViewerProps) => {
@@ -24,8 +25,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
+    // Table is of type keyof Database["Tables"], a string union.
     supabase
-      .from(table)
+      .from(table as string)
       .select("*")
       .limit(30)
       .then(({ data, error }) => {
@@ -44,6 +46,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   const handleExportCSV = () => {
     if (data.length === 0) return;
+    // Columns should be all strings
     const csvRows = [
       cols.join(","),
       ...data.map(row =>
@@ -79,8 +82,8 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
             <thead>
               <tr>
                 {cols.map(col => (
-                  <th className="py-2 px-2 border-b bg-gray-50" key={String(col)}>
-                    {String(col)}
+                  <th className="py-2 px-2 border-b bg-gray-50" key={col}>
+                    {col}
                   </th>
                 ))}
               </tr>
@@ -89,7 +92,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
               {data.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50 transition">
                   {cols.map(col => (
-                    <td className="py-2 px-2 border-b" key={String(col)}>
+                    <td className="py-2 px-2 border-b" key={col}>
                       {String(row[col])}
                     </td>
                   ))}
@@ -106,4 +109,3 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 };
 
 export default TableViewer;
-
