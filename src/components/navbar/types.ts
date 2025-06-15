@@ -1,15 +1,14 @@
 
-import { LucideIcon } from 'lucide-react';
-
-export interface NavigationItem {
-  title: string;
-  icon: LucideIcon;
-  path: string;
-}
-
 export interface NavItem {
   to: string;
-  icon: LucideIcon;
   label: string;
-  allowedRoles: string[];
+  icon?: React.ComponentType<{ className?: string }>;
+  allowedRoles?: string[];
+}
+
+export interface NavigationItem {
+  to: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  allowedRoles?: string[];
 }

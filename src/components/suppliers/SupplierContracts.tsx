@@ -46,7 +46,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as SupplierContract[];
+      return data as any[];
     },
     enabled: !!supplierId
   });
@@ -103,7 +103,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
     return types[type as keyof typeof types] || type;
   };
 
-  const getStatusColor = (contract: SupplierContract) => {
+  const getStatusColor = (contract: any) => {
     const now = new Date();
     const endDate = new Date(contract.end_date);
     const startDate = new Date(contract.start_date);
@@ -114,7 +114,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
     return "bg-green-100 text-green-800";
   };
 
-  const getStatusLabel = (contract: SupplierContract) => {
+  const getStatusLabel = (contract: any) => {
     const now = new Date();
     const endDate = new Date(contract.end_date);
     const startDate = new Date(contract.start_date);

@@ -7,7 +7,6 @@ import { Star, Plus, User } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SupplierRating } from '@/types/currency';
 
 interface SupplierRatingsProps {
   supplierId?: string | null;
@@ -43,7 +42,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
         .order('rating_date', { ascending: false });
       
       if (error) throw error;
-      return data as SupplierRating[];
+      return data as any[];
     },
     enabled: !!supplierId
   });

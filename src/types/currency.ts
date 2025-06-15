@@ -70,7 +70,7 @@ export interface ExchangeRate {
   is_active: boolean;
 }
 
-// نوع عقد المورد
+// نوع عقد المورد - محدث ليطابق قاعدة البيانات
 export interface SupplierContract {
   id: string;
   supplier_id: string;
@@ -78,21 +78,26 @@ export interface SupplierContract {
   contract_type: string;
   start_date: string;
   end_date: string;
-  terms: string;
-  value: number;
+  contract_value: number;
   currency: SupportedCurrency;
-  status: string;
+  payment_terms: string;
+  terms_and_conditions: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-// نوع تقييم المورد
+// نوع تقييم المورد - محدث ليطابق قاعدة البيانات
 export interface SupplierRating {
   id: string;
   supplier_id: string;
-  rating: number;
-  comment?: string;
+  service_quality: number;
+  delivery_time: number;
+  price_competitiveness: number;
+  communication: number;
+  overall_rating: number;
+  feedback?: string;
   rated_by: string;
-  rated_at: string;
-  service_type: string;
+  rating_date: string;
+  created_at: string;
 }

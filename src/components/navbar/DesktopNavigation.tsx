@@ -17,22 +17,22 @@ const DesktopNavigation = ({ userRole, hasRole, location }: DesktopNavigationPro
     <div className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
       {/* Main Navigation */}
       {mainNavItems.map((item) => (
-        <NavLink key={item.to} item={item} />
+        <NavLink key={item.to} item={{...item, allowedRoles: item.allowedRoles || []}} />
       ))}
       
       {/* Business Navigation */}
       {businessNavItems.map((item) => (
-        <NavLink key={item.to} item={item} />
+        <NavLink key={item.to} item={{...item, allowedRoles: item.allowedRoles || []}} />
       ))}
       
       {/* Communication Navigation */}
       {communicationNavItems.map((item) => (
-        <NavLink key={item.to} item={item} />
+        <NavLink key={item.to} item={{...item, allowedRoles: item.allowedRoles || []}} />
       ))}
       
       {/* Admin Settings - Only for Super Admin */}
       {isSuperAdmin() && adminNavItems.map((item) => (
-        <NavLink key={item.to} item={item} />
+        <NavLink key={item.to} item={{...item, allowedRoles: item.allowedRoles || []}} />
       ))}
     </div>
   );

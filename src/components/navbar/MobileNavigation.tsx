@@ -40,7 +40,7 @@ const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }
           {mainNavItems.map((item) => (
             <NavLink 
               key={item.to} 
-              item={item} 
+              item={{...item, allowedRoles: item.allowedRoles || []}}
               onClick={handleClose} 
             />
           ))}
@@ -54,7 +54,7 @@ const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }
           {businessNavItems.map((item) => (
             <NavLink 
               key={item.to} 
-              item={item} 
+              item={{...item, allowedRoles: item.allowedRoles || []}}
               onClick={handleClose} 
             />
           ))}
@@ -68,7 +68,7 @@ const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }
           {communicationNavItems.map((item) => (
             <NavLink 
               key={item.to} 
-              item={item} 
+              item={{...item, allowedRoles: item.allowedRoles || []}}
               onClick={handleClose} 
             />
           ))}
@@ -83,7 +83,7 @@ const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }
             {adminNavItems.map((item) => (
               <NavLink 
                 key={item.to} 
-                item={item} 
+                item={{...item, allowedRoles: item.allowedRoles || []}}
                 onClick={handleClose} 
               />
             ))}
