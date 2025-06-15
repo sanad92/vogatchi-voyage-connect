@@ -22,11 +22,11 @@ const SupplierSelection = ({
   supplierType,
   required = false
 }: SupplierSelectionProps) => {
-  const { data: allSuppliers, isLoading } = useSuppliers();
+  const { suppliers, suppliersLoading } = useSuppliers();
   const [customSupplierName, setCustomSupplierName] = useState(selectedSupplierName);
 
   // تصفية الموردين حسب النوع وضمان وجود ID صالح
-  const filteredSuppliers = allSuppliers?.filter(supplier => {
+  const filteredSuppliers = suppliers?.filter(supplier => {
     // تأكد من وجود ID صالح (ليس فارغ أو undefined)
     if (!supplier.id || supplier.id.trim() === '') {
       console.warn('Supplier with empty ID found:', supplier);
@@ -35,7 +35,7 @@ const SupplierSelection = ({
     
     // تصفية حسب النوع إذا كان محدد
     if (supplierType) {
-      return supplier.service_categories?.some(cat => cat.toLowerCase().includes(supplierType.toLowerCase()));
+      return supplier.supplier_type?.toLowerCase().includes(supplierType.toLowerCase());
     }
     return true;
   }) || [];
@@ -77,7 +77,7 @@ const SupplierSelection = ({
         </Select>
       ) : (
         <div className="text-sm text-gray-500">
-          {isLoading ? 'جاري التحميل...' : 'لا توجد موردين متاحين'}
+          {suppliersLoading ? 'جاري التحميل...' : 'لا توجد موردين متاحين'}
         </div>
       )}
       
