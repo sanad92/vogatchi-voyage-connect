@@ -7,6 +7,11 @@ import AddExchangeRateForm from './AddExchangeRateForm';
 import ExchangeRateGrid from './ExchangeRateGrid';
 import ExchangeRateEmptyState from './ExchangeRateEmptyState';
 import GoogleExchangeRateSync from './GoogleExchangeRateSync';
+import ExchangeRateChart from './exchange-rate-analytics/ExchangeRateChart';
+import RateAlerts from './exchange-rate-analytics/RateAlerts';
+import AdvancedStats from './exchange-rate-analytics/AdvancedStats';
+import DataExporter from './exchange-rate-analytics/DataExporter';
+import RateComparison from './exchange-rate-analytics/RateComparison';
 
 const ExchangeRateManager = () => {
   const { exchangeRates, isLoading, addExchangeRate } = useExchangeRates();
@@ -39,16 +44,38 @@ const ExchangeRateManager = () => {
     };
   });
 
+  // الحصول على البيانات التاريخية لأول زوج عملات للرسم البياني
+  const getChartData = (pair: string) => {
+    const rates = groupedRates[pair] || [];
+    return rates
+      .sort((a, b) => new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime())
+      .slice(-10) // آخر 10 نقاط
+      .map(rate => ({
+        date: rate.effective_date,
+        rate: rate.rate,
+        from_currency: rate.from_currency,
+        to_currency: rate.to_currency
+      }));
+  };
+
   if (isLoading) return <div className="text-center p-8">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
       <ExchangeRateStats latestRates={latestRates} />
 
+      {/* التنبيهات والتحليلات السريعة */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RateAlerts latestRates={latestRates} />
+        <RateComparison latestRates={latestRates} />
+      </div>
+
       <Tabs defaultValue="manage" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="manage">إدارة الأسعار</TabsTrigger>
           <TabsTrigger value="sync">المزامنة التلقائية</TabsTrigger>
+          <TabsTrigger value="analytics">التحليلات</TabsTrigger>
+          <TabsTrigger value="export">التصدير</TabsTrigger>
         </TabsList>
 
         <TabsContent value="manage" className="space-y-6">
@@ -70,6 +97,32 @@ const ExchangeRateManager = () => {
 
         <TabsContent value="sync">
           <GoogleExchangeRateSync />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <AdvancedStats 
+            latestRates={latestRates} 
+            exchangeRates={exchangeRates}
+          />
+          
+          {latestRates.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {latestRates.slice(0, 2).map(({ pair }) => (
+                <ExchangeRateChart
+                  key={pair}
+                  data={getChartData(pair)}
+                  pair={pair}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="export">
+          <DataExporter 
+            exchangeRates={exchangeRates}
+            latestRates={latestRates}
+          />
         </TabsContent>
       </Tabs>
     </div>
