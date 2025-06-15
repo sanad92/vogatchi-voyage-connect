@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useFlightBookings } from '@/hooks/useFlightBookings';
 import { useExpenses } from '@/hooks/useExpenses';
+import type { SupportedCurrency } from '@/types/currency';
 
 interface FlightFormData {
   // Customer & Agent
@@ -27,7 +28,7 @@ interface FlightFormData {
   supplier_cost: number;
   total_cost: number;
   paid_amount: number;
-  currency: string;
+  currency: SupportedCurrency;
   payment_method: string;
   
   // Additional Info
@@ -159,8 +160,28 @@ export const useEnhancedFlightForm = () => {
     const currentEmployee = employees?.find(emp => emp.id === formData.booking_agent_id);
     
     const bookingData = {
-      ...formData,
+      customer_id: formData.customer_id,
+      customer_name: formData.customer_name,
+      supplier_name: formData.supplier_name,
+      booking_agent_id: formData.booking_agent_id,
       booking_agent_name: currentEmployee?.full_name || formData.booking_agent_name,
+      departure_airport_id: formData.departure_airport_id,
+      arrival_airport_id: formData.arrival_airport_id,
+      airline_id: formData.airline_id,
+      flight_class_id: formData.flight_class_id,
+      departure_date: formData.departure_date,
+      arrival_date: formData.arrival_date,
+      number_of_passengers: formData.number_of_passengers,
+      ticket_price_per_person: formData.ticket_price_per_person,
+      taxes_and_fees: formData.taxes_and_fees,
+      supplier_cost: formData.supplier_cost,
+      paid_amount: formData.paid_amount,
+      currency: formData.currency,
+      payment_method: formData.payment_method,
+      confirmation_number: formData.confirmation_number,
+      special_requests: formData.special_requests,
+      meal_preferences: formData.meal_preferences,
+      seat_preferences: formData.seat_preferences,
       remaining_amount: formData.total_cost - formData.paid_amount,
       total_profit: formData.total_cost - formData.supplier_cost,
       exchange_rate_to_egp: 1.0,

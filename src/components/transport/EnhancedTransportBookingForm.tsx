@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -12,9 +11,7 @@ import TransportTripDetailsSection from './enhanced/TransportTripDetailsSection'
 import CostCalculationSection from '@/components/shared/CostCalculationSection';
 import PaymentSection from '@/components/shared/PaymentSection';
 import DocumentsTracking from '@/components/shared/DocumentsTracking';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import TransportAdditionalInfoSection from './enhanced/TransportAdditionalInfoSection';
 
 interface EnhancedTransportBookingFormProps {
   onSuccess?: () => void;
@@ -50,6 +47,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     special_requests: '',
     contract_sent: false,
     invoice_sent: false,
+    voucher_sent: false,
     supplier_payment_sent: false
   });
 
@@ -158,6 +156,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
       special_requests: '',
       contract_sent: false,
       invoice_sent: false,
+      voucher_sent: false,
       supplier_payment_sent: false
     });
     setErrors({});
@@ -239,7 +238,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
 
           {/* Payment Section */}
           <PaymentSection
-            totalAmount={totalCost}
+            totalAmount={formData.selling_price_per_trip * formData.number_of_passengers}
             paidAmount={formData.paid_amount}
             paymentMethod={formData.payment_method}
             onPaidAmountChange={(amount) => updateField('paid_amount', amount)}
@@ -251,52 +250,16 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
           <Separator />
 
           {/* Additional Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">معلومات إضافية</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="driver_name">اسم السائق</Label>
-                <Input
-                  id="driver_name"
-                  value={formData.driver_name}
-                  onChange={(e) => updateField('driver_name', e.target.value)}
-                  placeholder="اسم السائق"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="driver_phone">هاتف السائق</Label>
-                <Input
-                  id="driver_phone"
-                  value={formData.driver_phone}
-                  onChange={(e) => updateField('driver_phone', e.target.value)}
-                  placeholder="هاتف السائق"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="vehicle_plate">رقم لوحة المركبة</Label>
-                <Input
-                  id="vehicle_plate"
-                  value={formData.vehicle_plate_number}
-                  onChange={(e) => updateField('vehicle_plate_number', e.target.value)}
-                  placeholder="رقم لوحة المركبة"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="special_requests">طلبات خاصة</Label>
-              <Textarea
-                id="special_requests"
-                value={formData.special_requests}
-                onChange={(e) => updateField('special_requests', e.target.value)}
-                placeholder="أي طلبات خاصة أو ملاحظات"
-                rows={3}
-              />
-            </div>
-          </div>
+          <TransportAdditionalInfoSection
+            driverName={formData.driver_name}
+            driverPhone={formData.driver_phone}
+            vehiclePlateNumber={formData.vehicle_plate_number}
+            specialRequests={formData.special_requests}
+            onDriverNameChange={(name) => updateField('driver_name', name)}
+            onDriverPhoneChange={(phone) => updateField('driver_phone', phone)}
+            onVehiclePlateNumberChange={(plate) => updateField('vehicle_plate_number', plate)}
+            onSpecialRequestsChange={(requests) => updateField('special_requests', requests)}
+          />
 
           <Separator />
 
@@ -324,7 +287,38 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
             <Button
               type="button"
               variant="outline"
-              onClick={resetForm}
+              onClick={() => {
+                setFormData({
+                  customer_id: '',
+                  customer_name: '',
+                  supplier_name: '',
+                  booking_agent_id: '',
+                  route_id: '',
+                  vehicle_type_id: '',
+                  departure_date: new Date().toISOString().slice(0, 10),
+                  departure_time: '',
+                  arrival_date: '',
+                  arrival_time: '',
+                  pickup_location: '',
+                  dropoff_location: '',
+                  number_of_passengers: 1,
+                  cost_per_trip: 0,
+                  selling_price_per_trip: 0,
+                  supplier_cost: 0,
+                  paid_amount: 0,
+                  currency: 'EGP' as const,
+                  payment_method: 'cash',
+                  driver_name: '',
+                  driver_phone: '',
+                  vehicle_plate_number: '',
+                  special_requests: '',
+                  contract_sent: false,
+                  invoice_sent: false,
+                  voucher_sent: false,
+                  supplier_payment_sent: false
+                });
+                setErrors({});
+              }}
               disabled={isAddingBooking}
             >
               <RotateCcw className="h-4 w-4 mr-2" />

@@ -1,73 +1,84 @@
 
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import type { FlightBooking, NewFlightBooking } from '@/types/flightBooking';
-import { useExchangeRates } from './useExchangeRates';
-import { SupportedCurrency } from '@/types/currency';
+import { toast } from '@/hooks/use-toast';
+import type { FlightBooking, NewFlightBooking, Airport, Airline, FlightClass } from '@/types/flightBooking';
 
 export const useFlightBookings = () => {
   const queryClient = useQueryClient();
-  const { convertToPrimaryCurrency, getCurrentRate } = useExchangeRates();
 
-  // جلب حجوزات الطيران
-  const { data: flightBookings, isLoading: bookingsLoading } = useQuery({
+  // Fetch flight bookings
+  const { data: flightBookings = [], isLoading: bookingsLoading } = useQuery({
     queryKey: ['flight-bookings'],
-    queryFn: async () => {
+    queryFn: async (): Promise<FlightBooking[]> => {
       const { data, error } = await supabase
         .from('flight_bookings')
         .select(`
           *,
-          departure_airport:airports!departure_airport_id(id, name, city, iata_code, country, is_active, created_at),
-          arrival_airport:airports!arrival_airport_id(id, name, city, iata_code, country, is_active, created_at),
-          airline:airlines(name, iata_code),
-          flight_class:flight_classes(name, name_ar),
-          booking_status:booking_statuses(id, name, name_ar, color, sort_order, is_active, created_at)
+          departure_airport:airports!departure_airport_id(*),
+          arrival_airport:airports!arrival_airport_id(*),
+          airline:airlines(*),
+          flight_class:flight_classes(*),
+          booking_status:booking_statuses(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // تحويل البيانات إلى النوع المطلوب
-      return data?.map(booking => ({
-        ...booking,
-        passenger_details: booking.passenger_details as any || [],
-        baggage_info: booking.baggage_info as any || {},
-        currency: booking.currency as SupportedCurrency || 'EGP',
-      })) as FlightBooking[];
-    },
+      return data || [];
+    }
   });
 
-  // إضافة حجز طيران جديد مع دعم العملات المتعددة
+  // Fetch airports
+  const { data: airports = [] } = useQuery({
+    queryKey: ['airports'],
+    queryFn: async (): Promise<Airport[]> => {
+      const { data, error } = await supabase
+        .from('airports')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch airlines
+  const { data: airlines = [] } = useQuery({
+    queryKey: ['airlines'],
+    queryFn: async (): Promise<Airline[]> => {
+      const { data, error } = await supabase
+        .from('airlines')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch flight classes
+  const { data: flightClasses = [] } = useQuery({
+    queryKey: ['flight-classes'],
+    queryFn: async (): Promise<FlightClass[]> => {
+      const { data, error } = await supabase
+        .from('flight_classes')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Add flight booking mutation
   const { mutateAsync: addFlightBooking, isPending: isAddingBooking } = useMutation({
-    mutationFn: async (bookingData: NewFlightBooking) => {
-      // حساب التكلفة الإجمالية
-      const totalCost = bookingData.ticket_price_per_person * bookingData.number_of_passengers + (bookingData.taxes_and_fees || 0);
-      
-      // حساب أسعار الصرف والقيم بالجنيه المصري
-      let exchangeRateToEGP = 1;
-      let totalCostEGP = totalCost;
-      let supplierCostEGP = bookingData.supplier_cost;
-
-      const currency = (bookingData.currency as SupportedCurrency) || 'EGP';
-      if (currency !== 'EGP') {
-        exchangeRateToEGP = await getCurrentRate(currency, 'EGP');
-        totalCostEGP = await convertToPrimaryCurrency(totalCost, currency);
-        supplierCostEGP = await convertToPrimaryCurrency(bookingData.supplier_cost, currency);
-      }
-
+    mutationFn: async (booking: NewFlightBooking) => {
       const { data, error } = await supabase
         .from('flight_bookings')
-        .insert({
-          ...bookingData,
-          total_cost: totalCost,
-          currency: currency,
-          exchange_rate_to_egp: exchangeRateToEGP,
-          total_cost_egp: totalCostEGP,
-          supplier_cost_egp: supplierCostEGP,
-          passenger_details: bookingData.passenger_details ? JSON.stringify(bookingData.passenger_details) : null,
-          baggage_info: bookingData.baggage_info ? JSON.stringify(bookingData.baggage_info) : null,
-        })
+        .insert([booking])
         .select()
         .single();
 
@@ -76,53 +87,27 @@ export const useFlightBookings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flight-bookings'] });
-      toast.success('تم إضافة حجز الطيران بنجاح');
+      toast({
+        title: "تم إنشاء حجز الطيران",
+        description: "تم إضافة حجز الطيران بنجاح",
+      });
     },
     onError: (error) => {
-      toast.error('حدث خطأ في إضافة حجز الطيران');
       console.error('Error adding flight booking:', error);
-    },
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة حجز الطيران",
+        variant: "destructive",
+      });
+    }
   });
 
-  // تحديث حجز الطيران
+  // Update flight booking mutation
   const { mutateAsync: updateFlightBooking, isPending: isUpdatingBooking } = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<NewFlightBooking> }) => {
-      // إعادة حساب القيم بالجنيه المصري إذا تم تغيير العملة أو الأسعار
-      let updateData: any = { ...updates };
-      
-      if (updates.currency || updates.ticket_price_per_person || updates.supplier_cost) {
-        const currency = (updates.currency as SupportedCurrency) || 'EGP';
-        let exchangeRateToEGP = 1;
-        
-        if (currency !== 'EGP') {
-          exchangeRateToEGP = await getCurrentRate(currency, 'EGP');
-        }
-        
-        if (updates.ticket_price_per_person || updates.taxes_and_fees) {
-          const totalCost = (updates.ticket_price_per_person || 0) * (updates.number_of_passengers || 1) + (updates.taxes_and_fees || 0);
-          const totalCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(totalCost, currency) : totalCost;
-          updateData.total_cost_egp = totalCostEGP;
-        }
-        
-        if (updates.supplier_cost) {
-          const supplierCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(updates.supplier_cost, currency) : updates.supplier_cost;
-          updateData.supplier_cost_egp = supplierCostEGP;
-        }
-        
-        updateData.exchange_rate_to_egp = exchangeRateToEGP;
-      }
-
-      // تحويل البيانات المعقدة إلى JSON
-      if (updates.passenger_details) {
-        updateData.passenger_details = JSON.stringify(updates.passenger_details);
-      }
-      if (updates.baggage_info) {
-        updateData.baggage_info = JSON.stringify(updates.baggage_info);
-      }
-
+    mutationFn: async ({ id, ...updates }: Partial<FlightBooking> & { id: string }) => {
       const { data, error } = await supabase
         .from('flight_bookings')
-        .update(updateData)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -132,33 +117,59 @@ export const useFlightBookings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flight-bookings'] });
-      toast.success('تم تحديث حجز الطيران بنجاح');
+      toast({
+        title: "تم تحديث حجز الطيران",
+        description: "تم تحديث حجز الطيران بنجاح",
+      });
     },
+    onError: (error) => {
+      console.error('Error updating flight booking:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث حجز الطيران",
+        variant: "destructive",
+      });
+    }
   });
 
-  // حساب إجمالي الحجوزات بالجنيه المصري
-  const calculateTotalBookingsInEGP = async (bookings: FlightBooking[]) => {
-    let total = 0;
-    for (const booking of bookings) {
-      if (booking.total_cost_egp) {
-        total += booking.total_cost_egp;
-      } else if (booking.currency && booking.currency !== 'EGP') {
-        const amountInEGP = await convertToPrimaryCurrency(booking.total_cost, booking.currency);
-        total += amountInEGP;
-      } else {
-        total += booking.total_cost;
-      }
+  // Delete flight booking mutation
+  const { mutateAsync: deleteFlightBooking, isPending: isDeletingBooking } = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('flight_bookings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['flight-bookings'] });
+      toast({
+        title: "تم حذف حجز الطيران",
+        description: "تم حذف حجز الطيران بنجاح",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting flight booking:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف حجز الطيران",
+        variant: "destructive",
+      });
     }
-    return total;
-  };
+  });
 
   return {
     flightBookings,
     bookingsLoading,
+    airports,
+    airlines,
+    flightClasses,
     addFlightBooking,
-    isAddingBooking,
     updateFlightBooking,
+    deleteFlightBooking,
+    isAddingBooking,
     isUpdatingBooking,
-    calculateTotalBookingsInEGP,
+    isDeletingBooking
   };
 };

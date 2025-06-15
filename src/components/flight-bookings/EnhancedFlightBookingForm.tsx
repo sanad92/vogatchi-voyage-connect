@@ -9,10 +9,8 @@ import { useFlightBookings } from '@/hooks/useFlightBookings';
 import CustomerAgentSection from './enhanced/CustomerAgentSection';
 import FlightDetailsSection from './enhanced/FlightDetailsSection';
 import FlightPricingSection from './enhanced/FlightPricingSection';
+import FlightAdditionalInfoSection from './enhanced/FlightAdditionalInfoSection';
 import DocumentsTracking from '@/components/shared/DocumentsTracking';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
 interface EnhancedFlightBookingFormProps {
   onSuccess?: () => void;
@@ -115,66 +113,18 @@ const EnhancedFlightBookingForm = ({ onSuccess }: EnhancedFlightBookingFormProps
           <Separator />
 
           {/* Additional Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">معلومات إضافية</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="booking_reference">رقم الحجز</Label>
-                <Input
-                  id="booking_reference"
-                  value={formData.booking_reference}
-                  onChange={(e) => updateField('booking_reference', e.target.value)}
-                  placeholder="رقم حجز الطيران"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="confirmation_number">رقم التأكيد</Label>
-                <Input
-                  id="confirmation_number"
-                  value={formData.confirmation_number}
-                  onChange={(e) => updateField('confirmation_number', e.target.value)}
-                  placeholder="رقم تأكيد الحجز"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="special_requests">طلبات خاصة</Label>
-                <Textarea
-                  id="special_requests"
-                  value={formData.special_requests}
-                  onChange={(e) => updateField('special_requests', e.target.value)}
-                  placeholder="أي طلبات خاصة"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="meal_preferences">تفضيلات الوجبات</Label>
-                <Textarea
-                  id="meal_preferences"
-                  value={formData.meal_preferences}
-                  onChange={(e) => updateField('meal_preferences', e.target.value)}
-                  placeholder="تفضيلات الوجبات"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="seat_preferences">تفضيلات المقاعد</Label>
-                <Textarea
-                  id="seat_preferences"
-                  value={formData.seat_preferences}
-                  onChange={(e) => updateField('seat_preferences', e.target.value)}
-                  placeholder="تفضيلات المقاعد"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
+          <FlightAdditionalInfoSection
+            bookingReference={formData.booking_reference}
+            confirmationNumber={formData.confirmation_number}
+            specialRequests={formData.special_requests}
+            mealPreferences={formData.meal_preferences}
+            seatPreferences={formData.seat_preferences}
+            onBookingReferenceChange={(value) => updateField('booking_reference', value)}
+            onConfirmationNumberChange={(value) => updateField('confirmation_number', value)}
+            onSpecialRequestsChange={(value) => updateField('special_requests', value)}
+            onMealPreferencesChange={(value) => updateField('meal_preferences', value)}
+            onSeatPreferencesChange={(value) => updateField('seat_preferences', value)}
+          />
 
           <Separator />
 
