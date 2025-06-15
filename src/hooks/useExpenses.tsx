@@ -1,3 +1,4 @@
+
 import { useEmployees } from './useEmployees';
 import { useRentContracts } from './useRentContracts';
 import { useExpenseTransactions } from './useExpenseTransactions';
@@ -42,7 +43,7 @@ export const useExpenses = () => {
 
   const {
     rentPayments,
-    paymentsLoading,
+    paymentsLoading: rentPaymentsLoading,
     addRentPayment,
     isAddingPayment,
     updatePaymentStatus,
@@ -55,7 +56,7 @@ export const useExpenses = () => {
     commissionsLoading,
     commissionsError,
     commissionPayments,
-    paymentsLoading,
+    paymentsLoading: commissionPaymentsLoading,
     paymentsError,
     addCommissionPayment,
     markCommissionsAsPaid,
@@ -96,7 +97,7 @@ export const useExpenses = () => {
 
     // Rent Payments
     rentPayments,
-    paymentsLoading,
+    rentPaymentsLoading,
     addRentPayment,
     isAddingPayment,
     updatePaymentStatus,
@@ -108,6 +109,7 @@ export const useExpenses = () => {
     commissionsLoading,
     commissionsError,
     commissionPayments,
+    commissionPaymentsLoading,
     paymentsError,
     addCommissionPayment,
     markCommissionsAsPaid,
