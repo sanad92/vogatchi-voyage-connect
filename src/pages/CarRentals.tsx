@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Car, BarChart3, Calendar } from 'lucide-react';
-import CarRentalForm from '@/components/transport/CarRentalForm';
+import EnhancedCarRentalForm from '@/components/transport/EnhancedCarRentalForm';
 import CarRentalsList from '@/components/transport/CarRentalsList';
 import { useCarRentals } from '@/hooks/useCarRentals';
 
@@ -33,9 +33,9 @@ const CarRentals = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Car className="h-6 w-6 text-green-600" />
-            إيجار السيارات
+            إيجار السيارات - النظام المحسن
           </h1>
-          <p className="text-gray-600">إدارة عقود إيجار السيارات والمركبات</p>
+          <p className="text-gray-600">إدارة عقود إيجار السيارات والمركبات بنظام متطور</p>
         </div>
         <Button onClick={() => setShowForm(true)} disabled={showForm}>
           <Plus className="h-4 w-4 mr-2" />
@@ -114,7 +114,7 @@ const CarRentals = () => {
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            عقد جديد
+            نموذج محسن
           </TabsTrigger>
         </TabsList>
 
@@ -123,14 +123,7 @@ const CarRentals = () => {
         </TabsContent>
 
         <TabsContent value="form" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>إضافة عقد إيجار جديد</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CarRentalForm onSuccess={handleFormSuccess} />
-            </CardContent>
-          </Card>
+          <EnhancedCarRentalForm onSuccess={handleFormSuccess} />
         </TabsContent>
       </Tabs>
     </div>
