@@ -25,6 +25,16 @@ const CustomerService = () => {
     new Date(task.scheduled_date) < new Date()
   ).length || 0;
 
+  // مهام عاجلة حسب الأولوية
+  const urgentTasks = followUps?.filter(task => 
+    task.priority === 'urgent' && task.status !== 'completed'
+  ).length || 0;
+
+  // مهام العملاء المميزين
+  const vipTasks = followUps?.filter(task => 
+    task.customer_value === 'vip' && task.status !== 'completed'
+  ).length || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Navbar />
@@ -65,10 +75,25 @@ const CustomerService = () => {
             completedToday={completedToday}
             overdueTasks={overdueTasks}
             totalTasks={totalTasks}
+            urgentTasks={urgentTasks}
+            vipTasks={vipTasks}
           />
         </div>
 
         {/* تنبيهات مهمة */}
+        {urgentTasks > 0 && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-orange-700">
+                <AlertCircle className="h-5 w-5" />
+                <span className="font-medium">
+                  عاجل: يوجد {urgentTasks} مهام عالية الأولوية تحتاج لمتابعة فورية!
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {overdueTasks > 0 && (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="p-4">
@@ -76,6 +101,19 @@ const CustomerService = () => {
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
                   تنبيه: يوجد {overdueTasks} مهام متأخرة تحتاج لمتابعة فورية!
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {vipTasks > 0 && (
+          <Card className="mb-6 border-purple-200 bg-purple-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-purple-700">
+                <AlertCircle className="h-5 w-5" />
+                <span className="font-medium">
+                  VIP: يوجد {vipTasks} مهام للعملاء المميزين تحتاج لعناية خاصة!
                 </span>
               </div>
             </CardContent>
