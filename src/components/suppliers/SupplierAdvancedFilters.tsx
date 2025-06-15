@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,23 +41,51 @@ const SupplierAdvancedFilters = ({
   onFilterChange,
   currentFilters,
 }: SupplierAdvancedFiltersProps) => {
-  // Default filter values should use "all" instead of empty string
-  const [filters, setFilters] = useState({
+  // Ensure minRating is number | undefined, never string
+  const [filters, setFilters] = useState<{
+    type?: string;
+    status?: string;
+    minRating?: number;
+    search?: string;
+  }>({
     ...currentFilters,
     type: currentFilters.type ?? 'all',
     status: currentFilters.status ?? 'all',
-    minRating: currentFilters.minRating ?? '',
+    minRating: currentFilters.minRating ?? undefined,
     search: currentFilters.search ?? '',
   });
 
-  const handleChange = (key: string, value: any) => {
-    const updatedFilters = {
+  const handleChange = (key: string, value: string) => {
+    let updatedFilters = { ...filters };
+
+    if (key === 'type' || key === 'status') {
+      updatedFilters[key] = value === 'all' ? undefined : value;
+    } else if (key === 'minRating') {
+      // The Select always provides string. Convert to number if possible, else undefined.
+      updatedFilters.minRating = value === '' ? undefined : Number(value);
+    } else if (key === 'search') {
+      updatedFilters.search = value;
+    }
+    setFilters({
       ...filters,
-      [key]: value === 'all' ? undefined : value,
+      ...updatedFilters,
+      // For controlled Select: keep string values for type/status in the state if needed for UI
+      type: key === 'type' ? value : (filters.type ?? 'all'),
+      status: key === 'status' ? value : (filters.status ?? 'all'),
+    });
+    // Only pass numeric or undefined for minRating:
+    const outgoingFilters = {
+      ...updatedFilters,
+      type: updatedFilters.type ?? undefined,
+      status: updatedFilters.status ?? undefined,
+      minRating: updatedFilters.minRating,
+      search: updatedFilters.search ?? '',
     };
-    setFilters({ ...updatedFilters, [key]: value }); // keep value for controlled Select
-    onFilterChange(updatedFilters);
+    onFilterChange(outgoingFilters);
   };
+
+  // For the selects: value must be string always.
+  const minRatingValue = filters.minRating !== undefined ? String(filters.minRating) : '';
 
   return (
     <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-50 rounded-md mb-3">
@@ -96,8 +123,8 @@ const SupplierAdvancedFilters = ({
         </SelectContent>
       </Select>
       <Select
-        value={String(filters.minRating ?? '')}
-        onValueChange={v => handleChange('minRating', v ? Number(v) : undefined)}
+        value={minRatingValue}
+        onValueChange={v => handleChange('minRating', v)}
       >
         <SelectTrigger className="w-32">الحد الأدنى للتقييم</SelectTrigger>
         <SelectContent>
@@ -112,4 +139,3 @@ const SupplierAdvancedFilters = ({
 };
 
 export default SupplierAdvancedFilters;
-
