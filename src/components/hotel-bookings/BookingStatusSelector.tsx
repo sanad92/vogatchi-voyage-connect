@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { BookingStatus } from "@/types/hotelBooking";
+import { BookingStatus } from "@/types/common";
 import BookingStatusBadge from "./BookingStatusBadge";
 
 interface BookingStatusSelectorProps {

@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HotelBooking, BookingStatus } from "@/types/hotelBooking";
+import { HotelBooking } from "@/types/hotelBooking";
+import { BookingStatus } from "@/types/common";
 import BookingStatusSelector from "./BookingStatusSelector";
 import BookingActionsPanel from "./BookingActionsPanel";
 import DocumentActionsPanel from "./DocumentActionsPanel";

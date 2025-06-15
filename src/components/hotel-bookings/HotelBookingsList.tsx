@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { HotelBooking, BookingStatus } from "@/types/hotelBooking";
+import { HotelBooking } from "@/types/hotelBooking";
+import { BookingStatus } from "@/types/common";
 import BookingCard from "./BookingCard";
 
 interface HotelBookingsListProps {

@@ -1,6 +1,5 @@
-
 import { Badge } from "@/components/ui/badge";
-import { BookingStatus } from "@/types/hotelBooking";
+import { BookingStatus } from "@/types/common";
 
 interface BookingStatusBadgeProps {
   status?: BookingStatus;
