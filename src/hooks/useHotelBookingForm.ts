@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { HotelBooking, NewHotelBooking, HotelSupplier, Customer } from "@/types/hotelBooking";
+import { HotelBooking, NewHotelBooking, Customer } from "@/types/hotelBooking";
 import { useBookingCalculations } from "@/hooks/useBookingCalculations";
+import { useHotelBookingData } from "@/hooks/useHotelBookingData";
+import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";
+import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
 
 interface UseHotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -12,11 +13,6 @@ interface UseHotelBookingFormProps {
 }
 
 export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormProps) => {
-  const [suppliers, setSuppliers] = useState<HotelSupplier[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
-
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {
       customer_name: booking.customer_name,
@@ -57,161 +53,31 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     sellingPricePerNight
   });
 
+  const {
+    suppliers,
+    selectedCustomer,
+    selectedRequests,
+    setSelectedRequests,
+    handleCustomerSelect
+  } = useHotelBookingData({ booking });
+
+  const { validateBookingData } = useHotelBookingValidation();
+  const { isSubmitting, submitBooking } = useHotelBookingSubmission({ booking, onSuccess });
+
+  // Handle fetching existing requests when editing
+  const { fetchExistingRequests } = useHotelBookingData({ booking });
   useEffect(() => {
-    const fetchSuppliers = async () => {
-      const { data } = await supabase
-        .from('hotel_suppliers')
-        .select('*')
-        .order('name');
-      if (data) setSuppliers(data);
-    };
-    fetchSuppliers();
-  }, []);
-
-  // Fetch existing customer if editing
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      if (booking?.customer_id) {
-        const { data } = await supabase
-          .from('customers')
-          .select('id, name, phone, email, nationality')
-          .eq('id', booking.customer_id)
-          .single();
-        if (data) {
-          setSelectedCustomer(data);
-        }
-      }
-    };
-    fetchCustomer();
-  }, [booking]);
-
-  // Fetch existing special requests if editing
-  useEffect(() => {
-    const fetchExistingRequests = async () => {
-      if (booking?.id) {
-        const { data } = await supabase
-          .from('booking_special_requests')
-          .select('special_request_type_id, custom_request_text')
-          .eq('booking_id', booking.id);
-        
-        if (data) {
-          const requestIds = data
-            .filter(req => req.special_request_type_id)
-            .map(req => req.special_request_type_id!);
-          setSelectedRequests(requestIds);
-          
-          const customRequest = data.find(req => req.custom_request_text)?.custom_request_text;
-          if (customRequest) {
-            setValue('custom_request', customRequest);
-          }
-        }
-      }
-    };
-    fetchExistingRequests();
-  }, [booking, setValue]);
-
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-  };
-
-  const saveSpecialRequests = async (bookingId: string, formData: NewHotelBooking) => {
-    // Delete existing special requests
     if (booking?.id) {
-      await supabase
-        .from('booking_special_requests')
-        .delete()
-        .eq('booking_id', bookingId);
+      fetchExistingRequests(setValue);
     }
-
-    // Save selected special request types
-    if (selectedRequests.length > 0) {
-      const requestsToInsert = selectedRequests.map(requestId => ({
-        booking_id: bookingId,
-        special_request_type_id: requestId
-      }));
-
-      const { error } = await supabase
-        .from('booking_special_requests')
-        .insert(requestsToInsert);
-      
-      if (error) throw error;
-    }
-
-    // Save custom request if provided
-    if (formData.custom_request?.trim()) {
-      const { error } = await supabase
-        .from('booking_special_requests')
-        .insert({
-          booking_id: bookingId,
-          custom_request_text: formData.custom_request.trim()
-        });
-      
-      if (error) throw error;
-    }
-  };
+  }, [booking, setValue, fetchExistingRequests]);
 
   const onSubmit = async (data: NewHotelBooking) => {
-    // التحقق من اختيار العميل
-    if (!selectedCustomer) {
-      toast.error('يجب اختيار عميل أو إضافة عميل جديد قبل إتمام الحجز');
+    if (!validateBookingData(data, selectedCustomer)) {
       return;
     }
 
-    // التحقق من صحة البيانات المالية
-    if (!data.cost_per_night || data.cost_per_night <= 0) {
-      toast.error('يجب إدخال تكلفة صحيحة للليلة');
-      return;
-    }
-
-    if (!data.selling_price_per_night || data.selling_price_per_night <= 0) {
-      toast.error('يجب إدخال سعر بيع صحيح للليلة');
-      return;
-    }
-
-    if (!data.supplier_name) {
-      toast.error('يجب اختيار مورد للحجز');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const submitData = {
-        ...data,
-        customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.name
-      };
-
-      let bookingId: string;
-
-      if (booking) {
-        const { error } = await supabase
-          .from('hotel_bookings')
-          .update(submitData)
-          .eq('id', booking.id);
-        if (error) throw error;
-        bookingId = booking.id;
-        toast.success('تم تحديث الحجز بنجاح');
-      } else {
-        const { data: newBooking, error } = await supabase
-          .from('hotel_bookings')
-          .insert([submitData])
-          .select()
-          .single();
-        if (error) throw error;
-        bookingId = newBooking.id;
-        toast.success('تم إنشاء الحجز بنجاح');
-      }
-
-      // Save special requests
-      await saveSpecialRequests(bookingId, data);
-
-      onSuccess();
-    } catch (error) {
-      console.error('Error saving booking:', error);
-      toast.error('حدث خطأ في حفظ الحجز');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submitBooking(data, selectedCustomer!, selectedRequests);
   };
 
   return {
