@@ -1,4 +1,3 @@
-
 export interface HotelBooking {
   id: string;
   customer_id?: string;
@@ -132,8 +131,8 @@ export interface NewHotelBooking {
 }
 
 export const CURRENCY_OPTIONS = [
-  { value: 'SAR', label: 'ريال سعودي (SAR)', symbol: 'ر.س' },
   { value: 'EGP', label: 'جنيه مصري (EGP)', symbol: 'ج.م' },
+  { value: 'SAR', label: 'ريال سعودي (SAR)', symbol: 'ر.س' },
   { value: 'USD', label: 'دولار أمريكي (USD)', symbol: '$' },
   { value: 'EUR', label: 'يورو (EUR)', symbol: '€' }
 ] as const;

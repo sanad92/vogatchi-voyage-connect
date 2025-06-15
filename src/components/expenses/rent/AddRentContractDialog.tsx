@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ const AddRentContractDialog = ({
     landlord_name: '',
     landlord_phone: '',
     monthly_rent: 0,
-    currency: 'SAR',
+    currency: 'EGP', // تغيير الافتراضي إلى EGP
     start_date: '',
     end_date: '',
     renewal_period_months: 12,
@@ -48,7 +47,7 @@ const AddRentContractDialog = ({
       landlord_name: '',
       landlord_phone: '',
       monthly_rent: 0,
-      currency: 'SAR',
+      currency: 'EGP', // تغيير الافتراضي إلى EGP
       start_date: '',
       end_date: '',
       renewal_period_months: 12,
@@ -129,9 +128,10 @@ const AddRentContractDialog = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SAR">ريال سعودي</SelectItem>
-                <SelectItem value="USD">دولار أمريكي</SelectItem>
-                <SelectItem value="EUR">يورو</SelectItem>
+                <SelectItem value="EGP">جنيه مصري (ج.م)</SelectItem>
+                <SelectItem value="SAR">ريال سعودي (ر.س)</SelectItem>
+                <SelectItem value="USD">دولار أمريكي ($)</SelectItem>
+                <SelectItem value="EUR">يورو (€)</SelectItem>
               </SelectContent>
             </Select>
           </div>

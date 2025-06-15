@@ -28,7 +28,7 @@ const SupplierCostSection = ({
   totalProfit
 }: SupplierCostSectionProps) => {
   const selectedSupplier = watch('supplier_name');
-  const selectedCurrency = watch('currency') || 'SAR';
+  const selectedCurrency = watch('currency') || 'EGP'; // تغيير الافتراضي إلى EGP
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
   // تجهيز بيانات الموردين بطريقة تناسب مكون SearchableSelect

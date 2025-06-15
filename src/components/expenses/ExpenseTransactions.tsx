@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Receipt, Calendar, DollarSign } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import type { ExpenseTransaction } from '@/types/expenses';
-import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
+import PaymentMethodSelector from '@/components/expenses/PaymentMethodSelector';
 
 const ExpenseTransactions = () => {
   const { 
@@ -173,21 +174,11 @@ const ExpenseTransactions = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="payment_method">طريقة الدفع</Label>
-                  <Select 
-                    value={newTransaction.payment_method} 
-                    onValueChange={(value) => setNewTransaction({ ...newTransaction, payment_method: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">نقداً</SelectItem>
-                      <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
-                      <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>
-                      <SelectItem value="check">شيك</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <PaymentMethodSelector
+                    value={newTransaction.payment_method}
+                    onChange={(value) => setNewTransaction({ ...newTransaction, payment_method: value })}
+                    label="طريقة الدفع"
+                  />
                 </div>
                 
                 <div>
@@ -312,7 +303,7 @@ const ExpenseTransactions = () => {
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-2xl font-bold">
                     <DollarSign className="h-5 w-5 text-green-600" />
-                    <MultiCurrencyDisplay amount={transaction.amount} currency="EGP" />
+                    <EgyptianPoundDisplay amount={transaction.amount} />
                   </div>
                 </div>
               </div>

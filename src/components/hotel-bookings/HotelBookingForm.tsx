@@ -7,6 +7,7 @@ import RoomDetailsSection from "./sections/RoomDetailsSection";
 import SpecialRequestsSection from "./sections/SpecialRequestsSection";
 import SupplierCostSection from "./sections/SupplierCostSection";
 import FormActionsSection from "./sections/FormActionsSection";
+import { useEffect } from "react";
 
 interface HotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -32,6 +33,13 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
     handleCustomerSelect,
     onSubmit
   } = useHotelBookingForm({ booking, onSuccess });
+
+  // تعيين الجنيه المصري كعملة افتراضية
+  useEffect(() => {
+    if (!booking && !watch('currency')) {
+      setValue('currency', 'EGP');
+    }
+  }, [booking, setValue, watch]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
