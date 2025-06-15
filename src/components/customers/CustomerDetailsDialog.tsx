@@ -17,6 +17,10 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
 
   if (!selectedCustomer) return null;
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
   return (
     <Dialog open={!!selectedCustomer} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -44,6 +48,10 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                     <p><strong>البريد الإلكتروني:</strong> {customerData.email || 'غير محدد'}</p>
                     <p><strong>العنوان:</strong> {customerData.address || 'غير محدد'}</p>
                     <p><strong>الجنسية:</strong> {customerData.nationality || 'غير محدد'}</p>
+                    <p><strong>تاريخ التسجيل:</strong> {formatDate(customerData.created_at)}</p>
+                    {customerData.last_booking_date && (
+                      <p><strong>آخر حجز:</strong> {formatDate(customerData.last_booking_date)}</p>
+                    )}
                   </div>
                 </div>
 

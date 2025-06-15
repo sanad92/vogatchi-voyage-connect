@@ -24,6 +24,10 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
     }).format(amount);
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditDialogOpen(true);
@@ -129,7 +133,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
           {customer.last_booking_date && (
             <div className="mt-3 pt-2 border-t border-gray-100">
               <div className="text-xs text-gray-500 text-center">
-                آخر حجز: {new Date(customer.last_booking_date).toLocaleDateString('ar-EG')}
+                آخر حجز: {formatDate(customer.last_booking_date)}
               </div>
             </div>
           )}
