@@ -184,10 +184,26 @@ export const useExpenses = () => {
 
   // حساب الراتب الشهري
   const calculateMonthlySalaryMutation = useMutation({
-    mutationFn: async (salary: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at' | 'gross_salary' | 'net_salary' | 'overtime_amount'>) => {
+    mutationFn: async (salaryData: {
+      employee_id: string;
+      salary_month: string;
+      base_salary: number;
+      allowances?: number;
+      overtime_hours?: number;
+      overtime_rate?: number;
+      deductions?: number;
+      bonus?: number;
+      tax_amount?: number;
+      insurance_deduction?: number;
+      payment_method?: string;
+      bank_account_id?: string;
+      status?: 'pending' | 'paid' | 'cancelled';
+      notes?: string;
+      created_by?: string;
+    }) => {
       const { data, error } = await supabase
         .from('monthly_salaries')
-        .insert(salary)
+        .insert(salaryData)
         .select()
         .single();
 
@@ -223,8 +239,24 @@ export const useExpenses = () => {
     addRentContractMutation.mutate(contract);
   };
 
-  const calculateMonthlySalary = (salary: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at' | 'gross_salary' | 'net_salary' | 'overtime_amount'>) => {
-    calculateMonthlySalaryMutation.mutate(salary);
+  const calculateMonthlySalary = (salaryData: {
+    employee_id: string;
+    salary_month: string;
+    base_salary: number;
+    allowances?: number;
+    overtime_hours?: number;
+    overtime_rate?: number;
+    deductions?: number;
+    bonus?: number;
+    tax_amount?: number;
+    insurance_deduction?: number;
+    payment_method?: string;
+    bank_account_id?: string;
+    status?: 'pending' | 'paid' | 'cancelled';
+    notes?: string;
+    created_by?: string;
+  }) => {
+    calculateMonthlySalaryMutation.mutate(salaryData);
   };
 
   return {

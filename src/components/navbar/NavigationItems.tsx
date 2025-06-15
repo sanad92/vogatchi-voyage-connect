@@ -74,3 +74,9 @@ export const navigationItems: NavigationItem[] = [
     path: '/admin',
   },
 ];
+
+// تصدير المجموعات المختلفة للتوافق مع الملفات الموجودة
+export const mainNavItems = navigationItems.slice(0, 4);
+export const businessNavItems = navigationItems.slice(4, 10);
+export const communicationNavItems = navigationItems.slice(10, 13);
+export const adminNavItems = navigationItems.slice(13);
