@@ -27,12 +27,12 @@ const CustomerService = () => {
 
   // مهام عاجلة حسب الأولوية
   const urgentTasks = followUps?.filter(task => 
-    task.priority === 'urgent' && task.status !== 'completed'
+    (task.priority || 'normal') === 'urgent' && task.status !== 'completed'
   ).length || 0;
 
   // مهام العملاء المميزين
   const vipTasks = followUps?.filter(task => 
-    task.customer_value === 'vip' && task.status !== 'completed'
+    (task.customer_value || 'regular') === 'vip' && task.status !== 'completed'
   ).length || 0;
 
   return (

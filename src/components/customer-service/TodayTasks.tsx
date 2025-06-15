@@ -22,15 +22,15 @@ const TodayTasks = () => {
   // تطبيق الفلاتر
   const filteredTasks = todayTasks?.filter(task => {
     if (filters.type && task.follow_up_type !== filters.type) return false;
-    if (filters.priority && task.priority !== filters.priority) return false;
+    if (filters.priority && (task.priority || 'normal') !== filters.priority) return false;
     if (filters.status && task.status !== filters.status) return false;
-    if (filters.customerValue && task.customer_value !== filters.customerValue) return false;
+    if (filters.customerValue && (task.customer_value || 'regular') !== filters.customerValue) return false;
     return true;
   }) || [];
 
   // تصنيف المهام حسب الأولوية والحالة
   const urgentTasks = filteredTasks.filter(task => 
-    task.priority === 'urgent' && task.status !== 'completed'
+    (task.priority || 'normal') === 'urgent' && task.status !== 'completed'
   );
   
   const overdueTasks = filteredTasks.filter(task => 
@@ -44,15 +44,15 @@ const TodayTasks = () => {
   // ترتيب المهام حسب الأولوية
   const sortedPendingTasks = pendingTasks.sort((a, b) => {
     const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
-    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
-    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
+    const aPriority = priorityOrder[(a.priority || 'normal') as keyof typeof priorityOrder] || 2;
+    const bPriority = priorityOrder[(b.priority || 'normal') as keyof typeof priorityOrder] || 2;
     return bPriority - aPriority;
   });
 
   const sortedInProgressTasks = inProgressTasks.sort((a, b) => {
     const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
-    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
-    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
+    const aPriority = priorityOrder[(a.priority || 'normal') as keyof typeof priorityOrder] || 2;
+    const bPriority = priorityOrder[(b.priority || 'normal') as keyof typeof priorityOrder] || 2;
     return bPriority - aPriority;
   });
 

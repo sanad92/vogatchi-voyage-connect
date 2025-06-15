@@ -636,9 +636,12 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_id: string
+          customer_value: string | null
           follow_up_type: string
           id: string
+          last_contact_date: string | null
           notes: string | null
+          priority: string | null
           scheduled_date: string
           status: string
           updated_at: string
@@ -649,9 +652,12 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id: string
+          customer_value?: string | null
           follow_up_type: string
           id?: string
+          last_contact_date?: string | null
           notes?: string | null
+          priority?: string | null
           scheduled_date: string
           status?: string
           updated_at?: string
@@ -662,9 +668,12 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id?: string
+          customer_value?: string | null
           follow_up_type?: string
           id?: string
+          last_contact_date?: string | null
           notes?: string | null
+          priority?: string | null
           scheduled_date?: string
           status?: string
           updated_at?: string

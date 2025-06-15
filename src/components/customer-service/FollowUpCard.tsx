@@ -94,6 +94,10 @@ const FollowUpCard = ({ followUp, onUpdate, onCommunicate }: FollowUpCardProps) 
     });
   };
 
+  // استخدام القيم الافتراضية للحقول الجديدة
+  const priority = followUp.priority || 'normal';
+  const customerValue = followUp.customer_value || 'regular';
+
   return (
     <Card className={`mb-4 ${isOverdue() ? 'border-red-200 bg-red-50' : ''}`}>
       <CardHeader className="pb-3">
@@ -101,15 +105,15 @@ const FollowUpCard = ({ followUp, onUpdate, onCommunicate }: FollowUpCardProps) 
           <CardTitle className="text-lg flex items-center gap-2">
             <User className="h-5 w-5" />
             {followUp.customers?.name}
-            {getCustomerValueIcon(followUp.customer_value)}
-            {followUp.customer_value && (
-              <Badge className={getCustomerValueColor(followUp.customer_value)}>
-                {getCustomerValueLabel(followUp.customer_value)}
+            {getCustomerValueIcon(customerValue)}
+            {customerValue && (
+              <Badge className={getCustomerValueColor(customerValue)}>
+                {getCustomerValueLabel(customerValue)}
               </Badge>
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
-            {getPriorityIcon(followUp.priority)}
+            {getPriorityIcon(priority)}
             <Badge className={getStatusColor(followUp.status)}>
               {followUp.status === 'pending' && 'في الانتظار'}
               {followUp.status === 'in_progress' && 'قيد التنفيذ'}
@@ -205,7 +209,7 @@ const FollowUpCard = ({ followUp, onUpdate, onCommunicate }: FollowUpCardProps) 
 
             <div>
               <label className="text-sm font-medium mb-2 block">الأولوية:</label>
-              <Select value={followUp.priority || 'normal'} onValueChange={handlePriorityChange}>
+              <Select value={priority} onValueChange={handlePriorityChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -221,12 +225,11 @@ const FollowUpCard = ({ followUp, onUpdate, onCommunicate }: FollowUpCardProps) 
 
           {/* الأولوية */}
           <div className="flex items-center gap-2">
-            <Badge className={getPriorityColor(followUp.priority || 'normal')}>
-              {followUp.priority === 'urgent' && 'عاجل'}
-              {followUp.priority === 'high' && 'مهم'}
-              {followUp.priority === 'normal' && 'عادي'}
-              {followUp.priority === 'low' && 'منخفض'}
-              {!followUp.priority && 'عادي'}
+            <Badge className={getPriorityColor(priority)}>
+              {priority === 'urgent' && 'عاجل'}
+              {priority === 'high' && 'مهم'}
+              {priority === 'normal' && 'عادي'}
+              {priority === 'low' && 'منخفض'}
             </Badge>
           </div>
 
