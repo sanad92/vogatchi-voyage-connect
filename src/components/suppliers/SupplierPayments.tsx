@@ -10,11 +10,26 @@ import { DollarSign, Plus, Calendar } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency, SupplierPayment } from '@/types/currency';
+import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency } from '@/types/currency';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 
 interface SupplierPaymentsProps {
   supplierId?: string | null;
+}
+
+interface SupplierPayment {
+  id: string;
+  supplier_id: string;
+  amount: number;
+  currency: SupportedCurrency;
+  payment_date: string;
+  payment_method: string;
+  reference_number: string;
+  exchange_rate: number;
+  amount_in_egp: number;
+  status: 'pending' | 'paid' | 'cancelled';
+  notes?: string;
+  created_at: string;
 }
 
 const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
@@ -50,11 +65,18 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
       
       if (error) throw error;
       return data.map(payment => ({
-        ...payment,
-        payment_date: payment.payment_date || payment.paid_date,
-        reference_number: payment.reference_number || payment.payment_reference,
+        id: payment.id,
+        supplier_id: payment.supplier_id,
+        amount: payment.amount,
+        currency: payment.currency || 'EGP',
+        payment_date: payment.payment_date || payment.paid_date || new Date().toISOString().split('T')[0],
+        payment_method: payment.payment_method || 'bank_transfer',
+        reference_number: payment.reference_number || payment.payment_reference || '',
         exchange_rate: payment.exchange_rate || 1,
-        amount_in_egp: payment.amount_in_egp || payment.amount
+        amount_in_egp: payment.amount_in_egp || payment.amount,
+        status: payment.status || 'pending',
+        notes: payment.notes || '',
+        created_at: payment.created_at
       })) as SupplierPayment[];
     },
     enabled: !!supplierId
@@ -76,10 +98,12 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
           payment_date: payment.payment_date,
           payment_method: payment.payment_method,
           reference_number: payment.reference_number,
+          payment_reference: payment.reference_number, // للتوافق مع الحقل الحالي
           notes: payment.notes,
           exchange_rate: exchangeRate,
           amount_in_egp: amountInEgp,
-          status: 'pending'
+          status: 'pending',
+          booking_id: '00000000-0000-0000-0000-000000000000' // dummy value للتوافق مع الجدول
         }])
         .select()
         .single();
