@@ -27,7 +27,7 @@ export const useCustomerService = () => {
     },
   });
 
-  // جلب المهام المطلوبة لليوم الحالي
+  // جلب المهام المطلوبة لليوم الحالي مع البيانات المرتبطة
   const { data: todayTasks } = useQuery({
     queryKey: ['today-follow-ups'],
     queryFn: async () => {
@@ -37,7 +37,18 @@ export const useCustomerService = () => {
         .select(`
           *,
           customers(name, phone, email),
-          bookings(booking_reference, check_in_date)
+          bookings(booking_reference, check_in_date),
+          communications:customer_communications(
+            id,
+            communication_type,
+            direction,
+            status,
+            content,
+            duration_minutes,
+            created_at,
+            handled_by,
+            handled_by_profile:profiles!customer_communications_handled_by_fkey(full_name)
+          )
         `)
         .eq('scheduled_date', today)
         .order('created_at', { ascending: true });
@@ -91,6 +102,7 @@ export const useCustomerService = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-communications'] });
+      queryClient.invalidateQueries({ queryKey: ['today-follow-ups'] });
       toast({
         title: "تم إضافة التواصل",
         description: "تم تسجيل التواصل مع العميل بنجاح",

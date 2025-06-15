@@ -14,8 +14,8 @@ const CustomerInteractions = () => {
   const interactions = todayTasks?.flatMap(task => 
     task.communications?.map(comm => ({
       ...comm,
-      customer_name: task.customer_name,
-      booking_reference: task.booking_reference
+      customer_name: task.customers?.name || 'غير محدد',
+      booking_reference: task.bookings?.booking_reference || 'غير محدد'
     })) || []
   ) || [];
 
