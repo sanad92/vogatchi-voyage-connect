@@ -1,17 +1,21 @@
 
 import CustomerSelection from '@/components/shared/CustomerSelection';
 import SupplierSelection from '@/components/shared/SupplierSelection';
+import { Customer } from '@/types/customer';
 
 interface CustomerSupplierSectionProps {
   customerId: string;
   customerName: string;
   supplierId: string;
   supplierName: string;
-  onCustomerSelect: (id: string, name: string) => void;
+  selectedCustomer: Customer | null;
+  onCustomerSelect: (customer: Customer | null) => void;
   onCustomerNameChange: (name: string) => void;
   onSupplierSelect: (id: string, name: string) => void;
   onSupplierNameChange: (name: string) => void;
   errors?: Record<string, string>;
+  register: any;
+  setValue: any;
 }
 
 const CustomerSupplierSection = ({
@@ -19,11 +23,14 @@ const CustomerSupplierSection = ({
   customerName,
   supplierId,
   supplierName,
+  selectedCustomer,
   onCustomerSelect,
   onCustomerNameChange,
   onSupplierSelect,
   onSupplierNameChange,
-  errors = {}
+  errors = {},
+  register,
+  setValue
 }: CustomerSupplierSectionProps) => {
   return (
     <div className="space-y-4">
@@ -32,11 +39,11 @@ const CustomerSupplierSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <CustomerSelection
-            selectedCustomerId={customerId}
-            selectedCustomerName={customerName}
+            selectedCustomer={selectedCustomer}
             onCustomerSelect={onCustomerSelect}
-            onCustomerNameChange={onCustomerNameChange}
-            required
+            register={register}
+            setValue={setValue}
+            errors={errors}
           />
           {errors.customer_name && (
             <p className="text-sm text-red-600 mt-1">{errors.customer_name}</p>

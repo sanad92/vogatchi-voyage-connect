@@ -4,6 +4,7 @@ import SupplierSelection from '@/components/shared/SupplierSelection';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from 'lucide-react';
+import { Customer } from '@/types/customer';
 
 interface CustomerAgentSectionProps {
   customerId: string;
@@ -11,13 +12,16 @@ interface CustomerAgentSectionProps {
   supplierId: string;
   supplierName: string;
   bookingAgentId: string;
-  onCustomerSelect: (id: string, name: string) => void;
+  selectedCustomer: Customer | null;
+  onCustomerSelect: (customer: Customer | null) => void;
   onCustomerNameChange: (name: string) => void;
   onSupplierSelect: (id: string, name: string) => void;
   onSupplierNameChange: (name: string) => void;
   onBookingAgentChange: (agentId: string) => void;
   employees?: Array<{ id: string; full_name: string; employee_code: string }>;
   errors?: Record<string, string>;
+  register: any;
+  setValue: any;
 }
 
 const CustomerAgentSection = ({
@@ -26,13 +30,16 @@ const CustomerAgentSection = ({
   supplierId,
   supplierName,
   bookingAgentId,
+  selectedCustomer,
   onCustomerSelect,
   onCustomerNameChange,
   onSupplierSelect,
   onSupplierNameChange,
   onBookingAgentChange,
   employees = [],
-  errors = {}
+  errors = {},
+  register,
+  setValue
 }: CustomerAgentSectionProps) => {
   return (
     <div className="space-y-4">
@@ -44,11 +51,11 @@ const CustomerAgentSection = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <CustomerSelection
-            selectedCustomerId={customerId}
-            selectedCustomerName={customerName}
+            selectedCustomer={selectedCustomer}
             onCustomerSelect={onCustomerSelect}
-            onCustomerNameChange={onCustomerNameChange}
-            required
+            register={register}
+            setValue={setValue}
+            errors={errors}
           />
           {errors.customer_name && (
             <p className="text-sm text-red-600 mt-1">{errors.customer_name}</p>
