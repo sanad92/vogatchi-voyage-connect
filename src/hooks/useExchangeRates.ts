@@ -23,61 +23,35 @@ export const useExchangeRates = () => {
     }
   });
 
-  // Get current exchange rate between two currencies
+  // Get current exchange rate - always returns 1.0 for EGP since it's the only currency
   const getCurrentRate = async (fromCurrency: string, toCurrency: string): Promise<number> => {
-    if (fromCurrency === toCurrency) return 1.0;
-    
-    // إذا كانت إحدى العملات هي الجنيه المصري (العملة الأساسية)
-    if (fromCurrency === PRIMARY_CURRENCY || toCurrency === PRIMARY_CURRENCY) {
-      const { data, error } = await supabase
-        .rpc('get_current_exchange_rate', {
-          from_curr: fromCurrency,
-          to_curr: toCurrency
-        });
-      
-      if (error) {
-        console.error('Error getting exchange rate:', error);
-        return 1.0;
-      }
-      
-      return data || 1.0;
-    }
-    
-    // إذا كانت كلا العملتين ليستا الجنيه المصري، نحول عبر الجنيه المصري
-    try {
-      const fromToEgp = await getCurrentRate(fromCurrency, PRIMARY_CURRENCY);
-      const egpToTarget = await getCurrentRate(PRIMARY_CURRENCY, toCurrency);
-      return fromToEgp * egpToTarget;
-    } catch (error) {
-      console.error('Error calculating cross rate:', error);
-      return 1.0;
-    }
+    // Since we only support EGP, always return 1.0
+    return 1.0;
   };
 
-  // Convert amount between currencies
+  // Convert amount between currencies - since we only use EGP, return the same amount
   const convertCurrency = async (
     amount: number,
     fromCurrency: string,
     toCurrency: string
   ): Promise<number> => {
-    const rate = await getCurrentRate(fromCurrency, toCurrency);
-    return amount * rate;
+    return amount;
   };
 
-  // Convert amount to primary currency (EGP)
+  // Convert amount to primary currency (EGP) - return same amount
   const convertToPrimaryCurrency = async (
     amount: number,
     fromCurrency: string
   ): Promise<number> => {
-    return convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
+    return amount;
   };
 
-  // Convert amount from primary currency (EGP)
+  // Convert amount from primary currency (EGP) - return same amount
   const convertFromPrimaryCurrency = async (
     amount: number,
     toCurrency: string
   ): Promise<number> => {
-    return convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
+    return amount;
   };
 
   // Add new exchange rate

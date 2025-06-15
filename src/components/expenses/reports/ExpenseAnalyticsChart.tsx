@@ -66,7 +66,7 @@ const ExpenseAnalyticsChart = () => {
       {/* الاتجاهات الشهرية */}
       <Card>
         <CardHeader>
-          <CardTitle>الاتجاهات الشهرية للمصروفات</CardTitle>
+          <CardTitle>الاتجاهات الشهرية للمصروفات (بالجنيه المصري)</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -74,7 +74,7 @@ const ExpenseAnalyticsChart = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ر.س`} />
+              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ج.م`} />
               <Legend />
               <Line type="monotone" dataKey="الرواتب" stroke="#0088FE" strokeWidth={2} />
               <Line type="monotone" dataKey="الإيجارات" stroke="#00C49F" strokeWidth={2} />
@@ -87,7 +87,7 @@ const ExpenseAnalyticsChart = () => {
       {/* توزيع المصروفات */}
       <Card>
         <CardHeader>
-          <CardTitle>توزيع المصروفات حسب النوع</CardTitle>
+          <CardTitle>توزيع المصروفات حسب النوع (بالجنيه المصري)</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -106,7 +106,7 @@ const ExpenseAnalyticsChart = () => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ر.س`} />
+              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ج.م`} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -115,7 +115,7 @@ const ExpenseAnalyticsChart = () => {
       {/* مقارنة شهرية */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>مقارنة المصروفات الشهرية</CardTitle>
+          <CardTitle>مقارنة المصروفات الشهرية (بالجنيه المصري)</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -123,7 +123,7 @@ const ExpenseAnalyticsChart = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ر.س`} />
+              <Tooltip formatter={(value) => `${Number(value).toLocaleString()} ج.م`} />
               <Legend />
               <Bar dataKey="الرواتب" stackId="a" fill="#0088FE" />
               <Bar dataKey="الإيجارات" stackId="a" fill="#00C49F" />

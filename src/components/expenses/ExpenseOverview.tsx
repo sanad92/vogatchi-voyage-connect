@@ -42,21 +42,21 @@ const ExpenseOverview = () => {
     },
     {
       title: 'إجمالي الإيجارات الشهرية',
-      value: `${totalMonthlyRent.toLocaleString()} ر.س`,
+      value: `${totalMonthlyRent.toLocaleString()} ج.م`,
       icon: DollarSign,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
     },
     {
       title: 'مصروفات الشهر الحالي',
-      value: `${currentMonthExpenses.toLocaleString()} ر.س`,
+      value: `${currentMonthExpenses.toLocaleString()} ج.م`,
       icon: Receipt,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
     },
     {
       title: 'رواتب الشهر الحالي',
-      value: `${thisMonthSalaries.toLocaleString()} ر.س`,
+      value: `${thisMonthSalaries.toLocaleString()} ج.م`,
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -72,6 +72,11 @@ const ExpenseOverview = () => {
 
   return (
     <div className="space-y-6">
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold">نظرة عامة على المصروفات</h2>
+        <p className="text-gray-600">جميع المبالغ بالجنيه المصري (ج.م)</p>
+      </div>
+
       {/* إحصائيات سريعة */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => {
@@ -97,7 +102,7 @@ const ExpenseOverview = () => {
       {/* فئات المصروفات */}
       <Card>
         <CardHeader>
-          <CardTitle>فئات المصروفات</CardTitle>
+          <CardTitle>فئات المصروفات (بالجنيه المصري)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -114,49 +119,18 @@ const ExpenseOverview = () => {
                   {category.name_ar}
                 </Badge>
                 <p className="text-xs text-gray-500 mt-1">
-                  حد الميزانية: {category.budget_limit.toLocaleString()} ر.س
+                  حد الميزانية: {category.budget_limit.toLocaleString()} ج.م
                 </p>
               </div>
-            ))}
+            )) || []}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* آخر المعاملات */}
-      <Card>
-        <CardHeader>
-          <CardTitle>آخر المعاملات</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {expenseTransactions?.slice(0, 5).map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: transaction.category?.color || '#gray' }}
-                  />
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <p className="text-sm text-gray-500">
-                      {transaction.category?.name_ar} • {new Date(transaction.transaction_date).toLocaleDateString('ar')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold">{transaction.amount.toLocaleString()} {transaction.currency}</p>
-                  <Badge 
-                    variant={transaction.status === 'paid' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {transaction.status === 'paid' ? 'مدفوع' : 
-                     transaction.status === 'pending' ? 'معلق' : 
-                     transaction.status === 'approved' ? 'معتمد' : 'مرفوض'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+          {(!expenseCategories || expenseCategories.length === 0) && (
+            <div className="text-center py-8 text-gray-500">
+              <Receipt className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p>لا توجد فئات مصروفات محددة</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

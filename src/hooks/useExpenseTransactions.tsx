@@ -30,7 +30,10 @@ export const useExpenseTransactions = () => {
     mutationFn: async (transaction: Omit<ExpenseTransaction, 'id' | 'created_at' | 'updated_at' | 'transaction_number'>) => {
       const { data, error } = await supabase
         .from('expense_transactions')
-        .insert(transaction)
+        .insert({
+          ...transaction,
+          currency: 'EGP' // فرض الجنيه المصري كعملة وحيدة
+        })
         .select()
         .single();
 
@@ -41,7 +44,7 @@ export const useExpenseTransactions = () => {
       queryClient.invalidateQueries({ queryKey: ['expense-transactions'] });
       toast({
         title: "تمت الإضافة بنجاح",
-        description: "تم تسجيل المعاملة بنجاح",
+        description: "تم تسجيل المعاملة بنجاح بالجنيه المصري",
       });
     },
     onError: (error) => {
