@@ -35,7 +35,7 @@ const ExchangeRateManager = () => {
       pair,
       latest,
       previous,
-      trend: previous ? (latest.rate > previous.rate ? 'up' : 'down') : 'neutral' as const
+      trend: (previous ? (latest.rate > previous.rate ? 'up' : 'down') : 'neutral') as 'up' | 'down' | 'neutral'
     };
   });
 
