@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,9 +18,15 @@ interface FlightInvoiceCreatorProps {
   booking: FlightBooking;
   open: boolean;
   onClose: () => void;
+  printMode?: boolean; // ✅ NEW optional prop for print mode
 }
 
-const FlightInvoiceCreator = ({ booking, open, onClose }: FlightInvoiceCreatorProps) => {
+const FlightInvoiceCreator = ({
+  booking,
+  open,
+  onClose,
+  printMode, // Accept the new prop; can optionally be used
+}: FlightInvoiceCreatorProps) => {
   const [formData, setFormData] = useState({
     subtotal: booking.total_cost || 0,
     vat_rate: 14,
@@ -113,6 +118,7 @@ const FlightInvoiceCreator = ({ booking, open, onClose }: FlightInvoiceCreatorPr
           </DialogTitle>
         </DialogHeader>
         
+        {/* Optionally, you may use printMode here to adjust UI for printing */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -253,4 +259,3 @@ const FlightInvoiceCreator = ({ booking, open, onClose }: FlightInvoiceCreatorPr
 };
 
 export default FlightInvoiceCreator;
-
