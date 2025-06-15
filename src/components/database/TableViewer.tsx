@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
-// Use capitalized Tables, and only string keys!
+// Use capitalized Tables and only string keys for everything
 interface TableViewerProps {
   table: keyof Database["Tables"];
   onBack: () => void;
@@ -14,7 +14,7 @@ interface TableViewerProps {
 
 // Only use string keys for columns
 function getColumns(obj: Record<string, any>): string[] {
-  // object keys may also include symbol, but we only accept string
+  // Object.keys always returns string[], avoid symbol keys
   return Object.keys(obj) as string[];
 }
 
@@ -25,9 +25,8 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
-    // Table is of type keyof Database["Tables"], a string union.
     supabase
-      .from(table as string)
+      .from(table)
       .select("*")
       .limit(30)
       .then(({ data, error }) => {
@@ -46,7 +45,6 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   const handleExportCSV = () => {
     if (data.length === 0) return;
-    // Columns should be all strings
     const csvRows = [
       cols.join(","),
       ...data.map(row =>
@@ -109,3 +107,4 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 };
 
 export default TableViewer;
+

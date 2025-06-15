@@ -70,8 +70,8 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={tbl.name as string} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{tbl.name as string}</td>
+                <tr key={tbl.name} className="border-b hover:bg-blue-50 transition">
+                  <td className="p-3 font-mono text-blue-800">{tbl.name}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
                   <td className="p-3 text-gray-600">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">
