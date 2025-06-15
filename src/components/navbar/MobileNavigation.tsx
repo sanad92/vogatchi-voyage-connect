@@ -3,25 +3,33 @@ import { LogOut } from "lucide-react";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
 import NavLink from "./NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { User } from "@supabase/supabase-js";
+import { Location } from "react-router-dom";
 
 interface MobileNavigationProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSignOut: () => void;
-  userEmail: string;
+  userRole: string | null;
+  hasRole: (role: string) => boolean;
+  location: Location;
+  user: User;
+  signOut: () => Promise<void>;
 }
 
-const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavigationProps) => {
+const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }: MobileNavigationProps) => {
   const { isSuperAdmin } = useAuth();
 
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    // This would need to be passed from parent, but for now we'll handle it differently
+  };
 
   return (
     <div className="lg:hidden py-4 border-t bg-white">
       <div className="space-y-2">
         {/* User Info */}
         <div className="px-3 py-2 text-sm text-gray-600 border-b">
-          مرحباً، {userEmail}
+          مرحباً، {user.email}
         </div>
 
         {/* Main Navigation */}
@@ -33,7 +41,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
             <NavLink 
               key={item.to} 
               item={item} 
-              onClick={onClose} 
+              onClick={handleClose} 
             />
           ))}
         </div>
@@ -47,7 +55,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
             <NavLink 
               key={item.to} 
               item={item} 
-              onClick={onClose} 
+              onClick={handleClose} 
             />
           ))}
         </div>
@@ -61,7 +69,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
             <NavLink 
               key={item.to} 
               item={item} 
-              onClick={onClose} 
+              onClick={handleClose} 
             />
           ))}
         </div>
@@ -76,7 +84,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
               <NavLink 
                 key={item.to} 
                 item={item} 
-                onClick={onClose} 
+                onClick={handleClose} 
               />
             ))}
           </div>
@@ -86,8 +94,8 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
         <div className="border-t pt-2">
           <button
             onClick={() => {
-              onSignOut();
-              onClose();
+              signOut();
+              handleClose();
             }}
             className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full"
           >

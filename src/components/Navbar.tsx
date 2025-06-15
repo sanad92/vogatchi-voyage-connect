@@ -75,14 +75,16 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Navigation */}
-          <MobileNavigation 
-            isOpen={isMobileMenuOpen}
-            userRole={userRole}
-            hasRole={hasRole}
-            location={location}
-            user={user}
-            signOut={signOut}
-          />
+          {isMobileMenuOpen && (
+            <MobileNavigation 
+              isOpen={isMobileMenuOpen}
+              userRole={userRole}
+              hasRole={hasRole}
+              location={location}
+              user={user}
+              signOut={signOut}
+            />
+          )}
         </div>
       </nav>
     </>

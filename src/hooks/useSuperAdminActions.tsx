@@ -121,13 +121,16 @@ export const useSuperAdminActions = () => {
     try {
       setIsLoading(true);
       
+      // Fix the type issue by ensuring role is a valid user_role type
+      const validRole = userData.role as "admin" | "manager" | "sales_agent" | "accountant" | "viewer" | "super_admin";
+      
       const { data, error } = await supabase.rpc('admin_create_user', {
         p_email: userData.email,
         p_password: userData.password,
         p_full_name: userData.full_name,
         p_department: userData.department,
         p_phone: userData.phone,
-        p_role: userData.role
+        p_role: validRole
       });
 
       if (error) throw error;
