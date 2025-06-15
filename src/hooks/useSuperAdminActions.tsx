@@ -123,8 +123,15 @@ export const useSuperAdminActions = () => {
       setIsLoading(true);
       console.log('🔄 بدء إنشاء مستخدم جديد:', userData.email);
       
-      // Cast role to the correct type to fix TypeScript error
-      const validRole = userData.role as UserRole;
+      // Filter out 'no_role' and only pass valid roles to the RPC function
+      const validRoles = ['admin', 'manager', 'sales_agent', 'accountant', 'viewer', 'super_admin'];
+      
+      if (!validRoles.includes(userData.role)) {
+        throw new Error('دور المستخدم غير صالح');
+      }
+      
+      // Cast role to the correct type after validation
+      const validRole = userData.role as "admin" | "manager" | "sales_agent" | "accountant" | "viewer" | "super_admin";
       
       const { data, error } = await supabase.rpc('admin_create_user', {
         p_email: userData.email,
