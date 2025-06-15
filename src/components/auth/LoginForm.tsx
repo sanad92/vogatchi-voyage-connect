@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import LoginCredentials from './LoginCredentials';
 
 const LoginForm = () => {
   const { signIn } = useAuth();
@@ -84,8 +82,6 @@ const LoginForm = () => {
             {isLoading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}
           </Button>
         </form>
-
-        <LoginCredentials />
       </CardContent>
     </Card>
   );
