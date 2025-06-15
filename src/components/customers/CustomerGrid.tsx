@@ -1,10 +1,10 @@
 
+import React, { useState } from "react";
 import CustomerCard from "./CustomerCard";
 import { Button } from "@/components/ui/button";
 import { UserPlus, RefreshCw } from "lucide-react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
-import { useState } from "react";
 
 interface CustomerGridProps {
   customers: Customer[];
