@@ -7,21 +7,28 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Eye, DollarSign } from 'lucide-react';
+import { Calculator, Eye, DollarSign, AlertCircle } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useEmployeeCommissions } from '@/hooks/useEmployeeCommissions';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 
 const CommissionCalculation = () => {
   const { employees, employeesLoading } = useExpenses();
-  const { commissions, commissionsLoading } = useEmployeeCommissions();
+  const { commissions, commissionsLoading, commissionsError } = useEmployeeCommissions();
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().slice(0, 7) + '-01',
     end: new Date().toISOString().slice(0, 10)
   });
 
+  console.log('CommissionCalculation - employees:', employees);
+  console.log('CommissionCalculation - commissions:', commissions);
+  console.log('CommissionCalculation - selectedEmployee:', selectedEmployee);
+  console.log('CommissionCalculation - dateRange:', dateRange);
+
   const filteredCommissions = commissions?.filter(commission => {
+    if (!commission) return false;
+    
     const matchesEmployee = !selectedEmployee || commission.employee_id === selectedEmployee;
     const commissionDate = new Date(commission.commission_date);
     const startDate = new Date(dateRange.start);
@@ -29,14 +36,16 @@ const CommissionCalculation = () => {
     const matchesDate = commissionDate >= startDate && commissionDate <= endDate;
     
     return matchesEmployee && matchesDate;
-  });
+  }) || [];
 
-  const totalCommissions = filteredCommissions?.reduce((sum, commission) => 
-    sum + commission.commission_amount, 0
-  ) || 0;
+  console.log('CommissionCalculation - filteredCommissions:', filteredCommissions);
 
-  const pendingCommissions = filteredCommissions?.filter(c => c.payment_status === 'pending') || [];
-  const paidCommissions = filteredCommissions?.filter(c => c.payment_status === 'paid') || [];
+  const totalCommissions = filteredCommissions.reduce((sum, commission) => 
+    sum + (commission.commission_amount || 0), 0
+  );
+
+  const pendingCommissions = filteredCommissions.filter(c => c.payment_status === 'pending');
+  const paidCommissions = filteredCommissions.filter(c => c.payment_status === 'paid');
 
   const getBookingTypeLabel = (type: string) => {
     const types = {
@@ -55,12 +64,30 @@ const CommissionCalculation = () => {
       cancelled: { label: 'ملغي', variant: 'destructive' as const }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   if (employeesLoading || commissionsLoading) {
-    return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (commissionsError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-red-500">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+            <p>حدث خطأ أثناء تحميل بيانات العمولات</p>
+            <p className="text-sm mt-2">{commissionsError.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -83,7 +110,7 @@ const CommissionCalculation = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">جميع الموظفين</SelectItem>
-                  {employees?.map((employee) => (
+                  {employees?.filter(employee => employee.is_active).map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name} - {employee.employee_code}
                     </SelectItem>
@@ -122,7 +149,7 @@ const CommissionCalculation = () => {
               <p className="text-3xl font-bold text-blue-600 mt-2">
                 <MultiCurrencyDisplay amount={totalCommissions} currency="EGP" showInEGP={false} />
               </p>
-              <p className="text-sm text-gray-500 mt-1">{filteredCommissions?.length || 0} عملية</p>
+              <p className="text-sm text-gray-500 mt-1">{filteredCommissions.length} عملية</p>
             </div>
           </CardContent>
         </Card>
@@ -133,7 +160,7 @@ const CommissionCalculation = () => {
               <h3 className="text-lg font-semibold text-gray-900">العمولات المعلقة</h3>
               <p className="text-3xl font-bold text-orange-600 mt-2">
                 <MultiCurrencyDisplay 
-                  amount={pendingCommissions.reduce((sum, c) => sum + c.commission_amount, 0)} 
+                  amount={pendingCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0)} 
                   currency="EGP" 
                   showInEGP={false} 
                 />
@@ -149,7 +176,7 @@ const CommissionCalculation = () => {
               <h3 className="text-lg font-semibold text-gray-900">العمولات المدفوعة</h3>
               <p className="text-3xl font-bold text-green-600 mt-2">
                 <MultiCurrencyDisplay 
-                  amount={paidCommissions.reduce((sum, c) => sum + c.commission_amount, 0)} 
+                  amount={paidCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0)} 
                   currency="EGP" 
                   showInEGP={false} 
                 />
@@ -166,56 +193,63 @@ const CommissionCalculation = () => {
           <CardTitle>تفاصيل العمولات</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الموظف</TableHead>
-                <TableHead>نوع الحجز</TableHead>
-                <TableHead>مبلغ الحجز</TableHead>
-                <TableHead>معدل العمولة</TableHead>
-                <TableHead>مبلغ العمولة</TableHead>
-                <TableHead>تاريخ العمولة</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>العمليات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCommissions?.map((commission) => (
-                <TableRow key={commission.id}>
-                  <TableCell className="font-medium">
-                    {commission.employee?.full_name || 'غير محدد'}
-                  </TableCell>
-                  <TableCell>
-                    {getBookingTypeLabel(commission.booking_type)}
-                  </TableCell>
-                  <TableCell>
-                    <MultiCurrencyDisplay 
-                      amount={commission.booking_amount} 
-                      currency={commission.currency as "EGP" | "USD" | "SAR"} 
-                      showInEGP={false} 
-                    />
-                  </TableCell>
-                  <TableCell>{commission.commission_rate}%</TableCell>
-                  <TableCell className="font-semibold text-green-600">
-                    <MultiCurrencyDisplay 
-                      amount={commission.commission_amount} 
-                      currency={commission.currency as "EGP" | "USD" | "SAR"} 
-                      showInEGP={false} 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(commission.commission_date).toLocaleDateString('ar')}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(commission.payment_status)}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          {filteredCommissions.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>لا توجد عمولات للعرض في الفترة المحددة</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>الموظف</TableHead>
+                  <TableHead>نوع الحجز</TableHead>
+                  <TableHead>مبلغ الحجز</TableHead>
+                  <TableHead>معدل العمولة</TableHead>
+                  <TableHead>مبلغ العمولة</TableHead>
+                  <TableHead>تاريخ العمولة</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>العمليات</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCommissions.map((commission) => (
+                  <TableRow key={commission.id}>
+                    <TableCell className="font-medium">
+                      {commission.employee?.full_name || 'غير محدد'}
+                    </TableCell>
+                    <TableCell>
+                      {getBookingTypeLabel(commission.booking_type)}
+                    </TableCell>
+                    <TableCell>
+                      <MultiCurrencyDisplay 
+                        amount={commission.booking_amount || 0} 
+                        currency={commission.currency as "EGP" | "USD" | "SAR"} 
+                        showInEGP={false} 
+                      />
+                    </TableCell>
+                    <TableCell>{commission.commission_rate || 0}%</TableCell>
+                    <TableCell className="font-semibold text-green-600">
+                      <MultiCurrencyDisplay 
+                        amount={commission.commission_amount || 0} 
+                        currency={commission.currency as "EGP" | "USD" | "SAR"} 
+                        showInEGP={false} 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {new Date(commission.commission_date).toLocaleDateString('ar')}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(commission.payment_status)}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

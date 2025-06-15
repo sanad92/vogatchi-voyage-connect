@@ -1,4 +1,3 @@
-
 import { useEmployees } from './useEmployees';
 import { useRentContracts } from './useRentContracts';
 import { useExpenseTransactions } from './useExpenseTransactions';
@@ -54,11 +53,16 @@ export const useExpenses = () => {
   const {
     commissions,
     commissionsLoading,
+    commissionsError,
     commissionPayments,
+    paymentsLoading,
+    paymentsError,
     addCommissionPayment,
     markCommissionsAsPaid,
+    updateEmployeeCommissionSettings,
     isAddingPayment: isAddingCommissionPayment,
     isUpdatingStatus: isUpdatingCommissionStatus,
+    isUpdatingSettings: isUpdatingCommissionSettings,
   } = useEmployeeCommissions();
 
   return {
@@ -102,10 +106,14 @@ export const useExpenses = () => {
     // Employee Commissions
     commissions,
     commissionsLoading,
+    commissionsError,
     commissionPayments,
+    paymentsError,
     addCommissionPayment,
     markCommissionsAsPaid,
+    updateEmployeeCommissionSettings,
     isAddingCommissionPayment,
     isUpdatingCommissionStatus,
+    isUpdatingCommissionSettings,
   };
 };

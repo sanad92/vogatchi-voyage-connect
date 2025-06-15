@@ -7,45 +7,91 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Users, Settings, Edit, DollarSign } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useEmployeeCommissions } from '@/hooks/useEmployeeCommissions';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
-import { toast } from 'sonner';
 
 const EmployeeCommissionSettings = () => {
   const { employees, employeesLoading } = useExpenses();
+  const { updateEmployeeCommissionSettings, isUpdatingSettings } = useEmployeeCommissions();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [commissionSettings, setCommissionSettings] = useState({
     commission_rate: 0,
     commission_type: 'percentage'
   });
+  const [errors, setErrors] = useState<{ commission_rate?: string }>({});
 
   const handleEditEmployee = (employee: any) => {
+    console.log('Editing employee commission settings:', employee);
     setSelectedEmployee(employee);
     setCommissionSettings({
       commission_rate: employee.commission_rate || 0,
       commission_type: employee.commission_type || 'percentage'
     });
+    setErrors({});
     setIsEditDialogOpen(true);
   };
 
+  const validateCommissionRate = (rate: number) => {
+    if (rate < 0 || rate > 100) {
+      return 'معدل العمولة يجب أن يكون بين 0 و 100%';
+    }
+    if (isNaN(rate)) {
+      return 'معدل العمولة يجب أن يكون رقم صحيح';
+    }
+    return null;
+  };
+
   const handleSaveCommissionSettings = async () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee) {
+      console.error('No employee selected');
+      return;
+    }
+
+    // التحقق من صحة البيانات
+    const rateError = validateCommissionRate(commissionSettings.commission_rate);
+    if (rateError) {
+      setErrors({ commission_rate: rateError });
+      return;
+    }
+
+    console.log('Saving commission settings:', {
+      employeeId: selectedEmployee.id,
+      settings: commissionSettings
+    });
 
     try {
-      // هنا سيتم تحديث إعدادات العمولة في قاعدة البيانات
-      // سنحتاج لإضافة mutation للتحديث
-      toast.success('تم تحديث إعدادات العمولة بنجاح');
+      await updateEmployeeCommissionSettings(selectedEmployee.id, commissionSettings);
       setIsEditDialogOpen(false);
+      setSelectedEmployee(null);
+      setErrors({});
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحديث إعدادات العمولة');
+      console.error('Error saving commission settings:', error);
     }
   };
 
   if (employeesLoading) {
-    return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!employees || employees.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-gray-500">
+            <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>لا توجد موظفين في النظام</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -81,7 +127,7 @@ const EmployeeCommissionSettings = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees?.map((employee) => (
+              {employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">
                     {employee.full_name}
@@ -120,6 +166,7 @@ const EmployeeCommissionSettings = () => {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEditEmployee(employee)}
+                      disabled={!employee.is_active}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       تعديل
@@ -150,11 +197,19 @@ const EmployeeCommissionSettings = () => {
                 min="0"
                 max="100"
                 value={commissionSettings.commission_rate}
-                onChange={(e) => setCommissionSettings(prev => ({ 
-                  ...prev, 
-                  commission_rate: parseFloat(e.target.value) || 0 
-                }))}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setCommissionSettings(prev => ({ 
+                    ...prev, 
+                    commission_rate: value
+                  }));
+                  setErrors({});
+                }}
+                className={errors.commission_rate ? 'border-red-500' : ''}
               />
+              {errors.commission_rate && (
+                <p className="text-red-500 text-sm">{errors.commission_rate}</p>
+              )}
               <p className="text-sm text-gray-600">
                 أدخل معدل العمولة كنسبة مئوية (مثل: 2.5 للحصول على 2.5%)
               </p>
@@ -194,12 +249,16 @@ const EmployeeCommissionSettings = () => {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button onClick={handleSaveCommissionSettings}>
-                حفظ التغييرات
+              <Button 
+                onClick={handleSaveCommissionSettings}
+                disabled={isUpdatingSettings}
+              >
+                {isUpdatingSettings ? 'جاري الحفظ...' : 'حفظ التغييرات'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditDialogOpen(false)}
+                disabled={isUpdatingSettings}
               >
                 إلغاء
               </Button>
