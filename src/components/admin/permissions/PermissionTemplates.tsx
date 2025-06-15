@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileText, Users, Shield, Eye, Edit } from 'lucide-react';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useDetailedPermissions } from '@/hooks/useDetailedPermissions';
 
 // قوالب الصلاحيات المحددة مسبقاً
 const PERMISSION_TEMPLATES = [
@@ -142,7 +141,7 @@ interface PermissionTemplatesProps {
 
 const PermissionTemplates = ({ onApplyTemplate }: PermissionTemplatesProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const { updatePermissions } = useUserPermissions();
+  const { updatePermissions } = useDetailedPermissions();
 
   const getPermissionCount = (permissions: any) => {
     const readPermissions = Object.keys(permissions).filter(key => 

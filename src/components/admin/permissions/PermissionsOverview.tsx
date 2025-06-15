@@ -1,23 +1,22 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Shield, Users, Eye, Edit, AlertTriangle } from 'lucide-react';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { Users, Shield, Check, AlertTriangle, TrendingUp, Calendar } from 'lucide-react';
+import { useDetailedPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 
 const PermissionsOverview = () => {
-  const { allPermissions } = useUserPermissions();
+  const { allUserPermissions, isLoading } = useDetailedPermissions();
   const { unifiedUsers } = useUnifiedData();
 
   // حساب الإحصائيات
   const totalUsers = unifiedUsers?.length || 0;
-  const usersWithPermissions = allPermissions?.length || 0;
+  const usersWithPermissions = allUserPermissions?.length || 0;
   const usersWithoutPermissions = totalUsers - usersWithPermissions;
 
   // حساب إجمالي الصلاحيات
   const calculatePermissionStats = () => {
-    if (!allPermissions || allPermissions.length === 0) {
+    if (!allUserPermissions || allUserPermissions.length === 0) {
       return { readPermissions: 0, writePermissions: 0, totalPossible: 0 };
     }
 
@@ -29,7 +28,7 @@ const PermissionsOverview = () => {
     let totalReadPermissions = 0;
     let totalWritePermissions = 0;
 
-    allPermissions.forEach(userPermissions => {
+    allUserPermissions.forEach(userPermissions => {
       permissionKeys.forEach(key => {
         if (userPermissions[`${key}_read` as keyof typeof userPermissions]) {
           totalReadPermissions++;
@@ -55,14 +54,14 @@ const PermissionsOverview = () => {
 
   // حساب المستخدمين حسب مستوى الصلاحيات
   const getUserPermissionLevel = () => {
-    if (!allPermissions) return { noAccess: 0, limited: 0, moderate: 0, full: 0 };
+    if (!allUserPermissions) return { noAccess: 0, limited: 0, moderate: 0, full: 0 };
 
     let noAccess = 0;
     let limited = 0;
     let moderate = 0;
     let full = 0;
 
-    allPermissions.forEach(userPermissions => {
+    allUserPermissions.forEach(userPermissions => {
       const totalPermissions = Object.values(userPermissions).filter(
         (value, index, array) => typeof value === 'boolean' && value
       ).length;

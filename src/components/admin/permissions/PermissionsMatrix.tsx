@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Shield, Save, Users } from 'lucide-react';
-import { useUserPermissions, UserPermissions } from '@/hooks/useUserPermissions';
+import { useDetailedPermissions, DetailedUserPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 
 // تعريف الصلاحيات المتاحة
@@ -25,10 +24,10 @@ const PERMISSION_MODULES = [
 const PermissionsMatrix = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [tempPermissions, setTempPermissions] = useState<Partial<UserPermissions>>({});
+  const [tempPermissions, setTempPermissions] = useState<Partial<DetailedUserPermissions>>({});
 
   const { unifiedUsers, isLoading: usersLoading } = useUnifiedData();
-  const { allPermissions, updatePermissions, isUpdating } = useUserPermissions();
+  const { allUserPermissions, updatePermissions, isUpdating } = useDetailedPermissions();
 
   // فلترة المستخدمين
   const filteredUsers = unifiedUsers?.filter(user =>
@@ -38,7 +37,7 @@ const PermissionsMatrix = () => {
 
   // الحصول على صلاحيات مستخدم معين
   const getUserPermissions = (userId: string) => {
-    return allPermissions?.find(perm => perm.user_id === userId);
+    return allUserPermissions?.find(perm => perm.user_id === userId);
   };
 
   // بدء تعديل صلاحيات مستخدم
@@ -78,11 +77,11 @@ const PermissionsMatrix = () => {
   // الحصول على قيمة صلاحية
   const getPermissionValue = (userId: string, permissionKey: string): boolean => {
     if (editingUser === userId) {
-      return Boolean(tempPermissions[permissionKey as keyof UserPermissions]);
+      return Boolean(tempPermissions[permissionKey as keyof DetailedUserPermissions]);
     }
     
     const userPerms = getUserPermissions(userId);
-    return Boolean(userPerms?.[permissionKey as keyof UserPermissions]);
+    return Boolean(userPerms?.[permissionKey as keyof DetailedUserPermissions]);
   };
 
   if (usersLoading) {
