@@ -203,22 +203,15 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
               />
               <Input
                 type="number"
-                placeholder="قيمة العقد"
+                placeholder="قيمة العقد (ج.م)"
                 value={newContract.contract_value}
                 onChange={e => setNewContract({...newContract, contract_value: parseFloat(e.target.value) || 0})}
                 required
               />
-              <Select value={newContract.currency} onValueChange={(value: SupportedCurrency) => setNewContract({...newContract, currency: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="العملة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EGP">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</SelectItem>
-                  <SelectItem value="USD">{CURRENCY_NAMES.USD} ({CURRENCY_SYMBOLS.USD})</SelectItem>
-                  <SelectItem value="SAR">{CURRENCY_NAMES.SAR} ({CURRENCY_SYMBOLS.SAR})</SelectItem>
-                  <SelectItem value="EUR">{CURRENCY_NAMES.EUR} ({CURRENCY_SYMBOLS.EUR})</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">العملة:</span>
+                <span className="font-medium">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</span>
+              </div>
               <Input
                 placeholder="شروط الدفع"
                 value={newContract.payment_terms}
@@ -274,7 +267,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
                     </Badge>
                     <div className="mt-2 text-lg font-bold flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
-                      {contract.contract_value.toLocaleString()} {CURRENCY_SYMBOLS[contract.currency]}
+                      {contract.contract_value.toLocaleString()} {CURRENCY_SYMBOLS.EGP}
                     </div>
                   </div>
                 </div>
@@ -290,7 +283,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
                   </div>
                   <div>
                     <span className="font-medium">العملة:</span>
-                    <p>{CURRENCY_NAMES[contract.currency]} ({CURRENCY_SYMBOLS[contract.currency]})</p>
+                    <p>{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</p>
                   </div>
                   <div>
                     <span className="font-medium">شروط الدفع:</span>

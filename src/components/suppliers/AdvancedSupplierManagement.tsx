@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -309,17 +310,10 @@ const AdvancedSupplierManagement = () => {
                     value={newSupplier.phone}
                     onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
                   />
-                  <Select value={newSupplier.preferred_currency} onValueChange={(value: SupportedCurrency) => setNewSupplier({...newSupplier, preferred_currency: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="العملة المفضلة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EGP">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</SelectItem>
-                      <SelectItem value="USD">{CURRENCY_NAMES.USD} ({CURRENCY_SYMBOLS.USD})</SelectItem>
-                      <SelectItem value="SAR">{CURRENCY_NAMES.SAR} ({CURRENCY_SYMBOLS.SAR})</SelectItem>
-                      <SelectItem value="EUR">{CURRENCY_NAMES.EUR} ({CURRENCY_SYMBOLS.EUR})</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">العملة:</span>
+                    <span className="font-medium">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</span>
+                  </div>
                   <Input
                     placeholder="شروط الدفع"
                     value={newSupplier.payment_terms}
@@ -327,7 +321,7 @@ const AdvancedSupplierManagement = () => {
                   />
                   <Input
                     type="number"
-                    placeholder="حد الائتمان"
+                    placeholder="حد الائتمان (ج.م)"
                     value={newSupplier.credit_limit}
                     onChange={e => setNewSupplier({...newSupplier, credit_limit: parseFloat(e.target.value) || 0})}
                   />
@@ -386,7 +380,7 @@ const AdvancedSupplierManagement = () => {
                       {supplier.email && (
                         <p><span className="font-medium">البريد:</span> {supplier.email}</p>
                       )}
-                      <p><span className="font-medium">العملة المفضلة:</span> {CURRENCY_NAMES[supplier.preferred_currency as SupportedCurrency]} ({CURRENCY_SYMBOLS[supplier.preferred_currency as SupportedCurrency]})</p>
+                      <p><span className="font-medium">العملة:</span> {CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</p>
                       {supplier.payment_terms && (
                         <p><span className="font-medium">شروط الدفع:</span> {supplier.payment_terms}</p>
                       )}

@@ -253,22 +253,15 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
               <Input
                 type="number"
                 step="0.01"
-                placeholder="المبلغ"
+                placeholder="المبلغ (ج.م)"
                 value={newPayment.amount}
                 onChange={e => setNewPayment({...newPayment, amount: parseFloat(e.target.value) || 0})}
                 required
               />
-              <Select value={newPayment.currency} onValueChange={(value: SupportedCurrency) => setNewPayment({...newPayment, currency: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="العملة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EGP">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</SelectItem>
-                  <SelectItem value="USD">{CURRENCY_NAMES.USD} ({CURRENCY_SYMBOLS.USD})</SelectItem>
-                  <SelectItem value="SAR">{CURRENCY_NAMES.SAR} ({CURRENCY_SYMBOLS.SAR})</SelectItem>
-                  <SelectItem value="EUR">{CURRENCY_NAMES.EUR} ({CURRENCY_SYMBOLS.EUR})</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">العملة:</span>
+                <span className="font-medium">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</span>
+              </div>
               <Input
                 type="date"
                 placeholder="تاريخ الدفع"
@@ -343,13 +336,8 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
                     </Badge>
                     <div className="mt-2">
                       <div className="text-lg font-bold">
-                        {payment.amount.toLocaleString()} {CURRENCY_SYMBOLS[payment.currency]}
+                        {payment.amount.toLocaleString()} {CURRENCY_SYMBOLS.EGP}
                       </div>
-                      {payment.currency !== 'EGP' && (
-                        <div className="text-sm text-gray-600">
-                          ({payment.amount_in_egp.toLocaleString()} {CURRENCY_SYMBOLS.EGP})
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
