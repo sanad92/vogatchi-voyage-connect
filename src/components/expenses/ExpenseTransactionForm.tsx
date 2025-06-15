@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ const ExpenseTransactionForm = ({
   });
 
   const selectedCurrency = watch('currency');
+  const selectedCategoryId = watch('category_id');
 
   const handleFormSubmit = (data: any) => {
     // إضافة معرف الموظف المنشئ
@@ -82,12 +84,16 @@ const ExpenseTransactionForm = ({
 
             <div>
               <Label htmlFor="category_id">فئة المصروفات *</Label>
-              <Select onValueChange={(value) => setValue('category_id', value)}>
+              <Select 
+                value={selectedCategoryId || "none"} 
+                onValueChange={(value) => setValue('category_id', value === "none" ? "" : value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر فئة المصروفات" />
                 </SelectTrigger>
                 <SelectContent>
-                  {expenseCategories?.map((category) => (
+                  <SelectItem value="none">اختر فئة المصروفات</SelectItem>
+                  {expenseCategories?.filter(category => category.id && category.id.trim() !== '').map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name_ar}
                     </SelectItem>
