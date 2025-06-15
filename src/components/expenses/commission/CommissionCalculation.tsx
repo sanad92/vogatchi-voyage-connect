@@ -5,114 +5,162 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Eye, DollarSign, AlertCircle } from 'lucide-react';
-import { useExpenses } from '@/hooks/useExpenses';
+import { AlertCircle, Calculator, DollarSign, User, Calendar, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEmployeeCommissions } from '@/hooks/useEmployeeCommissions';
-import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import { useExpenses } from '@/hooks/useExpenses';
+import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 const CommissionCalculation = () => {
-  const { employees, employeesLoading } = useExpenses();
-  const { commissions, commissionsLoading, commissionsError } = useEmployeeCommissions();
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().slice(0, 7) + '-01',
-    end: new Date().toISOString().slice(0, 10)
-  });
+  const [bookingAmount, setBookingAmount] = useState('');
+  const [customRate, setCustomRate] = useState('');
+  const [bookingType, setBookingType] = useState('hotel');
+  const [bookingId, setBookingId] = useState('');
+  const [showDetails, setShowDetails] = useState(false);
 
-  console.log('CommissionCalculation - employees:', employees);
-  console.log('CommissionCalculation - commissions:', commissions);
-  console.log('CommissionCalculation - selectedEmployee:', selectedEmployee);
-  console.log('CommissionCalculation - dateRange:', dateRange);
+  const { 
+    commissions, 
+    commissionsLoading,
+    calculateCommission,
+    cancelCommission,
+    validateEmployeeCommissions,
+    isCalculating,
+    isCancelling,
+    isValidating
+  } = useEmployeeCommissions();
+  
+  const { employees } = useExpenses();
 
-  const filteredCommissions = commissions?.filter(commission => {
-    if (!commission) return false;
-    
-    const matchesEmployee = !selectedEmployee || commission.employee_id === selectedEmployee;
-    const commissionDate = new Date(commission.commission_date);
-    const startDate = new Date(dateRange.start);
-    const endDate = new Date(dateRange.end);
-    const matchesDate = commissionDate >= startDate && commissionDate <= endDate;
-    
-    return matchesEmployee && matchesDate;
-  }) || [];
+  const selectedEmployeeData = employees?.find(emp => emp.id === selectedEmployee);
+  const employeeCommissions = commissions?.filter(comm => comm.employee_id === selectedEmployee) || [];
+  const pendingCommissions = employeeCommissions.filter(comm => comm.payment_status === 'pending');
+  const totalPending = pendingCommissions.reduce((sum, comm) => sum + comm.commission_amount, 0);
 
-  console.log('CommissionCalculation - filteredCommissions:', filteredCommissions);
+  const handleCalculateCommission = () => {
+    if (!selectedEmployee || !bookingAmount || !bookingId) {
+      toast({
+        title: "بيانات ناقصة",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const totalCommissions = filteredCommissions.reduce((sum, commission) => 
-    sum + (commission.commission_amount || 0), 0
-  );
+    const amount = parseFloat(bookingAmount);
+    const rate = customRate ? parseFloat(customRate) : undefined;
 
-  const pendingCommissions = filteredCommissions.filter(c => c.payment_status === 'pending');
-  const paidCommissions = filteredCommissions.filter(c => c.payment_status === 'paid');
+    if (amount <= 0) {
+      toast({
+        title: "مبلغ غير صحيح",
+        description: "يجب أن يكون مبلغ الحجز أكبر من صفر",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const getBookingTypeLabel = (type: string) => {
-    const types = {
-      hotel: 'حجز فندقي',
-      flight: 'حجز طيران',
-      transport: 'حجز نقل',
-      car_rental: 'إيجار سيارة'
-    };
-    return types[type as keyof typeof types] || type;
+    if (rate !== undefined && (rate < 0 || rate > 100)) {
+      toast({
+        title: "معدل عمولة غير صحيح",
+        description: "معدل العمولة يجب أن يكون بين 0 و 100",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    calculateCommission({
+      employeeId: selectedEmployee,
+      bookingAmount: amount,
+      bookingId,
+      bookingType,
+      commissionRate: rate
+    });
+
+    // Reset form
+    setBookingAmount('');
+    setBookingId('');
+    setCustomRate('');
+  };
+
+  const handleCancelCommission = (commissionId: string) => {
+    if (window.confirm('هل أنت متأكد من إلغاء هذه العمولة؟')) {
+      cancelCommission({
+        commissionId,
+        reason: 'تم الإلغاء يدوياً من واجهة إدارة العمولات'
+      });
+    }
+  };
+
+  const handleValidateEmployee = () => {
+    if (!selectedEmployee) {
+      toast({
+        title: "لم يتم اختيار موظف",
+        description: "يرجى اختيار موظف للتحقق من عمولاته",
+        variant: "destructive",
+      });
+      return;
+    }
+    validateEmployeeCommissions(selectedEmployee);
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { label: 'معلق', variant: 'secondary' as const },
-      paid: { label: 'مدفوع', variant: 'default' as const },
-      cancelled: { label: 'ملغي', variant: 'destructive' as const }
+    const statusMap = {
+      'pending': { label: 'في الانتظار', color: 'bg-yellow-100 text-yellow-800' },
+      'paid': { label: 'مدفوع', color: 'bg-green-100 text-green-800' },
+      'cancelled': { label: 'ملغي', color: 'bg-red-100 text-red-800' }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, color: 'bg-gray-100 text-gray-800' };
+    
+    return (
+      <Badge className={statusInfo.color}>
+        {statusInfo.label}
+      </Badge>
+    );
   };
 
-  if (employeesLoading || commissionsLoading) {
+  const getBookingTypeBadge = (type: string) => {
+    const typeMap = {
+      'hotel': { label: 'فندق', color: 'bg-blue-100 text-blue-800' },
+      'flight': { label: 'طيران', color: 'bg-green-100 text-green-800' },
+      'transport': { label: 'نقل', color: 'bg-purple-100 text-purple-800' },
+      'car_rental': { label: 'تأجير سيارة', color: 'bg-orange-100 text-orange-800' }
+    };
+    
+    const typeInfo = typeMap[type as keyof typeof typeMap] || { label: type, color: 'bg-gray-100 text-gray-800' };
+    
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">جاري التحميل...</div>
-      </div>
+      <Badge className={typeInfo.color}>
+        {typeInfo.label}
+      </Badge>
     );
-  }
-
-  if (commissionsError) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-500">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-            <p>حدث خطأ أثناء تحميل بيانات العمولات</p>
-            <p className="text-sm mt-2">{commissionsError.message}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  };
 
   return (
     <div className="space-y-6">
-      {/* فلاتر البحث */}
+      {/* حساب عمولة جديدة */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            حساب عمولات الموظفين
+            حساب عمولة جديدة
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>الموظف</Label>
+              <Label htmlFor="employee">الموظف</Label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger>
-                  <SelectValue placeholder="جميع الموظفين" />
+                  <SelectValue placeholder="اختر الموظف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الموظفين</SelectItem>
-                  {employees?.filter(employee => employee.is_active).map((employee) => (
+                  {employees?.filter(emp => emp.is_active).map(employee => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.full_name} - {employee.employee_code}
+                      {employee.full_name} ({employee.employee_code}) - {employee.commission_rate}%
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -120,138 +168,184 @@ const CommissionCalculation = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>من تاريخ</Label>
+              <Label htmlFor="bookingType">نوع الحجز</Label>
+              <Select value={bookingType} onValueChange={setBookingType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع الحجز" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hotel">حجز فندق</SelectItem>
+                  <SelectItem value="flight">حجز طيران</SelectItem>
+                  <SelectItem value="transport">حجز نقل</SelectItem>
+                  <SelectItem value="car_rental">تأجير سيارة</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bookingId">رقم الحجز</Label>
               <Input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                id="bookingId"
+                value={bookingId}
+                onChange={(e) => setBookingId(e.target.value)}
+                placeholder="أدخل رقم الحجز"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>إلى تاريخ</Label>
+              <Label htmlFor="bookingAmount">مبلغ الحجز (ج.م)</Label>
               <Input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                id="bookingAmount"
+                type="number"
+                value={bookingAmount}
+                onChange={(e) => setBookingAmount(e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customRate">معدل عمولة مخصص (اختياري)</Label>
+              <Input
+                id="customRate"
+                type="number"
+                value={customRate}
+                onChange={(e) => setCustomRate(e.target.value)}
+                placeholder={selectedEmployeeData ? `${selectedEmployeeData.commission_rate}%` : "0.00"}
+                min="0"
+                max="100"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          {selectedEmployeeData && (
+            <Alert>
+              <User className="h-4 w-4" />
+              <AlertDescription>
+                <strong>{selectedEmployeeData.full_name}</strong> - معدل العمولة الافتراضي: {selectedEmployeeData.commission_rate}%
+                {bookingAmount && (
+                  <div className="mt-2">
+                    العمولة المحسوبة: <strong>
+                      {(parseFloat(bookingAmount) * (parseFloat(customRate) || selectedEmployeeData.commission_rate) / 100).toFixed(2)} ج.م
+                    </strong>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCalculateCommission}
+              disabled={isCalculating || !selectedEmployee || !bookingAmount || !bookingId}
+              className="flex items-center gap-2"
+            >
+              <Calculator className="h-4 w-4" />
+              {isCalculating ? 'جاري الحساب...' : 'حساب وإضافة العمولة'}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* ملخص العمولات */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* عمولات الموظف المحدد */}
+      {selectedEmployee && (
         <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">إجمالي العمولات</h3>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                <MultiCurrencyDisplay amount={totalCommissions} currency="EGP" showInEGP={false} />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">{filteredCommissions.length} عملية</p>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                عمولات {selectedEmployeeData?.full_name}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDetails(!showDetails)}
+                >
+                  {showDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showDetails ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleValidateEmployee}
+                  disabled={isValidating}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  {isValidating ? 'جاري التحقق...' : 'التحقق من صحة العمولات'}
+                </Button>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-blue-50 p-3 rounded">
+                <div className="text-sm text-blue-600">إجمالي العمولات</div>
+                <div className="text-lg font-bold text-blue-700">{employeeCommissions.length}</div>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded">
+                <div className="text-sm text-yellow-600">في الانتظار</div>
+                <div className="text-lg font-bold text-yellow-700">{pendingCommissions.length}</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded">
+                <div className="text-sm text-green-600">المبلغ المعلق</div>
+                <div className="text-lg font-bold text-green-700">{totalPending.toFixed(2)} ج.م</div>
+              </div>
+            </div>
+
+            {showDetails && (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {commissionsLoading ? (
+                  <div className="text-center py-4">جاري تحميل العمولات...</div>
+                ) : employeeCommissions.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">لا توجد عمولات لهذا الموظف</div>
+                ) : (
+                  employeeCommissions.map(commission => (
+                    <div key={commission.id} className="border rounded p-3 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {getBookingTypeBadge(commission.booking_type)}
+                          {getStatusBadge(commission.payment_status)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-green-600">
+                            {commission.commission_amount.toFixed(2)} ج.م
+                          </span>
+                          {commission.payment_status === 'pending' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleCancelCommission(commission.id)}
+                              disabled={isCancelling}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
+                        <div>مبلغ الحجز: {commission.booking_amount.toFixed(2)} ج.م</div>
+                        <div>معدل العمولة: {commission.commission_rate}%</div>
+                        <div>التاريخ: {format(new Date(commission.commission_date), 'dd/MM/yyyy', { locale: ar })}</div>
+                        {commission.booking_id && (
+                          <div>رقم الحجز: {commission.booking_id}</div>
+                        )}
+                      </div>
+                      {commission.notes && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ملاحظات: {commission.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">العمولات المعلقة</h3>
-              <p className="text-3xl font-bold text-orange-600 mt-2">
-                <MultiCurrencyDisplay 
-                  amount={pendingCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0)} 
-                  currency="EGP" 
-                  showInEGP={false} 
-                />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">{pendingCommissions.length} عملية</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">العمولات المدفوعة</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                <MultiCurrencyDisplay 
-                  amount={paidCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0)} 
-                  currency="EGP" 
-                  showInEGP={false} 
-                />
-              </p>
-              <p className="text-sm text-gray-500 mt-1">{paidCommissions.length} عملية</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* جدول تفاصيل العمولات */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تفاصيل العمولات</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredCommissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>لا توجد عمولات للعرض في الفترة المحددة</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>الموظف</TableHead>
-                  <TableHead>نوع الحجز</TableHead>
-                  <TableHead>مبلغ الحجز</TableHead>
-                  <TableHead>معدل العمولة</TableHead>
-                  <TableHead>مبلغ العمولة</TableHead>
-                  <TableHead>تاريخ العمولة</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>العمليات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCommissions.map((commission) => (
-                  <TableRow key={commission.id}>
-                    <TableCell className="font-medium">
-                      {commission.employee?.full_name || 'غير محدد'}
-                    </TableCell>
-                    <TableCell>
-                      {getBookingTypeLabel(commission.booking_type)}
-                    </TableCell>
-                    <TableCell>
-                      <MultiCurrencyDisplay 
-                        amount={commission.booking_amount || 0} 
-                        currency={commission.currency as "EGP" | "USD" | "SAR"} 
-                        showInEGP={false} 
-                      />
-                    </TableCell>
-                    <TableCell>{commission.commission_rate || 0}%</TableCell>
-                    <TableCell className="font-semibold text-green-600">
-                      <MultiCurrencyDisplay 
-                        amount={commission.commission_amount || 0} 
-                        currency={commission.currency as "EGP" | "USD" | "SAR"} 
-                        showInEGP={false} 
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(commission.commission_date).toLocaleDateString('ar')}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(commission.payment_status)}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      )}
     </div>
   );
 };

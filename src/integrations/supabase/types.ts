@@ -1483,6 +1483,8 @@ export type Database = {
       }
       employee_commissions: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           booking_amount: number
           booking_id: string | null
           booking_type: string
@@ -1490,6 +1492,7 @@ export type Database = {
           commission_date: string
           commission_rate: number
           created_at: string
+          created_by: string | null
           currency: string | null
           employee_id: string
           id: string
@@ -1499,6 +1502,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           booking_amount: number
           booking_id?: string | null
           booking_type: string
@@ -1506,6 +1511,7 @@ export type Database = {
           commission_date?: string
           commission_rate: number
           created_at?: string
+          created_by?: string | null
           currency?: string | null
           employee_id: string
           id?: string
@@ -1515,6 +1521,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           booking_amount?: number
           booking_id?: string | null
           booking_type?: string
@@ -1522,6 +1530,7 @@ export type Database = {
           commission_date?: string
           commission_rate?: number
           created_at?: string
+          created_by?: string | null
           currency?: string | null
           employee_id?: string
           id?: string
@@ -3791,6 +3800,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      cancel_commission: {
+        Args: { p_commission_id: string; p_reason?: string }
+        Returns: boolean
+      }
       end_impersonation: {
         Args: { p_session_id: string }
         Returns: {
@@ -3879,6 +3892,14 @@ export type Database = {
       user_has_permission: {
         Args: { p_user_id: string; p_permission_key: string }
         Returns: boolean
+      }
+      validate_employee_commissions: {
+        Args: { p_employee_id: string }
+        Returns: {
+          commission_id: string
+          booking_id: string
+          issue_description: string
+        }[]
       }
     }
     Enums: {
