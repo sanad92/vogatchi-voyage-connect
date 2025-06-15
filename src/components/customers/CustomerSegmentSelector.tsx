@@ -20,7 +20,10 @@ const CustomerSegmentSelector = ({ control, error }: CustomerSegmentSelectorProp
         name="segment_id"
         control={control}
         render={({ field }) => (
-          <Select onValueChange={field.onChange} value={field.value || ""}>
+          <Select 
+            onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+            value={field.value || "none"}
+          >
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="اختر تبويب العميل..." />
             </SelectTrigger>
