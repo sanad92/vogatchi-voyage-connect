@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Plus, Search, User, Phone, Mail, Calendar, DollarSign, Link, Users, Ref
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
+import { toast } from 'sonner';
 import type { Employee } from '@/types/expenses';
 
 interface EnhancedEmployee {
@@ -17,8 +19,8 @@ interface EnhancedEmployee {
   full_name: string;
   position: string;
   department: string;
-  phone?: string; // اختياري
-  email?: string; // اختياري
+  phone?: string;
+  email?: string;
   national_id?: string;
   hire_date: string;
   salary_scale_level?: number;
@@ -76,8 +78,8 @@ const EmployeeManagement = () => {
       full_name: user.full_name,
       position: user.employee!.position,
       department: user.department || '',
-      phone: user.phone, // من بيانات المستخدم
-      email: user.email, // من بيانات المستخدم
+      phone: user.phone,
+      email: user.email,
       national_id: user.employee!.national_id,
       hire_date: user.employee!.hire_date,
       salary_scale_level: 1,
@@ -101,8 +103,8 @@ const EmployeeManagement = () => {
       full_name: emp.full_name,
       position: emp.position,
       department: emp.department,
-      phone: undefined, // غير متوفر للموظفين غير المرتبطين
-      email: undefined, // غير متوفر للموظفين غير المرتبطين
+      phone: undefined,
+      email: undefined,
       national_id: undefined,
       hire_date: emp.hire_date,
       salary_scale_level: 1,
@@ -127,37 +129,71 @@ const EmployeeManagement = () => {
     employee.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmployee.full_name || !newEmployee.employee_code || !newEmployee.position) {
+    
+    // التحقق من البيانات المطلوبة
+    if (!newEmployee.full_name.trim()) {
+      toast.error('الاسم الكامل مطلوب');
+      return;
+    }
+    
+    if (!newEmployee.employee_code.trim()) {
+      toast.error('رقم الموظف مطلوب');
+      return;
+    }
+    
+    if (!newEmployee.position.trim()) {
+      toast.error('المنصب مطلوب');
       return;
     }
 
-    addEmployee(newEmployee);
-    setIsAddDialogOpen(false);
-    setNewEmployee({
-      employee_code: '',
-      full_name: '',
-      position: '',
-      department: '',
-      phone: '',
-      email: '',
-      national_id: '',
-      hire_date: new Date().toISOString().split('T')[0],
-      salary_scale_level: 1,
-      base_salary: 0,
-      allowances: 0,
-      is_active: true,
-      bank_account_number: '',
-      bank_name: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-    });
+    try {
+      await addEmployee(newEmployee);
+      setIsAddDialogOpen(false);
+      setNewEmployee({
+        employee_code: '',
+        full_name: '',
+        position: '',
+        department: '',
+        phone: '',
+        email: '',
+        national_id: '',
+        hire_date: new Date().toISOString().split('T')[0],
+        salary_scale_level: 1,
+        base_salary: 0,
+        allowances: 0,
+        is_active: true,
+        bank_account_number: '',
+        bank_name: '',
+        emergency_contact_name: '',
+        emergency_contact_phone: '',
+      });
+      toast.success('تم إضافة الموظف بنجاح');
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast.error('حدث خطأ أثناء إضافة الموظف');
+    }
   };
 
   const handleLinkEmployee = async (employeeId: string) => {
-    await linkUserToEmployee(employeeId);
-    refreshAllData(); // تحديث البيانات الموحدة
+    try {
+      await linkUserToEmployee(employeeId);
+      refreshAllData();
+      toast.success('تم ربط الموظف بالمستخدم بنجاح');
+    } catch (error) {
+      console.error('Error linking employee:', error);
+      toast.error('حدث خطأ أثناء ربط الموظف');
+    }
+  };
+
+  const formatSalary = (amount: number) => {
+    return new Intl.NumberFormat('ar-EG', {
+      style: 'currency',
+      currency: 'EGP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
   };
 
   const linkedEmployeesCount = allEmployees.filter(emp => emp.linkedToUser).length;
@@ -169,7 +205,7 @@ const EmployeeManagement = () => {
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold mb-2">إدارة الموظفين</h2>
-          <p className="text-gray-600">إدارة بيانات الموظفين ومعلوماتهم الأساسية</p>
+          <p className="text-gray-600">إدارة بيانات الموظفين ومعلوماتهم الأساسية (جميع الرواتب بالجنيه المصري)</p>
           {currentEmployee && (
             <div className="mt-2 p-2 bg-green-50 rounded-lg">
               <span className="text-green-800 text-sm">
@@ -178,7 +214,6 @@ const EmployeeManagement = () => {
             </div>
           )}
           
-          {/* إحصائيات الربط مع النظام الموحد */}
           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-2">
               <Users className="h-4 w-4 text-blue-600 mt-0.5" />
@@ -271,7 +306,7 @@ const EmployeeManagement = () => {
                       id="phone"
                       value={newEmployee.phone}
                       onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                      placeholder="+966XXXXXXXXX"
+                      placeholder="+20XXXXXXXXX"
                     />
                   </div>
                   
@@ -297,24 +332,26 @@ const EmployeeManagement = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="base_salary">الراتب الأساسي (ر.س)</Label>
+                    <Label htmlFor="base_salary">الراتب الأساسي (جنيه مصري)</Label>
                     <Input
                       id="base_salary"
                       type="number"
                       value={newEmployee.base_salary}
                       onChange={(e) => setNewEmployee({ ...newEmployee, base_salary: Number(e.target.value) })}
                       placeholder="0"
+                      min="0"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="allowances">البدلات (ر.س)</Label>
+                    <Label htmlFor="allowances">البدلات (جنيه مصري)</Label>
                     <Input
                       id="allowances"
                       type="number"
                       value={newEmployee.allowances}
                       onChange={(e) => setNewEmployee({ ...newEmployee, allowances: Number(e.target.value) })}
                       placeholder="0"
+                      min="0"
                     />
                   </div>
                   
@@ -324,7 +361,7 @@ const EmployeeManagement = () => {
                       id="bank_name"
                       value={newEmployee.bank_name}
                       onChange={(e) => setNewEmployee({ ...newEmployee, bank_name: e.target.value })}
-                      placeholder="البنك الأهلي السعودي"
+                      placeholder="البنك الأهلي المصري"
                     />
                   </div>
                   
@@ -334,7 +371,17 @@ const EmployeeManagement = () => {
                       id="bank_account_number"
                       value={newEmployee.bank_account_number}
                       onChange={(e) => setNewEmployee({ ...newEmployee, bank_account_number: e.target.value })}
-                      placeholder="SA..."
+                      placeholder="رقم الحساب..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="national_id">الرقم القومي</Label>
+                    <Input
+                      id="national_id"
+                      value={newEmployee.national_id}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, national_id: e.target.value })}
+                      placeholder="14 رقم"
                     />
                   </div>
                 </div>
@@ -343,11 +390,7 @@ const EmployeeManagement = () => {
                   <Button type="submit" disabled={isAddingEmployee}>
                     {isAddingEmployee ? 'جاري الحفظ...' : 'حفظ الموظف'}
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsAddDialogOpen(false)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                     إلغاء
                   </Button>
                 </div>
@@ -359,9 +402,9 @@ const EmployeeManagement = () => {
 
       {/* شريط البحث */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               placeholder="البحث في الموظفين..."
               value={searchTerm}
@@ -372,99 +415,104 @@ const EmployeeManagement = () => {
         </CardContent>
       </Card>
 
-      {/* معلومات البيانات الموحدة */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 bg-green-50 p-3 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span>
-              [بيانات موحدة] الموظفون الإجمالي: {allEmployees.length} | 
-              مرتبطون بمستخدمين: {linkedEmployeesCount} | 
-              غير مرتبطين: {unlinkedEmployeesCount}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* قائمة الموظفين */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEmployees.map((employee) => (
-          <Card key={employee.id} className="hover:shadow-md transition-shadow">
+          <Card key={employee.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <User className="h-5 w-5 text-blue-600" />
                   {employee.full_name}
                 </CardTitle>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <Badge variant={employee.is_active ? "default" : "secondary"}>
-                    {employee.is_active ? 'نشط' : 'غير نشط'}
+                    {employee.is_active ? 'نشط' : 'معطل'}
                   </Badge>
-                  {employee.linkedToUser ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  {employee.linkedToUser && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
                       مرتبط
                     </Badge>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleLinkEmployee(employee.id)}
-                    >
-                      <Link className="h-3 w-3 mr-1" />
-                      ربط
-                    </Button>
                   )}
                 </div>
               </div>
             </CardHeader>
+            
             <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium">رقم الموظف:</span> {employee.employee_code}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">المنصب:</span> {employee.position}
-                </p>
-                {employee.department && (
-                  <p className="text-sm">
-                    <span className="font-medium">القسم:</span> {employee.department}
-                  </p>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                {employee.phone && (
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    <span>{employee.phone}</span>
-                  </div>
-                )}
-                {employee.email && (
-                  <div className="flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    <span className="truncate">{employee.email}</span>
-                  </div>
-                )}
-                {!employee.phone && !employee.email && employee.linkedToUser === false && (
-                  <div className="text-xs text-gray-400">
-                    ⚠️ لا توجد معلومات اتصال متوفرة
-                  </div>
-                )}
-              </div>
-              
-              <div className="pt-2 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-gray-400" />
-                    <span>تاريخ التوظيف: {new Date(employee.hire_date).toLocaleDateString('ar')}</span>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-600">رقم الموظف:</span>
+                  <p className="font-medium">{employee.employee_code}</p>
                 </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <DollarSign className="h-3 w-3 text-green-600" />
-                  <span className="text-sm font-medium">
-                    {(employee.base_salary + employee.allowances).toLocaleString()} ج.م
+                <div>
+                  <span className="text-gray-600">المنصب:</span>
+                  <p className="font-medium">{employee.position}</p>
+                </div>
+                {employee.department && (
+                  <div>
+                    <span className="text-gray-600">القسم:</span>
+                    <p className="font-medium">{employee.department}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">تاريخ التوظيف:</span>
+                  <p className="font-medium">{new Date(employee.hire_date).toLocaleDateString('ar-EG')}</p>
+                </div>
+              </div>
+
+              {/* معلومات الاتصال */}
+              {(employee.phone || employee.email) && (
+                <div className="border-t pt-3 space-y-2">
+                  {employee.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span>{employee.phone}</span>
+                    </div>
+                  )}
+                  {employee.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="truncate">{employee.email}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* معلومات الراتب */}
+              <div className="border-t pt-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <span className="text-gray-600">الراتب الأساسي:</span>
+                  <span className="font-medium text-green-600">
+                    {formatSalary(employee.base_salary)}
                   </span>
                 </div>
+                {employee.allowances > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-600 ml-6">البدلات:</span>
+                    <span className="font-medium text-green-600">
+                      {formatSalary(employee.allowances)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* أزرار الإجراءات */}
+              <div className="border-t pt-3 flex gap-2">
+                {!employee.linkedToUser && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleLinkEmployee(employee.id)}
+                    className="flex-1 flex items-center gap-2"
+                  >
+                    <Link className="h-4 w-4" />
+                    ربط بمستخدم
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="flex-1">
+                  تعديل
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -473,12 +521,23 @@ const EmployeeManagement = () => {
 
       {filteredEmployees.length === 0 && (
         <Card>
-          <CardContent className="text-center py-8">
-            <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">لا توجد موظفين</h3>
+          <CardContent className="text-center py-12">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'لا توجد نتائج' : 'لا توجد موظفين'}
+            </h3>
             <p className="text-gray-600 mb-4">
-              لم يتم العثور على موظفين مطابقين لمعايير البحث
+              {searchTerm 
+                ? 'لم يتم العثور على موظفين يطابقون البحث الحالي'
+                : 'ابدأ بإضافة موظف جديد لإدارة فريق العمل'
+              }
             </p>
+            {!searchTerm && (
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                إضافة موظف جديد
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

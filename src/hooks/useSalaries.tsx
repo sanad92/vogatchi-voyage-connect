@@ -2,12 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { MonthlySalary } from '@/types/expenses';
-import { useExchangeRates } from './useExchangeRates';
-import { SupportedCurrency } from '@/types/currency';
+import { toast } from 'sonner';
 
 export const useSalaries = () => {
   const queryClient = useQueryClient();
-  const { convertToPrimaryCurrency, getCurrentRate } = useExchangeRates();
 
   // جلب الرواتب الشهرية
   const { data: monthlySalaries, isLoading: salariesLoading } = useQuery({
@@ -26,37 +24,40 @@ export const useSalaries = () => {
     },
   });
 
-  // حساب راتب شهري جديد مع دعم العملات المتعددة
+  // حساب راتب شهري جديد (جميع الرواتب بالجنيه المصري)
   const { mutateAsync: calculateMonthlySalary, isPending: isCalculatingSalary } = useMutation({
-    mutationFn: async (salaryData: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at'> & { 
-      currency?: SupportedCurrency 
-    }) => {
-      // إذا كانت العملة مختلفة عن الجنيه المصري، احسب المبلغ بالجنيه
-      let netSalaryEGP = salaryData.net_salary;
-      let exchangeRate = 1;
+    mutationFn: async (salaryData: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at'>) => {
+      // التأكد من أن العملة هي الجنيه المصري
+      const salaryDataWithEGP = {
+        ...salaryData,
+        currency: 'EGP',
+        exchange_rate: 1.00,
+        net_salary_egp: salaryData.net_salary,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      };
 
-      if (salaryData.currency && salaryData.currency !== 'EGP') {
-        exchangeRate = await getCurrentRate(salaryData.currency, 'EGP');
-        netSalaryEGP = await convertToPrimaryCurrency(salaryData.net_salary, salaryData.currency);
-      }
+      console.log('Creating salary with data:', salaryDataWithEGP);
 
       const { data, error } = await supabase
         .from('monthly_salaries')
-        .insert({
-          ...salaryData,
-          currency: salaryData.currency || 'EGP',
-          exchange_rate: exchangeRate,
-          net_salary_egp: netSalaryEGP,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        })
+        .insert(salaryDataWithEGP)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating salary:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
+      toast.success('تم حفظ الراتب بنجاح');
+    },
+    onError: (error: any) => {
+      console.error('Error saving salary:', error);
+      toast.error('حدث خطأ أثناء حفظ الراتب: ' + (error.message || 'خطأ غير محدد'));
     },
   });
 
@@ -79,23 +80,47 @@ export const useSalaries = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
+      toast.success('تم تحديث حالة الراتب بنجاح');
+    },
+    onError: (error: any) => {
+      console.error('Error updating salary status:', error);
+      toast.error('حدث خطأ أثناء تحديث حالة الراتب');
     },
   });
 
-  // حساب إجمالي الرواتب بالجنيه المصري
-  const calculateTotalSalariesInEGP = async (salaries: MonthlySalary[]) => {
-    let total = 0;
-    for (const salary of salaries) {
-      if (salary.net_salary_egp) {
-        total += salary.net_salary_egp;
-      } else if (salary.currency && salary.currency !== 'EGP') {
-        const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency as SupportedCurrency);
-        total += amountInEGP;
-      } else {
-        total += salary.net_salary;
-      }
-    }
-    return total;
+  // حساب إجمالي الرواتب (جميعها بالجنيه المصري)
+  const calculateTotalSalariesInEGP = (salaries: MonthlySalary[]) => {
+    return salaries.reduce((total, salary) => {
+      // جميع الرواتب بالجنيه المصري، لذا نجمع net_salary مباشرة
+      return total + (salary.net_salary || 0);
+    }, 0);
+  };
+
+  // إحصائيات الرواتب
+  const getSalaryStatistics = () => {
+    if (!monthlySalaries) return null;
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const currentMonthSalaries = monthlySalaries.filter(
+      salary => salary.salary_month.startsWith(currentMonth)
+    );
+
+    const totalSalariesThisMonth = calculateTotalSalariesInEGP(currentMonthSalaries);
+    const paidSalariesThisMonth = calculateTotalSalariesInEGP(
+      currentMonthSalaries.filter(salary => salary.status === 'paid')
+    );
+    const pendingSalariesThisMonth = calculateTotalSalariesInEGP(
+      currentMonthSalaries.filter(salary => salary.status === 'pending')
+    );
+
+    return {
+      totalSalariesThisMonth,
+      paidSalariesThisMonth,
+      pendingSalariesThisMonth,
+      salariesCount: currentMonthSalaries.length,
+      paidCount: currentMonthSalaries.filter(s => s.status === 'paid').length,
+      pendingCount: currentMonthSalaries.filter(s => s.status === 'pending').length,
+    };
   };
 
   return {
@@ -106,5 +131,6 @@ export const useSalaries = () => {
     updateSalaryStatus,
     isUpdatingSalary,
     calculateTotalSalariesInEGP,
+    getSalaryStatistics,
   };
 };
