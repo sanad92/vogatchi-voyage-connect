@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -111,7 +110,17 @@ const EnhancedAdminTabs = ({ activeTab, onTabChange, isSuperAdmin }: EnhancedAdm
           icon: '🔑',
           description: 'إدارة صلاحيات المستخدمين',
           disabled: !isSuperAdmin
-        }
+        },
+        ...(isSuperAdmin
+          ? [{
+            value: 'db-manager',
+            label: 'Database Manager',
+            icon: '🗄️',
+            description: 'إدارة وعرض بيانات الجداول مباشرة',
+            disabled: false,
+          }]
+          : []
+        ),
       ]
     }
   ];

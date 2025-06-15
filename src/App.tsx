@@ -28,6 +28,7 @@ import NewFlightBooking from "./pages/NewFlightBooking";
 import ProfitLossReports from "./pages/ProfitLossReports";
 import TransportBookings from "./pages/TransportBookings";
 import CarRentals from "./pages/CarRentals";
+import DatabaseManager from "./pages/DatabaseManager";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ function App() {
                           <Route path="/crm" element={<CRMDashboard />} />
                           <Route path="/customer-service" element={<CustomerService />} />
                           <Route path="/admin" element={<AdminSettings />} />
+                          <Route path="/admin/database" element={<DatabaseManager />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </main>
