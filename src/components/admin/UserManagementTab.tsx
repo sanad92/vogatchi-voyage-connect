@@ -18,14 +18,14 @@ const UserManagementTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("all");
 
-  // جلب جميع المستخدمين مع أدوارهم باستخدام استعلام محسن
+  // جلب جميع المستخدمين مع أدوارهم
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['users-with-roles'],
     queryFn: async () => {
       console.log('🔄 جاري جلب المستخدمين...');
       
       try {
-        // جلب جميع الملفات الشخصية أولاً
+        // جلب جميع الملفات الشخصية
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -36,7 +36,7 @@ const UserManagementTab = () => {
           throw profilesError;
         }
 
-        console.log('✅ تم جلب الملفات الشخصية:', profiles?.length);
+        console.log('✅ تم جلب الملفات الشخصية:', profiles?.length || 0);
 
         // جلب جميع الأدوار
         const { data: userRoles, error: rolesError } = await supabase
@@ -48,9 +48,9 @@ const UserManagementTab = () => {
           throw rolesError;
         }
 
-        console.log('✅ تم جلب الأدوار:', userRoles?.length);
+        console.log('✅ تم جلب الأدوار:', userRoles?.length || 0);
 
-        // دمج البيانات وإنشاء قائمة المستخدمين
+        // دمج البيانات
         const usersWithRoles = profiles?.map(profile => {
           const userRole = userRoles?.find(role => role.user_id === profile.id);
           return {
@@ -59,7 +59,8 @@ const UserManagementTab = () => {
           };
         }) || [];
 
-        console.log('✅ المستخدمون مع الأدوار:', usersWithRoles.length);
+        console.log('✅ المستخدمون النهائيون:', usersWithRoles.length);
+        console.log('📊 تفاصيل المستخدمين:', usersWithRoles);
         
         return usersWithRoles as User[];
       } catch (error) {
@@ -90,6 +91,8 @@ const UserManagementTab = () => {
     inactive: users?.filter(u => !u.is_active).length || 0,
     noRole: users?.filter(u => !u.role || u.role === 'no_role').length || 0
   };
+
+  console.log('📈 إحصائيات المستخدمين:', userStats);
 
   if (isLoading) {
     return (
@@ -174,15 +177,16 @@ const UserManagementTab = () => {
         </div>
       </div>
 
-      {/* معلومات إضافية */}
-      {users && users.length > 0 && (
-        <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg">
+      {/* معلومات التصحيح */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+            <Shield className="h-4 w-4" />
             <span>
-              إجمالي المستخدمين: {users.length} | 
-              النشطين: {userStats.active} | 
-              المعطلين: {userStats.inactive} | 
+              [تصحيح] إجمالي البيانات المجلبة: {users?.length || 0} | 
+              مفلترة: {filteredUsers.length} | 
+              نشطة: {userStats.active} | 
+              معطلة: {userStats.inactive} | 
               بدون أدوار: {userStats.noRole}
             </span>
           </div>
@@ -197,13 +201,19 @@ const UserManagementTab = () => {
               <Users className="h-5 w-5" />
               إدارة المستخدمين ({filteredUsers.length} من {users?.length || 0})
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <UserCheck className="h-4 w-4 text-green-600" />
-              <span>{userStats.active} نشط</span>
-              <UserX className="h-4 w-4 text-red-600" />
-              <span>{userStats.inactive} معطل</span>
-              <Shield className="h-4 w-4 text-orange-600" />
-              <span>{userStats.noRole} بدون دور</span>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <UserCheck className="h-4 w-4 text-green-600" />
+                <span>{userStats.active} نشط</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <UserX className="h-4 w-4 text-red-600" />
+                <span>{userStats.inactive} معطل</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="h-4 w-4 text-orange-600" />
+                <span>{userStats.noRole} بدون دور</span>
+              </div>
             </div>
           </CardTitle>
         </CardHeader>

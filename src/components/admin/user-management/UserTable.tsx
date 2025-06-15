@@ -107,6 +107,11 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
       {/* معلومات إضافية عن البيانات المعروضة */}
       <div className="mt-4 text-xs text-gray-500 text-center">
         عرض {users.length} مستخدم
+        {process.env.NODE_ENV === 'development' && (
+          <span className="ml-2 text-yellow-600">
+            [تطوير] تم تحميل البيانات بنجاح
+          </span>
+        )}
       </div>
     </div>
   );
