@@ -102,7 +102,7 @@ export const useRentPayments = () => {
       if (payment.amount_egp) {
         total += payment.amount_egp;
       } else if (payment.currency && payment.currency !== 'EGP') {
-        const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency);
+        const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency as SupportedCurrency);
         total += amountInEGP;
       } else {
         total += payment.amount;

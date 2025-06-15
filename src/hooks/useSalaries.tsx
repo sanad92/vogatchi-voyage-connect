@@ -89,7 +89,7 @@ export const useSalaries = () => {
       if (salary.net_salary_egp) {
         total += salary.net_salary_egp;
       } else if (salary.currency && salary.currency !== 'EGP') {
-        const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency);
+        const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency as SupportedCurrency);
         total += amountInEGP;
       } else {
         total += salary.net_salary;

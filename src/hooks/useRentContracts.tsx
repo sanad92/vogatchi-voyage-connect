@@ -2,7 +2,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { RentContract } from '@/types/expenses';
+
+export interface RentContract {
+  id: string;
+  contract_number: string;
+  landlord_name: string;
+  property_address: string;
+  property_type: string;
+  monthly_rent: number;
+  currency: string;
+  start_date: string;
+  end_date: string;
+  contract_terms?: string;
+  annual_increase_percentage?: number;
+  security_deposit?: number;
+  utilities_included: boolean;
+  maintenance_responsibility: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useRentContracts = () => {
   const queryClient = useQueryClient();
@@ -18,7 +37,7 @@ export const useRentContracts = () => {
         .order('contract_number');
 
       if (error) throw error;
-      return data as RentContract[];
+      return data;
     },
   });
 

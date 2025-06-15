@@ -18,8 +18,8 @@ export const useFlightBookings = () => {
         .from('flight_bookings')
         .select(`
           *,
-          departure_airport:airports!departure_airport_id(name, city, iata_code),
-          arrival_airport:airports!arrival_airport_id(name, city, iata_code),
+          departure_airport:airports!departure_airport_id(id, name, city, iata_code, country, is_active, created_at),
+          arrival_airport:airports!arrival_airport_id(id, name, city, iata_code, country, is_active, created_at),
           airline:airlines(name, iata_code),
           flight_class:flight_classes(name, name_ar),
           booking_status:booking_statuses(name, name_ar, color)

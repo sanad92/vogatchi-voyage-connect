@@ -7,6 +7,7 @@ import { useTransportBookings } from '@/hooks/useTransportBookings';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { SupportedCurrency } from '@/types/currency';
 
 const TransportBookingsList = () => {
   const { transportBookings, bookingsLoading } = useTransportBookings();
@@ -113,14 +114,14 @@ const TransportBookingsList = () => {
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>التكلفة الإجمالية:</span>
                 <span className="font-bold text-green-600">
-                  <MultiCurrencyDisplay amount={booking.total_cost} currency={booking.currency} />
+                  <MultiCurrencyDisplay amount={booking.total_cost} currency={booking.currency as SupportedCurrency} />
                 </span>
               </div>
               
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>المبلغ المدفوع:</span>
                 <span className="text-blue-600">
-                  <MultiCurrencyDisplay amount={booking.paid_amount} currency={booking.currency} />
+                  <MultiCurrencyDisplay amount={booking.paid_amount} currency={booking.currency as SupportedCurrency} />
                 </span>
               </div>
               
@@ -128,7 +129,7 @@ const TransportBookingsList = () => {
                 <div className="flex items-center justify-between text-sm">
                   <span>المبلغ المتبقي:</span>
                   <span className="text-red-600 font-medium">
-                    <MultiCurrencyDisplay amount={booking.remaining_amount} currency={booking.currency} />
+                    <MultiCurrencyDisplay amount={booking.remaining_amount} currency={booking.currency as SupportedCurrency} />
                   </span>
                 </div>
               )}
