@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useFlightBookings } from '@/hooks/useFlightBookings';
@@ -174,6 +173,7 @@ export const useEnhancedFlightForm = () => {
       number_of_passengers: formData.number_of_passengers,
       ticket_price_per_person: formData.ticket_price_per_person,
       taxes_and_fees: formData.taxes_and_fees,
+      total_cost: formData.total_cost, // إضافة total_cost المطلوب
       supplier_cost: formData.supplier_cost,
       paid_amount: formData.paid_amount,
       currency: formData.currency,
