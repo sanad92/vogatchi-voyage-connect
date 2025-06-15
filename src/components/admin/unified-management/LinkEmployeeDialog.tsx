@@ -2,9 +2,8 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Search, User, Calendar, DollarSign } from 'lucide-react';
+import EmployeeSearchBar from './link-dialog/EmployeeSearchBar';
+import EmployeesList from './link-dialog/EmployeesList';
 
 interface LinkEmployeeDialogProps {
   user: any;
@@ -23,6 +22,10 @@ const LinkEmployeeDialog = ({ user, unlinkedEmployees, isOpen, onOpenChange, onL
     employee.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleLinkEmployee = (employeeId: string) => {
+    onLink(user.id, employeeId);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -31,65 +34,15 @@ const LinkEmployeeDialog = ({ user, unlinkedEmployees, isOpen, onOpenChange, onL
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="البحث في الموظفين..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <EmployeeSearchBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
 
-          {/* Employees List */}
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {filteredEmployees.length === 0 ? (
-              <div className="text-center py-8">
-                <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">لا توجد موظفين متاحين</h3>
-                <p className="text-gray-600">
-                  جميع الموظفين مرتبطين بمستخدمين أو لا توجد موظفين يطابقون البحث
-                </p>
-              </div>
-            ) : (
-              filteredEmployees.map((employee) => (
-                <Card key={employee.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium">{employee.full_name}</span>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div>رقم الموظف: {employee.employee_code}</div>
-                          <div>المنصب: {employee.position}</div>
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(employee.hire_date).toLocaleDateString('ar')}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-3 w-3" />
-                              {(employee.base_salary + employee.allowances).toLocaleString()} ج.م
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => onLink(user.id, employee.id)}
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        ربط
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          <EmployeesList
+            employees={filteredEmployees}
+            onLinkEmployee={handleLinkEmployee}
+          />
         </div>
 
         <div className="flex justify-end pt-4">

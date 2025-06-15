@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { useUnifiedUserEmployee } from '@/hooks/useUnifiedUserEmployee';
+import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
 import { useAuth } from '@/hooks/useAuth';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
@@ -23,8 +24,14 @@ const UnifiedUserEmployeeManagement = () => {
     isUnlinking,
   } = useUnifiedUserEmployee();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState('all');
+  const {
+    searchTerm,
+    selectedRole,
+    filteredUsers,
+    setSearchTerm,
+    setSelectedRole,
+  } = useUnifiedUserFilters(unifiedUsers);
+
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
@@ -42,17 +49,6 @@ const UnifiedUserEmployeeManagement = () => {
       </Card>
     );
   }
-
-  // فلترة المستخدمين
-  const filteredUsers = unifiedUsers?.filter(user => {
-    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.employee?.employee_code?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    
-    return matchesSearch && matchesRole;
-  }) || [];
 
   const handleLinkEmployee = (userId: string, employeeId: string) => {
     linkUserToEmployee({ userId, employeeId });
