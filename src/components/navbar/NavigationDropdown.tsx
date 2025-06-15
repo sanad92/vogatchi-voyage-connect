@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { SimpleNavItem } from './NavigationItems';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NavigationDropdownProps {
   title: string;
@@ -13,8 +15,27 @@ interface NavigationDropdownProps {
 const NavigationDropdown = ({ title, icon: Icon, items }: NavigationDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { hasAnyPermission } = usePermissionCheck();
+  const { isSuperAdmin } = useAuth();
 
-  const isActiveGroup = items.some(item => 
+  // فلترة العناصر بناءً على الصلاحيات
+  const filteredItems = items.filter(item => {
+    // السوبر أدمن له صلاحية على كل شيء
+    if (isSuperAdmin()) return true;
+    
+    // إذا لم تكن هناك صلاحيات مطلوبة، اسمح بالوصول
+    if (!item.requiredPermissions || item.requiredPermissions.length === 0) return true;
+    
+    // تحقق من وجود أي من الصلاحيات المطلوبة
+    return hasAnyPermission(item.requiredPermissions as any[]);
+  });
+
+  // إذا لم تكن هناك عناصر مرئية، لا تظهر القائمة
+  if (filteredItems.length === 0) {
+    return null;
+  }
+
+  const isActiveGroup = filteredItems.some(item => 
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   );
 
@@ -35,7 +56,7 @@ const NavigationDropdown = ({ title, icon: Icon, items }: NavigationDropdownProp
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-in slide-in-from-top-2">
-          {items.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
             return (
               <Link

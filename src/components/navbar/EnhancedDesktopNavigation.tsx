@@ -3,7 +3,7 @@ import { Location } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
 import NavigationDropdown from "./NavigationDropdown";
-import NavLink from "./NavLink";
+import PermissionNavLink from "./PermissionNavLink";
 import { 
   Briefcase, 
   BarChart3, 
@@ -24,19 +24,21 @@ const EnhancedDesktopNavigation = ({ userRole, hasRole, location }: EnhancedDesk
   return (
     <div className="hidden lg:flex items-center space-x-2 rtl:space-x-reverse">
       {/* الصفحة الرئيسية - مباشرة */}
-      <NavLink item={{
+      <PermissionNavLink item={{
         to: "/",
         icon: Home,
         label: "الرئيسية",
-        allowedRoles: []
+        allowedRoles: [],
+        requiredPermissions: []
       }} />
 
       {/* العمليات اليومية - مباشرة */}
-      <NavLink item={{
+      <PermissionNavLink item={{
         to: "/daily-operations",
         icon: Calendar,
         label: "العمليات اليومية",
-        allowedRoles: []
+        allowedRoles: [],
+        requiredPermissions: ['bookings_view']
       }} />
 
       {/* إدارة الأعمال - Dropdown */}
