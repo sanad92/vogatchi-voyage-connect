@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_active_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          impersonated_user_id: string | null
+          is_impersonating: boolean | null
+          last_activity: string | null
+          original_session_id: string
+          session_data: Json | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          impersonated_user_id?: string | null
+          is_impersonating?: boolean | null
+          last_activity?: string | null
+          original_session_id: string
+          session_data?: Json | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          impersonated_user_id?: string | null
+          is_impersonating?: boolean | null
+          last_activity?: string | null
+          original_session_id?: string
+          session_data?: Json | null
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action_type: string
@@ -58,6 +94,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_impersonation_log: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          impersonation_ended_at: string | null
+          impersonation_started_at: string
+          ip_address: unknown | null
+          reason: string | null
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          impersonation_ended_at?: string | null
+          impersonation_started_at?: string
+          ip_address?: unknown | null
+          reason?: string | null
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          impersonation_ended_at?: string | null
+          impersonation_started_at?: string
+          ip_address?: unknown | null
+          reason?: string | null
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       airlines: {
         Row: {
@@ -2926,6 +2998,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_full_name: string
+          p_department?: string
+          p_phone?: string
+          p_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: {
+          success: boolean
+          message: string
+          user_id: string
+        }[]
+      }
+      admin_reset_user_password: {
+        Args: { p_user_id: string; p_new_password: string }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
+      }
+      admin_update_user_profile: {
+        Args: {
+          p_user_id: string
+          p_email?: string
+          p_full_name?: string
+          p_department?: string
+          p_phone?: string
+          p_is_active?: boolean
+        }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
+      }
       can_delete_customers: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2933,6 +3041,13 @@ export type Database = {
       can_manage_customers: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      end_impersonation: {
+        Args: { p_session_id: string }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
       }
       generate_booking_number: {
         Args: Record<PropertyKey, never>
@@ -2990,6 +3105,14 @@ export type Database = {
           p_description?: string
         }
         Returns: undefined
+      }
+      start_impersonation: {
+        Args: { p_target_user_id: string; p_reason?: string }
+        Returns: {
+          success: boolean
+          message: string
+          session_token: string
+        }[]
       }
       update_booking_status: {
         Args: {

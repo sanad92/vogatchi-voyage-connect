@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, UserCheck, UserX, Shield } from "lucide-react";
+import { Plus, Users, UserCheck, UserX, Shield, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import UserSearch from "./user-management/UserSearch";
-import CreateUserDialog from "./user-management/CreateUserDialog";
+import CreateUserDialogEnhanced from "./user-management/CreateUserDialogEnhanced";
 import UserTable from "./user-management/UserTable";
 import UserStatsCards from "./user-management/UserStatsCards";
 import { User } from "@/types/userManagement";
@@ -94,30 +94,23 @@ const UserManagementTab = () => {
           </select>
         </div>
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              إضافة مستخدم جديد
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                إضافة مستخدم جديد
-              </DialogTitle>
-            </DialogHeader>
-            <CreateUserDialog 
+        <div className="flex gap-2">
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                إنشاء مستخدم محسن
+              </Button>
+            </DialogTrigger>
+            <CreateUserDialogEnhanced 
               isOpen={isCreateDialogOpen} 
               onOpenChange={setIsCreateDialogOpen}
               onSuccess={() => {
                 refetch();
-                setIsCreateDialogOpen(false);
               }}
             />
-          </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* جدول المستخدمين */}
@@ -126,7 +119,7 @@ const UserManagementTab = () => {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              قائمة المستخدمين ({filteredUsers.length} من {users?.length || 0})
+              إدارة المستخدمين المتقدمة ({filteredUsers.length} من {users?.length || 0})
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <UserCheck className="h-4 w-4 text-green-600" />
