@@ -1,4 +1,3 @@
-
 export interface ExpenseCategory {
   id: string;
   name: string;
@@ -82,6 +81,9 @@ export interface MonthlySalary {
   tax_amount: number;
   insurance_deduction: number;
   net_salary: number;
+  currency?: string; // إضافة دعم العملة للراتب الشهري
+  exchange_rate?: number; // سعر الصرف المستخدم
+  net_salary_egp?: number; // الراتب الصافي بالجنيه المصري
   payment_date?: string;
   payment_method: string;
   bank_account_id?: string;

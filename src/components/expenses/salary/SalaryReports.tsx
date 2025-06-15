@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,19 +8,58 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Eye } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
 
 const SalaryReports = () => {
   const { monthlySalaries, employees, salariesLoading } = useExpenses();
+  const { convertToPrimaryCurrency } = useExchangeRates();
   const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const filteredSalaries = monthlySalaries?.filter(salary => 
     salary.salary_month.startsWith(filterMonth)
   );
 
-  const totalNetSalaries = filteredSalaries?.reduce((sum, salary) => sum + salary.net_salary, 0) || 0;
-  const totalGrossSalaries = filteredSalaries?.reduce((sum, salary) => sum + salary.gross_salary, 0) || 0;
-  const totalDeductions = filteredSalaries?.reduce((sum, salary) => 
-    sum + salary.tax_amount + salary.insurance_deduction + salary.deductions, 0) || 0;
+  // حساب الإجماليات بالجنيه المصري
+  const calculateTotalsInEGP = async () => {
+    if (!filteredSalaries) return { totalNet: 0, totalGross: 0, totalDeductions: 0 };
+
+    let totalNet = 0;
+    let totalGross = 0;
+    let totalDeductions = 0;
+
+    for (const salary of filteredSalaries) {
+      // تحويل الرواتب إلى الجنيه المصري إذا لزم الأمر
+      const netInEGP = salary.currency && salary.currency !== 'EGP' 
+        ? await convertToPrimaryCurrency(salary.net_salary, salary.currency)
+        : salary.net_salary;
+      
+      const grossInEGP = salary.currency && salary.currency !== 'EGP'
+        ? await convertToPrimaryCurrency(salary.gross_salary, salary.currency)
+        : salary.gross_salary;
+
+      const deductionsInEGP = salary.currency && salary.currency !== 'EGP'
+        ? await convertToPrimaryCurrency(salary.tax_amount + salary.insurance_deduction + salary.deductions, salary.currency)
+        : salary.tax_amount + salary.insurance_deduction + salary.deductions;
+
+      totalNet += netInEGP;
+      totalGross += grossInEGP;
+      totalDeductions += deductionsInEGP;
+    }
+
+    return { totalNet, totalGross, totalDeductions };
+  };
+
+  // استخدام حساب الإجماليات بالجنيه المصري
+  const [totals, setTotals] = useState({ totalNet: 0, totalGross: 0, totalDeductions: 0 });
+
+  // حساب الإجماليات عند تغيير البيانات
+  React.useEffect(() => {
+    if (filteredSalaries) {
+      calculateTotalsInEGP().then(setTotals);
+    }
+  }, [filteredSalaries]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -44,7 +83,7 @@ const SalaryReports = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            تقارير الرواتب
+            تقارير الرواتب - العملة الأساسية: الجنيه المصري
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -65,15 +104,16 @@ const SalaryReports = () => {
         </CardContent>
       </Card>
 
-      {/* ملخص الرواتب */}
+      {/* ملخص الرواتب بالجنيه المصري */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">إجمالي الرواتب الصافية</h3>
               <p className="text-3xl font-bold text-green-600 mt-2">
-                {totalNetSalaries.toLocaleString()} ريال
+                <EgyptianPoundDisplay amount={totals.totalNet} />
               </p>
+              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
             </div>
           </CardContent>
         </Card>
@@ -83,8 +123,9 @@ const SalaryReports = () => {
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">إجمالي الرواتب الإجمالية</h3>
               <p className="text-3xl font-bold text-blue-600 mt-2">
-                {totalGrossSalaries.toLocaleString()} ريال
+                <EgyptianPoundDisplay amount={totals.totalGross} />
               </p>
+              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
             </div>
           </CardContent>
         </Card>
@@ -94,8 +135,9 @@ const SalaryReports = () => {
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">إجمالي الاستقطاعات</h3>
               <p className="text-3xl font-bold text-red-600 mt-2">
-                {totalDeductions.toLocaleString()} ريال
+                <EgyptianPoundDisplay amount={totals.totalDeductions} />
               </p>
+              <p className="text-sm text-gray-500 mt-1">بالجنيه المصري</p>
             </div>
           </CardContent>
         </Card>
@@ -104,7 +146,7 @@ const SalaryReports = () => {
       {/* جدول تفاصيل الرواتب */}
       <Card>
         <CardHeader>
-          <CardTitle>تفاصيل رواتب الموظفين - {filterMonth}</CardTitle>
+          <CardTitle>تفاصيل رواتب الموظفين - {filterMonth} (المبالغ بالجنيه المصري)</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -118,6 +160,7 @@ const SalaryReports = () => {
                 <TableHead>الإجمالي</TableHead>
                 <TableHead>الاستقطاعات</TableHead>
                 <TableHead>الصافي</TableHead>
+                <TableHead>العملة الأصلية</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>العمليات</TableHead>
               </TableRow>
@@ -125,23 +168,66 @@ const SalaryReports = () => {
             <TableBody>
               {filteredSalaries?.map((salary) => {
                 const employee = employees?.find(emp => emp.id === salary.employee_id);
+                const originalCurrency = salary.currency || 'EGP';
+                
                 return (
                   <TableRow key={salary.id}>
                     <TableCell className="font-medium">
                       {employee?.full_name || 'غير محدد'}
                     </TableCell>
-                    <TableCell>{salary.base_salary.toLocaleString()}</TableCell>
-                    <TableCell>{salary.allowances.toLocaleString()}</TableCell>
-                    <TableCell>{salary.overtime_amount.toLocaleString()}</TableCell>
-                    <TableCell>{salary.bonus.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <MultiCurrencyDisplay 
+                        amount={salary.base_salary} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MultiCurrencyDisplay 
+                        amount={salary.allowances} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MultiCurrencyDisplay 
+                        amount={salary.overtime_amount} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MultiCurrencyDisplay 
+                        amount={salary.bonus} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
+                    </TableCell>
                     <TableCell className="font-semibold text-blue-600">
-                      {salary.gross_salary.toLocaleString()}
+                      <MultiCurrencyDisplay 
+                        amount={salary.gross_salary} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
                     </TableCell>
                     <TableCell className="text-red-600">
-                      {(salary.tax_amount + salary.insurance_deduction + salary.deductions).toLocaleString()}
+                      <MultiCurrencyDisplay 
+                        amount={salary.tax_amount + salary.insurance_deduction + salary.deductions} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
                     </TableCell>
                     <TableCell className="font-semibold text-green-600">
-                      {salary.net_salary.toLocaleString()}
+                      <MultiCurrencyDisplay 
+                        amount={salary.net_salary} 
+                        currency="EGP"
+                        showInEGP={false}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {originalCurrency}
+                      </Badge>
                     </TableCell>
                     <TableCell>{getStatusBadge(salary.status)}</TableCell>
                     <TableCell>
