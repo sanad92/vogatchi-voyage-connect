@@ -74,6 +74,26 @@ const SupplierGrid = ({ suppliers, isLoading, onSupplierSelect }: SupplierGridPr
     return <div className="flex">{stars}</div>;
   };
 
+  // Helper function to safely parse payment method options
+  const getPaymentMethods = (paymentMethodOptions: any): string[] => {
+    if (!paymentMethodOptions) return [];
+    
+    if (Array.isArray(paymentMethodOptions)) {
+      return paymentMethodOptions;
+    }
+    
+    if (typeof paymentMethodOptions === 'string') {
+      try {
+        const parsed = JSON.parse(paymentMethodOptions);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [paymentMethodOptions];
+      }
+    }
+    
+    return [];
+  };
+
   if (isLoading) {
     return (
       <div className="col-span-full text-center py-8">جاري تحميل الموردين...</div>
@@ -88,58 +108,62 @@ const SupplierGrid = ({ suppliers, isLoading, onSupplierSelect }: SupplierGridPr
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {suppliers.map((supplier) => (
-        <Card key={supplier.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onSupplierSelect(supplier.id)}>
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <CardTitle className="text-lg">{supplier.name}</CardTitle>
-              <Badge className={getTypeColor(supplier.type)}>
-                {getTypeLabel(supplier.type)}
-              </Badge>
-            </div>
-            {supplier.rating && supplier.rating > 0 && (
-              <div className="flex items-center gap-2">
-                {renderStars(supplier.rating)}
-                <span className="text-sm text-gray-600">({supplier.rating}/5)</span>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              {supplier.contact_person && (
-                <p><span className="font-medium">الشخص المسؤول:</span> {supplier.contact_person}</p>
-              )}
-              {supplier.phone && (
-                <p><span className="font-medium">الهاتف:</span> {supplier.phone}</p>
-              )}
-              {supplier.email && (
-                <p><span className="font-medium">البريد:</span> {supplier.email}</p>
-              )}
-              <p><span className="font-medium">نوع الدفع:</span> {getPaymentTypeLabel(supplier.payment_type)}</p>
-              {supplier.payment_method_options && supplier.payment_method_options.length > 0 && (
-                <div>
-                  <span className="font-medium">وسائل الدفع:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {supplier.payment_method_options.map((method, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {getPaymentMethodLabel(method)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {supplier.payment_terms && (
-                <p><span className="font-medium">شروط الدفع:</span> {supplier.payment_terms}</p>
-              )}
-              <div className="flex items-center gap-2 pt-2">
-                <Badge variant={supplier.is_active ? "default" : "secondary"}>
-                  {supplier.is_active ? "نشط" : "غير نشط"}
+      {suppliers.map((supplier) => {
+        const paymentMethods = getPaymentMethods(supplier.payment_method_options);
+        
+        return (
+          <Card key={supplier.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onSupplierSelect(supplier.id)}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                <Badge className={getTypeColor(supplier.type)}>
+                  {getTypeLabel(supplier.type)}
                 </Badge>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              {supplier.rating && supplier.rating > 0 && (
+                <div className="flex items-center gap-2">
+                  {renderStars(supplier.rating)}
+                  <span className="text-sm text-gray-600">({supplier.rating}/5)</span>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                {supplier.contact_person && (
+                  <p><span className="font-medium">الشخص المسؤول:</span> {supplier.contact_person}</p>
+                )}
+                {supplier.phone && (
+                  <p><span className="font-medium">الهاتف:</span> {supplier.phone}</p>
+                )}
+                {supplier.email && (
+                  <p><span className="font-medium">البريد:</span> {supplier.email}</p>
+                )}
+                <p><span className="font-medium">نوع الدفع:</span> {getPaymentTypeLabel(supplier.payment_type)}</p>
+                {paymentMethods.length > 0 && (
+                  <div>
+                    <span className="font-medium">وسائل الدفع:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {paymentMethods.map((method, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {getPaymentMethodLabel(method)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {supplier.payment_terms && (
+                  <p><span className="font-medium">شروط الدفع:</span> {supplier.payment_terms}</p>
+                )}
+                <div className="flex items-center gap-2 pt-2">
+                  <Badge variant={supplier.is_active ? "default" : "secondary"}>
+                    {supplier.is_active ? "نشط" : "غير نشط"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };
