@@ -17,9 +17,8 @@ import {
   YAxis, 
   CartesianGrid, 
   ResponsiveContainer,
-  ComposedChart,
-  Area,
-  AreaChart
+  AreaChart,
+  Area
 } from "recharts";
 import { 
   BarChart3, 
@@ -41,23 +40,6 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
   const [metric, setMetric] = useState("revenue");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // بيانات تجريبية شاملة
-  const revenueData = [
-    { period: "يناير", revenue: 220000, bookings: 145, profit: 66000, customers: 98 },
-    { period: "فبراير", revenue: 280000, bookings: 189, profit: 84000, customers: 134 },
-    { period: "مارس", revenue: 350000, bookings: 234, profit: 105000, customers: 167 },
-    { period: "أبريل", revenue: 420000, bookings: 278, profit: 126000, customers: 201 },
-    { period: "مايو", revenue: 380000, bookings: 251, profit: 114000, customers: 178 },
-    { period: "يونيو", revenue: 450000, bookings: 298, profit: 135000, customers: 223 },
-  ];
-
-  const serviceDistribution = [
-    { name: "فنادق", value: 45, revenue: 1200000, color: "#0088FE" },
-    { name: "طيران", value: 30, revenue: 800000, color: "#00C49F" },
-    { name: "باقات", value: 15, revenue: 400000, color: "#FFBB28" },
-    { name: "تأشيرات", value: 10, revenue: 200000, color: "#FF8042" },
-  ];
-
   const chartConfig = {
     revenue: { label: "الإيرادات", color: "#0088FE" },
     bookings: { label: "الحجوزات", color: "#00C49F" },
@@ -68,11 +50,19 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
   const renderChart = () => {
     const height = isFullscreen ? 600 : 400;
     
+    if (!data || data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          لا توجد بيانات لعرضها
+        </div>
+      );
+    }
+    
     switch (chartType) {
       case "bar":
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={revenueData}>
+            <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="period" />
               <YAxis />
@@ -89,7 +79,7 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
       case "line":
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={revenueData}>
+            <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="period" />
               <YAxis />
@@ -108,7 +98,7 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
       case "area":
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={revenueData}>
+            <AreaChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="period" />
               <YAxis />
@@ -129,7 +119,7 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
           <ResponsiveContainer width="100%" height={height}>
             <PieChart>
               <Pie
-                data={serviceDistribution}
+                data={data}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -138,8 +128,8 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {serviceDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color || chartConfig.revenue.color} />
                 ))}
               </Pie>
               <ChartTooltip content={<ChartTooltipContent />} />
@@ -223,54 +213,6 @@ const InteractiveCharts = ({ data, title, period }: InteractiveChartsProps) => {
         <ChartContainer config={chartConfig}>
           {renderChart()}
         </ChartContainer>
-
-        {/* معلومات إضافية */}
-        {chartType === "pie" && (
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {serviceDistribution.map((item, index) => (
-              <div key={index} className="text-center">
-                <div 
-                  className="w-4 h-4 rounded mx-auto mb-2"
-                  style={{ backgroundColor: item.color }}
-                />
-                <div className="text-sm font-medium">{item.name}</div>
-                <div className="text-xs text-gray-600">{item.value}%</div>
-                <div className="text-xs text-gray-500">
-                  {item.revenue.toLocaleString()} ر.س
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* إحصائيات سريعة */}
-        <div className="mt-6 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {revenueData.reduce((sum, item) => sum + item.revenue, 0).toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-600">إجمالي الإيرادات</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {revenueData.reduce((sum, item) => sum + item.bookings, 0)}
-            </div>
-            <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {revenueData.reduce((sum, item) => sum + item.profit, 0).toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-600">إجمالي الأرباح</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {Math.round(revenueData.reduce((sum, item) => sum + item.profit, 0) / 
-                         revenueData.reduce((sum, item) => sum + item.revenue, 0) * 100)}%
-            </div>
-            <div className="text-sm text-gray-600">هامش الربح</div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

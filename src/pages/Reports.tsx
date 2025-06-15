@@ -11,7 +11,6 @@ import {
   DollarSign, 
   BarChart3, 
   Bell, 
-  Filter, 
   Calendar,
   Download,
   Settings,
@@ -27,6 +26,8 @@ import AdvancedAnalytics from "@/components/reports/AdvancedAnalytics";
 import PeriodComparison from "@/components/reports/PeriodComparison";
 import SmartAlerts from "@/components/reports/SmartAlerts";
 import { DateRange } from "react-day-picker";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReportFilters {
   dateRange?: DateRange;
@@ -47,27 +48,61 @@ const Reports = () => {
     to: new Date()
   });
 
-  // بيانات تجريبية للتقارير المالية
-  const mockFinancialData = {
-    revenue: 2500000,
-    profit: 750000,
-    expenses: 1750000,
-    profitMargin: 30,
-    monthlyData: [
-      { month: 'يناير', revenue: 180000, profit: 54000, expenses: 126000 },
-      { month: 'فبراير', revenue: 220000, profit: 66000, expenses: 154000 },
-      { month: 'مارس', revenue: 280000, profit: 84000, expenses: 196000 },
-      { month: 'أبريل', revenue: 320000, profit: 96000, expenses: 224000 },
-      { month: 'مايو', revenue: 290000, profit: 87000, expenses: 203000 },
-      { month: 'يونيو', revenue: 350000, profit: 105000, expenses: 245000 },
-    ],
-    serviceBreakdown: [
-      { name: 'فنادق', value: 1200000, color: '#0088FE' },
-      { name: 'طيران', value: 800000, color: '#00C49F' },
-      { name: 'باقات سياحية', value: 400000, color: '#FFBB28' },
-      { name: 'تأشيرات', value: 100000, color: '#FF8042' },
-    ]
+  // جلب البيانات الحقيقية من قاعدة البيانات
+  const { data: hotelBookings, refetch: refetchBookings } = useQuery({
+    queryKey: ['reports-hotel-bookings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hotel_bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: customers } = useQuery({
+    queryKey: ['reports-customers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // حساب البيانات المالية من البيانات الحقيقية
+  const calculateFinancialData = () => {
+    if (!hotelBookings) return null;
+
+    const totalRevenue = hotelBookings.reduce((sum, booking) => 
+      sum + (booking.total_cost_customer || 0), 0
+    );
+    
+    const totalProfit = hotelBookings.reduce((sum, booking) => 
+      sum + (booking.total_profit || 0), 0
+    );
+
+    const totalExpenses = totalRevenue - totalProfit;
+    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+    return {
+      revenue: totalRevenue,
+      profit: totalProfit,
+      expenses: totalExpenses,
+      profitMargin: profitMargin,
+      monthlyData: [], // يمكن حسابها لاحقاً حسب الحاجة
+      serviceBreakdown: [
+        { name: 'حجوزات الفنادق', value: totalRevenue, color: '#0088FE' }
+      ]
+    };
   };
+
+  const financialData = calculateFinancialData();
 
   const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
     console.log(`Exporting report as ${format}`);
@@ -75,9 +110,11 @@ const Reports = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // محاكاة تحديث البيانات
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsRefreshing(false);
+    try {
+      await refetchBookings();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleFiltersChange = (newFilters: any) => {
@@ -95,7 +132,7 @@ const Reports = () => {
         </div>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="bg-green-50 text-green-700">
-            البيانات محدثة
+            البيانات الحقيقية
           </Badge>
           <Button
             variant="outline"
@@ -161,15 +198,17 @@ const Reports = () => {
           <TabsContent value="charts" className="space-y-6">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <InteractiveCharts 
-                data={mockFinancialData.monthlyData}
+                data={hotelBookings || []}
                 title="الأداء المالي"
-                period="آخر 6 أشهر"
+                period="البيانات الحقيقية"
               />
-              <InteractiveCharts 
-                data={mockFinancialData.serviceBreakdown}
-                title="توزيع الخدمات"
-                period="الشهر الحالي"
-              />
+              {financialData && (
+                <InteractiveCharts 
+                  data={financialData.serviceBreakdown}
+                  title="توزيع الخدمات"
+                  period="البيانات الحقيقية"
+                />
+              )}
             </div>
           </TabsContent>
 
@@ -180,33 +219,27 @@ const Reports = () => {
               </div>
               <Card>
                 <CardHeader>
-                  <CardTitle>التقارير المحفوظة</CardTitle>
+                  <CardTitle>إحصائيات النظام</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="p-3 border rounded-lg">
-                      <div className="font-medium">التقرير المالي الشهري</div>
-                      <div className="text-sm text-gray-600">آخر تحديث: منذ ساعتين</div>
-                      <Button size="sm" variant="outline" className="mt-2">
-                        <Download className="h-3 w-3 mr-1" />
-                        تحميل
-                      </Button>
+                      <div className="font-medium">إجمالي الحجوزات</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {hotelBookings?.length || 0}
+                      </div>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <div className="font-medium">تقرير المبيعات الأسبوعي</div>
-                      <div className="text-sm text-gray-600">آخر تحديث: أمس</div>
-                      <Button size="sm" variant="outline" className="mt-2">
-                        <Download className="h-3 w-3 mr-1" />
-                        تحميل
-                      </Button>
+                      <div className="font-medium">إجمالي العملاء</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {customers?.length || 0}
+                      </div>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <div className="font-medium">تحليل العملاء الربعي</div>
-                      <div className="text-sm text-gray-600">آخر تحديث: منذ 3 أيام</div>
-                      <Button size="sm" variant="outline" className="mt-2">
-                        <Download className="h-3 w-3 mr-1" />
-                        تحميل
-                      </Button>
+                      <div className="font-medium">الإيرادات الإجمالية</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {financialData?.revenue.toLocaleString() || 0} ج.م
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -227,7 +260,9 @@ const Reports = () => {
           </TabsContent>
 
           <TabsContent value="financial" className="space-y-4">
-            <FinancialReports data={mockFinancialData} period="آخر 6 أشهر" />
+            {financialData && (
+              <FinancialReports data={financialData} period="البيانات الحقيقية" />
+            )}
           </TabsContent>
 
           <TabsContent value="performance" className="space-y-4">
@@ -237,30 +272,34 @@ const Reports = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    إحصائيات العمليات
+                    إحصائيات العمليات الحقيقية
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">2,156</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {hotelBookings?.length || 0}
+                      </div>
                       <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
-                      <div className="text-xs text-green-600">+18% عن الشهر السابق</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">94.2%</div>
-                      <div className="text-sm text-gray-600">معدل النجاح</div>
-                      <div className="text-xs text-gray-500">من الحجوزات المؤكدة</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {customers?.length || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">إجمالي العملاء</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">2.3 ساعة</div>
-                      <div className="text-sm text-gray-600">متوسط وقت المعالجة</div>
-                      <div className="text-xs text-green-600">-15% عن الشهر السابق</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {financialData?.revenue.toLocaleString() || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">الإيرادات (ج.م)</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">4.7/5</div>
-                      <div className="text-sm text-gray-600">تقييم رضا العملاء</div>
-                      <div className="text-xs text-green-600">+0.3 نقطة</div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {financialData?.profitMargin.toFixed(1) || 0}%
+                      </div>
+                      <div className="text-sm text-gray-600">هامش الربح</div>
                     </div>
                   </div>
                 </CardContent>
