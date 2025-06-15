@@ -2,12 +2,28 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, TrendingUp, Users, DollarSign, BarChart3, Bell, Filter, Calendar } from "lucide-react";
-import ReportsChart from "@/components/reports/ReportsChart";
-import PerformanceMetrics from "@/components/reports/PerformanceMetrics";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  FileText, 
+  TrendingUp, 
+  Users, 
+  DollarSign, 
+  BarChart3, 
+  Bell, 
+  Filter, 
+  Calendar,
+  Download,
+  Settings,
+  RefreshCw
+} from "lucide-react";
+import ReportsOverview from "@/components/reports/ReportsOverview";
+import AdvancedFilters from "@/components/reports/AdvancedFilters";
+import InteractiveCharts from "@/components/reports/InteractiveCharts";
+import ReportExporter from "@/components/reports/ReportExporter";
 import FinancialReports from "@/components/reports/FinancialReports";
+import PerformanceMetrics from "@/components/reports/PerformanceMetrics";
 import AdvancedAnalytics from "@/components/reports/AdvancedAnalytics";
-import SmartReportFilters from "@/components/reports/SmartReportFilters";
 import PeriodComparison from "@/components/reports/PeriodComparison";
 import SmartAlerts from "@/components/reports/SmartAlerts";
 import { DateRange } from "react-day-picker";
@@ -23,7 +39,13 @@ interface ReportFilters {
 }
 
 const Reports = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const [filters, setFilters] = useState<ReportFilters>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dateRange] = useState({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date()
+  });
 
   // بيانات تجريبية للتقارير المالية
   const mockFinancialData = {
@@ -47,132 +69,205 @@ const Reports = () => {
     ]
   };
 
-  // بيانات تجريبية للرسوم البيانية
-  const mockChartData = [
-    { name: 'يناير', value: 180000 },
-    { name: 'فبراير', value: 220000 },
-    { name: 'مارس', value: 280000 },
-    { name: 'أبريل', value: 320000 },
-    { name: 'مايو', value: 290000 },
-    { name: 'يونيو', value: 350000 },
-  ];
-
   const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
     console.log(`Exporting report as ${format}`);
-    // يمكن تنفيذ منطق التصدير هنا
   };
 
-  const handleRefresh = () => {
-    console.log('Refreshing reports...');
-    // يمكن تنفيذ منطق التحديث هنا
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // محاكاة تحديث البيانات
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsRefreshing(false);
+  };
+
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
   };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
+        <div>
+          <h1 className="text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
+          <p className="text-gray-600 mt-1">
+            لوحة تحكم شاملة للتقارير المالية وتحليل الأداء
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="bg-green-50 text-green-700">
+            البيانات محدثة
+          </Badge>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            تحديث
+          </Button>
+          <Button>
+            <Settings className="h-4 w-4 mr-2" />
+            إعدادات التقارير
+          </Button>
+        </div>
       </div>
 
-      {/* فلاتر التقارير الذكية */}
-      <SmartReportFilters 
-        onFiltersChange={setFilters}
-        onExport={handleExport}
-        onRefresh={handleRefresh}
-      />
+      {/* فلاتر التقارير المتقدمة */}
+      <AdvancedFilters onFiltersChange={handleFiltersChange} />
 
-      <Tabs defaultValue="analytics" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            تحليلات متقدمة
-          </TabsTrigger>
-          <TabsTrigger value="comparison" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            مقارنة الفترات
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            التنبيهات الذكية
-          </TabsTrigger>
-          <TabsTrigger value="financial" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            التقارير المالية
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            الأداء
-          </TabsTrigger>
-          <TabsTrigger value="operations" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            العمليات
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="bg-white rounded-lg shadow-sm border p-2">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 gap-1">
+            <TabsTrigger value="overview" className="flex items-center gap-2 text-xs lg:text-sm">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">نظرة عامة</span>
+            </TabsTrigger>
+            <TabsTrigger value="charts" className="flex items-center gap-2 text-xs lg:text-sm">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">رسوم بيانية</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center gap-2 text-xs lg:text-sm">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">تصدير</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2 text-xs lg:text-sm">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">تحليلات متقدمة</span>
+            </TabsTrigger>
+            <TabsTrigger value="comparison" className="flex items-center gap-2 text-xs lg:text-sm">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">مقارنة الفترات</span>
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-2 text-xs lg:text-sm">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">التنبيهات</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-2 text-xs lg:text-sm">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">التقارير المالية</span>
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex items-center gap-2 text-xs lg:text-sm">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">الأداء</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="analytics" className="space-y-4">
-          <AdvancedAnalytics />
-        </TabsContent>
+        <div className="min-h-[600px]">
+          <TabsContent value="overview" className="space-y-6">
+            <ReportsOverview dateRange={dateRange} />
+          </TabsContent>
 
-        <TabsContent value="comparison" className="space-y-4">
-          <PeriodComparison />
-        </TabsContent>
+          <TabsContent value="charts" className="space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <InteractiveCharts 
+                data={mockFinancialData.monthlyData}
+                title="الأداء المالي"
+                period="آخر 6 أشهر"
+              />
+              <InteractiveCharts 
+                data={mockFinancialData.serviceBreakdown}
+                title="توزيع الخدمات"
+                period="الشهر الحالي"
+              />
+            </div>
+          </TabsContent>
 
-        <TabsContent value="alerts" className="space-y-4">
-          <SmartAlerts />
-        </TabsContent>
+          <TabsContent value="export" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <ReportExporter />
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>التقارير المحفوظة</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-3 border rounded-lg">
+                      <div className="font-medium">التقرير المالي الشهري</div>
+                      <div className="text-sm text-gray-600">آخر تحديث: منذ ساعتين</div>
+                      <Button size="sm" variant="outline" className="mt-2">
+                        <Download className="h-3 w-3 mr-1" />
+                        تحميل
+                      </Button>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <div className="font-medium">تقرير المبيعات الأسبوعي</div>
+                      <div className="text-sm text-gray-600">آخر تحديث: أمس</div>
+                      <Button size="sm" variant="outline" className="mt-2">
+                        <Download className="h-3 w-3 mr-1" />
+                        تحميل
+                      </Button>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <div className="font-medium">تحليل العملاء الربعي</div>
+                      <div className="text-sm text-gray-600">آخر تحديث: منذ 3 أيام</div>
+                      <Button size="sm" variant="outline" className="mt-2">
+                        <Download className="h-3 w-3 mr-1" />
+                        تحميل
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-        <TabsContent value="financial" className="space-y-4">
-          <FinancialReports data={mockFinancialData} period="آخر 6 أشهر" />
-        </TabsContent>
+          <TabsContent value="analytics" className="space-y-4">
+            <AdvancedAnalytics />
+          </TabsContent>
 
-        <TabsContent value="performance" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ReportsChart 
-              type="line"
-              data={mockChartData}
-              title="إيرادات الأشهر الماضية"
-              dataKey="value"
-              xAxisKey="name"
-            />
-            <PerformanceMetrics />
-          </div>
-        </TabsContent>
+          <TabsContent value="comparison" className="space-y-4">
+            <PeriodComparison />
+          </TabsContent>
 
-        <TabsContent value="operations" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">إجمالي الحجوزات</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">2,156</div>
-                <p className="text-xs text-muted-foreground">+18% عن الشهر السابق</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="alerts" className="space-y-4">
+            <SmartAlerts />
+          </TabsContent>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">معدل النجاح</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">94.2%</div>
-                <p className="text-xs text-muted-foreground">من الحجوزات المؤكدة</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="financial" className="space-y-4">
+            <FinancialReports data={mockFinancialData} period="آخر 6 أشهر" />
+          </TabsContent>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">متوسط وقت المعالجة</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">2.3 ساعة</div>
-                <p className="text-xs text-muted-foreground">-15% عن الشهر السابق</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+          <TabsContent value="performance" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PerformanceMetrics />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    إحصائيات العمليات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">2,156</div>
+                      <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
+                      <div className="text-xs text-green-600">+18% عن الشهر السابق</div>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">94.2%</div>
+                      <div className="text-sm text-gray-600">معدل النجاح</div>
+                      <div className="text-xs text-gray-500">من الحجوزات المؤكدة</div>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">2.3 ساعة</div>
+                      <div className="text-sm text-gray-600">متوسط وقت المعالجة</div>
+                      <div className="text-xs text-green-600">-15% عن الشهر السابق</div>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">4.7/5</div>
+                      <div className="text-sm text-gray-600">تقييم رضا العملاء</div>
+                      <div className="text-xs text-green-600">+0.3 نقطة</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
