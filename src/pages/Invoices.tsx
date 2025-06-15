@@ -150,7 +150,7 @@ const Invoices = () => {
             <Receipt className="h-8 w-8" />
             الفواتير المصدرة
           </h1>
-          <p className="text-gray-600 mt-1">إدارة ومتابعة جميع الفواتير المصدرة من الحجوزات</p>
+          <p className="text-gray-600 mt-1">إدارة ومتابعة جميع الفواتير المصدرة من الحجوزات (بالجنيه المصري)</p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ const Invoices = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">إجمالي المبلغ</p>
-                <p className="text-2xl font-bold">{totalAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ج.م</p>
               </div>
             </div>
           </CardContent>
@@ -186,7 +186,7 @@ const Invoices = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">المدفوع</p>
-                <p className="text-2xl font-bold text-green-600">{paidAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold text-green-600">{paidAmount.toLocaleString()} ج.م</p>
               </div>
             </div>
           </CardContent>
@@ -198,7 +198,7 @@ const Invoices = () => {
               <DollarSign className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">المعلق</p>
-                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toFixed(2)} ر.س</p>
+                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toLocaleString()} ج.م</p>
               </div>
             </div>
           </CardContent>
@@ -276,7 +276,7 @@ const Invoices = () => {
                     </Badge>
                     <div className="mt-2 text-lg font-bold flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
-                      {invoice.final_amount.toFixed(2)} ر.س
+                      {invoice.final_amount.toLocaleString()} ج.م
                     </div>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ const Invoices = () => {
                   </div>
                   <div>
                     <span className="font-medium">الضريبة:</span>
-                    <p>{invoice.vat_rate}% = {invoice.vat_amount?.toFixed(2) || '0.00'} ر.س</p>
+                    <p>{invoice.vat_rate}% = {(invoice.vat_amount || 0).toLocaleString()} ج.م</p>
                   </div>
                 </div>
 

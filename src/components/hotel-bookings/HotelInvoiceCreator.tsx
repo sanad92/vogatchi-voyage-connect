@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { HotelBooking } from "@/types/hotelBooking";
 import { FileText } from "lucide-react";
@@ -23,6 +24,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
     vat_rate: 14,
     discount_amount: 0,
     payment_terms: "30 days",
+    payment_method: "bank_transfer",
     notes: `فاتورة حجز فندق ${booking.hotel_name} - ${booking.destination_city}`,
     due_date: ""
   });
@@ -46,7 +48,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           invoice_number: invoiceNumber,
           customer_id: booking.customer_id,
           booking_id: booking.id,
-          booking_type: 'hotel', // تحديد نوع الحجز
+          booking_type: 'hotel',
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
           vat_amount: vatAmount,
@@ -57,6 +59,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
+          currency: 'EGP', // تثبيت العملة على الجنيه المصري
           status: 'sent'
         }])
         .select()
@@ -69,7 +72,8 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
         .from('hotel_bookings')
         .update({ 
           invoice_sent: true,
-          invoice_sent_date: new Date().toISOString()
+          invoice_sent_date: new Date().toISOString(),
+          payment_method: formData.payment_method // إضافة طريقة الدفع
         })
         .eq('id', booking.id);
 
@@ -78,7 +82,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hotel-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('تم إصدار الفاتورة بنجاح');
+      toast.success('تم إصدار الفاتورة بنجاح بالجنيه المصري');
       onClose();
     },
     onError: (error) => {
@@ -123,7 +127,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="subtotal">المبلغ الفرعي (ر.س)</Label>
+              <Label htmlFor="subtotal">المبلغ الفرعي (ج.م)</Label>
               <Input
                 id="subtotal"
                 type="number"
@@ -148,7 +152,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="discount_amount">قيمة الخصم (ر.س)</Label>
+              <Label htmlFor="discount_amount">قيمة الخصم (ج.م)</Label>
               <Input
                 id="discount_amount"
                 type="number"
@@ -168,14 +172,34 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="payment_terms">شروط الدفع</Label>
-            <Input
-              id="payment_terms"
-              value={formData.payment_terms}
-              onChange={e => setFormData({...formData, payment_terms: e.target.value})}
-              placeholder="30 days"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="payment_terms">شروط الدفع</Label>
+              <Input
+                id="payment_terms"
+                value={formData.payment_terms}
+                onChange={e => setFormData({...formData, payment_terms: e.target.value})}
+                placeholder="30 days"
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment_method">طريقة الدفع</Label>
+              <Select 
+                value={formData.payment_method} 
+                onValueChange={(value) => setFormData({...formData, payment_method: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">نقداً</SelectItem>
+                  <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                  <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>
+                  <SelectItem value="check">شيك</SelectItem>
+                  <SelectItem value="instant_transfer">تحويل فوري</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
@@ -193,19 +217,19 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>المبلغ الفرعي:</span>
-                <span>{formData.subtotal.toFixed(2)} ر.س</span>
+                <span>{formData.subtotal.toLocaleString()} ج.م</span>
               </div>
               <div className="flex justify-between">
                 <span>الضريبة ({formData.vat_rate}%):</span>
-                <span>{vatAmount.toFixed(2)} ر.س</span>
+                <span>{vatAmount.toLocaleString()} ج.م</span>
               </div>
               <div className="flex justify-between">
                 <span>الخصم:</span>
-                <span>-{formData.discount_amount.toFixed(2)} ر.س</span>
+                <span>-{formData.discount_amount.toLocaleString()} ج.م</span>
               </div>
               <div className="flex justify-between font-bold border-t pt-1">
                 <span>الإجمالي النهائي:</span>
-                <span>{finalAmount.toFixed(2)} ر.س</span>
+                <span>{finalAmount.toLocaleString()} ج.م</span>
               </div>
             </div>
           </div>
