@@ -95,7 +95,7 @@ const ExpenseReportExporter = () => {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">الفترة الزمنية</label>
-          <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+          <DatePickerWithRange value={dateRange} onChange={setDateRange} />
         </div>
 
         <div className="flex gap-2 pt-4">
