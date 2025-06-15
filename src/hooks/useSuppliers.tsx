@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +74,7 @@ export const useSuppliers = (supplierType?: string) => {
     }
   });
 
-  // Add new supplier
+  // Add new supplier with enhanced error handling
   const addSupplierMutation = useMutation({
     mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'currencies'>) => {
       const supplierData = {
@@ -99,6 +98,16 @@ export const useSuppliers = (supplierType?: string) => {
       
       if (error) {
         console.error('Error inserting supplier:', error);
+        
+        // Enhanced error handling for different types of errors
+        if (error.message.includes('row-level security policy')) {
+          throw new Error('ليس لديك صلاحية لإضافة موردين. يرجى التواصل مع المدير للحصول على الصلاحيات المناسبة.');
+        } else if (error.message.includes('duplicate key')) {
+          throw new Error('يوجد مورد بنفس البيانات. يرجى التحقق من البيانات المدخلة.');
+        } else if (error.message.includes('violates check constraint')) {
+          throw new Error('البيانات المدخلة غير صحيحة. يرجى مراجعة جميع الحقول.');
+        }
+        
         throw error;
       }
       return data;
@@ -107,14 +116,17 @@ export const useSuppliers = (supplierType?: string) => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       toast({
         title: "تم إضافة المورد بنجاح",
-        description: "تم حفظ بيانات المورد الجديد",
+        description: "تم حفظ بيانات المورد الجديد وإضافته إلى النظام",
       });
     },
     onError: (error: any) => {
       console.error('Error adding supplier:', error);
+      
+      const errorMessage = error.message || "حدث خطأ أثناء إضافة المورد";
+      
       toast({
         title: "خطأ في إضافة المورد",
-        description: error.message || "حدث خطأ أثناء إضافة المورد",
+        description: errorMessage,
         variant: "destructive",
       });
     }

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +18,7 @@ import SupplierStatsCards from './SupplierStatsCards';
 import SupplierSearchAndAdd from './SupplierSearchAndAdd';
 import SupplierForm, { SupplierFormData } from './SupplierForm';
 import SupplierGrid from './SupplierGrid';
+import SupplierPermissionCheck from './SupplierPermissionCheck';
 
 interface Supplier {
   id: string;
@@ -125,91 +125,105 @@ const AdvancedSupplierManagement = () => {
   const avgRating = suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / totalSuppliers || 0;
 
   return (
-    <div className="space-y-6">
-      <SupplierStatsCards 
-        totalSuppliers={totalSuppliers}
-        activeSuppliers={activeSuppliers}
-        avgRating={avgRating}
-      />
+    <SupplierPermissionCheck>
+      <div className="space-y-6">
+        <SupplierStatsCards 
+          totalSuppliers={totalSuppliers}
+          activeSuppliers={activeSuppliers}
+          avgRating={avgRating}
+        />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            نظرة عامة
-          </TabsTrigger>
-          <TabsTrigger value="currencies" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            العملات
-          </TabsTrigger>
-          <TabsTrigger value="contracts" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            العقود
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            المدفوعات
-          </TabsTrigger>
-          <TabsTrigger value="ratings" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            التقييمات
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            التحليلات
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              نظرة عامة
+            </TabsTrigger>
+            <TabsTrigger value="currencies" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              العملات
+            </TabsTrigger>
+            <TabsTrigger value="contracts" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              العقود
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              المدفوعات
+            </TabsTrigger>
+            <TabsTrigger value="ratings" className="flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              التقييمات
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              التحليلات
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <SupplierSearchAndAdd
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onAddClick={() => setShowAddForm(!showAddForm)}
-          />
+          <TabsContent value="overview" className="space-y-4">
+            <SupplierPermissionCheck action="create">
+              <SupplierSearchAndAdd
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onAddClick={() => setShowAddForm(!showAddForm)}
+              />
 
-          <SupplierForm
-            isVisible={showAddForm}
-            isLoading={isAddingSupplier}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setShowAddForm(false)}
-          />
+              <SupplierForm
+                isVisible={showAddForm}
+                isLoading={isAddingSupplier}
+                onSubmit={handleFormSubmit}
+                onCancel={() => setShowAddForm(false)}
+              />
+            </SupplierPermissionCheck>
 
-          <SupplierGrid
-            suppliers={filteredSuppliers}
-            isLoading={isLoading}
-            onSupplierSelect={setSelectedSupplier}
-          />
-        </TabsContent>
+            <SupplierGrid
+              suppliers={filteredSuppliers}
+              isLoading={isLoading}
+              onSupplierSelect={setSelectedSupplier}
+            />
+          </TabsContent>
 
-        <TabsContent value="currencies">
-          {selectedSupplier ? (
-            <SupplierCurrencyManager supplierId={selectedSupplier} />
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-gray-500">يرجى اختيار مورد لإدارة العملات المدعومة</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+          <TabsContent value="currencies">
+            {selectedSupplier ? (
+              <SupplierPermissionCheck action="edit">
+                <SupplierCurrencyManager supplierId={selectedSupplier} />
+              </SupplierPermissionCheck>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-gray-500">يرجى اختيار مورد لإدارة العملات المدعومة</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-        <TabsContent value="contracts">
-          <SupplierContracts supplierId={selectedSupplier} />
-        </TabsContent>
+          <TabsContent value="contracts">
+            <SupplierPermissionCheck action="view">
+              <SupplierContracts supplierId={selectedSupplier} />
+            </SupplierPermissionCheck>
+          </TabsContent>
 
-        <TabsContent value="payments">
-          <SupplierPayments supplierId={selectedSupplier} />
-        </TabsContent>
+          <TabsContent value="payments">
+            <SupplierPermissionCheck action="view">
+              <SupplierPayments supplierId={selectedSupplier} />
+            </SupplierPermissionCheck>
+          </TabsContent>
 
-        <TabsContent value="ratings">
-          <SupplierRatings supplierId={selectedSupplier} />
-        </TabsContent>
+          <TabsContent value="ratings">
+            <SupplierPermissionCheck action="view">
+              <SupplierRatings supplierId={selectedSupplier} />
+            </SupplierPermissionCheck>
+          </TabsContent>
 
-        <TabsContent value="analytics">
-          <SupplierAnalytics />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="analytics">
+            <SupplierPermissionCheck action="view">
+              <SupplierAnalytics />
+            </SupplierPermissionCheck>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </SupplierPermissionCheck>
   );
 };
 
