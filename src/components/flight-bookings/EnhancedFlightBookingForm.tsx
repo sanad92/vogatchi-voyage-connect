@@ -11,6 +11,8 @@ import FlightDetailsSection from './enhanced/FlightDetailsSection';
 import FlightPricingSection from './enhanced/FlightPricingSection';
 import FlightAdditionalInfoSection from './enhanced/FlightAdditionalInfoSection';
 import DocumentsTracking from '@/components/shared/DocumentsTracking';
+import { useState } from 'react';
+import { Customer } from '@/types/customer';
 
 interface EnhancedFlightBookingFormProps {
   onSuccess?: () => void;
@@ -19,6 +21,7 @@ interface EnhancedFlightBookingFormProps {
 const EnhancedFlightBookingForm = ({ onSuccess }: EnhancedFlightBookingFormProps) => {
   const { employees } = useExpenses();
   const { airports, airlines, flightClasses } = useFlightBookings();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const {
     formData,
     errors,
@@ -32,6 +35,17 @@ const EnhancedFlightBookingForm = ({ onSuccess }: EnhancedFlightBookingFormProps
     const success = await handleSubmit(e);
     if (success && onSuccess) {
       onSuccess();
+    }
+  };
+
+  const handleCustomerSelect = (customer: Customer | null) => {
+    setSelectedCustomer(customer);
+    if (customer) {
+      updateField('customer_id', customer.id);
+      updateField('customer_name', customer.name);
+    } else {
+      updateField('customer_id', '');
+      updateField('customer_name', '');
     }
   };
 
@@ -53,16 +67,16 @@ const EnhancedFlightBookingForm = ({ onSuccess }: EnhancedFlightBookingFormProps
             supplierId=""
             supplierName={formData.supplier_name}
             bookingAgentId={formData.booking_agent_id}
-            onCustomerSelect={(id, name) => {
-              updateField('customer_id', id);
-              updateField('customer_name', name);
-            }}
+            selectedCustomer={selectedCustomer}
+            onCustomerSelect={handleCustomerSelect}
             onCustomerNameChange={(name) => updateField('customer_name', name)}
             onSupplierSelect={(id, name) => updateField('supplier_name', name)}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
             onBookingAgentChange={(agentId) => updateField('booking_agent_id', agentId)}
             employees={employees}
             errors={errors}
+            register={() => {}}
+            setValue={() => {}}
           />
 
           <Separator />

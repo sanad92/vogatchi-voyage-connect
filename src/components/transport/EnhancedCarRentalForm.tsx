@@ -12,6 +12,8 @@ import PaymentSection from '@/components/shared/PaymentSection';
 import DocumentsTracking from '@/components/shared/DocumentsTracking';
 import AdditionalInfoSection from './car-rental/AdditionalInfoSection';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useState } from 'react';
+import { Customer } from '@/types/customer';
 
 interface EnhancedCarRentalFormProps {
   onSuccess?: () => void;
@@ -19,6 +21,7 @@ interface EnhancedCarRentalFormProps {
 
 const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
   const { employees } = useEmployees();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const {
     formData,
     errors,
@@ -45,6 +48,17 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
     updateField(name as any, value);
   };
 
+  const handleCustomerSelect = (customer: Customer | null) => {
+    setSelectedCustomer(customer);
+    if (customer) {
+      updateField('customer_id', customer.id);
+      updateField('customer_name', customer.name);
+    } else {
+      updateField('customer_id', '');
+      updateField('customer_name', '');
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -62,10 +76,8 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
             customerName={formData.customer_name}
             supplierId={formData.supplier_id}
             supplierName={formData.supplier_name}
-            onCustomerSelect={(id, name) => {
-              updateField('customer_id', id);
-              updateField('customer_name', name);
-            }}
+            selectedCustomer={selectedCustomer}
+            onCustomerSelect={handleCustomerSelect}
             onCustomerNameChange={(name) => updateField('customer_name', name)}
             onSupplierSelect={(id, name) => {
               updateField('supplier_id', id);
@@ -73,6 +85,8 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
             }}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
             errors={errors}
+            register={() => {}}
+            setValue={() => {}}
           />
 
           <Separator />

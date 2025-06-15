@@ -20,6 +20,7 @@ interface EnhancedTransportBookingFormProps {
 const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFormProps) => {
   const { employees } = useExpenses();
   const { vehicleTypes, transportRoutes, addTransportBooking, isAddingBooking } = useTransportBookings();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -162,6 +163,17 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     setErrors({});
   };
 
+  const handleCustomerSelect = (customer: Customer | null) => {
+    setSelectedCustomer(customer);
+    if (customer) {
+      updateField('customer_id', customer.id);
+      updateField('customer_name', customer.name);
+    } else {
+      updateField('customer_id', '');
+      updateField('customer_name', '');
+    }
+  };
+
   const totalCost = formData.selling_price_per_trip * formData.number_of_passengers;
 
   return (
@@ -181,15 +193,15 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
             customerName={formData.customer_name}
             supplierName={formData.supplier_name}
             bookingAgentId={formData.booking_agent_id}
-            onCustomerSelect={(id, name) => {
-              updateField('customer_id', id);
-              updateField('customer_name', name);
-            }}
+            selectedCustomer={selectedCustomer}
+            onCustomerSelect={handleCustomerSelect}
             onCustomerNameChange={(name) => updateField('customer_name', name)}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
             onBookingAgentChange={(agentId) => updateField('booking_agent_id', agentId)}
             employees={employees}
             errors={errors}
+            register={() => {}}
+            setValue={() => {}}
           />
 
           <Separator />

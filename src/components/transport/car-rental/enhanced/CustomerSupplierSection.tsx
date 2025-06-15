@@ -32,6 +32,12 @@ const CustomerSupplierSection = ({
   register,
   setValue
 }: CustomerSupplierSectionProps) => {
+  // Convert simple errors to the expected format
+  const fieldErrors = Object.keys(errors).reduce((acc, key) => {
+    acc[key] = { message: errors[key] };
+    return acc;
+  }, {} as any);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">معلومات العميل والمورد</h3>
@@ -43,7 +49,7 @@ const CustomerSupplierSection = ({
             onCustomerSelect={onCustomerSelect}
             register={register}
             setValue={setValue}
-            errors={errors}
+            errors={fieldErrors}
           />
           {errors.customer_name && (
             <p className="text-sm text-red-600 mt-1">{errors.customer_name}</p>
