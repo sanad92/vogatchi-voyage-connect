@@ -1,22 +1,29 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Users, MessageSquare, FileText, Receipt } from 'lucide-react';
+import { Plus, Calendar, Users, MessageSquare, FileText, Receipt, Hotel, Plane } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const QuickActions = () => {
   const actions = [
     {
-      title: 'حجز جديد',
-      icon: Plus,
-      href: '/bookings',
+      title: 'حجز فندق جديد',
+      icon: Hotel,
+      href: '/new-hotel-booking',
       color: 'bg-blue-600 hover:bg-blue-700',
-      description: 'إضافة حجز جديد'
+      description: 'إضافة حجز فندق جديد'
+    },
+    {
+      title: 'حجز طيران جديد',
+      icon: Plane,
+      href: '/flight-bookings',
+      color: 'bg-sky-600 hover:bg-sky-700',
+      description: 'إضافة حجز طيران'
     },
     {
       title: 'عميل جديد',
       icon: Users,
-      href: '/customers',
+      href: '/new-customer',
       color: 'bg-green-600 hover:bg-green-700',
       description: 'تسجيل عميل جديد'
     },
@@ -35,6 +42,13 @@ const QuickActions = () => {
       description: 'خدمة العملاء'
     },
     {
+      title: 'تقويم الحجوزات',
+      icon: Calendar,
+      href: '/bookings-calendar',
+      color: 'bg-indigo-600 hover:bg-indigo-700',
+      description: 'عرض التقويم'
+    },
+    {
       title: 'التقارير',
       icon: FileText,
       href: '/reports',
@@ -42,11 +56,11 @@ const QuickActions = () => {
       description: 'عرض التقارير'
     },
     {
-      title: 'التقويم',
-      icon: Calendar,
-      href: '/bookings',
-      color: 'bg-indigo-600 hover:bg-indigo-700',
-      description: 'عرض الحجوزات'
+      title: 'إضافة سريعة',
+      icon: Plus,
+      href: '/customers',
+      color: 'bg-gray-600 hover:bg-gray-700',
+      description: 'قائمة العمليات'
     }
   ];
 
@@ -56,7 +70,7 @@ const QuickActions = () => {
         <CardTitle className="text-lg sm:text-xl">العمليات السريعة</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {actions.map((action) => {
             const Icon = action.icon;
             return (

@@ -1,156 +1,134 @@
 
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import Auth from "@/pages/Auth";
-import Index from "@/pages/Index";
-import DailyOperations from "@/pages/DailyOperations";
-import HotelBookings from "@/pages/HotelBookings";
-import FlightBookings from "@/pages/FlightBookings";
-import Customers from "@/pages/Customers";
-import CustomerService from "@/pages/CustomerService";
-import Suppliers from "@/pages/Suppliers";
-import Invoices from "@/pages/Invoices";
-import PaymentOrders from "@/pages/PaymentOrders";
-import Reports from "@/pages/Reports";
-import AdminSettings from "@/pages/AdminSettings";
-import NotFound from "@/pages/NotFound";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Navbar from "@/components/Navbar";
-import BankAccounts from "@/pages/BankAccounts";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Customers from "./pages/Customers";
+import CustomerService from "./pages/CustomerService";
+import Invoices from "./pages/Invoices";
+import Reports from "./pages/Reports";
+import Suppliers from "./pages/Suppliers";
+import BankAccounts from "./pages/BankAccounts";
+import PaymentOrders from "./pages/PaymentOrders";
+import FlightBookings from "./pages/FlightBookings";
+import HotelBookings from "./pages/HotelBookings";
+import DailyOperations from "./pages/DailyOperations";
+import AdminSettings from "./pages/AdminSettings";
+import NewHotelBooking from "./pages/NewHotelBooking";
+import NewCustomer from "./pages/NewCustomer";
+import BookingsCalendar from "./pages/BookingsCalendar";
+import NotFound from "./pages/NotFound";
+import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <div className="flex">
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <div className="min-h-screen">
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <Index />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/daily-operations" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/customers" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <DailyOperations />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/hotel-bookings" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <Customers />
+              </ProtectedRoute>
+            } />
+            <Route path="/new-customer" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <HotelBookings />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/flight-bookings" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <NewCustomer />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer-service" element={
+              <ProtectedRoute>
+                <CustomerService />
+              </ProtectedRoute>
+            } />
+            <Route path="/daily-operations" element={
+              <ProtectedRoute>
+                <DailyOperations />
+              </ProtectedRoute>
+            } />
+            <Route path="/flight-bookings" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <FlightBookings />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/customers" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <FlightBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/hotel-bookings" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <Customers />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/customer-service" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <HotelBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/new-hotel-booking" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <CustomerService />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/suppliers" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <NewHotelBooking />
+              </ProtectedRoute>
+            } />
+            <Route path="/bookings-calendar" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <Suppliers />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/invoices" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <BookingsCalendar />
+              </ProtectedRoute>
+            } />
+            <Route path="/invoices" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <Invoices />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/payment-orders" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <Invoices />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <PaymentOrders />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/bank-accounts" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <Reports />
+              </ProtectedRoute>
+            } />
+            <Route path="/suppliers" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <BankAccounts />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/reports" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <Suppliers />
+              </ProtectedRoute>
+            } />
+            <Route path="/bank-accounts" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <Reports />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin-settings" element={
-            <ProtectedRoute>
-              <div className="flex">
+                <BankAccounts />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-orders" element={
+              <ProtectedRoute>
                 <Navbar />
-                <main className="flex-1">
-                  <AdminSettings />
-                </main>
-              </div>
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </div>
-    </Router>
-  );
-}
+                <PaymentOrders />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Navbar />
+                <AdminSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
