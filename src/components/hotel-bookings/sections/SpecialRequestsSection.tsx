@@ -72,7 +72,7 @@ const SpecialRequestsSection = ({
       updatedRequests = selectedRequests.filter(id => id !== requestId);
     }
     onRequestsChange(updatedRequests);
-    setValue('special_requests', updatedRequests);
+    // Remove the invalid setValue call since 'special_requests' is not a valid field
   };
 
   if (loading) {

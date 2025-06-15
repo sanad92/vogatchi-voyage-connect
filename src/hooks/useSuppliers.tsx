@@ -38,7 +38,21 @@ export const useSuppliers = (supplierType?: string) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Supplier[];
+      
+      // Map the database response to our Supplier interface
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        contact_person: item.contact_person,
+        email: item.email,
+        phone: item.phone,
+        address: item.address,
+        supplier_type: item.supplier_type || 'general',
+        payment_terms: item.payment_terms,
+        is_active: item.is_active,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) as Supplier[];
     }
   });
 
@@ -47,7 +61,16 @@ export const useSuppliers = (supplierType?: string) => {
     mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('suppliers')
-        .insert([newSupplier])
+        .insert([{
+          name: newSupplier.name,
+          contact_person: newSupplier.contact_person,
+          email: newSupplier.email,
+          phone: newSupplier.phone,
+          address: newSupplier.address,
+          supplier_type: newSupplier.supplier_type,
+          payment_terms: newSupplier.payment_terms,
+          is_active: newSupplier.is_active
+        }])
         .select()
         .single();
       
