@@ -23,35 +23,54 @@ export const useExchangeRates = () => {
     }
   });
 
-  // Get current exchange rate - always returns 1.0 for EGP since it's the only currency
+  // Get current exchange rate
   const getCurrentRate = async (fromCurrency: string, toCurrency: string): Promise<number> => {
-    // Since we only support EGP, always return 1.0
-    return 1.0;
+    if (fromCurrency === toCurrency) return 1.0;
+    
+    const { data, error } = await supabase
+      .from('exchange_rates')
+      .select('rate')
+      .eq('from_currency', fromCurrency)
+      .eq('to_currency', toCurrency)
+      .eq('is_active', true)
+      .order('effective_date', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (error || !data) {
+      console.warn(`No exchange rate found for ${fromCurrency} to ${toCurrency}, using 1.0`);
+      return 1.0;
+    }
+    
+    return data.rate;
   };
 
-  // Convert amount between currencies - since we only use EGP, return the same amount
+  // Convert amount between currencies
   const convertCurrency = async (
     amount: number,
     fromCurrency: string,
     toCurrency: string
   ): Promise<number> => {
-    return amount;
+    if (fromCurrency === toCurrency) return amount;
+    
+    const rate = await getCurrentRate(fromCurrency, toCurrency);
+    return amount * rate;
   };
 
-  // Convert amount to primary currency (EGP) - return same amount
+  // Convert amount to primary currency (EGP)
   const convertToPrimaryCurrency = async (
     amount: number,
     fromCurrency: string
   ): Promise<number> => {
-    return amount;
+    return convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
   };
 
-  // Convert amount from primary currency (EGP) - return same amount
+  // Convert amount from primary currency (EGP)
   const convertFromPrimaryCurrency = async (
     amount: number,
     toCurrency: string
   ): Promise<number> => {
-    return amount;
+    return convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
   };
 
   // Add new exchange rate

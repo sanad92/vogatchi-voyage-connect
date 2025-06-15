@@ -3,7 +3,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import CurrencySelector from '@/components/currency/CurrencySelector';
 import type { RentContractFormData } from './useRentContractForm';
+import type { SupportedCurrency } from '@/types/currency';
 
 interface RentContractFormFieldsProps {
   contractData: RentContractFormData;
@@ -71,17 +73,10 @@ const RentContractFormFields = ({ contractData, onUpdateField }: RentContractFor
       </div>
       <div className="space-y-2">
         <Label>العملة</Label>
-        <Select value={contractData.currency} onValueChange={(value) => onUpdateField('currency', value)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="EGP">جنيه مصري (ج.م)</SelectItem>
-            <SelectItem value="SAR">ريال سعودي (ر.س)</SelectItem>
-            <SelectItem value="USD">دولار أمريكي ($)</SelectItem>
-            <SelectItem value="EUR">يورو (€)</SelectItem>
-          </SelectContent>
-        </Select>
+        <CurrencySelector
+          value={contractData.currency as SupportedCurrency}
+          onValueChange={(currency) => onUpdateField('currency', currency)}
+        />
       </div>
       <div className="space-y-2">
         <Label>تاريخ بداية العقد</Label>

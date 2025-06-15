@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { SupportedCurrency } from '@/types/currency';
 
 export interface RentContractFormData {
   contract_number: string;
@@ -8,7 +9,7 @@ export interface RentContractFormData {
   landlord_name: string;
   landlord_phone: string;
   monthly_rent: number;
-  currency: string;
+  currency: SupportedCurrency;
   start_date: string;
   end_date: string;
   renewal_period_months: number;

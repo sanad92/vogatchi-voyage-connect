@@ -39,6 +39,7 @@ const flightBookingSchema = z.object({
   taxes_and_fees: z.number().min(0).optional(),
   supplier_cost: z.number().min(0, "تكلفة المورد مطلوبة"),
   supplier_name: z.string().min(1, "اسم المورد مطلوب"),
+  currency: z.string().min(1, "العملة مطلوبة"),
   special_requests: z.string().optional(),
   meal_preferences: z.string().optional(),
   seat_preferences: z.string().optional(),
@@ -69,6 +70,7 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
       taxes_and_fees: initialData?.taxes_and_fees || 0,
       supplier_cost: initialData?.supplier_cost || 0,
       supplier_name: initialData?.supplier_name || "",
+      currency: initialData?.currency || "EGP",
       is_round_trip: initialData?.is_round_trip || false,
       paid_amount: initialData?.paid_amount || 0,
     },
@@ -706,6 +708,29 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>العملة</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر العملة" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="EGP">جنيه مصري (ج.م)</SelectItem>
+                          <SelectItem value="USD">دولار أمريكي ($)</SelectItem>
+                          <SelectItem value="SAR">ريال سعودي (ر.س)</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

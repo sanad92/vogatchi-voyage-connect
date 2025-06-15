@@ -1,4 +1,6 @@
 
+import { SupportedCurrency } from './currency';
+
 export interface Airline {
   id: string;
   name: string;
@@ -80,7 +82,7 @@ export interface FlightBooking {
   total_cost: number;
   supplier_cost: number;
   total_profit?: number;
-  currency: string;
+  currency: SupportedCurrency;
   
   // معلومات الدفع
   payment_method?: string;
@@ -148,7 +150,7 @@ export interface NewFlightBooking {
   ticket_price_per_person: number;
   taxes_and_fees?: number;
   supplier_cost: number;
-  currency?: string;
+  currency?: SupportedCurrency;
   
   // معلومات الدفع
   payment_method?: string;
