@@ -12,7 +12,8 @@ import {
   Trash2, 
   UserX, 
   UserCheck,
-  MoreHorizontal
+  MoreHorizontal,
+  TestTube
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -37,6 +38,7 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showTestMode, setShowTestMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [loginReason, setLoginReason] = useState('');
   const [editForm, setEditForm] = useState({
@@ -200,55 +202,49 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
     }
   };
 
-  const handleDropdownClick = (e: React.MouseEvent) => {
-    console.log('🖱️ تم النقر على زر القائمة المنسدلة للمستخدم:', user.email);
-    console.log('🔍 تفاصيل الحدث:', {
-      type: e.type,
-      target: e.target,
-      currentTarget: e.currentTarget,
-      button: e.button,
-      buttons: e.buttons
-    });
-    e.stopPropagation();
+  // دالة اختبار مباشرة
+  const testButtonDirectly = () => {
+    console.log('🧪 اختبار مباشر للزر - معرف المستخدم:', user.id);
+    toast.success('تم النقر على الزر بنجاح! المستخدم: ' + user.email);
   };
 
-  const handleDropdownItemClick = (action: string, e: React.MouseEvent) => {
-    console.log('🎯 تم النقر على عنصر في القائمة المنسدلة:', action, 'للمستخدم:', user.email);
-    e.stopPropagation();
-    e.preventDefault();
-    
-    switch (action) {
-      case 'login':
-        console.log('🔐 فتح نافذة تسجيل الدخول');
-        setShowLoginDialog(true);
-        break;
-      case 'edit':
-        console.log('📝 فتح نافذة التعديل');
-        setShowEditDialog(true);
-        break;
-      case 'password':
-        console.log('🔑 فتح نافذة إعادة تعيين كلمة المرور');
-        setShowPasswordDialog(true);
-        break;
-      case 'toggle-active':
-        console.log('⚡ تنفيذ تبديل حالة التفعيل');
-        handleToggleActive();
-        break;
-      default:
-        console.warn('❓ إجراء غير معروف:', action);
+  // اختبار وظيفة تسجيل الدخول مباشرة
+  const testLoginFunction = async () => {
+    console.log('🧪 اختبار وظيفة تسجيل الدخول مباشرة');
+    if (loginAsUser) {
+      try {
+        const result = await loginAsUser(user.id, 'اختبار مباشر');
+        console.log('🧪 نتيجة اختبار تسجيل الدخول:', result);
+        toast.success('اختبار تسجيل الدخول تم بنجاح');
+      } catch (error) {
+        console.error('🧪 خطأ في اختبار تسجيل الدخول:', error);
+        toast.error('خطأ في اختبار تسجيل الدخول');
+      }
+    } else {
+      toast.error('وظيفة تسجيل الدخول غير متوفرة');
     }
   };
 
   return (
-    <div className="flex items-center">
-      <DropdownMenu>
+    <div className="flex items-center gap-2">
+      {/* Dropdown Menu الأصلي مع تحسينات */}
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button 
             variant="outline" 
             size="sm" 
             disabled={isLoading}
-            onClick={handleDropdownClick}
-            className="data-[state=open]:bg-muted h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-gray-100 focus:bg-gray-100 data-[state=open]:bg-gray-100"
+            onClick={(e) => {
+              console.log('🖱️ تم النقر على زر DropdownMenu:', {
+                event: e.type,
+                target: e.target,
+                userId: user.id,
+                timestamp: new Date().toISOString()
+              });
+              e.stopPropagation();
+              toast.info('تم النقر على زر القائمة');
+            }}
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
@@ -257,23 +253,48 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent 
+          align="end" 
+          className="w-48 bg-white border shadow-lg z-50"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DropdownMenuItem 
-            onClick={(e) => handleDropdownItemClick('login', e)}
+            onClick={(e) => {
+              console.log('🎯 تم النقر على: تسجيل دخول كمستخدم');
+              e.preventDefault();
+              e.stopPropagation();
+              setShowLoginDialog(true);
+              toast.info('فتح نافذة تسجيل الدخول');
+            }}
+            className="cursor-pointer hover:bg-gray-100"
           >
             <LogIn className="h-4 w-4 mr-2" />
             تسجيل دخول كمستخدم
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={(e) => handleDropdownItemClick('edit', e)}
+            onClick={(e) => {
+              console.log('🎯 تم النقر على: تعديل البيانات');
+              e.preventDefault();
+              e.stopPropagation();
+              setShowEditDialog(true);
+              toast.info('فتح نافذة التعديل');
+            }}
+            className="cursor-pointer hover:bg-gray-100"
           >
             <Edit className="h-4 w-4 mr-2" />
             تعديل البيانات
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={(e) => handleDropdownItemClick('password', e)}
+            onClick={(e) => {
+              console.log('🎯 تم النقر على: إعادة تعيين كلمة المرور');
+              e.preventDefault();
+              e.stopPropagation();
+              setShowPasswordDialog(true);
+              toast.info('فتح نافذة إعادة تعيين كلمة المرور');
+            }}
+            className="cursor-pointer hover:bg-gray-100"
           >
             <KeyRound className="h-4 w-4 mr-2" />
             إعادة تعيين كلمة المرور
@@ -282,8 +303,13 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
           <DropdownMenuSeparator />
           
           <DropdownMenuItem 
-            onClick={(e) => handleDropdownItemClick('toggle-active', e)}
-            className={user.is_active ? "text-red-600" : "text-green-600"}
+            onClick={(e) => {
+              console.log('🎯 تم النقر على: تبديل حالة التفعيل');
+              e.preventDefault();
+              e.stopPropagation();
+              handleToggleActive();
+            }}
+            className={`cursor-pointer hover:bg-gray-100 ${user.is_active ? "text-red-600" : "text-green-600"}`}
           >
             {user.is_active ? (
               <>
@@ -299,6 +325,68 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* أزرار الاختبار المباشر */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={testButtonDirectly}
+        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+        title="اختبار النقر المباشر"
+      >
+        <TestTube className="h-4 w-4" />
+      </Button>
+
+      {/* زر اختبار تسجيل الدخول المباشر */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={testLoginFunction}
+        className="h-8 px-2 text-green-600 hover:bg-green-50 text-xs"
+        title="اختبار تسجيل الدخول المباشر"
+      >
+        اختبار
+      </Button>
+
+      {/* زر تبديل وضع الاختبار */}
+      <Button
+        variant={showTestMode ? "default" : "outline"}
+        size="sm"
+        onClick={() => setShowTestMode(!showTestMode)}
+        className="h-8 px-2 text-xs"
+      >
+        {showTestMode ? 'إخفاء الاختبار' : 'إظهار الاختبار'}
+      </Button>
+
+      {/* أزرار الاختبار الإضافية (تظهر فقط في وضع الاختبار) */}
+      {showTestMode && (
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPasswordDialog(true)}
+            className="h-8 px-2 text-xs text-orange-600 hover:bg-orange-50"
+          >
+            كلمة المرور
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowEditDialog(true)}
+            className="h-8 px-2 text-xs text-purple-600 hover:bg-purple-50"
+          >
+            تعديل
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleActive}
+            className="h-8 px-2 text-xs text-red-600 hover:bg-red-50"
+          >
+            تفعيل/تعطيل
+          </Button>
+        </div>
+      )}
 
       {/* Login As User Dialog */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
