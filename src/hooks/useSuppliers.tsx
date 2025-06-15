@@ -32,7 +32,7 @@ export const useSuppliers = (supplierType?: string) => {
         .order('name', { ascending: true });
       
       if (supplierType) {
-        query = query.eq('type', supplierType);
+        query = query.ilike('type', `%${supplierType}%`);
       }
       
       const { data, error } = await query;
@@ -59,13 +59,14 @@ export const useSuppliers = (supplierType?: string) => {
   // Add new supplier
   const addSupplierMutation = useMutation({
     mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
+      // Map our interface to database structure
       const supplierData = {
         name: newSupplier.name,
         contact_person: newSupplier.contact_person,
         email: newSupplier.email,
         phone: newSupplier.phone,
         address: newSupplier.address,
-        type: newSupplier.supplier_type,
+        type: newSupplier.supplier_type, // Map supplier_type to type
         payment_terms: newSupplier.payment_terms,
         is_active: newSupplier.is_active
       };
@@ -76,19 +77,24 @@ export const useSuppliers = (supplierType?: string) => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting supplier:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       toast({
         title: "تم إضافة المورد بنجاح",
+        description: "تم حفظ بيانات المورد الجديد",
       });
     },
     onError: (error: any) => {
+      console.error('Error adding supplier:', error);
       toast({
         title: "خطأ في إضافة المورد",
-        description: error.message,
+        description: error.message || "حدث خطأ أثناء إضافة المورد",
         variant: "destructive",
       });
     }

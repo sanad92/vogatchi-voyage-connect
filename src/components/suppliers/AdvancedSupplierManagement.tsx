@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency } from '@/types/currency';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import SupplierContracts from './SupplierContracts';
 import SupplierPayments from './SupplierPayments';
 import SupplierRatings from './SupplierRatings';
@@ -43,20 +44,23 @@ const AdvancedSupplierManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { addSupplier, isAddingSupplier } = useSuppliers();
 
   const [newSupplier, setNewSupplier] = useState({
     name: '',
-    type: 'hotel' as const,
+    supplier_type: 'hotel' as const,
     contact_person: '',
     email: '',
     phone: '',
+    address: '',
     bank_name: '',
     bank_account: '',
     tax_number: '',
     preferred_currency: 'EGP' as SupportedCurrency,
     payment_terms: '',
     credit_limit: 0,
-    notes: ''
+    notes: '',
+    is_active: true
   });
 
   // استعلام الموردين
@@ -74,45 +78,6 @@ const AdvancedSupplierManagement = () => {
         preferred_currency: supplier.preferred_currency || 'EGP',
         credit_limit: supplier.credit_limit || 0
       })) as Supplier[];
-    }
-  });
-
-  // إضافة مورد جديد
-  const addSupplierMutation = useMutation({
-    mutationFn: async (supplier: typeof newSupplier) => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .insert([{
-          ...supplier,
-          rating: 0
-        }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      setNewSupplier({
-        name: '',
-        type: 'hotel',
-        contact_person: '',
-        email: '',
-        phone: '',
-        bank_name: '',
-        bank_account: '',
-        tax_number: '',
-        preferred_currency: 'EGP',
-        payment_terms: '',
-        credit_limit: 0,
-        notes: ''
-      });
-      setShowAddForm(false);
-      toast({
-        title: "تم إضافة المورد بنجاح",
-        description: "تم حفظ بيانات المورد الجديد",
-      });
     }
   });
 
@@ -165,7 +130,29 @@ const AdvancedSupplierManagement = () => {
       });
       return;
     }
-    addSupplierMutation.mutate(newSupplier);
+
+    // استخدام addSupplier من useSuppliers hook
+    addSupplier(newSupplier, {
+      onSuccess: () => {
+        setNewSupplier({
+          name: '',
+          supplier_type: 'hotel',
+          contact_person: '',
+          email: '',
+          phone: '',
+          address: '',
+          bank_name: '',
+          bank_account: '',
+          tax_number: '',
+          preferred_currency: 'EGP',
+          payment_terms: '',
+          credit_limit: 0,
+          notes: '',
+          is_active: true
+        });
+        setShowAddForm(false);
+      }
+    });
   };
 
   // حساب الإحصائيات
@@ -282,7 +269,7 @@ const AdvancedSupplierManagement = () => {
                     onChange={e => setNewSupplier({...newSupplier, name: e.target.value})}
                     required
                   />
-                  <Select value={newSupplier.type} onValueChange={(value: any) => setNewSupplier({...newSupplier, type: value})}>
+                  <Select value={newSupplier.supplier_type} onValueChange={(value: any) => setNewSupplier({...newSupplier, supplier_type: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="نوع الخدمة" />
                     </SelectTrigger>
@@ -310,20 +297,15 @@ const AdvancedSupplierManagement = () => {
                     value={newSupplier.phone}
                     onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
                   />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">العملة:</span>
-                    <span className="font-medium">{CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</span>
-                  </div>
+                  <Input
+                    placeholder="العنوان"
+                    value={newSupplier.address}
+                    onChange={e => setNewSupplier({...newSupplier, address: e.target.value})}
+                  />
                   <Input
                     placeholder="شروط الدفع"
                     value={newSupplier.payment_terms}
                     onChange={e => setNewSupplier({...newSupplier, payment_terms: e.target.value})}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="حد الائتمان (ج.م)"
-                    value={newSupplier.credit_limit}
-                    onChange={e => setNewSupplier({...newSupplier, credit_limit: parseFloat(e.target.value) || 0})}
                   />
                   <div className="md:col-span-2">
                     <Textarea
@@ -334,8 +316,8 @@ const AdvancedSupplierManagement = () => {
                     />
                   </div>
                   <div className="md:col-span-2 flex gap-2">
-                    <Button type="submit" disabled={addSupplierMutation.isPending}>
-                      {addSupplierMutation.isPending ? "جاري الحفظ..." : "حفظ المورد"}
+                    <Button type="submit" disabled={isAddingSupplier}>
+                      {isAddingSupplier ? "جاري الحفظ..." : "حفظ المورد"}
                     </Button>
                     <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                       إلغاء
