@@ -122,11 +122,13 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
     setShowStatusHistory(bookingId);
   };
 
-  const hasActiveFilters = searchFilters.searchTerm || 
-    searchFilters.status !== "all" || 
+  const hasActiveFilters = Boolean(
+    searchFilters.searchTerm || 
+    (searchFilters.status !== "all") || 
     searchFilters.dateRange || 
     searchFilters.minAmount || 
-    searchFilters.maxAmount;
+    searchFilters.maxAmount
+  );
 
   return (
     <div className="space-y-6">
