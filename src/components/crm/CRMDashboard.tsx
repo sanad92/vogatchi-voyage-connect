@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, PieChart, TrendingUp, Users, Target, Brain } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Users, Target, Brain, Send, MessageSquare } from 'lucide-react';
 import CustomerAnalytics from './CustomerAnalytics';
 import SmartSegmentation from './SmartSegmentation';
+import MarketingCampaigns from './MarketingCampaigns';
+import CustomerInteractions from './CustomerInteractions';
 import { useCRM } from '@/hooks/useCRM';
 
 const CRMDashboard = () => {
@@ -92,7 +94,7 @@ const CRMDashboard = () => {
 
       {/* التابات الرئيسية */}
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">التحليلات</span>
@@ -102,12 +104,20 @@ const CRMDashboard = () => {
             <span className="hidden sm:inline">التجزئة</span>
           </TabsTrigger>
           <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
+            <Send className="h-4 w-4" />
             <span className="hidden sm:inline">الحملات</span>
+          </TabsTrigger>
+          <TabsTrigger value="interactions" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">التفاعلات</span>
           </TabsTrigger>
           <TabsTrigger value="insights" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
             <span className="hidden sm:inline">الرؤى الذكية</span>
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">الأتمتة</span>
           </TabsTrigger>
         </TabsList>
 
@@ -120,20 +130,11 @@ const CRMDashboard = () => {
         </TabsContent>
 
         <TabsContent value="campaigns">
-          <Card>
-            <CardHeader>
-              <CardTitle>إدارة الحملات التسويقية</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <PieChart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">الحملات التسويقية</h3>
-                <p className="text-gray-600 mb-4">
-                  سيتم إضافة إدارة الحملات التسويقية في المرحلة التالية
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <MarketingCampaigns />
+        </TabsContent>
+
+        <TabsContent value="interactions">
+          <CustomerInteractions />
         </TabsContent>
 
         <TabsContent value="insights">
@@ -173,6 +174,26 @@ const CRMDashboard = () => {
                     زيادة متوسط قيمة الطلب إلى 25,000 ج.م خلال الربع القادم من خلال عروض الباقات المجمعة.
                   </p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="automation">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                أتمتة التسويق وسير العمل
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">أتمتة التسويق</h3>
+                <p className="text-gray-600 mb-4">
+                  سيتم إضافة ميزات أتمتة التسويق وسير العمل في المرحلة التالية
+                </p>
               </div>
             </CardContent>
           </Card>
