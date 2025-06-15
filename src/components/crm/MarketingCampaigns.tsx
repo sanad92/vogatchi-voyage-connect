@@ -1,18 +1,9 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Send, Plus, Users, MessageSquare, Mail, Phone, 
-  Calendar, Target, TrendingUp, Play, Pause, Eye
-} from 'lucide-react';
+import { Plus, Send } from 'lucide-react';
 import { useCRM } from '@/hooks/useCRM';
 import { useCustomers } from '@/hooks/useCustomers';
 import { toast } from 'sonner';
@@ -21,7 +12,7 @@ import CampaignForm from './campaign/CampaignForm';
 import CampaignCard from './campaign/CampaignCard';
 
 const MarketingCampaigns = () => {
-  const { customerSegments, marketingCampaigns, campaignsLoading, createCampaign } = useCRM();
+  const { customerSegments, marketingCampaigns, createCampaign } = useCRM();
   const { customers } = useCustomers();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
@@ -63,7 +54,6 @@ const MarketingCampaigns = () => {
     <div className="space-y-6">
       <CampaignStats marketingCampaigns={marketingCampaigns} />
 
-      {/* رأس القسم وزر إنشاء حملة جديدة */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">الحملات التسويقية</h2>
         
@@ -90,7 +80,6 @@ const MarketingCampaigns = () => {
         </Dialog>
       </div>
 
-      {/* قائمة الحملات */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {marketingCampaigns?.map((campaign) => (
           <CampaignCard 
