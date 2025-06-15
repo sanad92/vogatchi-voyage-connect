@@ -46,10 +46,20 @@ const FlightDetailsSection = ({
   errors = {}
 }: FlightDetailsSectionProps) => {
   // Avoid passing "" to <Select />
-  const depAirportValue = departureAirportId && departureAirportId !== "" ? departureAirportId : undefined;
-  const arrAirportValue = arrivalAirportId && arrivalAirportId !== "" ? arrivalAirportId : undefined;
-  const airlineValue = airlineId && airlineId !== "" ? airlineId : undefined;
-  const flightClassValue = flightClassId && flightClassId !== "" ? flightClassId : undefined;
+  const depAirportValue =
+    departureAirportId && departureAirportId !== "" && departureAirportId !== "none"
+      ? departureAirportId
+      : undefined;
+  const arrAirportValue =
+    arrivalAirportId && arrivalAirportId !== "" && arrivalAirportId !== "none"
+      ? arrivalAirportId
+      : undefined;
+  const airlineValue =
+    airlineId && airlineId !== "" && airlineId !== "none" ? airlineId : undefined;
+  const flightClassValue =
+    flightClassId && flightClassId !== "" && flightClassId !== "none"
+      ? flightClassId
+      : undefined;
 
   return (
     <div className="space-y-4">
@@ -69,7 +79,8 @@ const FlightDetailsSection = ({
               <SelectValue placeholder="اختر مطار المغادرة" />
             </SelectTrigger>
             <SelectContent>
-              {airports.map((airport) => (
+              <SelectItem value="none">بدون مطار</SelectItem>
+              {airports.filter(airport => airport.id && airport.id !== "").map((airport) => (
                 <SelectItem key={airport.id} value={airport.id}>
                   {airport.name} - {airport.city}
                 </SelectItem>
@@ -91,7 +102,8 @@ const FlightDetailsSection = ({
               <SelectValue placeholder="اختر مطار الوصول" />
             </SelectTrigger>
             <SelectContent>
-              {airports.map((airport) => (
+              <SelectItem value="none">بدون مطار</SelectItem>
+              {airports.filter(airport => airport.id && airport.id !== "").map((airport) => (
                 <SelectItem key={airport.id} value={airport.id}>
                   {airport.name} - {airport.city}
                 </SelectItem>
@@ -110,7 +122,8 @@ const FlightDetailsSection = ({
               <SelectValue placeholder="اختر شركة الطيران" />
             </SelectTrigger>
             <SelectContent>
-              {airlines.map((airline) => (
+              <SelectItem value="none">بدون شركة</SelectItem>
+              {airlines.filter(airline => airline.id && airline.id !== "").map((airline) => (
                 <SelectItem key={airline.id} value={airline.id}>
                   {airline.name}
                 </SelectItem>
@@ -156,7 +169,8 @@ const FlightDetailsSection = ({
               <SelectValue placeholder="اختر درجة السفر" />
             </SelectTrigger>
             <SelectContent>
-              {flightClasses.map((flightClass) => (
+              <SelectItem value="none">بدون درجة</SelectItem>
+              {flightClasses.filter(flightClass => flightClass.id && flightClass.id !== "").map((flightClass) => (
                 <SelectItem key={flightClass.id} value={flightClass.id}>
                   {flightClass.name_ar || flightClass.name}
                 </SelectItem>
@@ -180,5 +194,4 @@ const FlightDetailsSection = ({
     </div>
   );
 };
-
 export default FlightDetailsSection;

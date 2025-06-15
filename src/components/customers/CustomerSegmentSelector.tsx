@@ -1,4 +1,3 @@
-
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCustomerSegments } from "@/hooks/useCustomerSegments";
@@ -32,7 +31,7 @@ const CustomerSegmentSelector = ({ control, error }: CustomerSegmentSelectorProp
               {isLoading ? (
                 <SelectItem value="loading" disabled>جاري التحميل...</SelectItem>
               ) : (
-                segments?.map((segment) => (
+                segments?.filter(segment => segment.id && segment.id !== "").map((segment) => (
                   <SelectItem key={segment.id} value={segment.id}>
                     <div className="flex items-center gap-2">
                       <div 

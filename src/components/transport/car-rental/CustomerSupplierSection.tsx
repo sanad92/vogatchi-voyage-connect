@@ -22,7 +22,12 @@ const CustomerSupplierSection = ({
   onSelectChange
 }: CustomerSupplierSectionProps) => {
   // Force value to undefined if not set
-  const supplierValue = formData.supplier_id && formData.supplier_id !== "" ? formData.supplier_id : undefined;
+  const supplierValue =
+    formData.supplier_id &&
+    formData.supplier_id !== "" &&
+    formData.supplier_id !== "none"
+      ? formData.supplier_id
+      : undefined;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,7 +52,8 @@ const CustomerSupplierSection = ({
             <SelectValue placeholder="اختر مورد" />
           </SelectTrigger>
           <SelectContent>
-            {!suppliersLoading && suppliers?.map((supplier) => (
+            <SelectItem value="none">بدون مورد</SelectItem>
+            {!suppliersLoading && suppliers?.filter(supplier => supplier.id && supplier.id !== "").map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.name}
               </SelectItem>
@@ -58,5 +64,4 @@ const CustomerSupplierSection = ({
     </div>
   );
 };
-
 export default CustomerSupplierSection;

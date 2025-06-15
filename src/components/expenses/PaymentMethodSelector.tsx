@@ -26,6 +26,9 @@ const PaymentMethodSelector = ({
     { value: "mobile_payment", label: "دفع عبر الموبايل", icon: "📱" }
   ];
 
+  // لايسمح أن تكون القيمة فارغة أبداً في الـ SelectItem
+  const selectValue = value && value !== "" ? value : "none";
+
   return (
     <div className={className}>
       {label && (
@@ -33,11 +36,12 @@ const PaymentMethodSelector = ({
           {label} {required && <span className="text-red-500">*</span>}
         </Label>
       )}
-      <Select value={value} onValueChange={onChange}>
+      <Select value={selectValue} onValueChange={onChange}>
         <SelectTrigger id="payment_method">
           <SelectValue placeholder="اختر طريقة الدفع" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="none">اختر طريقة الدفع</SelectItem>
           {paymentMethods.map((method) => (
             <SelectItem key={method.value} value={method.value}>
               <div className="flex items-center gap-2">
@@ -51,5 +55,4 @@ const PaymentMethodSelector = ({
     </div>
   );
 };
-
 export default PaymentMethodSelector;

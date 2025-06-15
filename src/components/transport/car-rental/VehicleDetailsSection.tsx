@@ -18,7 +18,12 @@ const VehicleDetailsSection = ({
   onSelectChange
 }: VehicleDetailsSectionProps) => {
   // Force value to undefined if not set
-  const value = formData.vehicle_type_id && formData.vehicle_type_id !== "" ? formData.vehicle_type_id : undefined;
+  const value =
+    formData.vehicle_type_id &&
+    formData.vehicle_type_id !== "" &&
+    formData.vehicle_type_id !== "none"
+      ? formData.vehicle_type_id
+      : undefined;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -32,7 +37,8 @@ const VehicleDetailsSection = ({
             <SelectValue placeholder="اختر نوع السيارة" />
           </SelectTrigger>
           <SelectContent>
-            {!vehicleTypesLoading && vehicleTypes?.map((type) => (
+            <SelectItem value="none">بدون نوع</SelectItem>
+            {!vehicleTypesLoading && vehicleTypes?.filter(type => type.id && type.id !== "").map((type) => (
               <SelectItem key={type.id} value={type.id}>
                 {type.name_ar}
               </SelectItem>

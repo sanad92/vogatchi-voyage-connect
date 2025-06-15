@@ -1,4 +1,3 @@
-
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +37,12 @@ const VehicleDetailsSection = ({
 }: VehicleDetailsSectionProps) => {
   const { vehicleTypes, vehicleTypesLoading } = useVehicleTypes();
 
+  // اختر نوع المركبة: لا يسمح أن تكون القيمة فارغة
+  const selectValue =
+    vehicleTypeId && vehicleTypeId !== "" && vehicleTypeId !== "none"
+      ? vehicleTypeId
+      : undefined;
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -48,12 +53,13 @@ const VehicleDetailsSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="vehicle_type_id">نوع المركبة</Label>
-          <Select value={vehicleTypeId} onValueChange={onVehicleTypeChange}>
+          <Select value={selectValue} onValueChange={onVehicleTypeChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر نوع المركبة" />
             </SelectTrigger>
             <SelectContent>
-              {!vehicleTypesLoading && vehicleTypes?.map((type) => (
+              <SelectItem value="none">بدون نوع</SelectItem>
+              {!vehicleTypesLoading && vehicleTypes?.filter(type => type.id && type.id !== "").map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   {type.name_ar || type.name}
                 </SelectItem>
