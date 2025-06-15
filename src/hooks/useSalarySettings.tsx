@@ -14,32 +14,62 @@ interface SalarySetting {
 export const useSalarySettings = () => {
   const queryClient = useQueryClient();
 
-  // جلب إعدادات الرواتب
+  // محاكاة إعدادات الرواتب (سيتم استبدالها بالبيانات الحقيقية لاحقاً)
   const { data: salarySettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['salary-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('salary_settings')
-        .select('*')
-        .order('setting_key');
-
-      if (error) throw error;
-      return data as SalarySetting[];
+      // بيانات وهمية للعرض
+      const mockSettings: SalarySetting[] = [
+        {
+          id: '1',
+          setting_key: 'tax_rate',
+          setting_value: '14',
+          description: 'معدل الضريبة الافتراضي (%)',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          setting_key: 'insurance_rate',
+          setting_value: '9',
+          description: 'معدل التأمين الاجتماعي (%)',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '3',
+          setting_key: 'overtime_multiplier',
+          setting_value: '1.5',
+          description: 'مضاعف الساعات الإضافية',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '4',
+          setting_key: 'working_days_per_month',
+          setting_value: '30',
+          description: 'أيام العمل في الشهر',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '5',
+          setting_key: 'working_hours_per_day',
+          setting_value: '8',
+          description: 'ساعات العمل في اليوم',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      return mockSettings;
     },
   });
 
-  // تحديث إعداد راتب
+  // تحديث إعداد راتب (محاكاة)
   const { mutateAsync: updateSalarySetting, isPending: isUpdatingSetting } = useMutation({
     mutationFn: async ({ id, setting_value }: { id: string; setting_value: string }) => {
-      const { data, error } = await supabase
-        .from('salary_settings')
-        .update({ setting_value })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // محاكاة العملية
+      return { id, setting_value } as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-settings'] });
