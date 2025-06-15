@@ -1,331 +1,375 @@
-
+import React, { useState } from "react";
+import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
+import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Receipt, Eye, Edit, FileText, DollarSign, Search, Filter } from "lucide-react";
-import { useState } from "react";
-
-type Invoice = {
-  id: string;
-  invoice_number: string;
-  customer_id: string;
-  booking_id: string;
-  booking_type: 'hotel' | 'flight';
-  status: string;
-  total_amount: number;
-  subtotal: number | null;
-  vat_rate: number | null;
-  vat_amount: number | null;
-  discount_amount: number | null;
-  final_amount: number;
-  issued_date: string | null;
-  due_date: string | null;
-  paid_date: string | null;
-  payment_terms: string | null;
-  notes: string | null;
-  currency: string | null;
-  created_at: string;
-  customers: {
-    name: string;
-    phone: string;
-    email: string | null;
-  };
-  hotel_booking?: {
-    internal_booking_number: string;
-    hotel_name: string;
-    destination_city: string;
-  };
-  flight_booking?: {
-    booking_reference: string;
-    departure_airport_id: string;
-    arrival_airport_id: string;
-  };
-};
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, Printer, Search } from "lucide-react";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Invoices = () => {
+  const [selectedHotelBooking, setSelectedHotelBooking] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // استعلام الفواتير
-  const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ['invoices'],
+  const { data: invoices, isLoading } = useQuery({
+    queryKey: ["invoices", debouncedSearchTerm, filterStatus, filterType],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('invoices')
+      let query = supabase
+        .from("invoices")
         .select(`
           *,
-          customers(name, phone, email)
+          customer:customers(id, name, email, phone),
+          hotel_booking:hotel_bookings!invoices_booking_id_fkey(
+            id, customer_name, hotel_name, destination_city, check_in_date, 
+            check_out_date, internal_booking_number, voucher_sent
+          ),
+          flight_booking:flight_bookings!invoices_booking_id_fkey(
+            id, customer_name, airline_name, departure_city, arrival_city, 
+            departure_date, booking_reference
+          ),
+          transport_booking:transport_bookings!invoices_booking_id_fkey(
+            id, customer_name, service_type, pickup_location, dropoff_location, 
+            service_date, booking_reference
+          ),
+          car_rental:car_rentals!invoices_booking_id_fkey(
+            id, customer_name, vehicle_make, vehicle_model, pickup_date, 
+            return_date, rental_reference
+          )
         `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+        .order("created_at", { ascending: false });
 
-      // جلب تفاصيل الحجوزات بناءً على نوع الحجز
-      const invoicesWithBookings = await Promise.all(
-        data.map(async (invoice) => {
-          if (invoice.booking_type === 'hotel') {
-            const { data: hotelData } = await supabase
-              .from('hotel_bookings')
-              .select('internal_booking_number, hotel_name, destination_city')
-              .eq('id', invoice.booking_id)
-              .single();
-            
-            return {
-              ...invoice,
-              hotel_booking: hotelData,
-            };
-          } else if (invoice.booking_type === 'flight') {
-            const { data: flightData } = await supabase
-              .from('flight_bookings')
-              .select('booking_reference, departure_airport_id, arrival_airport_id')
-              .eq('id', invoice.booking_id)
-              .single();
-            
-            return {
-              ...invoice,
-              flight_booking: flightData,
-            };
-          }
-          return invoice;
-        })
-      );
+      // Apply search filter if provided
+      if (debouncedSearchTerm) {
+        query = query.or(`
+          invoice_number.ilike.%${debouncedSearchTerm}%,
+          customer.name.ilike.%${debouncedSearchTerm}%,
+          hotel_booking.hotel_name.ilike.%${debouncedSearchTerm}%,
+          flight_booking.airline_name.ilike.%${debouncedSearchTerm}%
+        `);
+      }
 
-      return invoicesWithBookings as Invoice[];
-    }
+      // Apply status filter
+      if (filterStatus !== "all") {
+        query = query.eq("status", filterStatus);
+      }
+
+      // Apply booking type filter
+      if (filterType !== "all") {
+        query = query.eq("booking_type", filterType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching invoices:", error);
+        throw error;
+      }
+
+      return data;
+    },
   });
 
-  const getStatusColor = (status: string) => {
+  const getBookingDetails = (invoice) => {
+    switch (invoice.booking_type) {
+      case "hotel":
+        return {
+          booking: invoice.hotel_booking,
+          title: invoice.hotel_booking?.hotel_name,
+          subtitle: invoice.hotel_booking?.destination_city,
+          date: invoice.hotel_booking?.check_in_date,
+          reference: invoice.hotel_booking?.internal_booking_number,
+        };
+      case "flight":
+        return {
+          booking: invoice.flight_booking,
+          title: invoice.flight_booking?.airline_name,
+          subtitle: `${invoice.flight_booking?.departure_city} → ${invoice.flight_booking?.arrival_city}`,
+          date: invoice.flight_booking?.departure_date,
+          reference: invoice.flight_booking?.booking_reference,
+        };
+      case "transport":
+        return {
+          booking: invoice.transport_booking,
+          title: invoice.transport_booking?.service_type,
+          subtitle: `${invoice.transport_booking?.pickup_location} → ${invoice.transport_booking?.dropoff_location}`,
+          date: invoice.transport_booking?.service_date,
+          reference: invoice.transport_booking?.booking_reference,
+        };
+      case "car_rental":
+        return {
+          booking: invoice.car_rental,
+          title: `${invoice.car_rental?.vehicle_make} ${invoice.car_rental?.vehicle_model}`,
+          subtitle: "إيجار سيارة",
+          date: invoice.car_rental?.pickup_date,
+          reference: invoice.car_rental?.rental_reference,
+        };
+      default:
+        return {
+          booking: null,
+          title: "غير معروف",
+          subtitle: "",
+          date: null,
+          reference: "",
+        };
+    }
+  };
+
+  const getBookingTypeLabel = (type) => {
+    const types = {
+      hotel: "حجز فندق",
+      flight: "حجز طيران",
+      transport: "حجز نقل",
+      car_rental: "إيجار سيارة",
+    };
+    return types[type] || type;
+  };
+
+  const getStatusLabel = (status) => {
+    const statuses = {
+      draft: "مسودة",
+      sent: "مرسلة",
+      paid: "مدفوعة",
+      overdue: "متأخرة",
+      cancelled: "ملغاة",
+    };
+    return statuses[status] || status;
+  };
+
+  const getStatusColor = (status) => {
     const colors = {
       draft: "bg-gray-100 text-gray-800",
       sent: "bg-blue-100 text-blue-800",
       paid: "bg-green-100 text-green-800",
       overdue: "bg-red-100 text-red-800",
-      cancelled: "bg-red-100 text-red-800"
+      cancelled: "bg-orange-100 text-orange-800",
     };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
-
-  const getStatusLabel = (status: string) => {
-    const labels = {
-      draft: "مسودة",
-      sent: "مرسلة",
-      paid: "مدفوعة",
-      overdue: "متأخرة",
-      cancelled: "ملغية"
-    };
-    return labels[status as keyof typeof labels] || status;
-  };
-
-  // تصفية الفواتير
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = searchTerm === "" || 
-      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customers.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalInvoices = invoices.length;
-  const totalAmount = invoices.reduce((sum, inv) => sum + inv.final_amount, 0);
-  const paidAmount = invoices
-    .filter(inv => inv.status === 'paid')
-    .reduce((sum, inv) => sum + inv.final_amount, 0);
-  const pendingAmount = totalAmount - paidAmount;
-
-  if (isLoading) {
-    return <div className="text-center py-8">جاري تحميل الفواتير...</div>;
-  }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-green-800 flex items-center gap-2">
-            <Receipt className="h-8 w-8" />
-            الفواتير المصدرة
-          </h1>
-          <p className="text-gray-600 mt-1">إدارة ومتابعة جميع الفواتير المصدرة من الحجوزات (بالجنيه المصري)</p>
-        </div>
+        <h1 className="text-3xl font-bold">الفواتير</h1>
       </div>
 
-      {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">إجمالي الفواتير</p>
-                <p className="text-2xl font-bold">{totalInvoices}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">إجمالي المبلغ</p>
-                <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ج.م</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">المدفوع</p>
-                <p className="text-2xl font-bold text-green-600">{paidAmount.toLocaleString()} ج.م</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">المعلق</p>
-                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toLocaleString()} ج.م</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* مرشحات البحث */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            <div className="flex-1">
+        <CardHeader>
+          <CardTitle>تصفية الفواتير</CardTitle>
+          <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="search">بحث</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
-                  placeholder="البحث برقم الفاتورة أو اسم العميل..."
+                  id="search"
+                  placeholder="رقم الفاتورة، اسم العميل..."
+                  className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="فلترة حسب الحالة" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الحالات</SelectItem>
-                <SelectItem value="draft">مسودة</SelectItem>
-                <SelectItem value="sent">مرسلة</SelectItem>
-                <SelectItem value="paid">مدفوعة</SelectItem>
-                <SelectItem value="overdue">متأخرة</SelectItem>
-                <SelectItem value="cancelled">ملغية</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label htmlFor="status">حالة الفاتورة</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="جميع الحالات" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
+                  <SelectItem value="draft">مسودة</SelectItem>
+                  <SelectItem value="sent">مرسلة</SelectItem>
+                  <SelectItem value="paid">مدفوعة</SelectItem>
+                  <SelectItem value="overdue">متأخرة</SelectItem>
+                  <SelectItem value="cancelled">ملغاة</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="type">نوع الحجز</Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="جميع الأنواع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأنواع</SelectItem>
+                  <SelectItem value="hotel">حجز فندق</SelectItem>
+                  <SelectItem value="flight">حجز طيران</SelectItem>
+                  <SelectItem value="transport">حجز نقل</SelectItem>
+                  <SelectItem value="car_rental">إيجار سيارة</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* قائمة الفواتير */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredInvoices.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">لا توجد فواتير مطابقة للبحث</p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredInvoices.map((invoice) => (
-            <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      فاتورة #{invoice.invoice_number}
-                    </h3>
-                    <p className="text-gray-600">العميل: {invoice.customers.name}</p>
-                    <p className="text-gray-600">الهاتف: {invoice.customers.phone}</p>
-                    {invoice.hotel_booking && (
-                      <p className="text-sm text-gray-500">
-                        حجز فندق: {invoice.hotel_booking.internal_booking_number} - {invoice.hotel_booking.hotel_name}
-                      </p>
-                    )}
-                    {invoice.flight_booking && (
-                      <p className="text-sm text-gray-500">
-                        حجز طيران: {invoice.flight_booking.booking_reference}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-left">
-                    <Badge className={getStatusColor(invoice.status)}>
-                      {getStatusLabel(invoice.status)}
-                    </Badge>
-                    <div className="mt-2 text-lg font-bold flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      {invoice.final_amount.toLocaleString()} ج.م
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة الفواتير</CardTitle>
+          <CardDescription>
+            {isLoading
+              ? "جاري تحميل الفواتير..."
+              : `${invoices?.length || 0} فاتورة`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4 rtl:space-x-reverse">
+                    <Skeleton className="h-12 w-12" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
                     </div>
+                    <Skeleton className="h-10 w-[100px]" />
                   </div>
-                </div>
+                ))}
+            </div>
+          ) : invoices?.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              لا توجد فواتير تطابق معايير البحث
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-right py-3 px-4 font-medium">رقم الفاتورة</th>
+                    <th className="text-right py-3 px-4 font-medium">العميل</th>
+                    <th className="text-right py-3 px-4 font-medium">نوع الحجز</th>
+                    <th className="text-right py-3 px-4 font-medium">التفاصيل</th>
+                    <th className="text-right py-3 px-4 font-medium">المبلغ</th>
+                    <th className="text-right py-3 px-4 font-medium">الحالة</th>
+                    <th className="text-right py-3 px-4 font-medium">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices?.map((invoice) => {
+                    const bookingDetails = getBookingDetails(invoice);
+                    return (
+                      <tr key={invoice.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">{invoice.invoice_number}</td>
+                        <td className="py-3 px-4">
+                          {invoice.customer?.name || bookingDetails.booking?.customer_name || "غير معروف"}
+                        </td>
+                        <td className="py-3 px-4">
+                          {getBookingTypeLabel(invoice.booking_type)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{bookingDetails.title}</div>
+                          <div className="text-sm text-gray-500">
+                            {bookingDetails.subtitle}
+                          </div>
+                          {bookingDetails.date && (
+                            <div className="text-xs text-gray-500">
+                              {format(new Date(bookingDetails.date), "d MMM yyyy", {
+                                locale: ar,
+                              })}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-medium">
+                          {invoice.final_amount?.toLocaleString()} ج.م
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-block px-2 py-1 rounded-full text-xs ${getStatusColor(
+                              invoice.status
+                            )}`}
+                          >
+                            {getStatusLabel(invoice.status)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            {invoice.booking_type === "hotel" && bookingDetails.booking && (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedHotelBooking(bookingDetails.booking);
+                                    setShowInvoiceModal(true);
+                                  }}
+                                >
+                                  <Printer className="h-4 w-4 mr-1" />
+                                  طباعة
+                                </Button>
+                                {!bookingDetails.booking.voucher_sent && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedHotelBooking(bookingDetails.booking);
+                                      setShowVoucherModal(true);
+                                    }}
+                                  >
+                                    <FileText className="h-4 w-4 mr-1" />
+                                    فاوتشر
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    <span className="font-medium">تاريخ الإصدار:</span>
-                    <p>{invoice.issued_date ? new Date(invoice.issued_date).toLocaleDateString('ar-EG') : 'غير محدد'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">تاريخ الاستحقاق:</span>
-                    <p>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('ar-EG') : 'غير محدد'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">شروط الدفع:</span>
-                    <p>{invoice.payment_terms}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">الضريبة:</span>
-                    <p>{invoice.vat_rate}% = {(invoice.vat_amount || 0).toLocaleString()} ج.م</p>
-                  </div>
-                </div>
-
-                {invoice.notes && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <span className="font-medium">ملاحظات:</span>
-                    <p className="text-sm mt-1">{invoice.notes}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
-                    <Eye className="w-4 h-4 mr-1" />
-                    عرض
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Edit className="w-4 h-4 mr-1" />
-                    تعديل
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <FileText className="w-4 h-4 mr-1" />
-                    طباعة
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {showInvoiceModal && selectedHotelBooking && (
+        <HotelInvoiceGenerator
+          booking={selectedHotelBooking}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedHotelBooking(null);
+          }}
+        />
+      )}
+      
+      {showVoucherModal && selectedHotelBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full relative">
+            <button
+              aria-label="إغلاق"
+              className="absolute top-2 left-2 text-gray-400 text-xl"
+              onClick={() => setShowVoucherModal(false)}
+            >
+              &times;
+            </button>
+            <HotelVoucherGenerator
+              booking={selectedHotelBooking}
+              onClose={() => setShowVoucherModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
