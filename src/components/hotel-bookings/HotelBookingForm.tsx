@@ -8,6 +8,8 @@ import SpecialRequestsSection from "./sections/SpecialRequestsSection";
 import SupplierCostSection from "./sections/SupplierCostSection";
 import FormActionsSection from "./sections/FormActionsSection";
 import { useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { User } from "lucide-react";
 
 interface HotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -31,7 +33,8 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
     totalCostCustomer,
     totalProfit,
     handleCustomerSelect,
-    onSubmit
+    onSubmit,
+    currentEmployee
   } = useHotelBookingForm({ booking, onSuccess });
 
   // تعيين الجنيه المصري كعملة افتراضية
@@ -42,53 +45,75 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
   }, [booking, setValue, watch]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <CustomerSection
-        register={register}
-        setValue={setValue}
-        errors={errors}
-        selectedCustomer={selectedCustomer}
-        onCustomerSelect={handleCustomerSelect}
-      />
+    <div className="space-y-6">
+      {/* معلومات موظف الحجز */}
+      {currentEmployee && (
+        <div className="bg-blue-50 p-4 rounded-lg border">
+          <div className="flex items-center gap-2 mb-2">
+            <User className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">موظف الحجز</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-white">
+              {currentEmployee.full_name}
+            </Badge>
+            {currentEmployee.employee_code && (
+              <Badge variant="outline" className="bg-white text-xs">
+                {currentEmployee.employee_code}
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
 
-      <HotelInfoSection
-        register={register}
-        setValue={setValue}
-        errors={errors}
-        numberOfNights={numberOfNights}
-      />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <CustomerSection
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          selectedCustomer={selectedCustomer}
+          onCustomerSelect={handleCustomerSelect}
+        />
 
-      <RoomDetailsSection
-        register={register}
-        setValue={setValue}
-        errors={errors}
-      />
+        <HotelInfoSection
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          numberOfNights={numberOfNights}
+        />
 
-      <SpecialRequestsSection
-        register={register}
-        setValue={setValue}
-        errors={errors}
-        selectedRequests={selectedRequests}
-        onRequestsChange={setSelectedRequests}
-      />
+        <RoomDetailsSection
+          register={register}
+          setValue={setValue}
+          errors={errors}
+        />
 
-      <SupplierCostSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-        suppliers={suppliers}
-        totalCostCustomer={totalCostCustomer}
-        totalProfit={totalProfit}
-      />
+        <SpecialRequestsSection
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          selectedRequests={selectedRequests}
+          onRequestsChange={setSelectedRequests}
+        />
 
-      <FormActionsSection
-        isSubmitting={isSubmitting}
-        selectedCustomer={selectedCustomer}
-        booking={booking}
-        onCancel={onCancel}
-      />
-    </form>
+        <SupplierCostSection
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          errors={errors}
+          suppliers={suppliers}
+          totalCostCustomer={totalCostCustomer}
+          totalProfit={totalProfit}
+        />
+
+        <FormActionsSection
+          isSubmitting={isSubmitting}
+          selectedCustomer={selectedCustomer}
+          booking={booking}
+          onCancel={onCancel}
+        />
+      </form>
+    </div>
   );
 };
 

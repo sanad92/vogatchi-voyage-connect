@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
@@ -7,6 +6,7 @@ import { useBookingCalculations } from "@/hooks/useBookingCalculations";
 import { useHotelBookingData } from "@/hooks/useHotelBookingData";
 import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";
 import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 
 interface UseHotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -14,6 +14,8 @@ interface UseHotelBookingFormProps {
 }
 
 export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormProps) => {
+  const { currentEmployee } = useCurrentEmployee();
+  
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {
       customer_name: booking.customer_name,
@@ -33,14 +35,25 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       supplier_name: booking.supplier_name,
       cost_per_night: booking.cost_per_night,
       selling_price_per_night: booking.selling_price_per_night,
-      currency: booking.currency || 'SAR',
+      currency: booking.currency || 'EGP',
       payment_method: booking.payment_method,
       paid_amount: booking.paid_amount,
       payment_due_date: booking.payment_due_date,
     } : {
-      currency: 'SAR'
+      currency: 'EGP'
     }
   });
+
+  // تعيين بيانات موظف الحجز تلقائياً
+  useEffect(() => {
+    if (currentEmployee && !booking) {
+      setValue('booking_agent_name', currentEmployee.full_name);
+      // إضافة booking_agent_id إذا كان متاحاً في النموذج
+      if (currentEmployee.id) {
+        setValue('booking_agent_id' as any, currentEmployee.id);
+      }
+    }
+  }, [currentEmployee, booking, setValue]);
 
   const checkInDate = watch('check_in_date');
   const checkOutDate = watch('check_out_date');
@@ -74,11 +87,18 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   }, [booking, setValue, fetchExistingRequests]);
 
   const onSubmit = async (data: NewHotelBooking) => {
-    if (!validateBookingData(data, selectedCustomer)) {
+    // إضافة بيانات موظف الحجز للبيانات المرسلة
+    const bookingData = {
+      ...data,
+      booking_agent_id: currentEmployee?.id,
+      booking_agent_name: currentEmployee?.full_name || data.booking_agent_name
+    };
+
+    if (!validateBookingData(bookingData, selectedCustomer)) {
       return;
     }
 
-    await submitBooking(data, selectedCustomer!, selectedRequests);
+    await submitBooking(bookingData, selectedCustomer!, selectedRequests);
   };
 
   return {
@@ -96,6 +116,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     totalCostCustomer,
     totalProfit,
     handleCustomerSelect,
-    onSubmit
+    onSubmit,
+    currentEmployee // إضافة بيانات الموظف الحالي
   };
 };

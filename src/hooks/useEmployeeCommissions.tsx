@@ -1,8 +1,32 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { EmployeeCommission, CommissionPayment } from '@/types/expenses';
+import type { CommissionPayment } from '@/types/expenses';
+
+// تعريف نوع EmployeeCommission مع employee مبسط
+interface EmployeeCommissionWithEmployee {
+  id: string;
+  employee_id: string;
+  booking_id: string;
+  booking_type: string;
+  booking_amount: number;
+  commission_rate: number;
+  commission_amount: number;
+  currency: string;
+  payment_status: string;
+  payment_date?: string;
+  commission_date: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+  employee: {
+    full_name: string;
+    employee_code: string;
+  };
+}
 
 export const useEmployeeCommissions = () => {
   const queryClient = useQueryClient();
@@ -25,7 +49,7 @@ export const useEmployeeCommissions = () => {
         throw error;
       }
       console.log('Fetched commissions:', data);
-      return data as EmployeeCommission[];
+      return data as EmployeeCommissionWithEmployee[];
     },
   });
 
@@ -69,7 +93,7 @@ export const useEmployeeCommissions = () => {
           throw error;
         }
         console.log('Fetched employee commissions:', data);
-        return data as EmployeeCommission[];
+        return data as EmployeeCommissionWithEmployee[];
       },
       enabled: !!employeeId,
     });
