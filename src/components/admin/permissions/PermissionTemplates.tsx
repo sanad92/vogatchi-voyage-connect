@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileTemplate, Users, Shield, Eye, Edit } from 'lucide-react';
+import { FileText, Users, Shield, Eye, Edit } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 // قوالب الصلاحيات المحددة مسبقاً
@@ -161,7 +161,7 @@ const PermissionTemplates = ({ onApplyTemplate }: PermissionTemplatesProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileTemplate className="h-5 w-5" />
+            <FileText className="h-5 w-5" />
             قوالب الصلاحيات
           </CardTitle>
         </CardHeader>
