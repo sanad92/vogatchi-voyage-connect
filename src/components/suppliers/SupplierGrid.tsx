@@ -112,7 +112,8 @@ const SupplierGrid = ({
     if (!deleteSupplier) return;
     setBulkDeleteLoading(true);
     for (const id of selectedIds) {
-      await new Promise(res => deleteSupplier(id) || setTimeout(res, 300));
+      deleteSupplier(id);
+      await new Promise(res => setTimeout(res, 300));
     }
     setBulkDeleteLoading(false);
     setSelectedIds([]);
@@ -125,8 +126,7 @@ const SupplierGrid = ({
     );
   }
 
-  // Fix TS1345: never check the result of a setter or void function
-  // Ensure suppliers is an array before accessing .length
+  // Check suppliers array/length, don't check setState results
   if (!Array.isArray(suppliers) || suppliers.length === 0) {
     return (
       <div className="col-span-full text-center py-8 text-gray-500">لا يوجد موردون مطابقون للبحث</div>
