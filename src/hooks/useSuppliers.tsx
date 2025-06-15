@@ -132,10 +132,84 @@ export const useSuppliers = (supplierType?: string) => {
     }
   });
 
+  // UPDATE supplier
+  const updateSupplierMutation = useMutation({
+    mutationFn: async ({
+      id,
+      ...updatedSupplier
+    }: Partial<Supplier> & { id: string }) => {
+      const updateData: any = { ...updatedSupplier };
+      if (updateData.payment_method_options)
+        updateData.payment_method_options = JSON.stringify(updateData.payment_method_options);
+
+      const { data, error } = await supabase
+        .from('suppliers')
+        .update(updateData)
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw new Error(
+          error.message.includes('row-level security policy')
+            ? 'ليس لديك صلاحية لتعديل بيانات الموردين.'
+            : error.message
+        );
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast({
+        title: 'تم تعديل بيانات المورد بنجاح',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'تعذر تعديل بيانات المورد',
+        description: error.message ?? '',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // DELETE supplier
+  const deleteSupplierMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('suppliers').delete().eq('id', id);
+      if (error) {
+        throw new Error(
+          error.message.includes('row-level security policy')
+            ? 'ليس لديك صلاحية لحذف الموردين.'
+            : error.message
+        );
+      }
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast({
+        title: 'تم حذف المورد بنجاح',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'تعذر حذف المورد',
+        description: error.message ?? '',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     suppliers: suppliersQuery.data || [],
     suppliersLoading: suppliersQuery.isLoading,
     addSupplier: addSupplierMutation.mutate,
-    isAddingSupplier: addSupplierMutation.isPending
+    isAddingSupplier: addSupplierMutation.isPending,
+    updateSupplier: updateSupplierMutation.mutate,
+    isUpdatingSupplier: updateSupplierMutation.isPending,
+    deleteSupplier: deleteSupplierMutation.mutate,
+    isDeletingSupplier: deleteSupplierMutation.isPending,
   };
 };

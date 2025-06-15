@@ -47,11 +47,19 @@ const AdvancedSupplierManagement = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
-  const { addSupplier, isAddingSupplier } = useSuppliers();
-  const { addCurrency } = useSupplierCurrencies();
+  const { 
+    suppliers: suppliersList, 
+    suppliersLoading: isLoading, 
+    addSupplier,
+    isAddingSupplier,
+    updateSupplier,
+    isUpdatingSupplier,
+    deleteSupplier,
+    isDeletingSupplier
+  } = useSuppliers();
 
   // استعلام الموردين
-  const { data: suppliers = [], isLoading } = useQuery({
+  const { data: suppliers = [], isLoading: suppliersLoading } = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -181,6 +189,10 @@ const AdvancedSupplierManagement = () => {
               suppliers={filteredSuppliers}
               isLoading={isLoading}
               onSupplierSelect={setSelectedSupplier}
+              updateSupplier={updateSupplier}
+              isUpdatingSupplier={isUpdatingSupplier}
+              deleteSupplier={deleteSupplier}
+              isDeletingSupplier={isDeletingSupplier}
             />
           </TabsContent>
 
