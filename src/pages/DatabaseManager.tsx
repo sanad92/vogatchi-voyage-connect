@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Database as DBType } from "@/integrations/supabase/types";
 
-// Derive TableName type safely from Database['tables']
-type TableName = keyof DBType['tables'];
+// Correctly access Tables from Database type
+type TableName = keyof DBType["public"]["Tables"];
 
 const DatabaseManager = () => {
   const { isSuperAdmin } = useAuth();
@@ -34,7 +34,7 @@ const DatabaseManager = () => {
     );
   }
 
-  // List of main tables: update typing
+  // List of main tables with correct typing
   const availableTables: { name: TableName; rowCount?: number; description: string }[] = [
     { name: "customers", rowCount: 112, description: "عملاء النظام" },
     { name: "suppliers", rowCount: 32, description: "الموردين" },
@@ -73,8 +73,8 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={tbl.name.toString()} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{tbl.name.toString()}</td>
+                <tr key={String(tbl.name)} className="border-b hover:bg-blue-50 transition">
+                  <td className="p-3 font-mono text-blue-800">{String(tbl.name)}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
                   <td className="p-3 text-gray-600">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
-// Explicitly enumerate table names using keyof Database['tables']
-type TableName = keyof Database['tables'];
+// Correctly access Tables from Database type
+type TableName = keyof Database["public"]["Tables"];
 
 interface TableViewerProps {
   table: TableName;
@@ -26,9 +26,9 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
-    // Table is type TableName: string union of DB table names
+    // Use type assertion to ensure TypeScript knows this is a valid table name
     supabase
-      .from(table)
+      .from(table as string)
       .select("*")
       .limit(30)
       .then(({ data, error }) => {
@@ -56,7 +56,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
     const csvString = csvRows.join("\n");
     const a = document.createElement("a");
     a.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csvString)}`;
-    a.download = `${table}-export.csv`;
+    a.download = `${String(table)}-export.csv`;
     a.click();
     toast({ title: "تم التصدير", description: "تم تصدير البيانات إلى CSV" });
   };
@@ -82,8 +82,8 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
             <thead>
               <tr>
                 {cols.map(col => (
-                  <th className="py-2 px-2 border-b bg-gray-50" key={col.toString()}>
-                    {col}
+                  <th className="py-2 px-2 border-b bg-gray-50" key={String(col)}>
+                    {String(col)}
                   </th>
                 ))}
               </tr>
@@ -92,7 +92,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
               {data.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50 transition">
                   {cols.map(col => (
-                    <td className="py-2 px-2 border-b" key={col.toString()}>
+                    <td className="py-2 px-2 border-b" key={String(col)}>
                       {typeof row[col] === "symbol"
                         ? String(row[col])
                         : String(row[col] ?? "")}
@@ -111,4 +111,3 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 };
 
 export default TableViewer;
-
