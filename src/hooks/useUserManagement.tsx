@@ -9,23 +9,30 @@ export const useUserManagement = () => {
   const resetUserPassword = async (userId: string, newPassword: string) => {
     try {
       setIsLoading(true);
+      console.log('🔄 بدء إعادة تعيين كلمة المرور للمستخدم:', userId);
       
       const { data, error } = await supabase.rpc('admin_reset_user_password', {
         p_user_id: userId,
         p_new_password: newPassword
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في استدعاء admin_reset_user_password:', error);
+        throw error;
+      }
 
       const result = data?.[0];
+      console.log('📋 نتيجة إعادة تعيين كلمة المرور:', result);
+      
       if (!result?.success) {
         throw new Error(result?.message || 'فشل في إعادة تعيين كلمة المرور');
       }
 
+      console.log('✅ تم إعادة تعيين كلمة المرور بنجاح');
       toast.success('تم إعادة تعيين كلمة المرور بنجاح');
       return { success: true };
     } catch (error: any) {
-      console.error('خطأ في إعادة تعيين كلمة المرور:', error);
+      console.error('❌ خطأ في إعادة تعيين كلمة المرور:', error);
       toast.error(error.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
       return { success: false, error: error.message };
     } finally {
@@ -50,11 +57,13 @@ export const useUserManagement = () => {
       type ValidRole = typeof validRoles[number];
       
       if (!validRoles.includes(userData.role as ValidRole)) {
+        console.error('❌ دور المستخدم غير صالح:', userData.role);
         throw new Error('دور المستخدم غير صالح');
       }
       
       // Cast role to the correct type after validation
       const validRole = userData.role as ValidRole;
+      console.log('✅ دور المستخدم صالح:', validRole);
       
       const { data, error } = await supabase.rpc('admin_create_user', {
         p_email: userData.email,
@@ -98,6 +107,7 @@ export const useUserManagement = () => {
   }) => {
     try {
       setIsLoading(true);
+      console.log('🔄 بدء تحديث ملف المستخدم:', userId, updates);
       
       const { data, error } = await supabase.rpc('admin_update_user_profile', {
         p_user_id: userId,
@@ -108,17 +118,23 @@ export const useUserManagement = () => {
         p_is_active: updates.is_active
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في استدعاء admin_update_user_profile:', error);
+        throw error;
+      }
 
       const result = data?.[0];
+      console.log('📋 نتيجة تحديث ملف المستخدم:', result);
+      
       if (!result?.success) {
         throw new Error(result?.message || 'فشل في تحديث ملف المستخدم');
       }
 
+      console.log('✅ تم تحديث ملف المستخدم بنجاح');
       toast.success('تم تحديث ملف المستخدم بنجاح');
       return { success: true };
     } catch (error: any) {
-      console.error('خطأ في تحديث ملف المستخدم:', error);
+      console.error('❌ خطأ في تحديث ملف المستخدم:', error);
       toast.error(error.message || 'حدث خطأ أثناء تحديث ملف المستخدم');
       return { success: false, error: error.message };
     } finally {

@@ -9,15 +9,21 @@ export const useImpersonation = () => {
   const loginAsUser = async (userId: string, reason?: string) => {
     try {
       setIsLoading(true);
+      console.log('🔄 بدء تسجيل الدخول كمستخدم:', userId, 'السبب:', reason);
       
       const { data, error } = await supabase.rpc('start_impersonation', {
         p_target_user_id: userId,
         p_reason: reason || 'إدارة الحساب'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في استدعاء start_impersonation:', error);
+        throw error;
+      }
 
       const result = data?.[0];
+      console.log('📋 نتيجة بدء تسجيل الدخول:', result);
+      
       if (!result?.success) {
         throw new Error(result?.message || 'فشل في بدء عملية تسجيل الدخول');
       }
@@ -29,6 +35,7 @@ export const useImpersonation = () => {
         session_token: result.session_token
       }));
 
+      console.log('✅ تم بدء تسجيل الدخول بنجاح');
       toast.success('تم بدء تسجيل الدخول كمستخدم بنجاح');
       
       // Redirect to main page as the impersonated user
@@ -36,7 +43,7 @@ export const useImpersonation = () => {
       
       return { success: true };
     } catch (error: any) {
-      console.error('خطأ في تسجيل الدخول كمستخدم:', error);
+      console.error('❌ خطأ في تسجيل الدخول كمستخدم:', error);
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
       return { success: false, error: error.message };
     } finally {
@@ -47,6 +54,7 @@ export const useImpersonation = () => {
   const endImpersonation = async () => {
     try {
       setIsLoading(true);
+      console.log('🔄 بدء إنهاء تسجيل الدخول');
       
       const sessionToken = localStorage.getItem('admin_impersonation_session');
       if (!sessionToken) {
@@ -57,9 +65,14 @@ export const useImpersonation = () => {
         p_session_id: sessionToken
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في استدعاء end_impersonation:', error);
+        throw error;
+      }
 
       const result = data?.[0];
+      console.log('📋 نتيجة إنهاء تسجيل الدخول:', result);
+      
       if (!result?.success) {
         throw new Error(result?.message || 'فشل في إنهاء عملية تسجيل الدخول');
       }
@@ -68,6 +81,7 @@ export const useImpersonation = () => {
       localStorage.removeItem('admin_impersonation_session');
       localStorage.removeItem('admin_original_user');
 
+      console.log('✅ تم إنهاء تسجيل الدخول بنجاح');
       toast.success('تم إنهاء عملية تسجيل الدخول بنجاح');
       
       // Redirect back to admin panel
@@ -75,7 +89,7 @@ export const useImpersonation = () => {
       
       return { success: true };
     } catch (error: any) {
-      console.error('خطأ في إنهاء تسجيل الدخول:', error);
+      console.error('❌ خطأ في إنهاء تسجيل الدخول:', error);
       toast.error(error.message || 'حدث خطأ أثناء إنهاء تسجيل الدخول');
       return { success: false, error: error.message };
     } finally {
