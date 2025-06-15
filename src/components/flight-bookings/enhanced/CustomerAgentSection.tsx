@@ -1,4 +1,3 @@
-
 import CustomerSelection from '@/components/shared/CustomerSelection';
 import SupplierSelection from '@/components/shared/SupplierSelection';
 import { Label } from '@/components/ui/label';
@@ -47,6 +46,9 @@ const CustomerAgentSection = ({
     return acc;
   }, {} as any);
 
+  // Fix empty string for agent picker
+  const agentValue = bookingAgentId && bookingAgentId !== "" ? bookingAgentId : undefined;
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -84,7 +86,7 @@ const CustomerAgentSection = ({
         
         <div>
           <Label htmlFor="booking_agent">الموظف المسؤول</Label>
-          <Select value={bookingAgentId} onValueChange={onBookingAgentChange}>
+          <Select value={agentValue} onValueChange={onBookingAgentChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر موظف" />
             </SelectTrigger>

@@ -45,6 +45,12 @@ const FlightDetailsSection = ({
   flightClasses = [],
   errors = {}
 }: FlightDetailsSectionProps) => {
+  // Avoid passing "" to <Select />
+  const depAirportValue = departureAirportId && departureAirportId !== "" ? departureAirportId : undefined;
+  const arrAirportValue = arrivalAirportId && arrivalAirportId !== "" ? arrivalAirportId : undefined;
+  const airlineValue = airlineId && airlineId !== "" ? airlineId : undefined;
+  const flightClassValue = flightClassId && flightClassId !== "" ? flightClassId : undefined;
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -58,7 +64,7 @@ const FlightDetailsSection = ({
             <MapPin className="h-4 w-4" />
             مطار المغادرة
           </Label>
-          <Select value={departureAirportId} onValueChange={onDepartureAirportChange}>
+          <Select value={depAirportValue} onValueChange={onDepartureAirportChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر مطار المغادرة" />
             </SelectTrigger>
@@ -80,7 +86,7 @@ const FlightDetailsSection = ({
             <MapPin className="h-4 w-4" />
             مطار الوصول
           </Label>
-          <Select value={arrivalAirportId} onValueChange={onArrivalAirportChange}>
+          <Select value={arrAirportValue} onValueChange={onArrivalAirportChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر مطار الوصول" />
             </SelectTrigger>
@@ -99,7 +105,7 @@ const FlightDetailsSection = ({
 
         <div>
           <Label htmlFor="airline">شركة الطيران</Label>
-          <Select value={airlineId} onValueChange={onAirlineChange}>
+          <Select value={airlineValue} onValueChange={onAirlineChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر شركة الطيران" />
             </SelectTrigger>
@@ -145,7 +151,7 @@ const FlightDetailsSection = ({
 
         <div>
           <Label htmlFor="flight_class">درجة السفر</Label>
-          <Select value={flightClassId} onValueChange={onFlightClassChange}>
+          <Select value={flightClassValue} onValueChange={onFlightClassChange}>
             <SelectTrigger>
               <SelectValue placeholder="اختر درجة السفر" />
             </SelectTrigger>

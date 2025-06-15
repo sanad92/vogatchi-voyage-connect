@@ -17,12 +17,15 @@ const VehicleDetailsSection = ({
   vehicleTypesLoading,
   onSelectChange
 }: VehicleDetailsSectionProps) => {
+  // Force value to undefined if not set
+  const value = formData.vehicle_type_id && formData.vehicle_type_id !== "" ? formData.vehicle_type_id : undefined;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <Label htmlFor="vehicle_type_id">نوع السيارة</Label>
         <Select
-          value={formData.vehicle_type_id}
+          value={value}
           onValueChange={(value) => onSelectChange('vehicle_type_id', value)}
         >
           <SelectTrigger>

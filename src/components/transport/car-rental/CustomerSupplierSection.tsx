@@ -21,6 +21,9 @@ const CustomerSupplierSection = ({
   onInputChange,
   onSelectChange
 }: CustomerSupplierSectionProps) => {
+  // Force value to undefined if not set
+  const supplierValue = formData.supplier_id && formData.supplier_id !== "" ? formData.supplier_id : undefined;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -37,7 +40,7 @@ const CustomerSupplierSection = ({
       <div>
         <Label htmlFor="supplier_id">المورد</Label>
         <Select
-          value={formData.supplier_id}
+          value={supplierValue}
           onValueChange={(value) => onSelectChange('supplier_id', value)}
         >
           <SelectTrigger>
