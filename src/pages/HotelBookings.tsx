@@ -94,14 +94,19 @@ const HotelBookings = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Hotel className="h-5 w-5" />
-                حجز فندق جديد
+                {editingBooking
+                  ? `تعديل حجز الفندق رقم ${editingBooking.internal_booking_number}`
+                  : "حجز فندق جديد"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <HotelBookingForm 
-                booking={null}
+                booking={editingBooking}
                 onSuccess={handleFormSuccess}
-                onCancel={() => setActiveTab("list")}
+                onCancel={() => {
+                  setActiveTab("list");
+                  setEditingBooking(null);
+                }}
               />
             </CardContent>
           </Card>
