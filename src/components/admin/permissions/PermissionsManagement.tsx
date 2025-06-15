@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useDetailedPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
-import PermissionsOverview from './permissions/PermissionsOverview';
-import PermissionsMatrix from './permissions/PermissionsMatrix';
-import PermissionTemplates from './permissions/PermissionTemplates';
+import PermissionsOverview from './PermissionsOverview';
+import PermissionsMatrix from './PermissionsMatrix';
+import PermissionTemplates from './PermissionTemplates';
 import { toast } from 'sonner';
 
 const PermissionsManagement = () => {
