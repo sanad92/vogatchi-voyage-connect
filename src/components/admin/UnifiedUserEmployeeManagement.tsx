@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, UserPlus, Search } from 'lucide-react';
-import { useUnifiedUserEmployee } from '@/hooks/useUnifiedUserEmployee';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnifiedData } from '@/hooks/useUnifiedData';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
 import UnifiedStatsHeaderEnhanced from './unified-management/enhanced/UnifiedStatsHeaderEnhanced';
@@ -23,7 +23,7 @@ const UnifiedUserEmployeeManagement = () => {
     unlinkUserFromEmployee,
     isLinking,
     isUnlinking,
-  } = useUnifiedUserEmployee();
+  } = useUnifiedData();
 
   const {
     searchTerm,
@@ -106,6 +106,21 @@ const UnifiedUserEmployeeManagement = () => {
         onRoleChange={setSelectedRole}
         totalResults={filteredUsers.length}
       />
+
+      {/* معلومات الـ unified data */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 bg-green-50 p-3 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span>
+              [إدارة موحدة] البيانات محدثة ومتزامنة مع جميع الأقسام | 
+              المستخدمون: {unifiedUsers?.length || 0} | 
+              المرتبطون: {unifiedUsers?.filter(u => u.employee).length || 0} | 
+              الموظفون غير المرتبطين: {unlinkedEmployees?.length || 0}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Users Grid */}
       {filteredUsers.length > 0 ? (

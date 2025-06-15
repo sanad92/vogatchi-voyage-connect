@@ -1,77 +1,29 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, UserCheck, UserX, Shield, RefreshCw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import UserSearch from "./user-management/UserSearch";
 import CreateUserDialogEnhanced from "./user-management/CreateUserDialogEnhanced";
 import UserTable from "./user-management/UserTable";
 import UserStatsCards from "./user-management/UserStatsCards";
-import { User } from "@/types/userManagement";
 import { toast } from "sonner";
+import { useUnifiedData } from "@/hooks/useUnifiedData";
 
 const UserManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("all");
 
-  // جلب جميع المستخدمين مع أدوارهم
-  const { data: users, isLoading, error, refetch } = useQuery({
-    queryKey: ['users-with-roles'],
-    queryFn: async () => {
-      console.log('🔄 جاري جلب المستخدمين...');
-      
-      try {
-        // جلب جميع الملفات الشخصية
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (profilesError) {
-          console.error('❌ خطأ في جلب الملفات الشخصية:', profilesError);
-          throw profilesError;
-        }
-
-        console.log('✅ تم جلب الملفات الشخصية:', profiles?.length || 0);
-
-        // جلب جميع الأدوار
-        const { data: userRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('user_id, role');
-        
-        if (rolesError) {
-          console.error('❌ خطأ في جلب الأدوار:', rolesError);
-          throw rolesError;
-        }
-
-        console.log('✅ تم جلب الأدوار:', userRoles?.length || 0);
-
-        // دمج البيانات
-        const usersWithRoles = profiles?.map(profile => {
-          const userRole = userRoles?.find(role => role.user_id === profile.id);
-          return {
-            ...profile,
-            role: userRole?.role || 'no_role'
-          };
-        }) || [];
-
-        console.log('✅ المستخدمون النهائيون:', usersWithRoles.length);
-        console.log('📊 تفاصيل المستخدمين:', usersWithRoles);
-        
-        return usersWithRoles as User[];
-      } catch (error) {
-        console.error('❌ خطأ في جلب المستخدمين:', error);
-        toast.error('حدث خطأ في جلب بيانات المستخدمين');
-        throw error;
-      }
-    },
-    retry: 3,
-    retryDelay: 1000,
-  });
+  // استخدام الـ unified data hook
+  const { 
+    unifiedUsers: users, 
+    isLoading, 
+    usersError: error, 
+    refreshAllData: refetch,
+    usersLoading 
+  } = useUnifiedData();
 
   // فلترة المستخدمين
   const filteredUsers = users?.filter(user => {
@@ -92,9 +44,9 @@ const UserManagementTab = () => {
     noRole: users?.filter(u => !u.role || u.role === 'no_role').length || 0
   };
 
-  console.log('📈 إحصائيات المستخدمين:', userStats);
+  console.log('📈 إحصائيات المستخدمين (Unified):', userStats);
 
-  if (isLoading) {
+  if (usersLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -153,8 +105,9 @@ const UserManagementTab = () => {
             variant="outline"
             onClick={() => refetch()}
             className="flex items-center gap-2"
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             تحديث
           </Button>
           
@@ -177,17 +130,18 @@ const UserManagementTab = () => {
         </div>
       </div>
 
-      {/* معلومات التصحيح */}
+      {/* معلومات الـ unified data */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-lg">
+        <div className="text-xs text-gray-500 bg-green-50 p-3 rounded-lg">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             <span>
-              [تصحيح] إجمالي البيانات المجلبة: {users?.length || 0} | 
+              [بيانات موحدة] إجمالي البيانات: {users?.length || 0} | 
               مفلترة: {filteredUsers.length} | 
               نشطة: {userStats.active} | 
               معطلة: {userStats.inactive} | 
-              بدون أدوار: {userStats.noRole}
+              بدون أدوار: {userStats.noRole} |
+              مع موظفين: {users?.filter(u => u.employee).length || 0}
             </span>
           </div>
         </div>
