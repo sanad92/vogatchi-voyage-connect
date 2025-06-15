@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +26,8 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NewFlightBooking from "./pages/NewFlightBooking";
 import ProfitLossReports from "./pages/ProfitLossReports";
+import TransportBookings from "./pages/TransportBookings";
+import CarRentals from "./pages/CarRentals";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,8 @@ function App() {
                           <Route path="/hotel-bookings/new" element={<NewHotelBooking />} />
                           <Route path="/flight-bookings" element={<FlightBookings />} />
                           <Route path="/flight-bookings/new" element={<NewFlightBooking />} />
+                          <Route path="/transport-bookings" element={<TransportBookings />} />
+                          <Route path="/car-rentals" element={<CarRentals />} />
                           <Route path="/suppliers" element={<Suppliers />} />
                           <Route path="/invoices" element={<Invoices />} />
                           <Route path="/payment-orders" element={<PaymentOrders />} />

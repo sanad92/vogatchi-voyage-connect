@@ -619,6 +619,212 @@ export type Database = {
           },
         ]
       }
+      car_rentals: {
+        Row: {
+          additional_driver_count: number | null
+          additional_fees: number | null
+          booking_agent_name: string
+          contract_sent: boolean | null
+          contract_sent_date: string | null
+          created_at: string
+          currency: string | null
+          customer_id: string | null
+          customer_name: string
+          daily_rate: number
+          damage_notes: string | null
+          deposit_paid: number | null
+          deposit_returned: number | null
+          driver_license_expiry: string | null
+          driver_license_number: string | null
+          exchange_rate_to_egp: number | null
+          fuel_level_pickup: string | null
+          fuel_level_return: string | null
+          gps_included: boolean | null
+          id: string
+          insurance_cost: number | null
+          insurance_included: boolean | null
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          paid_amount: number | null
+          payment_due_date: string | null
+          payment_method: string | null
+          pickup_location: string
+          pickup_notes: string | null
+          remaining_amount: number | null
+          rental_duration_days: number
+          rental_end_date: string
+          rental_reference: string
+          rental_start_date: string
+          return_location: string
+          return_notes: string | null
+          security_deposit: number | null
+          special_requirements: string | null
+          status_id: string | null
+          supplier_cost_egp: number | null
+          supplier_daily_cost: number
+          supplier_id: string | null
+          supplier_name: string
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          supplier_total_cost: number
+          total_cost_egp: number | null
+          total_profit: number | null
+          total_rental_cost: number
+          updated_at: string
+          vehicle_color: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_plate_number: string | null
+          vehicle_type_id: string | null
+          vehicle_year: number | null
+        }
+        Insert: {
+          additional_driver_count?: number | null
+          additional_fees?: number | null
+          booking_agent_name: string
+          contract_sent?: boolean | null
+          contract_sent_date?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name: string
+          daily_rate: number
+          damage_notes?: string | null
+          deposit_paid?: number | null
+          deposit_returned?: number | null
+          driver_license_expiry?: string | null
+          driver_license_number?: string | null
+          exchange_rate_to_egp?: number | null
+          fuel_level_pickup?: string | null
+          fuel_level_return?: string | null
+          gps_included?: boolean | null
+          id?: string
+          insurance_cost?: number | null
+          insurance_included?: boolean | null
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          pickup_location: string
+          pickup_notes?: string | null
+          remaining_amount?: number | null
+          rental_duration_days: number
+          rental_end_date: string
+          rental_reference?: string
+          rental_start_date: string
+          return_location: string
+          return_notes?: string | null
+          security_deposit?: number | null
+          special_requirements?: string | null
+          status_id?: string | null
+          supplier_cost_egp?: number | null
+          supplier_daily_cost: number
+          supplier_id?: string | null
+          supplier_name: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          supplier_total_cost: number
+          total_cost_egp?: number | null
+          total_profit?: number | null
+          total_rental_cost: number
+          updated_at?: string
+          vehicle_color?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_plate_number?: string | null
+          vehicle_type_id?: string | null
+          vehicle_year?: number | null
+        }
+        Update: {
+          additional_driver_count?: number | null
+          additional_fees?: number | null
+          booking_agent_name?: string
+          contract_sent?: boolean | null
+          contract_sent_date?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          daily_rate?: number
+          damage_notes?: string | null
+          deposit_paid?: number | null
+          deposit_returned?: number | null
+          driver_license_expiry?: string | null
+          driver_license_number?: string | null
+          exchange_rate_to_egp?: number | null
+          fuel_level_pickup?: string | null
+          fuel_level_return?: string | null
+          gps_included?: boolean | null
+          id?: string
+          insurance_cost?: number | null
+          insurance_included?: boolean | null
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          pickup_location?: string
+          pickup_notes?: string | null
+          remaining_amount?: number | null
+          rental_duration_days?: number
+          rental_end_date?: string
+          rental_reference?: string
+          rental_start_date?: string
+          return_location?: string
+          return_notes?: string | null
+          security_deposit?: number | null
+          special_requirements?: string | null
+          status_id?: string | null
+          supplier_cost_egp?: number | null
+          supplier_daily_cost?: number
+          supplier_id?: string | null
+          supplier_name?: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          supplier_total_cost?: number
+          total_cost_egp?: number | null
+          total_profit?: number | null
+          total_rental_cost?: number
+          updated_at?: string
+          vehicle_color?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_plate_number?: string | null
+          vehicle_type_id?: string | null
+          vehicle_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_rentals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_vehicle_type_id_fkey"
+            columns: ["vehicle_type_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -3027,6 +3233,219 @@ export type Database = {
           },
         ]
       }
+      transport_bookings: {
+        Row: {
+          arrival_date: string | null
+          arrival_time: string | null
+          booking_agent_name: string
+          booking_reference: string
+          cost_per_trip: number
+          created_at: string
+          currency: string | null
+          customer_id: string | null
+          customer_name: string
+          departure_date: string
+          departure_time: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          dropoff_location: string
+          exchange_rate_to_egp: number | null
+          id: string
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          number_of_passengers: number
+          paid_amount: number | null
+          payment_due_date: string | null
+          payment_method: string | null
+          pickup_location: string
+          remaining_amount: number | null
+          route_id: string | null
+          selling_price_per_trip: number
+          special_requests: string | null
+          status_id: string | null
+          supplier_cost: number
+          supplier_cost_egp: number | null
+          supplier_id: string | null
+          supplier_name: string
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          total_cost: number
+          total_cost_egp: number | null
+          total_profit: number | null
+          updated_at: string
+          vehicle_plate_number: string | null
+          vehicle_type_id: string | null
+          voucher_sent: boolean | null
+          voucher_sent_date: string | null
+        }
+        Insert: {
+          arrival_date?: string | null
+          arrival_time?: string | null
+          booking_agent_name: string
+          booking_reference?: string
+          cost_per_trip: number
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name: string
+          departure_date: string
+          departure_time?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          dropoff_location: string
+          exchange_rate_to_egp?: number | null
+          id?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          number_of_passengers?: number
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          pickup_location: string
+          remaining_amount?: number | null
+          route_id?: string | null
+          selling_price_per_trip: number
+          special_requests?: string | null
+          status_id?: string | null
+          supplier_cost: number
+          supplier_cost_egp?: number | null
+          supplier_id?: string | null
+          supplier_name: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          total_cost: number
+          total_cost_egp?: number | null
+          total_profit?: number | null
+          updated_at?: string
+          vehicle_plate_number?: string | null
+          vehicle_type_id?: string | null
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Update: {
+          arrival_date?: string | null
+          arrival_time?: string | null
+          booking_agent_name?: string
+          booking_reference?: string
+          cost_per_trip?: number
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          departure_date?: string
+          departure_time?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          dropoff_location?: string
+          exchange_rate_to_egp?: number | null
+          id?: string
+          invoice_sent?: boolean | null
+          invoice_sent_date?: string | null
+          number_of_passengers?: number
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          pickup_location?: string
+          remaining_amount?: number | null
+          route_id?: string | null
+          selling_price_per_trip?: number
+          special_requests?: string | null
+          status_id?: string | null
+          supplier_cost?: number
+          supplier_cost_egp?: number | null
+          supplier_id?: string | null
+          supplier_name?: string
+          supplier_payment_sent?: boolean | null
+          supplier_payment_sent_date?: string | null
+          total_cost?: number
+          total_cost_egp?: number | null
+          total_profit?: number | null
+          updated_at?: string
+          vehicle_plate_number?: string | null
+          vehicle_type_id?: string | null
+          voucher_sent?: boolean | null
+          voucher_sent_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_vehicle_type_id_fkey"
+            columns: ["vehicle_type_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_routes: {
+        Row: {
+          arrival_city: string
+          created_at: string
+          departure_city: string
+          distance_km: number | null
+          estimated_duration_hours: number | null
+          id: string
+          is_active: boolean | null
+          route_name: string
+          route_name_ar: string
+          route_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          arrival_city: string
+          created_at?: string
+          departure_city: string
+          distance_km?: number | null
+          estimated_duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          route_name: string
+          route_name_ar: string
+          route_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arrival_city?: string
+          created_at?: string
+          departure_city?: string
+          distance_km?: number | null
+          estimated_duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          route_name?: string
+          route_name_ar?: string
+          route_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_creation_requests: {
         Row: {
           created_at: string
@@ -3096,6 +3515,48 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_types: {
+        Row: {
+          capacity_passengers: number | null
+          created_at: string
+          description: string | null
+          features: Json | null
+          fuel_type: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          transmission_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity_passengers?: number | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          transmission_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity_passengers?: number | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          transmission_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

@@ -1,96 +1,134 @@
+import {
+  Home,
+  Calendar,
+  Users,
+  Building,
+  Plane,
+  Truck,
+  DollarSign,
+  FileText,
+  CreditCard,
+  BarChart,
+  TrendingUp,
+  Headphones,
+  Settings,
+  Car as CarIcon
+} from "lucide-react";
 
-import { Calendar, FileText, Home, Users, CreditCard, Banknote, Settings, BarChart3, UserCheck, Receipt } from 'lucide-react';
-import type { NavItem } from './types';
+interface NavigationItem {
+  title: string;
+  href?: string;
+  icon: string;
+  subItems?: NavigationItem[];
+}
 
-export const navigationItems: NavItem[] = [
+export const navigationItems: NavigationItem[] = [
   {
-    label: 'الرئيسية',
-    icon: Home,
-    to: '/',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
+    title: "الصفحة الرئيسية",
+    href: "/",
+    icon: "home"
   },
   {
-    label: 'العمليات اليومية',
-    icon: Calendar,
-    to: '/daily-operations',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
+    title: "العمليات اليومية",
+    href: "/daily-operations",
+    icon: "calendar"
   },
   {
-    label: 'العملاء',
-    icon: Users,
-    to: '/customers',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
+    title: "العملاء",
+    href: "/customers",
+    icon: "users"
   },
   {
-    label: 'حجوزات الفنادق',
-    icon: FileText,
-    to: '/hotel-bookings',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
+    title: "الحجوزات",
+    icon: "calendar",
+    subItems: [
+      {
+        title: "حجوزات الفنادق",
+        href: "/hotel-bookings",
+        icon: "building"
+      },
+      {
+        title: "حجوزات الطيران",
+        href: "/flight-bookings",
+        icon: "plane"
+      },
+      {
+        title: "حجوزات النقل",
+        href: "/transport-bookings",
+        icon: "car"
+      },
+      {
+        title: "إيجار السيارات",
+        href: "/car-rentals",
+        icon: "car"
+      }
+    ]
   },
   {
-    label: 'حجوزات الطيران',
-    icon: FileText,
-    to: '/flight-bookings',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
+    title: "الموردين",
+    href: "/suppliers",
+    icon: "truck"
   },
   {
-    label: 'الموردين',
-    icon: UserCheck,
-    to: '/suppliers',
-    allowedRoles: ['super_admin', 'admin', 'manager'],
+    title: "المالية",
+    icon: "dollarSign",
+    subItems: [
+      {
+        title: "الفواتير",
+        href: "/invoices",
+        icon: "fileText"
+      },
+      {
+        title: "أوامر الدفع",
+        href: "/payment-orders",
+        icon: "creditCard"
+      },
+      {
+        title: "الحسابات البنكية",
+        href: "/bank-accounts",
+        icon: "building"
+      },
+      {
+        title: "إدارة المصروفات",
+        href: "/expense-management",
+        icon: "dollarSign"
+      }
+    ]
   },
   {
-    label: 'الفواتير',
-    icon: FileText,
-    to: '/invoices',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
+    title: "التقارير",
+    icon: "barChart",
+    subItems: [
+      {
+        title: "التقارير العامة",
+        href: "/reports",
+        icon: "barChart"
+      },
+      {
+        title: "تقارير الأرباح والخسائر",
+        href: "/profit-loss-reports",
+        icon: "trendingUp"
+      }
+    ]
   },
   {
-    label: 'أوامر الدفع',
-    icon: CreditCard,
-    to: '/payment-orders',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
+    title: "تقويم الحجوزات",
+    href: "/bookings-calendar",
+    icon: "calendar"
   },
   {
-    label: 'الحسابات البنكية',
-    icon: Banknote,
-    to: '/bank-accounts',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
+    title: "إدارة علاقات العملاء",
+    href: "/crm",
+    icon: "users"
   },
   {
-    label: 'إدارة المصروفات',
-    icon: Receipt,
-    to: '/expense-management',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
+    title: "خدمة العملاء",
+    href: "/customer-service",
+    icon: "headphones"
   },
   {
-    label: 'نظام CRM',
-    icon: Users,
-    to: '/crm',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
-  },
-  {
-    label: 'خدمة العملاء',
-    icon: UserCheck,
-    to: '/customer-service',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
-  },
-  {
-    label: 'التقارير',
-    icon: BarChart3,
-    to: '/reports',
-    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
-  },
-  {
-    label: 'إدارة النظام',
-    icon: Settings,
-    to: '/admin',
-    allowedRoles: ['super_admin'],
-  },
+    title: "إعدادات النظام",
+    href: "/admin",
+    icon: "settings"
+  }
 ];
-
-// تصدير المجموعات المختلفة للتوافق مع الملفات الموجودة
-export const mainNavItems = navigationItems.slice(0, 4);
-export const businessNavItems = navigationItems.slice(4, 10);
-export const communicationNavItems = navigationItems.slice(10, 13);
-export const adminNavItems = navigationItems.slice(13);
