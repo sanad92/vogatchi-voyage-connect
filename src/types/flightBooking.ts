@@ -85,6 +85,11 @@ export interface FlightBooking {
   total_profit?: number;
   currency: SupportedCurrency;
   
+  // حقول العملات المتعددة الجديدة
+  exchange_rate_to_egp?: number;
+  total_cost_egp?: number;
+  supplier_cost_egp?: number;
+  
   // معلومات الدفع
   payment_method?: string;
   paid_amount?: number;

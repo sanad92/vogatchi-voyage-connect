@@ -27,7 +27,13 @@ export const useFlightBookings = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as FlightBooking[];
+      
+      // تحويل البيانات إلى النوع المطلوب
+      return data?.map(booking => ({
+        ...booking,
+        passenger_details: booking.passenger_details as any || [],
+        baggage_info: booking.baggage_info as any || {},
+      })) as FlightBooking[];
     },
   });
 
@@ -56,7 +62,9 @@ export const useFlightBookings = () => {
           currency: bookingData.currency || 'EGP',
           exchange_rate_to_egp: exchangeRateToEGP,
           total_cost_egp: totalCostEGP,
-          supplier_cost_egp: supplierCostEGP
+          supplier_cost_egp: supplierCostEGP,
+          passenger_details: bookingData.passenger_details ? JSON.stringify(bookingData.passenger_details) : null,
+          baggage_info: bookingData.baggage_info ? JSON.stringify(bookingData.baggage_info) : null,
         })
         .select()
         .single();
@@ -78,7 +86,7 @@ export const useFlightBookings = () => {
   const { mutateAsync: updateFlightBooking, isPending: isUpdatingBooking } = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<NewFlightBooking> }) => {
       // إعادة حساب القيم بالجنيه المصري إذا تم تغيير العملة أو الأسعار
-      let updateData = { ...updates };
+      let updateData: any = { ...updates };
       
       if (updates.currency || updates.ticket_price_per_person || updates.supplier_cost) {
         const currency = updates.currency || 'EGP';
@@ -100,6 +108,14 @@ export const useFlightBookings = () => {
         }
         
         updateData.exchange_rate_to_egp = exchangeRateToEGP;
+      }
+
+      // تحويل البيانات المعقدة إلى JSON
+      if (updates.passenger_details) {
+        updateData.passenger_details = JSON.stringify(updates.passenger_details);
+      }
+      if (updates.baggage_info) {
+        updateData.baggage_info = JSON.stringify(updates.baggage_info);
       }
 
       const { data, error } = await supabase

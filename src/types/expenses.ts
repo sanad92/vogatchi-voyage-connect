@@ -115,6 +115,8 @@ export interface RentPayment {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  exchange_rate?: number;
+  amount_egp?: number;
 }
 
 export interface ExpenseTransaction {

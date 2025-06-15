@@ -23,7 +23,13 @@ export const useRentPayments = () => {
         .order('payment_month', { ascending: false });
 
       if (error) throw error;
-      return data as (RentPayment & { contract?: any })[];
+      
+      // تحويل البيانات إلى النوع المطلوب مع إضافة الحقول الناقصة
+      return data?.map(payment => ({
+        ...payment,
+        amount_egp: payment.amount_egp || payment.amount, // fallback للقيم القديمة
+        exchange_rate: payment.exchange_rate || 1,
+      })) as (RentPayment & { contract?: any })[];
     },
   });
 

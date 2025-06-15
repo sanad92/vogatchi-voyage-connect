@@ -10,7 +10,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
 
 const FinancialDashboard = () => {
-  const { expenseTransactions, monthlySalaries, rentPayments } = useExpenses();
+  const { expenseTransactions, monthlySalaries } = useExpenses();
   const { flightBookings } = useFlightBookings();
   const { convertToPrimaryCurrency } = useExchangeRates();
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
@@ -30,7 +30,7 @@ const FinancialDashboard = () => {
       for (const booking of flightBookings) {
         const profit = booking.total_cost - booking.supplier_cost;
         if (booking.currency && booking.currency !== 'EGP') {
-          const profitInEGP = await convertToPrimaryCurrency(profit, booking.currency as any);
+          const profitInEGP = await convertToPrimaryCurrency(profit, booking.currency);
           totalRevenue += profitInEGP;
         } else {
           totalRevenue += profit;
@@ -67,19 +67,7 @@ const FinancialDashboard = () => {
       }
     }
 
-    // إيجارات
-    if (rentPayments) {
-      for (const payment of rentPayments) {
-        if (payment.amount_egp) {
-          totalExpenses += payment.amount_egp;
-        } else if (payment.currency && payment.currency !== 'EGP') {
-          const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency);
-          totalExpenses += amountInEGP;
-        } else {
-          totalExpenses += payment.amount;
-        }
-      }
-    }
+    // ملاحظة: سيتم إضافة الإيجارات لاحقاً
 
     setDashboardData({
       totalRevenue,
@@ -92,10 +80,10 @@ const FinancialDashboard = () => {
   };
 
   useEffect(() => {
-    if (expenseTransactions && monthlySalaries && rentPayments && flightBookings) {
+    if (expenseTransactions && monthlySalaries && flightBookings) {
       calculateDashboardData();
     }
-  }, [selectedPeriod, expenseTransactions, monthlySalaries, rentPayments, flightBookings]);
+  }, [selectedPeriod, expenseTransactions, monthlySalaries, flightBookings]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -240,9 +228,7 @@ const FinancialDashboard = () => {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {rentPayments?.length || 0}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">0</p>
             <p className="text-sm text-gray-600">دفعة إيجار</p>
           </CardContent>
         </Card>

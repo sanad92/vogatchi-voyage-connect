@@ -13,7 +13,6 @@ const ExpenseOverview = () => {
   const { 
     expenseTransactions, 
     monthlySalaries, 
-    rentPayments, 
     expenseCategories,
     transactionsLoading 
   } = useExpenses();
@@ -83,22 +82,7 @@ const ExpenseOverview = () => {
       }
     }
 
-    // حساب مدفوعات الإيجار
-    if (rentPayments) {
-      for (const payment of rentPayments) {
-        const paymentDate = new Date(payment.payment_month);
-        if (paymentDate >= startDate) {
-          if (payment.amount_egp) {
-            totalRent += payment.amount_egp;
-          } else if (payment.currency && payment.currency !== 'EGP') {
-            const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency);
-            totalRent += amountInEGP;
-          } else {
-            totalRent += payment.amount;
-          }
-        }
-      }
-    }
+    // ملاحظة: سيتم حساب الإيجارات لاحقاً عندما يتم دمج useRentPayments في useExpenses
 
     setSummary({
       totalExpenses,
@@ -109,10 +93,10 @@ const ExpenseOverview = () => {
   };
 
   useEffect(() => {
-    if (expenseTransactions && monthlySalaries && rentPayments) {
+    if (expenseTransactions && monthlySalaries) {
       calculateSummary();
     }
-  }, [selectedPeriod, expenseTransactions, monthlySalaries, rentPayments]);
+  }, [selectedPeriod, expenseTransactions, monthlySalaries]);
 
   if (showFinancialDashboard) {
     return (
@@ -284,9 +268,7 @@ const ExpenseOverview = () => {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {rentPayments?.length || 0}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">0</p>
             <p className="text-sm text-gray-600">دفعة إيجار</p>
           </CardContent>
         </Card>
