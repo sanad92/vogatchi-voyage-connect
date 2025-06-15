@@ -11,7 +11,7 @@ const DesktopNavigation = () => {
       {/* Main Actions */}
       <div className="flex items-center gap-1">
         {mainNavItems.map((item) => (
-          <NavLink key={item.href} item={item} />
+          <NavLink key={item.to} item={item} />
         ))}
       </div>
 
@@ -21,7 +21,7 @@ const DesktopNavigation = () => {
       {/* Business Actions */}
       <div className="flex items-center gap-1">
         {businessNavItems.slice(0, 3).map((item) => (
-          <NavLink key={item.href} item={item} />
+          <NavLink key={item.to} item={item} />
         ))}
       </div>
 
@@ -36,7 +36,7 @@ const DesktopNavigation = () => {
           <div className="h-6 w-px bg-gray-300"></div>
           <div className="flex items-center gap-1">
             {adminNavItems.map((item) => (
-              <NavLink key={item.href} item={item} />
+              <NavLink key={item.to} item={item} />
             ))}
           </div>
         </>

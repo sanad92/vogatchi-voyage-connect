@@ -31,7 +31,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
           </div>
           {mainNavItems.map((item) => (
             <NavLink 
-              key={item.href} 
+              key={item.to} 
               item={item} 
               onClick={onClose} 
             />
@@ -45,7 +45,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
           </div>
           {businessNavItems.map((item) => (
             <NavLink 
-              key={item.href} 
+              key={item.to} 
               item={item} 
               onClick={onClose} 
             />
@@ -59,7 +59,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
           </div>
           {communicationNavItems.map((item) => (
             <NavLink 
-              key={item.href} 
+              key={item.to} 
               item={item} 
               onClick={onClose} 
             />
@@ -74,7 +74,7 @@ const MobileNavigation = ({ isOpen, onClose, onSignOut, userEmail }: MobileNavig
             </div>
             {adminNavItems.map((item) => (
               <NavLink 
-                key={item.href} 
+                key={item.to} 
                 item={item} 
                 onClick={onClose} 
               />
