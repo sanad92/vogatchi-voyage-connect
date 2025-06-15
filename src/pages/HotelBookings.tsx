@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +8,18 @@ import { Hotel, Plus } from "lucide-react";
 import HotelBookingForm from "@/components/hotel-bookings/HotelBookingForm";
 import HotelBookingsList from "@/components/hotel-bookings/HotelBookingsList";
 import { HotelBooking } from "@/types/hotelBooking";
+import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
+import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
+import HotelInvoiceCreator from "@/components/hotel-bookings/HotelInvoiceCreator";
+import { Printer, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 const HotelBookings = () => {
   const [activeTab, setActiveTab] = useState("list");
   const [editingBooking, setEditingBooking] = useState<HotelBooking | null>(null);
+  const [showPrintInvoice, setShowPrintInvoice] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [showVoucher, setShowVoucher] = useState(false);
 
   const { data: bookings = [], isLoading, refetch } = useQuery({
     queryKey: ['hotel-bookings'],
@@ -160,14 +167,83 @@ const HotelBookings = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-6 flex flex-wrap gap-2 justify-end">
+                  {/* زر الرجوع والتعديل الأساسيين */}
                   <Button variant="outline" onClick={() => setActiveTab("list")}>
                     رجوع للقائمة
                   </Button>
                   <Button onClick={() => setActiveTab("form")}>
                     تعديل الحجز
                   </Button>
+
+                  {/* زر إصدار الفاتورة (يظهر فقط إذا لم تُصدر) */}
+                  {!editingBooking.invoice_sent && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowCreateInvoice(true)}
+                    >
+                      <FileText className="h-4 w-4 ml-1" />
+                      إصدار فاتورة
+                    </Button>
+                  )}
+
+                  {/* زر طباعة الفاتورة (يظهر فقط إذا تم إصدار الفاتورة) */}
+                  {editingBooking.invoice_sent && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowPrintInvoice(true)}
+                    >
+                      <Printer className="h-4 w-4 ml-1" />
+                      طباعة الفاتورة
+                    </Button>
+                  )}
+
+                  {/* زر إنشاء الفاوتشر (يظهر دائماً) */}
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowVoucher(true)}
+                  >
+                    <FileText className="h-4 w-4 ml-1" />
+                    إنشاء فاوتشر
+                  </Button>
                 </div>
+
+                {/* حوار إصدار الفاتورة */}
+                {showCreateInvoice && (
+                  <HotelInvoiceCreator
+                    booking={editingBooking}
+                    open={showCreateInvoice}
+                    onClose={() => {
+                      setShowCreateInvoice(false);
+                      toast.success("تم إصدار الفاتورة بنجاح");
+                    }}
+                  />
+                )}
+                {/* حوار طباعة الفاتورة */}
+                {showPrintInvoice && (
+                  <HotelInvoiceGenerator
+                    booking={editingBooking}
+                    onClose={() => setShowPrintInvoice(false)}
+                  />
+                )}
+                {/* حوار الفاوتشر */}
+                {showVoucher && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
+                    <div className="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full relative">
+                      <button
+                        aria-label="إغلاق"
+                        className="absolute top-2 left-2 text-gray-400 text-xl"
+                        onClick={() => setShowVoucher(false)}
+                      >
+                        &times;
+                      </button>
+                      <HotelVoucherGenerator
+                        booking={editingBooking}
+                        onClose={() => setShowVoucher(false)}
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
