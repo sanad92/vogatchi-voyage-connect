@@ -1,162 +1,172 @@
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
-import SearchableSelect from '@/components/ui/SearchableSelect';
+import { useExpenses } from '@/hooks/useExpenses';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
-
-const transportBookingSchema = z.object({
-  customer_id: z.string().optional(),
-  customer_name: z.string().min(1, 'اسم العميل مطلوب'),
-  supplier_name: z.string().min(1, 'اسم المورد مطلوب'),
-  departure_date: z.string().min(1, 'تاريخ المغادرة مطلوب'),
-  departure_time: z.string().optional(),
-  pickup_location: z.string().min(1, 'موقع الانطلاق مطلوب'),
-  dropoff_location: z.string().min(1, 'موقع الوصول مطلوب'),
-  number_of_passengers: z.number().min(1, 'عدد الركاب مطلوب'),
-  cost_per_trip: z.number().min(0, 'تكلفة الرحلة مطلوبة'),
-  selling_price_per_trip: z.number().min(0, 'سعر البيع مطلوب'),
-  supplier_cost: z.number().min(0, 'تكلفة المورد مطلوبة'),
-  booking_agent_name: z.string().min(1, 'اسم وكيل الحجز مطلوب'),
-  currency: z.string().default('EGP'),
-  payment_method: z.string().optional(),
-  special_requests: z.string().optional(),
-  driver_name: z.string().optional(),
-  driver_phone: z.string().optional(),
-  vehicle_plate_number: z.string().optional(),
-});
-
-type TransportBookingFormData = z.infer<typeof transportBookingSchema>;
+import { toast } from 'sonner';
 
 interface TransportBookingFormProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
 const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
-  const { customers, customersLoading } = useCustomers();
-  const { vehicleTypes, transportRoutes, addTransportBooking, isAddingBooking } = useTransportBookings();
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
-  const [selectedRoute, setSelectedRoute] = useState<string>('');
+  const { customers, isLoading: customersLoading } = useCustomers();
+  const { employees } = useExpenses();
+  const { 
+    vehicleTypes, 
+    transportRoutes, 
+    addTransportBooking, 
+    isAddingBooking 
+  } = useTransportBookings();
 
-  const form = useForm<TransportBookingFormData>({
-    resolver: zodResolver(transportBookingSchema),
-    defaultValues: {
-      currency: 'EGP',
-      number_of_passengers: 1,
-      cost_per_trip: 0,
-      selling_price_per_trip: 0,
-      supplier_cost: 0,
-    },
+  const [formData, setFormData] = useState({
+    customer_id: '',
+    customer_name: '',
+    supplier_name: '',
+    route_id: '',
+    vehicle_type_id: '',
+    booking_agent_id: '',
+    departure_date: '',
+    departure_time: '',
+    arrival_date: '',
+    arrival_time: '',
+    pickup_location: '',
+    dropoff_location: '',
+    number_of_passengers: 1,
+    currency: 'EGP' as const,
+    cost_per_trip: 0,
+    selling_price_per_trip: 0,
+    supplier_cost: 0,
+    paid_amount: 0,
+    payment_method: '',
+    booking_agent_name: '',
+    special_requests: '',
+    driver_name: '',
+    driver_phone: '',
+    vehicle_plate_number: ''
   });
 
-  const handleSubmit = (data: TransportBookingFormData) => {
-    addTransportBooking({
-      ...data,
-      customer_id: selectedCustomer || undefined,
-      vehicle_type_id: selectedVehicleType || undefined,
-      route_id: selectedRoute || undefined,
-      total_cost: data.selling_price_per_trip * data.number_of_passengers,
-      paid_amount: 0,
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const bookingData = {
+      ...formData,
+      total_cost: formData.selling_price_per_trip * formData.number_of_passengers,
       exchange_rate_to_egp: 1.00,
       invoice_sent: false,
       voucher_sent: false,
       supplier_payment_sent: false,
-    });
+      currency: formData.currency as string
+    };
 
-    if (onSuccess) {
-      onSuccess();
-    }
+    addTransportBooking(bookingData);
+    onSuccess();
   };
 
   const customerOptions = customers?.map(customer => ({
     value: customer.id,
-    label: `${customer.name} - ${customer.phone}`,
-  })) || [];
-
-  const vehicleTypeOptions = vehicleTypes?.map(type => ({
-    value: type.id,
-    label: `${type.name_ar} (${type.capacity_passengers} راكب)`,
+    label: `${customer.name} - ${customer.phone}`
   })) || [];
 
   const routeOptions = transportRoutes?.map(route => ({
     value: route.id,
-    label: `${route.route_name_ar} (${route.departure_city} → ${route.arrival_city})`,
+    label: `${route.route_name} (${route.departure_city} - ${route.arrival_city})`
   })) || [];
 
-  const watchedValues = form.watch();
-  const totalCost = watchedValues.selling_price_per_trip * watchedValues.number_of_passengers;
-  const totalProfit = totalCost - watchedValues.supplier_cost;
+  const vehicleTypeOptions = vehicleTypes?.map(type => ({
+    value: type.id,
+    label: `${type.name} - ${type.capacity_passengers} راكب`
+  })) || [];
+
+  const employeeOptions = employees?.map(employee => ({
+    value: employee.id,
+    label: `${employee.full_name} - ${employee.employee_code}`
+  })) || [];
+
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customers?.find(c => c.id === customerId);
+    if (customer) {
+      setFormData(prev => ({
+        ...prev,
+        customer_id: customerId,
+        customer_name: customer.name
+      }));
+    }
+  };
+
+  const handleEmployeeSelect = (employeeId: string) => {
+    const employee = employees?.find(e => e.id === employeeId);
+    if (employee) {
+      setFormData(prev => ({
+        ...prev,
+        booking_agent_id: employeeId,
+        booking_agent_name: employee.full_name
+      }));
+    }
+  };
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* معلومات العميل */}
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات العميل</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>العميل</Label>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* معلومات العميل والموظف */}
+      <Card>
+        <CardHeader>
+          <CardTitle>معلومات العميل والموظف المسؤول</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>العميل *</Label>
               <SearchableSelect
                 options={customerOptions}
-                value={selectedCustomer}
-                onValueChange={(value) => {
-                  setSelectedCustomer(value);
-                  const customer = customers?.find(c => c.id === value);
-                  if (customer) {
-                    form.setValue('customer_name', customer.name);
-                  }
-                }}
-                placeholder="اختر العميل أو ابحث..."
+                value={formData.customer_id}
+                onChange={handleCustomerSelect}
+                placeholder="اختر عميل"
                 emptyText="لا توجد عملاء"
                 loading={customersLoading}
               />
             </div>
-            <div>
-              <Label htmlFor="customer_name">اسم العميل *</Label>
-              <Input 
-                id="customer_name" 
-                {...form.register('customer_name')}
-                placeholder="أدخل اسم العميل"
-              />
-              {form.formState.errors.customer_name && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.customer_name.message}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* معلومات المورد */}
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات المورد</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="supplier_name">اسم المورد *</Label>
-              <Input 
-                id="supplier_name" 
-                {...form.register('supplier_name')}
-                placeholder="أدخل اسم المورد"
+            <div className="space-y-2">
+              <Label>اسم العميل</Label>
+              <Input
+                value={formData.customer_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                placeholder="اسم العميل"
+                required
               />
-              {form.formState.errors.supplier_name && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.supplier_name.message}</p>
-              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className="space-y-2">
+              <Label>الموظف المسؤول *</Label>
+              <SearchableSelect
+                options={employeeOptions}
+                value={formData.booking_agent_id}
+                onChange={handleEmployeeSelect}
+                placeholder="اختر موظف"
+                emptyText="لا توجد موظفين"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>اسم المورد *</Label>
+              <Input
+                value={formData.supplier_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, supplier_name: e.target.value }))}
+                placeholder="اسم المورد"
+                required
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* تفاصيل الرحلة */}
       <Card>
@@ -164,82 +174,95 @@ const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
           <CardTitle>تفاصيل الرحلة</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>الطريق</Label>
+              <SearchableSelect
+                options={routeOptions}
+                value={formData.route_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, route_id: value }))}
+                placeholder="اختر طريق"
+                emptyText="لا توجد طرق"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>نوع المركبة</Label>
               <SearchableSelect
                 options={vehicleTypeOptions}
-                value={selectedVehicleType}
-                onValueChange={setSelectedVehicleType}
-                placeholder="اختر نوع المركبة..."
-                emptyText="لا توجد مركبات"
+                value={formData.vehicle_type_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, vehicle_type_id: value }))}
+                placeholder="اختر نوع المركبة"
+                emptyText="لا توجد أنواع مركبات"
               />
             </div>
-            <div>
-              <Label>المسار</Label>
-              <SearchableSelect
-                options={routeOptions}
-                value={selectedRoute}
-                onValueChange={setSelectedRoute}
-                placeholder="اختر المسار..."
-                emptyText="لا توجد مسارات"
+
+            <div className="space-y-2">
+              <Label>تاريخ المغادرة *</Label>
+              <Input
+                type="date"
+                value={formData.departure_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, departure_date: e.target.value }))}
+                required
               />
             </div>
-            <div>
-              <Label htmlFor="number_of_passengers">عدد الركاب *</Label>
-              <Input 
-                id="number_of_passengers" 
+
+            <div className="space-y-2">
+              <Label>وقت المغادرة</Label>
+              <Input
+                type="time"
+                value={formData.departure_time}
+                onChange={(e) => setFormData(prev => ({ ...prev, departure_time: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>تاريخ الوصول</Label>
+              <Input
+                type="date"
+                value={formData.arrival_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, arrival_date: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>وقت الوصول</Label>
+              <Input
+                type="time"
+                value={formData.arrival_time}
+                onChange={(e) => setFormData(prev => ({ ...prev, arrival_time: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مكان الاستلام *</Label>
+              <Input
+                value={formData.pickup_location}
+                onChange={(e) => setFormData(prev => ({ ...prev, pickup_location: e.target.value }))}
+                placeholder="مكان الاستلام"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مكان التسليم *</Label>
+              <Input
+                value={formData.dropoff_location}
+                onChange={(e) => setFormData(prev => ({ ...prev, dropoff_location: e.target.value }))}
+                placeholder="مكان التسليم"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>عدد الركاب *</Label>
+              <Input
                 type="number"
                 min="1"
-                {...form.register('number_of_passengers', { valueAsNumber: true })}
+                value={formData.number_of_passengers}
+                onChange={(e) => setFormData(prev => ({ ...prev, number_of_passengers: parseInt(e.target.value) || 1 }))}
+                required
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="departure_date">تاريخ المغادرة *</Label>
-              <Input 
-                id="departure_date" 
-                type="date"
-                {...form.register('departure_date')}
-              />
-              {form.formState.errors.departure_date && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.departure_date.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="departure_time">وقت المغادرة</Label>
-              <Input 
-                id="departure_time" 
-                type="time"
-                {...form.register('departure_time')}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pickup_location">موقع الانطلاق *</Label>
-              <Input 
-                id="pickup_location" 
-                {...form.register('pickup_location')}
-                placeholder="أدخل موقع الانطلاق"
-              />
-              {form.formState.errors.pickup_location && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.pickup_location.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="dropoff_location">موقع الوصول *</Label>
-              <Input 
-                id="dropoff_location" 
-                {...form.register('dropoff_location')}
-                placeholder="أدخل موقع الوصول"
-              />
-              {form.formState.errors.dropoff_location && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.dropoff_location.message}</p>
-              )}
             </div>
           </div>
         </CardContent>
@@ -252,60 +275,115 @@ const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="selling_price_per_trip">سعر البيع للرحلة *</Label>
-              <Input 
-                id="selling_price_per_trip" 
-                type="number"
-                step="0.01"
-                min="0"
-                {...form.register('selling_price_per_trip', { valueAsNumber: true })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="supplier_cost">تكلفة المورد *</Label>
-              <Input 
-                id="supplier_cost" 
-                type="number"
-                step="0.01"
-                min="0"
-                {...form.register('supplier_cost', { valueAsNumber: true })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="currency">العملة</Label>
-              <Select value={form.watch('currency')} onValueChange={(value) => form.setValue('currency', value)}>
+            <div className="space-y-2">
+              <Label>العملة *</Label>
+              <Select value={formData.currency} onValueChange={(value: any) => setFormData(prev => ({ ...prev, currency: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EGP">جنيه مصري</SelectItem>
-                  <SelectItem value="USD">دولار أمريكي</SelectItem>
-                  <SelectItem value="EUR">يورو</SelectItem>
+                  <SelectItem value="EGP">جنيه مصري (EGP)</SelectItem>
+                  <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                  <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label>تكلفة الرحلة الواحدة *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.cost_per_trip}
+                onChange={(e) => setFormData(prev => ({ ...prev, cost_per_trip: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>سعر البيع للرحلة الواحدة *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.selling_price_per_trip}
+                onChange={(e) => setFormData(prev => ({ ...prev, selling_price_per_trip: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>تكلفة المورد *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.supplier_cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, supplier_cost: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>المبلغ المدفوع</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.paid_amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, paid_amount: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>طريقة الدفع</Label>
+              <Input
+                value={formData.payment_method}
+                onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
+                placeholder="طريقة الدفع"
+              />
+            </div>
           </div>
 
-          {/* عرض الحسابات */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          {/* ملخص التكاليف */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium mb-3">ملخص التكاليف:</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="font-medium">التكلفة الإجمالية:</span>
-                <div className="text-lg font-bold text-green-600">
-                  <MultiCurrencyDisplay amount={totalCost} currency={form.watch('currency')} />
+                <span className="text-gray-600">إجمالي السعر:</span>
+                <div className="font-semibold">
+                  <MultiCurrencyDisplay 
+                    amount={formData.selling_price_per_trip * formData.number_of_passengers} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
               </div>
               <div>
-                <span className="font-medium">تكلفة المورد:</span>
-                <div className="text-lg text-red-600">
-                  <MultiCurrencyDisplay amount={watchedValues.supplier_cost} currency={form.watch('currency')} />
+                <span className="text-gray-600">إجمالي التكلفة:</span>
+                <div className="font-semibold">
+                  <MultiCurrencyDisplay 
+                    amount={formData.supplier_cost} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
               </div>
               <div>
-                <span className="font-medium">الربح المتوقع:</span>
-                <div className={`text-lg font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  <MultiCurrencyDisplay amount={totalProfit} currency={form.watch('currency')} />
+                <span className="text-gray-600">الربح المتوقع:</span>
+                <div className="font-semibold text-green-600">
+                  <MultiCurrencyDisplay 
+                    amount={(formData.selling_price_per_trip * formData.number_of_passengers) - formData.supplier_cost} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-600">المبلغ المتبقي:</span>
+                <div className="font-semibold text-orange-600">
+                  <MultiCurrencyDisplay 
+                    amount={(formData.selling_price_per_trip * formData.number_of_passengers) - formData.paid_amount} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
               </div>
             </div>
@@ -320,75 +398,61 @@ const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="driver_name">اسم السائق</Label>
-              <Input 
-                id="driver_name" 
-                {...form.register('driver_name')}
-                placeholder="أدخل اسم السائق"
+            <div className="space-y-2">
+              <Label>اسم السائق</Label>
+              <Input
+                value={formData.driver_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, driver_name: e.target.value }))}
+                placeholder="اسم السائق"
               />
             </div>
-            <div>
-              <Label htmlFor="driver_phone">هاتف السائق</Label>
-              <Input 
-                id="driver_phone" 
-                {...form.register('driver_phone')}
-                placeholder="أدخل هاتف السائق"
+
+            <div className="space-y-2">
+              <Label>هاتف السائق</Label>
+              <Input
+                value={formData.driver_phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, driver_phone: e.target.value }))}
+                placeholder="هاتف السائق"
               />
             </div>
-            <div>
-              <Label htmlFor="vehicle_plate_number">رقم لوحة السيارة</Label>
-              <Input 
-                id="vehicle_plate_number" 
-                {...form.register('vehicle_plate_number')}
-                placeholder="أدخل رقم اللوحة"
+
+            <div className="space-y-2">
+              <Label>رقم لوحة المركبة</Label>
+              <Input
+                value={formData.vehicle_plate_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_plate_number: e.target.value }))}
+                placeholder="رقم لوحة المركبة"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="booking_agent_name">اسم وكيل الحجز *</Label>
-              <Input 
-                id="booking_agent_name" 
-                {...form.register('booking_agent_name')}
-                placeholder="أدخل اسم وكيل الحجز"
-              />
-              {form.formState.errors.booking_agent_name && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.booking_agent_name.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="payment_method">طريقة الدفع</Label>
-              <Select value={form.watch('payment_method')} onValueChange={(value) => form.setValue('payment_method', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر طريقة الدفع" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">نقدي</SelectItem>
-                  <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
-                  <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>
-                  <SelectItem value="installment">أقساط</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="special_requests">طلبات خاصة</Label>
-            <Textarea 
-              id="special_requests" 
-              {...form.register('special_requests')}
-              placeholder="أدخل أي طلبات خاصة..."
+          <div className="space-y-2">
+            <Label>طلبات خاصة</Label>
+            <Textarea
+              value={formData.special_requests}
+              onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
+              placeholder="أي طلبات خاصة أو ملاحظات"
               rows={3}
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-4">
-        <Button type="submit" disabled={isAddingBooking}>
+      {/* أزرار العمليات */}
+      <div className="flex gap-2 justify-end">
+        <Button 
+          type="submit" 
+          disabled={isAddingBooking}
+          className="min-w-32"
+        >
           {isAddingBooking ? 'جاري الحفظ...' : 'حفظ الحجز'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onSuccess}
+        >
+          إلغاء
         </Button>
       </div>
     </form>

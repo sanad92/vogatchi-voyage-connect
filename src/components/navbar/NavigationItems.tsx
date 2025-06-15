@@ -20,6 +20,8 @@ interface NavigationItem {
   title: string;
   to: string;
   icon: React.ComponentType<{ className?: string }>;
+  label?: string;
+  allowedRoles?: string[];
 }
 
 // العمليات الرئيسية
@@ -27,12 +29,16 @@ export const mainNavItems: NavigationItem[] = [
   {
     title: "الصفحة الرئيسية",
     to: "/",
-    icon: Home
+    icon: Home,
+    label: "الصفحة الرئيسية",
+    allowedRoles: []
   },
   {
     title: "العمليات اليومية",
     to: "/daily-operations",
-    icon: Calendar
+    icon: Calendar,
+    label: "العمليات اليومية",
+    allowedRoles: []
   }
 ];
 
@@ -41,52 +47,72 @@ export const businessNavItems: NavigationItem[] = [
   {
     title: "العملاء",
     to: "/customers",
-    icon: Users
+    icon: Users,
+    label: "العملاء",
+    allowedRoles: []
   },
   {
     title: "حجوزات الفنادق",
     to: "/hotel-bookings",
-    icon: Building
+    icon: Building,
+    label: "حجوزات الفنادق",
+    allowedRoles: []
   },
   {
     title: "حجوزات الطيران",
     to: "/flight-bookings",
-    icon: Plane
+    icon: Plane,
+    label: "حجوزات الطيران",
+    allowedRoles: []
   },
   {
     title: "حجوزات النقل",
     to: "/transport-bookings",
-    icon: CarIcon
+    icon: CarIcon,
+    label: "حجوزات النقل",
+    allowedRoles: []
   },
   {
     title: "إيجار السيارات",
     to: "/car-rentals",
-    icon: CarIcon
+    icon: CarIcon,
+    label: "إيجار السيارات",
+    allowedRoles: []
   },
   {
     title: "الموردين",
     to: "/suppliers",
-    icon: Truck
+    icon: Truck,
+    label: "الموردين",
+    allowedRoles: []
   },
   {
     title: "الفواتير",
     to: "/invoices",
-    icon: FileText
+    icon: FileText,
+    label: "الفواتير",
+    allowedRoles: []
   },
   {
     title: "أوامر الدفع",
     to: "/payment-orders",
-    icon: CreditCard
+    icon: CreditCard,
+    label: "أوامر الدفع",
+    allowedRoles: []
   },
   {
     title: "الحسابات البنكية",
     to: "/bank-accounts",
-    icon: Building
+    icon: Building,
+    label: "الحسابات البنكية",
+    allowedRoles: []
   },
   {
     title: "إدارة المصروفات",
     to: "/expense-management",
-    icon: DollarSign
+    icon: DollarSign,
+    label: "إدارة المصروفات",
+    allowedRoles: []
   }
 ];
 
@@ -95,27 +121,37 @@ export const communicationNavItems: NavigationItem[] = [
   {
     title: "التقارير",
     to: "/reports",
-    icon: BarChart
+    icon: BarChart,
+    label: "التقارير",
+    allowedRoles: []
   },
   {
     title: "تقارير الأرباح والخسائر",
     to: "/profit-loss-reports",
-    icon: TrendingUp
+    icon: TrendingUp,
+    label: "تقارير الأرباح والخسائر",
+    allowedRoles: []
   },
   {
     title: "تقويم الحجوزات",
     to: "/bookings-calendar",
-    icon: Calendar
+    icon: Calendar,
+    label: "تقويم الحجوزات",
+    allowedRoles: []
   },
   {
     title: "إدارة علاقات العملاء",
     to: "/crm",
-    icon: Users
+    icon: Users,
+    label: "إدارة علاقات العملاء",
+    allowedRoles: []
   },
   {
     title: "خدمة العملاء",
     to: "/customer-service",
-    icon: Headphones
+    icon: Headphones,
+    label: "خدمة العملاء",
+    allowedRoles: []
   }
 ];
 
@@ -124,7 +160,9 @@ export const adminNavItems: NavigationItem[] = [
   {
     title: "إعدادات النظام",
     to: "/admin",
-    icon: Settings
+    icon: Settings,
+    label: "إعدادات النظام",
+    allowedRoles: []
   }
 ];
 

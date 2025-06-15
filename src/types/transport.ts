@@ -36,6 +36,7 @@ export interface TransportBooking {
   supplier_name: string;
   route_id?: string;
   vehicle_type_id?: string;
+  booking_agent_id?: string;
   
   // تفاصيل الرحلة
   departure_date: string;
@@ -96,6 +97,7 @@ export interface CarRental {
   supplier_id?: string;
   supplier_name: string;
   vehicle_type_id?: string;
+  booking_agent_id?: string;
   
   // تفاصيل الإيجار
   rental_start_date: string;

@@ -5,6 +5,7 @@ import { useExpenseTransactions } from './useExpenseTransactions';
 import { useSalaries } from './useSalaries';
 import { useExpenseCategories } from './useExpenseCategories';
 import { useRentPayments } from './useRentPayments';
+import { useEmployeeCommissions } from './useEmployeeCommissions';
 
 export const useExpenses = () => {
   const {
@@ -50,6 +51,16 @@ export const useExpenses = () => {
     calculateTotalPaymentsInEGP,
   } = useRentPayments();
 
+  const {
+    commissions,
+    commissionsLoading,
+    commissionPayments,
+    addCommissionPayment,
+    markCommissionsAsPaid,
+    isAddingPayment: isAddingCommissionPayment,
+    isUpdatingStatus: isUpdatingCommissionStatus,
+  } = useEmployeeCommissions();
+
   return {
     // Categories
     expenseCategories,
@@ -87,5 +98,14 @@ export const useExpenses = () => {
     updatePaymentStatus,
     isUpdatingPayment,
     calculateTotalPaymentsInEGP,
+
+    // Employee Commissions
+    commissions,
+    commissionsLoading,
+    commissionPayments,
+    addCommissionPayment,
+    markCommissionsAsPaid,
+    isAddingCommissionPayment,
+    isUpdatingCommissionStatus,
   };
 };

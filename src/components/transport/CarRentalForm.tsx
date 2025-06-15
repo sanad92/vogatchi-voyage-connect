@@ -1,8 +1,5 @@
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,184 +7,181 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import { useExpenses } from '@/hooks/useExpenses';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
-import SearchableSelect from '@/components/ui/SearchableSelect';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
-
-const carRentalSchema = z.object({
-  customer_id: z.string().optional(),
-  customer_name: z.string().min(1, 'اسم العميل مطلوب'),
-  supplier_name: z.string().min(1, 'اسم المورد مطلوب'),
-  rental_start_date: z.string().min(1, 'تاريخ بداية الإيجار مطلوب'),
-  rental_end_date: z.string().min(1, 'تاريخ نهاية الإيجار مطلوب'),
-  pickup_location: z.string().min(1, 'موقع الاستلام مطلوب'),
-  return_location: z.string().min(1, 'موقع الإرجاع مطلوب'),
-  vehicle_make: z.string().optional(),
-  vehicle_model: z.string().optional(),
-  vehicle_year: z.number().optional(),
-  vehicle_color: z.string().optional(),
-  daily_rate: z.number().min(0, 'المعدل اليومي مطلوب'),
-  supplier_daily_cost: z.number().min(0, 'تكلفة المورد اليومية مطلوبة'),
-  insurance_cost: z.number().default(0),
-  additional_fees: z.number().default(0),
-  security_deposit: z.number().default(0),
-  booking_agent_name: z.string().min(1, 'اسم وكيل الحجز مطلوب'),
-  currency: z.string().default('EGP'),
-  driver_license_number: z.string().optional(),
-  insurance_included: z.boolean().default(true),
-  gps_included: z.boolean().default(false),
-  additional_driver_count: z.number().default(0),
-  special_requirements: z.string().optional(),
-});
-
-type CarRentalFormData = z.infer<typeof carRentalSchema>;
+import { toast } from 'sonner';
 
 interface CarRentalFormProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
 const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
-  const { customers, customersLoading } = useCustomers();
+  const { customers, isLoading: customersLoading } = useCustomers();
+  const { employees } = useExpenses();
   const { vehicleTypes } = useTransportBookings();
   const { addCarRental, isAddingRental } = useCarRentals();
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
 
-  const form = useForm<CarRentalFormData>({
-    resolver: zodResolver(carRentalSchema),
-    defaultValues: {
-      currency: 'EGP',
-      daily_rate: 0,
-      supplier_daily_cost: 0,
-      insurance_cost: 0,
-      additional_fees: 0,
-      security_deposit: 0,
-      insurance_included: true,
-      gps_included: false,
-      additional_driver_count: 0,
-    },
+  const [formData, setFormData] = useState({
+    customer_id: '',
+    customer_name: '',
+    supplier_name: '',
+    vehicle_type_id: '',
+    booking_agent_id: '',
+    rental_start_date: '',
+    rental_end_date: '',
+    pickup_location: '',
+    return_location: '',
+    vehicle_make: '',
+    vehicle_model: '',
+    vehicle_year: new Date().getFullYear(),
+    vehicle_plate_number: '',
+    vehicle_color: '',
+    fuel_level_pickup: 'full',
+    currency: 'EGP' as const,
+    daily_rate: 0,
+    supplier_daily_cost: 0,
+    insurance_cost: 0,
+    additional_fees: 0,
+    security_deposit: 0,
+    paid_amount: 0,
+    deposit_paid: 0,
+    payment_method: '',
+    booking_agent_name: '',
+    driver_license_number: '',
+    driver_license_expiry: '',
+    insurance_included: true,
+    gps_included: false,
+    additional_driver_count: 0,
+    pickup_notes: '',
+    special_requirements: ''
   });
 
-  const handleSubmit = (data: CarRentalFormData) => {
-    const startDate = new Date(data.rental_start_date);
-    const endDate = new Date(data.rental_end_date);
-    const rentalDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const rentalDays = Math.ceil(
+      (new Date(formData.rental_end_date).getTime() - new Date(formData.rental_start_date).getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
 
-    addCarRental({
-      ...data,
-      customer_id: selectedCustomer || undefined,
-      vehicle_type_id: selectedVehicleType || undefined,
-      rental_duration_days: rentalDurationDays,
-      total_rental_cost: data.daily_rate * rentalDurationDays,
-      supplier_total_cost: data.supplier_daily_cost * rentalDurationDays,
-      vehicle_plate_number: '',
-      fuel_level_pickup: 'full',
-      paid_amount: 0,
-      deposit_paid: 0,
-      deposit_returned: 0,
+    const rentalData = {
+      ...formData,
+      rental_duration_days: rentalDays,
+      total_rental_cost: formData.daily_rate * rentalDays,
+      supplier_total_cost: formData.supplier_daily_cost * rentalDays,
       exchange_rate_to_egp: 1.00,
       contract_sent: false,
       invoice_sent: false,
       supplier_payment_sent: false,
-    });
+      currency: formData.currency as string
+    };
 
-    if (onSuccess) {
-      onSuccess();
-    }
+    addCarRental(rentalData);
+    onSuccess();
   };
 
   const customerOptions = customers?.map(customer => ({
     value: customer.id,
-    label: `${customer.name} - ${customer.phone}`,
+    label: `${customer.name} - ${customer.phone}`
   })) || [];
 
   const vehicleTypeOptions = vehicleTypes?.map(type => ({
     value: type.id,
-    label: `${type.name_ar} (${type.capacity_passengers} راكب)`,
+    label: `${type.name} - ${type.capacity_passengers} راكب`
   })) || [];
 
-  const watchedValues = form.watch();
-  const startDate = new Date(watchedValues.rental_start_date || '');
-  const endDate = new Date(watchedValues.rental_end_date || '');
-  const rentalDays = watchedValues.rental_start_date && watchedValues.rental_end_date 
-    ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 
+  const employeeOptions = employees?.map(employee => ({
+    value: employee.id,
+    label: `${employee.full_name} - ${employee.employee_code}`
+  })) || [];
+
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customers?.find(c => c.id === customerId);
+    if (customer) {
+      setFormData(prev => ({
+        ...prev,
+        customer_id: customerId,
+        customer_name: customer.name
+      }));
+    }
+  };
+
+  const handleEmployeeSelect = (employeeId: string) => {
+    const employee = employees?.find(e => e.id === employeeId);
+    if (employee) {
+      setFormData(prev => ({
+        ...prev,
+        booking_agent_id: employeeId,
+        booking_agent_name: employee.full_name
+      }));
+    }
+  };
+
+  const rentalDays = formData.rental_start_date && formData.rental_end_date
+    ? Math.ceil((new Date(formData.rental_end_date).getTime() - new Date(formData.rental_start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1
     : 0;
-  
-  const totalRentalCost = watchedValues.daily_rate * rentalDays;
-  const supplierTotalCost = watchedValues.supplier_daily_cost * rentalDays;
-  const totalCost = totalRentalCost + watchedValues.insurance_cost + watchedValues.additional_fees;
-  const totalProfit = totalRentalCost - supplierTotalCost - watchedValues.insurance_cost - watchedValues.additional_fees;
+
+  const totalCost = formData.daily_rate * rentalDays + formData.insurance_cost + formData.additional_fees;
+  const supplierTotalCost = formData.supplier_daily_cost * rentalDays;
+  const expectedProfit = totalCost - supplierTotalCost;
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* معلومات العميل */}
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات العميل</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>العميل</Label>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* معلومات العميل والموظف */}
+      <Card>
+        <CardHeader>
+          <CardTitle>معلومات العميل والموظف المسؤول</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>العميل *</Label>
               <SearchableSelect
                 options={customerOptions}
-                value={selectedCustomer}
-                onValueChange={(value) => {
-                  setSelectedCustomer(value);
-                  const customer = customers?.find(c => c.id === value);
-                  if (customer) {
-                    form.setValue('customer_name', customer.name);
-                  }
-                }}
-                placeholder="اختر العميل أو ابحث..."
+                value={formData.customer_id}
+                onChange={handleCustomerSelect}
+                placeholder="اختر عميل"
                 emptyText="لا توجد عملاء"
                 loading={customersLoading}
               />
             </div>
-            <div>
-              <Label htmlFor="customer_name">اسم العميل *</Label>
-              <Input 
-                id="customer_name" 
-                {...form.register('customer_name')}
-                placeholder="أدخل اسم العميل"
-              />
-              {form.formState.errors.customer_name && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.customer_name.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="driver_license_number">رقم رخصة القيادة</Label>
-              <Input 
-                id="driver_license_number" 
-                {...form.register('driver_license_number')}
-                placeholder="أدخل رقم رخصة القيادة"
-              />
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* معلومات المورد */}
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات المورد</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="supplier_name">اسم المورد *</Label>
-              <Input 
-                id="supplier_name" 
-                {...form.register('supplier_name')}
-                placeholder="أدخل اسم المورد"
+            <div className="space-y-2">
+              <Label>اسم العميل</Label>
+              <Input
+                value={formData.customer_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                placeholder="اسم العميل"
+                required
               />
-              {form.formState.errors.supplier_name && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.supplier_name.message}</p>
-              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className="space-y-2">
+              <Label>الموظف المسؤول *</Label>
+              <SearchableSelect
+                options={employeeOptions}
+                value={formData.booking_agent_id}
+                onChange={handleEmployeeSelect}
+                placeholder="اختر موظف"
+                emptyText="لا توجد موظفين"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>اسم المورد *</Label>
+              <Input
+                value={formData.supplier_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, supplier_name: e.target.value }))}
+                placeholder="اسم المورد"
+                required
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* تفاصيل الإيجار */}
       <Card>
@@ -195,148 +189,139 @@ const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
           <CardTitle>تفاصيل الإيجار</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="rental_start_date">تاريخ بداية الإيجار *</Label>
-              <Input 
-                id="rental_start_date" 
-                type="date"
-                {...form.register('rental_start_date')}
-              />
-              {form.formState.errors.rental_start_date && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.rental_start_date.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="rental_end_date">تاريخ نهاية الإيجار *</Label>
-              <Input 
-                id="rental_end_date" 
-                type="date"
-                {...form.register('rental_end_date')}
-              />
-              {form.formState.errors.rental_end_date && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.rental_end_date.message}</p>
-              )}
-            </div>
-            <div>
-              <Label>مدة الإيجار</Label>
-              <div className="p-2 bg-gray-100 rounded text-center">
-                {rentalDays > 0 ? `${rentalDays} يوم` : '-'}
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pickup_location">موقع الاستلام *</Label>
-              <Input 
-                id="pickup_location" 
-                {...form.register('pickup_location')}
-                placeholder="أدخل موقع الاستلام"
+            <div className="space-y-2">
+              <Label>نوع المركبة</Label>
+              <SearchableSelect
+                options={vehicleTypeOptions}
+                value={formData.vehicle_type_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, vehicle_type_id: value }))}
+                placeholder="اختر نوع المركبة"
+                emptyText="لا توجد أنواع مركبات"
               />
-              {form.formState.errors.pickup_location && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.pickup_location.message}</p>
-              )}
             </div>
-            <div>
-              <Label htmlFor="return_location">موقع الإرجاع *</Label>
-              <Input 
-                id="return_location" 
-                {...form.register('return_location')}
-                placeholder="أدخل موقع الإرجاع"
-              />
-              {form.formState.errors.return_location && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.return_location.message}</p>
-              )}
-            </div>
-          </div>
 
-          <div>
-            <Label>نوع المركبة</Label>
-            <SearchableSelect
-              options={vehicleTypeOptions}
-              value={selectedVehicleType}
-              onValueChange={setSelectedVehicleType}
-              placeholder="اختر نوع المركبة..."
-              emptyText="لا توجد مركبات"
-            />
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label>ماركة السيارة</Label>
+              <Input
+                value={formData.vehicle_make}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_make: e.target.value }))}
+                placeholder="تويوتا، هوندا، نيسان..."
+              />
+            </div>
 
-      {/* تفاصيل السيارة */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تفاصيل السيارة</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="vehicle_make">الماركة</Label>
-              <Input 
-                id="vehicle_make" 
-                {...form.register('vehicle_make')}
-                placeholder="تويوتا، هوندا..."
+            <div className="space-y-2">
+              <Label>موديل السيارة</Label>
+              <Input
+                value={formData.vehicle_model}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_model: e.target.value }))}
+                placeholder="كامري، أكورد، التيما..."
               />
             </div>
-            <div>
-              <Label htmlFor="vehicle_model">الموديل</Label>
-              <Input 
-                id="vehicle_model" 
-                {...form.register('vehicle_model')}
-                placeholder="كورولا، سيفيك..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="vehicle_year">سنة الصنع</Label>
-              <Input 
-                id="vehicle_year" 
+
+            <div className="space-y-2">
+              <Label>سنة الصنع</Label>
+              <Input
                 type="number"
                 min="1990"
-                max="2030"
-                {...form.register('vehicle_year', { valueAsNumber: true })}
-                placeholder="2020"
+                max={new Date().getFullYear() + 1}
+                value={formData.vehicle_year}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_year: parseInt(e.target.value) || new Date().getFullYear() }))}
               />
             </div>
-            <div>
-              <Label htmlFor="vehicle_color">اللون</Label>
-              <Input 
-                id="vehicle_color" 
-                {...form.register('vehicle_color')}
-                placeholder="أبيض، أسود..."
+
+            <div className="space-y-2">
+              <Label>رقم اللوحة</Label>
+              <Input
+                value={formData.vehicle_plate_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_plate_number: e.target.value }))}
+                placeholder="رقم لوحة السيارة"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>لون السيارة</Label>
+              <Input
+                value={formData.vehicle_color}
+                onChange={(e) => setFormData(prev => ({ ...prev, vehicle_color: e.target.value }))}
+                placeholder="أبيض، أسود، فضي..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>تاريخ بداية الإيجار *</Label>
+              <Input
+                type="date"
+                value={formData.rental_start_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, rental_start_date: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>تاريخ نهاية الإيجار *</Label>
+              <Input
+                type="date"
+                value={formData.rental_end_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, rental_end_date: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مكان الاستلام *</Label>
+              <Input
+                value={formData.pickup_location}
+                onChange={(e) => setFormData(prev => ({ ...prev, pickup_location: e.target.value }))}
+                placeholder="مكان استلام السيارة"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مكان الإرجاع *</Label>
+              <Input
+                value={formData.return_location}
+                onChange={(e) => setFormData(prev => ({ ...prev, return_location: e.target.value }))}
+                placeholder="مكان إرجاع السيارة"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مستوى الوقود عند الاستلام</Label>
+              <Select value={formData.fuel_level_pickup} onValueChange={(value) => setFormData(prev => ({ ...prev, fuel_level_pickup: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">ممتلئ</SelectItem>
+                  <SelectItem value="three_quarters">ثلاثة أرباع</SelectItem>
+                  <SelectItem value="half">نصف</SelectItem>
+                  <SelectItem value="quarter">ربع</SelectItem>
+                  <SelectItem value="empty">فارغ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>عدد السائقين الإضافيين</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.additional_driver_count}
+                onChange={(e) => setFormData(prev => ({ ...prev, additional_driver_count: parseInt(e.target.value) || 0 }))}
               />
             </div>
           </div>
 
-          <div className="flex gap-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="insurance_included"
-                checked={form.watch('insurance_included')}
-                onCheckedChange={(checked) => form.setValue('insurance_included', !!checked)}
-              />
-              <Label htmlFor="insurance_included">التأمين مشمول</Label>
+          {rentalDays > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <span className="text-blue-800 font-medium">
+                عدد أيام الإيجار: {rentalDays} يوم
+              </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="gps_included"
-                checked={form.watch('gps_included')}
-                onCheckedChange={(checked) => form.setValue('gps_included', !!checked)}
-              />
-              <Label htmlFor="gps_included">نظام GPS</Label>
-            </div>
-            <div>
-              <Label htmlFor="additional_driver_count">سائقين إضافيين</Label>
-              <Input 
-                id="additional_driver_count" 
-                type="number"
-                min="0"
-                max="5"
-                {...form.register('additional_driver_count', { valueAsNumber: true })}
-                className="w-20"
-              />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -346,143 +331,239 @@ const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
           <CardTitle>التكاليف والأسعار</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="daily_rate">المعدل اليومي *</Label>
-              <Input 
-                id="daily_rate" 
-                type="number"
-                step="0.01"
-                min="0"
-                {...form.register('daily_rate', { valueAsNumber: true })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="supplier_daily_cost">تكلفة المورد اليومية *</Label>
-              <Input 
-                id="supplier_daily_cost" 
-                type="number"
-                step="0.01"
-                min="0"
-                {...form.register('supplier_daily_cost', { valueAsNumber: true })}
-              />
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="insurance_cost">تكلفة التأمين</Label>
-              <Input 
-                id="insurance_cost" 
+            <div className="space-y-2">
+              <Label>العملة *</Label>
+              <Select value={formData.currency} onValueChange={(value: any) => setFormData(prev => ({ ...prev, currency: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EGP">جنيه مصري (EGP)</SelectItem>
+                  <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                  <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>السعر اليومي *</Label>
+              <Input
                 type="number"
                 step="0.01"
-                min="0"
-                {...form.register('insurance_cost', { valueAsNumber: true })}
+                value={formData.daily_rate}
+                onChange={(e) => setFormData(prev => ({ ...prev, daily_rate: parseFloat(e.target.value) || 0 }))}
+                required
               />
             </div>
-            <div>
-              <Label htmlFor="additional_fees">رسوم إضافية</Label>
-              <Input 
-                id="additional_fees" 
+
+            <div className="space-y-2">
+              <Label>تكلفة المورد اليومية *</Label>
+              <Input
                 type="number"
                 step="0.01"
-                min="0"
-                {...form.register('additional_fees', { valueAsNumber: true })}
+                value={formData.supplier_daily_cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, supplier_daily_cost: parseFloat(e.target.value) || 0 }))}
+                required
               />
             </div>
-            <div>
-              <Label htmlFor="security_deposit">التأمين (العربون)</Label>
-              <Input 
-                id="security_deposit" 
+
+            <div className="space-y-2">
+              <Label>تكلفة التأمين</Label>
+              <Input
                 type="number"
                 step="0.01"
-                min="0"
-                {...form.register('security_deposit', { valueAsNumber: true })}
+                value={formData.insurance_cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, insurance_cost: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>رسوم إضافية</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.additional_fees}
+                onChange={(e) => setFormData(prev => ({ ...prev, additional_fees: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>مبلغ التأمين</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.security_deposit}
+                onChange={(e) => setFormData(prev => ({ ...prev, security_deposit: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>المبلغ المدفوع</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.paid_amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, paid_amount: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>التأمين المدفوع</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.deposit_paid}
+                onChange={(e) => setFormData(prev => ({ ...prev, deposit_paid: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>طريقة الدفع</Label>
+              <Input
+                value={formData.payment_method}
+                onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
+                placeholder="طريقة الدفع"
               />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="currency">العملة</Label>
-            <Select value={form.watch('currency')} onValueChange={(value) => form.setValue('currency', value)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EGP">جنيه مصري</SelectItem>
-                <SelectItem value="USD">دولار أمريكي</SelectItem>
-                <SelectItem value="EUR">يورو</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* الخدمات المضمنة */}
+          <div className="space-y-4">
+            <h4 className="font-medium">الخدمات المضمنة:</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="insurance"
+                  checked={formData.insurance_included}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, insurance_included: checked as boolean }))}
+                />
+                <Label htmlFor="insurance">التأمين مشمول</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="gps"
+                  checked={formData.gps_included}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, gps_included: checked as boolean }))}
+                />
+                <Label htmlFor="gps">نظام GPS مشمول</Label>
+              </div>
+            </div>
           </div>
 
-          {/* عرض الحسابات */}
-          {rentalDays > 0 && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">إجمالي الإيجار:</span>
-                  <div className="text-lg font-bold text-blue-600">
-                    <MultiCurrencyDisplay amount={totalRentalCost} currency={form.watch('currency')} />
-                  </div>
+          {/* ملخص التكاليف */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium mb-3">ملخص التكاليف:</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">إجمالي السعر:</span>
+                <div className="font-semibold">
+                  <MultiCurrencyDisplay 
+                    amount={totalCost} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
-                <div>
-                  <span className="font-medium">التكلفة الإجمالية:</span>
-                  <div className="text-lg font-bold text-green-600">
-                    <MultiCurrencyDisplay amount={totalCost} currency={form.watch('currency')} />
-                  </div>
+              </div>
+              <div>
+                <span className="text-gray-600">تكلفة المورد:</span>
+                <div className="font-semibold">
+                  <MultiCurrencyDisplay 
+                    amount={supplierTotalCost} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
-                <div>
-                  <span className="font-medium">تكلفة المورد:</span>
-                  <div className="text-lg text-red-600">
-                    <MultiCurrencyDisplay amount={supplierTotalCost} currency={form.watch('currency')} />
-                  </div>
+              </div>
+              <div>
+                <span className="text-gray-600">الربح المتوقع:</span>
+                <div className="font-semibold text-green-600">
+                  <MultiCurrencyDisplay 
+                    amount={expectedProfit} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
-                <div>
-                  <span className="font-medium">الربح المتوقع:</span>
-                  <div className={`text-lg font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    <MultiCurrencyDisplay amount={totalProfit} currency={form.watch('currency')} />
-                  </div>
+              </div>
+              <div>
+                <span className="text-gray-600">المبلغ المتبقي:</span>
+                <div className="font-semibold text-orange-600">
+                  <MultiCurrencyDisplay 
+                    amount={totalCost - formData.paid_amount} 
+                    currency={formData.currency as any} 
+                    showInEGP={false} 
+                  />
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* معلومات إضافية */}
+      {/* معلومات السائق */}
       <Card>
         <CardHeader>
-          <CardTitle>معلومات إضافية</CardTitle>
+          <CardTitle>معلومات السائق والملاحظات</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="booking_agent_name">اسم وكيل الحجز *</Label>
-            <Input 
-              id="booking_agent_name" 
-              {...form.register('booking_agent_name')}
-              placeholder="أدخل اسم وكيل الحجز"
-            />
-            {form.formState.errors.booking_agent_name && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.booking_agent_name.message}</p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>رقم رخصة القيادة</Label>
+              <Input
+                value={formData.driver_license_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, driver_license_number: e.target.value }))}
+                placeholder="رقم رخصة القيادة"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>تاريخ انتهاء الرخصة</Label>
+              <Input
+                type="date"
+                value={formData.driver_license_expiry}
+                onChange={(e) => setFormData(prev => ({ ...prev, driver_license_expiry: e.target.value }))}
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="special_requirements">متطلبات خاصة</Label>
-            <Textarea 
-              id="special_requirements" 
-              {...form.register('special_requirements')}
-              placeholder="أدخل أي متطلبات خاصة..."
+          <div className="space-y-2">
+            <Label>ملاحظات الاستلام</Label>
+            <Textarea
+              value={formData.pickup_notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, pickup_notes: e.target.value }))}
+              placeholder="ملاحظات عند استلام السيارة"
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>متطلبات خاصة</Label>
+            <Textarea
+              value={formData.special_requirements}
+              onChange={(e) => setFormData(prev => ({ ...prev, special_requirements: e.target.value }))}
+              placeholder="أي متطلبات خاصة أو ملاحظات"
               rows={3}
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-4">
-        <Button type="submit" disabled={isAddingRental}>
-          {isAddingRental ? 'جاري الحفظ...' : 'حفظ عقد الإيجار'}
+      {/* أزرار العمليات */}
+      <div className="flex gap-2 justify-end">
+        <Button 
+          type="submit" 
+          disabled={isAddingRental}
+          className="min-w-32"
+        >
+          {isAddingRental ? 'جاري الحفظ...' : 'حفظ العقد'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onSuccess}
+        >
+          إلغاء
         </Button>
       </div>
     </form>

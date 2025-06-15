@@ -623,6 +623,7 @@ export type Database = {
         Row: {
           additional_driver_count: number | null
           additional_fees: number | null
+          booking_agent_id: string | null
           booking_agent_name: string
           contract_sent: boolean | null
           contract_sent_date: string | null
@@ -681,6 +682,7 @@ export type Database = {
         Insert: {
           additional_driver_count?: number | null
           additional_fees?: number | null
+          booking_agent_id?: string | null
           booking_agent_name: string
           contract_sent?: boolean | null
           contract_sent_date?: string | null
@@ -739,6 +741,7 @@ export type Database = {
         Update: {
           additional_driver_count?: number | null
           additional_fees?: number | null
+          booking_agent_id?: string | null
           booking_agent_name?: string
           contract_sent?: boolean | null
           contract_sent_date?: string | null
@@ -796,6 +799,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "car_rentals_booking_agent_id_fkey"
+            columns: ["booking_agent_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "car_rentals_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -821,6 +831,72 @@ export type Database = {
             columns: ["vehicle_type_id"]
             isOneToOne: false
             referencedRelation: "vehicle_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_payments: {
+        Row: {
+          bank_account_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          employee_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          payment_period_end: string
+          payment_period_start: string
+          reference_number: string | null
+          total_commission_amount: number
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          payment_period_end: string
+          payment_period_start: string
+          reference_number?: string | null
+          total_commission_amount: number
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_period_end?: string
+          payment_period_start?: string
+          reference_number?: string | null
+          total_commission_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_payments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -1405,12 +1481,73 @@ export type Database = {
           },
         ]
       }
+      employee_commissions: {
+        Row: {
+          booking_amount: number
+          booking_id: string | null
+          booking_type: string
+          commission_amount: number
+          commission_date: string
+          commission_rate: number
+          created_at: string
+          currency: string | null
+          employee_id: string
+          id: string
+          notes: string | null
+          payment_date: string | null
+          payment_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_amount: number
+          booking_id?: string | null
+          booking_type: string
+          commission_amount: number
+          commission_date?: string
+          commission_rate: number
+          created_at?: string
+          currency?: string | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_amount?: number
+          booking_id?: string | null
+          booking_type?: string
+          commission_amount?: number
+          commission_date?: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_commissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           allowances: number | null
           bank_account_number: string | null
           bank_name: string | null
           base_salary: number
+          commission_rate: number | null
+          commission_type: string | null
           created_at: string
           department: string | null
           email: string | null
@@ -1425,6 +1562,7 @@ export type Database = {
           phone: string | null
           position: string
           salary_scale_level: number | null
+          total_commission_earned: number | null
           updated_at: string
         }
         Insert: {
@@ -1432,6 +1570,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           base_salary?: number
+          commission_rate?: number | null
+          commission_type?: string | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -1446,6 +1586,7 @@ export type Database = {
           phone?: string | null
           position: string
           salary_scale_level?: number | null
+          total_commission_earned?: number | null
           updated_at?: string
         }
         Update: {
@@ -1453,6 +1594,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           base_salary?: number
+          commission_rate?: number | null
+          commission_type?: string | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -1467,6 +1610,7 @@ export type Database = {
           phone?: string | null
           position?: string
           salary_scale_level?: number | null
+          total_commission_earned?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -1645,6 +1789,7 @@ export type Database = {
           arrival_date: string
           arrival_time: string | null
           baggage_info: Json | null
+          booking_agent_id: string | null
           booking_agent_name: string
           booking_date: string
           booking_reference: string
@@ -1696,6 +1841,7 @@ export type Database = {
           arrival_date: string
           arrival_time?: string | null
           baggage_info?: Json | null
+          booking_agent_id?: string | null
           booking_agent_name: string
           booking_date?: string
           booking_reference?: string
@@ -1747,6 +1893,7 @@ export type Database = {
           arrival_date?: string
           arrival_time?: string | null
           baggage_info?: Json | null
+          booking_agent_id?: string | null
           booking_agent_name?: string
           booking_date?: string
           booking_reference?: string
@@ -1805,6 +1952,13 @@ export type Database = {
             columns: ["arrival_airport_id"]
             isOneToOne: false
             referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_agent_id_fkey"
+            columns: ["booking_agent_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -1876,6 +2030,7 @@ export type Database = {
       }
       hotel_bookings: {
         Row: {
+          booking_agent_id: string | null
           booking_agent_name: string
           booking_date: string
           booking_reference_supplier: string | null
@@ -1919,6 +2074,7 @@ export type Database = {
           voucher_sent_date: string | null
         }
         Insert: {
+          booking_agent_id?: string | null
           booking_agent_name: string
           booking_date?: string
           booking_reference_supplier?: string | null
@@ -1962,6 +2118,7 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Update: {
+          booking_agent_id?: string | null
           booking_agent_name?: string
           booking_date?: string
           booking_reference_supplier?: string | null
@@ -2005,6 +2162,13 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "hotel_bookings_booking_agent_id_fkey"
+            columns: ["booking_agent_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hotel_bookings_customer_id_fkey"
             columns: ["customer_id"]
@@ -3237,6 +3401,7 @@ export type Database = {
         Row: {
           arrival_date: string | null
           arrival_time: string | null
+          booking_agent_id: string | null
           booking_agent_name: string
           booking_reference: string
           cost_per_trip: number
@@ -3281,6 +3446,7 @@ export type Database = {
         Insert: {
           arrival_date?: string | null
           arrival_time?: string | null
+          booking_agent_id?: string | null
           booking_agent_name: string
           booking_reference?: string
           cost_per_trip: number
@@ -3325,6 +3491,7 @@ export type Database = {
         Update: {
           arrival_date?: string | null
           arrival_time?: string | null
+          booking_agent_id?: string | null
           booking_agent_name?: string
           booking_reference?: string
           cost_per_trip?: number
@@ -3367,6 +3534,13 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "transport_bookings_booking_agent_id_fkey"
+            columns: ["booking_agent_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transport_bookings_customer_id_fkey"
             columns: ["customer_id"]
@@ -3600,6 +3774,14 @@ export type Database = {
           success: boolean
           message: string
         }[]
+      }
+      calculate_employee_commission: {
+        Args: {
+          p_employee_id: string
+          p_booking_amount: number
+          p_commission_rate?: number
+        }
+        Returns: number
       }
       can_delete_customers: {
         Args: Record<PropertyKey, never>
