@@ -13,6 +13,8 @@ import { FileText } from "lucide-react";
 
 // type for FlightBooking (تعديل حسب المتوفر في types/flightBooking.ts)
 import { FlightBooking } from "@/types/flightBooking";
+import FlightInvoiceForm from "./forms/FlightInvoiceForm";
+import FlightInvoiceSummary from "./summary/FlightInvoiceSummary";
 
 interface FlightInvoiceCreatorProps {
   booking: FlightBooking;
