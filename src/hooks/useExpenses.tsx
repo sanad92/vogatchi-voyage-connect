@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import type { 
   ExpenseCategory, 
   Employee, 
@@ -201,9 +201,17 @@ export const useExpenses = () => {
       notes?: string;
       created_by?: string;
     }) => {
+      // إضافة القيم المطلوبة للراتب الإجمالي والصافي (سيتم حسابها في قاعدة البيانات)
+      const dataToInsert = {
+        ...salaryData,
+        gross_salary: 0, // سيتم حسابها في trigger
+        net_salary: 0,   // سيتم حسابها في trigger
+        overtime_amount: 0 // سيتم حسابها في trigger
+      };
+
       const { data, error } = await supabase
         .from('monthly_salaries')
-        .insert(salaryData)
+        .insert(dataToInsert)
         .select()
         .single();
 

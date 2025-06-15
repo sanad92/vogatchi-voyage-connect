@@ -6,3 +6,10 @@ export interface NavigationItem {
   icon: LucideIcon;
   path: string;
 }
+
+export interface NavItem {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  allowedRoles: string[];
+}

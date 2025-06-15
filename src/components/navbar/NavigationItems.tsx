@@ -1,77 +1,91 @@
 
 import { Calendar, FileText, Home, Users, CreditCard, Banknote, Settings, BarChart3, UserCheck, Receipt } from 'lucide-react';
-import type { NavigationItem } from './types';
+import type { NavItem } from './types';
 
-export const navigationItems: NavigationItem[] = [
+export const navigationItems: NavItem[] = [
   {
-    title: 'الرئيسية',
+    label: 'الرئيسية',
     icon: Home,
-    path: '/',
+    to: '/',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent', 'accountant', 'viewer'],
   },
   {
-    title: 'العمليات اليومية',
+    label: 'العمليات اليومية',
     icon: Calendar,
-    path: '/daily-operations',
+    to: '/daily-operations',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'العملاء',
+    label: 'العملاء',
     icon: Users,
-    path: '/customers',
+    to: '/customers',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'حجوزات الفنادق',
+    label: 'حجوزات الفنادق',
     icon: FileText,
-    path: '/hotel-bookings',
+    to: '/hotel-bookings',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'حجوزات الطيران',
+    label: 'حجوزات الطيران',
     icon: FileText,
-    path: '/flight-bookings',
+    to: '/flight-bookings',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'الموردين',
+    label: 'الموردين',
     icon: UserCheck,
-    path: '/suppliers',
+    to: '/suppliers',
+    allowedRoles: ['super_admin', 'admin', 'manager'],
   },
   {
-    title: 'الفواتير',
+    label: 'الفواتير',
     icon: FileText,
-    path: '/invoices',
+    to: '/invoices',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
   },
   {
-    title: 'أوامر الدفع',
+    label: 'أوامر الدفع',
     icon: CreditCard,
-    path: '/payment-orders',
+    to: '/payment-orders',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
   },
   {
-    title: 'الحسابات البنكية',
+    label: 'الحسابات البنكية',
     icon: Banknote,
-    path: '/bank-accounts',
+    to: '/bank-accounts',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
   },
   {
-    title: 'إدارة المصروفات',
+    label: 'إدارة المصروفات',
     icon: Receipt,
-    path: '/expense-management',
+    to: '/expense-management',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
   },
   {
-    title: 'نظام CRM',
+    label: 'نظام CRM',
     icon: Users,
-    path: '/crm',
+    to: '/crm',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'خدمة العملاء',
+    label: 'خدمة العملاء',
     icon: UserCheck,
-    path: '/customer-service',
+    to: '/customer-service',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'sales_agent'],
   },
   {
-    title: 'التقارير',
+    label: 'التقارير',
     icon: BarChart3,
-    path: '/reports',
+    to: '/reports',
+    allowedRoles: ['super_admin', 'admin', 'manager', 'accountant'],
   },
   {
-    title: 'إدارة النظام',
+    label: 'إدارة النظام',
     icon: Settings,
-    path: '/admin',
+    to: '/admin',
+    allowedRoles: ['super_admin'],
   },
 ];
 
