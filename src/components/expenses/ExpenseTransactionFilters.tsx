@@ -17,6 +17,8 @@ const ExpenseTransactionFilters = ({
   statusFilter,
   onStatusFilterChange
 }: ExpenseTransactionFiltersProps) => {
+  console.log('ExpenseTransactionFilters - statusFilter:', statusFilter);
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -30,7 +32,7 @@ const ExpenseTransactionFilters = ({
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+          <Select value={statusFilter || "all"} onValueChange={onStatusFilterChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="حالة المصروف" />
             </SelectTrigger>
