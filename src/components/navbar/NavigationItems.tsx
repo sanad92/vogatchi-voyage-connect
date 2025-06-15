@@ -1,176 +1,168 @@
-
-import {
-  Home,
-  Calendar,
-  Users,
-  Building,
-  Plane,
-  Truck,
-  DollarSign,
-  FileText,
-  CreditCard,
-  BarChart,
-  TrendingUp,
-  Headphones,
+import { 
+  Home, 
+  Users, 
+  Calendar, 
+  Building2, 
+  Receipt, 
+  FileText, 
+  BarChart3, 
   Settings,
-  Car as CarIcon,
-  type LucideIcon
-} from "lucide-react";
+  Plane,
+  Car,
+  MapPin,
+  Hotel,
+  Briefcase,
+  PiggyBank,
+  Calculator,
+  CreditCard,
+  UserCheck,
+  Target,
+  TrendingUp,
+  MessageSquare,
+  Phone,
+  UserCog,
+  Shield
+} from 'lucide-react';
 
 export interface NavigationItem {
-  title: string;
-  to: string;
-  icon: LucideIcon;
-  label: string;
-  allowedRoles?: string[];
+  name: string;
+  nameEn: string;
+  href: string;
+  icon: any;
+  children?: NavigationItem[];
 }
 
-// العمليات الرئيسية
-export const mainNavItems: NavigationItem[] = [
+export const navigationItems: NavigationItem[] = [
   {
-    title: "الصفحة الرئيسية",
-    to: "/",
+    name: 'لوحة التحكم',
+    nameEn: 'Dashboard',
+    href: '/',
     icon: Home,
-    label: "الصفحة الرئيسية",
-    allowedRoles: []
   },
   {
-    title: "العمليات اليومية",
-    to: "/daily-operations",
+    name: 'العملاء',
+    nameEn: 'Customers',
+    href: '/customers',
+    icon: UserCheck,
+  },
+  {
+    name: 'الحجوزات',
+    nameEn: 'Bookings',
+    href: '/bookings',
     icon: Calendar,
-    label: "العمليات اليومية",
-    allowedRoles: []
-  }
-];
-
-// إدارة الأعمال
-export const businessNavItems: NavigationItem[] = [
+    children: [
+      {
+        name: 'الفنادق',
+        nameEn: 'Hotels',
+        href: '/bookings/hotels',
+        icon: Hotel,
+      },
+      {
+        name: 'الطيران',
+        nameEn: 'Flights',
+        href: '/bookings/flights',
+        icon: Plane,
+      },
+      {
+        name: 'المواصلات',
+        nameEn: 'Transport',
+        href: '/bookings/transport',
+        icon: MapPin,
+      },
+      {
+        name: 'تأجير سيارات',
+        nameEn: 'Car Rental',
+        href: '/bookings/car-rental',
+        icon: Car,
+      },
+    ],
+  },
   {
-    title: "العملاء",
-    to: "/customers",
+    name: 'الموردين',
+    nameEn: 'Suppliers',
+    href: '/suppliers',
+    icon: Building2,
+  },
+  {
+    name: 'الموظفين',
+    nameEn: 'Employees', 
+    href: '/employees',
     icon: Users,
-    label: "إدارة العملاء",
-    allowedRoles: []
   },
   {
-    title: "حجوزات الفنادق",
-    to: "/hotel-bookings",
-    icon: Building,
-    label: "حجوزات الفنادق",
-    allowedRoles: []
+    name: 'المصروفات',
+    nameEn: 'Expenses',
+    href: '/expenses',
+    icon: Receipt,
+    children: [
+      {
+        name: 'فئات المصروفات',
+        nameEn: 'Expense Categories',
+        href: '/expenses/categories',
+        icon: FileText,
+      },
+      {
+        name: 'المعاملات',
+        nameEn: 'Transactions',
+        href: '/expenses/transactions',
+        icon: CreditCard,
+      },
+      {
+        name: 'الرواتب',
+        nameEn: 'Salaries',
+        href: '/expenses/salaries',
+        icon: PiggyBank,
+      },
+      {
+        name: 'العقارات',
+        nameEn: 'Properties',
+        href: '/expenses/properties',
+        icon: Briefcase,
+      },
+      {
+        name: 'التقارير',
+        nameEn: 'Reports',
+        href: '/expenses/reports',
+        icon: Calculator,
+      },
+    ],
   },
   {
-    title: "حجوزات الطيران",
-    to: "/flight-bookings",
-    icon: Plane,
-    label: "حجوزات الطيران",
-    allowedRoles: []
-  },
-  {
-    title: "حجوزات النقل",
-    to: "/transport-bookings",
-    icon: CarIcon,
-    label: "حجوزات النقل",
-    allowedRoles: []
-  },
-  {
-    title: "إيجار السيارات",
-    to: "/car-rentals",
-    icon: CarIcon,
-    label: "إيجار السيارات",
-    allowedRoles: []
-  },
-  {
-    title: "الموردين",
-    to: "/suppliers",
-    icon: Truck,
-    label: "إدارة الموردين",
-    allowedRoles: []
-  },
-  {
-    title: "الفواتير",
-    to: "/invoices",
+    name: 'الفواتير',
+    nameEn: 'Invoices',
+    href: '/invoices',
     icon: FileText,
-    label: "إدارة الفواتير",
-    allowedRoles: []
   },
   {
-    title: "أوامر الدفع",
-    to: "/payment-orders",
-    icon: CreditCard,
-    label: "أوامر الدفع",
-    allowedRoles: []
+    name: 'التقارير',
+    nameEn: 'Reports',
+    href: '/reports',
+    icon: BarChart3,
   },
   {
-    title: "الحسابات البنكية",
-    to: "/bank-accounts",
-    icon: Building,
-    label: "إدارة الحسابات البنكية",
-    allowedRoles: []
-  },
-  {
-    title: "إدارة المصروفات",
-    to: "/expense-management",
-    icon: DollarSign,
-    label: "إدارة المصروفات",
-    allowedRoles: []
-  }
-];
-
-// التواصل والتقارير
-export const communicationNavItems: NavigationItem[] = [
-  {
-    title: "التقارير",
-    to: "/reports",
-    icon: BarChart,
-    label: "التقارير التفصيلية",
-    allowedRoles: []
-  },
-  {
-    title: "تقارير الأرباح والخسائر",
-    to: "/profit-loss-reports",
-    icon: TrendingUp,
-    label: "تقارير الأرباح والخسائر",
-    allowedRoles: []
-  },
-  {
-    title: "تقويم الحجوزات",
-    to: "/bookings-calendar",
-    icon: Calendar,
-    label: "تقويم الحجوزات",
-    allowedRoles: []
-  },
-  {
-    title: "إدارة علاقات العملاء",
-    to: "/crm",
-    icon: Users,
-    label: "إدارة علاقات العملاء",
-    allowedRoles: []
-  },
-  {
-    title: "خدمة العملاء",
-    to: "/customer-service",
-    icon: Headphones,
-    label: "خدمة العملاء",
-    allowedRoles: []
-  }
-];
-
-// إعدادات النظام
-export const adminNavItems: NavigationItem[] = [
-  {
-    title: "إعدادات النظام",
-    to: "/admin",
+    name: 'إدارة النظام',
+    nameEn: 'Admin Settings',
+    href: '/admin-settings',
     icon: Settings,
-    label: "إعدادات النظام",
-    allowedRoles: []
-  }
-];
-
-// للتوافق مع الكود الموجود
-export const navigationItems = [
-  ...mainNavItems,
-  ...businessNavItems,
-  ...communicationNavItems,
-  ...adminNavItems
+    children: [
+      {
+        name: 'إدارة المستخدمين',
+        nameEn: 'User Management',
+        href: '/admin-settings/users',
+        icon: UserCog,
+      },
+      {
+        name: 'إدارة الأدوار',
+        nameEn: 'Role Management',
+        href: '/admin-settings/roles',
+        icon: Shield,
+      },
+      {
+        name: 'سجل العمليات',
+        nameEn: 'Activity Log',
+        href: '/admin-settings/activity-log',
+        icon: MessageSquare,
+      },
+    ],
+  },
 ];

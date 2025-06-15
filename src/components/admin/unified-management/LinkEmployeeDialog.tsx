@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Plus, ExternalLink } from 'lucide-react';
 import EmployeeSearchBar from './link-dialog/EmployeeSearchBar';
 import EmployeesList from './link-dialog/EmployeesList';
 
@@ -26,6 +27,10 @@ const LinkEmployeeDialog = ({ user, unlinkedEmployees, isOpen, onOpenChange, onL
     onLink(user.id, employeeId);
   };
 
+  const handleGoToEmployeesPage = () => {
+    window.open('/employees', '_blank');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -39,13 +44,47 @@ const LinkEmployeeDialog = ({ user, unlinkedEmployees, isOpen, onOpenChange, onL
             onSearchChange={setSearchTerm}
           />
 
-          <EmployeesList
-            employees={filteredEmployees}
-            onLinkEmployee={handleLinkEmployee}
-          />
+          {filteredEmployees.length === 0 && !searchTerm && (
+            <div className="text-center py-8 space-y-4">
+              <div className="text-gray-500">
+                لا توجد موظفين متاحين للربط
+              </div>
+              <Button 
+                onClick={handleGoToEmployeesPage}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                إضافة موظف جديد
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {filteredEmployees.length === 0 && searchTerm && (
+            <div className="text-center py-8 text-gray-500">
+              لا توجد نتائج مطابقة للبحث
+            </div>
+          )}
+
+          {filteredEmployees.length > 0 && (
+            <EmployeesList
+              employees={filteredEmployees}
+              onLinkEmployee={handleLinkEmployee}
+            />
+          )}
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-between pt-4">
+          <Button 
+            variant="outline" 
+            onClick={handleGoToEmployeesPage}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            إدارة الموظفين
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+          
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             إلغاء
           </Button>
