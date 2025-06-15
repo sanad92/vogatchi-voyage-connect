@@ -1,23 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import PaymentMethodsSelector from '@/components/shared/PaymentMethodsSelector';
-
-interface Supplier {
-  id: string;
-  name: string;
-  supplier_type: string;
-  contact_person?: string;
-  email?: string;
-  phone?: string;
-  payment_type: 'prepaid' | 'deferred';
-  payment_method_options: string[];
-  payment_terms?: string;
-  is_active: boolean | null;
-}
+import { Supplier } from '@/types/supplier';
 
 interface EditSupplierDialogProps {
   supplier: Supplier | null;
@@ -60,7 +47,7 @@ const EditSupplierDialog = ({
             onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
             required
           />
-          <Select value={formData.supplier_type || 'hotel'} onValueChange={val => setFormData(f => ({ ...f, supplier_type: val }))}>
+          <Select value={formData.supplier_type || 'hotel'} onValueChange={val => setFormData(f => ({ ...f, supplier_type: val as Supplier["supplier_type"] }))}>
             <SelectTrigger>
               <SelectValue placeholder="نوع الخدمة" />
             </SelectTrigger>
@@ -73,19 +60,19 @@ const EditSupplierDialog = ({
           </Select>
           <Input
             placeholder="اسم الشخص المسؤول"
-            value={formData.contact_person || ''}
+            value={formData.contact_person ?? ''}
             onChange={e => setFormData(f => ({ ...f, contact_person: e.target.value }))}
           />
           <Input
             type="email"
             placeholder="البريد الإلكتروني"
-            value={formData.email || ''}
+            value={formData.email ?? ''}
             onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
           />
           <Input
             type="tel"
             placeholder="رقم الهاتف"
-            value={formData.phone || ''}
+            value={formData.phone ?? ''}
             onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))}
           />
           <Select value={formData.payment_type || 'deferred'} onValueChange={val => setFormData(f => ({ ...f, payment_type: val as "prepaid" | "deferred" }))}>
@@ -107,12 +94,12 @@ const EditSupplierDialog = ({
         <Input
           placeholder="شروط الدفع"
           className="mt-2"
-          value={formData.payment_terms || ''}
+          value={formData.payment_terms ?? ''}
           onChange={e => setFormData(f => ({ ...f, payment_terms: e.target.value }))}
         />
         <div className="flex items-center gap-2 pt-2">
           <label>حالة المورد:</label>
-          <Select value={(formData.is_active ? "true" : "false") || "true"} onValueChange={v => setFormData(f => ({ ...f, is_active: v === "true" }))}>
+          <Select value={formData.is_active === false ? "false" : "true"} onValueChange={v => setFormData(f => ({ ...f, is_active: v === "true" }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -124,7 +111,7 @@ const EditSupplierDialog = ({
         </div>
         <DialogFooter>
           <Button 
-            onClick={() => onSave({ ...formData, id: supplier.id })} 
+            onClick={() => supplier && onSave({ ...formData, id: supplier.id })} 
             disabled={isLoading}
           >
             {isLoading ? "جاري الحفظ..." : "حفظ التغييرات"}

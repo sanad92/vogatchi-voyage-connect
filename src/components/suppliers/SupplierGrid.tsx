@@ -5,20 +5,7 @@ import { Star } from 'lucide-react';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import EditSupplierDialog from './EditSupplierDialog';
-
-interface Supplier {
-  id: string;
-  name: string;
-  type: string;
-  contact_person: string | null;
-  email: string | null;
-  phone: string | null;
-  rating: number | null;
-  payment_type: 'prepaid' | 'deferred';
-  payment_method_options: string[];
-  payment_terms: string | null;
-  is_active: boolean | null;
-}
+import { Supplier } from '@/types/supplier';
 
 interface SupplierGridProps {
   suppliers: Supplier[];
@@ -133,8 +120,8 @@ const SupplierGrid = ({
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{supplier.name}</CardTitle>
-                  <Badge className={getTypeColor(supplier.type)}>
-                    {getTypeLabel(supplier.type)}
+                  <Badge className={getTypeColor(supplier.supplier_type)}>
+                    {getTypeLabel(supplier.supplier_type)}
                   </Badge>
                 </div>
                 {supplier.rating && supplier.rating > 0 && (
@@ -186,10 +173,7 @@ const SupplierGrid = ({
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
                       onClick={() => { 
-                        setSelectedSupplier({
-                          ...supplier,
-                          supplier_type: supplier.type // ensure dialog gets supplier_type
-                        }); 
+                        setSelectedSupplier(supplier); 
                         setShowEdit(true); 
                       }}>
                       <Edit className="w-4 h-4" />
