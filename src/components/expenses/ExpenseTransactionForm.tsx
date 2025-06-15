@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 import { SupportedCurrency } from '@/types/currency';
 import CurrencySelector from '@/components/currency/CurrencySelector';
 import PaymentMethodSelector from './PaymentMethodSelector';
@@ -26,6 +26,7 @@ const ExpenseTransactionForm = ({
   isSubmitting = false 
 }: ExpenseTransactionFormProps) => {
   const { expenseCategories } = useExpenses();
+  const { getCurrentEmployeeName, getCurrentEmployeeId } = useUserEmployeeMapping();
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
@@ -44,15 +45,28 @@ const ExpenseTransactionForm = ({
 
   const selectedCurrency = watch('currency');
 
+  const handleFormSubmit = (data: any) => {
+    // إضافة معرف الموظف المنشئ
+    const formDataWithEmployee = {
+      ...data,
+      created_by: getCurrentEmployeeId(),
+      created_by_name: getCurrentEmployeeName()
+    };
+    onSubmit(formDataWithEmployee);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>
           {initialData ? 'تعديل معاملة مصروفات' : 'إضافة معاملة مصروفات جديدة'}
         </CardTitle>
+        <div className="text-sm text-gray-600">
+          المنشئ: {getCurrentEmployeeName()}
+        </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="description">وصف المعاملة *</Label>

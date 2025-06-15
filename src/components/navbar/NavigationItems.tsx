@@ -21,7 +21,7 @@ interface NavigationItem {
   title: string;
   to: string;
   icon: LucideIcon;
-  label?: string;
+  label: string;
   allowedRoles?: string[];
 }
 

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, User, Phone, Mail, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Calendar, DollarSign, Link } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 import type { Employee } from '@/types/expenses';
 
 const EmployeeManagement = () => {
   const { employees, addEmployee, isAddingEmployee } = useExpenses();
+  const { currentEmployee, linkUserToEmployee } = useUserEmployeeMapping();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newEmployee, setNewEmployee] = useState<Omit<Employee, 'id' | 'created_at' | 'updated_at'>>({
@@ -67,6 +68,10 @@ const EmployeeManagement = () => {
     });
   };
 
+  const handleLinkEmployee = async (employeeId: string) => {
+    await linkUserToEmployee(employeeId);
+  };
+
   return (
     <div className="space-y-6">
       {/* رأس الصفحة */}
@@ -74,6 +79,13 @@ const EmployeeManagement = () => {
         <div>
           <h2 className="text-2xl font-bold mb-2">إدارة الموظفين</h2>
           <p className="text-gray-600">إدارة بيانات الموظفين ومعلوماتهم الأساسية</p>
+          {currentEmployee && (
+            <div className="mt-2 p-2 bg-green-50 rounded-lg">
+              <span className="text-green-800 text-sm">
+                مرتبط بالموظف: {currentEmployee.full_name} ({currentEmployee.employee_code})
+              </span>
+            </div>
+          )}
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -249,9 +261,21 @@ const EmployeeManagement = () => {
                   <User className="h-5 w-5 text-blue-600" />
                   {employee.full_name}
                 </CardTitle>
-                <Badge variant={employee.is_active ? "default" : "secondary"}>
-                  {employee.is_active ? 'نشط' : 'غير نشط'}
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge variant={employee.is_active ? "default" : "secondary"}>
+                    {employee.is_active ? 'نشط' : 'غير نشط'}
+                  </Badge>
+                  {!currentEmployee && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleLinkEmployee(employee.id)}
+                    >
+                      <Link className="h-3 w-3 mr-1" />
+                      ربط
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -294,7 +318,7 @@ const EmployeeManagement = () => {
                 <div className="flex items-center gap-1 mt-1">
                   <DollarSign className="h-3 w-3 text-green-600" />
                   <span className="text-sm font-medium">
-                    {(employee.base_salary + employee.allowances).toLocaleString()} ر.س
+                    {(employee.base_salary + employee.allowances).toLocaleString()} ج.م
                   </span>
                 </div>
               </div>

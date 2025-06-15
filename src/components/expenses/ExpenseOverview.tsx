@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
 import FinancialDashboard from './reports/FinancialDashboard';
+import type { SupportedCurrency } from '@/types/currency';
 
 const ExpenseOverview = () => {
   const { 
@@ -55,7 +57,7 @@ const ExpenseOverview = () => {
         const transactionDate = new Date(transaction.transaction_date);
         if (transactionDate >= startDate) {
           if (transaction.currency && transaction.currency !== 'EGP') {
-            const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency);
+            const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency as SupportedCurrency);
             totalExpenses += amountInEGP;
           } else {
             totalExpenses += transaction.amount;
@@ -72,7 +74,7 @@ const ExpenseOverview = () => {
           if (salary.net_salary_egp) {
             totalSalaries += salary.net_salary_egp;
           } else if (salary.currency && salary.currency !== 'EGP') {
-            const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency);
+            const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency as SupportedCurrency);
             totalSalaries += amountInEGP;
           } else {
             totalSalaries += salary.net_salary;
