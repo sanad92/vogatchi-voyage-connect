@@ -11,7 +11,7 @@ import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 import BackupManagementTab from '@/components/admin/BackupManagementTab';
 import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
-import PermissionsTab from '@/components/admin/PermissionsTab';
+import PermissionsManagement from '@/components/admin/PermissionsManagement';
 import EnhancedAdminTabs from '@/components/admin/EnhancedAdminTabs';
 
 const AdminSettings = () => {
@@ -84,7 +84,7 @@ const AdminSettings = () => {
             </TabsContent>
 
             <TabsContent value="permissions" className="mt-0">
-              <PermissionsTab />
+              <PermissionsManagement />
             </TabsContent>
           </div>
         </Tabs>
