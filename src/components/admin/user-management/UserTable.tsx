@@ -36,6 +36,17 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('خطأ في تنسيق التاريخ:', error);
+      return 'غير محدد';
+    }
+  };
+
+  console.log('🔍 عرض المستخدمين في الجدول:', users.length);
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -54,15 +65,21 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
             <TableRow key={user.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">{user.full_name}</div>
-                  <div className="text-sm text-gray-500">{user.email}</div>
+                  <div className="font-medium">
+                    {user.full_name || 'غير محدد'}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {user.email || 'غير محدد'}
+                  </div>
                   {user.phone && (
                     <div className="text-xs text-gray-400">{user.phone}</div>
                   )}
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-sm">{user.department || 'غير محدد'}</span>
+                <span className="text-sm">
+                  {user.department || 'غير محدد'}
+                </span>
               </TableCell>
               <TableCell>
                 <Badge className={getRoleBadgeColor(user.role || 'no_role')}>
@@ -76,7 +93,7 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
               </TableCell>
               <TableCell>
                 <span className="text-sm">
-                  {format(new Date(user.created_at), 'dd/MM/yyyy')}
+                  {user.created_at ? formatDate(user.created_at) : 'غير محدد'}
                 </span>
               </TableCell>
               <TableCell className="text-center">
@@ -86,6 +103,11 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
           ))}
         </TableBody>
       </Table>
+      
+      {/* معلومات إضافية عن البيانات المعروضة */}
+      <div className="mt-4 text-xs text-gray-500 text-center">
+        عرض {users.length} مستخدم
+      </div>
     </div>
   );
 };

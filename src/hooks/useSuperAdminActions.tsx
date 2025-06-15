@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { UserRole } from "@/types/userManagement";
 
 export const useSuperAdminActions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -120,9 +121,10 @@ export const useSuperAdminActions = () => {
   }) => {
     try {
       setIsLoading(true);
+      console.log('🔄 بدء إنشاء مستخدم جديد:', userData.email);
       
-      // Fix the type issue by ensuring role is a valid user_role type
-      const validRole = userData.role as "admin" | "manager" | "sales_agent" | "accountant" | "viewer" | "super_admin";
+      // Cast role to the correct type to fix TypeScript error
+      const validRole = userData.role as UserRole;
       
       const { data, error } = await supabase.rpc('admin_create_user', {
         p_email: userData.email,
@@ -133,17 +135,23 @@ export const useSuperAdminActions = () => {
         p_role: validRole
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في استدعاء admin_create_user:', error);
+        throw error;
+      }
 
       const result = data?.[0];
+      console.log('📋 نتيجة إنشاء المستخدم:', result);
+      
       if (!result?.success) {
         throw new Error(result?.message || 'فشل في إنشاء المستخدم');
       }
 
+      console.log('✅ تم إنشاء المستخدم بنجاح:', result.user_id);
       toast.success('تم إنشاء المستخدم بنجاح');
       return { success: true, userId: result.user_id };
     } catch (error: any) {
-      console.error('خطأ في إنشاء المستخدم:', error);
+      console.error('❌ خطأ في إنشاء المستخدم:', error);
       toast.error(error.message || 'حدث خطأ أثناء إنشاء المستخدم');
       return { success: false, error: error.message };
     } finally {
