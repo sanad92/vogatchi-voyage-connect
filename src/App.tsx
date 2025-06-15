@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -14,8 +15,8 @@ import PaymentOrders from "@/pages/PaymentOrders";
 import Reports from "@/pages/Reports";
 import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "@/pages/NotFound";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import Navbar from "@/components/navbar/Navbar";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Navbar from "@/components/Navbar";
 import BankAccounts from "@/pages/BankAccounts";
 
 function App() {

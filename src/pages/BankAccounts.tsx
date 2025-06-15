@@ -4,15 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Eye, Edit, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Building2, Plus, Edit, Trash2, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { SUPPORTED_CURRENCIES, CURRENCY_SYMBOLS, CURRENCY_NAMES } from "@/types/currency";
 
 const BankAccounts = () => {
+  const [showForm, setShowForm] = useState(false);
   const [newAccount, setNewAccount] = useState({
     account_name: "",
     bank_name: "",
@@ -20,16 +19,14 @@ const BankAccounts = () => {
     currency: "EGP",
     account_type: "checking",
     current_balance: 0,
-    notes: ""
+    notes: "",
+    is_active: true
   });
-  const [showForm, setShowForm] = useState(false);
-  const { bankAccounts, transactions, isLoading, addBankAccount, isAddingAccount } = useBankAccounts();
+
+  const { bankAccounts, transactions, isLoading, addBankAccount, addTransaction, getAccountsByCurrency, isAddingAccount } = useBankAccounts();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAccount.account_name || !newAccount.bank_name || !newAccount.account_number) {
-      return;
-    }
     addBankAccount(newAccount);
     setNewAccount({
       account_name: "",
@@ -38,144 +35,138 @@ const BankAccounts = () => {
       currency: "EGP",
       account_type: "checking",
       current_balance: 0,
-      notes: ""
+      notes: "",
+      is_active: true
     });
     setShowForm(false);
   };
 
-  // إحصائيات الحسابات
-  const totalBalance = bankAccounts.reduce((sum, account) => sum + account.current_balance, 0);
-  const accountsByCurrency = SUPPORTED_CURRENCIES.map(currency => ({
-    currency,
-    accounts: bankAccounts.filter(acc => acc.currency === currency),
-    totalBalance: bankAccounts
-      .filter(acc => acc.currency === currency)
-      .reduce((sum, acc) => sum + acc.current_balance, 0)
-  }));
+  const getTotalBalanceByCurrency = (currency: string) => {
+    return bankAccounts
+      .filter(account => account.currency === currency)
+      .reduce((sum, account) => sum + account.current_balance, 0);
+  };
 
   const getAccountTypeLabel = (type: string) => {
     const types = {
       checking: "حساب جاري",
       savings: "حساب توفير",
-      credit: "حساب ائتماني"
+      business: "حساب تجاري",
+      investment: "حساب استثماري"
     };
     return types[type as keyof typeof types] || type;
-  };
-
-  const getTransactionIcon = (type: string) => {
-    return type === 'credit' ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-600" />;
   };
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-blue-900 flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-orange-900 flex items-center gap-2">
             <Building2 className="h-8 w-8" />
             الحسابات البنكية
           </h1>
           <p className="text-gray-600 mt-1">إدارة الحسابات البنكية متعددة العملات</p>
         </div>
-        <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 ml-2" />
-              إضافة حساب بنكي
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>إضافة حساب بنكي جديد</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="account_name">اسم الحساب</Label>
-                <Input
-                  id="account_name"
-                  value={newAccount.account_name}
-                  onChange={e => setNewAccount({...newAccount, account_name: e.target.value})}
-                  placeholder="الحساب الجاري الرئيسي"
-                  required
-                />
-              </div>
+        <Button onClick={() => setShowForm(!showForm)} className="bg-orange-600 hover:bg-orange-700">
+          <Plus className="w-4 h-4 ml-2" />
+          إضافة حساب بنكي
+        </Button>
+      </div>
 
-              <div>
-                <Label htmlFor="bank_name">اسم البنك</Label>
-                <Input
-                  id="bank_name"
-                  value={newAccount.bank_name}
-                  onChange={e => setNewAccount({...newAccount, bank_name: e.target.value})}
-                  placeholder="البنك الأهلي المصري"
-                  required
-                />
-              </div>
+      {/* ملخص الأرصدة */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {SUPPORTED_CURRENCIES.map(currency => {
+          const total = getTotalBalanceByCurrency(currency);
+          return (
+            <Card key={currency}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">{CURRENCY_NAMES[currency]}</p>
+                    <p className="text-2xl font-bold">
+                      {total.toFixed(2)} {CURRENCY_SYMBOLS[currency]}
+                    </p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-              <div>
-                <Label htmlFor="account_number">رقم الحساب</Label>
-                <Input
-                  id="account_number"
-                  value={newAccount.account_number}
-                  onChange={e => setNewAccount({...newAccount, account_number: e.target.value})}
-                  placeholder="1234567890123"
-                  required
-                />
-              </div>
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>إضافة حساب بنكي جديد</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                placeholder="اسم الحساب"
+                value={newAccount.account_name}
+                onChange={e => setNewAccount({...newAccount, account_name: e.target.value})}
+                required
+              />
 
-              <div>
-                <Label htmlFor="currency">العملة</Label>
-                <Select value={newAccount.currency} onValueChange={(value) => setNewAccount({...newAccount, currency: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_CURRENCIES.map(currency => (
-                      <SelectItem key={currency} value={currency}>
-                        {CURRENCY_NAMES[currency]} ({CURRENCY_SYMBOLS[currency]})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                placeholder="اسم البنك"
+                value={newAccount.bank_name}
+                onChange={e => setNewAccount({...newAccount, bank_name: e.target.value})}
+                required
+              />
 
-              <div>
-                <Label htmlFor="account_type">نوع الحساب</Label>
-                <Select value={newAccount.account_type} onValueChange={(value) => setNewAccount({...newAccount, account_type: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="checking">حساب جاري</SelectItem>
-                    <SelectItem value="savings">حساب توفير</SelectItem>
-                    <SelectItem value="credit">حساب ائتماني</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                placeholder="رقم الحساب"
+                value={newAccount.account_number}
+                onChange={e => setNewAccount({...newAccount, account_number: e.target.value})}
+                required
+              />
 
-              <div>
-                <Label htmlFor="current_balance">الرصيد الحالي</Label>
-                <Input
-                  id="current_balance"
-                  type="number"
-                  step="0.01"
-                  value={newAccount.current_balance}
-                  onChange={e => setNewAccount({...newAccount, current_balance: parseFloat(e.target.value) || 0})}
-                  placeholder="0.00"
-                />
-              </div>
+              <Select value={newAccount.currency} onValueChange={(value) => setNewAccount({...newAccount, currency: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="العملة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_CURRENCIES.map(currency => (
+                    <SelectItem key={currency} value={currency}>
+                      {CURRENCY_NAMES[currency]} ({CURRENCY_SYMBOLS[currency]})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <div>
-                <Label htmlFor="notes">ملاحظات</Label>
+              <Select value={newAccount.account_type} onValueChange={(value) => setNewAccount({...newAccount, account_type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="نوع الحساب" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="checking">حساب جاري</SelectItem>
+                  <SelectItem value="savings">حساب توفير</SelectItem>
+                  <SelectItem value="business">حساب تجاري</SelectItem>
+                  <SelectItem value="investment">حساب استثماري</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="number"
+                placeholder="الرصيد الافتتاحي"
+                value={newAccount.current_balance}
+                onChange={e => setNewAccount({...newAccount, current_balance: parseFloat(e.target.value) || 0})}
+                step="0.01"
+              />
+
+              <div className="md:col-span-2">
                 <Textarea
-                  id="notes"
+                  placeholder="ملاحظات (اختياري)"
                   value={newAccount.notes}
                   onChange={e => setNewAccount({...newAccount, notes: e.target.value})}
-                  placeholder="ملاحظات إضافية..."
                   rows={3}
                 />
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isAddingAccount} className="flex-1">
+              <div className="md:col-span-2 flex gap-2">
+                <Button type="submit" disabled={isAddingAccount}>
                   {isAddingAccount ? "جاري الإضافة..." : "إضافة الحساب"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
@@ -183,150 +174,73 @@ const BankAccounts = () => {
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">إجمالي الحسابات</p>
-                <p className="text-2xl font-bold">{bankAccounts.length}</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
-        
-        {accountsByCurrency.map(({ currency, accounts, totalBalance }) => (
-          <Card key={currency}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">إجمالي {CURRENCY_NAMES[currency]}</p>
-                  <p className="text-2xl font-bold">
-                    {totalBalance.toFixed(2)} {CURRENCY_SYMBOLS[currency]}
-                  </p>
-                  <p className="text-xs text-gray-500">{accounts.length} حساب</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      )}
 
       {/* قائمة الحسابات البنكية */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         {isLoading ? (
-          <div className="col-span-full text-center py-8">جاري تحميل الحسابات البنكية...</div>
+          <div className="text-center py-8">جاري تحميل الحسابات البنكية...</div>
         ) : bankAccounts.length === 0 ? (
-          <Card className="col-span-full">
+          <Card>
             <CardContent className="text-center py-8">
               <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">لا توجد حسابات بنكية مضافة</p>
-              <Button onClick={() => setShowForm(true)} className="mt-4">
-                إضافة أول حساب بنكي
-              </Button>
+              <p className="text-gray-500">لا توجد حسابات بنكية مضافة بعد</p>
             </CardContent>
           </Card>
         ) : (
           bankAccounts.map((account) => (
             <Card key={account.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <CardTitle className="text-lg">{account.account_name}</CardTitle>
-                    <p className="text-sm text-gray-600">{account.bank_name}</p>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Building2 className="w-5 h-5" />
+                      {account.account_name}
+                    </h3>
+                    <p className="text-gray-600">{account.bank_name}</p>
+                    <p className="text-sm text-gray-500">رقم الحساب: {account.account_number}</p>
                   </div>
-                  <Badge variant="outline" className="ml-2">
-                    {CURRENCY_SYMBOLS[account.currency as keyof typeof CURRENCY_SYMBOLS]} {account.currency}
-                  </Badge>
+                  <div className="text-left">
+                    <Badge variant="secondary" className="mb-2">
+                      {getAccountTypeLabel(account.account_type)}
+                    </Badge>
+                    <div className="text-2xl font-bold text-green-600">
+                      {account.current_balance.toFixed(2)} {CURRENCY_SYMBOLS[account.currency as keyof typeof CURRENCY_SYMBOLS]}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {CURRENCY_NAMES[account.currency as keyof typeof CURRENCY_NAMES]}
+                    </div>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-600">الرصيد الحالي</p>
-                    <p className="text-3xl font-bold text-blue-600">
-                      {account.current_balance.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {CURRENCY_SYMBOLS[account.currency as keyof typeof CURRENCY_SYMBOLS]} {account.currency}
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">رقم الحساب:</span>
-                      <p className="text-gray-600">{account.account_number}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">نوع الحساب:</span>
-                      <p className="text-gray-600">{getAccountTypeLabel(account.account_type)}</p>
-                    </div>
+                {account.notes && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded">
+                    <span className="font-medium">ملاحظات:</span>
+                    <p className="text-sm mt-1">{account.notes}</p>
                   </div>
+                )}
 
-                  {account.notes && (
-                    <div className="p-3 bg-blue-50 rounded">
-                      <span className="font-medium text-blue-800">ملاحظات:</span>
-                      <p className="text-sm text-blue-700 mt-1">{account.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Eye className="w-4 h-4 mr-1" />
-                      عرض
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Edit className="w-4 h-4 mr-1" />
-                      تعديل
-                    </Button>
-                  </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline">
+                    <Edit className="w-4 h-4 mr-1" />
+                    تعديل
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    إيداع
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <TrendingDown className="w-4 h-4 mr-1" />
+                    سحب
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))
         )}
       </div>
-
-      {/* آخر المعاملات */}
-      {transactions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>آخر المعاملات البنكية</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {transactions.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {getTransactionIcon(transaction.transaction_type)}
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-sm text-gray-600">
-                        {transaction.bank_accounts?.account_name} • {new Date(transaction.transaction_date).toLocaleDateString('ar-EG')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-left">
-                    <p className={`font-bold ${transaction.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.transaction_type === 'credit' ? '+' : '-'}{transaction.amount.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {CURRENCY_SYMBOLS[transaction.bank_accounts?.currency as keyof typeof CURRENCY_SYMBOLS]}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
