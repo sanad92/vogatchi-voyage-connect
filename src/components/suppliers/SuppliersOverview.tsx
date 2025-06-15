@@ -20,10 +20,16 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
-  const [advancedFilters, setAdvancedFilters] = useState({
+  // الأنواع متوافقة الآن مع الفلاتر (كل شيء optional)
+  const [advancedFilters, setAdvancedFilters] = useState<{
+    type?: string;
+    status?: string;
+    minRating?: number;
+    search?: string;
+  }>({
     type: '',
     status: '',
-    minRating: undefined as number | undefined,
+    minRating: undefined,
     search: '',
   });
   const { 
@@ -107,14 +113,14 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
 
   const totalSuppliers = suppliers.length;
   const activeSuppliers = suppliers.filter(s => s.is_active).length;
-  const avgRating = suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / totalSuppliers || 0;
+  const avgRating = suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / (suppliers.length || 1);
 
   return (
     <div className="space-y-6">
       <SupplierStatsCards 
-        totalSuppliers={totalSuppliers}
-        activeSuppliers={activeSuppliers}
-        avgRating={avgRating}
+        totalSuppliers={suppliers.length}
+        activeSuppliers={suppliers.filter(s => s.is_active).length}
+        avgRating={suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / (suppliers.length || 1)}
       />
       {/* شريط الفلاتر المتقدمة */}
       <SupplierAdvancedFilters

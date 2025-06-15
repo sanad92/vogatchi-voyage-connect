@@ -124,7 +124,7 @@ const SupplierGrid = ({
     );
   }
 
-  if (suppliers.length === 0) {
+  if (!suppliers || suppliers.length === 0) {
     return (
       <div className="col-span-full text-center py-8 text-gray-500">لا يوجد موردون مطابقون للبحث</div>
     );

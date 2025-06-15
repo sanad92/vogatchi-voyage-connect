@@ -1,7 +1,12 @@
 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 interface SupplierAdvancedFiltersProps {
   onFilterChange: (filters: {
@@ -32,7 +37,10 @@ const statusOptions = [
   { value: 'inactive', label: 'غير نشط' },
 ];
 
-const SupplierAdvancedFilters = ({ onFilterChange, currentFilters }: SupplierAdvancedFiltersProps) => {
+const SupplierAdvancedFilters = ({
+  onFilterChange,
+  currentFilters,
+}: SupplierAdvancedFiltersProps) => {
   const [filters, setFilters] = useState(currentFilters);
 
   const handleChange = (key: string, value: any) => {
@@ -54,35 +62,35 @@ const SupplierAdvancedFilters = ({ onFilterChange, currentFilters }: SupplierAdv
         value={filters.type || ''}
         onValueChange={v => handleChange('type', v)}
       >
-        <Select.Trigger className="w-32">نوع المورد</Select.Trigger>
-        <Select.Content>
+        <SelectTrigger className="w-32">نوع المورد</SelectTrigger>
+        <SelectContent>
           {typesOptions.map(opt => (
-            <Select.Item key={opt.value} value={opt.value}>{opt.label}</Select.Item>
+            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
           ))}
-        </Select.Content>
+        </SelectContent>
       </Select>
       <Select
         value={filters.status || ''}
         onValueChange={v => handleChange('status', v)}
       >
-        <Select.Trigger className="w-32">الحالة</Select.Trigger>
-        <Select.Content>
+        <SelectTrigger className="w-32">الحالة</SelectTrigger>
+        <SelectContent>
           {statusOptions.map(opt => (
-            <Select.Item key={opt.value} value={opt.value}>{opt.label}</Select.Item>
+            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
           ))}
-        </Select.Content>
+        </SelectContent>
       </Select>
       <Select
         value={String(filters.minRating ?? '')}
         onValueChange={v => handleChange('minRating', v ? Number(v) : undefined)}
       >
-        <Select.Trigger className="w-32">الحد الأدنى للتقييم</Select.Trigger>
-        <Select.Content>
-          <Select.Item value="">الكل</Select.Item>
+        <SelectTrigger className="w-32">الحد الأدنى للتقييم</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">الكل</SelectItem>
           {[1,2,3,4,5].map(num => (
-            <Select.Item key={num} value={String(num)}>{num} نجوم+</Select.Item>
+            <SelectItem key={num} value={String(num)}>{num} نجوم+</SelectItem>
           ))}
-        </Select.Content>
+        </SelectContent>
       </Select>
     </div>
   );
