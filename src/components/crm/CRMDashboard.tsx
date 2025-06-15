@@ -1,13 +1,9 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, PieChart, TrendingUp, Users, Target, Brain, Send, MessageSquare } from 'lucide-react';
-import CustomerAnalytics from './CustomerAnalytics';
-import SmartSegmentation from './SmartSegmentation';
-import MarketingCampaigns from './MarketingCampaigns';
-import CustomerInteractions from './CustomerInteractions';
+import { Brain } from 'lucide-react';
+import CRMOverview from './dashboard/CRMOverview';
+import CRMTabs from './dashboard/CRMTabs';
 import { useCRM } from '@/hooks/useCRM';
 
 const CRMDashboard = () => {
@@ -48,157 +44,13 @@ const CRMDashboard = () => {
         </div>
       </div>
 
-      {/* نظرة عامة سريعة */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">قطاعات العملاء</p>
-                <p className="text-2xl font-bold">{customerSegments?.length || 0}</p>
-                <p className="text-xs text-green-600">+2 هذا الشهر</p>
-              </div>
-              <Target className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+      <CRMOverview
+        customerSegments={customerSegments}
+        loyaltyRewards={loyaltyRewards}
+        marketingCampaigns={marketingCampaigns}
+      />
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">مكافآت الولاء</p>
-                <p className="text-2xl font-bold">{loyaltyRewards?.length || 0}</p>
-                <p className="text-xs text-blue-600">نشطة</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">الحملات النشطة</p>
-                <p className="text-2xl font-bold">
-                  {marketingCampaigns?.filter(c => c.status === 'active').length || 0}
-                </p>
-                <p className="text-xs text-purple-600">قيد التشغيل</p>
-              </div>
-              <PieChart className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* التابات الرئيسية */}
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">التحليلات</span>
-          </TabsTrigger>
-          <TabsTrigger value="segmentation" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            <span className="hidden sm:inline">التجزئة</span>
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            <span className="hidden sm:inline">الحملات</span>
-          </TabsTrigger>
-          <TabsTrigger value="interactions" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">التفاعلات</span>
-          </TabsTrigger>
-          <TabsTrigger value="insights" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            <span className="hidden sm:inline">الرؤى الذكية</span>
-          </TabsTrigger>
-          <TabsTrigger value="automation" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">الأتمتة</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="analytics">
-          <CustomerAnalytics timeframe={timeframe} />
-        </TabsContent>
-
-        <TabsContent value="segmentation">
-          <SmartSegmentation />
-        </TabsContent>
-
-        <TabsContent value="campaigns">
-          <MarketingCampaigns />
-        </TabsContent>
-
-        <TabsContent value="interactions">
-          <CustomerInteractions />
-        </TabsContent>
-
-        <TabsContent value="insights">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                الرؤى الذكية والتوصيات
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-800 mb-2">💡 توصية ذكية</h4>
-                  <p className="text-blue-700 text-sm">
-                    لديك 23 عميل معرض للمغادرة. نوصي بإرسال حملة استعادة بخصم 15% خلال الأسبوع القادم.
-                  </p>
-                </div>
-                
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">📈 فرصة نمو</h4>
-                  <p className="text-green-700 text-sm">
-                    العملاء الجدد يظهرون نمط حجز مرتفع. زيادة الاستثمار في التسويق الرقمي قد تحقق عائد 300%.
-                  </p>
-                </div>
-                
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <h4 className="font-medium text-orange-800 mb-2">⚠️ تحذير</h4>
-                  <p className="text-orange-700 text-sm">
-                    معدل التراجع ارتفع بنسبة 15% هذا الشهر. يُنصح بمراجعة استراتيجية الاحتفاظ بالعملاء.
-                  </p>
-                </div>
-                
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h4 className="font-medium text-purple-800 mb-2">🎯 هدف مقترح</h4>
-                  <p className="text-purple-700 text-sm">
-                    زيادة متوسط قيمة الطلب إلى 25,000 ج.م خلال الربع القادم من خلال عروض الباقات المجمعة.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="automation">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                أتمتة التسويق وسير العمل
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">أتمتة التسويق</h3>
-                <p className="text-gray-600 mb-4">
-                  سيتم إضافة ميزات أتمتة التسويق وسير العمل في المرحلة التالية
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <CRMTabs timeframe={timeframe} />
     </div>
   );
 };
