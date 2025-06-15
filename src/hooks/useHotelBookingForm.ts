@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
@@ -112,10 +113,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
 
     // تحقق من أن المورد تم اختياره (supplier_id/name)
     if (!bookingData.supplier_id || !bookingData.supplier_name) {
-      toast({
-        title: "يجب اختيار مورد الفندق.",
-        variant: "destructive"
-      });
+      toast.error("يجب اختيار مورد الفندق.");
       return;
     }
 
