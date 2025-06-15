@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
@@ -40,18 +41,16 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       payment_method: booking.payment_method,
       paid_amount: booking.paid_amount,
       payment_due_date: booking.payment_due_date,
-      supplier_id: (booking as any).supplier_id || '', // مبدئياً لأي حجوزات قديمة، سيأخذ القيمة أو فارغ
+      supplier_id: (booking as any).supplier_id || '',
     } : {
       currency: 'EGP',
       booking_agent_name: currentEmployee?.full_name || 'مستخدم غير محدد'
     }
   });
 
-  // تعيين بيانات موظف الحجز تلقائياً ومنع تغييرها
   useEffect(() => {
     if (currentEmployee && !booking) {
       setValue('booking_agent_name', currentEmployee.full_name);
-      // قفل الحقل ضد التغيير
       const agentNameField = document.getElementById('booking_agent_name') as HTMLInputElement;
       if (agentNameField) {
         agentNameField.readOnly = true;
@@ -60,7 +59,6 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     }
   }, [currentEmployee, booking, setValue]);
 
-  // منع تغيير اسم موظف الحجز في أي وقت
   useEffect(() => {
     const currentAgentName = watch('booking_agent_name');
     const expectedAgentName = currentEmployee?.full_name || 'مستخدم غير محدد';
@@ -70,7 +68,6 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     }
   }, [watch('booking_agent_name'), currentEmployee, booking, setValue]);
 
-  // التحقق من أن المورد معرف
   const checkInDate = watch('check_in_date');
   const checkOutDate = watch('check_out_date');
   const costPerNight = watch('cost_per_night');
@@ -95,7 +92,6 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   const { validateBookingData } = useHotelBookingValidation();
   const { isSubmitting, submitBooking } = useHotelBookingSubmission({ booking, onSuccess });
 
-  // Handle fetching existing requests when editing
   useEffect(() => {
     if (booking?.id) {
       fetchExistingRequests(setValue);
@@ -103,7 +99,6 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   }, [booking, setValue, fetchExistingRequests]);
 
   const sanitizeBookingData = (data: NewHotelBooking) => {
-    // التحقق من الأنواع بشكل صحيح لمنع الأخطاء
     const parseOptionalNumber = (val: unknown, fallback: number | null = null) => {
       if (typeof val === "number") return val;
       if (typeof val === "string" && val.trim() !== "") {
@@ -114,18 +109,12 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     };
 
     const parsedHotelStarRating = parseOptionalNumber(data.hotel_star_rating, null);
-
     const parsedNumAdults = parseOptionalNumber(data.number_of_adults, 1);
-
     const parsedNumChildren = parseOptionalNumber(data.number_of_children, 0);
-
     const parsedCostPerNight = parseOptionalNumber(data.cost_per_night, 0);
-
     const parsedSellingPrice = parseOptionalNumber(data.selling_price_per_night, 0);
-
     const parsedPaidAmount = parseOptionalNumber(data.paid_amount, 0);
 
-    // Handle supplier_id: allow custom supplier name if ID not present
     let outSupplierId = data.supplier_id;
     if ((typeof data.supplier_id === "string" && data.supplier_id.trim() === "") || !data.supplier_id) {
       if (data.supplier_name && data.supplier_name.trim() !== "") {
@@ -133,7 +122,11 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       }
     }
 
-    // Return the sanitized object
+    // هنا نتحكم بقيمة booking_agent_id: نرسلها فقط إذا فعلاً يوجد موظف حقيقي معرفه صالح (متواجد في employees)
+    const bookingAgentId = currentEmployee && currentEmployee.id && currentEmployee.employee_code !== "USER"
+      ? currentEmployee.id
+      : undefined;
+
     return {
       ...data,
       hotel_star_rating: parsedHotelStarRating,
@@ -143,27 +136,24 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       selling_price_per_night: parsedSellingPrice,
       paid_amount: parsedPaidAmount,
       supplier_id: outSupplierId,
+      booking_agent_id: bookingAgentId, // فقط إذا موظف فعلي
     };
   };
 
   const onSubmit = async (rawData: NewHotelBooking) => {
-    // Sanitize data before sending
     const data = sanitizeBookingData(rawData);
 
-    //تأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
-    const bookingData = {
-      ...data,
-      booking_agent_id: currentEmployee?.id,
-      booking_agent_name: currentEmployee?.full_name || data.booking_agent_name
-    };
+    // التأكد من عدم تمرير booking_agent_id إذا لم يكن فعليًا
+    const bookingData = { ...data };
+    if (!data.booking_agent_id) {
+      delete bookingData.booking_agent_id;
+    }
 
-    // التحقق من اختيار اسم مورد على الأقل
     if (!bookingData.supplier_name || bookingData.supplier_name.trim() === "") {
       toast.error("يجب اختيار مورد الفندق أو إدخال اسم مورد مخصص.");
       return;
     }
 
-    // supplier_id يمكن أن يكون null إذا المورد مخصص، لنجعل هذا التحقق فقط على اسم المورد
     if (!validateBookingData(bookingData, selectedCustomer)) {
       return;
     }
