@@ -1,138 +1,305 @@
 
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, Receipt, Home, TrendingUp, DollarSign, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, TrendingDown, Receipt, Users, Home, PieChart } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
+import FinancialDashboard from './reports/FinancialDashboard';
 
 const ExpenseOverview = () => {
   const { 
-    employees, 
-    rentContracts, 
     expenseTransactions, 
-    monthlySalaries,
-    expenseCategories 
+    monthlySalaries, 
+    rentPayments, 
+    expenseCategories,
+    transactionsLoading 
   } = useExpenses();
+  
+  const { convertToPrimaryCurrency } = useExchangeRates();
+  const [selectedPeriod, setSelectedPeriod] = useState('thisMonth');
+  const [showFinancialDashboard, setShowFinancialDashboard] = useState(false);
+  const [summary, setSummary] = useState({
+    totalExpenses: 0,
+    totalSalaries: 0,
+    totalRent: 0,
+    monthlyChange: 0
+  });
 
-  // حساب إحصائيات سريعة
-  const activeEmployees = employees?.filter(emp => emp.is_active).length || 0;
-  const activeContracts = rentContracts?.filter(contract => contract.is_active).length || 0;
-  const totalMonthlyRent = rentContracts?.reduce((sum, contract) => sum + contract.monthly_rent, 0) || 0;
-  const currentMonthExpenses = expenseTransactions?.filter(
-    tx => tx.transaction_date.startsWith(new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'))
-  ).reduce((sum, tx) => sum + tx.amount, 0) || 0;
+  // حساب ملخص المصروفات بالجنيه المصري
+  const calculateSummary = async () => {
+    const currentDate = new Date();
+    let startDate: Date;
+    
+    switch (selectedPeriod) {
+      case 'thisMonth':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        break;
+      case 'lastMonth':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        break;
+      case 'thisYear':
+        startDate = new Date(currentDate.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    }
 
-  const thisMonthSalaries = monthlySalaries?.filter(
-    salary => salary.salary_month.startsWith(new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'))
-  ).reduce((sum, salary) => sum + salary.net_salary, 0) || 0;
+    let totalExpenses = 0;
+    let totalSalaries = 0;
+    let totalRent = 0;
 
-  const stats = [
-    {
-      title: 'إجمالي الموظفين',
-      value: activeEmployees,
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'عقود الإيجار النشطة',
-      value: activeContracts,
-      icon: Home,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'إجمالي الإيجارات الشهرية',
-      value: `${totalMonthlyRent.toLocaleString()} ج.م`,
-      icon: DollarSign,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-    {
-      title: 'مصروفات الشهر الحالي',
-      value: `${currentMonthExpenses.toLocaleString()} ج.م`,
-      icon: Receipt,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-    },
-    {
-      title: 'رواتب الشهر الحالي',
-      value: `${thisMonthSalaries.toLocaleString()} ج.م`,
-      icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      title: 'فئات المصروفات',
-      value: expenseCategories?.length || 0,
-      icon: TrendingUp,
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50',
-    },
-  ];
+    // حساب المصروفات العامة
+    if (expenseTransactions) {
+      for (const transaction of expenseTransactions) {
+        const transactionDate = new Date(transaction.transaction_date);
+        if (transactionDate >= startDate) {
+          if (transaction.currency && transaction.currency !== 'EGP') {
+            const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency);
+            totalExpenses += amountInEGP;
+          } else {
+            totalExpenses += transaction.amount;
+          }
+        }
+      }
+    }
+
+    // حساب الرواتب
+    if (monthlySalaries) {
+      for (const salary of monthlySalaries) {
+        const salaryDate = new Date(salary.salary_month);
+        if (salaryDate >= startDate) {
+          if (salary.net_salary_egp) {
+            totalSalaries += salary.net_salary_egp;
+          } else if (salary.currency && salary.currency !== 'EGP') {
+            const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency);
+            totalSalaries += amountInEGP;
+          } else {
+            totalSalaries += salary.net_salary;
+          }
+        }
+      }
+    }
+
+    // حساب مدفوعات الإيجار
+    if (rentPayments) {
+      for (const payment of rentPayments) {
+        const paymentDate = new Date(payment.payment_month);
+        if (paymentDate >= startDate) {
+          if (payment.amount_egp) {
+            totalRent += payment.amount_egp;
+          } else if (payment.currency && payment.currency !== 'EGP') {
+            const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency);
+            totalRent += amountInEGP;
+          } else {
+            totalRent += payment.amount;
+          }
+        }
+      }
+    }
+
+    setSummary({
+      totalExpenses,
+      totalSalaries,
+      totalRent,
+      monthlyChange: 0 // يمكن حساب التغيير الشهري لاحقاً
+    });
+  };
+
+  useEffect(() => {
+    if (expenseTransactions && monthlySalaries && rentPayments) {
+      calculateSummary();
+    }
+  }, [selectedPeriod, expenseTransactions, monthlySalaries, rentPayments]);
+
+  if (showFinancialDashboard) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">لوحة المعلومات المالية الشاملة</h2>
+          <Button variant="outline" onClick={() => setShowFinancialDashboard(false)}>
+            العودة للملخص
+          </Button>
+        </div>
+        <FinancialDashboard />
+      </div>
+    );
+  }
+
+  if (transactionsLoading) {
+    return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
+  }
+
+  const getPeriodLabel = () => {
+    switch (selectedPeriod) {
+      case 'thisMonth': return 'هذا الشهر';
+      case 'lastMonth': return 'الشهر الماضي';
+      case 'thisYear': return 'هذا العام';
+      default: return 'هذا الشهر';
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold">نظرة عامة على المصروفات</h2>
-        <p className="text-gray-600">جميع المبالغ بالجنيه المصري (ج.م)</p>
+      {/* العنوان والفلاتر */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">نظرة عامة على المصروفات</h2>
+          <p className="text-gray-600">جميع المبالغ محسوبة بالجنيه المصري (ج.م)</p>
+        </div>
+        <div className="flex gap-4 items-center">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="thisMonth">هذا الشهر</SelectItem>
+              <SelectItem value="lastMonth">الشهر الماضي</SelectItem>
+              <SelectItem value="thisYear">هذا العام</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setShowFinancialDashboard(true)}>
+            <PieChart className="h-4 w-4 mr-2" />
+            لوحة المعلومات الشاملة
+          </Button>
+        </div>
+      </div>
+
+      {/* بطاقات الملخص */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">المصروفات العامة</p>
+                <p className="text-2xl font-bold text-red-600">
+                  <EgyptianPoundDisplay amount={summary.totalExpenses} />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{getPeriodLabel()}</p>
+              </div>
+              <Receipt className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">إجمالي الرواتب</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  <EgyptianPoundDisplay amount={summary.totalSalaries} />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{getPeriodLabel()}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">مدفوعات الإيجار</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  <EgyptianPoundDisplay amount={summary.totalRent} />
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{getPeriodLabel()}</p>
+              </div>
+              <Home className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* الإجمالي والتحليل */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>إجمالي المصروفات</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-gray-900">
+                <EgyptianPoundDisplay 
+                  amount={summary.totalExpenses + summary.totalSalaries + summary.totalRent} 
+                />
+              </p>
+              <p className="text-sm text-gray-600 mt-2">{getPeriodLabel()}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>توزيع المصروفات</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">الرواتب</span>
+                <span className="text-sm text-gray-600">
+                  {((summary.totalSalaries / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">المصروفات العامة</span>
+                <span className="text-sm text-gray-600">
+                  {((summary.totalExpenses / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">الإيجارات</span>
+                <span className="text-sm text-gray-600">
+                  {((summary.totalRent / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {expenseTransactions?.length || 0}
+            </p>
+            <p className="text-sm text-gray-600">معاملة مصروفات</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {monthlySalaries?.length || 0}
+            </p>
+            <p className="text-sm text-gray-600">راتب شهري</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {rentPayments?.length || 0}
+            </p>
+            <p className="text-sm text-gray-600">دفعة إيجار</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {expenseCategories?.length || 0}
+            </p>
+            <p className="text-sm text-gray-600">فئة مصروفات</p>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* فئات المصروفات */}
-      <Card>
-        <CardHeader>
-          <CardTitle>فئات المصروفات (بالجنيه المصري)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {expenseCategories?.map((category) => (
-              <div key={category.id} className="text-center">
-                <Badge 
-                  variant="outline" 
-                  className="w-full justify-center py-2"
-                  style={{ 
-                    borderColor: category.color,
-                    color: category.color 
-                  }}
-                >
-                  {category.name_ar}
-                </Badge>
-                <p className="text-xs text-gray-500 mt-1">
-                  حد الميزانية: {category.budget_limit.toLocaleString()} ج.م
-                </p>
-              </div>
-            )) || []}
-          </div>
-
-          {(!expenseCategories || expenseCategories.length === 0) && (
-            <div className="text-center py-8 text-gray-500">
-              <Receipt className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p>لا توجد فئات مصروفات محددة</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

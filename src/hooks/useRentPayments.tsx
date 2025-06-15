@@ -3,9 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { RentPayment } from '@/types/expenses';
+import { useExchangeRates } from './useExchangeRates';
+import { SupportedCurrency } from '@/types/currency';
 
 export const useRentPayments = () => {
   const queryClient = useQueryClient();
+  const { convertToPrimaryCurrency, getCurrentRate } = useExchangeRates();
 
   // جلب مدفوعات الإيجار
   const { data: rentPayments, isLoading: paymentsLoading } = useQuery({
@@ -15,7 +18,7 @@ export const useRentPayments = () => {
         .from('rent_payments')
         .select(`
           *,
-          contract:rent_contracts(*)
+          contract:rent_contracts(contract_number, property_address, landlord_name)
         `)
         .order('payment_month', { ascending: false });
 
@@ -24,13 +27,27 @@ export const useRentPayments = () => {
     },
   });
 
-  // إضافة مدفوعة إيجار
+  // إضافة دفعة إيجار جديدة مع دعم العملات المتعددة
   const { mutateAsync: addRentPayment, isPending: isAddingPayment } = useMutation({
-    mutationFn: async (payment: Omit<RentPayment, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (paymentData: Omit<RentPayment, 'id' | 'created_at' | 'updated_at'> & { 
+      currency?: SupportedCurrency 
+    }) => {
+      // إذا كانت العملة مختلفة عن الجنيه المصري، احسب المبلغ بالجنيه
+      let amountEGP = paymentData.amount;
+      let exchangeRate = 1;
+
+      if (paymentData.currency && paymentData.currency !== 'EGP') {
+        exchangeRate = await getCurrentRate(paymentData.currency, 'EGP');
+        amountEGP = await convertToPrimaryCurrency(paymentData.amount, paymentData.currency);
+      }
+
       const { data, error } = await supabase
         .from('rent_payments')
         .insert({
-          ...payment,
+          ...paymentData,
+          currency: paymentData.currency || 'EGP',
+          exchange_rate: exchangeRate,
+          amount_egp: amountEGP,
           created_by: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -41,15 +58,15 @@ export const useRentPayments = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent-payments'] });
-      toast.success('تم إضافة مدفوعة الإيجار بنجاح');
+      toast.success('تم إضافة دفعة الإيجار بنجاح');
     },
     onError: (error) => {
+      toast.error('حدث خطأ في إضافة دفعة الإيجار');
       console.error('Error adding rent payment:', error);
-      toast.error('حدث خطأ في إضافة مدفوعة الإيجار');
     },
   });
 
-  // تحديث حالة مدفوعة إيجار
+  // تحديث حالة دفعة الإيجار
   const { mutateAsync: updatePaymentStatus, isPending: isUpdatingPayment } = useMutation({
     mutationFn: async ({ id, status, payment_date }: { 
       id: string; 
@@ -68,65 +85,25 @@ export const useRentPayments = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent-payments'] });
-      toast.success('تم تحديث حالة المدفوعة بنجاح');
-    },
-    onError: (error) => {
-      console.error('Error updating payment status:', error);
-      toast.error('حدث خطأ في تحديث حالة المدفوعة');
+      toast.success('تم تحديث حالة الدفعة بنجاح');
     },
   });
 
-  // إنشاء مدفوعات شهرية تلقائية لعقد معين
-  const { mutateAsync: generateMonthlyPayments, isPending: isGeneratingPayments } = useMutation({
-    mutationFn: async ({ contractId, months }: { contractId: string; months: number }) => {
-      const contract = await supabase
-        .from('rent_contracts')
-        .select('*')
-        .eq('id', contractId)
-        .single();
-
-      if (contract.error) throw contract.error;
-
-      const payments = [];
-      const startDate = new Date(contract.data.start_date);
-      
-      for (let i = 0; i < months; i++) {
-        const paymentMonth = new Date(startDate);
-        paymentMonth.setMonth(startDate.getMonth() + i);
-        
-        const dueDate = new Date(paymentMonth);
-        dueDate.setDate(5); // استحقاق في الخامس من كل شهر
-
-        payments.push({
-          contract_id: contractId,
-          payment_month: paymentMonth.toISOString().slice(0, 10),
-          amount: contract.data.monthly_rent,
-          currency: contract.data.currency,
-          due_date: dueDate.toISOString().slice(0, 10),
-          status: 'pending' as const,
-          payment_method: 'bank_transfer',
-          late_fee: 0,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
+  // حساب إجمالي المدفوعات بالجنيه المصري
+  const calculateTotalPaymentsInEGP = async (payments: RentPayment[]) => {
+    let total = 0;
+    for (const payment of payments) {
+      if (payment.amount_egp) {
+        total += payment.amount_egp;
+      } else if (payment.currency && payment.currency !== 'EGP') {
+        const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency);
+        total += amountInEGP;
+      } else {
+        total += payment.amount;
       }
-
-      const { data, error } = await supabase
-        .from('rent_payments')
-        .insert(payments)
-        .select();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rent-payments'] });
-      toast.success('تم إنشاء المدفوعات الشهرية بنجاح');
-    },
-    onError: (error) => {
-      console.error('Error generating payments:', error);
-      toast.error('حدث خطأ في إنشاء المدفوعات الشهرية');
-    },
-  });
+    }
+    return total;
+  };
 
   return {
     rentPayments,
@@ -135,7 +112,6 @@ export const useRentPayments = () => {
     isAddingPayment,
     updatePaymentStatus,
     isUpdatingPayment,
-    generateMonthlyPayments,
-    isGeneratingPayments,
+    calculateTotalPaymentsInEGP,
   };
 };

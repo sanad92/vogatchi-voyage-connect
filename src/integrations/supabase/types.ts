@@ -1337,6 +1337,7 @@ export type Database = {
           departure_airport_id: string
           departure_date: string
           departure_time: string | null
+          exchange_rate_to_egp: number | null
           flight_class_id: string
           flight_number: string | null
           id: string
@@ -1355,6 +1356,7 @@ export type Database = {
           special_requests: string | null
           status_id: string | null
           supplier_cost: number
+          supplier_cost_egp: number | null
           supplier_name: string
           supplier_payment_sent: boolean | null
           supplier_payment_sent_date: string | null
@@ -1363,6 +1365,7 @@ export type Database = {
           ticket_numbers: string[] | null
           ticket_price_per_person: number
           total_cost: number
+          total_cost_egp: number | null
           total_profit: number | null
           updated_at: string
           voucher_sent: boolean | null
@@ -1385,6 +1388,7 @@ export type Database = {
           departure_airport_id: string
           departure_date: string
           departure_time?: string | null
+          exchange_rate_to_egp?: number | null
           flight_class_id: string
           flight_number?: string | null
           id?: string
@@ -1403,6 +1407,7 @@ export type Database = {
           special_requests?: string | null
           status_id?: string | null
           supplier_cost: number
+          supplier_cost_egp?: number | null
           supplier_name: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -1411,6 +1416,7 @@ export type Database = {
           ticket_numbers?: string[] | null
           ticket_price_per_person: number
           total_cost: number
+          total_cost_egp?: number | null
           total_profit?: number | null
           updated_at?: string
           voucher_sent?: boolean | null
@@ -1433,6 +1439,7 @@ export type Database = {
           departure_airport_id?: string
           departure_date?: string
           departure_time?: string | null
+          exchange_rate_to_egp?: number | null
           flight_class_id?: string
           flight_number?: string | null
           id?: string
@@ -1451,6 +1458,7 @@ export type Database = {
           special_requests?: string | null
           status_id?: string | null
           supplier_cost?: number
+          supplier_cost_egp?: number | null
           supplier_name?: string
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
@@ -1459,6 +1467,7 @@ export type Database = {
           ticket_numbers?: string[] | null
           ticket_price_per_person?: number
           total_cost?: number
+          total_cost_egp?: number | null
           total_profit?: number | null
           updated_at?: string
           voucher_sent?: boolean | null
@@ -1556,11 +1565,13 @@ export type Database = {
           check_out_date: string
           children_ages: string | null
           cost_per_night: number
+          cost_per_night_egp: number | null
           created_at: string
           currency: string | null
           customer_id: string | null
           customer_name: string
           destination_city: string
+          exchange_rate_to_egp: number | null
           hotel_name: string
           hotel_star_rating: number | null
           id: string
@@ -1582,6 +1593,7 @@ export type Database = {
           supplier_payment_sent: boolean | null
           supplier_payment_sent_date: string | null
           total_cost_customer: number | null
+          total_cost_customer_egp: number | null
           total_profit: number | null
           updated_at: string
           voucher_sent: boolean | null
@@ -1596,11 +1608,13 @@ export type Database = {
           check_out_date: string
           children_ages?: string | null
           cost_per_night: number
+          cost_per_night_egp?: number | null
           created_at?: string
           currency?: string | null
           customer_id?: string | null
           customer_name: string
           destination_city: string
+          exchange_rate_to_egp?: number | null
           hotel_name: string
           hotel_star_rating?: number | null
           id?: string
@@ -1622,6 +1636,7 @@ export type Database = {
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
           total_cost_customer?: number | null
+          total_cost_customer_egp?: number | null
           total_profit?: number | null
           updated_at?: string
           voucher_sent?: boolean | null
@@ -1636,11 +1651,13 @@ export type Database = {
           check_out_date?: string
           children_ages?: string | null
           cost_per_night?: number
+          cost_per_night_egp?: number | null
           created_at?: string
           currency?: string | null
           customer_id?: string | null
           customer_name?: string
           destination_city?: string
+          exchange_rate_to_egp?: number | null
           hotel_name?: string
           hotel_star_rating?: number | null
           id?: string
@@ -1662,6 +1679,7 @@ export type Database = {
           supplier_payment_sent?: boolean | null
           supplier_payment_sent_date?: string | null
           total_cost_customer?: number | null
+          total_cost_customer_egp?: number | null
           total_profit?: number | null
           updated_at?: string
           voucher_sent?: boolean | null
@@ -2020,12 +2038,15 @@ export type Database = {
           bonus: number | null
           created_at: string
           created_by: string | null
+          currency: string | null
           deductions: number | null
           employee_id: string
+          exchange_rate: number | null
           gross_salary: number
           id: string
           insurance_deduction: number | null
           net_salary: number
+          net_salary_egp: number | null
           notes: string | null
           overtime_amount: number | null
           overtime_hours: number | null
@@ -2044,12 +2065,15 @@ export type Database = {
           bonus?: number | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           deductions?: number | null
           employee_id: string
+          exchange_rate?: number | null
           gross_salary: number
           id?: string
           insurance_deduction?: number | null
           net_salary: number
+          net_salary_egp?: number | null
           notes?: string | null
           overtime_amount?: number | null
           overtime_hours?: number | null
@@ -2068,12 +2092,15 @@ export type Database = {
           bonus?: number | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           deductions?: number | null
           employee_id?: string
+          exchange_rate?: number | null
           gross_salary?: number
           id?: string
           insurance_deduction?: number | null
           net_salary?: number
+          net_salary_egp?: number | null
           notes?: string | null
           overtime_amount?: number | null
           overtime_hours?: number | null
@@ -2313,12 +2340,14 @@ export type Database = {
       rent_payments: {
         Row: {
           amount: number
+          amount_egp: number | null
           bank_account_id: string | null
           contract_id: string
           created_at: string
           created_by: string | null
           currency: string | null
           due_date: string
+          exchange_rate: number | null
           id: string
           late_fee: number | null
           notes: string | null
@@ -2331,12 +2360,14 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_egp?: number | null
           bank_account_id?: string | null
           contract_id: string
           created_at?: string
           created_by?: string | null
           currency?: string | null
           due_date: string
+          exchange_rate?: number | null
           id?: string
           late_fee?: number | null
           notes?: string | null
@@ -2349,12 +2380,14 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_egp?: number | null
           bank_account_id?: string | null
           contract_id?: string
           created_at?: string
           created_by?: string | null
           currency?: string | null
           due_date?: string
+          exchange_rate?: number | null
           id?: string
           late_fee?: number | null
           notes?: string | null

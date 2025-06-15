@@ -1,260 +1,258 @@
-
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Building2, CreditCard, TrendingUp, TrendingDown, Eye, EyeOff } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Edit2 } from 'lucide-react';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
-import { SUPPORTED_CURRENCIES, CURRENCY_SYMBOLS } from '@/types/currency';
-import { useToast } from '@/hooks/use-toast';
+import { BankAccount, SupportedCurrency } from '@/types/currency';
+import CurrencySelector from './CurrencySelector';
+import MultiCurrencyDisplay from './MultiCurrencyDisplay';
+import { Badge } from '@/components/ui/badge';
+
+interface BankAccountFormValues {
+  account_name: string;
+  bank_name: string;
+  account_number: string;
+  currency: SupportedCurrency;
+  account_type: 'checking' | 'savings' | 'business';
+  current_balance: number;
+  notes?: string;
+}
 
 const BankAccountManagement = () => {
-  const { bankAccounts, transactions, isLoading, addBankAccount, addTransaction } = useBankAccounts();
-  const { toast } = useToast();
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [showBalances, setShowBalances] = useState(false);
-  const [newAccount, setNewAccount] = useState({
-    account_name: '',
-    bank_name: '',
-    account_number: '',
-    currency: 'SAR',
-    account_type: 'checking',
-    current_balance: 0
-  });
+  const { bankAccounts, addBankAccount, updateBankAccount, isAddingAccount, isUpdatingAccount } = useBankAccounts();
+  const [showForm, setShowForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
 
-  const handleAddAccount = async () => {
-    if (!newAccount.account_name || !newAccount.bank_name || !newAccount.account_number) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    addBankAccount({
-      ...newAccount,
-      is_active: true,
-      notes: undefined
-    });
-
-    setNewAccount({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<BankAccountFormValues>({
+    defaultValues: {
       account_name: '',
       bank_name: '',
       account_number: '',
-      currency: 'SAR',
+      currency: 'EGP' as SupportedCurrency,
       account_type: 'checking',
-      current_balance: 0
-    });
-    setShowAddAccount(false);
+      current_balance: 0,
+      notes: ''
+    }
+  });
+
+  const selectedCurrency = watch('currency');
+
+  const handleEdit = (account: BankAccount) => {
+    setEditingAccount(account);
+    setShowForm(true);
+    setValue('account_name', account.account_name);
+    setValue('bank_name', account.bank_name);
+    setValue('account_number', account.account_number);
+    setValue('currency', account.currency);
+    setValue('account_type', account.account_type);
+    setValue('current_balance', account.current_balance);
+    setValue('notes', account.notes || '');
   };
 
-  // حساب إجمالي الأرصدة بكل عملة
-  const getTotalBalancesByCurrency = () => {
-    const balances: { [key: string]: number } = {};
-    bankAccounts.forEach(account => {
-      if (!balances[account.currency]) {
-        balances[account.currency] = 0;
+  const onSubmit = async (data: any) => {
+    try {
+      if (editingAccount) {
+        await updateBankAccount({ 
+          id: editingAccount.id, 
+          updates: {
+            ...data,
+            currency: selectedCurrency
+          }
+        });
+      } else {
+        await addBankAccount({
+          ...data,
+          currency: selectedCurrency
+        });
       }
-      balances[account.currency] += account.current_balance;
-    });
-    return balances;
+      
+      setShowForm(false);
+      setEditingAccount(null);
+      reset();
+    } catch (error) {
+      console.error('Error saving bank account:', error);
+    }
   };
 
-  const totalBalances = getTotalBalancesByCurrency();
-
-  if (isLoading) return <div className="text-center p-8">جاري التحميل...</div>;
+  if (!bankAccounts) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* ملخص الأرصدة */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الحسابات</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{bankAccounts.length}</div>
-            <p className="text-xs text-muted-foreground">حساب نشط</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">العملات المتاحة</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(totalBalances).length}</div>
-            <p className="text-xs text-muted-foreground">عملة مختلفة</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الأرصدة الإجمالية</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowBalances(!showBalances)}
-              className="h-4 w-4 p-0"
-            >
-              {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {showBalances ? (
-              <div className="space-y-1">
-                {Object.entries(totalBalances).map(([currency, balance]) => (
-                  <div key={currency} className="text-sm">
-                    <span className="font-medium">{balance.toLocaleString()}</span> {CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS]}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-lg">•••••••</div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">إدارة الحسابات البنكية</h2>
+          <p className="text-gray-600">إدارة حسابات البنوك بالعملات المختلفة - الجنيه المصري كعملة أساسية</p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          إضافة حساب جديد
+        </Button>
       </div>
 
-      {/* إضافة حساب جديد */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>إدارة الحسابات البنكية</CardTitle>
-            <Button onClick={() => setShowAddAccount(!showAddAccount)}>
-              <Plus className="h-4 w-4 mr-2" />
-              إضافة حساب جديد
-            </Button>
-          </div>
-        </CardHeader>
-        {showAddAccount && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">اسم الحساب</label>
-                <Input
-                  value={newAccount.account_name}
-                  onChange={(e) => setNewAccount({...newAccount, account_name: e.target.value})}
-                  placeholder="مثال: الحساب الجاري الرئيسي"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">اسم البنك</label>
-                <Input
-                  value={newAccount.bank_name}
-                  onChange={(e) => setNewAccount({...newAccount, bank_name: e.target.value})}
-                  placeholder="مثال: البنك الأهلي السعودي"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">رقم الحساب</label>
-                <Input
-                  value={newAccount.account_number}
-                  onChange={(e) => setNewAccount({...newAccount, account_number: e.target.value})}
-                  placeholder="رقم الحساب البنكي"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">العملة</label>
-                <Select value={newAccount.currency} onValueChange={(value) => setNewAccount({...newAccount, currency: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_CURRENCIES.map(currency => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency} - {CURRENCY_SYMBOLS[currency]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">نوع الحساب</label>
-                <Select value={newAccount.account_type} onValueChange={(value) => setNewAccount({...newAccount, account_type: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="checking">حساب جاري</SelectItem>
-                    <SelectItem value="savings">حساب توفير</SelectItem>
-                    <SelectItem value="business">حساب تجاري</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">الرصيد الابتدائي</label>
-                <Input
-                  type="number"
-                  value={newAccount.current_balance}
-                  onChange={(e) => setNewAccount({...newAccount, current_balance: parseFloat(e.target.value) || 0})}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAddAccount}>إضافة الحساب</Button>
-              <Button variant="outline" onClick={() => setShowAddAccount(false)}>إلغاء</Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingAccount ? 'تعديل حساب بنكي' : 'إضافة حساب بنكي جديد'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="account_name">اسم الحساب *</Label>
+                  <Input
+                    id="account_name"
+                    {...register('account_name', { required: 'اسم الحساب مطلوب' })}
+                    placeholder="اسم الحساب"
+                  />
+                  {errors.account_name && (
+                    <p className="text-red-500 text-sm">{errors.account_name.message}</p>
+                  )}
+                </div>
 
-      {/* قائمة الحسابات البنكية */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {bankAccounts.map((account) => (
-          <Card key={account.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{account.account_name}</CardTitle>
-                <Badge variant="secondary">{account.currency}</Badge>
+                <div>
+                  <Label htmlFor="bank_name">اسم البنك *</Label>
+                  <Input
+                    id="bank_name"
+                    {...register('bank_name', { required: 'اسم البنك مطلوب' })}
+                    placeholder="اسم البنك"
+                  />
+                  {errors.bank_name && (
+                    <p className="text-red-500 text-sm">{errors.bank_name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="account_number">رقم الحساب *</Label>
+                  <Input
+                    id="account_number"
+                    {...register('account_number', { required: 'رقم الحساب مطلوب' })}
+                    placeholder="رقم الحساب"
+                  />
+                  {errors.account_number && (
+                    <p className="text-red-500 text-sm">{errors.account_number.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="currency">عملة الحساب</Label>
+                  <CurrencySelector
+                    value={selectedCurrency}
+                    onValueChange={(value) => setValue('currency', value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="account_type">نوع الحساب</Label>
+                  <Select onValueChange={(value) => setValue('account_type', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر نوع الحساب" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="checking">حساب جاري</SelectItem>
+                      <SelectItem value="savings">حساب توفير</SelectItem>
+                      <SelectItem value="business">حساب تجاري</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="current_balance">الرصيد الحالي</Label>
+                  <Input
+                    id="current_balance"
+                    type="number"
+                    step="0.01"
+                    {...register('current_balance', { valueAsNumber: true })}
+                    placeholder="الرصيد الحالي"
+                  />
+                </div>
               </div>
-              <p className="text-sm text-gray-600">{account.bank_name}</p>
+
+              <div>
+                <Label htmlFor="notes">ملاحظات</Label>
+                <Textarea
+                  id="notes"
+                  {...register('notes')}
+                  placeholder="ملاحظات إضافية"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <Button type="submit" disabled={isAddingAccount || isUpdatingAccount}>
+                  {(isAddingAccount || isUpdatingAccount) ? 'جاري الحفظ...' : editingAccount ? 'تحديث' : 'إضافة'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowForm(false);
+                  setEditingAccount(null);
+                  reset();
+                }}>
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* عرض الحسابات البنكية */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {bankAccounts?.map((account) => (
+          <Card key={account.id}>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>{account.account_name}</span>
+                <Badge variant={account.is_active ? "default" : "secondary"}>
+                  {account.is_active ? 'نشط' : 'غير نشط'}
+                </Badge>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">رقم الحساب:</span>
-                  <span className="text-sm font-mono">
-                    {account.account_number.slice(-4).padStart(account.account_number.length, '*')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">نوع الحساب:</span>
-                  <span className="text-sm capitalize">
-                    {account.account_type === 'checking' ? 'جاري' : 
-                     account.account_type === 'savings' ? 'توفير' : 'تجاري'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-sm font-medium">الرصيد الحالي:</span>
-                  <span className="text-lg font-bold text-green-600">
-                    {showBalances ? 
-                      `${account.current_balance.toLocaleString()} ${CURRENCY_SYMBOLS[account.currency as keyof typeof CURRENCY_SYMBOLS]}` : 
-                      '•••••••'
-                    }
-                  </span>
-                </div>
+              <div className="space-y-2">
+                <p><strong>البنك:</strong> {account.bank_name}</p>
+                <p><strong>رقم الحساب:</strong> {account.account_number}</p>
+                <p><strong>النوع:</strong> {
+                  account.account_type === 'checking' ? 'حساب جاري' :
+                  account.account_type === 'savings' ? 'حساب توفير' : 'حساب تجاري'
+                }</p>
+                <p><strong>الرصيد:</strong> 
+                  <MultiCurrencyDisplay 
+                    amount={account.current_balance} 
+                    currency={account.currency}
+                    showInEGP={account.currency !== 'EGP'}
+                  />
+                </p>
+                {account.notes && <p><strong>ملاحظات:</strong> {account.notes}</p>}
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleEdit(account)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {bankAccounts.length === 0 && (
+      {bankAccounts?.length === 0 && (
         <Card>
-          <CardContent className="text-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد حسابات بنكية</h3>
-            <p className="text-gray-500 mb-4">ابدأ بإضافة حسابك البنكي الأول</p>
-            <Button onClick={() => setShowAddAccount(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              إضافة حساب بنكي
+          <CardContent className="text-center py-8">
+            <p className="text-gray-500">لا توجد حسابات بنكية مسجلة</p>
+            <Button onClick={() => setShowForm(true)} className="mt-4">
+              إضافة أول حساب
             </Button>
           </CardContent>
         </Card>
