@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import CustomerService from "./pages/CustomerService";
 import AdminSettings from "./pages/AdminSettings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NewFlightBooking from "./pages/NewFlightBooking";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +63,14 @@ function App() {
                           <Route path="/crm" element={<CRMDashboard />} />
                           <Route path="/customer-service" element={<CustomerService />} />
                           <Route path="/admin" element={<AdminSettings />} />
+                          <Route
+                            path="/new-flight-booking"
+                            element={
+                              <ProtectedRoute>
+                                <NewFlightBooking />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </main>
