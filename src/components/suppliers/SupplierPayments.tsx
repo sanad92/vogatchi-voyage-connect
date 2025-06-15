@@ -49,7 +49,13 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as SupplierPayment[];
+      return data.map(payment => ({
+        ...payment,
+        payment_date: payment.payment_date || payment.paid_date,
+        reference_number: payment.reference_number || payment.payment_reference,
+        exchange_rate: payment.exchange_rate || 1,
+        amount_in_egp: payment.amount_in_egp || payment.amount
+      })) as SupplierPayment[];
     },
     enabled: !!supplierId
   });
@@ -64,7 +70,13 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
       const { data, error } = await supabase
         .from('supplier_payments')
         .insert([{
-          ...payment,
+          supplier_id: payment.supplier_id,
+          amount: payment.amount,
+          currency: payment.currency,
+          payment_date: payment.payment_date,
+          payment_method: payment.payment_method,
+          reference_number: payment.reference_number,
+          notes: payment.notes,
           exchange_rate: exchangeRate,
           amount_in_egp: amountInEgp,
           status: 'pending'

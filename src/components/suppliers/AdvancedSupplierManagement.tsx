@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -69,7 +68,11 @@ const AdvancedSupplierManagement = () => {
         .order('name');
       
       if (error) throw error;
-      return data as Supplier[];
+      return data.map(supplier => ({
+        ...supplier,
+        preferred_currency: supplier.preferred_currency || 'EGP',
+        credit_limit: supplier.credit_limit || 0
+      })) as Supplier[];
     }
   });
 

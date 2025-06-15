@@ -2508,48 +2508,119 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_contracts: {
+        Row: {
+          contract_number: string
+          contract_type: string
+          contract_value: number
+          created_at: string | null
+          currency: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          payment_terms: string | null
+          start_date: string
+          supplier_id: string
+          terms_and_conditions: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contract_number: string
+          contract_type: string
+          contract_value?: number
+          created_at?: string | null
+          currency?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          payment_terms?: string | null
+          start_date: string
+          supplier_id: string
+          terms_and_conditions?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contract_number?: string
+          contract_type?: string
+          contract_value?: number
+          created_at?: string | null
+          currency?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          payment_terms?: string | null
+          start_date?: string
+          supplier_id?: string
+          terms_and_conditions?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_contracts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_payments: {
         Row: {
           amount: number
+          amount_in_egp: number | null
           booking_id: string
+          contract_id: string | null
           created_at: string
           currency: string | null
           due_date: string | null
+          exchange_rate: number | null
           id: string
           notes: string | null
           paid_date: string | null
+          payment_date: string | null
           payment_method: string | null
           payment_reference: string
+          reference_number: string | null
           status: string | null
           supplier_id: string
           updated_at: string
         }
         Insert: {
           amount: number
+          amount_in_egp?: number | null
           booking_id: string
+          contract_id?: string | null
           created_at?: string
           currency?: string | null
           due_date?: string | null
+          exchange_rate?: number | null
           id?: string
           notes?: string | null
           paid_date?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           payment_reference: string
+          reference_number?: string | null
           status?: string | null
           supplier_id: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          amount_in_egp?: number | null
           booking_id?: string
+          contract_id?: string | null
           created_at?: string
           currency?: string | null
           due_date?: string | null
+          exchange_rate?: number | null
           id?: string
           notes?: string | null
           paid_date?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           payment_reference?: string
+          reference_number?: string | null
           status?: string | null
           supplier_id?: string
           updated_at?: string
@@ -2563,7 +2634,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplier_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_contracts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "supplier_payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_ratings: {
+        Row: {
+          communication: number | null
+          created_at: string | null
+          delivery_time: number | null
+          feedback: string | null
+          id: string
+          overall_rating: number | null
+          price_competitiveness: number | null
+          rated_by: string | null
+          rating_date: string | null
+          service_quality: number | null
+          supplier_id: string
+        }
+        Insert: {
+          communication?: number | null
+          created_at?: string | null
+          delivery_time?: number | null
+          feedback?: string | null
+          id?: string
+          overall_rating?: number | null
+          price_competitiveness?: number | null
+          rated_by?: string | null
+          rating_date?: string | null
+          service_quality?: number | null
+          supplier_id: string
+        }
+        Update: {
+          communication?: number | null
+          created_at?: string | null
+          delivery_time?: number | null
+          feedback?: string | null
+          id?: string
+          overall_rating?: number | null
+          price_competitiveness?: number | null
+          rated_by?: string | null
+          rating_date?: string | null
+          service_quality?: number | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_ratings_rated_by_fkey"
+            columns: ["rated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_ratings_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
@@ -2578,6 +2713,7 @@ export type Database = {
           bank_name: string | null
           contact_person: string | null
           created_at: string
+          credit_limit: number | null
           email: string | null
           id: string
           is_active: boolean | null
@@ -2585,6 +2721,7 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          preferred_currency: string | null
           rating: number | null
           tax_number: string | null
           type: string
@@ -2596,6 +2733,7 @@ export type Database = {
           bank_name?: string | null
           contact_person?: string | null
           created_at?: string
+          credit_limit?: number | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -2603,6 +2741,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          preferred_currency?: string | null
           rating?: number | null
           tax_number?: string | null
           type: string
@@ -2614,6 +2753,7 @@ export type Database = {
           bank_name?: string | null
           contact_person?: string | null
           created_at?: string
+          credit_limit?: number | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -2621,6 +2761,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          preferred_currency?: string | null
           rating?: number | null
           tax_number?: string | null
           type?: string

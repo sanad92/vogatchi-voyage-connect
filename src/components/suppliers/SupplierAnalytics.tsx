@@ -56,11 +56,11 @@ const SupplierAnalytics = () => {
 
   // تحليل المدفوعات الشهرية
   const monthlyPayments = payments.reduce((acc, payment) => {
-    const month = new Date(payment.payment_date).toLocaleDateString('ar-EG', { 
+    const month = new Date(payment.payment_date || payment.paid_date).toLocaleDateString('ar-EG', { 
       year: 'numeric', 
       month: 'long' 
     });
-    acc[month] = (acc[month] || 0) + payment.amount_in_egp;
+    acc[month] = (acc[month] || 0) + (payment.amount_in_egp || payment.amount);
     return acc;
   }, {} as Record<string, number>);
 
@@ -84,7 +84,7 @@ const SupplierAnalytics = () => {
       };
     }
     
-    acc[supplierId].totalAmount += payment.amount_in_egp;
+    acc[supplierId].totalAmount += (payment.amount_in_egp || payment.amount);
     acc[supplierId].transactionCount += 1;
     
     return acc;
@@ -103,7 +103,7 @@ const SupplierAnalytics = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   // حساب الإحصائيات العامة
-  const totalPayments = payments.reduce((sum, p) => sum + p.amount_in_egp, 0);
+  const totalPayments = payments.reduce((sum, p) => sum + (p.amount_in_egp || p.amount), 0);
   const averageRating = suppliers.reduce((sum, s) => sum + (s.rating || 0), 0) / suppliers.length || 0;
   const activeSuppliers = suppliers.filter(s => s.is_active).length;
 
