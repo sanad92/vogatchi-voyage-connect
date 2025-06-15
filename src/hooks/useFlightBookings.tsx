@@ -25,7 +25,24 @@ export const useFlightBookings = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our TypeScript interfaces
+      return (data || []).map(booking => ({
+        ...booking,
+        passenger_details: Array.isArray(booking.passenger_details) 
+          ? booking.passenger_details 
+          : booking.passenger_details 
+            ? JSON.parse(booking.passenger_details as string) 
+            : [],
+        baggage_info: booking.baggage_info 
+          ? (typeof booking.baggage_info === 'string' 
+              ? JSON.parse(booking.baggage_info) 
+              : booking.baggage_info)
+          : undefined,
+        ticket_numbers: Array.isArray(booking.ticket_numbers) 
+          ? booking.ticket_numbers 
+          : []
+      })) as FlightBooking[];
     }
   });
 
@@ -76,9 +93,17 @@ export const useFlightBookings = () => {
   // Add flight booking mutation
   const { mutateAsync: addFlightBooking, isPending: isAddingBooking } = useMutation({
     mutationFn: async (booking: NewFlightBooking) => {
+      // Prepare data for database insertion, converting complex types to JSON
+      const dbBooking = {
+        ...booking,
+        passenger_details: booking.passenger_details ? JSON.stringify(booking.passenger_details) : null,
+        baggage_info: booking.baggage_info ? JSON.stringify(booking.baggage_info) : null,
+        ticket_numbers: booking.ticket_numbers || []
+      };
+
       const { data, error } = await supabase
         .from('flight_bookings')
-        .insert([booking])
+        .insert([dbBooking])
         .select()
         .single();
 
@@ -105,9 +130,23 @@ export const useFlightBookings = () => {
   // Update flight booking mutation
   const { mutateAsync: updateFlightBooking, isPending: isUpdatingBooking } = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<FlightBooking> & { id: string }) => {
+      // Prepare updates for database, converting complex types to JSON
+      const dbUpdates = {
+        ...updates,
+        passenger_details: updates.passenger_details ? JSON.stringify(updates.passenger_details) : undefined,
+        baggage_info: updates.baggage_info ? JSON.stringify(updates.baggage_info) : undefined
+      };
+
+      // Remove properties that shouldn't be updated directly
+      delete (dbUpdates as any).departure_airport;
+      delete (dbUpdates as any).arrival_airport;
+      delete (dbUpdates as any).airline;
+      delete (dbUpdates as any).flight_class;
+      delete (dbUpdates as any).booking_status;
+
       const { data, error } = await supabase
         .from('flight_bookings')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();

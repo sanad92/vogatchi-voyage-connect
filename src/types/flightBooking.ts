@@ -116,6 +116,7 @@ export interface NewFlightBooking {
   passenger_details?: PassengerDetail[];
   ticket_price_per_person: number;
   taxes_and_fees?: number;
+  total_cost: number; // Make this required to match database schema
   currency?: SupportedCurrency;
   supplier_cost: number;
   supplier_name: string;
@@ -134,4 +135,5 @@ export interface NewFlightBooking {
   supplier_reference?: string;
   is_round_trip?: boolean;
   return_flight_id?: string;
+  booking_reference?: string;
 }
