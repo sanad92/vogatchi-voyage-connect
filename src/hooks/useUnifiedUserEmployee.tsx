@@ -67,7 +67,9 @@ export const useUnifiedUserEmployee = () => {
           phone: profile.phone,
           department: profile.department,
           is_active: profile.is_active,
-          role: profile.user_roles?.[0]?.role || 'no_role',
+          role: Array.isArray(profile.user_roles) && profile.user_roles.length > 0 
+            ? profile.user_roles[0].role 
+            : 'no_role',
           created_at: profile.created_at,
           updated_at: profile.updated_at,
           employee: profile.employees ? {

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
-import SuperAdminActions from '@/components/admin/SuperAdminActions';
 import SiteSettings from '@/components/admin/SiteSettings';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
@@ -61,10 +60,6 @@ const AdminSettings = () => {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">المستخدمين</span>
             </TabsTrigger>
-            <TabsTrigger value="super-admin" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">سوبر أدمن</span>
-            </TabsTrigger>
             <TabsTrigger value="site" className="flex items-center gap-2 text-xs">
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">الموقع</span>
@@ -101,10 +96,6 @@ const AdminSettings = () => {
 
           <TabsContent value="users">
             <UserManagementTab />
-          </TabsContent>
-
-          <TabsContent value="super-admin">
-            <SuperAdminActions />
           </TabsContent>
 
           <TabsContent value="site">
