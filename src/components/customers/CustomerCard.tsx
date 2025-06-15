@@ -6,15 +6,17 @@ import { User, Phone, Mail, MapPin, Flag, Edit, Eye, Star } from "lucide-react";
 import { useState } from "react";
 import CustomerEditDialog from "./CustomerEditDialog";
 import { Customer } from "@/types/customer";
+import { toast } from "sonner";
 
 interface CustomerCardProps {
   customer: Customer;
   onSelect: () => void;
-  onCustomerUpdated: (customer: any) => void;
+  onCustomerUpdated: (customer: Customer) => void;
 }
 
 const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-EG', {
@@ -38,9 +40,28 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
     onSelect();
   };
 
+  const handleCustomerUpdated = async (updatedCustomer: Customer) => {
+    try {
+      setIsUpdating(true);
+      
+      // تحديث البيانات في الكارد فوراً
+      onCustomerUpdated(updatedCustomer);
+      
+      // إغلاق النافذة
+      setIsEditDialogOpen(false);
+      
+      console.log('تم تحديث بيانات العميل بنجاح:', updatedCustomer);
+    } catch (error) {
+      console.error('خطأ في تحديث بيانات العميل:', error);
+      toast.error('حدث خطأ أثناء حفظ التحديثات');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer border border-gray-200">
+      <Card className={`hover:shadow-md transition-shadow cursor-pointer border border-gray-200 ${isUpdating ? 'opacity-75' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -53,6 +74,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
                 variant="outline"
                 onClick={handleEditClick}
                 className="h-7 w-7 p-0"
+                disabled={isUpdating}
               >
                 <Edit className="h-3 w-3" />
               </Button>
@@ -144,7 +166,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
         customerId={customer.id}
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
-        onCustomerUpdated={onCustomerUpdated}
+        onCustomerUpdated={handleCustomerUpdated}
       />
     </>
   );

@@ -1,9 +1,10 @@
 
 import CustomerCard from "./CustomerCard";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { UserPlus, RefreshCw } from "lucide-react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
+import { useState } from "react";
 
 interface CustomerGridProps {
   customers: Customer[];
@@ -23,10 +24,35 @@ const CustomerGrid = ({
   onAddNewCustomer 
 }: CustomerGridProps) => {
   const { refetch } = useCustomers();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [localCustomers, setLocalCustomers] = useState<Customer[]>(customers);
 
-  const handleCustomerUpdated = () => {
-    // إعادة تحميل قائمة العملاء عند التحديث
-    refetch();
+  // تحديث البيانات المحلية عند تغيير البيانات الواردة
+  React.useEffect(() => {
+    setLocalCustomers(customers);
+  }, [customers]);
+
+  const handleCustomerUpdated = (updatedCustomer: Customer) => {
+    // تحديث البيانات المحلية فوراً
+    setLocalCustomers(prevCustomers => 
+      prevCustomers.map(customer => 
+        customer.id === updatedCustomer.id ? updatedCustomer : customer
+      )
+    );
+    
+    // إعادة تحميل البيانات من الخادم للتأكد من التحديث
+    handleRefresh();
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await refetch();
+    } catch (error) {
+      console.error('خطأ في إعادة تحميل البيانات:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   if (isLoading) {
@@ -43,14 +69,20 @@ const CustomerGrid = ({
     return (
       <div className="text-center py-8">
         <p className="text-red-600 mb-4">خطأ في تحميل العملاء: {error.message}</p>
-        <Button onClick={() => window.location.reload()} variant="outline">
-          إعادة المحاولة
-        </Button>
+        <div className="flex gap-2 justify-center">
+          <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            إعادة المحاولة
+          </Button>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            إعادة تحميل الصفحة
+          </Button>
+        </div>
       </div>
     );
   }
 
-  if (!customers || customers.length === 0) {
+  if (!localCustomers || localCustomers.length === 0) {
     return (
       <div className="text-center py-12">
         <UserPlus className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -69,15 +101,32 @@ const CustomerGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {customers.map((customer) => (
-        <CustomerCard
-          key={customer.id}
-          customer={customer}
-          onSelect={() => onCustomerSelect(customer.id)}
-          onCustomerUpdated={handleCustomerUpdated}
-        />
-      ))}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-600">
+          {localCustomers.length} عميل
+        </p>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="sm"
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          تحديث
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {localCustomers.map((customer) => (
+          <CustomerCard
+            key={customer.id}
+            customer={customer}
+            onSelect={() => onCustomerSelect(customer.id)}
+            onCustomerUpdated={handleCustomerUpdated}
+          />
+        ))}
+      </div>
     </div>
   );
 };

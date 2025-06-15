@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCustomerData } from "@/hooks/useCustomerData";
 import CustomerForm from "./CustomerForm";
 import { Customer } from "@/types/customer";
+import { toast } from "sonner";
 
 interface CustomerEditDialogProps {
   customerId: string | null;
@@ -12,10 +13,27 @@ interface CustomerEditDialogProps {
 }
 
 const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: CustomerEditDialogProps) => {
-  const { customerData, isLoading } = useCustomerData(customerId || '');
+  const { customerData, isLoading, refetch } = useCustomerData(customerId || '');
 
-  const handleCustomerUpdated = (customer: Customer) => {
-    onCustomerUpdated(customer);
+  const handleCustomerUpdated = async (customer: Customer) => {
+    try {
+      // تحديث البيانات المحلية فوراً
+      onCustomerUpdated(customer);
+      
+      // إعادة تحميل البيانات للتأكد من التحديث
+      await refetch();
+      
+      // إغلاق النافذة
+      onClose();
+      
+      toast.success(`تم تحديث بيانات العميل "${customer.name}" بنجاح`);
+    } catch (error) {
+      console.error('خطأ في تحديث بيانات العميل:', error);
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+    }
+  };
+
+  const handleCancel = () => {
     onClose();
   };
 
@@ -35,10 +53,10 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
         ) : customerData ? (
           <CustomerForm
             onCustomerUpdated={handleCustomerUpdated}
-            onCancel={onClose}
+            onCancel={handleCancel}
             initialData={{
-              name: customerData.name,
-              phone: customerData.phone,
+              name: customerData.name || '',
+              phone: customerData.phone || '',
               email: customerData.email || '',
               nationality: customerData.nationality || '',
               address: customerData.address || '',
@@ -48,8 +66,14 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
             customerId={customerId}
           />
         ) : (
-          <div className="text-center p-4 text-red-600">
-            خطأ في تحميل بيانات العميل
+          <div className="text-center p-4">
+            <p className="text-red-600 mb-4">خطأ في تحميل بيانات العميل</p>
+            <button 
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              إعادة المحاولة
+            </button>
           </div>
         )}
       </DialogContent>
