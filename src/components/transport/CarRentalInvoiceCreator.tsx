@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +24,7 @@ const CarRentalInvoiceCreator = ({ booking, open, onClose }: CarRentalInvoiceCre
     discount_amount: 0,
     payment_terms: "30 days",
     payment_method: "bank_transfer",
-    notes: `فاتورة إيجار سيارة للمركبة ${booking.car_model || ""}`,
+    notes: `فاتورة إيجار سيارة للمركبة ${booking.vehicle_make || ""} ${booking.vehicle_model || ""}`,
     due_date: ""
   });
 
@@ -106,7 +105,7 @@ const CarRentalInvoiceCreator = ({ booking, open, onClose }: CarRentalInvoiceCre
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            إصدار فاتورة إيجار سيارة - {booking.contract_number}
+            إصدار فاتورة إيجار سيارة - {booking.rental_reference}
           </DialogTitle>
         </DialogHeader>
         
@@ -118,7 +117,7 @@ const CarRentalInvoiceCreator = ({ booking, open, onClose }: CarRentalInvoiceCre
             </div>
             <div>
               <Label>رقم العقد</Label>
-              <Input value={booking.contract_number || ""} disabled />
+              <Input value={booking.rental_reference || ""} disabled />
             </div>
           </div>
 

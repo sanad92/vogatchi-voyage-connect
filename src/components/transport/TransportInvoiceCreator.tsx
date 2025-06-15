@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +24,7 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
     discount_amount: 0,
     payment_terms: "30 days",
     payment_method: "bank_transfer",
-    notes: `فاتورة حجز نقل للرحلة ${booking.trip_reference || ""}`,
+    notes: `فاتورة حجز نقل للرحلة ${booking.booking_reference || ""}`,
     due_date: ""
   });
 
@@ -105,7 +104,7 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            إصدار فاتورة نقل - {booking.trip_reference}
+            إصدار فاتورة نقل - {booking.booking_reference}
           </DialogTitle>
         </DialogHeader>
         
@@ -117,7 +116,7 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
             </div>
             <div>
               <Label>رقم الرحلة</Label>
-              <Input value={booking.trip_reference || ""} disabled />
+              <Input value={booking.booking_reference || ""} disabled />
             </div>
           </div>
 
