@@ -1,28 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-export interface Supplier {
-  id: string;
-  name: string;
-  contact_person?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  supplier_type: string;
-  payment_terms?: string;
-  payment_type: 'prepaid' | 'deferred';
-  payment_method_options: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  currencies?: Array<{
-    id: string;
-    currency: string;
-    is_primary: boolean;
-    exchange_rate?: number;
-  }>;
-}
+import type { Supplier } from "@/types/supplier"; // توحيد الاستيراد
 
 export const useSuppliers = (supplierType?: string) => {
   const { toast } = useToast();
@@ -54,40 +34,65 @@ export const useSuppliers = (supplierType?: string) => {
       
       if (error) throw error;
       
-      // Map the database response to our Supplier interface
+      // Map the database response to the unified Supplier interface
       return (data || []).map((item: any): Supplier => ({
         id: item.id,
         name: item.name,
-        contact_person: item.contact_person,
-        email: item.email,
-        phone: item.phone,
-        address: item.address,
-        supplier_type: item.type || 'general',
-        payment_terms: item.payment_terms,
-        payment_type: item.payment_type || 'deferred',
-        payment_method_options: item.payment_method_options || ['bank_transfer'],
-        is_active: item.is_active,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        currencies: item.supplier_currencies || []
+        contact_person: item.contact_person ?? null,
+        email: item.email ?? null,
+        phone: item.phone ?? null,
+        address: item.address ?? null,
+        bank_name: item.bank_name ?? null,
+        bank_account: item.bank_account ?? null,
+        tax_number: item.tax_number ?? null,
+        rating: item.rating ?? null,
+        supplier_type: item.type ?? "hotel", // المصدر دائماً حقل type في قاعدة البيانات
+        payment_type: item.payment_type ?? "deferred",
+        payment_method_options: Array.isArray(item.payment_method_options)
+          ? item.payment_method_options
+          : (
+              typeof item.payment_method_options === 'string'
+                ? (() => {
+                    try {
+                      const arr = JSON.parse(item.payment_method_options);
+                      return Array.isArray(arr) ? arr : [item.payment_method_options];
+                    } catch {
+                      return [item.payment_method_options];
+                    }
+                  })()
+                : []
+            ),
+        payment_terms: item.payment_terms ?? null,
+        is_active: typeof item.is_active === "boolean" ? item.is_active : true,
+        notes: item.notes ?? null,
+        credit_limit: typeof item.credit_limit === 'number'
+          ? item.credit_limit
+          : (item.credit_limit ? Number(item.credit_limit) : null),
+        created_at: item.created_at ?? undefined,
+        updated_at: item.updated_at ?? undefined,
       }));
     }
   });
 
-  // Add new supplier with enhanced error handling
+  // Add new supplier
   const addSupplierMutation = useMutation({
-    mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'currencies'>) => {
+    mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'rating'>) => {
       const supplierData = {
         name: newSupplier.name,
         contact_person: newSupplier.contact_person,
         email: newSupplier.email,
         phone: newSupplier.phone,
         address: newSupplier.address,
-        type: newSupplier.supplier_type,
+        bank_name: newSupplier.bank_name,
+        bank_account: newSupplier.bank_account,
+        tax_number: newSupplier.tax_number,
+        type: newSupplier.supplier_type, // تخزين النوع في type مع التوحيد
         payment_terms: newSupplier.payment_terms,
         payment_type: newSupplier.payment_type,
         payment_method_options: JSON.stringify(newSupplier.payment_method_options),
-        is_active: newSupplier.is_active
+        is_active: newSupplier.is_active,
+        notes: newSupplier.notes,
+        credit_limit: newSupplier.credit_limit
       };
 
       const { data, error } = await supabase
@@ -98,8 +103,7 @@ export const useSuppliers = (supplierType?: string) => {
       
       if (error) {
         console.error('Error inserting supplier:', error);
-        
-        // Enhanced error handling for different types of errors
+
         if (error.message.includes('row-level security policy')) {
           throw new Error('ليس لديك صلاحية لإضافة موردين. يرجى التواصل مع المدير للحصول على الصلاحيات المناسبة.');
         } else if (error.message.includes('duplicate key')) {
@@ -107,7 +111,6 @@ export const useSuppliers = (supplierType?: string) => {
         } else if (error.message.includes('violates check constraint')) {
           throw new Error('البيانات المدخلة غير صحيحة. يرجى مراجعة جميع الحقول.');
         }
-        
         throw error;
       }
       return data;
@@ -121,9 +124,7 @@ export const useSuppliers = (supplierType?: string) => {
     },
     onError: (error: any) => {
       console.error('Error adding supplier:', error);
-      
       const errorMessage = error.message || "حدث خطأ أثناء إضافة المورد";
-      
       toast({
         title: "خطأ في إضافة المورد",
         description: errorMessage,
@@ -141,6 +142,10 @@ export const useSuppliers = (supplierType?: string) => {
       const updateData: any = { ...updatedSupplier };
       if (updateData.payment_method_options)
         updateData.payment_method_options = JSON.stringify(updateData.payment_method_options);
+      if (updateData.supplier_type) {
+        updateData.type = updateData.supplier_type;
+        delete updateData.supplier_type;
+      }
 
       const { data, error } = await supabase
         .from('suppliers')
@@ -213,3 +218,5 @@ export const useSuppliers = (supplierType?: string) => {
     isDeletingSupplier: deleteSupplierMutation.isPending,
   };
 };
+
+// نهاية الملف
