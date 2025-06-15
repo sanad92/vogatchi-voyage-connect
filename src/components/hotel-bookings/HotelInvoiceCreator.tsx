@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +50,6 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           booking_type: 'hotel',
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
-          vat_amount: vatAmount,
           discount_amount: formData.discount_amount,
           total_amount: formData.subtotal + vatAmount,
           final_amount: finalAmount,
