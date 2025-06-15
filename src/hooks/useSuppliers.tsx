@@ -40,7 +40,7 @@ export const useSuppliers = (supplierType?: string) => {
       if (error) throw error;
       
       // Map the database response to our Supplier interface
-      return (data || []).map(item => ({
+      return (data || []).map((item: any) => ({
         id: item.id,
         name: item.name,
         contact_person: item.contact_person,
@@ -61,7 +61,7 @@ export const useSuppliers = (supplierType?: string) => {
     mutationFn: async (newSupplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('suppliers')
-        .insert([{
+        .insert({
           name: newSupplier.name,
           contact_person: newSupplier.contact_person,
           email: newSupplier.email,
@@ -70,7 +70,7 @@ export const useSuppliers = (supplierType?: string) => {
           supplier_type: newSupplier.supplier_type,
           payment_terms: newSupplier.payment_terms,
           is_active: newSupplier.is_active
-        }])
+        } as any)
         .select()
         .single();
       
