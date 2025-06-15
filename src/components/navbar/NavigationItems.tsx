@@ -17,7 +17,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 
-interface NavigationItem {
+export interface NavigationItem {
   title: string;
   to: string;
   icon: LucideIcon;
@@ -49,7 +49,7 @@ export const businessNavItems: NavigationItem[] = [
     title: "العملاء",
     to: "/customers",
     icon: Users,
-    label: "العملاء",
+    label: "إدارة العملاء",
     allowedRoles: []
   },
   {
@@ -84,14 +84,14 @@ export const businessNavItems: NavigationItem[] = [
     title: "الموردين",
     to: "/suppliers",
     icon: Truck,
-    label: "الموردين",
+    label: "إدارة الموردين",
     allowedRoles: []
   },
   {
     title: "الفواتير",
     to: "/invoices",
     icon: FileText,
-    label: "الفواتير",
+    label: "إدارة الفواتير",
     allowedRoles: []
   },
   {
@@ -105,7 +105,7 @@ export const businessNavItems: NavigationItem[] = [
     title: "الحسابات البنكية",
     to: "/bank-accounts",
     icon: Building,
-    label: "الحسابات البنكية",
+    label: "إدارة الحسابات البنكية",
     allowedRoles: []
   },
   {
@@ -123,7 +123,7 @@ export const communicationNavItems: NavigationItem[] = [
     title: "التقارير",
     to: "/reports",
     icon: BarChart,
-    label: "التقارير",
+    label: "التقارير التفصيلية",
     allowedRoles: []
   },
   {

@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { Shield } from 'lucide-react';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 import SiteSettings from '@/components/admin/SiteSettings';
@@ -12,19 +12,7 @@ import BackupManagementTab from '@/components/admin/BackupManagementTab';
 import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
 import PermissionsTab from '@/components/admin/PermissionsTab';
-import { 
-  Settings, 
-  Users, 
-  UserCog, 
-  Shield, 
-  Database, 
-  Activity, 
-  Archive,
-  Lock,
-  Cog,
-  KeyRound,
-  Palette
-} from 'lucide-react';
+import EnhancedAdminTabs from '@/components/admin/EnhancedAdminTabs';
 
 const AdminSettings = () => {
   const { hasRole, isSuperAdmin } = useAuth();
@@ -33,10 +21,18 @@ const AdminSettings = () => {
   if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">ليس لديك صلاحية</h1>
-          <p className="text-gray-600">هذه الصفحة متاحة للأدمن والمديرين فقط</p>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center space-y-6">
+            <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto">
+              <Shield className="h-12 w-12 text-red-500" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-gray-900">ليس لديك صلاحية</h1>
+              <p className="text-gray-600 max-w-md mx-auto">
+                هذه الصفحة متاحة للأدمن والمديرين فقط. يرجى التواصل مع المدير للحصول على الصلاحيات المطلوبة.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -45,86 +41,52 @@ const AdminSettings = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">إعدادات الإدارة</h1>
-          <p className="text-gray-600">إدارة شاملة لجميع جوانب النظام والمستخدمين</p>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          {/* Enhanced Admin Tabs */}
+          <EnhancedAdminTabs 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            isSuperAdmin={isSuperAdmin()}
+          />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-10">
-            <TabsTrigger value="unified-management" className="flex items-center gap-2 text-xs">
-              <UserCog className="h-4 w-4" />
-              <span className="hidden sm:inline">الإدارة الموحدة</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2 text-xs">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">المستخدمين</span>
-            </TabsTrigger>
-            <TabsTrigger value="site" className="flex items-center gap-2 text-xs">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">الموقع</span>
-            </TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2 text-xs">
-              <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">السجلات</span>
-            </TabsTrigger>
-            <TabsTrigger value="performance" className="flex items-center gap-2 text-xs">
-              <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">الأداء</span>
-            </TabsTrigger>
-            <TabsTrigger value="backup" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
-              <Archive className="h-4 w-4" />
-              <span className="hidden sm:inline">النسخ الاحتياطي</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
-              <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">الأمان</span>
-            </TabsTrigger>
-            <TabsTrigger value="system" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
-              <Cog className="h-4 w-4" />
-              <span className="hidden sm:inline">النظام</span>
-            </TabsTrigger>
-            <TabsTrigger value="permissions" disabled={!isSuperAdmin()} className="flex items-center gap-2 text-xs">
-              <KeyRound className="h-4 w-4" />
-              <span className="hidden sm:inline">الصلاحيات</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Tab Contents */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <TabsContent value="unified-management" className="mt-0">
+              <UnifiedUserEmployeeManagement />
+            </TabsContent>
 
-          <TabsContent value="unified-management">
-            <UnifiedUserEmployeeManagement />
-          </TabsContent>
+            <TabsContent value="users" className="mt-0">
+              <UserManagementTab />
+            </TabsContent>
 
-          <TabsContent value="users">
-            <UserManagementTab />
-          </TabsContent>
+            <TabsContent value="site" className="mt-0">
+              <SiteSettings />
+            </TabsContent>
 
-          <TabsContent value="site">
-            <SiteSettings />
-          </TabsContent>
+            <TabsContent value="audit" className="mt-0">
+              <AuditLogTab />
+            </TabsContent>
 
-          <TabsContent value="audit">
-            <AuditLogTab />
-          </TabsContent>
+            <TabsContent value="performance" className="mt-0">
+              <PerformanceMonitorTab />
+            </TabsContent>
 
-          <TabsContent value="performance">
-            <PerformanceMonitorTab />
-          </TabsContent>
+            <TabsContent value="backup" className="mt-0">
+              <BackupManagementTab />
+            </TabsContent>
 
-          <TabsContent value="backup">
-            <BackupManagementTab />
-          </TabsContent>
+            <TabsContent value="security" className="mt-0">
+              <SecurityManagementTab />
+            </TabsContent>
 
-          <TabsContent value="security">
-            <SecurityManagementTab />
-          </TabsContent>
+            <TabsContent value="system" className="mt-0">
+              <SystemSettingsTab />
+            </TabsContent>
 
-          <TabsContent value="system">
-            <SystemSettingsTab />
-          </TabsContent>
-
-          <TabsContent value="permissions">
-            <PermissionsTab />
-          </TabsContent>
+            <TabsContent value="permissions" className="mt-0">
+              <PermissionsTab />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>
