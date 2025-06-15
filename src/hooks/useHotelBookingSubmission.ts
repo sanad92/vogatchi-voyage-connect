@@ -56,8 +56,10 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
   ) => {
     setIsSubmitting(true);
     try {
+      // Remove custom_request from data sent to hotel_bookings table
+      const { custom_request, ...bookingDataForTable } = data;
       const submitData = {
-        ...data,
+        ...bookingDataForTable,
         customer_id: selectedCustomer.id,
         customer_name: selectedCustomer.name
       };
@@ -83,7 +85,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         toast.success('تم إنشاء الحجز بنجاح');
       }
 
-      // Save special requests
+      // Save special requests (types + custom)
       await saveSpecialRequests(bookingId, data, selectedRequests);
 
       onSuccess();

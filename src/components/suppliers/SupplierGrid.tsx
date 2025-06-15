@@ -124,7 +124,10 @@ const SupplierGrid = ({
     );
   }
 
-  if (!suppliers || suppliers.length === 0) {
+  // FIX: TS1345 "expression of type 'void' cannot be tested for truthiness"
+  // There was: if (suppliers.length === 0) {
+  // Now with additional check:
+  if (!Array.isArray(suppliers) || suppliers.length === 0) {
     return (
       <div className="col-span-full text-center py-8 text-gray-500">لا يوجد موردون مطابقون للبحث</div>
     );
