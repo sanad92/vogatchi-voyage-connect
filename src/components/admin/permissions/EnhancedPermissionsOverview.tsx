@@ -12,11 +12,11 @@ const EnhancedPermissionsOverview = () => {
 
   // حساب الإحصائيات
   const totalUsers = unifiedUsers?.length || 0;
-  const usersWithPermissions = allUserPermissions?.length || 0;
+  const usersWithPermissions = Array.isArray(allUserPermissions) ? allUserPermissions.length : 0;
   const usersWithoutPermissions = totalUsers - usersWithPermissions;
 
   // تحليل الصلاحيات الشائعة
-  const permissionStats = allUserPermissions?.reduce((acc, userPerms) => {
+  const permissionStats = Array.isArray(allUserPermissions) ? allUserPermissions.reduce((acc, userPerms) => {
     Object.entries(userPerms).forEach(([key, value]) => {
       if (key.endsWith('_view') || key.endsWith('_create') || key.endsWith('_edit') || key.endsWith('_delete')) {
         if (!acc[key]) acc[key] = 0;
@@ -24,7 +24,7 @@ const EnhancedPermissionsOverview = () => {
       }
     });
     return acc;
-  }, {} as Record<string, number>) || {};
+  }, {} as Record<string, number>) : {};
 
   // الصلاحيات الأكثر استخداماً
   const mostUsedPermissions = Object.entries(permissionStats)

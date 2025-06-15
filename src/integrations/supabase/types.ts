@@ -3960,6 +3960,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_default_permissions: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       end_impersonation: {
         Args: { p_session_id: string }
         Returns: {
@@ -3974,6 +3978,62 @@ export type Database = {
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_all_user_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          user_id: string
+          email: string
+          full_name: string
+          is_active: boolean
+          customers_view: boolean
+          customers_create: boolean
+          customers_edit: boolean
+          customers_delete: boolean
+          customers_export: boolean
+          bookings_view: boolean
+          bookings_create: boolean
+          bookings_edit: boolean
+          bookings_delete: boolean
+          bookings_cancel: boolean
+          bookings_confirm: boolean
+          invoices_view: boolean
+          invoices_create: boolean
+          invoices_edit: boolean
+          invoices_delete: boolean
+          invoices_send: boolean
+          invoices_payment: boolean
+          suppliers_view: boolean
+          suppliers_create: boolean
+          suppliers_edit: boolean
+          suppliers_delete: boolean
+          suppliers_contracts: boolean
+          reports_financial: boolean
+          reports_sales: boolean
+          reports_operational: boolean
+          reports_export: boolean
+          reports_advanced: boolean
+          employees_view: boolean
+          employees_create: boolean
+          employees_edit: boolean
+          employees_delete: boolean
+          employees_salary: boolean
+          employees_commission: boolean
+          expenses_view: boolean
+          expenses_create: boolean
+          expenses_approve: boolean
+          expenses_reports: boolean
+          system_users: boolean
+          system_settings: boolean
+          system_backup: boolean
+          system_audit: boolean
+          banking_view: boolean
+          banking_transactions: boolean
+          banking_transfer: boolean
+          created_at: string
+          updated_at: string
+        }[]
       }
       get_current_booking_status: {
         Args: { p_booking_id: string }
@@ -3991,9 +4051,87 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_detailed_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          permission_key: string
+          permission_name: string
+          permission_name_ar: string
+          description: string
+          group_id: string
+          is_active: boolean
+          created_at: string
+        }[]
+      }
+      get_permission_groups: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          name_ar: string
+          description: string
+          color: string
+          is_active: boolean
+          created_at: string
+        }[]
+      }
       get_system_setting: {
         Args: { setting_key_param: string }
         Returns: string
+      }
+      get_user_permissions: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          user_id: string
+          customers_view: boolean
+          customers_create: boolean
+          customers_edit: boolean
+          customers_delete: boolean
+          customers_export: boolean
+          bookings_view: boolean
+          bookings_create: boolean
+          bookings_edit: boolean
+          bookings_delete: boolean
+          bookings_cancel: boolean
+          bookings_confirm: boolean
+          invoices_view: boolean
+          invoices_create: boolean
+          invoices_edit: boolean
+          invoices_delete: boolean
+          invoices_send: boolean
+          invoices_payment: boolean
+          suppliers_view: boolean
+          suppliers_create: boolean
+          suppliers_edit: boolean
+          suppliers_delete: boolean
+          suppliers_contracts: boolean
+          reports_financial: boolean
+          reports_sales: boolean
+          reports_operational: boolean
+          reports_export: boolean
+          reports_advanced: boolean
+          employees_view: boolean
+          employees_create: boolean
+          employees_edit: boolean
+          employees_delete: boolean
+          employees_salary: boolean
+          employees_commission: boolean
+          expenses_view: boolean
+          expenses_create: boolean
+          expenses_approve: boolean
+          expenses_reports: boolean
+          system_users: boolean
+          system_settings: boolean
+          system_backup: boolean
+          system_audit: boolean
+          banking_view: boolean
+          banking_transactions: boolean
+          banking_transfer: boolean
+          created_at: string
+          updated_at: string
+        }[]
       }
       get_user_role: {
         Args: { user_id: string }
@@ -4052,6 +4190,10 @@ export type Database = {
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }
         Returns: undefined
+      }
+      update_user_permissions: {
+        Args: { p_user_id: string; p_permissions: Json }
+        Returns: string
       }
       user_has_permission: {
         Args: { p_user_id: string; p_permission_key: string }

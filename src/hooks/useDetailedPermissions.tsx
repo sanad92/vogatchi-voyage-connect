@@ -64,6 +64,12 @@ export interface DetailedUserPermissions {
   updated_at: string;
 }
 
+export interface AllUserPermissions extends DetailedUserPermissions {
+  email: string;
+  full_name: string;
+  is_active: boolean;
+}
+
 export interface PermissionGroup {
   id: string;
   name: string;
@@ -113,7 +119,7 @@ export const useDetailedPermissions = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_all_user_permissions');
       if (error) throw error;
-      return data;
+      return data as AllUserPermissions[];
     },
     enabled: isSuperAdmin(),
   });
@@ -127,7 +133,7 @@ export const useDetailedPermissions = () => {
           p_user_id: userId 
         });
         if (error) throw error;
-        return data as DetailedUserPermissions;
+        return data?.[0] as DetailedUserPermissions;
       },
       enabled: !!userId,
     });
