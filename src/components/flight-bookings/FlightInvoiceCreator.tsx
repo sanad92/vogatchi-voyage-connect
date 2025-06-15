@@ -105,8 +105,14 @@ const FlightInvoiceCreator = ({
     createInvoiceMutation.mutate();
   };
 
+  // Compute values for summary
   const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
   const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+
+  // Helper for controlled form
+  const handleFormChange = (fields: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...fields }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -118,7 +124,6 @@ const FlightInvoiceCreator = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Optionally, you may use printMode here to adjust UI for printing */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -131,127 +136,33 @@ const FlightInvoiceCreator = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="subtotal">المبلغ الفرعي</Label>
-              <Input
-                id="subtotal"
-                type="number"
-                step="0.01"
-                value={formData.subtotal}
-                onChange={e => setFormData({...formData, subtotal: parseFloat(e.target.value) || 0})}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="vat_rate">نسبة الضريبة (%)</Label>
-              <Input
-                id="vat_rate"
-                type="number"
-                step="0.01"
-                value={formData.vat_rate}
-                onChange={e => setFormData({...formData, vat_rate: parseFloat(e.target.value) || 0})}
-                required
-              />
-            </div>
-          </div>
+          <FlightInvoiceForm
+            formData={formData}
+            onChange={handleFormChange}
+            printMode={printMode}
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="discount_amount">قيمة الخصم</Label>
-              <Input
-                id="discount_amount"
-                type="number"
-                step="0.01"
-                value={formData.discount_amount}
-                onChange={e => setFormData({...formData, discount_amount: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="due_date">تاريخ الاستحقاق</Label>
-              <Input
-                id="due_date"
-                type="date"
-                value={formData.due_date}
-                onChange={e => setFormData({...formData, due_date: e.target.value})}
-              />
-            </div>
-          </div>
+          <FlightInvoiceSummary
+            subtotal={formData.subtotal}
+            vat_rate={formData.vat_rate}
+            discount_amount={formData.discount_amount}
+            currencySymbol={booking.currency || "ج.م"}
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="payment_terms">شروط الدفع</Label>
-              <Input
-                id="payment_terms"
-                value={formData.payment_terms}
-                onChange={e => setFormData({...formData, payment_terms: e.target.value})}
-                placeholder="30 days"
-              />
-            </div>
-            <div>
-              <Label htmlFor="payment_method">طريقة الدفع</Label>
-              <Select 
-                value={formData.payment_method} 
-                onValueChange={(value) => setFormData({...formData, payment_method: value})}
+          {!printMode && (
+            <div className="flex gap-2">
+              <Button 
+                type="submit"
+                disabled={createInvoiceMutation.isPending}
+                className="flex-1"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">نقداً</SelectItem>
-                  <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
-                  <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>
-                  <SelectItem value="check">شيك</SelectItem>
-                  <SelectItem value="instant_transfer">تحويل فوري</SelectItem>
-                </SelectContent>
-              </Select>
+                {createInvoiceMutation.isPending ? 'جاري الإصدار...' : 'إصدار الفاتورة'}
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                إلغاء
+              </Button>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">ملاحظات</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={e => setFormData({...formData, notes: e.target.value})}
-              rows={3}
-            />
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold mb-2">ملخص الفاتورة:</h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span>المبلغ الفرعي:</span>
-                <span>{formData.subtotal.toLocaleString()} ج.م</span>
-              </div>
-              <div className="flex justify-between">
-                <span>الضريبة ({formData.vat_rate}%):</span>
-                <span>{vatAmount.toLocaleString()} ج.م</span>
-              </div>
-              <div className="flex justify-between">
-                <span>الخصم:</span>
-                <span>-{formData.discount_amount.toLocaleString()} ج.م</span>
-              </div>
-              <div className="flex justify-between font-bold border-t pt-1">
-                <span>الإجمالي النهائي:</span>
-                <span>{finalAmount.toLocaleString()} ج.م</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              disabled={createInvoiceMutation.isPending}
-              className="flex-1"
-            >
-              {createInvoiceMutation.isPending ? 'جاري الإصدار...' : 'إصدار الفاتورة'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              إلغاء
-            </Button>
-          </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>
