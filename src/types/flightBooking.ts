@@ -30,6 +30,9 @@ export interface BookingStatus {
   name: string;
   name_ar: string;
   color: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export interface PassengerDetail {

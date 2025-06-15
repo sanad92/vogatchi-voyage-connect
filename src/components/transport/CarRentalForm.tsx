@@ -11,7 +11,11 @@ import { useCarRentals } from '@/hooks/useCarRentals';
 import { toast } from 'sonner';
 import { SupportedCurrency } from '@/types/currency';
 
-const CarRentalForm = () => {
+interface CarRentalFormProps {
+  onSuccess?: () => void;
+}
+
+const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
   const { addCarRental } = useCarRentals();
 
   const [formData, setFormData] = useState({
@@ -134,6 +138,10 @@ const CarRentalForm = () => {
       });
       
       toast.success('تم إضافة حجز الإيجار بنجاح');
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error adding car rental:', error);
       toast.error('حدث خطأ أثناء إضافة حجز الإيجار');

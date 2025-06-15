@@ -19,7 +19,7 @@ const Customers = () => {
   const [activeSegment, setActiveSegment] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   
-  const { customers, isLoading: customersLoading, error: customersError } = useCustomers(searchTerm, activeSegment);
+  const { customers, isLoading: customersLoading, error: customersError } = useCustomers();
 
   const handleCustomerAdded = (customer: any) => {
     console.log('Customer added:', customer);
@@ -30,29 +30,46 @@ const Customers = () => {
     setIsAddDialogOpen(false);
   };
 
-  // Filter customers based on active tab
+  // Filter customers based on active tab and search/segment filters
   const getFilteredCustomers = () => {
     if (!customers) return [];
     
+    let filtered = customers;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(customer => 
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone?.includes(searchTerm) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply segment filter
+    if (activeSegment) {
+      filtered = filtered.filter(customer => customer.segment_id === activeSegment);
+    }
+    
+    // Apply tab filter
     switch (activeTab) {
       case 'vip':
-        return customers.filter(customer => 
+        return filtered.filter(customer => 
           customer.segment?.name === 'VIP' || customer.total_spent > 50000 || customer.total_bookings > 10
         );
       case 'new':
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return customers.filter(customer => 
+        return filtered.filter(customer => 
           new Date(customer.created_at) > thirtyDaysAgo
         );
       case 'inactive':
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        return customers.filter(customer => 
+        return filtered.filter(customer => 
           !customer.last_booking_date || new Date(customer.last_booking_date) < sixMonthsAgo
         );
       default:
-        return customers;
+        return filtered;
     }
   };
 

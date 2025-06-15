@@ -148,7 +148,7 @@ const FlightBookings = () => {
                           <h4 className="font-medium mb-2">المسافر {index + 1}</h4>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <p><strong>الاسم:</strong> {passenger.name}</p>
-                            <p><strong>جواز السفر:</strong> {passenger.passport}</p>
+                            <p><strong>جواز السفر:</strong> {passenger.passport_number}</p>
                             <p><strong>تاريخ الميلاد:</strong> {passenger.date_of_birth}</p>
                             <p><strong>الجنسية:</strong> {passenger.nationality}</p>
                           </div>

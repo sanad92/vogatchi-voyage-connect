@@ -49,9 +49,9 @@ export const useFlightBookings = () => {
       let supplierCostEGP = bookingData.supplier_cost;
 
       if (bookingData.currency && bookingData.currency !== 'EGP') {
-        exchangeRateToEGP = await getCurrentRate(bookingData.currency, 'EGP');
-        totalCostEGP = await convertToPrimaryCurrency(totalCost, bookingData.currency);
-        supplierCostEGP = await convertToPrimaryCurrency(bookingData.supplier_cost, bookingData.currency);
+        exchangeRateToEGP = await getCurrentRate(bookingData.currency as SupportedCurrency, 'EGP');
+        totalCostEGP = await convertToPrimaryCurrency(totalCost, bookingData.currency as SupportedCurrency);
+        supplierCostEGP = await convertToPrimaryCurrency(bookingData.supplier_cost, bookingData.currency as SupportedCurrency);
       }
 
       const { data, error } = await supabase
@@ -93,17 +93,17 @@ export const useFlightBookings = () => {
         let exchangeRateToEGP = 1;
         
         if (currency !== 'EGP') {
-          exchangeRateToEGP = await getCurrentRate(currency, 'EGP');
+          exchangeRateToEGP = await getCurrentRate(currency as SupportedCurrency, 'EGP');
         }
         
         if (updates.ticket_price_per_person || updates.taxes_and_fees) {
           const totalCost = (updates.ticket_price_per_person || 0) * (updates.number_of_passengers || 1) + (updates.taxes_and_fees || 0);
-          const totalCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(totalCost, currency) : totalCost;
+          const totalCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(totalCost, currency as SupportedCurrency) : totalCost;
           updateData.total_cost_egp = totalCostEGP;
         }
         
         if (updates.supplier_cost) {
-          const supplierCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(updates.supplier_cost, currency) : updates.supplier_cost;
+          const supplierCostEGP = currency !== 'EGP' ? await convertToPrimaryCurrency(updates.supplier_cost, currency as SupportedCurrency) : updates.supplier_cost;
           updateData.supplier_cost_egp = supplierCostEGP;
         }
         
@@ -141,7 +141,7 @@ export const useFlightBookings = () => {
       if (booking.total_cost_egp) {
         total += booking.total_cost_egp;
       } else if (booking.currency && booking.currency !== 'EGP') {
-        const amountInEGP = await convertToPrimaryCurrency(booking.total_cost, booking.currency);
+        const amountInEGP = await convertToPrimaryCurrency(booking.total_cost, booking.currency as SupportedCurrency);
         total += amountInEGP;
       } else {
         total += booking.total_cost;
