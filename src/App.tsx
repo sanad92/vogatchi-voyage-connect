@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import BookingsCalendar from "./pages/BookingsCalendar";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import CRMDashboard from "./pages/CRMDashboard";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +51,12 @@ const App = () => (
               <ProtectedRoute>
                 <Navbar />
                 <NewCustomer />
+              </ProtectedRoute>
+            } />
+            <Route path="/crm" element={
+              <ProtectedRoute>
+                <Navbar />
+                <CRMDashboard />
               </ProtectedRoute>
             } />
             <Route path="/customer-service" element={
