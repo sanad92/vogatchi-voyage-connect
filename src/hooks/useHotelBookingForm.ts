@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
@@ -103,20 +102,81 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     }
   }, [booking, setValue, fetchExistingRequests]);
 
-  const onSubmit = async (data: NewHotelBooking) => {
-    //التأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
+  const sanitizeBookingData = (data: NewHotelBooking) => {
+    // Numeric fields: make empty string --> null or default
+    const parsedHotelStarRating = data.hotel_star_rating === "" || data.hotel_star_rating == null
+      ? null
+      : typeof data.hotel_star_rating === "string"
+        ? parseInt(data.hotel_star_rating)
+        : data.hotel_star_rating;
+
+    const parsedNumAdults = data.number_of_adults === "" || data.number_of_adults == null
+      ? 1
+      : typeof data.number_of_adults === "string"
+        ? parseInt(data.number_of_adults)
+        : data.number_of_adults;
+
+    const parsedNumChildren = data.number_of_children === "" || data.number_of_children == null
+      ? 0
+      : typeof data.number_of_children === "string"
+        ? parseInt(data.number_of_children)
+        : data.number_of_children;
+
+    const parsedCostPerNight = data.cost_per_night === "" || data.cost_per_night == null
+      ? 0
+      : typeof data.cost_per_night === "string"
+        ? parseFloat(data.cost_per_night)
+        : data.cost_per_night;
+
+    const parsedSellingPrice = data.selling_price_per_night === "" || data.selling_price_per_night == null
+      ? 0
+      : typeof data.selling_price_per_night === "string"
+        ? parseFloat(data.selling_price_per_night)
+        : data.selling_price_per_night;
+
+    const parsedPaidAmount = data.paid_amount === "" || data.paid_amount == null
+      ? 0
+      : typeof data.paid_amount === "string"
+        ? parseFloat(data.paid_amount)
+        : data.paid_amount;
+
+    // Handle supplier_id: allow custom supplier name if ID not present
+    let outSupplierId = data.supplier_id;
+    if ((!data.supplier_id || data.supplier_id === "") && data.supplier_name && data.supplier_name.trim() !== "") {
+      outSupplierId = null;
+    }
+
+    // Return the sanitized object
+    return {
+      ...data,
+      hotel_star_rating: parsedHotelStarRating,
+      number_of_adults: parsedNumAdults,
+      number_of_children: parsedNumChildren,
+      cost_per_night: parsedCostPerNight,
+      selling_price_per_night: parsedSellingPrice,
+      paid_amount: parsedPaidAmount,
+      supplier_id: outSupplierId,
+    };
+  };
+
+  const onSubmit = async (rawData: NewHotelBooking) => {
+    // Sanitize data before sending
+    const data = sanitizeBookingData(rawData);
+
+    //تأكد من أن بيانات موظف الحجز صحيحة وغير قابلة للتغيير
     const bookingData = {
       ...data,
       booking_agent_id: currentEmployee?.id,
       booking_agent_name: currentEmployee?.full_name || data.booking_agent_name
     };
 
-    // تحقق من أن المورد تم اختياره (supplier_id/name)
-    if (!bookingData.supplier_id || !bookingData.supplier_name) {
-      toast.error("يجب اختيار مورد الفندق.");
+    // التحقق من اختيار اسم مورد على الأقل
+    if (!bookingData.supplier_name || bookingData.supplier_name.trim() === "") {
+      toast.error("يجب اختيار مورد الفندق أو إدخال اسم مورد مخصص.");
       return;
     }
 
+    // supplier_id يمكن أن يكون null إذا المورد مخصص، لنجعل هذا التحقق فقط على اسم المورد
     if (!validateBookingData(bookingData, selectedCustomer)) {
       return;
     }

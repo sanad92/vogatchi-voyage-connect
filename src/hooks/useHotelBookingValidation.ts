@@ -4,8 +4,7 @@ import { NewHotelBooking } from "@/types/hotelBooking";
 import { Customer } from "@/types/customer";
 
 export const useHotelBookingValidation = () => {
-  const validateBookingData = (data: NewHotelBooking, selectedCustomer: Customer | null): boolean => {
-    // التحقق من اختيار العميل
+  const validateBookingData = (data: any, selectedCustomer: Customer | null): boolean => {
     if (!selectedCustomer) {
       toast.error('يجب اختيار عميل أو إضافة عميل جديد قبل إتمام الحجز');
       return false;
@@ -22,11 +21,11 @@ export const useHotelBookingValidation = () => {
       return false;
     }
 
-    if (!data.supplier_name) {
-      toast.error('يجب اختيار مورد للحجز');
+    // فقط supplier_name ضروري (وليس id)
+    if (!data.supplier_name || data.supplier_name.trim() === "") {
+      toast.error('يجب اختيار مورد للحجز أو إدخال اسم مورد مخصص');
       return false;
     }
-
     return true;
   };
 
@@ -34,3 +33,4 @@ export const useHotelBookingValidation = () => {
     validateBookingData
   };
 };
+

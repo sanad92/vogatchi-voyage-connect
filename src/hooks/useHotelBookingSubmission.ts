@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -62,15 +61,16 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         ...bookingDataForTable,
         customer_id: selectedCustomer.id,
         customer_name: selectedCustomer.name,
-        supplier_id: bookingDataForTable.supplier_id || null, // الجديد: الحقل الإجباري
+        supplier_id: bookingDataForTable.supplier_id && bookingDataForTable.supplier_id !== "" ? bookingDataForTable.supplier_id : null,
+        // Required: supplier_name (string) must be present, but supplier_id can be null for custom suppliers
       };
 
       let bookingId: string;
 
-      // تحقق من وجود قيم ضرورية
-      if (!submitData.supplier_id || !submitData.supplier_name) {
+      // تحقق بشكل أوضح: فقط supplier_name مطلوب، id اختياري إذا من القائمة
+      if (!submitData.supplier_name || submitData.supplier_name.trim() === "") {
         setIsSubmitting(false);
-        toast.error("يجب اختيار مورد وحفظ اسمه.");
+        toast.error("يجب اختيار مورد أو إدخال اسم مورد.");
         return;
       }
 
