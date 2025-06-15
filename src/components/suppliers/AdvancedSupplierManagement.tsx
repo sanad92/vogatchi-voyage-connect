@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,26 +21,7 @@ import SupplierForm, { SupplierFormData } from './SupplierForm';
 import SupplierGrid from './SupplierGrid';
 import SupplierPermissionCheck from './SupplierPermissionCheck';
 
-interface Supplier {
-  id: string;
-  name: string;
-  type: 'hotel' | 'airline' | 'transport' | 'tour';
-  contact_person: string | null;
-  email: string | null;
-  phone: string | null;
-  bank_name: string | null;
-  bank_account: string | null;
-  tax_number: string | null;
-  rating: number | null;
-  notes: string | null;
-  is_active: boolean | null;
-  preferred_currency: SupportedCurrency;
-  payment_terms: string | null;
-  payment_type: 'prepaid' | 'deferred';
-  payment_method_options: string[];
-  credit_limit: number | null;
-  created_at: string;
-}
+import { Supplier } from '@/types/supplier'; // <-- USE PROJECT TYPE
 
 const AdvancedSupplierManagement = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -68,12 +50,15 @@ const AdvancedSupplierManagement = () => {
         .order('name');
       
       if (error) throw error;
-      return data.map(supplier => ({
+      // Map 'type' from DB to 'supplier_type' expected by app types
+      return data.map((supplier: any) => ({
         ...supplier,
-        preferred_currency: supplier.preferred_currency || 'EGP',
-        payment_type: supplier.payment_type || 'deferred',
+        supplier_type: supplier.supplier_type || supplier.type, // prefer supplier_type if exists, else type
+        type: undefined, // remove local 'type' property if present
         payment_method_options: supplier.payment_method_options || ['bank_transfer'],
-        credit_limit: supplier.credit_limit || 0
+        payment_type: supplier.payment_type || 'deferred',
+        is_active: supplier.is_active ?? true,
+        credit_limit: supplier.credit_limit || 0,
       })) as Supplier[];
     }
   });
@@ -97,6 +82,7 @@ const AdvancedSupplierManagement = () => {
     try {
       const supplierData = {
         ...formData,
+        supplier_type: formData.supplier_type, // Ensure supplier_type is present
         payment_method_options: formData.payment_method_options
       };
       await new Promise((resolve, reject) => {
