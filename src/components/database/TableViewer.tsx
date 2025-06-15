@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
 interface TableViewerProps {
-  table: string;
+  table: keyof Database["Tables"]; // Restrict to valid table names
   onBack: () => void;
 }
 
