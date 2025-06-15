@@ -3,11 +3,27 @@ import { useState, useMemo } from 'react';
 
 interface UnifiedUser {
   id: string;
-  full_name: string;
   email: string;
-  role: string;
+  full_name: string;
+  phone?: string;
+  department?: string;
+  is_active: boolean;
+  role?: string;
+  created_at: string;
+  updated_at: string;
   employee?: {
+    id: string;
     employee_code: string;
+    position: string;
+    hire_date: string;
+    base_salary: number;
+    allowances: number;
+    commission_rate: number;
+    bank_name?: string;
+    bank_account_number?: string;
+    national_id?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
   };
 }
 
