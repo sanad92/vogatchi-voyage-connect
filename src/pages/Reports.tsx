@@ -2,11 +2,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, TrendingUp, Users, DollarSign } from "lucide-react";
+import { FileText, TrendingUp, Users, DollarSign, BarChart3, Bell, Filter, Calendar } from "lucide-react";
 import ReportsChart from "@/components/reports/ReportsChart";
 import PerformanceMetrics from "@/components/reports/PerformanceMetrics";
-import AdvancedReportsFilters from "@/components/reports/AdvancedReportsFilters";
 import FinancialReports from "@/components/reports/FinancialReports";
+import AdvancedAnalytics from "@/components/reports/AdvancedAnalytics";
+import SmartReportFilters from "@/components/reports/SmartReportFilters";
+import PeriodComparison from "@/components/reports/PeriodComparison";
+import SmartAlerts from "@/components/reports/SmartAlerts";
 import { DateRange } from "react-day-picker";
 
 interface ReportFilters {
@@ -54,26 +57,43 @@ const Reports = () => {
     { name: 'يونيو', value: 350000 },
   ];
 
-  const handleExport = (format: 'pdf' | 'excel') => {
+  const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
     console.log(`Exporting report as ${format}`);
     // يمكن تنفيذ منطق التصدير هنا
+  };
+
+  const handleRefresh = () => {
+    console.log('Refreshing reports...');
+    // يمكن تنفيذ منطق التحديث هنا
   };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">التقارير والتحليلات</h1>
+        <h1 className="text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
       </div>
 
-      {/* فلاتر التقارير المتقدمة */}
-      <AdvancedReportsFilters 
-        filters={filters}
+      {/* فلاتر التقارير الذكية */}
+      <SmartReportFilters 
         onFiltersChange={setFilters}
         onExport={handleExport}
+        onRefresh={handleRefresh}
       />
 
-      <Tabs defaultValue="financial" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="analytics" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            تحليلات متقدمة
+          </TabsTrigger>
+          <TabsTrigger value="comparison" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            مقارنة الفترات
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            التنبيهات الذكية
+          </TabsTrigger>
           <TabsTrigger value="financial" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             التقارير المالية
@@ -82,15 +102,23 @@ const Reports = () => {
             <TrendingUp className="h-4 w-4" />
             الأداء
           </TabsTrigger>
-          <TabsTrigger value="customers" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            العملاء
-          </TabsTrigger>
           <TabsTrigger value="operations" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             العمليات
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <AdvancedAnalytics />
+        </TabsContent>
+
+        <TabsContent value="comparison" className="space-y-4">
+          <PeriodComparison />
+        </TabsContent>
+
+        <TabsContent value="alerts" className="space-y-4">
+          <SmartAlerts />
+        </TabsContent>
 
         <TabsContent value="financial" className="space-y-4">
           <FinancialReports data={mockFinancialData} period="آخر 6 أشهر" />
@@ -106,54 +134,6 @@ const Reports = () => {
               xAxisKey="name"
             />
             <PerformanceMetrics />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="customers" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">إجمالي العملاء</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
-                <p className="text-xs text-muted-foreground">+12% عن الشهر السابق</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">عملاء جدد</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">89</div>
-                <p className="text-xs text-muted-foreground">هذا الشهر</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">عملاء VIP</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">45</div>
-                <p className="text-xs text-muted-foreground">3.6% من إجمالي العملاء</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">متوسط قيمة العميل</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">15,420 ج.م</div>
-                <p className="text-xs text-muted-foreground">+8% عن الشهر السابق</p>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
