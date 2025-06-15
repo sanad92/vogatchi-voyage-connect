@@ -61,24 +61,18 @@ export interface MultiCurrencyPaymentOrder {
   amount_in_account_currency?: number;
 }
 
-// الجنيه المصري كعملة أساسية
-export const SUPPORTED_CURRENCIES = ['EGP', 'USD', 'SAR', 'EUR'] as const;
+// الجنيه المصري كعملة أساسية ووحيدة
+export const SUPPORTED_CURRENCIES = ['EGP'] as const;
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
 
 export const PRIMARY_CURRENCY: SupportedCurrency = 'EGP';
 
 export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
-  EGP: 'ج.م',
-  USD: '$',
-  SAR: 'ر.س',
-  EUR: '€'
+  EGP: 'ج.م'
 };
 
 export const CURRENCY_NAMES: Record<SupportedCurrency, string> = {
-  EGP: 'جنيه مصري',
-  USD: 'دولار أمريكي',
-  SAR: 'ريال سعودي',
-  EUR: 'يورو'
+  EGP: 'جنيه مصري'
 };
 
 export interface SupplierContract {

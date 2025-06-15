@@ -16,7 +16,10 @@ const ExpenseManagement = () => {
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">إدارة المصروفات والحسابات</h1>
+        <div>
+          <h1 className="text-3xl font-bold">إدارة المصروفات والحسابات</h1>
+          <p className="text-gray-600 mt-2">جميع المبالغ والحسابات بالجنيه المصري (ج.م)</p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

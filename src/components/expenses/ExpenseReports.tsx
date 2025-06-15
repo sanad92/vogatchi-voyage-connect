@@ -5,6 +5,7 @@ import { TrendingUp, BarChart3, PieChart, Download } from 'lucide-react';
 import FinancialDashboard from './reports/FinancialDashboard';
 import ExpenseReportExporter from './reports/ExpenseReportExporter';
 import { useExpenses } from '@/hooks/useExpenses';
+import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 
 const ExpenseReports = () => {
   const { 
@@ -98,7 +99,7 @@ const ExpenseReports = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            نظام التقارير المالية المتقدم
+            نظام التقارير المالية المتقدم - بالجنيه المصري
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -118,7 +119,7 @@ const ExpenseReports = () => {
               </TabsTrigger>
               <TabsTrigger value="legacy" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                التقرير السابق
+                التقرير المبسط
               </TabsTrigger>
             </TabsList>
 
@@ -135,15 +136,17 @@ const ExpenseReports = () => {
             </TabsContent>
 
             <TabsContent value="legacy" className="space-y-4">
-              {/* التقرير السابق المبسط */}
+              {/* التقرير المبسط بالجنيه المصري */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalExpenses.toLocaleString()} ر.س</div>
-                    <p className="text-xs text-muted-foreground">جميع المصروفات</p>
+                    <div className="text-2xl font-bold">
+                      <MultiCurrencyDisplay amount={stats.totalExpenses} currency="EGP" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">جميع المصروفات بالجنيه المصري</p>
                   </CardContent>
                 </Card>
 
@@ -152,7 +155,9 @@ const ExpenseReports = () => {
                     <CardTitle className="text-sm font-medium">إجمالي الرواتب</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalSalaries.toLocaleString()} ر.س</div>
+                    <div className="text-2xl font-bold">
+                      <MultiCurrencyDisplay amount={stats.totalSalaries} currency="EGP" />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {stats.totalExpenses > 0 ? 
                         `${((stats.totalSalaries / stats.totalExpenses) * 100).toFixed(1)}% من إجمالي المصروفات` : 
@@ -167,7 +172,9 @@ const ExpenseReports = () => {
                     <CardTitle className="text-sm font-medium">إجمالي الإيجارات</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalRent.toLocaleString()} ر.س</div>
+                    <div className="text-2xl font-bold">
+                      <MultiCurrencyDisplay amount={stats.totalRent} currency="EGP" />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {stats.totalExpenses > 0 ? 
                         `${((stats.totalRent / stats.totalExpenses) * 100).toFixed(1)}% من إجمالي المصروفات` : 
@@ -182,7 +189,9 @@ const ExpenseReports = () => {
                     <CardTitle className="text-sm font-medium">مصروفات أخرى</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalOtherExpenses.toLocaleString()} ر.س</div>
+                    <div className="text-2xl font-bold">
+                      <MultiCurrencyDisplay amount={stats.totalOtherExpenses} currency="EGP" />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {stats.totalExpenses > 0 ? 
                         `${((stats.totalOtherExpenses / stats.totalExpenses) * 100).toFixed(1)}% من إجمالي المصروفات` : 
@@ -198,12 +207,12 @@ const ExpenseReports = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PieChart className="h-5 w-5" />
-                    تحليل المصروفات حسب الفئة
+                    تحليل المصروفات حسب الفئة (بالجنيه المصري)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {stats.categoryBreakdown.map((category, index) => (
+                    {stats.categoryBreakdown?.map((category, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <div 
@@ -213,11 +222,13 @@ const ExpenseReports = () => {
                           <span className="font-medium">{category.name}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{category.amount.toLocaleString()} ر.س</div>
+                          <div className="font-medium">
+                            <MultiCurrencyDisplay amount={category.amount} currency="EGP" />
+                          </div>
                           <div className="text-sm text-gray-500">{category.percentage.toFixed(1)}%</div>
                         </div>
                       </div>
-                    ))}
+                    )) || []}
                   </div>
                 </CardContent>
               </Card>

@@ -3,14 +3,14 @@ import { CURRENCY_SYMBOLS, SupportedCurrency } from '@/types/currency';
 
 interface MultiCurrencyDisplayProps {
   amount: number;
-  currency: SupportedCurrency;
+  currency?: SupportedCurrency;
   showSymbol?: boolean;
   className?: string;
 }
 
 const MultiCurrencyDisplay = ({ 
   amount, 
-  currency, 
+  currency = 'EGP', 
   showSymbol = true, 
   className = "" 
 }: MultiCurrencyDisplayProps) => {

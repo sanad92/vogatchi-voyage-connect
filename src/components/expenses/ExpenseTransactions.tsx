@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Receipt, Calendar, DollarSign } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import type { ExpenseTransaction } from '@/types/expenses';
+import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 
 const ExpenseTransactions = () => {
   const { 
@@ -28,7 +28,7 @@ const ExpenseTransactions = () => {
     category_id: '',
     description: '',
     amount: 0,
-    currency: 'SAR',
+    currency: 'EGP',
     transaction_date: new Date().toISOString().split('T')[0],
     payment_method: 'cash',
     bank_account_id: '',
@@ -65,7 +65,7 @@ const ExpenseTransactions = () => {
       category_id: '',
       description: '',
       amount: 0,
-      currency: 'SAR',
+      currency: 'EGP',
       transaction_date: new Date().toISOString().split('T')[0],
       payment_method: 'cash',
       bank_account_id: '',
@@ -102,7 +102,7 @@ const ExpenseTransactions = () => {
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold mb-2">إدارة المصروفات</h2>
-          <p className="text-gray-600">تسجيل ومتابعة جميع المصروفات العامة للشركة</p>
+          <p className="text-gray-600">تسجيل ومتابعة جميع المصروفات العامة للشركة بالجنيه المصري</p>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -139,7 +139,7 @@ const ExpenseTransactions = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="amount">المبلغ *</Label>
+                  <Label htmlFor="amount">المبلغ (ج.م) *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -269,7 +269,7 @@ const ExpenseTransactions = () => {
 
       {/* قائمة المصروفات */}
       <div className="space-y-4">
-        {filteredTransactions.map((transaction) => (
+        {filteredTransactions?.map((transaction) => (
           <Card key={transaction.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -312,13 +312,13 @@ const ExpenseTransactions = () => {
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-2xl font-bold">
                     <DollarSign className="h-5 w-5 text-green-600" />
-                    {transaction.amount.toLocaleString()} {transaction.currency}
+                    <MultiCurrencyDisplay amount={transaction.amount} currency="EGP" />
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
+        )) || []}
       </div>
 
       {filteredTransactions.length === 0 && (
