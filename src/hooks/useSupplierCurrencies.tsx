@@ -36,7 +36,12 @@ export const useSupplierCurrencies = (supplierId?: string) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion to ensure currency field matches SupportedCurrency type
+      return (data || []).map(item => ({
+        ...item,
+        currency: item.currency as SupportedCurrency
+      }));
     },
     enabled: !!supplierId
   });
