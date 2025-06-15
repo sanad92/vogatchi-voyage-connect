@@ -1,189 +1,76 @@
 
-import {
-  Home,
-  Calendar,
-  Building,
-  Plane,
-  Users,
-  Headphones as HeadphonesIcon,
-  Truck,
-  FileText,
-  CreditCard,
-  BarChart,
-  Settings,
-  Building2
-} from "lucide-react";
+import { Calendar, FileText, Home, Users, CreditCard, Banknote, Settings, BarChart3, UserCheck, Receipt } from 'lucide-react';
+import type { NavigationItem } from './types';
 
-interface NavItem {
-  to: string;
-  icon: any;
-  label: string;
-  allowedRoles: string[];
-}
-
-export const getNavigationItems = (userRole: string | undefined) => {
-  const items = [
-    {
-      to: "/",
-      icon: Home,
-      label: "الرئيسية",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent", "accountant", "viewer"]
-    },
-    {
-      to: "/daily-operations",
-      icon: Calendar,
-      label: "العمليات اليومية",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-    },
-    {
-      to: "/hotel-bookings",
-      icon: Building,
-      label: "حجوزات الفنادق",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-    },
-    {
-      to: "/flight-bookings",
-      icon: Plane,
-      label: "حجوزات الطيران",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-    },
-    {
-      to: "/customers",
-      icon: Users,
-      label: "العملاء",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-    },
-    {
-      to: "/customer-service",
-      icon: HeadphonesIcon,
-      label: "خدمة العملاء",
-      allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-    },
-    {
-      to: "/suppliers",
-      icon: Truck,
-      label: "الموردين",
-      allowedRoles: ["super_admin", "admin", "manager"]
-    },
-    {
-      to: "/invoices",
-      icon: FileText,
-      label: "الفواتير",
-      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
-    },
-    {
-      to: "/payment-orders",
-      icon: CreditCard,
-      label: "أوامر الدفع",
-      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
-    },
-    {
-      to: "/bank-accounts",
-      icon: Building2,
-      label: "الحسابات البنكية",
-      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
-    },
-    {
-      to: "/reports",
-      icon: BarChart,
-      label: "التقارير",
-      allowedRoles: ["super_admin", "admin", "manager", "accountant"]
-    },
-    {
-      to: "/admin-settings",
-      icon: Settings,
-      label: "إعدادات النظام",
-      allowedRoles: ["super_admin"]
-    }
-  ];
-
-  return items.filter(item => item.allowedRoles.includes(userRole || "viewer"));
-};
-
-// Export organized groups for compatibility with existing components
-export const mainNavItems = [
+export const navigationItems: NavigationItem[] = [
   {
-    to: "/",
+    title: 'الرئيسية',
     icon: Home,
-    label: "الرئيسية",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent", "accountant", "viewer"]
+    path: '/',
   },
   {
-    to: "/daily-operations",
+    title: 'العمليات اليومية',
     icon: Calendar,
-    label: "العمليات اليومية",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-  }
-];
-
-export const businessNavItems = [
-  {
-    to: "/hotel-bookings",
-    icon: Building,
-    label: "حجوزات الفنادق",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    path: '/daily-operations',
   },
   {
-    to: "/flight-bookings",
-    icon: Plane,
-    label: "حجوزات الطيران",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-  },
-  {
-    to: "/customers",
+    title: 'العملاء',
     icon: Users,
-    label: "العملاء",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
+    path: '/customers',
   },
   {
-    to: "/suppliers",
-    icon: Truck,
-    label: "الموردين",
-    allowedRoles: ["super_admin", "admin", "manager"]
-  }
-];
-
-export const communicationNavItems = [
-  {
-    to: "/customer-service",
-    icon: HeadphonesIcon,
-    label: "خدمة العملاء",
-    allowedRoles: ["super_admin", "admin", "manager", "sales_agent"]
-  }
-];
-
-export const adminNavItems = [
-  {
-    to: "/invoices",
+    title: 'حجوزات الفنادق',
     icon: FileText,
-    label: "الفواتير",
-    allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    path: '/hotel-bookings',
   },
   {
-    to: "/payment-orders",
+    title: 'حجوزات الطيران',
+    icon: FileText,
+    path: '/flight-bookings',
+  },
+  {
+    title: 'الموردين',
+    icon: UserCheck,
+    path: '/suppliers',
+  },
+  {
+    title: 'الفواتير',
+    icon: FileText,
+    path: '/invoices',
+  },
+  {
+    title: 'أوامر الدفع',
     icon: CreditCard,
-    label: "أوامر الدفع",
-    allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    path: '/payment-orders',
   },
   {
-    to: "/bank-accounts",
-    icon: Building2,
-    label: "الحسابات البنكية",
-    allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    title: 'الحسابات البنكية',
+    icon: Banknote,
+    path: '/bank-accounts',
   },
   {
-    to: "/reports",
-    icon: BarChart,
-    label: "التقارير",
-    allowedRoles: ["super_admin", "admin", "manager", "accountant"]
+    title: 'إدارة المصروفات',
+    icon: Receipt,
+    path: '/expense-management',
   },
   {
-    to: "/admin-settings",
+    title: 'نظام CRM',
+    icon: Users,
+    path: '/crm',
+  },
+  {
+    title: 'خدمة العملاء',
+    icon: UserCheck,
+    path: '/customer-service',
+  },
+  {
+    title: 'التقارير',
+    icon: BarChart3,
+    path: '/reports',
+  },
+  {
+    title: 'إدارة النظام',
     icon: Settings,
-    label: "إعدادات النظام",
-    allowedRoles: ["super_admin"]
-  }
+    path: '/admin',
+  },
 ];
-
-// Legacy export for backward compatibility
-export const navigationItems = getNavigationItems;

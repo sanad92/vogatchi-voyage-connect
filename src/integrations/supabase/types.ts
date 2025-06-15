@@ -442,6 +442,66 @@ export type Database = {
           },
         ]
       }
+      budget_allocations: {
+        Row: {
+          allocated_amount: number
+          budget_month: number | null
+          budget_year: number
+          category_id: string
+          created_at: string
+          created_by: string
+          currency: string | null
+          id: string
+          notes: string | null
+          remaining_amount: number | null
+          spent_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount: number
+          budget_month?: number | null
+          budget_year: number
+          category_id: string
+          created_at?: string
+          created_by: string
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          remaining_amount?: number | null
+          spent_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          budget_month?: number | null
+          budget_year?: number
+          category_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          remaining_amount?: number | null
+          spent_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_allocations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_allocations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_sends: {
         Row: {
           campaign_id: string
@@ -1026,6 +1086,72 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          allowances: number | null
+          bank_account_number: string | null
+          bank_name: string | null
+          base_salary: number
+          created_at: string
+          department: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_code: string
+          full_name: string
+          hire_date: string
+          id: string
+          is_active: boolean | null
+          national_id: string | null
+          phone: string | null
+          position: string
+          salary_scale_level: number | null
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          base_salary?: number
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_code: string
+          full_name: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean | null
+          national_id?: string | null
+          phone?: string | null
+          position: string
+          salary_scale_level?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          base_salary?: number
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_code?: string
+          full_name?: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean | null
+          national_id?: string | null
+          phone?: string | null
+          position?: string
+          salary_scale_level?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
@@ -1058,6 +1184,140 @@ export type Database = {
           to_currency?: string
         }
         Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          budget_limit: number | null
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          budget_limit?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          budget_limit?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expense_transactions: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string | null
+          category_id: string
+          created_at: string
+          created_by: string
+          currency: string | null
+          description: string
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          payment_method: string | null
+          receipt_url: string | null
+          status: string | null
+          transaction_date: string
+          transaction_number: string
+          updated_at: string
+          vendor_name: string | null
+          vendor_phone: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string | null
+          category_id: string
+          created_at?: string
+          created_by: string
+          currency?: string | null
+          description: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          status?: string | null
+          transaction_date?: string
+          transaction_number?: string
+          updated_at?: string
+          vendor_name?: string | null
+          vendor_phone?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string | null
+          category_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string | null
+          description?: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          status?: string | null
+          transaction_date?: string
+          transaction_number?: string
+          updated_at?: string
+          vendor_name?: string | null
+          vendor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_transactions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flight_bookings: {
         Row: {
@@ -1752,6 +2012,103 @@ export type Database = {
           },
         ]
       }
+      monthly_salaries: {
+        Row: {
+          allowances: number | null
+          bank_account_id: string | null
+          base_salary: number
+          bonus: number | null
+          created_at: string
+          created_by: string | null
+          deductions: number | null
+          employee_id: string
+          gross_salary: number
+          id: string
+          insurance_deduction: number | null
+          net_salary: number
+          notes: string | null
+          overtime_amount: number | null
+          overtime_hours: number | null
+          overtime_rate: number | null
+          payment_date: string | null
+          payment_method: string | null
+          salary_month: string
+          status: string | null
+          tax_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number | null
+          bank_account_id?: string | null
+          base_salary: number
+          bonus?: number | null
+          created_at?: string
+          created_by?: string | null
+          deductions?: number | null
+          employee_id: string
+          gross_salary: number
+          id?: string
+          insurance_deduction?: number | null
+          net_salary: number
+          notes?: string | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          salary_month: string
+          status?: string | null
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number | null
+          bank_account_id?: string | null
+          base_salary?: number
+          bonus?: number | null
+          created_at?: string
+          created_by?: string | null
+          deductions?: number | null
+          employee_id?: string
+          gross_salary?: number
+          id?: string
+          insurance_deduction?: number | null
+          net_salary?: number
+          notes?: string | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          salary_month?: string
+          status?: string | null
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_salaries_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_salaries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_salaries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -1889,6 +2246,184 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rent_contracts: {
+        Row: {
+          annual_increase_percentage: number | null
+          contract_number: string
+          contract_terms: string | null
+          created_at: string
+          currency: string | null
+          end_date: string
+          id: string
+          is_active: boolean | null
+          landlord_name: string
+          landlord_phone: string | null
+          monthly_rent: number
+          property_address: string
+          property_type: string
+          renewal_period_months: number | null
+          security_deposit: number | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          annual_increase_percentage?: number | null
+          contract_number: string
+          contract_terms?: string | null
+          created_at?: string
+          currency?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          landlord_name: string
+          landlord_phone?: string | null
+          monthly_rent: number
+          property_address: string
+          property_type: string
+          renewal_period_months?: number | null
+          security_deposit?: number | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          annual_increase_percentage?: number | null
+          contract_number?: string
+          contract_terms?: string | null
+          created_at?: string
+          currency?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          landlord_name?: string
+          landlord_phone?: string | null
+          monthly_rent?: number
+          property_address?: string
+          property_type?: string
+          renewal_period_months?: number | null
+          security_deposit?: number | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rent_payments: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          due_date: string
+          id: string
+          late_fee: number | null
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_month: string
+          reference_number: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date: string
+          id?: string
+          late_fee?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_month: string
+          reference_number?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date?: string
+          id?: string
+          late_fee?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_month?: string
+          reference_number?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "rent_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_scales: {
+        Row: {
+          annual_increment: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          level: number
+          max_salary: number
+          min_salary: number
+          position: string
+          updated_at: string
+        }
+        Insert: {
+          annual_increment?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level: number
+          max_salary: number
+          min_salary: number
+          position: string
+          updated_at?: string
+        }
+        Update: {
+          annual_increment?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: number
+          max_salary?: number
+          min_salary?: number
+          position?: string
           updated_at?: string
         }
         Relationships: []
