@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2 } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import EditSupplierDialog from './EditSupplierDialog';
@@ -184,7 +185,13 @@ const SupplierGrid = ({
                     <button
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
-                      onClick={() => { setSelectedSupplier(supplier); setShowEdit(true); }}>
+                      onClick={() => { 
+                        setSelectedSupplier({
+                          ...supplier,
+                          supplier_type: supplier.type // ensure dialog gets supplier_type
+                        }); 
+                        setShowEdit(true); 
+                      }}>
                       <Edit className="w-4 h-4" />
                     </button>
                     <button

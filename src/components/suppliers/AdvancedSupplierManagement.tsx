@@ -84,6 +84,8 @@ const AdvancedSupplierManagement = () => {
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const { addCurrency } = useSupplierCurrencies();
+
   const handleFormSubmit = async (formData: SupplierFormData, currencies: SupplierCurrencySetupData[]) => {
     if (!formData.name.trim()) {
       toast({
@@ -92,13 +94,11 @@ const AdvancedSupplierManagement = () => {
       });
       return;
     }
-
     try {
       const supplierData = {
         ...formData,
         payment_method_options: formData.payment_method_options
       };
-
       await new Promise((resolve, reject) => {
         addSupplier(supplierData, {
           onSuccess: async (addedSupplier: any) => {
@@ -120,7 +120,6 @@ const AdvancedSupplierManagement = () => {
           onError: reject
         });
       });
-
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding supplier with currencies:', error);

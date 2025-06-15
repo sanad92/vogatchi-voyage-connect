@@ -123,7 +123,10 @@ const EditSupplierDialog = ({
           </Select>
         </div>
         <DialogFooter>
-          <Button onClick={() => supplier && onSave({ ...formData, id: supplier.id })} disabled={isLoading}>
+          <Button 
+            onClick={() => onSave({ ...formData, id: supplier.id })} 
+            disabled={isLoading}
+          >
             {isLoading ? "جاري الحفظ..." : "حفظ التغييرات"}
           </Button>
           <DialogClose asChild>
