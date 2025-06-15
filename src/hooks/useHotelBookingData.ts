@@ -41,31 +41,27 @@ export const useHotelBookingData = ({ booking }: UseHotelBookingDataProps) => {
     fetchCustomer();
   }, [booking]);
 
-  // Fetch existing special requests if editing
-  useEffect(() => {
-    const fetchExistingRequests = async (setValue: any) => {
-      if (booking?.id) {
-        const { data } = await supabase
-          .from('booking_special_requests')
-          .select('special_request_type_id, custom_request_text')
-          .eq('booking_id', booking.id);
+  // Function to fetch existing special requests
+  const fetchExistingRequests = async (setValue: any) => {
+    if (booking?.id) {
+      const { data } = await supabase
+        .from('booking_special_requests')
+        .select('special_request_type_id, custom_request_text')
+        .eq('booking_id', booking.id);
+      
+      if (data) {
+        const requestIds = data
+          .filter(req => req.special_request_type_id)
+          .map(req => req.special_request_type_id!);
+        setSelectedRequests(requestIds);
         
-        if (data) {
-          const requestIds = data
-            .filter(req => req.special_request_type_id)
-            .map(req => req.special_request_type_id!);
-          setSelectedRequests(requestIds);
-          
-          const customRequest = data.find(req => req.custom_request_text)?.custom_request_text;
-          if (customRequest) {
-            setValue('custom_request', customRequest);
-          }
+        const customRequest = data.find(req => req.custom_request_text)?.custom_request_text;
+        if (customRequest) {
+          setValue('custom_request', customRequest);
         }
       }
-    };
-
-    return { fetchExistingRequests };
-  }, [booking]);
+    }
+  };
 
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -76,6 +72,7 @@ export const useHotelBookingData = ({ booking }: UseHotelBookingDataProps) => {
     selectedCustomer,
     selectedRequests,
     setSelectedRequests,
-    handleCustomerSelect
+    handleCustomerSelect,
+    fetchExistingRequests
   };
 };

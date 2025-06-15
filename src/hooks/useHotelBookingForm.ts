@@ -58,14 +58,14 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     selectedCustomer,
     selectedRequests,
     setSelectedRequests,
-    handleCustomerSelect
+    handleCustomerSelect,
+    fetchExistingRequests
   } = useHotelBookingData({ booking });
 
   const { validateBookingData } = useHotelBookingValidation();
   const { isSubmitting, submitBooking } = useHotelBookingSubmission({ booking, onSuccess });
 
   // Handle fetching existing requests when editing
-  const { fetchExistingRequests } = useHotelBookingData({ booking });
   useEffect(() => {
     if (booking?.id) {
       fetchExistingRequests(setValue);
