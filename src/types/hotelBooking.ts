@@ -1,3 +1,6 @@
+
+import { SupportedCurrency } from './currency';
+
 export interface HotelBooking {
   id: string;
   customer_id?: string;
@@ -27,7 +30,7 @@ export interface HotelBooking {
   paid_amount: number;
   remaining_amount: number;
   payment_due_date?: string;
-  currency: Currency;
+  currency: SupportedCurrency;
   invoice_sent: boolean;
   supplier_payment_sent: boolean;
   voucher_sent: boolean;
@@ -73,20 +76,13 @@ export interface HotelSupplier {
 
 export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'ALL' | 'UAI' | 'SAL';
 
-export type Currency = 'SAR' | 'EGP' | 'USD' | 'EUR';
-
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  nationality?: string;
-}
+// إزالة تعريف Customer المكرر - سيتم استخدام التعريف من customer.ts
+// إزالة تعريف Currency المكرر - يتم استخدام SupportedCurrency من currency.ts
 
 export interface SpecialRequestType {
   id: string;
   name: string;
-  category: string; // Changed from union type to string to match database
+  category: string;
   has_extra_cost: boolean;
   extra_cost_amount: number;
   is_active: boolean;
@@ -122,22 +118,22 @@ export interface NewHotelBooking {
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;
-  currency: Currency;
+  currency: SupportedCurrency;
   payment_method?: string;
   paid_amount?: number;
   payment_due_date?: string;
-  special_requests?: string[]; // IDs of selected special request types
-  custom_request?: string; // Free text for custom requests
+  special_requests?: string[];
+  custom_request?: string;
 }
 
+// استخدام العملات الموحدة من currency.ts
 export const CURRENCY_OPTIONS = [
-  { value: 'EGP', label: 'جنيه مصري (EGP)', symbol: 'ج.م' },
-  { value: 'SAR', label: 'ريال سعودي (SAR)', symbol: 'ر.س' },
-  { value: 'USD', label: 'دولار أمريكي (USD)', symbol: '$' },
-  { value: 'EUR', label: 'يورو (EUR)', symbol: '€' }
-] as const;
+  { value: 'EGP' as const, label: 'جنيه مصري (EGP)', symbol: 'ج.م' },
+  { value: 'USD' as const, label: 'دولار أمريكي (USD)', symbol: '$' },
+  { value: 'SAR' as const, label: 'ريال سعودي (SAR)', symbol: 'ر.س' }
+];
 
-export const getCurrencySymbol = (currency: Currency): string => {
+export const getCurrencySymbol = (currency: SupportedCurrency): string => {
   const currencyOption = CURRENCY_OPTIONS.find(option => option.value === currency);
   return currencyOption?.symbol || currency;
 };

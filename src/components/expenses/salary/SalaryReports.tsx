@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ const SalaryReports = () => {
   const { monthlySalaries, employees, salariesLoading } = useExpenses();
   const { convertToPrimaryCurrency } = useExchangeRates();
   const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [totals, setTotals] = useState({ totalNet: 0, totalGross: 0, totalDeductions: 0 });
 
   const filteredSalaries = monthlySalaries?.filter(salary => 
     salary.salary_month.startsWith(filterMonth)
@@ -51,11 +52,8 @@ const SalaryReports = () => {
     return { totalNet, totalGross, totalDeductions };
   };
 
-  // استخدام حساب الإجماليات بالجنيه المصري
-  const [totals, setTotals] = useState({ totalNet: 0, totalGross: 0, totalDeductions: 0 });
-
   // حساب الإجماليات عند تغيير البيانات
-  React.useEffect(() => {
+  useEffect(() => {
     if (filteredSalaries) {
       calculateTotalsInEGP().then(setTotals);
     }

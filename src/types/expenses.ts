@@ -1,3 +1,6 @@
+
+import { SupportedCurrency } from './currency';
+
 export interface ExpenseCategory {
   id: string;
   name: string;
@@ -53,7 +56,7 @@ export interface RentContract {
   landlord_name: string;
   landlord_phone?: string;
   monthly_rent: number;
-  currency: string;
+  currency: SupportedCurrency;
   start_date: string;
   end_date: string;
   renewal_period_months: number;
@@ -81,9 +84,9 @@ export interface MonthlySalary {
   tax_amount: number;
   insurance_deduction: number;
   net_salary: number;
-  currency?: string; // إضافة دعم العملة للراتب الشهري
-  exchange_rate?: number; // سعر الصرف المستخدم
-  net_salary_egp?: number; // الراتب الصافي بالجنيه المصري
+  currency?: SupportedCurrency;
+  exchange_rate?: number;
+  net_salary_egp?: number;
   payment_date?: string;
   payment_method: string;
   bank_account_id?: string;
@@ -100,7 +103,7 @@ export interface RentPayment {
   contract?: RentContract;
   payment_month: string;
   amount: number;
-  currency: string;
+  currency: SupportedCurrency;
   due_date: string;
   payment_date?: string;
   payment_method: string;
@@ -121,7 +124,7 @@ export interface ExpenseTransaction {
   category?: ExpenseCategory;
   description: string;
   amount: number;
-  currency: string;
+  currency: SupportedCurrency;
   transaction_date: string;
   payment_method: string;
   bank_account_id?: string;
@@ -147,7 +150,7 @@ export interface BudgetAllocation {
   allocated_amount: number;
   spent_amount: number;
   remaining_amount: number;
-  currency: string;
+  currency: SupportedCurrency;
   notes?: string;
   created_by: string;
   created_at: string;

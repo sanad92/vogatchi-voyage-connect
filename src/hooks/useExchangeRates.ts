@@ -24,7 +24,7 @@ export const useExchangeRates = () => {
   });
 
   // Get current exchange rate
-  const getCurrentRate = async (fromCurrency: string, toCurrency: string): Promise<number> => {
+  const getCurrentRate = async (fromCurrency: SupportedCurrency, toCurrency: SupportedCurrency): Promise<number> => {
     if (fromCurrency === toCurrency) return 1.0;
     
     const { data, error } = await supabase
@@ -48,8 +48,8 @@ export const useExchangeRates = () => {
   // Convert amount between currencies
   const convertCurrency = async (
     amount: number,
-    fromCurrency: string,
-    toCurrency: string
+    fromCurrency: SupportedCurrency,
+    toCurrency: SupportedCurrency
   ): Promise<number> => {
     if (fromCurrency === toCurrency) return amount;
     
@@ -60,7 +60,7 @@ export const useExchangeRates = () => {
   // Convert amount to primary currency (EGP)
   const convertToPrimaryCurrency = async (
     amount: number,
-    fromCurrency: string
+    fromCurrency: SupportedCurrency
   ): Promise<number> => {
     return convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
   };
@@ -68,7 +68,7 @@ export const useExchangeRates = () => {
   // Convert amount from primary currency (EGP)
   const convertFromPrimaryCurrency = async (
     amount: number,
-    toCurrency: string
+    toCurrency: SupportedCurrency
   ): Promise<number> => {
     return convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
   };

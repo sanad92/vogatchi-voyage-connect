@@ -1,30 +1,28 @@
 
+import React from 'react';
+
 interface EgyptianPoundDisplayProps {
   amount: number;
-  showSymbol?: boolean;
   className?: string;
-  showDecimals?: boolean;
+  showSymbol?: boolean;
 }
 
 const EgyptianPoundDisplay = ({ 
   amount, 
-  showSymbol = true, 
-  className = "",
-  showDecimals = true 
+  className = "", 
+  showSymbol = true 
 }: EgyptianPoundDisplayProps) => {
   const formatAmount = (value: number) => {
-    if (showDecimals) {
-      return value.toLocaleString('ar-EG', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
-    return Math.round(value).toLocaleString('ar-EG');
+    return new Intl.NumberFormat('ar-EG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
   };
 
   return (
-    <span className={`font-medium ${className}`}>
-      {formatAmount(amount)} {showSymbol && 'ج.م'}
+    <span className={className}>
+      {formatAmount(amount)}
+      {showSymbol && ' ج.م'}
     </span>
   );
 };

@@ -15,13 +15,16 @@ const CurrencySelector = ({
   placeholder = "اختر العملة",
   disabled = false 
 }: CurrencySelectorProps) => {
+  // ترتيب العملات مع جعل EGP في المقدمة
+  const orderedCurrencies = ['EGP', 'USD', 'SAR'] as const;
+
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {SUPPORTED_CURRENCIES.map((currency) => (
+        {orderedCurrencies.map((currency) => (
           <SelectItem key={currency} value={currency}>
             {CURRENCY_NAMES[currency]} ({CURRENCY_SYMBOLS[currency]})
           </SelectItem>

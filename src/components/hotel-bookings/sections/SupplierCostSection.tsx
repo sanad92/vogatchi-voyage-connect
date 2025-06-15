@@ -4,9 +4,10 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "rea
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewHotelBooking, HotelSupplier, CURRENCY_OPTIONS, getCurrencySymbol } from "@/types/hotelBooking";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import CurrencySelector from "@/components/currency/CurrencySelector";
+import { SupportedCurrency } from "@/types/currency";
 
 interface SupplierCostSectionProps {
   register: UseFormRegister<NewHotelBooking>;
@@ -28,7 +29,7 @@ const SupplierCostSection = ({
   totalProfit
 }: SupplierCostSectionProps) => {
   const selectedSupplier = watch('supplier_name');
-  const selectedCurrency = watch('currency') || 'EGP'; // تغيير الافتراضي إلى EGP
+  const selectedCurrency = watch('currency') || 'EGP';
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
   // تجهيز بيانات الموردين بطريقة تناسب مكون SearchableSelect
@@ -45,21 +46,10 @@ const SupplierCostSection = ({
       <CardContent className="space-y-4">
         <div>
           <Label htmlFor="currency">العملة</Label>
-          <Select 
-            value={selectedCurrency} 
-            onValueChange={(value) => setValue('currency', value as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="اختر العملة..." />
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCY_OPTIONS.map((currency) => (
-                <SelectItem key={currency.value} value={currency.value}>
-                  {currency.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CurrencySelector
+            value={selectedCurrency}
+            onValueChange={(value) => setValue('currency', value)}
+          />
         </div>
 
         <div>

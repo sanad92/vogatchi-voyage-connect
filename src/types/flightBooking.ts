@@ -1,5 +1,6 @@
 
 import { SupportedCurrency } from './currency';
+import { Customer } from './customer';
 
 export interface Airline {
   id: string;
