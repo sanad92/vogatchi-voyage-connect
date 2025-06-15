@@ -7,7 +7,6 @@ import { Calendar, MapPin, Users, Plane } from "lucide-react";
 import { FlightBooking } from "@/types/flightBooking";
 import BookingStatusBadge from "@/components/hotel-bookings/BookingStatusBadge";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 
 interface FlightBookingCardProps {
   booking: FlightBooking;
@@ -16,7 +15,7 @@ interface FlightBookingCardProps {
 
 const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
+    return new Intl.NumberFormat('en-EG', {
       style: 'currency',
       currency: 'EGP',
       minimumFractionDigits: 0,
@@ -24,7 +23,7 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd MMMM yyyy', { locale: ar });
+    return format(new Date(dateString), 'dd/MM/yyyy');
   };
 
   return (

@@ -50,6 +50,16 @@ const BookingStatusHistory = ({ bookingId }: BookingStatusHistoryProps) => {
     );
   }
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -81,13 +91,7 @@ const BookingStatusHistory = ({ bookingId }: BookingStatusHistoryProps) => {
                   </Badge>
                   <div className="flex items-center gap-1 text-sm text-gray-500">
                     <Clock className="h-3 w-3" />
-                    {new Date(record.created_at).toLocaleString('ar', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatDateTime(record.created_at)}
                   </div>
                 </div>
                 

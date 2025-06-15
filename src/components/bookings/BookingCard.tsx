@@ -70,6 +70,10 @@ const BookingCard = ({ booking }: BookingCardProps) => {
     return labels[category as keyof typeof labels] || "غير محدد";
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
@@ -98,12 +102,12 @@ const BookingCard = ({ booking }: BookingCardProps) => {
           <div>
             {booking.check_in_date && (
               <p className="text-sm">
-                <span className="font-medium">الوصول:</span> {booking.check_in_date}
+                <span className="font-medium">الوصول:</span> {formatDate(booking.check_in_date)}
               </p>
             )}
             {booking.check_out_date && (
               <p className="text-sm">
-                <span className="font-medium">المغادرة:</span> {booking.check_out_date}
+                <span className="font-medium">المغادرة:</span> {formatDate(booking.check_out_date)}
               </p>
             )}
             {booking.number_of_nights && (

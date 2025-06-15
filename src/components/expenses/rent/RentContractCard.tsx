@@ -33,6 +33,10 @@ const RentContractCard = ({ contract }: RentContractCardProps) => {
     return types[type] || type;
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
   return (
     <Card className="border">
       <CardHeader className="pb-3">
@@ -68,7 +72,7 @@ const RentContractCard = ({ contract }: RentContractCardProps) => {
         <div>
           <p className="text-sm text-gray-600">تاريخ الانتهاء</p>
           <p className="font-medium">
-            {new Date(contract.end_date).toLocaleDateString('ar-SA')}
+            {formatDate(contract.end_date)}
           </p>
           {isContractActive(contract) && (
             <p className="text-sm text-orange-600">

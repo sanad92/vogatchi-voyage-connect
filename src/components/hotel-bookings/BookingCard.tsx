@@ -21,6 +21,10 @@ const BookingCard = ({
   onRefresh, 
   onShowStatusHistory 
 }: BookingCardProps) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -57,8 +61,8 @@ const BookingCard = ({
           <div>
             <p className="text-sm text-gray-600">تواريخ الإقامة</p>
             <p className="font-medium">
-              {new Date(booking.check_in_date).toLocaleDateString('ar')} - 
-              {new Date(booking.check_out_date).toLocaleDateString('ar')}
+              {formatDate(booking.check_in_date)} - 
+              {formatDate(booking.check_out_date)}
             </p>
             <p className="text-sm text-gray-500">{booking.number_of_nights} ليلة</p>
           </div>
@@ -99,7 +103,7 @@ const BookingCard = ({
             <p>متبقي: {booking.remaining_amount?.toFixed(2) || '0.00'} {booking.currency || 'SAR'}</p>
             {booking.payment_due_date && (
               <p className="text-sm text-red-600">
-                تاريخ الاستحقاق: {new Date(booking.payment_due_date).toLocaleDateString('ar')}
+                تاريخ الاستحقاق: {formatDate(booking.payment_due_date)}
               </p>
             )}
           </div>

@@ -5,7 +5,6 @@ import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
-import { ar } from "date-fns/locale"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -43,11 +42,11 @@ export function DatePickerWithRange({
             {value?.from ? (
               value.to ? (
                 <>
-                  {format(value.from, "dd LLL, y", { locale: ar })} -{" "}
-                  {format(value.to, "dd LLL, y", { locale: ar })}
+                  {format(value.from, "dd/MM/yyyy")} -{" "}
+                  {format(value.to, "dd/MM/yyyy")}
                 </>
               ) : (
-                format(value.from, "dd LLL, y", { locale: ar })
+                format(value.from, "dd/MM/yyyy")
               )
             ) : (
               <span>اختر نطاق التاريخ</span>
@@ -62,7 +61,6 @@ export function DatePickerWithRange({
             selected={value}
             onSelect={onChange}
             numberOfMonths={2}
-            locale={ar}
           />
         </PopoverContent>
       </Popover>

@@ -13,7 +13,7 @@ const TodayOverview = () => {
   const inProgressTasks = todayTasks?.filter(task => task.status === 'in_progress') || [];
   const completedTasks = todayTasks?.filter(task => task.status === 'completed') || [];
 
-  const todayDate = new Date().toLocaleDateString('ar-EG', {
+  const todayDate = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
