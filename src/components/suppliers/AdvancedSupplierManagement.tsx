@@ -12,11 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency } from '@/types/currency';
 import { useSuppliers } from '@/hooks/useSuppliers';
+import { useSupplierCurrencies } from '@/hooks/useSupplierCurrencies';
 import SupplierContracts from './SupplierContracts';
 import SupplierPayments from './SupplierPayments';
 import SupplierRatings from './SupplierRatings';
 import SupplierAnalytics from './SupplierAnalytics';
 import SupplierCurrencyManager from './SupplierCurrencyManager';
+import PaymentMethodsSelector from '@/components/shared/PaymentMethodsSelector';
+import SupplierCurrencySetup, { SupplierCurrencySetupData } from '@/components/shared/SupplierCurrencySetup';
 
 interface Supplier {
   id: string;
@@ -33,6 +36,8 @@ interface Supplier {
   is_active: boolean | null;
   preferred_currency: SupportedCurrency;
   payment_terms: string | null;
+  payment_type: 'prepaid' | 'deferred';
+  payment_method_options: string[];
   credit_limit: number | null;
   created_at: string;
 }
@@ -45,6 +50,7 @@ const AdvancedSupplierManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { addSupplier, isAddingSupplier } = useSuppliers();
+  const { addCurrency } = useSupplierCurrencies();
 
   const [newSupplier, setNewSupplier] = useState({
     name: '',
@@ -56,12 +62,17 @@ const AdvancedSupplierManagement = () => {
     bank_name: '',
     bank_account: '',
     tax_number: '',
-    preferred_currency: 'EGP' as SupportedCurrency,
     payment_terms: '',
+    payment_type: 'deferred' as const,
+    payment_method_options: ['bank_transfer'],
     credit_limit: 0,
     notes: '',
     is_active: true
   });
+
+  const [supplierCurrencies, setSupplierCurrencies] = useState<SupplierCurrencySetupData[]>([
+    { currency: 'EGP', is_primary: true }
+  ]);
 
   // استعلام الموردين
   const { data: suppliers = [], isLoading } = useQuery({
@@ -76,6 +87,8 @@ const AdvancedSupplierManagement = () => {
       return data.map(supplier => ({
         ...supplier,
         preferred_currency: supplier.preferred_currency || 'EGP',
+        payment_type: supplier.payment_type || 'deferred',
+        payment_method_options: supplier.payment_method_options || ['bank_transfer'],
         credit_limit: supplier.credit_limit || 0
       })) as Supplier[];
     }
@@ -101,6 +114,22 @@ const AdvancedSupplierManagement = () => {
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
+  const getPaymentTypeLabel = (type: string) => {
+    return type === 'prepaid' ? 'دفع مسبق' : 'دفع آجل';
+  };
+
+  const getPaymentMethodLabel = (method: string) => {
+    const methods = {
+      cash: 'نقدي',
+      bank_transfer: 'حوالة بنكية',
+      check: 'شيك',
+      credit_card: 'بطاقة ائتمان',
+      installments: 'أقساط',
+      trade_credit: 'ائتمان تجاري'
+    };
+    return methods[method as keyof typeof methods] || method;
+  };
+
   const renderStars = (rating: number | null) => {
     const stars = [];
     const ratingValue = rating || 0;
@@ -121,7 +150,7 @@ const AdvancedSupplierManagement = () => {
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSupplier.name.trim()) {
       toast({
@@ -131,28 +160,59 @@ const AdvancedSupplierManagement = () => {
       return;
     }
 
-    // استخدام addSupplier من useSuppliers hook
-    addSupplier(newSupplier, {
-      onSuccess: () => {
-        setNewSupplier({
-          name: '',
-          supplier_type: 'hotel',
-          contact_person: '',
-          email: '',
-          phone: '',
-          address: '',
-          bank_name: '',
-          bank_account: '',
-          tax_number: '',
-          preferred_currency: 'EGP',
-          payment_terms: '',
-          credit_limit: 0,
-          notes: '',
-          is_active: true
+    try {
+      // إضافة المورد أولاً
+      const supplierData = {
+        ...newSupplier,
+        payment_method_options: newSupplier.payment_method_options
+      };
+
+      await new Promise((resolve, reject) => {
+        addSupplier(supplierData, {
+          onSuccess: async (addedSupplier: any) => {
+            // إضافة العملات للمورد الجديد
+            try {
+              for (const currency of supplierCurrencies) {
+                await addCurrency({
+                  supplier_id: addedSupplier.id,
+                  currency: currency.currency,
+                  is_primary: currency.is_primary,
+                  exchange_rate: currency.exchange_rate || null,
+                  notes: currency.notes || null
+                });
+              }
+              resolve(addedSupplier);
+            } catch (error) {
+              reject(error);
+            }
+          },
+          onError: reject
         });
-        setShowAddForm(false);
-      }
-    });
+      });
+
+      // إعادة تعيين النموذج
+      setNewSupplier({
+        name: '',
+        supplier_type: 'hotel',
+        contact_person: '',
+        email: '',
+        phone: '',
+        address: '',
+        bank_name: '',
+        bank_account: '',
+        tax_number: '',
+        payment_terms: '',
+        payment_type: 'deferred',
+        payment_method_options: ['bank_transfer'],
+        credit_limit: 0,
+        notes: '',
+        is_active: true
+      });
+      setSupplierCurrencies([{ currency: 'EGP', is_primary: true }]);
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Error adding supplier with currencies:', error);
+    }
   };
 
   // حساب الإحصائيات
@@ -259,67 +319,102 @@ const AdvancedSupplierManagement = () => {
             </Button>
           </div>
 
-          {/* نموذج إضافة مورد */}
+          {/* نموذج إضافة مورد محسن */}
           {showAddForm && (
             <Card>
               <CardHeader>
                 <CardTitle>إضافة مورد جديد</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="اسم المورد"
-                    value={newSupplier.name}
-                    onChange={e => setNewSupplier({...newSupplier, name: e.target.value})}
-                    required
-                  />
-                  <Select value={newSupplier.supplier_type} onValueChange={(value: any) => setNewSupplier({...newSupplier, supplier_type: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="نوع الخدمة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hotel">فندق</SelectItem>
-                      <SelectItem value="airline">طيران</SelectItem>
-                      <SelectItem value="transport">نقل</SelectItem>
-                      <SelectItem value="tour">جولة سياحية</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="اسم الشخص المسؤول"
-                    value={newSupplier.contact_person}
-                    onChange={e => setNewSupplier({...newSupplier, contact_person: e.target.value})}
-                  />
-                  <Input
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    value={newSupplier.email}
-                    onChange={e => setNewSupplier({...newSupplier, email: e.target.value})}
-                  />
-                  <Input
-                    type="tel"
-                    placeholder="رقم الهاتف"
-                    value={newSupplier.phone}
-                    onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
-                  />
-                  <Input
-                    placeholder="العنوان"
-                    value={newSupplier.address}
-                    onChange={e => setNewSupplier({...newSupplier, address: e.target.value})}
-                  />
-                  <Input
-                    placeholder="شروط الدفع"
-                    value={newSupplier.payment_terms}
-                    onChange={e => setNewSupplier({...newSupplier, payment_terms: e.target.value})}
-                  />
-                  <div className="md:col-span-2">
-                    <Textarea
-                      placeholder="ملاحظات إضافية"
-                      value={newSupplier.notes}
-                      onChange={e => setNewSupplier({...newSupplier, notes: e.target.value})}
-                      rows={3}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* المعلومات الأساسية */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="اسم المورد"
+                      value={newSupplier.name}
+                      onChange={e => setNewSupplier({...newSupplier, name: e.target.value})}
+                      required
+                    />
+                    <Select value={newSupplier.supplier_type} onValueChange={(value: any) => setNewSupplier({...newSupplier, supplier_type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="نوع الخدمة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hotel">فندق</SelectItem>
+                        <SelectItem value="airline">طيران</SelectItem>
+                        <SelectItem value="transport">نقل</SelectItem>
+                        <SelectItem value="tour">جولة سياحية</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="اسم الشخص المسؤول"
+                      value={newSupplier.contact_person}
+                      onChange={e => setNewSupplier({...newSupplier, contact_person: e.target.value})}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="البريد الإلكتروني"
+                      value={newSupplier.email}
+                      onChange={e => setNewSupplier({...newSupplier, email: e.target.value})}
+                    />
+                    <Input
+                      type="tel"
+                      placeholder="رقم الهاتف"
+                      value={newSupplier.phone}
+                      onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
+                    />
+                    <Input
+                      placeholder="العنوان"
+                      value={newSupplier.address}
+                      onChange={e => setNewSupplier({...newSupplier, address: e.target.value})}
                     />
                   </div>
-                  <div className="md:col-span-2 flex gap-2">
+
+                  {/* شروط الدفع المحسنة */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">نوع الدفع</label>
+                      <Select value={newSupplier.payment_type} onValueChange={(value: any) => setNewSupplier({...newSupplier, payment_type: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر نوع الدفع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="prepaid">دفع مسبق</SelectItem>
+                          <SelectItem value="deferred">دفع آجل</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">شروط الدفع التفصيلية</label>
+                      <Input
+                        placeholder="مثال: 30 يوم من تاريخ الفاتورة"
+                        value={newSupplier.payment_terms}
+                        onChange={e => setNewSupplier({...newSupplier, payment_terms: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* وسائل الدفع المتاحة */}
+                  <PaymentMethodsSelector
+                    selectedMethods={newSupplier.payment_method_options}
+                    onMethodsChange={(methods) => setNewSupplier({...newSupplier, payment_method_options: methods})}
+                  />
+
+                  {/* العملات المدعومة */}
+                  <SupplierCurrencySetup
+                    currencies={supplierCurrencies}
+                    onCurrenciesChange={setSupplierCurrencies}
+                  />
+
+                  {/* ملاحظات إضافية */}
+                  <Textarea
+                    placeholder="ملاحظات إضافية"
+                    value={newSupplier.notes}
+                    onChange={e => setNewSupplier({...newSupplier, notes: e.target.value})}
+                    rows={3}
+                  />
+
+                  <div className="flex gap-2">
                     <Button type="submit" disabled={isAddingSupplier}>
                       {isAddingSupplier ? "جاري الحفظ..." : "حفظ المورد"}
                     </Button>
@@ -332,7 +427,7 @@ const AdvancedSupplierManagement = () => {
             </Card>
           )}
 
-          {/* قائمة الموردين */}
+          {/* قائمة الموردين المحسنة */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
               <div className="col-span-full text-center py-8">جاري تحميل الموردين...</div>
@@ -366,7 +461,19 @@ const AdvancedSupplierManagement = () => {
                       {supplier.email && (
                         <p><span className="font-medium">البريد:</span> {supplier.email}</p>
                       )}
-                      <p><span className="font-medium">العملة:</span> {CURRENCY_NAMES.EGP} ({CURRENCY_SYMBOLS.EGP})</p>
+                      <p><span className="font-medium">نوع الدفع:</span> {getPaymentTypeLabel(supplier.payment_type)}</p>
+                      {supplier.payment_method_options && supplier.payment_method_options.length > 0 && (
+                        <div>
+                          <span className="font-medium">وسائل الدفع:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {supplier.payment_method_options.map((method, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {getPaymentMethodLabel(method)}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {supplier.payment_terms && (
                         <p><span className="font-medium">شروط الدفع:</span> {supplier.payment_terms}</p>
                       )}

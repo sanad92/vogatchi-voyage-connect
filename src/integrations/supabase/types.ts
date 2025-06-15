@@ -3361,7 +3361,9 @@ export type Database = {
           is_active: boolean | null
           name: string
           notes: string | null
+          payment_method_options: Json | null
           payment_terms: string | null
+          payment_type: string | null
           phone: string | null
           preferred_currency: string | null
           rating: number | null
@@ -3381,7 +3383,9 @@ export type Database = {
           is_active?: boolean | null
           name: string
           notes?: string | null
+          payment_method_options?: Json | null
           payment_terms?: string | null
+          payment_type?: string | null
           phone?: string | null
           preferred_currency?: string | null
           rating?: number | null
@@ -3401,7 +3405,9 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           notes?: string | null
+          payment_method_options?: Json | null
           payment_terms?: string | null
+          payment_type?: string | null
           phone?: string | null
           preferred_currency?: string | null
           rating?: number | null

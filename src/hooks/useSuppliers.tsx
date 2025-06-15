@@ -12,6 +12,8 @@ export interface Supplier {
   address?: string;
   supplier_type: string;
   payment_terms?: string;
+  payment_type: 'prepaid' | 'deferred';
+  payment_method_options: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -63,6 +65,8 @@ export const useSuppliers = (supplierType?: string) => {
         address: item.address,
         supplier_type: item.type || 'general',
         payment_terms: item.payment_terms,
+        payment_type: item.payment_type || 'deferred',
+        payment_method_options: item.payment_method_options || ['bank_transfer'],
         is_active: item.is_active,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -82,6 +86,8 @@ export const useSuppliers = (supplierType?: string) => {
         address: newSupplier.address,
         type: newSupplier.supplier_type,
         payment_terms: newSupplier.payment_terms,
+        payment_type: newSupplier.payment_type,
+        payment_method_options: JSON.stringify(newSupplier.payment_method_options),
         is_active: newSupplier.is_active
       };
 
