@@ -5,8 +5,8 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  phone: string;
-  department: string;
+  phone?: string; // جعل phone اختياري ليتوافق مع UnifiedUser
+  department?: string; // جعل department اختياري أيضاً
   is_active: boolean;
   created_at: string;
   role?: UserRole;
