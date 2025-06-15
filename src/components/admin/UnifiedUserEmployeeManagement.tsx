@@ -1,16 +1,17 @@
 
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, UserPlus, Search } from 'lucide-react';
 import { useUnifiedUserEmployee } from '@/hooks/useUnifiedUserEmployee';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
 import { useAuth } from '@/hooks/useAuth';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
-import UnifiedStatsHeader from './unified-management/UnifiedStatsHeader';
-import UnifiedFilters from './unified-management/UnifiedFilters';
-import UnifiedUserCard from './unified-management/UnifiedUserCard';
-import UnifiedEmptyState from './unified-management/UnifiedEmptyState';
+import UnifiedStatsHeaderEnhanced from './unified-management/enhanced/UnifiedStatsHeaderEnhanced';
+import UnifiedFiltersEnhanced from './unified-management/enhanced/UnifiedFiltersEnhanced';
+import UnifiedUserCardEnhanced from './unified-management/enhanced/UnifiedUserCardEnhanced';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { EnhancedEmptyState } from '@/components/ui/enhanced-empty-state';
 
 const UnifiedUserEmployeeManagement = () => {
   const { isSuperAdmin } = useAuth();
@@ -38,15 +39,12 @@ const UnifiedUserEmployeeManagement = () => {
 
   if (!isSuperAdmin()) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Users className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">ليس لديك صلاحية</h3>
-            <p className="text-gray-600">هذه الميزة متاحة للسوبر أدمن فقط</p>
-          </div>
-        </CardContent>
-      </Card>
+      <EnhancedEmptyState
+        icon={Users}
+        title="ليس لديك صلاحية"
+        description="هذه الميزة متاحة للسوبر أدمن فقط. يرجى التواصل مع المدير للحصول على الصلاحيات المطلوبة."
+        variant="error"
+      />
     );
   }
 
@@ -67,48 +65,98 @@ const UnifiedUserEmployeeManagement = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">جاري تحميل البيانات...</p>
+      <div className="space-y-6">
+        {/* Loading Header */}
+        <div className="text-center space-y-4">
+          <LoadingSkeleton variant="text" className="max-w-md mx-auto" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <LoadingSkeleton variant="stat" count={4} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Loading Filters */}
+        <Card className="shadow-lg">
+          <CardContent className="pt-6">
+            <LoadingSkeleton variant="text" />
+          </CardContent>
+        </Card>
+
+        {/* Loading Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <LoadingSkeleton variant="card" count={6} />
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <UnifiedStatsHeader
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Enhanced Stats Header */}
+      <UnifiedStatsHeaderEnhanced
         totalUsers={unifiedUsers?.length || 0}
         linkedUsers={unifiedUsers?.filter(u => u.employee).length || 0}
         unlinkedEmployees={unlinkedEmployees?.length || 0}
       />
 
-      <UnifiedFilters
+      {/* Enhanced Filters */}
+      <UnifiedFiltersEnhanced
         searchTerm={searchTerm}
         selectedRole={selectedRole}
         onSearchChange={setSearchTerm}
         onRoleChange={setSelectedRole}
+        totalResults={filteredUsers.length}
       />
 
       {/* Users Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredUsers.map((user) => (
-          <UnifiedUserCard
-            key={user.id}
-            user={user}
-            onEdit={handleEditUser}
-            onLink={handleLinkUser}
-            onUnlink={unlinkUserFromEmployee}
-            isLinking={isLinking}
-            isUnlinking={isUnlinking}
-          />
-        ))}
-      </div>
-
-      {filteredUsers.length === 0 && <UnifiedEmptyState />}
+      {filteredUsers.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredUsers.map((user, index) => (
+            <div
+              key={user.id}
+              className="animate-in slide-in-from-bottom-4 duration-300"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <UnifiedUserCardEnhanced
+                user={user}
+                onEdit={handleEditUser}
+                onLink={handleLinkUser}
+                onUnlink={unlinkUserFromEmployee}
+                isLinking={isLinking}
+                isUnlinking={isUnlinking}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EnhancedEmptyState
+          icon={searchTerm || selectedRole !== 'all' ? Search : UserPlus}
+          title={
+            searchTerm || selectedRole !== 'all' 
+              ? 'لا توجد نتائج مطابقة' 
+              : 'لا توجد مستخدمين'
+          }
+          description={
+            searchTerm || selectedRole !== 'all'
+              ? 'لم يتم العثور على مستخدمين يطابقون معايير البحث والفلاتر المحددة. جرب تعديل البحث أو إزالة بعض الفلاتر.'
+              : 'لم يتم إنشاء أي مستخدمين بعد. ابدأ بإضافة مستخدمين جدد لإدارة النظام.'
+            }
+          variant={searchTerm || selectedRole !== 'all' ? 'search' : 'default'}
+          actionLabel={
+            searchTerm || selectedRole !== 'all' 
+              ? 'مسح الفلاتر' 
+              : 'إضافة مستخدم جديد'
+          }
+          onAction={() => {
+            if (searchTerm || selectedRole !== 'all') {
+              setSearchTerm('');
+              setSelectedRole('all');
+            } else {
+              // يمكن إضافة وظيفة إضافة مستخدم جديد هنا
+              console.log('إضافة مستخدم جديد');
+            }
+          }}
+        />
+      )}
 
       {/* Edit Dialog */}
       {selectedUser && (
