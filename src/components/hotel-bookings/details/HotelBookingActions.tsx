@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Printer } from "lucide-react";
+import { FileText, Printer, Ban, RotateCcw } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
+import CancelBookingDialog from "../dialogs/CancelBookingDialog";
+import RefundBookingDialog from "../dialogs/RefundBookingDialog";
 
 interface Props {
   booking: HotelBooking;
@@ -16,6 +18,12 @@ interface Props {
 const HotelBookingActions: React.FC<Props> = ({
   booking, onBack, onEdit, onInvoice, onPrint, onVoucher
 }) => {
+  const [showCancel, setShowCancel] = useState(false);
+  const [showRefund, setShowRefund] = useState(false);
+
+  const isCancellable = !["ملغي", "مسترد"].includes(booking.booking_status?.name_ar || "") && !booking.invoice_sent;
+  const isRefundable = (booking.booking_status?.name_ar === "ملغي" || booking.booking_status?.name_ar?.toLowerCase() === "cancelled") && (booking.paid_amount || 0) > 0 && booking.booking_status?.name_ar !== "مسترد";
+
   return (
     <div className="mt-6 flex flex-wrap gap-2 justify-end">
       <Button variant="outline" onClick={onBack}>
@@ -40,6 +48,29 @@ const HotelBookingActions: React.FC<Props> = ({
         <FileText className="h-4 w-4 ml-1" />
         إنشاء فاوتشر
       </Button>
+      {isCancellable && (
+        <Button variant="destructive" onClick={() => setShowCancel(true)}>
+          <Ban className="h-4 w-4 ml-1" />
+          إلغاء الحجز
+        </Button>
+      )}
+      {isRefundable && (
+        <Button variant="secondary" onClick={() => setShowRefund(true)}>
+          <RotateCcw className="h-4 w-4 ml-1" />
+          استرداد الحجز
+        </Button>
+      )}
+      {/* Dialogs */}
+      <CancelBookingDialog
+        open={showCancel}
+        bookingId={booking.id}
+        onClose={() => setShowCancel(false)}
+      />
+      <RefundBookingDialog
+        open={showRefund}
+        bookingId={booking.id}
+        onClose={() => setShowRefund(false)}
+      />
     </div>
   );
 };
