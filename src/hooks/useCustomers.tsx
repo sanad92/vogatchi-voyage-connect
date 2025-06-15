@@ -1,47 +1,66 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
-export const useCustomers = (searchTerm?: string, segmentFilter?: string) => {
+export const useCustomers = () => {
+  const queryClient = useQueryClient();
+
   const { data: customers, isLoading, error, refetch } = useQuery({
-    queryKey: ['customers', searchTerm, segmentFilter],
+    queryKey: ['customers'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('customers')
         .select(`
           *,
-          segment:customer_segments(
-            id,
-            name,
-            name_ar,
-            color,
-            minimum_bookings,
-            minimum_total_spent
-          )
+          segment:customer_segments(name, name_ar, color)
         `)
         .order('created_at', { ascending: false });
 
-      // Apply search filter
-      if (searchTerm && searchTerm.length >= 2) {
-        query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-      }
-
-      // Apply segment filter
-      if (segmentFilter) {
-        query = query.eq('segment_id', segmentFilter);
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      return data || [];
+      return data;
     },
   });
+
+  const addCustomerMutation = useMutation({
+    mutationFn: async (customer: any) => {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert(customer)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: "تم إضافة العميل بنجاح",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding customer:', error);
+      toast({
+        title: "خطأ في الحفظ",
+        description: "حدث خطأ أثناء إضافة العميل",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addCustomer = (customer: any) => {
+    addCustomerMutation.mutate(customer);
+  };
 
   return {
     customers,
     isLoading,
+    customersLoading: isLoading, // إضافة alias للتوافق
     error,
-    refetch
+    refetch,
+    addCustomer,
+    isAddingCustomer: addCustomerMutation.isPending,
   };
 };

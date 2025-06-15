@@ -62,7 +62,10 @@ export const useTransportBookings = () => {
     mutationFn: async (booking: Omit<TransportBooking, 'id' | 'created_at' | 'updated_at' | 'booking_reference'>) => {
       const { data, error } = await supabase
         .from('transport_bookings')
-        .insert(booking)
+        .insert({
+          ...booking,
+          currency: booking.currency || 'EGP'
+        })
         .select()
         .single();
 

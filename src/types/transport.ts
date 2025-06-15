@@ -65,6 +65,11 @@ export interface TransportBooking {
   
   // الحالة والوثائق
   status_id?: string;
+  status?: {
+    name: string;
+    name_ar: string;
+    color: string;
+  };
   booking_agent_name: string;
   special_requests?: string;
   driver_name?: string;
@@ -132,6 +137,11 @@ export interface CarRental {
   
   // الحالة والوثائق
   status_id?: string;
+  status?: {
+    name: string;
+    name_ar: string;
+    color: string;
+  };
   booking_agent_name: string;
   driver_license_number?: string;
   driver_license_expiry?: string;

@@ -31,7 +31,10 @@ export const useCarRentals = () => {
     mutationFn: async (rental: Omit<CarRental, 'id' | 'created_at' | 'updated_at' | 'rental_reference'>) => {
       const { data, error } = await supabase
         .from('car_rentals')
-        .insert(rental)
+        .insert({
+          ...rental,
+          currency: rental.currency || 'EGP'
+        })
         .select()
         .single();
 

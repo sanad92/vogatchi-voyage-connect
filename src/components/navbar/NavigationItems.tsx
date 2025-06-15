@@ -1,3 +1,4 @@
+
 import {
   Home,
   Calendar,
@@ -17,118 +18,120 @@ import {
 
 interface NavigationItem {
   title: string;
-  href?: string;
-  icon: string;
-  subItems?: NavigationItem[];
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
-export const navigationItems: NavigationItem[] = [
+// العمليات الرئيسية
+export const mainNavItems: NavigationItem[] = [
   {
     title: "الصفحة الرئيسية",
-    href: "/",
-    icon: "home"
+    to: "/",
+    icon: Home
   },
   {
     title: "العمليات اليومية",
-    href: "/daily-operations",
-    icon: "calendar"
-  },
+    to: "/daily-operations",
+    icon: Calendar
+  }
+];
+
+// إدارة الأعمال
+export const businessNavItems: NavigationItem[] = [
   {
     title: "العملاء",
-    href: "/customers",
-    icon: "users"
+    to: "/customers",
+    icon: Users
   },
   {
-    title: "الحجوزات",
-    icon: "calendar",
-    subItems: [
-      {
-        title: "حجوزات الفنادق",
-        href: "/hotel-bookings",
-        icon: "building"
-      },
-      {
-        title: "حجوزات الطيران",
-        href: "/flight-bookings",
-        icon: "plane"
-      },
-      {
-        title: "حجوزات النقل",
-        href: "/transport-bookings",
-        icon: "car"
-      },
-      {
-        title: "إيجار السيارات",
-        href: "/car-rentals",
-        icon: "car"
-      }
-    ]
+    title: "حجوزات الفنادق",
+    to: "/hotel-bookings",
+    icon: Building
+  },
+  {
+    title: "حجوزات الطيران",
+    to: "/flight-bookings",
+    icon: Plane
+  },
+  {
+    title: "حجوزات النقل",
+    to: "/transport-bookings",
+    icon: CarIcon
+  },
+  {
+    title: "إيجار السيارات",
+    to: "/car-rentals",
+    icon: CarIcon
   },
   {
     title: "الموردين",
-    href: "/suppliers",
-    icon: "truck"
+    to: "/suppliers",
+    icon: Truck
   },
   {
-    title: "المالية",
-    icon: "dollarSign",
-    subItems: [
-      {
-        title: "الفواتير",
-        href: "/invoices",
-        icon: "fileText"
-      },
-      {
-        title: "أوامر الدفع",
-        href: "/payment-orders",
-        icon: "creditCard"
-      },
-      {
-        title: "الحسابات البنكية",
-        href: "/bank-accounts",
-        icon: "building"
-      },
-      {
-        title: "إدارة المصروفات",
-        href: "/expense-management",
-        icon: "dollarSign"
-      }
-    ]
+    title: "الفواتير",
+    to: "/invoices",
+    icon: FileText
   },
+  {
+    title: "أوامر الدفع",
+    to: "/payment-orders",
+    icon: CreditCard
+  },
+  {
+    title: "الحسابات البنكية",
+    to: "/bank-accounts",
+    icon: Building
+  },
+  {
+    title: "إدارة المصروفات",
+    to: "/expense-management",
+    icon: DollarSign
+  }
+];
+
+// التواصل والتقارير
+export const communicationNavItems: NavigationItem[] = [
   {
     title: "التقارير",
-    icon: "barChart",
-    subItems: [
-      {
-        title: "التقارير العامة",
-        href: "/reports",
-        icon: "barChart"
-      },
-      {
-        title: "تقارير الأرباح والخسائر",
-        href: "/profit-loss-reports",
-        icon: "trendingUp"
-      }
-    ]
+    to: "/reports",
+    icon: BarChart
+  },
+  {
+    title: "تقارير الأرباح والخسائر",
+    to: "/profit-loss-reports",
+    icon: TrendingUp
   },
   {
     title: "تقويم الحجوزات",
-    href: "/bookings-calendar",
-    icon: "calendar"
+    to: "/bookings-calendar",
+    icon: Calendar
   },
   {
     title: "إدارة علاقات العملاء",
-    href: "/crm",
-    icon: "users"
+    to: "/crm",
+    icon: Users
   },
   {
     title: "خدمة العملاء",
-    href: "/customer-service",
-    icon: "headphones"
-  },
+    to: "/customer-service",
+    icon: Headphones
+  }
+];
+
+// إعدادات النظام
+export const adminNavItems: NavigationItem[] = [
   {
     title: "إعدادات النظام",
-    href: "/admin",
-    icon: "settings"
+    to: "/admin",
+    icon: Settings
   }
+];
+
+// للتوافق مع الكود الموجود
+export const navigationItems = [
+  ...mainNavItems,
+  ...businessNavItems,
+  ...communicationNavItems,
+  ...adminNavItems
 ];
