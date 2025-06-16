@@ -1,3 +1,4 @@
+
 // Response types for database functions
 export interface LinkUserToEmployeeResponse {
   success: boolean;
@@ -37,7 +38,7 @@ export interface UnifiedUser {
     hire_date: string;
     base_salary: number;
     allowances: number;
-    commission_rate?: number;
+    commission_rate?: number; // جعلها optional
     bank_account_number?: string;
     bank_name?: string;
     emergency_contact_name?: string;

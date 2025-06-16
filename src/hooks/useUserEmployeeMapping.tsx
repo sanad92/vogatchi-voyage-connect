@@ -74,7 +74,7 @@ export const useUserEmployeeMapping = () => {
               });
               
               // Type cast the response safely
-              const response = linkResult as LinkUserToEmployeeResponse;
+              const response = linkResult as unknown as LinkUserToEmployeeResponse;
               
               if (!linkError && response?.success) {
                 console.log('✅ تم الربط التلقائي بنجاح:', response);
@@ -129,7 +129,7 @@ export const useUserEmployeeMapping = () => {
       }
 
       // Type cast the response safely
-      const response = data as LinkUserToEmployeeResponse;
+      const response = data as unknown as LinkUserToEmployeeResponse;
 
       if (!response?.success) {
         console.error('فشل في ربط المستخدم بالموظف:', response);

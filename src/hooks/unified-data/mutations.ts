@@ -25,7 +25,7 @@ export const useLinkUserToEmployeeMutation = () => {
         console.log('📋 استجابة دالة الربط:', data);
 
         // Type cast the response safely
-        const response = data as LinkUserToEmployeeResponse;
+        const response = data as unknown as LinkUserToEmployeeResponse;
 
         // التحقق من نجاح العملية
         if (!response?.success) {
@@ -95,7 +95,7 @@ export const useUnlinkUserFromEmployeeMutation = () => {
         console.log('📋 استجابة دالة إلغاء الربط:', data);
 
         // Type cast the response safely
-        const response = data as UnlinkUserFromEmployeeResponse;
+        const response = data as unknown as UnlinkUserFromEmployeeResponse;
 
         // التحقق من نجاح العملية
         if (!response?.success) {
