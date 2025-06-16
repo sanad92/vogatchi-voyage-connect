@@ -16,10 +16,6 @@ interface EmployeeCardHeaderProps {
 }
 
 const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
-  // تحديد ما إذا كان اسم المستخدم مختلف عن اسم الموظف
-  const hasUserName = employee.linkedToUser && employee.user_full_name;
-  const isDifferentName = hasUserName && employee.user_full_name !== employee.employee_full_name;
-
   return (
     <CardHeader className="pb-3">
       <div className="flex items-start justify-between">
@@ -51,10 +47,11 @@ const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
               )}
             </div>
             
-            {/* عرض اسم المستخدم إذا كان مختلف */}
-            {isDifferentName && (
+            {/* عرض اسم المستخدم دائماً إذا كان مرتبط */}
+            {employee.linkedToUser && employee.user_full_name && (
               <p className="text-sm text-blue-600 font-medium mb-1">
-                المستخدم: {employee.user_full_name}
+                <User className="h-3 w-3 inline mr-1" />
+                {employee.user_full_name}
               </p>
             )}
             
