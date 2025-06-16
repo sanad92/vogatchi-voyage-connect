@@ -10,6 +10,7 @@ import UserTable from "./user-management/UserTable";
 import UserStatsCards from "./user-management/UserStatsCards";
 import { toast } from "sonner";
 import { useUnifiedData } from "@/hooks/useUnifiedData";
+import type { User } from "@/types/userManagement";
 
 const UserManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,12 +19,24 @@ const UserManagementTab = () => {
 
   // استخدام الـ unified data hook
   const { 
-    unifiedUsers: users, 
+    unifiedUsers, 
     isLoading, 
     usersError: error, 
     refreshAllData: refetch,
     usersLoading 
   } = useUnifiedData();
+
+  // تحويل UnifiedUser إلى User للجدول
+  const users: User[] = unifiedUsers?.map(unifiedUser => ({
+    id: unifiedUser.id,
+    email: unifiedUser.email,
+    full_name: unifiedUser.full_name,
+    phone: unifiedUser.phone,
+    department: unifiedUser.department,
+    is_active: unifiedUser.is_active,
+    created_at: unifiedUser.created_at,
+    role: unifiedUser.role as any // Cast to UserRole type
+  })) || [];
 
   // فلترة المستخدمين
   const filteredUsers = users?.filter(user => {
@@ -141,7 +154,7 @@ const UserManagementTab = () => {
               نشطة: {userStats.active} | 
               معطلة: {userStats.inactive} | 
               بدون أدوار: {userStats.noRole} |
-              مع موظفين: {users?.filter(u => u.employee).length || 0}
+              مع موظفين: {unifiedUsers?.filter(u => u.employee).length || 0}
             </span>
           </div>
         </div>
