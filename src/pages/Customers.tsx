@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp } from "lucide-react";
+import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp, Brain, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +18,9 @@ import CustomerSmartAnalytics from "@/components/customers/CustomerSmartAnalytic
 import CustomerLoyaltyManager from "@/components/customers/CustomerLoyaltyManager";
 import AdvancedFollowUpAutomation from "@/components/customers/AdvancedFollowUpAutomation";
 import CustomerSatisfactionTracker from "@/components/customers/CustomerSatisfactionTracker";
+import SmartCustomerSegmentation from "@/components/customers/SmartCustomerSegmentation";
+import PredictiveAnalytics from "@/components/customers/PredictiveAnalytics";
+import ComplaintManagementSystem from "@/components/customers/ComplaintManagementSystem";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
 
@@ -284,7 +287,7 @@ const Customers = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="all">جميع العملاء</TabsTrigger>
           <TabsTrigger value="vip" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
@@ -307,6 +310,14 @@ const Customers = () => {
           <TabsTrigger value="automation" className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4" />
             الأتمتة
+          </TabsTrigger>
+          <TabsTrigger value="segmentation" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            التقسيم الذكي
+          </TabsTrigger>
+          <TabsTrigger value="complaints" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            الشكاوى
           </TabsTrigger>
         </TabsList>
 
@@ -333,6 +344,15 @@ const Customers = () => {
 
         <TabsContent value="automation" className="space-y-4">
           <AdvancedFollowUpAutomation customers={filteredCustomers} />
+        </TabsContent>
+
+        <TabsContent value="segmentation" className="space-y-4">
+          <SmartCustomerSegmentation customers={filteredCustomers} />
+          <PredictiveAnalytics customers={filteredCustomers} />
+        </TabsContent>
+
+        <TabsContent value="complaints" className="space-y-4">
+          <ComplaintManagementSystem customers={filteredCustomers} />
         </TabsContent>
 
         <TabsContent value={activeTab} className="space-y-4" 
