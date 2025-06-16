@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Link } from 'lucide-react';
+import { Check, X, Link, User } from 'lucide-react';
 
 interface EmployeeCardBadgesProps {
   employee: {
@@ -15,7 +15,11 @@ const EmployeeCardBadges = ({ employee }: EmployeeCardBadgesProps) => {
       {/* شارة الحالة */}
       <Badge 
         variant={employee.is_active ? "default" : "secondary"}
-        className={`${employee.is_active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}
+        className={`transition-all duration-200 ${
+          employee.is_active 
+            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-600 shadow-sm hover:shadow-md' 
+            : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white border-gray-500'
+        }`}
       >
         {employee.is_active ? (
           <>
@@ -31,10 +35,15 @@ const EmployeeCardBadges = ({ employee }: EmployeeCardBadgesProps) => {
       </Badge>
 
       {/* شارة الربط */}
-      {employee.linkedToUser && (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+      {employee.linkedToUser ? (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
           <Link className="h-3 w-3 mr-1" />
           مرتبط بمستخدم
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200 font-medium">
+          <User className="h-3 w-3 mr-1" />
+          غير مرتبط
         </Badge>
       )}
     </div>

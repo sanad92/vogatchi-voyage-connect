@@ -58,6 +58,48 @@ const EmployeeCardActions = ({
 
   return (
     <div className="flex items-center gap-2">
+      {/* زر عرض التفاصيل */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onViewDetails}
+              className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+              disabled={isLoading}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-blue-600 text-white">
+            <span>عرض التفاصيل</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* زر التعديل - للمدراء والأدمن */}
+      {canEdit && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditEmployee}
+                className="h-8 w-8 p-0 border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                disabled={isLoading}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-green-600 text-white">
+              <span>تعديل البيانات</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
       {/* زر الحذف المنفصل - يظهر فقط للسوبر أدمن */}
       {canDelete && (
         <TooltipProvider>
@@ -83,36 +125,23 @@ const EmployeeCardActions = ({
         </TooltipProvider>
       )}
 
-      {/* قائمة الإجراءات */}
+      {/* قائمة الإجراءات الإضافية */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={onViewDetails}>
-            <Eye className="h-4 w-4 mr-2" />
-            عرض التفاصيل
-          </DropdownMenuItem>
-          
-          {canEdit && (
-            <>
-              <DropdownMenuItem onClick={onEditEmployee}>
-                <Edit className="h-4 w-4 mr-2" />
-                تعديل البيانات
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-            </>
-          )}
-
+        <DropdownMenuContent align="end" className="w-48 bg-white shadow-lg border">
           {/* ربط بمستخدم */}
           {!employee.linkedToUser && onLinkEmployee && (
-            <DropdownMenuItem onClick={() => onLinkEmployee(employee.id)}>
-              <Link className="h-4 w-4 mr-2" />
-              ربط بمستخدم
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem onClick={() => onLinkEmployee(employee.id)}>
+                <Link className="h-4 w-4 mr-2" />
+                ربط بمستخدم
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
           )}
 
           {/* تفعيل/إيقاف */}
@@ -133,20 +162,6 @@ const EmployeeCardActions = ({
                 </>
               )}
             </DropdownMenuItem>
-          )}
-
-          {/* خيار حذف إضافي في القائمة للتأكيد */}
-          {canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={onDelete}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                حذف الموظف
-              </DropdownMenuItem>
-            </>
           )}
 
           {/* شارة السوبر أدمن */}

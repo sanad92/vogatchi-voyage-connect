@@ -78,30 +78,36 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
 
   return (
     <>
-      <Card className={`hover:shadow-lg transition-all duration-200 ${
-        !employee.is_active ? 'opacity-75 border-red-200' : ''
+      <Card className={`group hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-0 shadow-md ${
+        !employee.is_active 
+          ? 'bg-gradient-to-br from-gray-50 to-gray-100 opacity-90 border-red-200' 
+          : 'bg-gradient-to-br from-white to-blue-50/30'
       }`}>
-        <EmployeeCardHeader employee={employee} />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
         
-        <div className="px-6 pb-3">
-          <div className="flex items-center justify-between">
-            <EmployeeCardBadges employee={employee} />
-            <EmployeeCardActions
-              employee={employee}
-              onLinkEmployee={onLinkEmployee}
-              onViewDetails={handleViewDetails}
-              onEditEmployee={handleEditEmployee}
-              onToggleStatus={() => setIsToggleDialogOpen(true)}
-              onDelete={() => setIsDeleteDialogOpen(true)}
-              isLoading={isLoading}
-              canToggleStatus={canToggleStatus}
-              canDelete={canDelete}
-              canEdit={canEdit}
-            />
+        <div className="relative z-10">
+          <EmployeeCardHeader employee={employee} />
+          
+          <div className="px-6 pb-3">
+            <div className="flex items-center justify-between mb-4">
+              <EmployeeCardBadges employee={employee} />
+              <EmployeeCardActions
+                employee={employee}
+                onLinkEmployee={onLinkEmployee}
+                onViewDetails={handleViewDetails}
+                onEditEmployee={handleEditEmployee}
+                onToggleStatus={() => setIsToggleDialogOpen(true)}
+                onDelete={() => setIsDeleteDialogOpen(true)}
+                isLoading={isLoading}
+                canToggleStatus={canToggleStatus}
+                canDelete={canDelete}
+                canEdit={canEdit}
+              />
+            </div>
           </div>
-        </div>
 
-        <EmployeeCardContent employee={employee} canDelete={canDelete} />
+          <EmployeeCardContent employee={employee} canDelete={canDelete} />
+        </div>
       </Card>
 
       {/* حوار عرض التفاصيل */}

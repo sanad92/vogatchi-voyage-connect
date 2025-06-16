@@ -24,18 +24,22 @@ const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
     <CardHeader className="pb-3">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-            employee.is_active ? 'bg-blue-100' : 'bg-gray-100'
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+            employee.is_active 
+              ? 'bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300' 
+              : 'bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-300'
           }`}>
             <User className={`h-6 w-6 ${
               employee.is_active ? 'text-blue-600' : 'text-gray-400'
             }`} />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{employee.employee_full_name}</CardTitle>
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-lg font-bold text-gray-800">
+                {employee.employee_full_name}
+              </CardTitle>
               {employee.linkedToUser && (
-                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 font-medium">
                   <Link className="h-3 w-3 mr-1" />
                   مرتبط
                 </Badge>
@@ -44,14 +48,18 @@ const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
             
             {/* عرض اسم المستخدم إذا كان مختلف */}
             {isDifferentName && (
-              <p className="text-sm text-blue-600 font-medium">
+              <p className="text-sm text-blue-600 font-medium mb-1">
                 المستخدم: {employee.user_full_name}
               </p>
             )}
             
-            <p className="text-sm text-gray-600">
-              {employee.employee_code} | {employee.position}
-            </p>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-mono">
+                {employee.employee_code}
+              </span>
+              <span className="text-gray-500">|</span>
+              <span className="font-medium">{employee.position}</span>
+            </div>
           </div>
         </div>
       </div>
