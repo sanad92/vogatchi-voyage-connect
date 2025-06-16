@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Hotel, Calendar, DollarSign, TrendingUp, Users, Clock } from "lucide-react";
+import { Hotel, Calendar, DollarSign, Clock, Users, TrendingUp } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
 import { useMemo } from "react";
 
@@ -39,9 +39,19 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
       booking.status_id && booking.status_id !== 'cancelled'
     ).length;
     
+    const pendingBookings = bookings.filter(booking => 
+      !booking.status_id || booking.status_id === 'pending'
+    ).length;
+    
+    const cancelledBookings = bookings.filter(booking => 
+      booking.status_id === 'cancelled'
+    ).length;
+    
     const averageNights = totalBookings > 0 
       ? bookings.reduce((sum, booking) => sum + (booking.number_of_nights || 0), 0) / totalBookings
       : 0;
+
+    const totalNights = bookings.reduce((sum, booking) => sum + (booking.number_of_nights || 0), 0);
 
     return {
       totalBookings,
@@ -51,7 +61,10 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
       checkingInToday,
       checkingOutToday,
       confirmedBookings,
-      averageNights: Math.round(averageNights * 10) / 10
+      pendingBookings,
+      cancelledBookings,
+      averageNights: Math.round(averageNights * 10) / 10,
+      totalNights
     };
   }, [bookings]);
 
@@ -83,15 +96,31 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
     {
       title: "متوسط الليالي",
       value: stats.averageNights.toString(),
-      subtitle: `${stats.confirmedBookings} مؤكد`,
+      subtitle: `${stats.totalNights} ليلة إجمالي`,
       icon: Clock,
       color: "text-purple-600",
       bgColor: "bg-purple-50"
+    },
+    {
+      title: "الحجوزات المؤكدة",
+      value: stats.confirmedBookings.toString(),
+      subtitle: `${stats.pendingBookings} في الانتظار`,
+      icon: Users,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50"
+    },
+    {
+      title: "معدل النجاح",
+      value: stats.totalBookings > 0 ? `${Math.round((stats.confirmedBookings / stats.totalBookings) * 100)}%` : "0%",
+      subtitle: `${stats.cancelledBookings} ملغي`,
+      icon: TrendingUp,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {statCards.map((stat, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

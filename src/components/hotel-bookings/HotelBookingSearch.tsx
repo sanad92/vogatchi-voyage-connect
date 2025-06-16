@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CalendarDays, Search, Filter, X } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { DateRange } from "react-day-picker";
 
@@ -57,7 +57,7 @@ const HotelBookingSearch = ({ onSearch, onClear }: HotelBookingSearchProps) => {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="البحث بالاسم، رقم الحجز، أو اسم العميل..."
+              placeholder="البحث بالاسم، رقم الحجز، اسم الفندق، أو المدينة..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -100,7 +100,7 @@ const HotelBookingSearch = ({ onSearch, onClear }: HotelBookingSearchProps) => {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">فترة الحجز</label>
+              <label className="text-sm font-medium mb-2 block">فترة الإقامة</label>
               <DatePickerWithRange
                 date={dateRange}
                 onDateChange={setDateRange}
@@ -122,7 +122,7 @@ const HotelBookingSearch = ({ onSearch, onClear }: HotelBookingSearchProps) => {
               <label className="text-sm font-medium mb-2 block">الحد الأقصى للمبلغ</label>
               <Input
                 type="number"
-                placeholder="10000"
+                placeholder="50000"
                 value={maxAmount}
                 onChange={(e) => setMaxAmount(e.target.value)}
               />
