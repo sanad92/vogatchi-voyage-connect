@@ -29,8 +29,10 @@ export const useUnifiedData = () => {
   const {
     linkUserToEmployee,
     unlinkUserFromEmployee,
+    updateUnifiedData,
     isLinking,
-    isUnlinking
+    isUnlinking,
+    isUpdating
   } = useLinkingMutations();
 
   // التحقق من الأخطاء وعرض رسائل مفيدة
@@ -125,8 +127,10 @@ export const useUnifiedData = () => {
     // العمليات
     linkUserToEmployee,
     unlinkUserFromEmployee,
+    updateUnifiedData,
     isLinking,
     isUnlinking,
+    isUpdating,
     refreshAllData,
     
     // الإحصائيات

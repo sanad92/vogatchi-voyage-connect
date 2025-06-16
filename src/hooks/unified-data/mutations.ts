@@ -157,3 +157,19 @@ export const useUpdateUnifiedDataMutation = () => {
     },
   });
 };
+
+// Export a combined hook for backward compatibility
+export const useLinkingMutations = () => {
+  const linkMutation = useLinkUserToEmployeeMutation();
+  const unlinkMutation = useUnlinkUserFromEmployeeMutation();
+  const updateMutation = useUpdateUnifiedDataMutation();
+
+  return {
+    linkUserToEmployee: (params: { userId: string; employeeId: string }) => linkMutation.mutate(params),
+    unlinkUserFromEmployee: (userId: string) => unlinkMutation.mutate(userId),
+    updateUnifiedData: (data: any) => updateMutation.mutate(data),
+    isLinking: linkMutation.isPending,
+    isUnlinking: unlinkMutation.isPending,
+    isUpdating: updateMutation.isPending,
+  };
+};
