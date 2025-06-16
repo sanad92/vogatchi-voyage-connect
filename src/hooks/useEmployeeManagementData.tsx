@@ -5,7 +5,9 @@ import { useUnifiedData } from '@/hooks/useUnifiedData';
 interface EnhancedEmployee {
   id: string;
   employee_code: string;
-  full_name: string;
+  full_name: string; // الاسم المعروض الرئيسي
+  employee_full_name: string; // اسم الموظف الأصلي
+  user_full_name?: string; // اسم المستخدم (إذا كان مرتبط)
   position: string;
   department: string;
   phone?: string;
@@ -52,7 +54,9 @@ export const useEmployeeManagementData = () => {
         employeeMap.set(employee.id, {
           id: employee.id,
           employee_code: employee.employee_code,
-          full_name: user.full_name, // استخدام اسم المستخدم
+          full_name: employee.full_name, // استخدام اسم الموظف كاسم رئيسي
+          employee_full_name: employee.full_name, // الاحتفاظ باسم الموظف الأصلي
+          user_full_name: user.full_name, // اسم المستخدم
           position: employee.position,
           department: user.department || employee.department || '',
           phone: user.phone,
@@ -85,6 +89,8 @@ export const useEmployeeManagementData = () => {
             id: emp.id,
             employee_code: emp.employee_code,
             full_name: emp.full_name,
+            employee_full_name: emp.full_name, // نفس الاسم للموظفين غير المرتبطين
+            user_full_name: undefined, // لا يوجد مستخدم مرتبط
             position: emp.position,
             department: emp.department,
             phone: emp.phone,
