@@ -7,7 +7,7 @@ import { FileText } from "lucide-react";
 interface InvoiceHeaderProps {
   invoice: any;
   getStatusLabel: (status: string) => string;
-  getStatusColor: (status: string) => string;
+  getStatusColor: (status: string) => "default" | "destructive" | "outline" | "secondary";
 }
 
 const InvoiceHeader = ({ invoice, getStatusLabel, getStatusColor }: InvoiceHeaderProps) => {

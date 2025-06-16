@@ -74,15 +74,30 @@ const Invoices = () => {
     return statuses[status] || status;
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status): "default" | "destructive" | "outline" | "secondary" => {
     const colors = {
-      draft: "secondary",
-      sent: "default",
-      paid: "success",
-      overdue: "destructive",
-      cancelled: "outline",
+      draft: "secondary" as const,
+      sent: "default" as const,
+      paid: "default" as const,
+      overdue: "destructive" as const,
+      cancelled: "outline" as const,
     };
     return colors[status] || "default";
+  };
+
+  const getBookingDetails = (invoice) => {
+    switch (invoice.booking_type) {
+      case "hotel":
+        return invoice.hotel_booking;
+      case "flight":
+        return invoice.flight_booking;
+      case "transport":
+        return invoice.transport_booking;
+      case "car_rental":
+        return invoice.car_rental;
+      default:
+        return null;
+    }
   };
 
   const handleViewDetails = (invoice) => {
