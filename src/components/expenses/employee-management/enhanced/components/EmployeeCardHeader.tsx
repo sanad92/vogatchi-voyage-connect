@@ -2,7 +2,6 @@
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Link } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
 
 interface EmployeeCardHeaderProps {
   employee: {
@@ -17,8 +16,6 @@ interface EmployeeCardHeaderProps {
 }
 
 const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
-  const { isSuperAdmin } = useAuth();
-  
   // تحديد ما إذا كان اسم المستخدم مختلف عن اسم الموظف
   const hasUserName = employee.linkedToUser && employee.user_full_name;
   const isDifferentName = hasUserName && employee.user_full_name !== employee.employee_full_name;
@@ -43,11 +40,6 @@ const EmployeeCardHeader = ({ employee }: EmployeeCardHeaderProps) => {
                 employee.is_active ? 'text-gray-800' : 'text-gray-500'
               }`}>
                 {employee.employee_full_name}
-                {isSuperAdmin() && (
-                  <span className="text-sm text-red-600 font-normal ml-2">
-                    (السوبر أدمن)
-                  </span>
-                )}
               </CardTitle>
               
               {/* شارة الربط */}
