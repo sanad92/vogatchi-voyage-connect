@@ -51,6 +51,13 @@ const EmployeeManagement = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { newEmployee, setNewEmployee, resetForm, validateForm } = useEmployeeForm();
 
+  console.log('📊 حالة البيانات الموحدة:', {
+    unifiedUsers: unifiedUsers?.length || 0,
+    unlinkedEmployees: unlinkedEmployees?.length || 0,
+    unifiedLoading,
+    isRefreshing
+  });
+
   // دمج الموظفين من البيانات الموحدة والموظفين غير المرتبطين
   const allEmployees: EnhancedEmployee[] = [
     // الموظفين المرتبطين بمستخدمين
@@ -114,35 +121,55 @@ const EmployeeManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 بدء عملية إضافة موظف...');
+    
     if (!validateForm()) {
+      console.log('❌ النموذج غير صحيح');
       return;
     }
 
     try {
+      console.log('🚀 إضافة الموظف...', newEmployee);
+      
       // إضافة الموظف
       await addEmployee(newEmployee);
       
-      // إعادة تحديث البيانات الموحدة
-      await handleRefreshData();
+      console.log('✅ تم إضافة الموظف بنجاح');
+      
+      // انتظار قصير ثم تحديث البيانات الموحدة
+      setTimeout(async () => {
+        console.log('🔄 تحديث البيانات الموحدة...');
+        await handleRefreshData();
+      }, 1000);
       
       // إغلاق النافذة وإعادة تعيين البيانات
       setIsAddDialogOpen(false);
       resetForm();
       
-      toast.success('تم إضافة الموظف بنجاح وتحديث البيانات');
+      toast.success('تم إضافة الموظف بنجاح');
     } catch (error) {
-      console.error('Error adding employee:', error);
+      console.error('❌ خطأ في إضافة الموظف:', error);
       toast.error('حدث خطأ أثناء إضافة الموظف');
     }
   };
 
   const handleLinkEmployee = async (employeeId: string) => {
+    console.log('🔗 بدء ربط الموظف:', employeeId);
+    
     try {
-      await linkUserToEmployee(employeeId);
-      await handleRefreshData();
-      toast.success('تم ربط الموظف بالمستخدم بنجاح');
+      const success = await linkUserToEmployee(employeeId);
+      if (success) {
+        console.log('✅ تم ربط الموظف بنجاح');
+        
+        // تحديث البيانات بعد الربط
+        setTimeout(async () => {
+          await handleRefreshData();
+        }, 1000);
+        
+        toast.success('تم ربط الموظف بالمستخدم بنجاح');
+      }
     } catch (error) {
-      console.error('Error linking employee:', error);
+      console.error('❌ خطأ في ربط الموظف:', error);
       toast.error('حدث خطأ أثناء ربط الموظف');
     }
   };
@@ -150,10 +177,12 @@ const EmployeeManagement = () => {
   const handleRefreshData = async () => {
     setIsRefreshing(true);
     try {
+      console.log('🔄 تحديث جميع البيانات...');
       await refreshAllData();
+      console.log('✅ تم تحديث البيانات بنجاح');
       toast.success('تم تحديث البيانات بنجاح');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('❌ خطأ في تحديث البيانات:', error);
       toast.error('حدث خطأ أثناء تحديث البيانات');
     } finally {
       setIsRefreshing(false);
@@ -162,6 +191,18 @@ const EmployeeManagement = () => {
 
   const linkedEmployeesCount = allEmployees.filter(emp => emp.linkedToUser).length;
   const unlinkedEmployeesCount = allEmployees.filter(emp => !emp.linkedToUser).length;
+
+  // عرض رسالة التحميل
+  if (unifiedLoading && !isRefreshing) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل بيانات الموظفين...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
