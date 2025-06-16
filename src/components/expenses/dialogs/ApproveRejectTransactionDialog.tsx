@@ -73,7 +73,7 @@ const ApproveRejectTransactionDialog = ({
               <p><span className="font-medium">رقم المعاملة:</span> {transaction.transaction_number}</p>
               <p><span className="font-medium">الوصف:</span> {transaction.description}</p>
               <p><span className="font-medium">المبلغ:</span> <EgyptianPoundDisplay amount={transaction.amount} /></p>
-              <p><span className="font-medium">الفئة:</span> {transaction.expense_categories?.name_ar}</p>
+              <p><span className="font-medium">الفئة:</span> {transaction.expense_categories?.name_ar || 'غير محدد'}</p>
             </div>
           </div>
 

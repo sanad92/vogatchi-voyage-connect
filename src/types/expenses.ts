@@ -92,7 +92,7 @@ export interface ExpenseTransaction {
   approved_at?: string;
   created_at: string;
   updated_at: string;
-  category?: ExpenseCategory;
+  expense_categories?: ExpenseCategory;
 }
 
 export interface RentContract {

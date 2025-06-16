@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -92,7 +91,7 @@ const ViewExpenseTransactionDialog = ({ transaction, open, onOpenChange }: ViewE
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: transaction.expense_categories?.color || '#gray' }}
                     />
-                    <p>{transaction.expense_categories?.name_ar}</p>
+                    <p>{transaction.expense_categories?.name_ar || 'غير محدد'}</p>
                   </div>
                 </div>
               </div>
