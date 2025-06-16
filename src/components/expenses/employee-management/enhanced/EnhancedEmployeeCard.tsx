@@ -10,6 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   User, 
   Mail, 
@@ -23,7 +29,8 @@ import {
   Trash2,
   Shield,
   Eye,
-  Edit
+  Edit,
+  AlertTriangle
 } from 'lucide-react';
 import { useEmployeeActions } from '@/hooks/useEmployeeActions';
 import { useAuth } from '@/hooks/useAuth';
@@ -121,6 +128,31 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
                 </Badge>
               )}
 
+              {/* زر الحذف المنفصل - يظهر فقط للسوبر أدمن */}
+              {canDelete && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-red-600 text-white">
+                      <div className="flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        <span>حذف الموظف (سوبر أدمن)</span>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
               {/* قائمة الإجراءات */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -173,7 +205,7 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
                     </DropdownMenuItem>
                   )}
 
-                  {/* حذف */}
+                  {/* خيار حذف إضافي في القائمة للتأكيد */}
                   {canDelete && (
                     <>
                       <DropdownMenuSeparator />
@@ -204,6 +236,16 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* تحذير للموظفين مع ارتباطات (إذا كان سوبر أدمن) */}
+          {canDelete && employee.linkedToUser && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+              <div className="flex items-center gap-2 text-orange-700 text-xs">
+                <AlertTriangle className="h-3 w-3" />
+                <span>قد يحتاج حذف إجباري بسبب الارتباطات</span>
+              </div>
+            </div>
+          )}
+
           {/* معلومات الاتصال */}
           <div className="space-y-2">
             {employee.email && (
