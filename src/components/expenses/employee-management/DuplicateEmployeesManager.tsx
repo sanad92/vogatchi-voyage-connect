@@ -45,7 +45,7 @@ const DuplicateEmployeesManager = () => {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const { allEmployees, refreshAllData } = useEmployeeManagementData();
 
-  // تحليل البيانات للعثور على المكررات
+  // تحليل البيانات للعثور على المكررات الحقيقية
   useEffect(() => {
     if (!allEmployees || allEmployees.length === 0) return;
 
@@ -53,20 +53,24 @@ const DuplicateEmployeesManager = () => {
     const phoneGroups = new Map<string, any[]>();
     const emailGroups = new Map<string, any[]>();
 
-    // تجميع الموظفين حسب الاسم
+    // تجميع الموظفين حسب المعايير المختلفة
     allEmployees.forEach(employee => {
+      // تجميع حسب الاسم (تطبيع الاسم)
       if (employee.full_name && employee.full_name.trim()) {
-        const normalizedName = employee.full_name.toLowerCase().trim();
+        const normalizedName = employee.full_name.toLowerCase().trim()
+          .replace(/\s+/g, ' ') // توحيد المسافات
+          .replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - '٠'.charCodeAt(0) + '0'.charCodeAt(0))); // تحويل الأرقام العربية
+        
         if (!nameGroups.has(normalizedName)) {
           nameGroups.set(normalizedName, []);
         }
         nameGroups.get(normalizedName)!.push(employee);
       }
 
-      // تجميع الموظفين حسب رقم الهاتف
+      // تجميع حسب رقم الهاتف
       if (employee.phone && employee.phone.trim()) {
-        const normalizedPhone = employee.phone.replace(/\D/g, '');
-        if (normalizedPhone.length >= 10) {
+        const normalizedPhone = employee.phone.replace(/\D/g, ''); // إزالة كل شيء عدا الأرقام
+        if (normalizedPhone.length >= 10) { // رقم هاتف صحيح
           if (!phoneGroups.has(normalizedPhone)) {
             phoneGroups.set(normalizedPhone, []);
           }
@@ -74,49 +78,67 @@ const DuplicateEmployeesManager = () => {
         }
       }
 
-      // تجميع الموظفين حسب البريد الإلكتروني
+      // تجميع حسب البريد الإلكتروني
       if (employee.email && employee.email.trim()) {
         const normalizedEmail = employee.email.toLowerCase().trim();
-        if (!emailGroups.has(normalizedEmail)) {
-          emailGroups.set(normalizedEmail, []);
+        if (normalizedEmail.includes('@')) { // بريد إلكتروني صحيح
+          if (!emailGroups.has(normalizedEmail)) {
+            emailGroups.set(normalizedEmail, []);
+          }
+          emailGroups.get(normalizedEmail)!.push(employee);
         }
-        emailGroups.get(normalizedEmail)!.push(employee);
       }
     });
 
     const duplicates: DuplicateGroup[] = [];
 
-    // إضافة مجموعات الأسماء المكررة
+    // إضافة المجموعات المكررة فقط
     nameGroups.forEach((employees, name) => {
       if (employees.length > 1) {
-        duplicates.push({
-          name,
-          employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
-          type: 'name'
-        });
+        // تحقق إضافي: تأكد من أنها ليست نفس الموظف برقم موظف مختلف
+        const uniqueEmployeeIds = new Set(employees.map(emp => emp.id));
+        if (uniqueEmployeeIds.size > 1) {
+          duplicates.push({
+            name,
+            employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
+            type: 'name'
+          });
+        }
       }
     });
 
-    // إضافة مجموعات الهاتف المكررة
     phoneGroups.forEach((employees, phone) => {
       if (employees.length > 1) {
-        duplicates.push({
-          phone,
-          employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
-          type: 'phone'
-        });
+        const uniqueEmployeeIds = new Set(employees.map(emp => emp.id));
+        if (uniqueEmployeeIds.size > 1) {
+          duplicates.push({
+            phone,
+            employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
+            type: 'phone'
+          });
+        }
       }
     });
 
-    // إضافة مجموعات البريد المكررة
     emailGroups.forEach((employees, email) => {
       if (employees.length > 1) {
-        duplicates.push({
-          email,
-          employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
-          type: 'email'
-        });
+        const uniqueEmployeeIds = new Set(employees.map(emp => emp.id));
+        if (uniqueEmployeeIds.size > 1) {
+          duplicates.push({
+            email,
+            employees: employees.sort((a, b) => new Date(a.hire_date).getTime() - new Date(b.hire_date).getTime()),
+            type: 'email'
+          });
+        }
       }
+    });
+
+    console.log('🔍 تحليل التكرار:', {
+      totalEmployees: allEmployees.length,
+      nameGroups: nameGroups.size,
+      phoneGroups: phoneGroups.size,
+      emailGroups: emailGroups.size,
+      duplicatesFound: duplicates.length
     });
 
     setDuplicateGroups(duplicates);
@@ -154,10 +176,10 @@ const DuplicateEmployeesManager = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6 text-orange-600" />
-            إدارة الموظفين المكررين
+            إدارة الموظفين المكررين المحسنة
           </h2>
           <p className="text-gray-600 mt-1">
-            عثرنا على {duplicateGroups.length} مجموعة من الموظفين المحتمل تكرارها
+            عثرنا على {duplicateGroups.length} مجموعة من الموظفين المحتمل تكرارها حقيقياً
           </p>
         </div>
         <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
@@ -170,7 +192,7 @@ const DuplicateEmployeesManager = () => {
         <Alert className="border-green-200 bg-green-50">
           <AlertTriangle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-700">
-            ممتاز! لا توجد موظفين مكررين في النظام.
+            ممتاز! لا توجد موظفين مكررين في النظام بعد الإصلاح.
           </AlertDescription>
         </Alert>
       ) : (
@@ -282,6 +304,20 @@ const DuplicateEmployeesManager = () => {
             ))}
           </div>
         </>
+      )}
+
+      {/* معلومات تطوير */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-blue-600" />
+            <span className="font-medium text-blue-800">
+              [تطوير] إجمالي الموظفين: {allEmployees.length} | 
+              مجموعات مكررة: {duplicateGroups.length} |
+              <span className="text-green-700">✓ تم إصلاح منطق منع التكرار</span>
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -90,15 +91,16 @@ export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
       console.log('🔄 جاري جلب الموظفين غير المرتبطين...');
       
       try {
-        // الطريقة المحسنة: استخدام LEFT JOIN بدلاً من الـ filter المعقد
+        // الطريقة المحسنة: استخدام subquery للتأكد من عدم وجود ربط
         const { data, error } = await supabase
           .from('employees')
-          .select(`
-            *,
-            profiles!left(id)
-          `)
+          .select('*')
           .eq('is_active', true)
-          .is('profiles.id', null)
+          .not('id', 'in', `(
+            SELECT employee_id 
+            FROM profiles 
+            WHERE employee_id IS NOT NULL
+          )`)
           .order('full_name');
         
         if (error) {
@@ -106,14 +108,8 @@ export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
           throw error;
         }
         
-        // تنظيف البيانات - إزالة profiles من النتيجة
-        const cleanedData = data?.map(employee => {
-          const { profiles, ...employeeData } = employee;
-          return employeeData;
-        }) || [];
-        
-        console.log('✅ تم جلب الموظفين غير المرتبطين:', cleanedData.length);
-        return cleanedData as UnlinkedEmployee[];
+        console.log('✅ تم جلب الموظفين غير المرتبطين:', data?.length || 0);
+        return (data || []) as UnlinkedEmployee[];
       } catch (error) {
         console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
         toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');

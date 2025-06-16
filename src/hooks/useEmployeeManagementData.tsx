@@ -41,59 +41,77 @@ export const useEmployeeManagementData = () => {
     return originalRefreshAllData();
   };
 
-  // Transform and merge employee data
-  const allEmployees: EnhancedEmployee[] = useMemo(() => [
-    // الموظفين المرتبطين بمستخدمين
-    ...(unifiedUsers?.filter(user => user.employee).map(user => ({
-      id: user.employee!.id,
-      employee_code: user.employee!.employee_code,
-      full_name: user.full_name,
-      position: user.employee!.position,
-      department: user.department || '',
-      phone: user.phone,
-      email: user.email,
-      national_id: user.employee!.national_id,
-      hire_date: user.employee!.hire_date,
-      salary_scale_level: 1,
-      base_salary: user.employee!.base_salary,
-      allowances: user.employee!.allowances,
-      commission_rate: user.employee!.commission_rate,
-      is_active: user.is_active,
-      bank_account_number: user.employee!.bank_account_number,
-      bank_name: user.employee!.bank_name,
-      emergency_contact_name: user.employee!.emergency_contact_name,
-      emergency_contact_phone: user.employee!.emergency_contact_phone,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      linkedToUser: true,
-      userId: user.id
-    })) || []),
-    // الموظفين غير المرتبطين
-    ...(unlinkedEmployees?.map(emp => ({
-      id: emp.id,
-      employee_code: emp.employee_code,
-      full_name: emp.full_name,
-      position: emp.position,
-      department: emp.department,
-      phone: undefined,
-      email: undefined,
-      national_id: undefined,
-      hire_date: emp.hire_date,
-      salary_scale_level: 1,
-      base_salary: emp.base_salary,
-      allowances: emp.allowances,
-      commission_rate: emp.commission_rate,
-      is_active: emp.is_active,
-      bank_account_number: undefined,
-      bank_name: undefined,
-      emergency_contact_name: undefined,
-      emergency_contact_phone: undefined,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      linkedToUser: false,
-      userId: undefined
-    })) || [])
-  ], [unifiedUsers, unlinkedEmployees]);
+  // Transform and merge employee data with uniqueness protection
+  const allEmployees: EnhancedEmployee[] = useMemo(() => {
+    const employeeMap = new Map<string, EnhancedEmployee>();
+    
+    // أولاً: إضافة الموظفين المرتبطين بمستخدمين (أولوية أعلى)
+    if (unifiedUsers) {
+      unifiedUsers.filter(user => user.employee).forEach(user => {
+        const employee = user.employee!;
+        employeeMap.set(employee.id, {
+          id: employee.id,
+          employee_code: employee.employee_code,
+          full_name: user.full_name, // استخدام اسم المستخدم
+          position: employee.position,
+          department: user.department || employee.department || '',
+          phone: user.phone,
+          email: user.email,
+          national_id: employee.national_id,
+          hire_date: employee.hire_date,
+          salary_scale_level: 1,
+          base_salary: employee.base_salary,
+          allowances: employee.allowances,
+          commission_rate: employee.commission_rate,
+          is_active: user.is_active,
+          bank_account_number: employee.bank_account_number,
+          bank_name: employee.bank_name,
+          emergency_contact_name: employee.emergency_contact_name,
+          emergency_contact_phone: employee.emergency_contact_phone,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          linkedToUser: true,
+          userId: user.id
+        });
+      });
+    }
+
+    // ثانياً: إضافة الموظفين غير المرتبطين (فقط إذا لم يكونوا موجودين بالفعل)
+    if (unlinkedEmployees) {
+      unlinkedEmployees.forEach(emp => {
+        // التحقق من عدم وجود الموظف بالفعل
+        if (!employeeMap.has(emp.id)) {
+          employeeMap.set(emp.id, {
+            id: emp.id,
+            employee_code: emp.employee_code,
+            full_name: emp.full_name,
+            position: emp.position,
+            department: emp.department,
+            phone: emp.phone,
+            email: emp.email,
+            national_id: emp.national_id,
+            hire_date: emp.hire_date,
+            salary_scale_level: 1,
+            base_salary: emp.base_salary,
+            allowances: emp.allowances,
+            commission_rate: emp.commission_rate,
+            is_active: emp.is_active,
+            bank_account_number: emp.bank_account_number,
+            bank_name: emp.bank_name,
+            emergency_contact_name: emp.emergency_contact_name,
+            emergency_contact_phone: emp.emergency_contact_phone,
+            created_at: emp.created_at || new Date().toISOString(),
+            updated_at: emp.updated_at || new Date().toISOString(),
+            linkedToUser: false,
+            userId: undefined
+          });
+        }
+      });
+    }
+
+    // تحويل Map إلى Array
+    return Array.from(employeeMap.values());
+  }, [unifiedUsers, unlinkedEmployees]);
 
   // Calculate statistics
   const stats = useMemo(() => ({
@@ -103,6 +121,13 @@ export const useEmployeeManagementData = () => {
     linked: allEmployees.filter(emp => emp.linkedToUser).length,
     unlinked: allEmployees.filter(emp => !emp.linkedToUser).length
   }), [allEmployees]);
+
+  console.log('🔄 معالجة البيانات المحسنة:', {
+    unifiedUsersWithEmployees: unifiedUsers?.filter(u => u.employee).length || 0,
+    unlinkedEmployees: unlinkedEmployees?.length || 0,
+    finalAllEmployees: allEmployees.length,
+    stats
+  });
 
   return {
     allEmployees,
