@@ -21,7 +21,8 @@ import {
   Trash2,
   Shield,
   Eye,
-  Edit
+  Edit,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -30,6 +31,7 @@ interface EmployeeCardActionsProps {
     id: string;
     linkedToUser: boolean;
     is_active: boolean;
+    full_name: string;
   };
   onLinkEmployee?: (employeeId: string) => void;
   onViewDetails: () => void;
@@ -54,7 +56,21 @@ const EmployeeCardActions = ({
   canDelete,
   canEdit
 }: EmployeeCardActionsProps) => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin, userRole } = useAuth();
+
+  // تسجيل مفصل للصلاحيات على مستوى الإجراءات
+  console.log('🎯 EmployeeCardActions - فحص الصلاحيات:', {
+    employeeName: employee.full_name,
+    employeeId: employee.id,
+    userRole,
+    isSuperAdmin: isSuperAdmin(),
+    hasAdminRole: hasRole('admin'),
+    hasManagerRole: hasRole('manager'),
+    canToggleStatus,
+    canDelete,
+    canEdit,
+    isLoading
+  });
 
   return (
     <div className="flex items-center gap-2">
@@ -78,7 +94,7 @@ const EmployeeCardActions = ({
         </Tooltip>
       </TooltipProvider>
 
-      {/* زر التعديل - للمدراء والأدمن */}
+      {/* زر التعديل - للمدراء والأدمن والسوبر أدمن */}
       {canEdit && (
         <TooltipProvider>
           <Tooltip>
@@ -87,21 +103,29 @@ const EmployeeCardActions = ({
                 variant="outline"
                 size="sm"
                 onClick={onEditEmployee}
-                className="h-8 w-8 p-0 border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                className={`h-8 w-8 p-0 transition-all duration-200 ${
+                  isSuperAdmin() 
+                    ? 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                    : 'border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300'
+                }`}
                 disabled={isLoading}
               >
                 <Edit className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="bg-green-600 text-white">
-              <span>تعديل البيانات</span>
+            <TooltipContent side="top" className={isSuperAdmin() ? "bg-red-600 text-white" : "bg-green-600 text-white"}>
+              <div className="flex items-center gap-1">
+                {isSuperAdmin() && <Crown className="h-3 w-3" />}
+                <span>تعديل البيانات</span>
+                {isSuperAdmin() && <span>(سوبر أدمن)</span>}
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
 
       {/* زر الحذف المنفصل - يظهر فقط للسوبر أدمن */}
-      {canDelete && (
+      {canDelete && isSuperAdmin() && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -109,7 +133,7 @@ const EmployeeCardActions = ({
                 variant="outline"
                 size="sm"
                 onClick={onDelete}
-                className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 ring-1 ring-red-100"
                 disabled={isLoading}
               >
                 <Trash2 className="h-4 w-4" />
@@ -117,8 +141,9 @@ const EmployeeCardActions = ({
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-red-600 text-white">
               <div className="flex items-center gap-1">
+                <Crown className="h-3 w-3" />
                 <Shield className="h-3 w-3" />
-                <span>حذف الموظف (سوبر أدمن)</span>
+                <span>حذف الموظف (سوبر أدمن فقط)</span>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -132,7 +157,7 @@ const EmployeeCardActions = ({
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 bg-white shadow-lg border">
+        <DropdownMenuContent align="end" className="w-56 bg-white shadow-lg border">
           {/* ربط بمستخدم */}
           {!employee.linkedToUser && onLinkEmployee && (
             <>
@@ -164,13 +189,43 @@ const EmployeeCardActions = ({
             </DropdownMenuItem>
           )}
 
-          {/* شارة السوبر أدمن */}
+          {/* شارة الصلاحيات */}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled className="text-xs">
+            <Shield className="h-3 w-3 mr-1" />
+            {isSuperAdmin() ? (
+              <span className="text-red-600 font-bold flex items-center gap-1">
+                <Crown className="h-3 w-3" />
+                سوبر أدمن
+              </span>
+            ) : hasRole('admin') ? (
+              <span className="text-purple-600 font-medium">أدمن</span>
+            ) : hasRole('manager') ? (
+              <span className="text-blue-600 font-medium">مدير</span>
+            ) : (
+              <span className="text-gray-600">مستخدم</span>
+            )}
+          </DropdownMenuItem>
+
+          {/* معلومات الصلاحيات المفصلة للسوبر أدمن */}
           {isSuperAdmin() && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled className="text-xs text-red-600">
-                <Shield className="h-3 w-3 mr-1" />
-                سوبر أدمن
+              <DropdownMenuItem disabled className="text-xs text-gray-500">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <Edit className="h-3 w-3" />
+                    <span>تعديل: {canEdit ? '✓' : '✗'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Trash2 className="h-3 w-3" />
+                    <span>حذف: {canDelete ? '✓' : '✗'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <UserCheck className="h-3 w-3" />
+                    <span>تفعيل/إيقاف: {canToggleStatus ? '✓' : '✗'}</span>
+                  </div>
+                </div>
               </DropdownMenuItem>
             </>
           )}

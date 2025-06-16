@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,19 +16,40 @@ interface EmployeeActionResponse {
 
 export const useEmployeeActions = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { isSuperAdmin, hasRole } = useAuth();
+  const { isSuperAdmin, hasRole, userRole } = useAuth();
   const queryClient = useQueryClient();
+
+  // تسجيل مفصل للصلاحيات
+  console.log('🔍 useEmployeeActions - فحص الصلاحيات:', {
+    userRole,
+    isSuperAdmin: isSuperAdmin(),
+    hasAdminRole: hasRole('admin'),
+    hasManagerRole: hasRole('manager')
+  });
+
+  // تحديد الصلاحيات بشكل مفصل
+  const canToggleStatus = hasRole('admin') || hasRole('manager') || isSuperAdmin();
+  const canDelete = isSuperAdmin();
+  const canEdit = hasRole('admin') || hasRole('manager') || isSuperAdmin();
+
+  console.log('✅ الصلاحيات المحسوبة:', {
+    canToggleStatus,
+    canDelete,
+    canEdit,
+    isSuperAdminUser: isSuperAdmin()
+  });
 
   // تحديث بيانات الموظف
   const updateEmployee = async (employeeData: any) => {
-    if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
+    if (!canEdit) {
+      console.error('❌ ليس لديك صلاحية لهذه العملية - التعديل');
       toast.error('ليس لديك صلاحية لهذه العملية');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log('🔄 تحديث بيانات الموظف:', employeeData);
+      console.log('🔄 تحديث بيانات الموظف:', { employeeData, userRole });
 
       const { data, error } = await supabase
         .from('employees')
@@ -80,14 +102,15 @@ export const useEmployeeActions = () => {
 
   // تفعيل/إيقاف الموظف
   const toggleEmployeeStatus = async (employeeId: string, isActive: boolean, reason?: string) => {
-    if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
+    if (!canToggleStatus) {
+      console.error('❌ ليس لديك صلاحية لهذه العملية - تغيير الحالة');
       toast.error('ليس لديك صلاحية لهذه العملية');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log(`🔄 ${isActive ? 'تفعيل' : 'إيقاف'} الموظف:`, { employeeId, isActive, reason });
+      console.log(`🔄 ${isActive ? 'تفعيل' : 'إيقاف'} الموظف:`, { employeeId, isActive, reason, userRole });
 
       const { data, error } = await supabase.rpc('toggle_employee_status', {
         p_employee_id: employeeId,
@@ -131,7 +154,7 @@ export const useEmployeeActions = () => {
   // التحقق من إمكانية حذف الموظف
   const checkEmployeeDeletion = async (employeeId: string) => {
     try {
-      console.log('🔍 فحص إمكانية حذف الموظف:', employeeId);
+      console.log('🔍 فحص إمكانية حذف الموظف:', { employeeId, userRole, isSuperAdmin: isSuperAdmin() });
 
       const { data, error } = await supabase.rpc('check_employee_deletion', {
         p_employee_id: employeeId
@@ -162,14 +185,15 @@ export const useEmployeeActions = () => {
 
   // حذف الموظف
   const deleteEmployee = async (employeeId: string, forceDelete = false, reason?: string) => {
-    if (!isSuperAdmin()) {
+    if (!canDelete) {
+      console.error('❌ ليس لديك صلاحية لحذف الموظفين - السوبر أدمن فقط');
       toast.error('ليس لديك صلاحية لحذف الموظفين - السوبر أدمن فقط');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log('🗑️ بدء حذف الموظف:', { employeeId, forceDelete, reason });
+      console.log('🗑️ بدء حذف الموظف:', { employeeId, forceDelete, reason, userRole, isSuperAdmin: isSuperAdmin() });
 
       const { data, error } = await supabase.rpc('safe_delete_employee', {
         p_employee_id: employeeId,
@@ -226,8 +250,8 @@ export const useEmployeeActions = () => {
     toggleEmployeeStatus,
     checkEmployeeDeletion,
     deleteEmployee,
-    canToggleStatus: hasRole('admin') || hasRole('manager') || isSuperAdmin(),
-    canDelete: isSuperAdmin(),
-    canEdit: hasRole('admin') || hasRole('manager') || isSuperAdmin()
+    canToggleStatus,
+    canDelete,
+    canEdit
   };
 };
