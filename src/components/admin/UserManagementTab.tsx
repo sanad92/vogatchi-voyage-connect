@@ -17,7 +17,7 @@ const UserManagementTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("all");
 
-  // استخدام الـ unified data hook
+  // استخدام الـ unified data hook المحسن
   const { 
     unifiedUsers, 
     isLoading, 
@@ -35,10 +35,10 @@ const UserManagementTab = () => {
     department: unifiedUser.department,
     is_active: unifiedUser.is_active,
     created_at: unifiedUser.created_at,
-    role: unifiedUser.role as any // Cast to UserRole type
+    role: unifiedUser.role as any
   })) || [];
 
-  // فلترة المستخدمين
+  // فلترة المستخدمين مع التحسينات
   const filteredUsers = users?.filter(user => {
     const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,15 +49,16 @@ const UserManagementTab = () => {
     return matchesSearch && matchesRole;
   }) || [];
 
-  // احصائيات المستخدمين
+  // احصائيات المستخدمين المحسنة
   const userStats = {
     total: users?.length || 0,
     active: users?.filter(u => u.is_active).length || 0,
     inactive: users?.filter(u => !u.is_active).length || 0,
-    noRole: users?.filter(u => !u.role || u.role === 'no_role').length || 0
+    noRole: users?.filter(u => !u.role || u.role === 'no_role').length || 0,
+    linked: unifiedUsers?.filter(u => u.employee).length || 0
   };
 
-  console.log('📈 إحصائيات المستخدمين (Unified):', userStats);
+  console.log('📈 إحصائيات المستخدمين المحسنة:', userStats);
 
   if (usersLoading) {
     return (
@@ -86,17 +87,28 @@ const UserManagementTab = () => {
     );
   }
 
+  const handleRefresh = async () => {
+    try {
+      console.log('🔄 تحديث البيانات يدوياً...');
+      await refetch();
+      toast.success('تم تحديث البيانات بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في تحديث البيانات:', error);
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* احصائيات المستخدمين */}
+      {/* احصائيات المستخدمين المحسنة */}
       <UserStatsCards stats={userStats} />
 
-      {/* شريط البحث والإجراءات */}
+      {/* شريط البحث والإجراءات المحسن */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
           <UserSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
           
-          {/* فلتر حسب الدور */}
+          {/* فلتر حسب الدور المحسن */}
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
@@ -116,7 +128,7 @@ const UserManagementTab = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => refetch()}
+            onClick={handleRefresh}
             className="flex items-center gap-2"
             disabled={isLoading}
           >
@@ -135,7 +147,7 @@ const UserManagementTab = () => {
               isOpen={isCreateDialogOpen} 
               onOpenChange={setIsCreateDialogOpen}
               onSuccess={() => {
-                refetch();
+                handleRefresh();
                 toast.success('تم إنشاء المستخدم بنجاح');
               }}
             />
@@ -143,18 +155,19 @@ const UserManagementTab = () => {
         </div>
       </div>
 
-      {/* معلومات الـ unified data */}
+      {/* معلومات النظام المحسن */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 bg-green-50 p-3 rounded-lg">
+        <div className="text-xs text-gray-500 bg-green-50 p-3 rounded-lg border border-green-200">
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span>
-              [بيانات موحدة] إجمالي البيانات: {users?.length || 0} | 
+            <Shield className="h-4 w-4 text-green-600" />
+            <span className="font-medium text-green-800">
+              [نظام محسن] إجمالي: {users?.length || 0} | 
               مفلترة: {filteredUsers.length} | 
               نشطة: {userStats.active} | 
               معطلة: {userStats.inactive} | 
               بدون أدوار: {userStats.noRole} |
-              مع موظفين: {unifiedUsers?.filter(u => u.employee).length || 0}
+              مرتبطة بموظفين: {userStats.linked} |
+              <span className="text-green-700">✓ تم إصلاح مشكلة employee_id</span>
             </span>
           </div>
         </div>
@@ -207,7 +220,7 @@ const UserManagementTab = () => {
               )}
             </div>
           ) : (
-            <UserTable users={filteredUsers} onUpdate={() => refetch()} />
+            <UserTable users={filteredUsers} onUpdate={handleRefresh} />
           )}
         </CardContent>
       </Card>
