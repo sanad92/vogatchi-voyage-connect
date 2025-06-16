@@ -2,29 +2,87 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const useEnhancedCustomerValidation = () => {
-  // تنسيق رقم الهاتف لجعله موحد
+  // تنسيق رقم الهاتف لجعله موحد - نسخة محسنة
   const normalizePhoneNumber = (phone: string): string => {
     if (!phone) return '';
+    
+    console.log('🔧 تنسيق الرقم الأصلي:', phone);
     
     // إزالة جميع المسافات والرموز
     let normalized = phone.replace(/[\s\-\(\)\+]/g, '');
     
-    // إضافة +20 إذا كان الرقم يبدأ بـ 1 (مصري)
+    console.log('🔧 بعد إزالة الرموز:', normalized);
+    
+    // معالجة الأرقام المصرية بجميع الصيغ
+    if (normalized.match(/^201[0-9]{9}$/)) {
+      // الرقم بالفعل بصيغة 201xxxxxxxxx
+      console.log('✅ الرقم بصيغة 201 بالفعل');
+      return normalized;
+    }
+    
+    if (normalized.match(/^01[0-9]{9}$/)) {
+      // الرقم بصيغة 01xxxxxxxxx - تحويل إلى 201xxxxxxxxx
+      normalized = '20' + normalized.substring(1);
+      console.log('🔄 تحويل من 01 إلى 201:', normalized);
+      return normalized;
+    }
+    
     if (normalized.match(/^1[0-9]{9}$/)) {
+      // الرقم بصيغة 1xxxxxxxxx - إضافة 20
       normalized = '20' + normalized;
+      console.log('🔄 إضافة 20 للرقم:', normalized);
+      return normalized;
     }
     
-    // إزالة 0 من البداية إذا كان موجود
-    if (normalized.startsWith('0')) {
+    // إذا كان الرقم يبدأ بـ 0 وليس 01، قم بإزالة الصفر
+    if (normalized.startsWith('0') && !normalized.startsWith('01')) {
       normalized = normalized.substring(1);
+      console.log('🔄 إزالة الصفر من البداية:', normalized);
     }
     
-    // إضافة +20 إذا لم تكن موجودة
-    if (!normalized.startsWith('20') && normalized.length === 10) {
+    // إذا كان الرقم 10 أرقام ولا يبدأ بـ 20، أضف 20
+    if (normalized.length === 10 && !normalized.startsWith('20')) {
       normalized = '20' + normalized;
+      console.log('🔄 إضافة 20 للرقم ذو الـ 10 أرقام:', normalized);
     }
     
+    console.log('✨ الرقم النهائي المنسق:', normalized);
     return normalized;
+  };
+
+  // إنشاء جميع الصيغ المحتملة للرقم
+  const generatePhoneVariants = (phone: string): string[] => {
+    if (!phone) return [];
+    
+    const normalized = normalizePhoneNumber(phone);
+    const variants = new Set<string>();
+    
+    // إضافة الرقم المنسق
+    variants.add(normalized);
+    
+    // إضافة الرقم الأصلي
+    variants.add(phone);
+    
+    // إذا كان الرقم المنسق يبدأ بـ 201، أضف الصيغ الأخرى
+    if (normalized.startsWith('201')) {
+      const localNumber = normalized.substring(2); // إزالة 20
+      
+      // صيغة 01xxxxxxxxx
+      variants.add('0' + localNumber);
+      
+      // صيغة 1xxxxxxxxx
+      variants.add(localNumber);
+      
+      // صيغة +201xxxxxxxxx
+      variants.add('+' + normalized);
+      
+      // صيغة +20 1xxxxxxxxx (مع مسافة)
+      variants.add('+20 ' + localNumber);
+    }
+    
+    const result = Array.from(variants).filter(v => v.length >= 10);
+    console.log('🔍 صيغ الرقم المختلفة:', result);
+    return result;
   };
 
   // التحقق من صحة رقم الهاتف
@@ -36,7 +94,7 @@ export const useEnhancedCustomerValidation = () => {
     const normalized = normalizePhoneNumber(phone);
     
     // فحص الأرقام المصرية
-    if (normalized.match(/^20[1][0-9]{9}$/)) {
+    if (normalized.match(/^201[0-9]{9}$/)) {
       return { isValid: true };
     }
     
@@ -51,7 +109,7 @@ export const useEnhancedCustomerValidation = () => {
     };
   };
 
-  // فحص تكرار رقم الهاتف مع تحسينات
+  // فحص تكرار رقم الهاتف مع تحسينات - نسخة محسنة
   const checkDuplicatePhone = async (phone: string, excludeId?: string) => {
     if (!phone) return { isDuplicate: false };
     
@@ -60,22 +118,23 @@ export const useEnhancedCustomerValidation = () => {
       return { isDuplicate: false, error: phoneValidation.message };
     }
 
-    const normalizedPhone = normalizePhoneNumber(phone);
+    // إنشاء جميع الصيغ المحتملة للرقم
+    const phoneVariants = generatePhoneVariants(phone);
     
     try {
-      console.log('🔍 فحص تكرار رقم الهاتف المنسق:', normalizedPhone);
+      console.log('🔍 فحص تكرار للصيغ التالية:', phoneVariants);
       
-      // البحث عن الرقم المنسق والرقم الأصلي
+      // البحث عن جميع الصيغ المحتملة
       let query = supabase
         .from('customers')
         .select('id, name, phone')
-        .or(`phone.eq.${phone},phone.eq.${normalizedPhone}`);
+        .or(phoneVariants.map(variant => `phone.eq.${variant}`).join(','));
       
       if (excludeId) {
         query = query.neq('id', excludeId);
       }
       
-      const { data, error } = await query.limit(1);
+      const { data, error } = await query.limit(5); // زيادة الحد للتأكد من العثور على جميع التكرارات
       
       if (error) {
         console.error('❌ خطأ في فحص تكرار الهاتف:', error);
@@ -83,11 +142,14 @@ export const useEnhancedCustomerValidation = () => {
       }
       
       if (data && data.length > 0) {
-        console.log('✅ تم العثور على عميل مكرر:', data[0]);
+        console.log('⚠️ تم العثور على عملاء مكررين:', data);
+        const existingCustomer = data[0];
         return { 
           isDuplicate: true, 
-          existingCustomer: data[0],
-          message: `رقم الهاتف ${phone} مُسجل بالفعل للعميل: ${data[0].name}`
+          existingCustomer,
+          message: `رقم الهاتف ${phone} مُسجل بالفعل للعميل: ${existingCustomer.name} (${existingCustomer.phone})`,
+          duplicateCount: data.length,
+          allDuplicates: data
         };
       }
       
@@ -165,6 +227,7 @@ export const useEnhancedCustomerValidation = () => {
 
   return {
     normalizePhoneNumber,
+    generatePhoneVariants,
     validatePhoneNumber,
     checkDuplicatePhone,
     checkDuplicateEmail,
