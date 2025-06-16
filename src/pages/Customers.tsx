@@ -1,23 +1,42 @@
 
 import { useState } from "react";
-import { Plus, Users, Star } from "lucide-react";
+import { Plus, Users, Star, Grid, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CustomerStats from "@/components/customers/CustomerStats";
 import CustomerFilters from "@/components/customers/CustomerFilters";
-import CustomerSearchBar from "@/components/customers/CustomerSearchBar";
 import CustomerGrid from "@/components/customers/CustomerGrid";
+import CustomerTableView from "@/components/customers/CustomerTableView";
+import CustomerAdvancedSearch, { CustomerSearchFilters } from "@/components/customers/CustomerAdvancedSearch";
+import CustomerFollowUpManager from "@/components/customers/CustomerFollowUpManager";
+import CustomerDataExporter from "@/components/customers/CustomerDataExporter";
 import CustomerDetailsDialog from "@/components/customers/CustomerDetailsDialog";
 import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
 import { useCustomers } from "@/hooks/useCustomers";
+import { Customer } from "@/types/customer";
 
 const Customers = () => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [searchFilters, setSearchFilters] = useState<CustomerSearchFilters>({
+    searchTerm: '',
+    segment: 'all',
+    nationality: 'all',
+    totalBookingsMin: '',
+    totalBookingsMax: '',
+    totalSpentMin: '',
+    totalSpentMax: '',
+    lastBookingDateRange: undefined,
+    registrationDateRange: undefined,
+    communicationPreference: 'all',
+    hasEmail: null,
+    hasWhatsapp: null
+  });
   
   const { customers, isLoading: customersLoading, error: customersError } = useCustomers();
 
@@ -30,25 +49,108 @@ const Customers = () => {
     setIsAddDialogOpen(false);
   };
 
+  const applyAdvancedFilters = (customers: Customer[], filters: CustomerSearchFilters) => {
+    let filtered = customers;
+
+    // فلتر النص
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(customer => 
+        customer.name.toLowerCase().includes(searchLower) ||
+        customer.phone?.includes(filters.searchTerm) ||
+        customer.email?.toLowerCase().includes(searchLower) ||
+        customer.passport_number?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // فلتر الشريحة
+    if (filters.segment !== 'all') {
+      filtered = filtered.filter(customer => {
+        if (filters.segment === 'vip') {
+          return customer.segment?.name === 'VIP' || customer.total_spent > 50000;
+        }
+        if (filters.segment === 'regular') {
+          return customer.total_bookings > 1 && customer.total_spent <= 50000;
+        }
+        if (filters.segment === 'new') {
+          return customer.total_bookings === 0;
+        }
+        return customer.segment_id === filters.segment;
+      });
+    }
+
+    // فلتر الجنسية
+    if (filters.nationality !== 'all') {
+      filtered = filtered.filter(customer => customer.nationality === filters.nationality);
+    }
+
+    // فلتر عدد الحجوزات
+    if (filters.totalBookingsMin) {
+      filtered = filtered.filter(customer => 
+        (customer.total_bookings || 0) >= parseInt(filters.totalBookingsMin)
+      );
+    }
+    if (filters.totalBookingsMax) {
+      filtered = filtered.filter(customer => 
+        (customer.total_bookings || 0) <= parseInt(filters.totalBookingsMax)
+      );
+    }
+
+    // فلتر إجمالي الإنفاق
+    if (filters.totalSpentMin) {
+      filtered = filtered.filter(customer => 
+        (customer.total_spent || 0) >= parseFloat(filters.totalSpentMin)
+      );
+    }
+    if (filters.totalSpentMax) {
+      filtered = filtered.filter(customer => 
+        (customer.total_spent || 0) <= parseFloat(filters.totalSpentMax)
+      );
+    }
+
+    // فلتر تاريخ آخر حجز
+    if (filters.lastBookingDateRange?.from && filters.lastBookingDateRange?.to) {
+      filtered = filtered.filter(customer => {
+        if (!customer.last_booking_date) return false;
+        const bookingDate = new Date(customer.last_booking_date);
+        return bookingDate >= filters.lastBookingDateRange!.from! && 
+               bookingDate <= filters.lastBookingDateRange!.to!;
+      });
+    }
+
+    // فلتر تاريخ التسجيل
+    if (filters.registrationDateRange?.from && filters.registrationDateRange?.to) {
+      filtered = filtered.filter(customer => {
+        if (!customer.created_at) return false;
+        const registrationDate = new Date(customer.created_at);
+        return registrationDate >= filters.registrationDateRange!.from! && 
+               registrationDate <= filters.registrationDateRange!.to!;
+      });
+    }
+
+    // فلتر البريد الإلكتروني
+    if (filters.hasEmail !== null) {
+      filtered = filtered.filter(customer => 
+        filters.hasEmail ? !!customer.email : !customer.email
+      );
+    }
+
+    return filtered;
+  };
+
   // Filter customers based on active tab and search/segment filters
   const getFilteredCustomers = () => {
     if (!customers) return [];
     
     let filtered = customers;
     
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(customer => 
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone?.includes(searchTerm) ||
-        customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
     // Apply segment filter
     if (activeSegment) {
       filtered = filtered.filter(customer => customer.segment_id === activeSegment);
     }
+    
+    // Apply advanced search filters
+    filtered = applyAdvancedFilters(filtered, searchFilters);
     
     // Apply tab filter
     switch (activeTab) {
@@ -87,6 +189,27 @@ const Customers = () => {
     noCommunication: customers?.filter(c => c.total_bookings === 0).length || 0
   };
 
+  const handleSearch = (filters: CustomerSearchFilters) => {
+    setSearchFilters(filters);
+  };
+
+  const handleClearSearch = () => {
+    setSearchFilters({
+      searchTerm: '',
+      segment: 'all',
+      nationality: 'all',
+      totalBookingsMin: '',
+      totalBookingsMax: '',
+      totalSpentMin: '',
+      totalSpentMax: '',
+      lastBookingDateRange: undefined,
+      registrationDateRange: undefined,
+      communicationPreference: 'all',
+      hasEmail: null,
+      hasWhatsapp: null
+    });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -94,23 +217,45 @@ const Customers = () => {
           <Users className="h-8 w-8" />
           إدارة العملاء
         </h1>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              إضافة عميل جديد
+        <div className="flex items-center gap-3">
+          <CustomerDataExporter 
+            customers={filteredCustomers}
+            selectedCustomers={selectedCustomers}
+          />
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+            >
+              <Grid className="h-4 w-4" />
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>إضافة عميل جديد</DialogTitle>
-            </DialogHeader>
-            <QuickCustomerAdd 
-              onCustomerAdded={handleCustomerAdded}
-              onCancel={handleCancelAdd}
-            />
-          </DialogContent>
-        </Dialog>
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+            >
+              <Table className="h-4 w-4" />
+            </Button>
+          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                إضافة عميل جديد
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>إضافة عميل جديد</DialogTitle>
+              </DialogHeader>
+              <QuickCustomerAdd 
+                onCustomerAdded={handleCustomerAdded}
+                onCancel={handleCancelAdd}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* إحصائيات العملاء */}
@@ -119,6 +264,12 @@ const Customers = () => {
         activeCustomers={stats.activeCustomers}
         needsFollowUp={stats.needsFollowUp}
         noCommunication={stats.noCommunication}
+      />
+
+      {/* البحث المتقدم */}
+      <CustomerAdvancedSearch 
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
       />
 
       {/* فلاتر تقسيم العملاء */}
@@ -139,23 +290,38 @@ const Customers = () => {
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
-          {/* شريط البحث */}
-          <CustomerSearchBar 
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onCustomerSelect={(customer) => setSelectedCustomer(customer.id)}
-            onNewCustomer={() => setIsAddDialogOpen(true)}
-          />
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-600">
+              عرض {filteredCustomers.length} من أصل {customers?.length || 0} عميل
+            </p>
+          </div>
 
           {/* قائمة العملاء */}
-          <CustomerGrid 
-            customers={filteredCustomers}
-            isLoading={customersLoading}
-            error={customersError}
-            activeTab={activeTab}
-            onCustomerSelect={setSelectedCustomer}
-            onAddNewCustomer={() => setIsAddDialogOpen(true)}
-          />
+          {viewMode === "grid" ? (
+            <CustomerGrid 
+              customers={filteredCustomers}
+              isLoading={customersLoading}
+              error={customersError}
+              activeTab={activeTab}
+              onCustomerSelect={setSelectedCustomer}
+              onAddNewCustomer={() => setIsAddDialogOpen(true)}
+            />
+          ) : (
+            <CustomerTableView
+              customers={filteredCustomers}
+              onCustomerSelect={setSelectedCustomer}
+              selectedCustomers={selectedCustomers}
+              onSelectionChange={setSelectedCustomers}
+            />
+          )}
+
+          {/* إدارة المتابعات */}
+          {viewMode === "table" && (
+            <CustomerFollowUpManager
+              customers={filteredCustomers}
+              selectedCustomers={selectedCustomers}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
