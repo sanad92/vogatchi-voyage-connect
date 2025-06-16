@@ -1,8 +1,19 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Phone, Mail, DollarSign, Link, Calendar, Building } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { User, Phone, Mail, DollarSign, Link, Calendar, Building, Trash2, Shield } from 'lucide-react';
+import { useEmployeeActions } from '@/hooks/useEmployeeActions';
+import { useAuth } from '@/hooks/useAuth';
+import ToggleEmployeeStatusDialog from './dialogs/ToggleEmployeeStatusDialog';
+import DeleteEmployeeDialog from './dialogs/DeleteEmployeeDialog';
 
 interface EnhancedEmployee {
   id: string;
@@ -26,6 +37,27 @@ interface EmployeeCardProps {
 }
 
 const EmployeeCard = ({ employee, onLinkEmployee }: EmployeeCardProps) => {
+  const { isSuperAdmin } = useAuth();
+  const { 
+    isLoading, 
+    toggleEmployeeStatus, 
+    deleteEmployee, 
+    checkEmployeeDeletion,
+    canToggleStatus,
+    canDelete 
+  } = useEmployeeActions();
+
+  const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleToggleStatus = async (employeeId: string, isActive: boolean, reason?: string) => {
+    await toggleEmployeeStatus(employeeId, isActive, reason);
+  };
+
+  const handleDeleteEmployee = async (employeeId: string, forceDelete?: boolean, reason?: string) => {
+    await deleteEmployee(employeeId, forceDelete, reason);
+  };
+
   const formatSalary = (amount: number) => {
     return new Intl.NumberFormat('ar-EG', {
       style: 'currency',
@@ -44,146 +76,209 @@ const EmployeeCard = ({ employee, onLinkEmployee }: EmployeeCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <User className="h-5 w-5 text-blue-600" />
-            <span className="truncate">{employee.full_name}</span>
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge variant={employee.is_active ? "default" : "secondary"}>
-              {employee.is_active ? 'نشط' : 'معطل'}
-            </Badge>
-            {employee.linkedToUser && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                مرتبط
+    <>
+      <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-600" />
+              <span className="truncate">{employee.full_name}</span>
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge variant={employee.is_active ? "default" : "secondary"}>
+                {employee.is_active ? 'نشط' : 'معطل'}
               </Badge>
+              {employee.linkedToUser && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  مرتبط
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* المعلومات الأساسية */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-gray-600 font-medium">رقم الموظف:</span>
+              <p className="font-semibold text-gray-900">{employee.employee_code}</p>
+            </div>
+            <div>
+              <span className="text-gray-600 font-medium">المنصب:</span>
+              <p className="font-semibold text-gray-900 truncate" title={employee.position}>
+                {employee.position}
+              </p>
+            </div>
+            {employee.department && (
+              <div className="col-span-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Building className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-600">القسم:</span>
+                  <span className="font-medium text-gray-900">{employee.department}</span>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* المعلومات الأساسية */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <span className="text-gray-600 font-medium">رقم الموظف:</span>
-            <p className="font-semibold text-gray-900">{employee.employee_code}</p>
-          </div>
-          <div>
-            <span className="text-gray-600 font-medium">المنصب:</span>
-            <p className="font-semibold text-gray-900 truncate" title={employee.position}>
-              {employee.position}
-            </p>
-          </div>
-          {employee.department && (
             <div className="col-span-2">
               <div className="flex items-center gap-2 text-sm">
-                <Building className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-600">القسم:</span>
-                <span className="font-medium text-gray-900">{employee.department}</span>
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-600">تاريخ التوظيف:</span>
+                <span className="font-medium text-gray-900">{formatDate(employee.hire_date)}</span>
               </div>
-            </div>
-          )}
-          <div className="col-span-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-600">تاريخ التوظيف:</span>
-              <span className="font-medium text-gray-900">{formatDate(employee.hire_date)}</span>
             </div>
           </div>
-        </div>
 
-        {/* معلومات الاتصال */}
-        {(employee.phone || employee.email) && (
+          {/* معلومات الاتصال */}
+          {(employee.phone || employee.email) && (
+            <div className="border-t pt-3 space-y-2">
+              {employee.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700">{employee.phone}</span>
+                </div>
+              )}
+              {employee.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700 truncate" title={employee.email}>
+                    {employee.email}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* معلومات الراتب */}
           <div className="border-t pt-3 space-y-2">
-            {employee.phone && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-700">{employee.phone}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <span className="text-gray-600 text-sm">الراتب الأساسي:</span>
+              </div>
+              <span className="font-semibold text-green-600">
+                {formatSalary(employee.base_salary)}
+              </span>
+            </div>
+            {employee.allowances > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 ml-6">البدلات:</span>
+                <span className="font-medium text-green-600">
+                  {formatSalary(employee.allowances)}
+                </span>
               </div>
             )}
-            {employee.email && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-700 truncate" title={employee.email}>
-                  {employee.email}
+            {(employee.base_salary + employee.allowances) > 0 && (
+              <div className="flex items-center justify-between text-sm border-t pt-2">
+                <span className="text-gray-700 font-medium">الإجمالي:</span>
+                <span className="font-bold text-green-700">
+                  {formatSalary(employee.base_salary + employee.allowances)}
                 </span>
               </div>
             )}
           </div>
-        )}
 
-        {/* معلومات الراتب */}
-        <div className="border-t pt-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <span className="text-gray-600 text-sm">الراتب الأساسي:</span>
-            </div>
-            <span className="font-semibold text-green-600">
-              {formatSalary(employee.base_salary)}
-            </span>
-          </div>
-          {employee.allowances > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 ml-6">البدلات:</span>
-              <span className="font-medium text-green-600">
-                {formatSalary(employee.allowances)}
-              </span>
-            </div>
-          )}
-          {(employee.base_salary + employee.allowances) > 0 && (
-            <div className="flex items-center justify-between text-sm border-t pt-2">
-              <span className="text-gray-700 font-medium">الإجمالي:</span>
-              <span className="font-bold text-green-700">
-                {formatSalary(employee.base_salary + employee.allowances)}
-              </span>
-            </div>
-          )}
-        </div>
+          {/* أزرار الإجراءات */}
+          <div className="border-t pt-3 flex gap-2">
+            {/* زر الحذف المنفصل - يظهر فقط للسوبر أدمن */}
+            {canDelete && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                      disabled={isLoading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      حذف
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-red-600 text-white">
+                    <div className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      <span>حذف الموظف (سوبر أدمن)</span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
 
-        {/* أزرار الإجراءات */}
-        <div className="border-t pt-3 flex gap-2">
-          {!employee.linkedToUser && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onLinkEmployee(employee.id)}
-              className="flex-1 flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
+            {!employee.linkedToUser && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onLinkEmployee(employee.id)}
+                className="flex-1 flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
+              >
+                <Link className="h-4 w-4" />
+                ربط بمستخدم
+              </Button>
+            )}
+            
+            {canToggleStatus && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsToggleDialogOpen(true)}
+                className={`flex-1 ${
+                  employee.is_active 
+                    ? 'hover:bg-orange-50 hover:border-orange-300 text-orange-600' 
+                    : 'hover:bg-green-50 hover:border-green-300 text-green-600'
+                }`}
+                disabled={isLoading}
+              >
+                {employee.is_active ? 'إيقاف' : 'تفعيل'}
+              </Button>
+            )}
+            
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex-1 hover:bg-gray-50"
+              onClick={() => {
+                // TODO: إضافة وظيفة التعديل
+                console.log('تعديل موظف:', employee.id);
+              }}
             >
-              <Link className="h-4 w-4" />
-              ربط بمستخدم
+              تعديل
             </Button>
-          )}
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex-1 hover:bg-gray-50"
-            onClick={() => {
-              // TODO: إضافة وظيفة التعديل
-              console.log('تعديل موظف:', employee.id);
-            }}
-          >
-            تعديل
-          </Button>
-        </div>
-
-        {/* معلومات إضافية للموظفين المرتبطين */}
-        {employee.linkedToUser && employee.userId && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm text-green-800">
-              <User className="h-4 w-4" />
-              <span className="font-medium">مرتبط بحساب مستخدم</span>
-            </div>
-            <p className="text-xs text-green-600 mt-1">
-              يمكن للموظف الوصول إلى النظام بحسابه الشخصي
-            </p>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* معلومات إضافية للموظفين المرتبطين */}
+          {employee.linkedToUser && employee.userId && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-sm text-green-800">
+                <User className="h-4 w-4" />
+                <span className="font-medium">مرتبط بحساب مستخدم</span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                يمكن للموظف الوصول إلى النظام بحسابه الشخصي
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* حوارات التأكيد */}
+      <ToggleEmployeeStatusDialog
+        isOpen={isToggleDialogOpen}
+        onOpenChange={setIsToggleDialogOpen}
+        employee={employee}
+        onConfirm={handleToggleStatus}
+        isLoading={isLoading}
+      />
+
+      <DeleteEmployeeDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        employee={employee}
+        onConfirm={handleDeleteEmployee}
+        onCheckDeletion={checkEmployeeDeletion}
+        isLoading={isLoading}
+      />
+    </>
   );
 };
 
