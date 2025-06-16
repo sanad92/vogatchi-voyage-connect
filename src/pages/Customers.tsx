@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Plus, Users, Star, Grid, Table } from "lucide-react";
+import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,9 @@ import CustomerFollowUpManager from "@/components/customers/CustomerFollowUpMana
 import CustomerDataExporter from "@/components/customers/CustomerDataExporter";
 import CustomerDetailsDialog from "@/components/customers/CustomerDetailsDialog";
 import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
+import CustomerPersonalDashboard from "@/components/customers/CustomerPersonalDashboard";
+import CustomerCommunicationHub from "@/components/customers/CustomerCommunicationHub";
+import CustomerSmartAnalytics from "@/components/customers/CustomerSmartAnalytics";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
 
@@ -279,7 +281,7 @@ const Customers = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="all">جميع العملاء</TabsTrigger>
           <TabsTrigger value="vip" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
@@ -287,9 +289,26 @@ const Customers = () => {
           </TabsTrigger>
           <TabsTrigger value="new">عملاء جدد</TabsTrigger>
           <TabsTrigger value="inactive">غير نشطين</TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            لوحتي
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            تحليلات
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
+        <TabsContent value="dashboard" className="space-y-4">
+          <CustomerPersonalDashboard customers={filteredCustomers} />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <CustomerSmartAnalytics customers={filteredCustomers} />
+        </TabsContent>
+
+        <TabsContent value={activeTab} className="space-y-4" 
+          style={{ display: ['all', 'vip', 'new', 'inactive'].includes(activeTab) ? 'block' : 'none' }}>
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-600">
               عرض {filteredCustomers.length} من أصل {customers?.length || 0} عميل
@@ -315,12 +334,20 @@ const Customers = () => {
             />
           )}
 
-          {/* إدارة المتابعات */}
+          {/* مركز التواصل المتعدد */}
           {viewMode === "table" && (
-            <CustomerFollowUpManager
-              customers={filteredCustomers}
-              selectedCustomers={selectedCustomers}
-            />
+            <>
+              <CustomerCommunicationHub
+                customers={filteredCustomers}
+                selectedCustomers={selectedCustomers}
+              />
+              
+              {/* إدارة المتابعات */}
+              <CustomerFollowUpManager
+                customers={filteredCustomers}
+                selectedCustomers={selectedCustomers}
+              />
+            </>
           )}
         </TabsContent>
       </Tabs>

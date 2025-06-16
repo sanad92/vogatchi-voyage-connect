@@ -36,6 +36,9 @@ export const useCustomerService = () => {
     return followUp.scheduled_date < today && followUp.status === 'pending';
   });
 
+  // Get today's tasks - alias for todayFollowUps
+  const todayTasks = todayFollowUps;
+
   // Create follow-up mutation
   const createFollowUpMutation = useMutation({
     mutationFn: async (followUpData: any) => {
@@ -69,7 +72,7 @@ export const useCustomerService = () => {
   });
 
   // Mark follow-up complete mutation
-  const markCompleteM​utation = useMutation({
+  const markCompleteMutation = useMutation({
     mutationFn: async (followUpId: string) => {
       const { data, error } = await supabase
         .from('customer_follow_ups')
@@ -113,6 +116,7 @@ export const useCustomerService = () => {
     followUps,
     todayFollowUps,
     overdueFollowUps,
+    todayTasks,
     createFollowUp,
     markFollowUpComplete,
     isLoading,
