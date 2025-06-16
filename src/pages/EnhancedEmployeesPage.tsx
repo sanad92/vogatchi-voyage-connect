@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Shield } from 'lucide-react';
-import EnhancedEmployeeManagement from '@/components/expenses/employee-management/enhanced/EnhancedEmployeeManagement';
+import EmployeeManagement from '@/components/expenses/EmployeeManagement';
 import { useAuth } from '@/hooks/useAuth';
 
 const EnhancedEmployeesPage = () => {
@@ -44,7 +44,7 @@ const EnhancedEmployeesPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <EnhancedEmployeeManagement />
+          <EmployeeManagement />
         </CardContent>
       </Card>
     </div>
