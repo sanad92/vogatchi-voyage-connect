@@ -79,7 +79,7 @@ const TodayOverview = () => {
                 <div key={task.id} className="flex items-center justify-between p-2 bg-red-50 rounded border-l-4 border-red-400">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {task.customers?.name}
+                      {task.customer?.name || 'غير محدد'}
                     </p>
                     <p className="text-xs text-gray-600">
                       {task.follow_up_type === 'pre_arrival_2days' && 'متابعة قبل الوصول بيومين'}

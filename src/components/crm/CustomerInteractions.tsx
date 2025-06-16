@@ -10,14 +10,18 @@ const CustomerInteractions = () => {
   const { todayTasks, addCommunication } = useCustomerService();
   const [isNewInteractionOpen, setIsNewInteractionOpen] = useState(false);
 
-  // استخراج التفاعلات من مهام المتابعة
-  const interactions = todayTasks?.flatMap(task => 
-    task.communications?.map(comm => ({
-      ...comm,
-      customer_name: task.customers?.name || 'غير محدد',
-      booking_reference: task.bookings?.booking_reference || 'غير محدد'
-    })) || []
-  ) || [];
+  // Since communications are not directly available in follow-ups,
+  // we'll create a placeholder structure for interactions
+  const interactions = todayTasks?.map(task => ({
+    id: task.id,
+    customer_name: task.customer?.name || 'غير محدد',
+    booking_reference: task.booking_id || 'غير محدد',
+    communication_type: 'follow_up',
+    status: task.status,
+    content: task.notes || 'متابعة مجدولة',
+    created_at: task.created_at,
+    direction: 'outbound'
+  })) || [];
 
   const handleNewInteraction = (data: any) => {
     addCommunication(data);
