@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -49,7 +48,8 @@ const CustomerFollowUpButton = ({
           completed_at: new Date().toISOString(),
           status: 'completed',
           notes: notes || `تمت متابعة العميل ${customerName} بنجاح`,
-          priority: 'normal'
+          priority: 'normal',
+          booking_id: null // إضافة booking_id كـ null للمتابعة العامة
         })
         .select()
         .single();
