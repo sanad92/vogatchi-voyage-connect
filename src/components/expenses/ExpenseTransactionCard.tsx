@@ -33,7 +33,7 @@ const ExpenseTransactionCard = ({ transaction }: ExpenseTransactionCardProps) =>
             <div className="flex items-start gap-3">
               <div 
                 className="w-4 h-4 rounded-full mt-1 flex-shrink-0"
-                style={{ backgroundColor: transaction.category?.color || '#gray' }}
+                style={{ backgroundColor: transaction.expense_categories?.color || '#gray' }}
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -41,7 +41,7 @@ const ExpenseTransactionCard = ({ transaction }: ExpenseTransactionCardProps) =>
                   {getStatusBadge(transaction.status)}
                 </div>
                 <p className="text-sm text-gray-600 mb-2">
-                  {transaction.category?.name_ar} • {transaction.transaction_number}
+                  {transaction.expense_categories?.name_ar || 'غير محدد'} • {transaction.transaction_number}
                 </p>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                   <div className="flex items-center gap-1">
