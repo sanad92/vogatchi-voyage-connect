@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -10,7 +9,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useRentContracts } from '@/hooks/useRentContracts';
 import { useSalaries } from '@/hooks/useSalaries';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 
 const FinancialDashboard = () => {
   const { transactions: expenseTransactions, isLoading: expensesLoading } = useExpenseTransactions();
@@ -43,11 +42,12 @@ const FinancialDashboard = () => {
     
     const monthlyChange = lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : 0;
 
-    // حساب إجمالي الرواتب للشهر الحالي
+    // حساب إجمالي الرواتب للشهر الحالي - إصلاح الحقول
+    const currentMonthStr = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
     const thisMonthSalaries = monthlySalaries.filter(salary => {
-      return salary.month === currentMonth && salary.year === currentYear;
+      return salary.salary_month.startsWith(currentMonthStr);
     });
-    const totalSalaries = thisMonthSalaries.reduce((sum, s) => sum + Number(s.total_salary || 0), 0);
+    const totalSalaries = thisMonthSalaries.reduce((sum, s) => sum + Number(s.net_salary || 0), 0);
 
     // حساب إجمالي الإيجارات للشهر الحالي
     const totalRent = rentContracts.reduce((sum, contract) => {
@@ -68,29 +68,6 @@ const FinancialDashboard = () => {
       pendingApprovals: thisMonthExpenses.filter(t => t.status === 'pending').length,
     };
   }, [expenseTransactions, monthlySalaries, rentContracts, currentMonth, currentYear]);
-
-  // بيانات المصروفات حسب الفئة
-  const expensesByCategory = useMemo(() => {
-    const categoryMap = new Map();
-    
-    expenseTransactions.forEach(transaction => {
-      const categoryId = transaction.category_id;
-      const category = expenseCategories.find(c => c.id === categoryId);
-      const categoryName = category?.name_ar || 'غير محدد';
-      
-      if (categoryMap.has(categoryName)) {
-        categoryMap.set(categoryName, categoryMap.get(categoryName) + Number(transaction.amount || 0));
-      } else {
-        categoryMap.set(categoryName, Number(transaction.amount || 0));
-      }
-    });
-
-    return Array.from(categoryMap.entries()).map(([name, amount]) => ({
-      name,
-      amount: Number(amount),
-      color: expenseCategories.find(c => c.name_ar === name)?.color || '#8884d8'
-    })).sort((a, b) => b.amount - a.amount);
-  }, [expenseTransactions, expenseCategories]);
 
   // بيانات المصروفات الشهرية
   const monthlyExpensesData = useMemo(() => {
@@ -114,6 +91,29 @@ const FinancialDashboard = () => {
     }
     return months;
   }, [expenseTransactions]);
+
+  // بيانات المصروفات حسب الفئة
+  const expensesByCategory = useMemo(() => {
+    const categoryMap = new Map();
+    
+    expenseTransactions.forEach(transaction => {
+      const categoryId = transaction.category_id;
+      const category = expenseCategories.find(c => c.id === categoryId);
+      const categoryName = category?.name_ar || 'غير محدد';
+      
+      if (categoryMap.has(categoryName)) {
+        categoryMap.set(categoryName, categoryMap.get(categoryName) + Number(transaction.amount || 0));
+      } else {
+        categoryMap.set(categoryName, Number(transaction.amount || 0));
+      }
+    });
+
+    return Array.from(categoryMap.entries()).map(([name, amount]) => ({
+      name,
+      amount: Number(amount),
+      color: expenseCategories.find(c => c.name_ar === name)?.color || '#8884d8'
+    })).sort((a, b) => b.amount - a.amount);
+  }, [expenseTransactions, expenseCategories]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 

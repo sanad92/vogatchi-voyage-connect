@@ -1,8 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, BarChart3, PieChart, Download } from 'lucide-react';
+import { TrendingUp, BarChart3, PieChart, Download, Calculator } from 'lucide-react';
 import FinancialDashboard from './reports/FinancialDashboard';
+import EnhancedFinancialDashboard from './reports/EnhancedFinancialDashboard';
 import ExpenseReportExporter from './reports/ExpenseReportExporter';
 import { useExpenses } from '@/hooks/useExpenses';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
@@ -33,26 +34,26 @@ const ExpenseReports = () => {
 
     // حساب إجمالي المصروفات العامة
     const totalOtherExpenses = expenseTransactions
-      .filter(t => t.status === 'paid')
-      .reduce((sum, t) => sum + t.amount, 0);
+      .filter(t => t.status === 'approved')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
     // حساب إجمالي الرواتب
     const totalSalaries = monthlySalaries
       .filter(s => s.status === 'paid')
-      .reduce((sum, s) => sum + s.net_salary, 0);
+      .reduce((sum, s) => sum + Number(s.net_salary), 0);
 
     // حساب إجمالي الإيجارات (تقديري - شهر واحد لكل عقد نشط)
     const totalRent = rentContracts
       .filter(c => c.is_active)
-      .reduce((sum, c) => sum + c.monthly_rent, 0);
+      .reduce((sum, c) => sum + Number(c.monthly_rent), 0);
 
     const totalExpenses = totalOtherExpenses + totalSalaries + totalRent;
 
     // تحليل حسب الفئة
     const categoryBreakdown = expenseCategories?.map(category => {
       const categoryExpenses = expenseTransactions
-        .filter(t => t.category_id === category.id && t.status === 'paid')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter(t => t.category_id === category.id && t.status === 'approved')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       return {
         name: category.name_ar,
@@ -67,13 +68,13 @@ const ExpenseReports = () => {
       {
         name: 'الرواتب',
         amount: totalSalaries,
-        color: '#green-600',
+        color: '#10B981',
         percentage: totalExpenses > 0 ? (totalSalaries / totalExpenses) * 100 : 0
       },
       {
         name: 'الإيجارات',
         amount: totalRent,
-        color: '#blue-600',
+        color: '#3B82F6',
         percentage: totalExpenses > 0 ? (totalRent / totalExpenses) * 100 : 0
       }
     );
@@ -103,8 +104,12 @@ const ExpenseReports = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="enhanced" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="enhanced" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                التحليل المتقدم
+              </TabsTrigger>
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 لوحة المؤشرات
@@ -122,6 +127,10 @@ const ExpenseReports = () => {
                 التقرير المبسط
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="enhanced" className="space-y-4">
+              <EnhancedFinancialDashboard />
+            </TabsContent>
 
             <TabsContent value="dashboard" className="space-y-4">
               <FinancialDashboard />
