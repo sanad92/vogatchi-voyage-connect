@@ -1,4 +1,6 @@
 
+import { UserRole } from '@/types/userManagement';
+
 export interface UnifiedUser {
   id: string;
   email: string;
@@ -6,7 +8,7 @@ export interface UnifiedUser {
   phone?: string;
   department?: string;
   is_active: boolean;
-  role?: string;
+  role?: UserRole; // Changed from string to UserRole
   created_at: string;
   updated_at: string;
   employee?: {

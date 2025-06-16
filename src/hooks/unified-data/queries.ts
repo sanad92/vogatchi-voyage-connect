@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { UnifiedUser, UnlinkedEmployee } from './types';
+import type { UserRole } from '@/types/userManagement';
 
 export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
   return useQuery({
@@ -47,7 +48,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
             phone: profile.phone,
             department: profile.department,
             is_active: profile.is_active,
-            role: userRole?.role || 'no_role',
+            role: (userRole?.role as UserRole) || 'no_role' as UserRole, // Type cast to UserRole
             created_at: profile.created_at,
             updated_at: profile.updated_at,
             employee: profile.employees ? {
