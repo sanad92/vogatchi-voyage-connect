@@ -17,12 +17,32 @@ export const useLinkUserToEmployeeMutation = () => {
         });
 
         if (error) {
-          console.error('❌ خطأ في ربط المستخدم بالموظف:', error);
-          throw error;
+          console.error('❌ خطأ في استدعاء دالة الربط:', error);
+          throw new Error(error.message || 'خطأ في الاتصال بقاعدة البيانات');
         }
 
-        if (!data) {
-          throw new Error('فشل في ربط المستخدم بالموظف');
+        console.log('📋 استجابة دالة الربط:', data);
+
+        // التحقق من نجاح العملية
+        if (!data?.success) {
+          const errorMessage = data?.message || 'فشل في ربط المستخدم بالموظف';
+          console.error('❌ فشل في ربط المستخدم:', data);
+          
+          // رسائل خطأ مخصصة حسب نوع الخطأ
+          switch (data?.error) {
+            case 'USER_NOT_FOUND':
+              throw new Error('المستخدم غير موجود في النظام');
+            case 'EMPLOYEE_NOT_FOUND':
+              throw new Error('الموظف غير موجود في النظام');
+            case 'EMPLOYEE_INACTIVE':
+              throw new Error('الموظف غير نشط حالياً');
+            case 'EMPLOYEE_ALREADY_LINKED':
+              throw new Error('هذا الموظف مرتبط بمستخدم آخر بالفعل');
+            case 'UPDATE_FAILED':
+              throw new Error('فشل في تحديث بيانات المستخدم');
+            default:
+              throw new Error(errorMessage);
+          }
         }
 
         console.log('✅ تم ربط المستخدم بالموظف بنجاح');
@@ -32,7 +52,7 @@ export const useLinkUserToEmployeeMutation = () => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log('✅ نجح ربط المستخدم - تحديث البيانات...');
       
       // تحديث جميع الـ caches المرتبطة
@@ -41,7 +61,7 @@ export const useLinkUserToEmployeeMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       
-      toast.success('تم ربط المستخدم بالموظف بنجاح');
+      toast.success(data?.message || 'تم ربط المستخدم بالموظف بنجاح');
     },
     onError: (error: any) => {
       console.error('❌ خطأ في ربط المستخدم بالموظف:', error);
@@ -64,12 +84,26 @@ export const useUnlinkUserFromEmployeeMutation = () => {
         });
 
         if (error) {
-          console.error('❌ خطأ في إلغاء ربط المستخدم من الموظف:', error);
-          throw error;
+          console.error('❌ خطأ في استدعاء دالة إلغاء الربط:', error);
+          throw new Error(error.message || 'خطأ في الاتصال بقاعدة البيانات');
         }
 
-        if (!data) {
-          throw new Error('فشل في إلغاء ربط المستخدم من الموظف');
+        console.log('📋 استجابة دالة إلغاء الربط:', data);
+
+        // التحقق من نجاح العملية
+        if (!data?.success) {
+          const errorMessage = data?.message || 'فشل في إلغاء ربط المستخدم من الموظف';
+          console.error('❌ فشل في إلغاء ربط المستخدم:', data);
+          
+          // رسائل خطأ مخصصة حسب نوع الخطأ
+          switch (data?.error) {
+            case 'USER_NOT_FOUND':
+              throw new Error('المستخدم غير موجود في النظام');
+            case 'UPDATE_FAILED':
+              throw new Error('فشل في تحديث بيانات المستخدم');
+            default:
+              throw new Error(errorMessage);
+          }
         }
 
         console.log('✅ تم إلغاء ربط المستخدم من الموظف بنجاح');
@@ -79,7 +113,7 @@ export const useUnlinkUserFromEmployeeMutation = () => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log('✅ نجح إلغاء ربط المستخدم - تحديث البيانات...');
       
       // تحديث جميع الـ caches المرتبطة
@@ -88,7 +122,7 @@ export const useUnlinkUserFromEmployeeMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       
-      toast.success('تم إلغاء ربط المستخدم من الموظف بنجاح');
+      toast.success(data?.message || 'تم إلغاء ربط المستخدم من الموظف بنجاح');
     },
     onError: (error: any) => {
       console.error('❌ خطأ في إلغاء ربط المستخدم من الموظف:', error);

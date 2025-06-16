@@ -65,22 +65,27 @@ export const useUserEmployeeMapping = () => {
             setCurrentEmployee(employeeData);
             setError(null);
             
-            // محاولة ربط تلقائي باستخدام الـ function المحسن
+            // محاولة ربط تلقائي باستخدام الدالة المحسنة
             try {
               const { data: linkResult, error: linkError } = await supabase.rpc('link_user_to_employee', {
                 p_user_id: user.id,
                 p_employee_id: employeeData.id
               });
               
-              if (!linkError && linkResult) {
-                console.log('✅ تم الربط التلقائي بنجاح');
-                toast.success('تم ربط حسابك بملف الموظف تلقائياً');
+              if (!linkError && linkResult?.success) {
+                console.log('✅ تم الربط التلقائي بنجاح:', linkResult);
+                toast.success(linkResult.message || 'تم ربط حسابك بملف الموظف تلقائياً');
                 // تحديث البيانات
                 queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
                 queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
+              } else {
+                console.warn('تحذير: فشل الربط التلقائي:', linkResult);
+                if (linkResult?.message) {
+                  toast.warning(`تحذير: ${linkResult.message}`);
+                }
               }
             } catch (linkError) {
-              console.warn('تحذير: فشل الربط التلقائي:', linkError);
+              console.warn('تحذير: خطأ في الربط التلقائي:', linkError);
             }
           } else {
             console.log('⚠️ لم يتم العثور على موظف بنفس البريد الإلكتروني');
@@ -98,7 +103,7 @@ export const useUserEmployeeMapping = () => {
     }
   };
 
-  // ربط مستخدم بموظف باستخدام الـ function المحسن
+  // ربط مستخدم بموظف باستخدام الدالة المحسنة
   const linkUserToEmployee = async (employeeId: string) => {
     if (!user?.id) {
       toast.error('المستخدم غير مسجل الدخول');
@@ -113,14 +118,38 @@ export const useUserEmployeeMapping = () => {
         p_employee_id: employeeId
       });
 
-      if (error || !data) {
+      if (error) {
         console.error('Error linking user to employee:', error);
-        toast.error('فشل في ربط المستخدم بالموظف: ' + (error?.message || 'خطأ غير معروف'));
+        toast.error('خطأ في الاتصال بقاعدة البيانات: ' + error.message);
         return false;
       }
 
-      console.log('✅ تم ربط المستخدم بالموظف بنجاح');
-      toast.success('تم ربط المستخدم بالموظف بنجاح');
+      if (!data?.success) {
+        console.error('فشل في ربط المستخدم بالموظف:', data);
+        
+        // رسائل خطأ مخصصة
+        let errorMessage = data?.message || 'فشل في ربط المستخدم بالموظف';
+        switch (data?.error) {
+          case 'USER_NOT_FOUND':
+            errorMessage = 'المستخدم غير موجود في النظام';
+            break;
+          case 'EMPLOYEE_NOT_FOUND':
+            errorMessage = 'الموظف غير موجود في النظام';
+            break;
+          case 'EMPLOYEE_INACTIVE':
+            errorMessage = 'الموظف غير نشط حالياً';
+            break;
+          case 'EMPLOYEE_ALREADY_LINKED':
+            errorMessage = 'هذا الموظف مرتبط بمستخدم آخر بالفعل';
+            break;
+        }
+        
+        toast.error(errorMessage);
+        return false;
+      }
+
+      console.log('✅ تم ربط المستخدم بالموظف بنجاح:', data);
+      toast.success(data.message || 'تم ربط المستخدم بالموظف بنجاح');
       
       // تحديث البيانات المحلية والـ cache
       await fetchCurrentEmployee();

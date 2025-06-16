@@ -4329,7 +4329,7 @@ export type Database = {
       }
       link_user_to_employee: {
         Args: { p_user_id: string; p_employee_id: string }
-        Returns: boolean
+        Returns: Json
       }
       log_admin_action: {
         Args: {
@@ -4352,7 +4352,7 @@ export type Database = {
       }
       unlink_user_from_employee: {
         Args: { p_user_id: string }
-        Returns: boolean
+        Returns: Json
       }
       update_booking_status: {
         Args: {
