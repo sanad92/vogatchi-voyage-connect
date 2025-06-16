@@ -1,18 +1,13 @@
 
 import { CardContent } from '@/components/ui/card';
-import { 
-  Mail, 
-  Phone, 
-  Calendar, 
-  AlertTriangle
-} from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, DollarSign, CreditCard, User, Shield } from 'lucide-react';
 
 interface EmployeeCardContentProps {
   employee: {
-    email?: string;
-    phone?: string;
-    hire_date: string;
     department: string;
+    phone?: string;
+    email?: string;
+    hire_date: string;
     base_salary: number;
     allowances: number;
     commission_rate?: number;
@@ -22,82 +17,80 @@ interface EmployeeCardContentProps {
 }
 
 const EmployeeCardContent = ({ employee, canDelete }: EmployeeCardContentProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-EG');
-  };
+  const totalSalary = employee.base_salary + employee.allowances;
 
   return (
     <CardContent className="space-y-4">
-      {/* تحذير للموظفين مع ارتباطات (إذا كان سوبر أدمن) */}
-      {canDelete && employee.linkedToUser && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
-          <div className="flex items-center gap-2 text-orange-700 text-xs">
-            <AlertTriangle className="h-3 w-3" />
-            <span>قد يحتاج حذف إجباري بسبب الارتباطات</span>
-          </div>
+      {/* معلومات الاتصال والقسم */}
+      <div className="grid grid-cols-1 gap-3 text-sm">
+        <div className="flex items-center gap-2 text-gray-600">
+          <MapPin className="h-4 w-4 text-blue-500" />
+          <span>{employee.department}</span>
         </div>
-      )}
-
-      {/* معلومات الاتصال */}
-      <div className="space-y-2">
-        {employee.email && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Mail className="h-4 w-4" />
-            <span>{employee.email}</span>
-          </div>
-        )}
+        
         {employee.phone && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Phone className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-gray-600">
+            <Phone className="h-4 w-4 text-green-500" />
             <span>{employee.phone}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar className="h-4 w-4" />
-          <span>تاريخ التوظيف: {formatDate(employee.hire_date)}</span>
-        </div>
+        
+        {employee.email && (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Mail className="h-4 w-4 text-orange-500" />
+            <span className="break-all">{employee.email}</span>
+          </div>
+        )}
       </div>
 
-      {/* معلومات القسم */}
-      {employee.department && (
-        <div className="text-sm">
-          <span className="font-medium text-gray-700">القسم: </span>
-          <span className="text-gray-600">{employee.department}</span>
+      {/* معلومات مالية */}
+      <div className="border-t pt-3 space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="h-4 w-4 text-purple-500" />
+          <span className="text-gray-600">
+            تاريخ التوظيف: {new Date(employee.hire_date).toLocaleDateString('ar-EG')}
+          </span>
         </div>
-      )}
-
-      {/* معلومات الراتب */}
-      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-700">الراتب الأساسي:</span>
-          <span className="font-medium">{formatCurrency(employee.base_salary)}</span>
+        
+        <div className="flex items-center gap-2 text-sm">
+          <DollarSign className="h-4 w-4 text-green-500" />
+          <span className="font-semibold text-green-600">
+            الراتب الإجمالي: {totalSalary.toLocaleString()} ج.م
+          </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-700">البدلات:</span>
-          <span className="font-medium">{formatCurrency(employee.allowances)}</span>
-        </div>
+        
         {employee.commission_rate && employee.commission_rate > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-700">نسبة العمولة:</span>
-            <span className="font-medium text-green-600">
-              {employee.commission_rate}%
+          <div className="flex items-center gap-2 text-sm">
+            <CreditCard className="h-4 w-4 text-blue-500" />
+            <span className="text-blue-600">
+              عمولة: {employee.commission_rate}%
             </span>
           </div>
         )}
-        <div className="border-t pt-2 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-900">إجمالي الراتب:</span>
-          <span className="font-bold text-blue-600">
-            {formatCurrency(employee.base_salary + employee.allowances)}
-          </span>
+      </div>
+
+      {/* معلومات الحالة */}
+      <div className="border-t pt-3 flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center gap-1">
+          {employee.linkedToUser ? (
+            <>
+              <User className="h-3 w-3 text-green-500" />
+              <span className="text-green-600">مرتبط بحساب مستخدم</span>
+            </>
+          ) : (
+            <>
+              <User className="h-3 w-3 text-gray-400" />
+              <span>غير مرتبط بحساب</span>
+            </>
+          )}
         </div>
+        
+        {canDelete && (
+          <div className="flex items-center gap-1 text-red-500">
+            <Shield className="h-3 w-3" />
+            <span>إمكانية الحذف متاحة</span>
+          </div>
+        )}
       </div>
     </CardContent>
   );

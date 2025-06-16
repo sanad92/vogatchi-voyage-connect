@@ -15,6 +15,8 @@ interface EnhancedEmployeeCardProps {
     id: string;
     employee_code: string;
     full_name: string;
+    employee_full_name: string;
+    user_full_name?: string;
     position: string;
     department: string;
     phone?: string;
