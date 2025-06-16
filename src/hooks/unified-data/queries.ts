@@ -91,34 +91,75 @@ export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
       console.log('🔄 جاري جلب الموظفين غير المرتبطين...');
       
       try {
-        // الطريقة المحسنة: استخدام subquery للتأكد من عدم وجود ربط
-        const { data, error } = await supabase
+        // الخطوة 1: جلب جميع الموظفين النشطين
+        console.log('📋 الخطوة 1: جلب جميع الموظفين النشطين...');
+        const { data: allEmployees, error: employeesError } = await supabase
           .from('employees')
           .select('*')
           .eq('is_active', true)
-          .not('id', 'in', `(
-            SELECT employee_id 
-            FROM profiles 
-            WHERE employee_id IS NOT NULL
-          )`)
           .order('full_name');
         
-        if (error) {
-          console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
-          throw error;
+        if (employeesError) {
+          console.error('❌ خطأ في جلب الموظفين:', employeesError);
+          throw employeesError;
         }
         
-        console.log('✅ تم جلب الموظفين غير المرتبطين:', data?.length || 0);
-        return (data || []) as UnlinkedEmployee[];
+        console.log(`📊 تم جلب ${allEmployees?.length || 0} موظف نشط`);
+        
+        // الخطوة 2: جلب IDs الموظفين المرتبطين بالمستخدمين
+        console.log('📋 الخطوة 2: جلب الموظفين المرتبطين...');
+        const { data: linkedProfiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('employee_id')
+          .not('employee_id', 'is', null);
+        
+        if (profilesError) {
+          console.error('❌ خطأ في جلب الملفات الشخصية:', profilesError);
+          throw profilesError;
+        }
+        
+        // استخراج IDs الموظفين المرتبطين
+        const linkedEmployeeIds = linkedProfiles?.map(p => p.employee_id).filter(Boolean) || [];
+        console.log(`🔗 تم العثور على ${linkedEmployeeIds.length} موظف مرتبط:`, linkedEmployeeIds);
+        
+        // الخطوة 3: فلترة الموظفين غير المرتبطين
+        console.log('📋 الخطوة 3: فلترة الموظفين غير المرتبطين...');
+        const unlinkedEmployees = allEmployees?.filter(emp => 
+          !linkedEmployeeIds.includes(emp.id)
+        ) || [];
+        
+        console.log(`✅ تم العثور على ${unlinkedEmployees.length} موظف غير مرتبط`);
+        
+        // طباعة تفاصيل للمراجعة
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 تفاصيل الموظفين غير المرتبطين:', {
+            total_employees: allEmployees?.length || 0,
+            linked_employees: linkedEmployeeIds.length,
+            unlinked_employees: unlinkedEmployees.length,
+            unlinked_names: unlinkedEmployees.map(emp => emp.full_name)
+          });
+        }
+        
+        return unlinkedEmployees as UnlinkedEmployee[];
       } catch (error) {
-        console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
-        toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');
+        console.error('❌ خطأ شامل في جلب الموظفين غير المرتبطين:', error);
+        
+        // معالجة أنواع مختلفة من الأخطاء
+        if (error?.message?.includes('permission')) {
+          toast.error('ليس لديك صلاحية لجلب بيانات الموظفين');
+        } else if (error?.message?.includes('network')) {
+          toast.error('خطأ في الاتصال بالشبكة، يرجى المحاولة مرة أخرى');
+        } else {
+          toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');
+        }
+        
+        // إرجاع مصفوفة فارغة بدلاً من throw لتجنب كسر التطبيق
         return [];
       }
     },
     enabled: isSuperAdmin,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
-    retryDelay: 1000,
+    retry: 3, // زيادة عدد المحاولات
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // تأخير متدرج
   });
 };

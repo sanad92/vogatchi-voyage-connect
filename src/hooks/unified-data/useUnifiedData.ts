@@ -1,64 +1,135 @@
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedUsersQuery, useUnlinkedEmployeesQuery } from './queries';
-import { 
-  useLinkUserToEmployeeMutation, 
-  useUnlinkUserFromEmployeeMutation, 
-  useUpdateUnifiedDataMutation 
-} from './mutations';
+import { useLinkingMutations } from './mutations';
+import { toast } from 'sonner';
 
 export const useUnifiedData = () => {
   const { isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const isSuperAdminUser = isSuperAdmin();
 
-  // استعلامات البيانات
-  const { 
-    data: unifiedUsers, 
-    isLoading: usersLoading, 
-    error: usersError, 
-    refetch: refetchUsers 
-  } = useUnifiedUsersQuery(isSuperAdmin());
+  // الـ queries الأساسية
+  const {
+    data: unifiedUsers,
+    isLoading: usersLoading,
+    error: usersError,
+    refetch: refetchUsers
+  } = useUnifiedUsersQuery(isSuperAdminUser);
 
-  const { 
-    data: unlinkedEmployees, 
-    isLoading: employeesLoading 
-  } = useUnlinkedEmployeesQuery(isSuperAdmin());
+  const {
+    data: unlinkedEmployees,
+    isLoading: employeesLoading,
+    error: employeesError,
+    refetch: refetchEmployees
+  } = useUnlinkedEmployeesQuery(isSuperAdminUser);
 
-  // العمليات
-  const linkUserToEmployeeMutation = useLinkUserToEmployeeMutation();
-  const unlinkUserFromEmployeeMutation = useUnlinkUserFromEmployeeMutation();
-  const updateUnifiedDataMutation = useUpdateUnifiedDataMutation();
+  // الـ mutations
+  const {
+    linkUserToEmployee,
+    unlinkUserFromEmployee,
+    isLinking,
+    isUnlinking
+  } = useLinkingMutations();
 
-  // إعادة تحديث جميع البيانات
-  const refreshAllData = () => {
-    queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
-    queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
-    queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
-    queryClient.invalidateQueries({ queryKey: ['employees'] });
+  // التحقق من الأخطاء وعرض رسائل مفيدة
+  const hasErrors = usersError || employeesError;
+  const isLoading = usersLoading || employeesLoading;
+
+  // دالة تحديث شاملة محسنة
+  const refreshAllData = async (): Promise<void> => {
+    try {
+      console.log('🔄 بدء تحديث جميع البيانات...');
+      
+      // إنعاش الـ cache أولاً
+      await queryClient.invalidateQueries({ 
+        queryKey: ['unified-users-employees-all'] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['unlinked-employees-all'] 
+      });
+      
+      // إعادة جلب البيانات
+      const [usersResult, employeesResult] = await Promise.allSettled([
+        refetchUsers(),
+        refetchEmployees()
+      ]);
+      
+      // التحقق من النتائج
+      if (usersResult.status === 'rejected') {
+        console.error('❌ فشل في تحديث بيانات المستخدمين:', usersResult.reason);
+        toast.error('فشل في تحديث بيانات المستخدمين');
+      }
+      
+      if (employeesResult.status === 'rejected') {
+        console.error('❌ فشل في تحديث بيانات الموظفين:', employeesResult.reason);
+        toast.error('فشل في تحديث بيانات الموظفين');
+      }
+      
+      if (usersResult.status === 'fulfilled' && employeesResult.status === 'fulfilled') {
+        console.log('✅ تم تحديث جميع البيانات بنجاح');
+        toast.success('تم تحديث البيانات بنجاح');
+      }
+      
+    } catch (error) {
+      console.error('❌ خطأ في تحديث البيانات:', error);
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+      throw error;
+    }
   };
+
+  // تحسين معالجة الأخطاء مع تفاصيل أكثر
+  if (hasErrors) {
+    console.log('⚠️ تفاصيل الأخطاء:', {
+      usersError: usersError?.message || usersError,
+      employeesError: employeesError?.message || employeesError,
+      isSuperAdmin: isSuperAdminUser
+    });
+  }
+
+  // إحصائيات محسنة
+  const stats = {
+    totalUsers: unifiedUsers?.length || 0,
+    usersWithEmployees: unifiedUsers?.filter(u => u.employee).length || 0,
+    usersWithoutEmployees: unifiedUsers?.filter(u => !u.employee).length || 0,
+    unlinkedEmployees: unlinkedEmployees?.length || 0,
+    hasData: (unifiedUsers?.length || 0) > 0 || (unlinkedEmployees?.length || 0) > 0
+  };
+
+  // طباعة معلومات تشخيصية
+  if (process.env.NODE_ENV === 'development') {
+    console.log('📊 إحصائيات البيانات الموحدة:', {
+      ...stats,
+      isLoading,
+      hasErrors,
+      isSuperAdmin: isSuperAdminUser
+    });
+  }
 
   return {
     // البيانات
-    unifiedUsers,
-    unlinkedEmployees,
+    unifiedUsers: unifiedUsers || [],
+    unlinkedEmployees: unlinkedEmployees || [],
     
     // حالات التحميل
-    isLoading: usersLoading || employeesLoading,
+    isLoading,
     usersLoading,
     employeesLoading,
+    
+    // الأخطاء
     usersError,
+    employeesError,
+    hasErrors,
     
-    // الإجراءات
-    linkUserToEmployee: linkUserToEmployeeMutation.mutate,
-    unlinkUserFromEmployee: unlinkUserFromEmployeeMutation.mutate,
-    updateUnifiedData: updateUnifiedDataMutation.mutate,
+    // العمليات
+    linkUserToEmployee,
+    unlinkUserFromEmployee,
+    isLinking,
+    isUnlinking,
     refreshAllData,
-    refetchUsers,
     
-    // حالات الإجراءات
-    isLinking: linkUserToEmployeeMutation.isPending,
-    isUnlinking: unlinkUserFromEmployeeMutation.isPending,
-    isUpdating: updateUnifiedDataMutation.isPending,
+    // الإحصائيات
+    stats
   };
 };

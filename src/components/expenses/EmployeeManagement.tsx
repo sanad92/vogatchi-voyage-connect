@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { RefreshCw, AlertCircle, Users } from 'lucide-react';
+import { RefreshCw, AlertCircle, Users, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -61,38 +61,65 @@ const EmployeeManagement = () => {
     handleSubmit(e, newEmployee, validateForm, resetForm, () => setIsAddDialogOpen(false));
   };
 
-  // عرض رسالة الخطأ إذا كان هناك خطأ في البيانات
-  if (usersError || employeesError) {
+  // تحسين عرض رسائل الخطأ
+  const renderErrorAlert = () => {
+    const errors = [];
+    if (usersError) errors.push('خطأ في جلب بيانات المستخدمين');
+    if (employeesError) errors.push('خطأ في جلب بيانات الموظفين');
+    
+    if (errors.length === 0) return null;
+
     return (
-      <div className="space-y-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.
-            <div className="mt-2">
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <div className="font-medium">حدث خطأ في تحميل البيانات:</div>
+            <ul className="list-disc list-inside space-y-1">
+              {errors.map((error, index) => (
+                <li key={index} className="text-sm">{error}</li>
+              ))}
+            </ul>
+            <div className="flex items-center gap-2 mt-3">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleRefreshData}
                 disabled={isRefreshing}
+                className="flex items-center gap-2"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                إعادة المحاولة
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'جاري المحاولة...' : 'إعادة المحاولة'}
               </Button>
+              
+              {navigator.onLine ? (
+                <div className="flex items-center gap-1 text-green-600 text-xs">
+                  <Wifi className="h-3 w-3" />
+                  متصل بالإنترنت
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-red-600 text-xs">
+                  <WifiOff className="h-3 w-3" />
+                  غير متصل بالإنترنت
+                </div>
+              )}
             </div>
-          </AlertDescription>
-        </Alert>
-      </div>
+          </div>
+        </AlertDescription>
+      </Alert>
     );
-  }
+  };
 
-  // عرض رسالة التحميل
+  // عرض رسالة التحميل المحسنة
   if (unifiedLoading && !isRefreshing) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري تحميل بيانات الموظفين المحسنة...</p>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="space-y-2">
+            <p className="text-gray-600 font-medium">جاري تحميل بيانات الموظفين المحسنة...</p>
+            <p className="text-sm text-gray-500">يتم جلب البيانات من الخادم</p>
+          </div>
         </div>
       </div>
     );
@@ -100,6 +127,9 @@ const EmployeeManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* عرض رسائل الخطأ */}
+      {renderErrorAlert()}
+
       <EmployeeStatsHeader
         linkedEmployeesCount={stats.linked}
         unlinkedEmployeesCount={stats.unlinked}
@@ -147,7 +177,7 @@ const EmployeeManagement = () => {
                   مرتبط: {stats.linked} | 
                   غير مرتبط: {stats.unlinked} |
                   مفلتر: {filteredEmployees.length} |
-                  <span className="text-green-700">✓ تم إضافة إدارة الحالة والحذف</span>
+                  <span className="text-green-700">✓ تم إصلاح مشكلة جلب الموظفين غير المرتبطين</span>
                 </span>
               </div>
             </div>
