@@ -8,16 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Printer, Search, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Printer, Search, Eye, Edit, Trash2, AlertCircle, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInitialInvoices } from "@/hooks/useInitialInvoices";
+import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
 import InvoicesHeader from "@/components/invoices/InvoicesHeader";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
+import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
+import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
 import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
 import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
+import { toast } from "sonner";
 
 const Invoices = () => {
   // Initialize with sample invoices if none exist
@@ -27,73 +32,38 @@ const Invoices = () => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["invoices", debouncedSearchTerm, filterStatus, filterType],
-    queryFn: async () => {
-      let query = supabase
-        .from("invoices")
-        .select(`
-          *,
-          customer:customers(id, name, email, phone),
-          hotel_booking:hotel_bookings!invoices_booking_id_fkey(
-            id, customer_name, hotel_name, destination_city, check_in_date, 
-            check_out_date, internal_booking_number, voucher_sent
-          ),
-          flight_booking:flight_bookings!invoices_booking_id_fkey(
-            id, customer_name, airline_name, departure_city, arrival_city, 
-            departure_date, booking_reference
-          ),
-          transport_booking:transport_bookings!invoices_booking_id_fkey(
-            id, customer_name, service_type, pickup_location, dropoff_location, 
-            service_date, booking_reference
-          ),
-          car_rental:car_rentals!invoices_booking_id_fkey(
-            id, customer_name, vehicle_make, vehicle_model, pickup_date, 
-            return_date, rental_reference
-          )
-        `)
-        .order("created_at", { ascending: false });
-
-      // Apply search filter if provided
-      if (debouncedSearchTerm) {
-        query = query.or(`
-          invoice_number.ilike.%${debouncedSearchTerm}%,
-          notes.ilike.%${debouncedSearchTerm}%
-        `);
-      }
-
-      // Apply status filter
-      if (filterStatus !== "all") {
-        query = query.eq("status", filterStatus);
-      }
-
-      // Apply booking type filter
-      if (filterType !== "all") {
-        query = query.eq("booking_type", filterType);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching invoices:", error);
-        throw error;
-      }
-
-      return data;
-    },
+  // استخدام hook إدارة الفواتير الجديد
+  const {
+    invoices,
+    isLoading,
+    updateStatus,
+    deleteInvoice,
+    updateInvoice,
+    isUpdatingStatus,
+    isDeletingInvoice,
+    isUpdatingInvoice,
+    getInvoiceStats,
+  } = useInvoicesManagement({
+    searchTerm: debouncedSearchTerm,
+    status: filterStatus,
+    bookingType: filterType,
+    dateFrom,
+    dateTo,
   });
 
-  // Calculate statistics
-  const totalInvoices = invoices?.length || 0;
-  const paidInvoices = invoices?.filter(inv => inv.status === 'paid').length || 0;
-  const overdueInvoices = invoices?.filter(inv => inv.status === 'overdue').length || 0;
-  const pendingInvoices = invoices?.filter(inv => inv.status === 'sent').length || 0;
+  const stats = getInvoiceStats();
 
   const getBookingDetails = (invoice) => {
     switch (invoice.booking_type) {
@@ -163,32 +133,140 @@ const Invoices = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      draft: "bg-gray-100 text-gray-800",
-      sent: "bg-blue-100 text-blue-800",
-      paid: "bg-green-100 text-green-800",
-      overdue: "bg-red-100 text-red-800",
-      cancelled: "bg-orange-100 text-orange-800",
+      draft: "secondary",
+      sent: "default",
+      paid: "success",
+      overdue: "destructive",
+      cancelled: "outline",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "default";
+  };
+
+  const handleViewDetails = (invoice) => {
+    setSelectedInvoice(invoice);
+    setShowDetailsDialog(true);
+  };
+
+  const handleEditInvoice = (invoice) => {
+    setSelectedInvoice(invoice);
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (window.confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) {
+      try {
+        await deleteInvoice(invoiceId);
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
+    }
+  };
+
+  const handleUpdateStatus = async (invoiceId, status, paymentDate) => {
+    try {
+      await updateStatus({ invoiceId, status, paymentDate });
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleSaveInvoice = async (invoiceId, updateData) => {
+    try {
+      await updateInvoice({ invoiceId, updateData });
+      setShowEditDialog(false);
+      setSelectedInvoice(null);
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterStatus("all");
+    setFilterType("all");
+    setDateFrom("");
+    setDateTo("");
   };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <InvoicesHeader
-        totalInvoices={totalInvoices}
-        paidInvoices={paidInvoices}
-        overdueInvoices={overdueInvoices}
-        pendingInvoices={pendingInvoices}
-        onCreateInvoice={() => setShowCreateDialog(true)}
-      />
+      {/* رأس الصفحة مع الإحصائيات */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">إجمالي الفواتير</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalInvoices || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <FileText className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">فواتير مدفوعة</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.paidInvoices || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">فواتير متأخرة</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.overdueInvoices || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <FileText className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">إجمالي المبالغ</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {stats?.totalAmount?.toLocaleString() || 0} ج.م
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* أدوات التصفية والبحث */}
       <Card>
         <CardHeader>
-          <CardTitle>تصفية الفواتير</CardTitle>
-          <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>تصفية الفواتير</CardTitle>
+              <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
+            </div>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              فاتورة جديدة
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="search">بحث</Label>
               <div className="relative">
@@ -202,6 +280,7 @@ const Invoices = () => {
                 />
               </div>
             </div>
+            
             <div>
               <Label htmlFor="status">حالة الفاتورة</Label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -218,6 +297,7 @@ const Invoices = () => {
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label htmlFor="type">نوع الحجز</Label>
               <Select value={filterType} onValueChange={setFilterType}>
@@ -233,10 +313,39 @@ const Invoices = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="dateFrom">من تاريخ</Label>
+              <Input
+                id="dateFrom"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col justify-end">
+              <Label htmlFor="dateTo">إلى تاريخ</Label>
+              <Input
+                id="dateTo"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
           </div>
+
+          {(searchTerm || filterStatus !== 'all' || filterType !== 'all' || dateFrom || dateTo) && (
+            <div className="mt-4">
+              <Button variant="outline" onClick={clearFilters}>
+                مسح الفلاتر
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* قائمة الفواتير */}
       <Card>
         <CardHeader>
           <CardTitle>قائمة الفواتير</CardTitle>
@@ -277,10 +386,11 @@ const Invoices = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-right py-3 px-4 font-medium">رقم الفاتورة</th>
+                    <th className="text-right py-3 px-4 font-medium">العميل</th>
                     <th className="text-right py-3 px-4 font-medium">نوع الحجز</th>
-                    <th className="text-right py-3 px-4 font-medium">التفاصيل</th>
                     <th className="text-right py-3 px-4 font-medium">المبلغ</th>
                     <th className="text-right py-3 px-4 font-medium">الحالة</th>
+                    <th className="text-right py-3 px-4 font-medium">تاريخ الإصدار</th>
                     <th className="text-right py-3 px-4 font-medium">الإجراءات</th>
                   </tr>
                 </thead>
@@ -291,70 +401,54 @@ const Invoices = () => {
                       <tr key={invoice.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium">{invoice.invoice_number}</td>
                         <td className="py-3 px-4">
-                          {getBookingTypeLabel(invoice.booking_type)}
+                          <div className="font-medium">{invoice.customer?.name || "غير محدد"}</div>
+                          {invoice.customer?.email && (
+                            <div className="text-sm text-gray-500">{invoice.customer.email}</div>
+                          )}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-medium">{bookingDetails.title}</div>
-                          <div className="text-sm text-gray-500">
-                            {bookingDetails.subtitle}
-                          </div>
-                          {bookingDetails.date && (
-                            <div className="text-xs text-gray-500">
-                              {format(new Date(bookingDetails.date), "d MMM yyyy", {
-                                locale: ar,
-                              })}
-                            </div>
-                          )}
+                          {getBookingTypeLabel(invoice.booking_type)}
                         </td>
                         <td className="py-3 px-4 font-medium">
                           {invoice.final_amount?.toLocaleString()} {invoice.currency}
                         </td>
                         <td className="py-3 px-4">
-                          <span
-                            className={`inline-block px-2 py-1 rounded-full text-xs ${getStatusColor(
-                              invoice.status
-                            )}`}
-                          >
+                          <Badge variant={getStatusColor(invoice.status)}>
                             {getStatusLabel(invoice.status)}
-                          </span>
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          {format(new Date(invoice.issued_date), "d MMM yyyy", {
+                            locale: ar,
+                          })}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => handleViewDetails(invoice)}
                             >
                               <Eye className="h-4 w-4 mr-1" />
                               عرض
                             </Button>
-                            {invoice.booking_type === "hotel" && bookingDetails.booking && (
-                              <>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedHotelBooking(bookingDetails.booking);
-                                    setShowInvoiceModal(true);
-                                  }}
-                                >
-                                  <Printer className="h-4 w-4 mr-1" />
-                                  طباعة
-                                </Button>
-                                {!bookingDetails.booking.voucher_sent && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedHotelBooking(bookingDetails.booking);
-                                      setShowVoucherModal(true);
-                                    }}
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    فاوتشر
-                                  </Button>
-                                )}
-                              </>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditInvoice(invoice)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              تعديل
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteInvoice(invoice.id)}
+                              disabled={isDeletingInvoice}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              حذف
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -367,11 +461,38 @@ const Invoices = () => {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
+      {/* النوافذ المنبثقة */}
       <CreateInvoiceDialog
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
       />
+
+      {selectedInvoice && (
+        <>
+          <InvoiceDetailsDialog
+            invoice={selectedInvoice}
+            open={showDetailsDialog}
+            onClose={() => {
+              setShowDetailsDialog(false);
+              setSelectedInvoice(null);
+            }}
+            onEdit={handleEditInvoice}
+            onDelete={handleDeleteInvoice}
+            onUpdateStatus={handleUpdateStatus}
+          />
+
+          <EditInvoiceDialog
+            invoice={selectedInvoice}
+            open={showEditDialog}
+            onClose={() => {
+              setShowEditDialog(false);
+              setSelectedInvoice(null);
+            }}
+            onSave={handleSaveInvoice}
+            isLoading={isUpdatingInvoice}
+          />
+        </>
+      )}
 
       {showInvoiceModal && selectedHotelBooking && (
         <HotelInvoiceGenerator
