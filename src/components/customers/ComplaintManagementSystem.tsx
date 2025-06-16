@@ -19,7 +19,10 @@ import {
   Users,
   Plus,
   Filter,
-  Search
+  Search,
+  Calendar,
+  CreditCard,
+  Phone
 } from "lucide-react";
 import { Customer } from "@/types/customer";
 
