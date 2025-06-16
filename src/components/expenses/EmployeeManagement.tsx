@@ -1,13 +1,15 @@
 
 import { useState } from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmployeeStatsHeader from './employee-management/EmployeeStatsHeader';
 import EnhancedEmployeeFilters from './employee-management/EnhancedEmployeeFilters';
 import EnhancedEmployeeCard from './employee-management/enhanced/EnhancedEmployeeCard';
 import EmployeeEmptyState from './employee-management/EmployeeEmptyState';
 import EmployeeFormDialog from './employee-management/EmployeeFormDialog';
+import DuplicateEmployeesManager from './employee-management/DuplicateEmployeesManager';
 import { useEmployeeForm } from './employee-management/useEmployeeForm';
 import { useEmployeeManagementData } from '@/hooks/useEmployeeManagementData';
 import { useEmployeeManagementActions } from '@/hooks/useEmployeeManagementActions';
@@ -107,53 +109,72 @@ const EmployeeManagement = () => {
         onAddEmployee={() => setIsAddDialogOpen(true)}
       />
 
-      <EnhancedEmployeeFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        linkedFilter={linkedFilter}
-        onLinkedFilterChange={setLinkedFilter}
-        onRefresh={handleRefreshData}
-        isRefreshing={isRefreshing}
-        totalEmployees={allEmployees.length}
-        filteredEmployees={filteredEmployees.length}
-      />
+      <Tabs defaultValue="employees" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="employees" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            إدارة الموظفين
+          </TabsTrigger>
+          <TabsTrigger value="duplicates" className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            الموظفين المكررين
+          </TabsTrigger>
+        </TabsList>
 
-      {/* معلومات النظام المحسن */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-blue-800">
-              [نظام محسن] إجمالي: {stats.total} | 
-              نشط: {stats.active} | 
-              معطل: {stats.inactive} | 
-              مرتبط: {stats.linked} | 
-              غير مرتبط: {stats.unlinked} |
-              مفلتر: {filteredEmployees.length} |
-              <span className="text-green-700">✓ تم إضافة إدارة الحالة والحذف</span>
-            </span>
-          </div>
-        </div>
-      )}
+        <TabsContent value="employees" className="space-y-6">
+          <EnhancedEmployeeFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            linkedFilter={linkedFilter}
+            onLinkedFilterChange={setLinkedFilter}
+            onRefresh={handleRefreshData}
+            isRefreshing={isRefreshing}
+            totalEmployees={allEmployees.length}
+            filteredEmployees={filteredEmployees.length}
+          />
 
-      {filteredEmployees.length === 0 ? (
-        <EmployeeEmptyState
-          searchTerm={searchTerm}
-          onAddEmployee={() => setIsAddDialogOpen(true)}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees.map((employee) => (
-            <EnhancedEmployeeCard
-              key={employee.id}
-              employee={employee}
-              onLinkEmployee={handleLinkEmployee}
+          {/* معلومات النظام المحسن */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-800">
+                  [نظام محسن] إجمالي: {stats.total} | 
+                  نشط: {stats.active} | 
+                  معطل: {stats.inactive} | 
+                  مرتبط: {stats.linked} | 
+                  غير مرتبط: {stats.unlinked} |
+                  مفلتر: {filteredEmployees.length} |
+                  <span className="text-green-700">✓ تم إضافة إدارة الحالة والحذف</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {filteredEmployees.length === 0 ? (
+            <EmployeeEmptyState
+              searchTerm={searchTerm}
+              onAddEmployee={() => setIsAddDialogOpen(true)}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEmployees.map((employee) => (
+                <EnhancedEmployeeCard
+                  key={employee.id}
+                  employee={employee}
+                  onLinkEmployee={handleLinkEmployee}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="duplicates">
+          <DuplicateEmployeesManager />
+        </TabsContent>
+      </Tabs>
 
       <EmployeeFormDialog
         isOpen={isAddDialogOpen}
