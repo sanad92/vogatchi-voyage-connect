@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -54,6 +53,8 @@ const CustomerTableView = ({
   selectedCustomers,
   onSelectionChange 
 }: CustomerTableViewProps) => {
+  const selectAllCheckboxRef = useRef<HTMLButtonElement>(null);
+  
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { key: 'select', label: 'اختيار', visible: true, width: 'w-12' },
     { key: 'name', label: 'الاسم', visible: true, width: 'w-48' },
@@ -73,6 +74,19 @@ const CustomerTableView = ({
     columns.filter(col => col.visible), 
     [columns]
   );
+
+  const isAllSelected = selectedCustomers.length === customers.length && customers.length > 0;
+  const isPartiallySelected = selectedCustomers.length > 0 && selectedCustomers.length < customers.length;
+
+  // Update indeterminate state when selection changes
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      const checkbox = selectAllCheckboxRef.current.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      if (checkbox) {
+        checkbox.indeterminate = isPartiallySelected;
+      }
+    }
+  }, [isPartiallySelected]);
 
   const toggleColumn = (columnKey: string) => {
     setColumns(prev => 
@@ -99,9 +113,6 @@ const CustomerTableView = ({
       onSelectionChange(selectedCustomers.filter(id => id !== customerId));
     }
   };
-
-  const isAllSelected = selectedCustomers.length === customers.length && customers.length > 0;
-  const isPartiallySelected = selectedCustomers.length > 0 && selectedCustomers.length < customers.length;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-EG', {
@@ -301,10 +312,8 @@ const CustomerTableView = ({
                 >
                   {column.key === 'select' ? (
                     <Checkbox
+                      ref={selectAllCheckboxRef}
                       checked={isAllSelected}
-                      ref={(ref) => {
-                        if (ref) ref.indeterminate = isPartiallySelected;
-                      }}
                       onCheckedChange={handleSelectAll}
                     />
                   ) : (

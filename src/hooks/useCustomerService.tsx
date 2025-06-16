@@ -1,70 +1,50 @@
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
-import { CustomerFollowUp, CustomerCommunication, CustomerNote } from '@/types/customerService';
+import { toast } from '@/hooks/use-toast';
 
 export const useCustomerService = () => {
   const queryClient = useQueryClient();
 
-  // جلب مهام المتابعة
-  const { data: followUps, isLoading: followUpsLoading } = useQuery({
+  // Fetch all follow-ups
+  const { data: followUps = [], isLoading } = useQuery({
     queryKey: ['customer-follow-ups'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customer_follow_ups')
         .select(`
           *,
-          customers(name, phone, email),
-          bookings(booking_reference, check_in_date),
-          assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(full_name)
+          customer:customers(id, name),
+          assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(id, full_name)
         `)
         .order('scheduled_date', { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  // جلب المهام المطلوبة لليوم الحالي مع البيانات المرتبطة
-  const { data: todayTasks } = useQuery({
-    queryKey: ['today-follow-ups'],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('customer_follow_ups')
-        .select(`
-          *,
-          customers(name, phone, email),
-          bookings(booking_reference, check_in_date),
-          communications:customer_communications(
-            id,
-            communication_type,
-            direction,
-            status,
-            content,
-            duration_minutes,
-            created_at,
-            handled_by,
-            handled_by_profile:profiles!customer_communications_handled_by_fkey(full_name)
-          )
-        `)
-        .eq('scheduled_date', today)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data;
-    },
+  // Get today's follow-ups
+  const todayFollowUps = followUps.filter(followUp => {
+    const today = new Date().toISOString().split('T')[0];
+    return followUp.scheduled_date === today && followUp.status === 'pending';
   });
 
-  // تحديث حالة مهمة المتابعة
-  const updateFollowUpMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CustomerFollowUp> }) => {
+  // Get overdue follow-ups
+  const overdueFollowUps = followUps.filter(followUp => {
+    const today = new Date().toISOString().split('T')[0];
+    return followUp.scheduled_date < today && followUp.status === 'pending';
+  });
+
+  // Create follow-up mutation
+  const createFollowUpMutation = useMutation({
+    mutationFn: async (followUpData: any) => {
       const { data, error } = await supabase
         .from('customer_follow_ups')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
+        .insert({
+          ...followUpData,
+          booking_id: followUpData.customer_id // Use customer_id as booking_id for now
+        })
         .select()
         .single();
 
@@ -73,27 +53,31 @@ export const useCustomerService = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] });
-      queryClient.invalidateQueries({ queryKey: ['today-follow-ups'] });
       toast({
-        title: "تم التحديث بنجاح",
-        description: "تم تحديث مهمة المتابعة بنجاح",
+        title: "تم الحفظ بنجاح",
+        description: "تم إضافة المتابعة بنجاح",
       });
     },
     onError: (error) => {
+      console.error('Error creating follow-up:', error);
       toast({
-        title: "خطأ في التحديث",
-        description: "حدث خطأ أثناء تحديث مهمة المتابعة",
+        title: "خطأ في الحفظ",
+        description: "حدث خطأ أثناء إضافة المتابعة",
         variant: "destructive",
       });
     },
   });
 
-  // إضافة تواصل جديد
-  const addCommunicationMutation = useMutation({
-    mutationFn: async (communication: Omit<CustomerCommunication, 'id' | 'created_at'>) => {
+  // Mark follow-up complete mutation
+  const markCompleteM​utation = useMutation({
+    mutationFn: async (followUpId: string) => {
       const { data, error } = await supabase
-        .from('customer_communications')
-        .insert(communication)
+        .from('customer_follow_ups')
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', followUpId)
         .select()
         .single();
 
@@ -101,58 +85,38 @@ export const useCustomerService = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer-communications'] });
-      queryClient.invalidateQueries({ queryKey: ['today-follow-ups'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] });
       toast({
-        title: "تم إضافة التواصل",
-        description: "تم تسجيل التواصل مع العميل بنجاح",
+        title: "تم التحديث",
+        description: "تم تحديث حالة المتابعة",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating follow-up:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث المتابعة",
+        variant: "destructive",
       });
     },
   });
 
-  // إضافة ملاحظة جديدة
-  const addNoteMutation = useMutation({
-    mutationFn: async (note: Omit<CustomerNote, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('customer_notes')
-        .insert(note)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer-notes'] });
-      toast({
-        title: "تم إضافة الملاحظة",
-        description: "تم إضافة ملاحظة العميل بنجاح",
-      });
-    },
-  });
-
-  // دالة مساعدة لتحديث المتابعة بطريقة مبسطة
-  const updateFollowUp = (id: string, updates: Partial<CustomerFollowUp>) => {
-    updateFollowUpMutation.mutate({ id, updates });
+  const createFollowUp = (data: any) => {
+    createFollowUpMutation.mutate(data);
   };
 
-  // دالة مساعدة لإضافة التواصل بطريقة مبسطة
-  const addCommunication = (data: Omit<CustomerCommunication, 'id' | 'created_at'>) => {
-    addCommunicationMutation.mutate(data);
-  };
-
-  // دالة مساعدة لإضافة الملاحظة بطريقة مبسطة
-  const addNote = (data: Omit<CustomerNote, 'id' | 'created_at' | 'updated_at'>) => {
-    addNoteMutation.mutate(data);
+  const markFollowUpComplete = (id: string) => {
+    markCompleteMutation.mutate(id);
   };
 
   return {
     followUps,
-    followUpsLoading,
-    todayTasks,
-    updateFollowUp,
-    addCommunication,
-    addNote,
-    isUpdating: updateFollowUpMutation.isPending,
+    todayFollowUps,
+    overdueFollowUps,
+    createFollowUp,
+    markFollowUpComplete,
+    isLoading,
+    isCreating: createFollowUpMutation.isPending,
+    isUpdating: markCompleteMutation.isPending,
   };
 };
