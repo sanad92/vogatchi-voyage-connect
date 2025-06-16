@@ -1,14 +1,31 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CustomerSegmentBadge from "@/components/crm/CustomerSegmentBadge";
-import LoyaltyPointsDisplay from "@/components/crm/LoyaltyPointsDisplay";
-import CustomerBookingsList from "./CustomerBookingsList";
-import CustomerFollowUpButton from "./CustomerFollowUpButton";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  ListChecks,
+  DollarSign,
+  MessageSquare,
+  Package,
+  Plane,
+  Bus,
+  Car,
+  Star,
+} from "lucide-react";
 import { useCustomerData } from "@/hooks/useCustomerData";
-import { useCRM } from "@/hooks/useCRM";
-import { RefreshCw, AlertCircle, User, Calendar, Phone } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import LoyaltyPointsDisplay from "./LoyaltyPointsDisplay";
 
 interface CustomerDetailsDialogProps {
   selectedCustomer: string | null;
@@ -16,283 +33,254 @@ interface CustomerDetailsDialogProps {
 }
 
 const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDialogProps) => {
-  const { customerData, isLoading: customerDataLoading, error, refetch } = useCustomerData(selectedCustomer || '');
-  const { customerSegments } = useCRM();
+  const { customerData, isLoading, refetch, error } = useCustomerData(selectedCustomer || '');
 
-  if (!selectedCustomer) return null;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ar-EG');
-  };
-
-  const handleRetry = () => {
-    refetch();
-  };
-
-  const handleFollowUpCompleted = () => {
-    refetch();
-  };
+  useEffect(() => {
+    if (selectedCustomer) {
+      refetch();
+    }
+  }, [selectedCustomer, refetch]);
 
   return (
     <Dialog open={!!selectedCustomer} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-        {customerDataLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">جاري تحميل تفاصيل العميل...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-8 space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <div>
-              <p className="text-red-600 mb-2 font-medium">خطأ في تحميل تفاصيل العميل</p>
-              <p className="text-sm text-gray-600 mb-4">
-                {error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}
-              </p>
-              <p className="text-xs text-gray-500">
-                يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني
-              </p>
-            </div>
-            <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={handleRetry}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                إعادة المحاولة
-              </Button>
-              <Button variant="outline" onClick={onClose}>
-                إغلاق
-              </Button>
-            </div>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            تفاصيل العميل
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-gray-500">جاري تحميل بيانات العميل...</p>
           </div>
         ) : customerData ? (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                تفاصيل العميل - {customerData.name}
-                <CustomerSegmentBadge segment={customerSegments?.find(s => s.id === customerData.segment_id)} />
-              </DialogTitle>
-            </DialogHeader>
-            
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-                <TabsTrigger value="follow-up">متابعة العميل</TabsTrigger>
-                <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
-                <TabsTrigger value="loyalty">نقاط الولاء</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-4">
-                    {/* معلومات العميل الأساسية */}
-                    <div className="p-4 border rounded-lg">
-                      <h3 className="font-semibold mb-2">معلومات الاتصال</h3>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>الهاتف:</strong> {customerData.phone}</p>
-                        <p><strong>البريد الإلكتروني:</strong> {customerData.email || 'غير محدد'}</p>
-                        <p><strong>العنوان:</strong> {customerData.address || 'غير محدد'}</p>
-                        <p><strong>الجنسية:</strong> {customerData.nationality || 'غير محدد'}</p>
-                        <p><strong>تاريخ التسجيل:</strong> {formatDate(customerData.created_at)}</p>
-                        {customerData.last_booking_date && (
-                          <p><strong>آخر حجز:</strong> {formatDate(customerData.last_booking_date)}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* معلومات من أضاف العميل */}
-                    <div className="p-4 border rounded-lg">
-                      <h3 className="font-semibold mb-2 flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        معلومات إضافة العميل
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <p>
-                          <strong>تم إضافته بواسطة:</strong> {
-                            customerData.created_by_profile?.full_name || 
-                            customerData.created_by_profile?.email || 
-                            'غير محدد'
-                          }
-                        </p>
-                        <p><strong>تاريخ الإضافة:</strong> {formatDateTime(customerData.created_at)}</p>
-                      </div>
-                    </div>
-
-                    {/* إحصائيات العميل */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg text-center">
-                        <div className="text-2xl font-bold text-blue-600">{customerData.total_bookings || 0}</div>
-                        <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
-                      </div>
-                      <div className="p-4 border rounded-lg text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          {(customerData.total_spent || 0).toLocaleString()} ج.م
-                        </div>
-                        <div className="text-sm text-gray-600">إجمالي المنفق</div>
-                      </div>
-                    </div>
+          <div className="space-y-6">
+            {/* البيانات الأساسية */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">المعلومات الشخصية</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">{customerData.name}</span>
                   </div>
-
-                  {/* نقاط الولاء */}
-                  <div>
-                    <LoyaltyPointsDisplay 
-                      customerId={selectedCustomer}
-                      loyaltyPoints={customerData.loyalty_points || 0}
-                      onRedeemPoints={() => {
-                        refetch();
-                      }}
-                    />
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span>{customerData.email || 'غير متوفر'}</span>
                   </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="follow-up" className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* معلومات آخر متابعة */}
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      معلومات آخر متابعة
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      {customerData.last_follow_up_date ? (
-                        <>
-                          <p>
-                            <strong>تاريخ آخر متابعة:</strong> {formatDateTime(customerData.last_follow_up_date)}
-                          </p>
-                          <p>
-                            <strong>تمت بواسطة:</strong> {
-                              customerData.last_follow_up_by_profile?.full_name || 
-                              customerData.last_follow_up_by_profile?.email || 
-                              'غير محدد'
-                            }
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-yellow-600">لم تتم أي متابعة مع هذا العميل بعد</p>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span>{customerData.phone}</span>
                   </div>
-
-                  {/* زر المتابعة */}
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      تسجيل متابعة جديدة
-                    </h3>
-                    <CustomerFollowUpButton
-                      customerId={selectedCustomer}
-                      customerName={customerData.name}
-                      lastFollowUpDate={customerData.last_follow_up_date}
-                      onFollowUpCompleted={handleFollowUpCompleted}
-                    />
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span>{customerData.address || 'غير متوفر'}</span>
                   </div>
-                </div>
-
-                {/* سجل المتابعات السابقة */}
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-3">سجل المتابعات السابقة</h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {customerData.follow_ups && customerData.follow_ups.length > 0 ? (
-                      customerData.follow_ups
-                        .filter((followUp: any) => followUp.status === 'completed')
-                        .map((followUp: any) => (
-                          <div key={followUp.id} className="flex justify-between items-start p-2 bg-gray-50 rounded">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">{followUp.notes || 'متابعة عامة'}</div>
-                              <div className="text-xs text-gray-500">
-                                {formatDateTime(followUp.completed_at || followUp.created_at)}
-                              </div>
-                              {followUp.assigned_to_profile?.full_name && (
-                                <div className="text-xs text-blue-600">
-                                  بواسطة: {followUp.assigned_to_profile.full_name}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      <div className="text-center text-gray-500 py-4">
-                        لا توجد متابعات سابقة
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span>
+                      تاريخ التسجيل:{' '}
+                      {formatDate(customerData.created_at || '')}
+                    </span>
                   </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="bookings" className="space-y-4">
-                <CustomerBookingsList
-                  hotelBookings={customerData.hotel_bookings || []}
-                  flightBookings={customerData.flight_bookings || []}
-                  transportBookings={customerData.transport_bookings || []}
-                  carRentals={customerData.car_rentals || []}
-                />
-              </TabsContent>
-
-              <TabsContent value="loyalty" className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <LoyaltyPointsDisplay 
-                    customerId={selectedCustomer}
-                    loyaltyPoints={customerData.loyalty_points || 0}
-                    onRedeemPoints={() => {
-                      refetch();
-                    }}
-                  />
                   
-                  {/* تاريخ معاملات نقاط الولاء */}
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-semibold mb-3">تاريخ معاملات النقاط</h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {customerData.loyalty_transactions && customerData.loyalty_transactions.length > 0 ? (
-                        customerData.loyalty_transactions.map((transaction: any) => (
-                          <div key={transaction.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <div className="text-sm">
-                              <div className="font-medium">{transaction.description}</div>
-                              <div className="text-gray-500 text-xs">
-                                {formatDate(transaction.created_at)}
-                              </div>
-                            </div>
-                            <div className={`text-sm font-medium ${
-                              transaction.transaction_type === 'earned' ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {transaction.transaction_type === 'earned' ? '+' : '-'}
-                              {transaction.points_earned || transaction.points_used} نقطة
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center text-gray-500 py-4">
-                          لا توجد معاملات نقاط ولاء
-                        </div>
-                      )}
+                  {/* إضافة عرض نقاط الولاء */}
+                  {customerData.loyalty_points && customerData.loyalty_points > 0 && (
+                    <div className="pt-3 border-t">
+                      <LoyaltyPointsDisplay
+                        points={customerData.loyalty_points}
+                        size="lg"
+                        showProgress={true}
+                      />
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* إحصائيات العميل */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">إحصائيات</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ListChecks className="h-4 w-4 text-gray-500" />
+                      <span>عدد الحجوزات:</span>
+                    </div>
+                    <Badge variant="secondary">
+                      {customerData.total_bookings || 0}
+                    </Badge>
                   </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </>
-        ) : (
-          <div className="text-center py-8 space-y-4">
-            <AlertCircle className="h-12 w-12 text-gray-500 mx-auto" />
-            <p className="text-gray-600 mb-4">لم يتم العثور على بيانات العميل</p>
-            <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={handleRetry}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                إعادة المحاولة
-              </Button>
-              <Button variant="outline" onClick={onClose}>
-                إغلاق
-              </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <span>إجمالي الإنفاق:</span>
+                    </div>
+                    <Badge variant="secondary">
+                      {customerData.total_spent || 0}
+                    </Badge>
+                  </div>
+                  {customerData.segment && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-gray-500" />
+                        <span>الشريحة:</span>
+                      </div>
+                      <Badge className="capitalize" style={{ backgroundColor: customerData.segment.color, color: 'white' }}>
+                        {customerData.segment.name_ar}
+                      </Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
+
+            {/* تفاصيل الحجوزات */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">الحجوزات</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* حجوزات الفنادق */}
+                {customerData.hotel_bookings && customerData.hotel_bookings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        حجوزات الفنادق
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {customerData.hotel_bookings.map((booking: any) => (
+                        <div key={booking.id} className="flex items-center justify-between">
+                          <span>{booking.hotel_name}</span>
+                          <Badge>{booking?.status?.name_ar}</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* حجوزات الطيران */}
+                {customerData.flight_bookings && customerData.flight_bookings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Plane className="h-4 w-4" />
+                        حجوزات الطيران
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {customerData.flight_bookings.map((booking: any) => (
+                        <div key={booking.id} className="flex items-center justify-between">
+                          <span>
+                            {booking.departure_airport?.iata_code} -{' '}
+                            {booking.arrival_airport?.iata_code}
+                          </span>
+                          <Badge>{booking?.status?.name_ar}</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* حجوزات النقل */}
+                {customerData.transport_bookings && customerData.transport_bookings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Bus className="h-4 w-4" />
+                        حجوزات النقل
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {customerData.transport_bookings.map((booking: any) => (
+                        <div key={booking.id} className="flex items-center justify-between">
+                          <span>{booking.route?.route_name_ar}</span>
+                          <Badge>{booking?.status?.name_ar}</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* حجوزات تأجير السيارات */}
+                {customerData.car_rentals && customerData.car_rentals.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Car className="h-4 w-4" />
+                        حجوزات تأجير السيارات
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {customerData.car_rentals.map((booking: any) => (
+                        <div key={booking.id} className="flex items-center justify-between">
+                          <span>{booking.vehicle_type?.name_ar}</span>
+                          <Badge>{booking?.status?.name_ar}</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            {/* التواصل والملاحظات */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    التواصل
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {customerData.communications && customerData.communications.length > 0 ? (
+                    customerData.communications.map((communication: any) => (
+                      <div key={communication.id} className="flex items-center justify-between">
+                        <span>{communication.communication_type}</span>
+                        <span>{communication.created_at}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">لا يوجد سجل تواصل</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    الملاحظات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {customerData.notes && customerData.notes.length > 0 ? (
+                    customerData.notes.map((note: any) => (
+                      <div key={note.id} className="space-y-1">
+                        <p className="text-sm">{note.content}</p>
+                        <div className="text-xs text-gray-500">
+                          بواسطة: {note.created_by_profile?.full_name || 'غير معروف'}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">لا يوجد ملاحظات</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-red-500">
+              {error ? 'فشل في تحميل بيانات العميل' : 'العميل غير موجود'}
+            </p>
           </div>
         )}
       </DialogContent>

@@ -15,6 +15,9 @@ import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
 import CustomerPersonalDashboard from "@/components/customers/CustomerPersonalDashboard";
 import CustomerCommunicationHub from "@/components/customers/CustomerCommunicationHub";
 import CustomerSmartAnalytics from "@/components/customers/CustomerSmartAnalytics";
+import CustomerLoyaltyManager from "@/components/customers/CustomerLoyaltyManager";
+import AdvancedFollowUpAutomation from "@/components/customers/AdvancedFollowUpAutomation";
+import CustomerSatisfactionTracker from "@/components/customers/CustomerSatisfactionTracker";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
 
@@ -170,7 +173,7 @@ const Customers = () => {
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         return filtered.filter(customer => 
-          !customer.last_booking_date || new Date(customer.last_booking_date) < sixMonthsAgo
+          !customer.last_booking_date || new Date(customer.last_booking_date) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         );
       default:
         return filtered;
@@ -281,7 +284,7 @@ const Customers = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="all">جميع العملاء</TabsTrigger>
           <TabsTrigger value="vip" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
@@ -297,6 +300,14 @@ const Customers = () => {
             <BarChart3 className="h-4 w-4" />
             تحليلات
           </TabsTrigger>
+          <TabsTrigger value="loyalty" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            الولاء
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            الأتمتة
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
@@ -305,6 +316,23 @@ const Customers = () => {
 
         <TabsContent value="analytics" className="space-y-4">
           <CustomerSmartAnalytics customers={filteredCustomers} />
+        </TabsContent>
+
+        <TabsContent value="loyalty" className="space-y-4">
+          <div className="grid grid-cols-1 gap-6">
+            <CustomerLoyaltyManager
+              customers={filteredCustomers}
+              selectedCustomers={selectedCustomers}
+            />
+            <CustomerSatisfactionTracker
+              customers={filteredCustomers}
+              selectedCustomers={selectedCustomers}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="automation" className="space-y-4">
+          <AdvancedFollowUpAutomation customers={filteredCustomers} />
         </TabsContent>
 
         <TabsContent value={activeTab} className="space-y-4" 
