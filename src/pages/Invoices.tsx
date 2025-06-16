@@ -1,7 +1,4 @@
-
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,28 +6,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Printer, Search, Eye, Edit, Trash2, AlertCircle, Plus } from "lucide-react";
+import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInitialInvoices } from "@/hooks/useInitialInvoices";
 import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
-import InvoicesHeader from "@/components/invoices/InvoicesHeader";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
 import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
-import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
-import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
-import { toast } from "sonner";
 
 const Invoices = () => {
-  // Initialize with sample invoices if none exist
   useInitialInvoices();
 
-  const [selectedHotelBooking, setSelectedHotelBooking] = useState(null);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -44,7 +33,6 @@ const Invoices = () => {
   
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // استخدام hook إدارة الفواتير الجديد
   const {
     invoices,
     isLoading,
@@ -64,51 +52,6 @@ const Invoices = () => {
   });
 
   const stats = getInvoiceStats();
-
-  const getBookingDetails = (invoice) => {
-    switch (invoice.booking_type) {
-      case "hotel":
-        return {
-          booking: invoice.hotel_booking,
-          title: invoice.hotel_booking?.hotel_name || "فندق غير محدد",
-          subtitle: invoice.hotel_booking?.destination_city || "مدينة غير محددة",
-          date: invoice.hotel_booking?.check_in_date,
-          reference: invoice.hotel_booking?.internal_booking_number,
-        };
-      case "flight":
-        return {
-          booking: invoice.flight_booking,
-          title: invoice.flight_booking?.airline_name || "شركة طيران غير محددة",
-          subtitle: `طيران`,
-          date: invoice.flight_booking?.departure_date,
-          reference: invoice.flight_booking?.booking_reference,
-        };
-      case "transport":
-        return {
-          booking: invoice.transport_booking,
-          title: "خدمة نقل",
-          subtitle: "نقل",
-          date: invoice.transport_booking?.service_date,
-          reference: invoice.transport_booking?.booking_reference,
-        };
-      case "car_rental":
-        return {
-          booking: invoice.car_rental,
-          title: "إيجار سيارة",
-          subtitle: "إيجار سيارة",
-          date: invoice.car_rental?.pickup_date,
-          reference: invoice.car_rental?.rental_reference,
-        };
-      default:
-        return {
-          booking: null,
-          title: invoice.notes || "خدمة عامة",
-          subtitle: "فاتورة مستقلة",
-          date: invoice.issued_date,
-          reference: invoice.invoice_number,
-        };
-    }
-  };
 
   const getBookingTypeLabel = (type) => {
     const types = {
@@ -492,34 +435,6 @@ const Invoices = () => {
             isLoading={isUpdatingInvoice}
           />
         </>
-      )}
-
-      {showInvoiceModal && selectedHotelBooking && (
-        <HotelInvoiceGenerator
-          booking={selectedHotelBooking}
-          onClose={() => {
-            setShowInvoiceModal(false);
-            setSelectedHotelBooking(null);
-          }}
-        />
-      )}
-      
-      {showVoucherModal && selectedHotelBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full relative">
-            <button
-              aria-label="إغلاق"
-              className="absolute top-2 left-2 text-gray-400 text-xl"
-              onClick={() => setShowVoucherModal(false)}
-            >
-              &times;
-            </button>
-            <HotelVoucherGenerator
-              booking={selectedHotelBooking}
-              onClose={() => setShowVoucherModal(false)}
-            />
-          </div>
-        </div>
       )}
     </div>
   );
