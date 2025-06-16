@@ -93,11 +93,21 @@ export const useInvoicesManagement = (filters?: InvoiceFilters) => {
       status: string; 
       paymentDate?: string; 
     }) => {
-      const { data, error } = await supabase.rpc('update_invoice_status', {
-        p_invoice_id: invoiceId,
-        p_status: status,
-        p_payment_date: paymentDate || null
-      });
+      const updateData: any = {
+        status,
+        updated_at: new Date().toISOString()
+      };
+
+      if (status === 'paid' && paymentDate) {
+        updateData.paid_date = paymentDate;
+      }
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .update(updateData)
+        .eq('id', invoiceId)
+        .select()
+        .single();
 
       if (error) throw error;
       return data;
