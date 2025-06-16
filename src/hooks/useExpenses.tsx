@@ -23,10 +23,10 @@ export const useExpenses = () => {
   } = useRentContracts();
 
   const {
-    expenseTransactions,
-    transactionsLoading,
-    addExpenseTransaction,
-    isAddingTransaction,
+    transactions,
+    isLoading: transactionsLoading,
+    addTransaction,
+    isAdding: isAddingTransaction,
   } = useExpenseTransactions();
 
   const {
@@ -83,10 +83,10 @@ export const useExpenses = () => {
     addRentContract,
     isAddingContract,
     
-    // Expense Transactions
-    expenseTransactions,
+    // Expense Transactions - إصلاح الأسماء
+    expenseTransactions: transactions,
     transactionsLoading,
-    addExpenseTransaction,
+    addExpenseTransaction: addTransaction,
     isAddingTransaction,
     
     // Salaries
