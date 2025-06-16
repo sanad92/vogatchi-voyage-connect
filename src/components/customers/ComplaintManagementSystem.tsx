@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -225,6 +224,7 @@ const ComplaintManagementSystem = ({ customers }: ComplaintManagementProps) => {
                         <SelectValue placeholder="اختر العميل" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="no_customer">بدون عميل محدد</SelectItem>
                         {customers.slice(0, 10).map(customer => (
                           <SelectItem key={customer.id} value={customer.id}>
                             {customer.name}
