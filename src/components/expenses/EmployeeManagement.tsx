@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -8,8 +7,8 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import EmployeeStatsHeader from './employee-management/EmployeeStatsHeader';
-import EmployeeFilters from './employee-management/EmployeeFilters';
-import EmployeeCard from './employee-management/EmployeeCard';
+import EnhancedEmployeeFilters from './employee-management/enhanced/EnhancedEmployeeFilters';
+import EnhancedEmployeeCard from './employee-management/enhanced/EnhancedEmployeeCard';
 import EmployeeEmptyState from './employee-management/EmployeeEmptyState';
 import EmployeeFormDialog from './employee-management/EmployeeFormDialog';
 import { useEmployeeForm } from './employee-management/useEmployeeForm';
@@ -245,7 +244,7 @@ const EmployeeManagement = () => {
         onAddEmployee={() => setIsAddDialogOpen(true)}
       />
 
-      <EmployeeFilters
+      <EnhancedEmployeeFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
       />
@@ -258,7 +257,7 @@ const EmployeeManagement = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (
-            <EmployeeCard
+            <EnhancedEmployeeCard
               key={employee.id}
               employee={employee}
               onLinkEmployee={handleLinkEmployee}
