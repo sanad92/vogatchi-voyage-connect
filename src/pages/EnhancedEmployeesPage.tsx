@@ -2,11 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Shield } from 'lucide-react';
 import EnhancedEmployeeManagement from '@/components/expenses/employee-management/enhanced/EnhancedEmployeeManagement';
-import { useInitialEmployees } from '@/hooks/useInitialEmployees';
 import { useAuth } from '@/hooks/useAuth';
 
 const EnhancedEmployeesPage = () => {
-  useInitialEmployees();
   const { hasRole, isSuperAdmin } = useAuth();
 
   return (
