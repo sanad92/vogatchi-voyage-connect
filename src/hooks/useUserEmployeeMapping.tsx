@@ -65,14 +65,14 @@ export const useUserEmployeeMapping = () => {
             setCurrentEmployee(employeeData);
             setError(null);
             
-            // محاولة ربط تلقائي
+            // محاولة ربط تلقائي باستخدام الـ function المحسن
             try {
-              const { error: linkError } = await supabase.rpc('link_user_to_employee', {
+              const { data: linkResult, error: linkError } = await supabase.rpc('link_user_to_employee', {
                 p_user_id: user.id,
                 p_employee_id: employeeData.id
               });
               
-              if (!linkError) {
+              if (!linkError && linkResult) {
                 console.log('✅ تم الربط التلقائي بنجاح');
                 toast.success('تم ربط حسابك بملف الموظف تلقائياً');
                 // تحديث البيانات
@@ -98,7 +98,7 @@ export const useUserEmployeeMapping = () => {
     }
   };
 
-  // ربط مستخدم بموظف
+  // ربط مستخدم بموظف باستخدام الـ function المحسن
   const linkUserToEmployee = async (employeeId: string) => {
     if (!user?.id) {
       toast.error('المستخدم غير مسجل الدخول');
@@ -108,14 +108,14 @@ export const useUserEmployeeMapping = () => {
     try {
       console.log('🔄 بدء ربط المستخدم بالموظف:', { userId: user.id, employeeId });
       
-      const { error } = await supabase.rpc('link_user_to_employee', {
+      const { data, error } = await supabase.rpc('link_user_to_employee', {
         p_user_id: user.id,
         p_employee_id: employeeId
       });
 
-      if (error) {
+      if (error || !data) {
         console.error('Error linking user to employee:', error);
-        toast.error('فشل في ربط المستخدم بالموظف: ' + error.message);
+        toast.error('فشل في ربط المستخدم بالموظف: ' + (error?.message || 'خطأ غير معروف'));
         return false;
       }
 

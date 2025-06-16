@@ -1,104 +1,91 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useAuth } from './useAuth';
 import { useEmployees } from './useEmployees';
 
-const initialEmployees = [
+// عينة من الموظفين الافتراضيين
+const sampleEmployees = [
   {
-    employee_code: 'EMP001',
-    full_name: 'أحمد محمد',
-    email: 'ahmed@vogatchi.com',
-    position: 'مدير مبيعات',
+    employee_code: 'EMP-001',
+    full_name: 'أحمد محمد علي',
+    position: 'مدير المبيعات',
     department: 'المبيعات',
-    hire_date: '2023-01-15',
-    salary_scale_level: 3,
-    base_salary: 8000.00,
-    allowances: 1000.00,
-    commission_rate: 5.0,
-    is_active: true
+    phone: '+20123456789',
+    email: 'ahmed@company.com',
+    hire_date: '2024-01-15',
+    salary_scale_level: 1,
+    base_salary: 8000,
+    allowances: 1500,
+    commission_rate: 5,
+    commission_type: 'percentage' as const,
+    total_commission_earned: 0,
+    is_active: true,
+    bank_name: 'البنك الأهلي المصري',
+    bank_account_number: '1234567890',
+    emergency_contact_name: 'فاطمة علي',
+    emergency_contact_phone: '+20987654321',
   },
   {
-    employee_code: 'EMP002',
-    full_name: 'فاطمة علي',
-    email: 'fatma@vogatchi.com',
-    position: 'مندوب حجوزات',
-    department: 'الحجوزات',
-    hire_date: '2023-02-01',
-    salary_scale_level: 2,
-    base_salary: 5000.00,
-    allowances: 500.00,
-    commission_rate: 3.0,
-    is_active: true
-  },
-  {
-    employee_code: 'EMP003',
-    full_name: 'محمد حسن',
-    email: 'mohamed@vogatchi.com',
-    position: 'محاسب',
+    employee_code: 'EMP-002',
+    full_name: 'سارة أحمد حسن',
+    position: 'محاسبة',
     department: 'المحاسبة',
-    hire_date: '2023-03-10',
-    salary_scale_level: 2,
-    base_salary: 7000.00,
-    allowances: 800.00,
-    commission_rate: 2.0,
-    is_active: true
+    phone: '+20111222333',
+    email: 'sara@company.com',
+    hire_date: '2024-02-01',
+    salary_scale_level: 1,
+    base_salary: 6500,
+    allowances: 1000,
+    commission_rate: 0,
+    commission_type: 'percentage' as const,
+    total_commission_earned: 0,
+    is_active: true,
+    bank_name: 'بنك مصر',
+    bank_account_number: '0987654321',
+    emergency_contact_name: 'محمد حسن',
+    emergency_contact_phone: '+20444555666',
   },
   {
-    employee_code: 'EMP004',
-    full_name: 'سارة أحمد',
-    email: 'sara@vogatchi.com',
+    employee_code: 'EMP-003',
+    full_name: 'محمد عبد الرحمن',
     position: 'مندوب مبيعات',
     department: 'المبيعات',
-    hire_date: '2023-04-05',
+    phone: '+20777888999',
+    email: 'mohamed@company.com',
+    hire_date: '2024-03-10',
     salary_scale_level: 1,
-    base_salary: 4500.00,
-    allowances: 400.00,
-    commission_rate: 4.0,
-    is_active: true
-  },
-  {
-    employee_code: 'EMP005',
-    full_name: 'علي محمود',
-    email: 'ali@vogatchi.com',
-    position: 'مساعد إداري',
-    department: 'الإدارة',
-    hire_date: '2023-05-20',
-    salary_scale_level: 1,
-    base_salary: 3500.00,
-    allowances: 300.00,
-    commission_rate: 1.0,
-    is_active: true
-  },
-  {
-    employee_code: 'EMP006',
-    full_name: 'نور الدين',
-    email: 'nour@vogatchi.com',
-    position: 'مطور نظم',
-    department: 'تقنية المعلومات',
-    hire_date: '2023-06-15',
-    salary_scale_level: 3,
-    base_salary: 9000.00,
-    allowances: 1200.00,
-    commission_rate: 0.0,
-    is_active: true
+    base_salary: 5000,
+    allowances: 800,
+    commission_rate: 3,
+    commission_type: 'percentage' as const,
+    total_commission_earned: 0,
+    is_active: true,
+    bank_name: 'البنك التجاري الدولي',
+    bank_account_number: '5555666777',
+    emergency_contact_name: 'عائشة عبد الرحمن',
+    emergency_contact_phone: '+20333444555',
   }
 ];
 
 export const useInitialEmployees = () => {
+  const { isSuperAdmin } = useAuth();
   const { employees, addEmployee } = useEmployees();
-  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (employees && employees.length === 0 && !initialized) {
-      setInitialized(true);
+    // فقط السوبر أدمن يمكنه إضافة الموظفين الافتراضيين
+    if (!isSuperAdmin()) return;
+
+    // إذا لم يكن هناك موظفين، أضف العينة
+    if (employees && employees.length === 0) {
+      console.log('🔄 إضافة موظفين افتراضيين...');
       
-      // Add initial employees one by one
-      initialEmployees.forEach((employee, index) => {
+      sampleEmployees.forEach((employee, index) => {
         setTimeout(() => {
           addEmployee(employee);
-        }, index * 500); // Stagger the additions to avoid conflicts
+        }, index * 1000); // تأخير بسيط بين كل إضافة
       });
     }
-  }, [employees, addEmployee, initialized]);
+  }, [employees, isSuperAdmin, addEmployee]);
 
-  return { initialized };
+  return null; // هذا hook لا يعيد شيء
 };

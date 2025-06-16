@@ -90,41 +90,30 @@ export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
       console.log('🔄 جاري جلب الموظفين غير المرتبطين...');
       
       try {
-        // جلب جميع IDs الموظفين المرتبطين أولاً
-        const { data: linkedEmployeeIds, error: linkedError } = await supabase
-          .from('profiles')
-          .select('employee_id')
-          .not('employee_id', 'is', null);
-
-        if (linkedError) {
-          console.error('❌ خطأ في جلب الموظفين المرتبطين:', linkedError);
-          throw linkedError;
-        }
-
-        // استخراج الـ IDs
-        const linkedIds = linkedEmployeeIds?.map(p => p.employee_id).filter(Boolean) || [];
-        
-        // جلب الموظفين غير المرتبطين
-        let query = supabase
+        // الطريقة المحسنة: استخدام LEFT JOIN بدلاً من الـ filter المعقد
+        const { data, error } = await supabase
           .from('employees')
-          .select('*')
+          .select(`
+            *,
+            profiles!left(id)
+          `)
           .eq('is_active', true)
+          .is('profiles.id', null)
           .order('full_name');
-
-        // إضافة filter للموظفين غير المرتبطين إذا كان هناك موظفين مرتبطين
-        if (linkedIds.length > 0) {
-          query = query.not('id', 'in', `(${linkedIds.map(id => `'${id}'`).join(',')})`);
-        }
-
-        const { data, error } = await query;
         
         if (error) {
           console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
           throw error;
         }
         
-        console.log('✅ تم جلب الموظفين غير المرتبطين:', data?.length || 0);
-        return data as UnlinkedEmployee[];
+        // تنظيف البيانات - إزالة profiles من النتيجة
+        const cleanedData = data?.map(employee => {
+          const { profiles, ...employeeData } = employee;
+          return employeeData;
+        }) || [];
+        
+        console.log('✅ تم جلب الموظفين غير المرتبطين:', cleanedData.length);
+        return cleanedData as UnlinkedEmployee[];
       } catch (error) {
         console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
         toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');

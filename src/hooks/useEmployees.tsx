@@ -45,6 +45,30 @@ export const useEmployees = () => {
       console.log('🔄 إضافة موظف جديد:', employee);
       
       try {
+        // التحقق من عدم تكرار رقم الموظف
+        const { data: existingEmployee } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('employee_code', employee.employee_code)
+          .single();
+
+        if (existingEmployee) {
+          throw new Error(`رقم الموظف "${employee.employee_code}" مستخدم بالفعل`);
+        }
+
+        // التحقق من عدم تكرار البريد الإلكتروني إذا تم إدخاله
+        if (employee.email) {
+          const { data: existingEmailEmployee } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('email', employee.email)
+            .single();
+
+          if (existingEmailEmployee) {
+            throw new Error(`البريد الإلكتروني "${employee.email}" مستخدم بالفعل`);
+          }
+        }
+
         const { data, error } = await supabase
           .from('employees')
           .insert(employee)
