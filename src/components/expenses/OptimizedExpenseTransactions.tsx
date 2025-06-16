@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,9 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Check,
+  X
 } from 'lucide-react';
 import { useExpenseTransactionsOptimized } from '@/hooks/useExpenseTransactionsOptimized';
 import { useExpenseCategories } from '@/hooks/useExpenseCategories';
@@ -30,6 +31,10 @@ import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExpenseTransactionForm from './ExpenseTransactionForm';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
+import ViewExpenseTransactionDialog from './dialogs/ViewExpenseTransactionDialog';
+import EditExpenseTransactionDialog from './dialogs/EditExpenseTransactionDialog';
+import DeleteExpenseTransactionDialog from './dialogs/DeleteExpenseTransactionDialog';
+import ApproveRejectTransactionDialog from './dialogs/ApproveRejectTransactionDialog';
 
 const OptimizedExpenseTransactions = () => {
   // حالة الفلاتر والصفحات
@@ -46,6 +51,13 @@ const OptimizedExpenseTransactions = () => {
   const [pageSize, setPageSize] = useState(50);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+
+  // حالة الحوارات
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
 
   // استخدام debounce للبحث لتحسين الأداء
   const debouncedSearch = useDebounce(filters.search, 500);
@@ -68,9 +80,11 @@ const OptimizedExpenseTransactions = () => {
     updateTransaction,
     deleteTransaction,
     isAdding,
+    isUpdating,
+    isDeleting,
   } = useExpenseTransactionsOptimized(debouncedFilters, { page: currentPage, pageSize });
 
-  // بيانات مساعدة للفلاتر - إصلاح المشكلة
+  // بيانات مساعدة للفلاتر
   const { expenseCategories: categories } = useExpenseCategories();
   const { bankAccounts } = useBankAccounts();
 
@@ -108,6 +122,83 @@ const OptimizedExpenseTransactions = () => {
       console.error('خطأ في إضافة المعاملة:', error);
     }
   }, [addTransaction]);
+
+  // معالجة عرض المعاملة
+  const handleViewTransaction = useCallback((transaction: any) => {
+    setSelectedTransaction(transaction);
+    setViewDialogOpen(true);
+  }, []);
+
+  // معالجة تعديل المعاملة
+  const handleEditTransaction = useCallback((transaction: any) => {
+    setSelectedTransaction(transaction);
+    setEditDialogOpen(true);
+  }, []);
+
+  // معالجة حذف المعاملة
+  const handleDeleteTransaction = useCallback((transaction: any) => {
+    setSelectedTransaction(transaction);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // معالجة الموافقة/الرفض
+  const handleApproveReject = useCallback((transaction: any) => {
+    setSelectedTransaction(transaction);
+    setApproveRejectDialogOpen(true);
+  }, []);
+
+  // تنفيذ التعديل
+  const handleUpdateTransaction = useCallback(async (id: string, data: any) => {
+    try {
+      await updateTransaction({ id, ...data });
+      setEditDialogOpen(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('خطأ في تحديث المعاملة:', error);
+    }
+  }, [updateTransaction]);
+
+  // تنفيذ الحذف
+  const handleConfirmDelete = useCallback(async (id: string) => {
+    try {
+      await deleteTransaction(id);
+      setDeleteDialogOpen(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('خطأ في حذف المعاملة:', error);
+    }
+  }, [deleteTransaction]);
+
+  // تنفيذ الموافقة
+  const handleApprove = useCallback(async (id: string, notes?: string) => {
+    try {
+      await updateTransaction({ 
+        id, 
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        notes: notes || undefined
+      });
+      setApproveRejectDialogOpen(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('خطأ في الموافقة على المعاملة:', error);
+    }
+  }, [updateTransaction]);
+
+  // تنفيذ الرفض
+  const handleReject = useCallback(async (id: string, notes: string) => {
+    try {
+      await updateTransaction({ 
+        id, 
+        status: 'rejected',
+        notes: notes
+      });
+      setApproveRejectDialogOpen(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('خطأ في رفض المعاملة:', error);
+    }
+  }, [updateTransaction]);
 
   // إحصائيات سريعة
   const stats = useMemo(() => {
@@ -418,20 +509,46 @@ const OptimizedExpenseTransactions = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="flex items-center gap-2 text-2xl font-bold text-green-600 mb-2">
+                      <div className="flex items-center gap-2 text-2xl font-bold text-green-600 mb-3">
                         <DollarSign className="h-6 w-6" />
                         <EgyptianPoundDisplay amount={transaction.amount} />
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="h-8 px-3">
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 px-3"
+                          onClick={() => handleViewTransaction(transaction)}
+                        >
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 px-3">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 px-3"
+                          onClick={() => handleEditTransaction(transaction)}
+                        >
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 px-3 text-red-600 hover:text-red-700">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 px-3 text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteTransaction(transaction)}
+                        >
                           <Trash2 className="h-3 w-3" />
                         </Button>
+                        {transaction.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-8 px-3 text-blue-600 hover:text-blue-700"
+                            onClick={() => handleApproveReject(transaction)}
+                          >
+                            <Check className="h-3 w-3 mr-1" />
+                            إدارة
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -515,7 +632,7 @@ const OptimizedExpenseTransactions = () => {
         </Card>
       )}
 
-      {/* نموذج إضافة معاملة - إصلاح الخصائص */}
+      {/* نموذج إضافة معاملة */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -527,6 +644,38 @@ const OptimizedExpenseTransactions = () => {
           </div>
         </div>
       )}
+
+      {/* الحوارات */}
+      <ViewExpenseTransactionDialog
+        transaction={selectedTransaction}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+
+      <EditExpenseTransactionDialog
+        transaction={selectedTransaction}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubmit={handleUpdateTransaction}
+        isSubmitting={isUpdating}
+      />
+
+      <DeleteExpenseTransactionDialog
+        transaction={selectedTransaction}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
+
+      <ApproveRejectTransactionDialog
+        transaction={selectedTransaction}
+        open={approveRejectDialogOpen}
+        onOpenChange={setApproveRejectDialogOpen}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        isSubmitting={isUpdating}
+      />
     </div>
   );
 };
