@@ -53,7 +53,7 @@ export const useEnhancedCustomerValidation = () => {
 
   // فحص تكرار رقم الهاتف مع تحسينات
   const checkDuplicatePhone = async (phone: string, excludeId?: string) => {
-    if (!phone) return false;
+    if (!phone) return { isDuplicate: false };
     
     const phoneValidation = validatePhoneNumber(phone);
     if (!phoneValidation.isValid) {
@@ -150,8 +150,10 @@ export const useEnhancedCustomerValidation = () => {
       email: customerData.email ? await checkDuplicateEmail(customerData.email, excludeId) : { isDuplicate: false }
     };
 
-    // فحص إذا كان هناك أي تكرار
-    const hasDuplication = results.phone.isDuplicate || results.email.isDuplicate;
+    // فحص إذا كان هناك أي تكرار - التأكد من أن النتائج كائنات صحيحة
+    const phoneHasDuplicate = typeof results.phone === 'object' && 'isDuplicate' in results.phone && results.phone.isDuplicate;
+    const emailHasDuplicate = typeof results.email === 'object' && 'isDuplicate' in results.email && results.email.isDuplicate;
+    const hasDuplication = phoneHasDuplicate || emailHasDuplicate;
     
     return {
       hasDuplication,

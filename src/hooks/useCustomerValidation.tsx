@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useEnhancedCustomerValidation } from "./useEnhancedCustomerValidation";
 
@@ -9,9 +10,12 @@ export const useCustomerValidation = () => {
     checkDuplicatePhone: async (phone: string, excludeId?: string) => {
       const result = await checkDuplicatePhone(phone, excludeId);
       
-      // Return old format for compatibility
-      if (result.isDuplicate) {
-        return result.existingCustomer;
+      // التحقق من نوع النتيجة بشكل آمن
+      if (typeof result === 'object' && result !== null && 'isDuplicate' in result) {
+        // Return old format for compatibility
+        if (result.isDuplicate && 'existingCustomer' in result) {
+          return result.existingCustomer;
+        }
       }
       
       return false;

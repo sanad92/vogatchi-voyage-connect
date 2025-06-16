@@ -14,7 +14,7 @@ export const useCustomerForm = ({
 }: UseCustomerFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, control, reset } = useForm<CustomerData>({
+  const { register, handleSubmit, formState: { errors }, control, reset, watch } = useForm<CustomerData>({
     defaultValues: {
       name: initialData?.name || "",
       phone: initialData?.phone || "",
@@ -96,6 +96,7 @@ export const useCustomerForm = ({
     control,
     isSubmitting,
     onSubmit,
-    reset
+    reset,
+    watch
   };
 };
