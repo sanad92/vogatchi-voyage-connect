@@ -32,21 +32,27 @@ interface EmployeeCardActionsProps {
     is_active: boolean;
   };
   onLinkEmployee?: (employeeId: string) => void;
+  onViewDetails: () => void;
+  onEditEmployee: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
   isLoading: boolean;
   canToggleStatus: boolean;
   canDelete: boolean;
+  canEdit: boolean;
 }
 
 const EmployeeCardActions = ({ 
   employee, 
   onLinkEmployee, 
+  onViewDetails,
+  onEditEmployee,
   onToggleStatus, 
   onDelete, 
   isLoading, 
   canToggleStatus, 
-  canDelete 
+  canDelete,
+  canEdit
 }: EmployeeCardActionsProps) => {
   const { hasRole, isSuperAdmin } = useAuth();
 
@@ -85,14 +91,14 @@ const EmployeeCardActions = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={onViewDetails}>
             <Eye className="h-4 w-4 mr-2" />
             عرض التفاصيل
           </DropdownMenuItem>
           
-          {(hasRole('admin') || hasRole('manager') || isSuperAdmin()) && (
+          {canEdit && (
             <>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onEditEmployee}>
                 <Edit className="h-4 w-4 mr-2" />
                 تعديل البيانات
               </DropdownMenuItem>

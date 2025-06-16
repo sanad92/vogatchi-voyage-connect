@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +17,66 @@ export const useEmployeeActions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { isSuperAdmin, hasRole } = useAuth();
   const queryClient = useQueryClient();
+
+  // تحديث بيانات الموظف
+  const updateEmployee = async (employeeData: any) => {
+    if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
+      toast.error('ليس لديك صلاحية لهذه العملية');
+      return { success: false, error: 'غير مصرح' };
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('🔄 تحديث بيانات الموظف:', employeeData);
+
+      const { data, error } = await supabase
+        .from('employees')
+        .update({
+          full_name: employeeData.full_name,
+          position: employeeData.position,
+          department: employeeData.department,
+          phone: employeeData.phone,
+          email: employeeData.email,
+          national_id: employeeData.national_id,
+          hire_date: employeeData.hire_date,
+          base_salary: employeeData.base_salary,
+          allowances: employeeData.allowances,
+          commission_rate: employeeData.commission_rate,
+          is_active: employeeData.is_active,
+          bank_account_number: employeeData.bank_account_number,
+          bank_name: employeeData.bank_name,
+          emergency_contact_name: employeeData.emergency_contact_name,
+          emergency_contact_phone: employeeData.emergency_contact_phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', employeeData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ خطأ في تحديث الموظف:', error);
+        toast.error(`فشل في تحديث الموظف: ${error.message}`);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ تم تحديث الموظف بنجاح');
+      
+      // تحديث البيانات في الـ cache
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
+      queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
+      
+      toast.success('تم تحديث بيانات الموظف بنجاح');
+      return { success: true, data };
+
+    } catch (error: any) {
+      console.error('💥 خطأ في تحديث الموظف:', error);
+      toast.error('حدث خطأ أثناء تحديث الموظف');
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // تفعيل/إيقاف الموظف
   const toggleEmployeeStatus = async (employeeId: string, isActive: boolean, reason?: string) => {
@@ -163,10 +222,12 @@ export const useEmployeeActions = () => {
 
   return {
     isLoading,
+    updateEmployee,
     toggleEmployeeStatus,
     checkEmployeeDeletion,
     deleteEmployee,
     canToggleStatus: hasRole('admin') || hasRole('manager') || isSuperAdmin(),
-    canDelete: isSuperAdmin()
+    canDelete: isSuperAdmin(),
+    canEdit: hasRole('admin') || hasRole('manager') || isSuperAdmin()
   };
 };
