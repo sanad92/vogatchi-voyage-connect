@@ -4,6 +4,8 @@ import { useCustomerData } from "@/hooks/useCustomerData";
 import CustomerForm from "./CustomerForm";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 interface CustomerEditDialogProps {
   customerId: string | null;
@@ -13,10 +15,12 @@ interface CustomerEditDialogProps {
 }
 
 const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: CustomerEditDialogProps) => {
-  const { customerData, isLoading, refetch } = useCustomerData(customerId || '');
+  const { customerData, isLoading, refetch, error } = useCustomerData(customerId || '');
 
   const handleCustomerUpdated = async (customer: Customer) => {
     try {
+      console.log('✅ تم تحديث العميل:', customer);
+      
       // تحديث البيانات المحلية فوراً
       onCustomerUpdated(customer);
       
@@ -37,6 +41,10 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
     onClose();
   };
 
+  const handleRetry = () => {
+    refetch();
+  };
+
   if (!customerId) return null;
 
   return (
@@ -45,10 +53,36 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
         <DialogHeader>
           <DialogTitle>تعديل معلومات العميل</DialogTitle>
         </DialogHeader>
+        
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="mr-2 text-gray-600">جاري تحميل بيانات العميل...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center p-8 space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div>
+              <p className="text-red-600 mb-2 font-medium">خطأ في تحميل بيانات العميل</p>
+              <p className="text-sm text-gray-600 mb-4">
+                {error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}
+              </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={handleRetry}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                إعادة المحاولة
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={onClose}
+              >
+                إغلاق
+              </Button>
+            </div>
           </div>
         ) : customerData ? (
           <CustomerForm
@@ -66,14 +100,27 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
             customerId={customerId}
           />
         ) : (
-          <div className="text-center p-4">
-            <p className="text-red-600 mb-4">خطأ في تحميل بيانات العميل</p>
-            <button 
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              إعادة المحاولة
-            </button>
+          <div className="text-center p-8 space-y-4">
+            <AlertCircle className="h-12 w-12 text-gray-500 mx-auto" />
+            <div>
+              <p className="text-gray-600 mb-4">لم يتم العثور على بيانات العميل</p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={handleRetry}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                إعادة المحاولة
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={onClose}
+              >
+                إغلاق
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>

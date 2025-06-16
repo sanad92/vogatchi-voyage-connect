@@ -3,9 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useCustomerData = (customerId: string) => {
-  const { data: customerData, isLoading, refetch } = useQuery({
+  const { data: customerData, isLoading, refetch, error } = useQuery({
     queryKey: ['customer-full-data', customerId],
     queryFn: async () => {
+      if (!customerId) {
+        throw new Error('Customer ID is required');
+      }
+
+      console.log('🔍 جاري تحميل بيانات العميل:', customerId);
+
       const { data, error } = await supabase
         .from('customers')
         .select(`
@@ -43,15 +49,28 @@ export const useCustomerData = (customerId: string) => {
         .eq('id', customerId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ خطأ في تحميل بيانات العميل:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error('❌ لم يتم العثور على العميل');
+        throw new Error('لم يتم العثور على العميل');
+      }
+
+      console.log('✅ تم تحميل بيانات العميل بنجاح:', data);
       return data;
     },
     enabled: !!customerId,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   return {
     customerData,
     isLoading,
-    refetch
+    refetch,
+    error
   };
 };

@@ -5,6 +5,7 @@ import CustomerSegmentBadge from "@/components/crm/CustomerSegmentBadge";
 import LoyaltyPointsDisplay from "@/components/crm/LoyaltyPointsDisplay";
 import { useCustomerData } from "@/hooks/useCustomerData";
 import { useCRM } from "@/hooks/useCRM";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 interface CustomerDetailsDialogProps {
   selectedCustomer: string | null;
@@ -12,13 +13,17 @@ interface CustomerDetailsDialogProps {
 }
 
 const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDialogProps) => {
-  const { customerData, isLoading: customerDataLoading } = useCustomerData(selectedCustomer || '');
+  const { customerData, isLoading: customerDataLoading, error, refetch } = useCustomerData(selectedCustomer || '');
   const { customerSegments } = useCRM();
 
   if (!selectedCustomer) return null;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
+  const handleRetry = () => {
+    refetch();
   };
 
   return (
@@ -28,6 +33,28 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">جاري تحميل تفاصيل العميل...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div>
+              <p className="text-red-600 mb-2 font-medium">خطأ في تحميل تفاصيل العميل</p>
+              <p className="text-sm text-gray-600 mb-4">
+                {error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}
+              </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={handleRetry}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                إعادة المحاولة
+              </Button>
+              <Button variant="outline" onClick={onClose}>
+                إغلاق
+              </Button>
+            </div>
           </div>
         ) : customerData ? (
           <>
@@ -77,17 +104,29 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                   loyaltyPoints={customerData.loyalty_points || 0}
                   onRedeemPoints={() => {
                     // تحديث البيانات بعد استرداد النقاط
+                    refetch();
                   }}
                 />
               </div>
             </div>
           </>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-red-600">لم يتم العثور على بيانات العميل</p>
-            <Button variant="outline" onClick={onClose} className="mt-2">
-              إغلاق
-            </Button>
+          <div className="text-center py-8 space-y-4">
+            <AlertCircle className="h-12 w-12 text-gray-500 mx-auto" />
+            <p className="text-gray-600 mb-4">لم يتم العثور على بيانات العميل</p>
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={handleRetry}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                إعادة المحاولة
+              </Button>
+              <Button variant="outline" onClick={onClose}>
+                إغلاق
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>
