@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import type { LinkUserToEmployeeResponse } from './unified-data/types';
 
 export const useUserEmployeeMapping = () => {
   const { user } = useAuth();
@@ -72,16 +73,19 @@ export const useUserEmployeeMapping = () => {
                 p_employee_id: employeeData.id
               });
               
-              if (!linkError && linkResult?.success) {
-                console.log('✅ تم الربط التلقائي بنجاح:', linkResult);
-                toast.success(linkResult.message || 'تم ربط حسابك بملف الموظف تلقائياً');
+              // Type cast the response safely
+              const response = linkResult as LinkUserToEmployeeResponse;
+              
+              if (!linkError && response?.success) {
+                console.log('✅ تم الربط التلقائي بنجاح:', response);
+                toast.success(response.message || 'تم ربط حسابك بملف الموظف تلقائياً');
                 // تحديث البيانات
                 queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
                 queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
               } else {
-                console.warn('تحذير: فشل الربط التلقائي:', linkResult);
-                if (linkResult?.message) {
-                  toast.warning(`تحذير: ${linkResult.message}`);
+                console.warn('تحذير: فشل الربط التلقائي:', response);
+                if (response?.message) {
+                  toast.warning(`تحذير: ${response.message}`);
                 }
               }
             } catch (linkError) {
@@ -124,12 +128,15 @@ export const useUserEmployeeMapping = () => {
         return false;
       }
 
-      if (!data?.success) {
-        console.error('فشل في ربط المستخدم بالموظف:', data);
+      // Type cast the response safely
+      const response = data as LinkUserToEmployeeResponse;
+
+      if (!response?.success) {
+        console.error('فشل في ربط المستخدم بالموظف:', response);
         
         // رسائل خطأ مخصصة
-        let errorMessage = data?.message || 'فشل في ربط المستخدم بالموظف';
-        switch (data?.error) {
+        let errorMessage = response?.message || 'فشل في ربط المستخدم بالموظف';
+        switch (response?.error) {
           case 'USER_NOT_FOUND':
             errorMessage = 'المستخدم غير موجود في النظام';
             break;
@@ -148,8 +155,8 @@ export const useUserEmployeeMapping = () => {
         return false;
       }
 
-      console.log('✅ تم ربط المستخدم بالموظف بنجاح:', data);
-      toast.success(data.message || 'تم ربط المستخدم بالموظف بنجاح');
+      console.log('✅ تم ربط المستخدم بالموظف بنجاح:', response);
+      toast.success(response.message || 'تم ربط المستخدم بالموظف بنجاح');
       
       // تحديث البيانات المحلية والـ cache
       await fetchCurrentEmployee();

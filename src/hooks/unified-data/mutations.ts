@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { LinkUserToEmployeeResponse, UnlinkUserFromEmployeeResponse } from './types';
 
 export const useLinkUserToEmployeeMutation = () => {
   const queryClient = useQueryClient();
@@ -23,13 +24,16 @@ export const useLinkUserToEmployeeMutation = () => {
 
         console.log('📋 استجابة دالة الربط:', data);
 
+        // Type cast the response safely
+        const response = data as LinkUserToEmployeeResponse;
+
         // التحقق من نجاح العملية
-        if (!data?.success) {
-          const errorMessage = data?.message || 'فشل في ربط المستخدم بالموظف';
-          console.error('❌ فشل في ربط المستخدم:', data);
+        if (!response?.success) {
+          const errorMessage = response?.message || 'فشل في ربط المستخدم بالموظف';
+          console.error('❌ فشل في ربط المستخدم:', response);
           
           // رسائل خطأ مخصصة حسب نوع الخطأ
-          switch (data?.error) {
+          switch (response?.error) {
             case 'USER_NOT_FOUND':
               throw new Error('المستخدم غير موجود في النظام');
             case 'EMPLOYEE_NOT_FOUND':
@@ -46,7 +50,7 @@ export const useLinkUserToEmployeeMutation = () => {
         }
 
         console.log('✅ تم ربط المستخدم بالموظف بنجاح');
-        return data;
+        return response;
       } catch (error) {
         console.error('❌ خطأ في عملية الربط:', error);
         throw error;
@@ -90,13 +94,16 @@ export const useUnlinkUserFromEmployeeMutation = () => {
 
         console.log('📋 استجابة دالة إلغاء الربط:', data);
 
+        // Type cast the response safely
+        const response = data as UnlinkUserFromEmployeeResponse;
+
         // التحقق من نجاح العملية
-        if (!data?.success) {
-          const errorMessage = data?.message || 'فشل في إلغاء ربط المستخدم من الموظف';
-          console.error('❌ فشل في إلغاء ربط المستخدم:', data);
+        if (!response?.success) {
+          const errorMessage = response?.message || 'فشل في إلغاء ربط المستخدم من الموظف';
+          console.error('❌ فشل في إلغاء ربط المستخدم:', response);
           
           // رسائل خطأ مخصصة حسب نوع الخطأ
-          switch (data?.error) {
+          switch (response?.error) {
             case 'USER_NOT_FOUND':
               throw new Error('المستخدم غير موجود في النظام');
             case 'UPDATE_FAILED':
@@ -107,7 +114,7 @@ export const useUnlinkUserFromEmployeeMutation = () => {
         }
 
         console.log('✅ تم إلغاء ربط المستخدم من الموظف بنجاح');
-        return data;
+        return response;
       } catch (error) {
         console.error('❌ خطأ في عملية إلغاء الربط:', error);
         throw error;

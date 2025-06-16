@@ -1,27 +1,45 @@
+// Response types for database functions
+export interface LinkUserToEmployeeResponse {
+  success: boolean;
+  error?: string;
+  message: string;
+  user_id?: string;
+  employee_id?: string;
+  sqlstate?: string;
+}
 
-import { UserRole } from '@/types/userManagement';
+export interface UnlinkUserFromEmployeeResponse {
+  success: boolean;
+  error?: string;
+  message: string;
+  user_id?: string;
+  sqlstate?: string;
+}
 
+// Existing types
 export interface UnifiedUser {
   id: string;
   email: string;
   full_name: string;
-  phone?: string;
   department?: string;
+  phone?: string;
+  role: string;
   is_active: boolean;
-  role?: UserRole; // Changed from string to UserRole
   created_at: string;
   updated_at: string;
   employee?: {
     id: string;
     employee_code: string;
+    full_name: string;
     position: string;
+    department: string;
+    national_id?: string;
     hire_date: string;
     base_salary: number;
     allowances: number;
-    commission_rate: number;
-    bank_name?: string;
+    commission_rate?: number;
     bank_account_number?: string;
-    national_id?: string;
+    bank_name?: string;
     emergency_contact_name?: string;
     emergency_contact_phone?: string;
   };
@@ -36,6 +54,6 @@ export interface UnlinkedEmployee {
   hire_date: string;
   base_salary: number;
   allowances: number;
-  commission_rate: number;
+  commission_rate?: number;
   is_active: boolean;
 }
