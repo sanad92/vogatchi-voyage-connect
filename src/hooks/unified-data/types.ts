@@ -52,9 +52,18 @@ export interface UnlinkedEmployee {
   full_name: string;
   position: string;
   department: string;
+  phone?: string;
+  email?: string;
+  national_id?: string;
   hire_date: string;
   base_salary: number;
   allowances: number;
   commission_rate?: number;
   is_active: boolean;
+  bank_account_number?: string;
+  bank_name?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  created_at?: string;
+  updated_at?: string;
 }
