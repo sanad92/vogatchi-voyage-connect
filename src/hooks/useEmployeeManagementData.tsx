@@ -32,9 +32,14 @@ export const useEmployeeManagementData = () => {
     unifiedUsers, 
     unlinkedEmployees, 
     isLoading: unifiedLoading, 
-    refreshAllData,
+    refreshAllData: originalRefreshAllData,
     usersError 
   } = useUnifiedData();
+
+  // Wrap refreshAllData to return a Promise
+  const refreshAllData = async (): Promise<void> => {
+    return originalRefreshAllData();
+  };
 
   // Transform and merge employee data
   const allEmployees: EnhancedEmployee[] = useMemo(() => [

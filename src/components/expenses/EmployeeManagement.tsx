@@ -4,7 +4,7 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import EmployeeStatsHeader from './employee-management/EmployeeStatsHeader';
-import EnhancedEmployeeFilters from './employee-management/enhanced/EnhancedEmployeeFilters';
+import EnhancedEmployeeFilters from './employee-management/EnhancedEmployeeFilters';
 import EnhancedEmployeeCard from './employee-management/enhanced/EnhancedEmployeeCard';
 import EmployeeEmptyState from './employee-management/EmployeeEmptyState';
 import EmployeeFormDialog from './employee-management/EmployeeFormDialog';
