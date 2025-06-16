@@ -51,6 +51,8 @@ const EmployeeManagement = () => {
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [linkedFilter, setLinkedFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { newEmployee, setNewEmployee, resetForm, validateForm } = useEmployeeForm();
 
@@ -117,16 +119,31 @@ const EmployeeManagement = () => {
     })) || [])
   ];
 
-  const filteredEmployees = allEmployees.filter(employee =>
-    employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.employee_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // تطبيق الفلاتر
+  const filteredEmployees = allEmployees.filter(employee => {
+    // فلتر البحث
+    const matchesSearch = employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.employee_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.department.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // فلتر الحالة
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && employee.is_active) ||
+      (statusFilter === 'inactive' && !employee.is_active);
+    
+    // فلتر الربط
+    const matchesLinked = linkedFilter === 'all' ||
+      (linkedFilter === 'linked' && employee.linkedToUser) ||
+      (linkedFilter === 'unlinked' && !employee.linkedToUser);
+    
+    return matchesSearch && matchesStatus && matchesLinked;
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('📝 بدء عملية إضافة موظف...');
+    console.log('📝 بدء عملية إضافة موظف محسنة...');
     
     if (!validateForm()) {
       console.log('❌ النموذج غير صحيح');
@@ -136,18 +153,15 @@ const EmployeeManagement = () => {
     try {
       console.log('🚀 إضافة الموظف...', newEmployee);
       
-      // إضافة الموظف
       await addEmployee(newEmployee);
       
       console.log('✅ تم إضافة الموظف بنجاح');
       
-      // انتظار قصير ثم تحديث البيانات الموحدة
       setTimeout(async () => {
         console.log('🔄 تحديث البيانات الموحدة...');
         await handleRefreshData();
       }, 1000);
       
-      // إغلاق النافذة وإعادة تعيين البيانات
       setIsAddDialogOpen(false);
       resetForm();
       
@@ -165,7 +179,6 @@ const EmployeeManagement = () => {
       if (success) {
         console.log('✅ تم ربط الموظف بنجاح');
         
-        // تحديث البيانات بعد الربط
         setTimeout(async () => {
           await handleRefreshData();
         }, 1000);
@@ -181,7 +194,7 @@ const EmployeeManagement = () => {
   const handleRefreshData = async () => {
     setIsRefreshing(true);
     try {
-      console.log('🔄 تحديث جميع البيانات...');
+      console.log('🔄 تحديث جميع البيانات المحسنة...');
       await refreshAllData();
       console.log('✅ تم تحديث البيانات بنجاح');
       toast.success('تم تحديث البيانات بنجاح');
@@ -247,6 +260,14 @@ const EmployeeManagement = () => {
       <EnhancedEmployeeFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        linkedFilter={linkedFilter}
+        onLinkedFilterChange={setLinkedFilter}
+        onRefresh={handleRefreshData}
+        isRefreshing={isRefreshing}
+        totalEmployees={allEmployees.length}
+        filteredEmployees={filteredEmployees.length}
       />
 
       {filteredEmployees.length === 0 ? (
