@@ -5,9 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CustomerSegmentBadge from "@/components/crm/CustomerSegmentBadge";
 import LoyaltyPointsDisplay from "@/components/crm/LoyaltyPointsDisplay";
 import CustomerBookingsList from "./CustomerBookingsList";
+import CustomerFollowUpButton from "./CustomerFollowUpButton";
 import { useCustomerData } from "@/hooks/useCustomerData";
 import { useCRM } from "@/hooks/useCRM";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, User, Calendar, Phone } from "lucide-react";
 
 interface CustomerDetailsDialogProps {
   selectedCustomer: string | null;
@@ -24,7 +25,15 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('ar-EG');
+  };
+
   const handleRetry = () => {
+    refetch();
+  };
+
+  const handleFollowUpCompleted = () => {
     refetch();
   };
 
@@ -71,8 +80,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
             </DialogHeader>
             
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+                <TabsTrigger value="follow-up">متابعة العميل</TabsTrigger>
                 <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
                 <TabsTrigger value="loyalty">نقاط الولاء</TabsTrigger>
               </TabsList>
@@ -92,6 +102,24 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                         {customerData.last_booking_date && (
                           <p><strong>آخر حجز:</strong> {formatDate(customerData.last_booking_date)}</p>
                         )}
+                      </div>
+                    </div>
+
+                    {/* معلومات من أضاف العميل */}
+                    <div className="p-4 border rounded-lg">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        معلومات إضافة العميل
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <p>
+                          <strong>تم إضافته بواسطة:</strong> {
+                            customerData.created_by_profile?.full_name || 
+                            customerData.created_by_profile?.email || 
+                            'غير محدد'
+                          }
+                        </p>
+                        <p><strong>تاريخ الإضافة:</strong> {formatDateTime(customerData.created_at)}</p>
                       </div>
                     </div>
 
@@ -119,6 +147,80 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                         refetch();
                       }}
                     />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="follow-up" className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* معلومات آخر متابعة */}
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      معلومات آخر متابعة
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      {customerData.last_follow_up_date ? (
+                        <>
+                          <p>
+                            <strong>تاريخ آخر متابعة:</strong> {formatDateTime(customerData.last_follow_up_date)}
+                          </p>
+                          <p>
+                            <strong>تمت بواسطة:</strong> {
+                              customerData.last_follow_up_by_profile?.full_name || 
+                              customerData.last_follow_up_by_profile?.email || 
+                              'غير محدد'
+                            }
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-yellow-600">لم تتم أي متابعة مع هذا العميل بعد</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* زر المتابعة */}
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      تسجيل متابعة جديدة
+                    </h3>
+                    <CustomerFollowUpButton
+                      customerId={selectedCustomer}
+                      customerName={customerData.name}
+                      lastFollowUpDate={customerData.last_follow_up_date}
+                      onFollowUpCompleted={handleFollowUpCompleted}
+                    />
+                  </div>
+                </div>
+
+                {/* سجل المتابعات السابقة */}
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-semibold mb-3">سجل المتابعات السابقة</h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {customerData.follow_ups && customerData.follow_ups.length > 0 ? (
+                      customerData.follow_ups
+                        .filter((followUp: any) => followUp.status === 'completed')
+                        .map((followUp: any) => (
+                          <div key={followUp.id} className="flex justify-between items-start p-2 bg-gray-50 rounded">
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">{followUp.notes || 'متابعة عامة'}</div>
+                              <div className="text-xs text-gray-500">
+                                {formatDateTime(followUp.completed_at || followUp.created_at)}
+                              </div>
+                              {followUp.assigned_to_profile?.full_name && (
+                                <div className="text-xs text-blue-600">
+                                  بواسطة: {followUp.assigned_to_profile.full_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-4">
+                        لا توجد متابعات سابقة
+                      </div>
+                    )}
                   </div>
                 </div>
               </TabsContent>

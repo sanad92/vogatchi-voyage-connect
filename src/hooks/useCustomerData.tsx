@@ -12,7 +12,7 @@ export const useCustomerData = (customerId: string) => {
 
       console.log('🔍 جاري تحميل بيانات العميل:', customerId);
 
-      // First, load basic customer data with segment
+      // First, load basic customer data with segment and creator info
       const { data: basicData, error: basicError } = await supabase
         .from('customers')
         .select(`
@@ -24,6 +24,16 @@ export const useCustomerData = (customerId: string) => {
             color,
             minimum_bookings,
             minimum_total_spent
+          ),
+          created_by_profile:profiles!customers_created_by_fkey(
+            id,
+            full_name,
+            email
+          ),
+          last_follow_up_by_profile:profiles!customers_last_follow_up_by_fkey(
+            id,
+            full_name,
+            email
           )
         `)
         .eq('id', customerId)

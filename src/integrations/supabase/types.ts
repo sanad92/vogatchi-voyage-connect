@@ -1380,9 +1380,12 @@ export type Database = {
           address: string | null
           communication_preferences: Json | null
           created_at: string
+          created_by: string | null
           email: string | null
           id: string
           last_booking_date: string | null
+          last_follow_up_by: string | null
+          last_follow_up_date: string | null
           loyalty_points: number | null
           name: string
           nationality: string | null
@@ -1398,9 +1401,12 @@ export type Database = {
           address?: string | null
           communication_preferences?: Json | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           last_booking_date?: string | null
+          last_follow_up_by?: string | null
+          last_follow_up_date?: string | null
           loyalty_points?: number | null
           name: string
           nationality?: string | null
@@ -1416,9 +1422,12 @@ export type Database = {
           address?: string | null
           communication_preferences?: Json | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           last_booking_date?: string | null
+          last_follow_up_by?: string | null
+          last_follow_up_date?: string | null
           loyalty_points?: number | null
           name?: string
           nationality?: string | null
@@ -1431,6 +1440,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_last_follow_up_by_fkey"
+            columns: ["last_follow_up_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_segment_id_fkey"
             columns: ["segment_id"]

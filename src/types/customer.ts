@@ -29,6 +29,21 @@ export interface Customer {
   passport_number?: string;
   preferences?: any;
   communication_preferences?: any;
+  
+  // الحقول الجديدة لنظام المتابعة
+  created_by?: string;
+  created_by_profile?: {
+    id: string;
+    full_name?: string;
+    email?: string;
+  };
+  last_follow_up_date?: string;
+  last_follow_up_by?: string;
+  last_follow_up_by_profile?: {
+    id: string;
+    full_name?: string;
+    email?: string;
+  };
 }
 
 export interface UseCustomerFormProps {
