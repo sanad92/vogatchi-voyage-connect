@@ -16,40 +16,23 @@ interface EmployeeActionResponse {
 
 export const useEmployeeActions = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { isSuperAdmin, hasRole, userRole } = useAuth();
+  const { isSuperAdmin, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  // تسجيل مفصل للصلاحيات
-  console.log('🔍 useEmployeeActions - فحص الصلاحيات:', {
-    userRole,
-    isSuperAdmin: isSuperAdmin(),
-    hasAdminRole: hasRole('admin'),
-    hasManagerRole: hasRole('manager')
-  });
-
-  // تحديد الصلاحيات بشكل مفصل
+  // تحديد الصلاحيات
   const canToggleStatus = hasRole('admin') || hasRole('manager') || isSuperAdmin();
   const canDelete = isSuperAdmin();
   const canEdit = hasRole('admin') || hasRole('manager') || isSuperAdmin();
 
-  console.log('✅ الصلاحيات المحسوبة:', {
-    canToggleStatus,
-    canDelete,
-    canEdit,
-    isSuperAdminUser: isSuperAdmin()
-  });
-
   // تحديث بيانات الموظف
   const updateEmployee = async (employeeData: any) => {
     if (!canEdit) {
-      console.error('❌ ليس لديك صلاحية لهذه العملية - التعديل');
       toast.error('ليس لديك صلاحية لهذه العملية');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log('🔄 تحديث بيانات الموظف:', { employeeData, userRole });
 
       const { data, error } = await supabase
         .from('employees')
@@ -76,13 +59,10 @@ export const useEmployeeActions = () => {
         .single();
 
       if (error) {
-        console.error('❌ خطأ في تحديث الموظف:', error);
         toast.error(`فشل في تحديث الموظف: ${error.message}`);
         return { success: false, error: error.message };
       }
 
-      console.log('✅ تم تحديث الموظف بنجاح');
-      
       // تحديث البيانات في الـ cache
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
@@ -92,7 +72,6 @@ export const useEmployeeActions = () => {
       return { success: true, data };
 
     } catch (error: any) {
-      console.error('💥 خطأ في تحديث الموظف:', error);
       toast.error('حدث خطأ أثناء تحديث الموظف');
       return { success: false, error: error.message };
     } finally {
@@ -103,14 +82,12 @@ export const useEmployeeActions = () => {
   // تفعيل/إيقاف الموظف
   const toggleEmployeeStatus = async (employeeId: string, isActive: boolean, reason?: string) => {
     if (!canToggleStatus) {
-      console.error('❌ ليس لديك صلاحية لهذه العملية - تغيير الحالة');
       toast.error('ليس لديك صلاحية لهذه العملية');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log(`🔄 ${isActive ? 'تفعيل' : 'إيقاف'} الموظف:`, { employeeId, isActive, reason, userRole });
 
       const { data, error } = await supabase.rpc('toggle_employee_status', {
         p_employee_id: employeeId,
@@ -119,7 +96,6 @@ export const useEmployeeActions = () => {
       });
 
       if (error) {
-        console.error('❌ خطأ في تغيير حالة الموظف:', error);
         toast.error(`فشل في ${isActive ? 'تفعيل' : 'إيقاف'} الموظف: ${error.message}`);
         return { success: false, error: error.message };
       }
@@ -127,13 +103,10 @@ export const useEmployeeActions = () => {
       const response = data as unknown as EmployeeActionResponse;
 
       if (!response?.success) {
-        console.error('❌ فشل في تغيير حالة الموظف:', response);
         toast.error(response?.message || `فشل في ${isActive ? 'تفعيل' : 'إيقاف'} الموظف`);
         return { success: false, error: response?.message };
       }
 
-      console.log('✅ تم تغيير حالة الموظف بنجاح');
-      
       // تحديث البيانات في الـ cache
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
@@ -143,7 +116,6 @@ export const useEmployeeActions = () => {
       return { success: true, data: response };
 
     } catch (error: any) {
-      console.error('💥 خطأ في تغيير حالة الموظف:', error);
       toast.error(`حدث خطأ أثناء ${isActive ? 'تفعيل' : 'إيقاف'} الموظف`);
       return { success: false, error: error.message };
     } finally {
@@ -154,14 +126,11 @@ export const useEmployeeActions = () => {
   // التحقق من إمكانية حذف الموظف
   const checkEmployeeDeletion = async (employeeId: string) => {
     try {
-      console.log('🔍 فحص إمكانية حذف الموظف:', { employeeId, userRole, isSuperAdmin: isSuperAdmin() });
-
       const { data, error } = await supabase.rpc('check_employee_deletion', {
         p_employee_id: employeeId
       });
 
       if (error) {
-        console.error('❌ خطأ في فحص إمكانية الحذف:', error);
         return { success: false, error: error.message };
       }
 
@@ -174,11 +143,9 @@ export const useEmployeeActions = () => {
         has_expenses: boolean;
       };
 
-      console.log('✅ نتيجة فحص إمكانية الحذف:', response);
       return { success: true, data: response };
 
     } catch (error: any) {
-      console.error('💥 خطأ في فحص إمكانية الحذف:', error);
       return { success: false, error: error.message };
     }
   };
@@ -186,14 +153,12 @@ export const useEmployeeActions = () => {
   // حذف الموظف
   const deleteEmployee = async (employeeId: string, forceDelete = false, reason?: string) => {
     if (!canDelete) {
-      console.error('❌ ليس لديك صلاحية لحذف الموظفين - السوبر أدمن فقط');
       toast.error('ليس لديك صلاحية لحذف الموظفين - السوبر أدمن فقط');
       return { success: false, error: 'غير مصرح' };
     }
 
     try {
       setIsLoading(true);
-      console.log('🗑️ بدء حذف الموظف:', { employeeId, forceDelete, reason, userRole, isSuperAdmin: isSuperAdmin() });
 
       const { data, error } = await supabase.rpc('safe_delete_employee', {
         p_employee_id: employeeId,
@@ -202,7 +167,6 @@ export const useEmployeeActions = () => {
       });
 
       if (error) {
-        console.error('❌ خطأ في حذف الموظف:', error);
         toast.error(`فشل في حذف الموظف: ${error.message}`);
         return { success: false, error: error.message };
       }
@@ -210,8 +174,6 @@ export const useEmployeeActions = () => {
       const response = data as unknown as EmployeeActionResponse;
 
       if (!response?.success) {
-        console.error('❌ فشل في حذف الموظف:', response);
-        
         if (response.can_force_delete && response.blocking_reasons) {
           return { 
             success: false, 
@@ -225,8 +187,6 @@ export const useEmployeeActions = () => {
         return { success: false, error: response?.message };
       }
 
-      console.log('✅ تم حذف الموظف بنجاح');
-      
       // تحديث البيانات في الـ cache
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
@@ -236,7 +196,6 @@ export const useEmployeeActions = () => {
       return { success: true, data: response };
 
     } catch (error: any) {
-      console.error('💥 خطأ في حذف الموظف:', error);
       toast.error('حدث خطأ أثناء حذف الموظف');
       return { success: false, error: error.message };
     } finally {
