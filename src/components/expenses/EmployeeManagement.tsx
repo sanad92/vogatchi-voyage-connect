@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +49,7 @@ const EmployeeManagement = () => {
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Omit<Employee, 'id' | 'created_at' | 'updated_at'>>({
     employee_code: '',
     full_name: '',
@@ -149,7 +149,13 @@ const EmployeeManagement = () => {
     }
 
     try {
+      // إضافة الموظف
       await addEmployee(newEmployee);
+      
+      // إعادة تحديث البيانات الموحدة
+      await handleRefreshData();
+      
+      // إغلاق النافذة وإعادة تعيين البيانات
       setIsAddDialogOpen(false);
       setNewEmployee({
         employee_code: '',
@@ -169,7 +175,8 @@ const EmployeeManagement = () => {
         emergency_contact_name: '',
         emergency_contact_phone: '',
       });
-      toast.success('تم إضافة الموظف بنجاح');
+      
+      toast.success('تم إضافة الموظف بنجاح وتحديث البيانات');
     } catch (error) {
       console.error('Error adding employee:', error);
       toast.error('حدث خطأ أثناء إضافة الموظف');
@@ -179,11 +186,24 @@ const EmployeeManagement = () => {
   const handleLinkEmployee = async (employeeId: string) => {
     try {
       await linkUserToEmployee(employeeId);
-      refreshAllData();
+      await handleRefreshData();
       toast.success('تم ربط الموظف بالمستخدم بنجاح');
     } catch (error) {
       console.error('Error linking employee:', error);
       toast.error('حدث خطأ أثناء ربط الموظف');
+    }
+  };
+
+  const handleRefreshData = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshAllData();
+      toast.success('تم تحديث البيانات بنجاح');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -235,12 +255,12 @@ const EmployeeManagement = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={refreshAllData}
-            disabled={unifiedLoading}
+            onClick={handleRefreshData}
+            disabled={isRefreshing || unifiedLoading}
             className="flex items-center gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${unifiedLoading ? 'animate-spin' : ''}`} />
-            تحديث
+            <RefreshCw className={`h-4 w-4 ${(isRefreshing || unifiedLoading) ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'جاري التحديث...' : 'تحديث'}
           </Button>
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

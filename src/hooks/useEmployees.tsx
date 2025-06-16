@@ -35,16 +35,22 @@ export const useEmployees = () => {
       return data;
     },
     onSuccess: () => {
+      // تحديث جميع الـ caches المرتبطة بالموظفين والبيانات الموحدة
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
+      queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      
       toast({
         title: "تمت الإضافة بنجاح",
-        description: "تم إضافة الموظف الجديد بنجاح",
+        description: "تم إضافة الموظف الجديد بنجاح وسيظهر في القائمة",
       });
     },
     onError: (error) => {
+      console.error('Error adding employee:', error);
       toast({
         title: "خطأ في الإضافة",
-        description: "حدث خطأ أثناء إضافة الموظف",
+        description: "حدث خطأ أثناء إضافة الموظف. يرجى المحاولة مرة أخرى",
         variant: "destructive",
       });
     },
