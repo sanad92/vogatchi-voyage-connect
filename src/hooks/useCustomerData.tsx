@@ -12,7 +12,8 @@ export const useCustomerData = (customerId: string) => {
 
       console.log('🔍 جاري تحميل بيانات العميل:', customerId);
 
-      const { data, error } = await supabase
+      // First, load basic customer data with segment
+      const { data: basicData, error: basicError } = await supabase
         .from('customers')
         .select(`
           *,
@@ -23,44 +24,75 @@ export const useCustomerData = (customerId: string) => {
             color,
             minimum_bookings,
             minimum_total_spent
-          ),
-          loyalty_transactions:customer_loyalty_points(
-            *,
-            booking:hotel_bookings(internal_booking_number)
-          ),
-          bookings:hotel_bookings(
-            *,
-            follow_ups:customer_follow_ups(*)
-          ),
-          communications:customer_communications(
-            *,
-            handled_by_profile:profiles!customer_communications_handled_by_fkey(full_name)
-          ),
-          notes:customer_notes(
-            *,
-            created_by_profile:profiles!customer_notes_created_by_fkey(full_name)
-          ),
-          follow_ups:customer_follow_ups(
-            *,
-            bookings:hotel_bookings(internal_booking_number),
-            assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(full_name)
           )
         `)
         .eq('id', customerId)
         .single();
 
-      if (error) {
-        console.error('❌ خطأ في تحميل بيانات العميل:', error);
-        throw error;
+      if (basicError) {
+        console.error('❌ خطأ في تحميل بيانات العميل الأساسية:', basicError);
+        throw basicError;
       }
 
-      if (!data) {
+      if (!basicData) {
         console.error('❌ لم يتم العثور على العميل');
         throw new Error('لم يتم العثور على العميل');
       }
 
-      console.log('✅ تم تحميل بيانات العميل بنجاح:', data);
-      return data;
+      // Load loyalty transactions separately
+      const { data: loyaltyData } = await supabase
+        .from('customer_loyalty_points')
+        .select(`
+          *,
+          booking:hotel_bookings(internal_booking_number)
+        `)
+        .eq('customer_id', customerId);
+
+      // Load bookings separately
+      const { data: bookingsData } = await supabase
+        .from('hotel_bookings')
+        .select('*')
+        .eq('customer_id', customerId);
+
+      // Load communications separately
+      const { data: communicationsData } = await supabase
+        .from('customer_communications')
+        .select(`
+          *,
+          handled_by_profile:profiles!customer_communications_handled_by_fkey(full_name)
+        `)
+        .eq('customer_id', customerId);
+
+      // Load notes separately
+      const { data: notesData } = await supabase
+        .from('customer_notes')
+        .select(`
+          *,
+          created_by_profile:profiles!customer_notes_created_by_fkey(full_name)
+        `)
+        .eq('customer_id', customerId);
+
+      // Load follow-ups separately
+      const { data: followUpsData } = await supabase
+        .from('customer_follow_ups')
+        .select(`
+          *,
+          assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(full_name)
+        `)
+        .eq('customer_id', customerId);
+
+      // Combine all data
+      const combinedData = {
+        ...basicData,
+        loyalty_transactions: loyaltyData || [],
+        bookings: bookingsData || [],
+        communications: communicationsData || [],
+        notes: notesData || [],
+        follow_ups: followUpsData || []
+      };
+
+      console.log('✅ تم تحميل بيانات العميل بنجاح:', combinedData);
+      return combinedData;
     },
     enabled: !!customerId,
     retry: 2,

@@ -42,6 +42,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
               <p className="text-sm text-gray-600 mb-4">
                 {error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}
               </p>
+              <p className="text-xs text-gray-500">
+                يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني
+              </p>
             </div>
             <div className="flex gap-3 justify-center">
               <Button 
