@@ -42,7 +42,7 @@ export const useEmployeeActions = () => {
         return { success: false, error: error.message };
       }
 
-      const response = data as EmployeeActionResponse;
+      const response = data as unknown as EmployeeActionResponse;
 
       if (!response?.success) {
         console.error('❌ فشل في تغيير حالة الموظف:', response);
@@ -83,7 +83,7 @@ export const useEmployeeActions = () => {
         return { success: false, error: error.message };
       }
 
-      const response = data as EmployeeActionResponse & {
+      const response = data as unknown as EmployeeActionResponse & {
         can_delete_safely: boolean;
         dependencies_count: number;
         linked_to_user: boolean;
@@ -124,7 +124,7 @@ export const useEmployeeActions = () => {
         return { success: false, error: error.message };
       }
 
-      const response = data as EmployeeActionResponse;
+      const response = data as unknown as EmployeeActionResponse;
 
       if (!response?.success) {
         console.error('❌ فشل في حذف الموظف:', response);
