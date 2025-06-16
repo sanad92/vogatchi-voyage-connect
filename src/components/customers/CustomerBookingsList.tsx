@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CustomerBookingCard from "./CustomerBookingCard";
+import BookingQuickViewDialog from "./BookingQuickViewDialog";
 import { Building, Plane, Car, Bus } from "lucide-react";
 
 interface CustomerBookingsListProps {
@@ -19,6 +20,8 @@ const CustomerBookingsList = ({
   carRentals 
 }: CustomerBookingsListProps) => {
   const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBookingType, setSelectedBookingType] = useState<'hotel' | 'flight' | 'transport' | 'car_rental' | null>(null);
 
   // Combine all bookings with type information
   const allBookings = [
@@ -52,6 +55,11 @@ const CustomerBookingsList = ({
     { key: 'transport', label: 'نقل', icon: <Bus className="h-4 w-4" />, count: stats.transport },
     { key: 'car_rental', label: 'سيارات', icon: <Car className="h-4 w-4" />, count: stats.car_rental }
   ];
+
+  const handleBookingClick = (booking: any, type: 'hotel' | 'flight' | 'transport' | 'car_rental') => {
+    setSelectedBooking(booking);
+    setSelectedBookingType(type);
+  };
 
   if (allBookings.length === 0) {
     return (
@@ -119,14 +127,31 @@ const CustomerBookingsList = ({
           </div>
         ) : (
           filteredBookings.map((booking) => (
-            <CustomerBookingCard
+            <div 
               key={`${booking.type}-${booking.id}`}
-              booking={booking}
-              type={booking.type}
-            />
+              onClick={() => handleBookingClick(booking, booking.type)}
+            >
+              <CustomerBookingCard
+                booking={booking}
+                type={booking.type}
+              />
+            </div>
           ))
         )}
       </div>
+
+      {/* Quick View Dialog */}
+      {selectedBooking && selectedBookingType && (
+        <BookingQuickViewDialog
+          booking={selectedBooking}
+          type={selectedBookingType}
+          isOpen={!!selectedBooking}
+          onClose={() => {
+            setSelectedBooking(null);
+            setSelectedBookingType(null);
+          }}
+        />
+      )}
     </div>
   );
 };

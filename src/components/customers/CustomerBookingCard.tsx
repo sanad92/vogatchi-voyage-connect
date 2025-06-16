@@ -1,7 +1,9 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Plane, Car, Building, Bus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Plane, Car, Building, Bus, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface BookingStatus {
   name: string;
@@ -15,6 +17,8 @@ interface CustomerBookingCardProps {
 }
 
 const CustomerBookingCard = ({ booking, type }: CustomerBookingCardProps) => {
+  const navigate = useNavigate();
+
   const getBookingIcon = () => {
     switch (type) {
       case 'hotel':
@@ -106,14 +110,26 @@ const CustomerBookingCard = ({ booking, type }: CustomerBookingCardProps) => {
     return new Date(dateString).toLocaleDateString('ar-EG');
   };
 
+  const handleViewDetails = () => {
+    const routes = {
+      hotel: '/hotel-bookings',
+      flight: '/flight-bookings',
+      transport: '/transport-bookings',
+      car_rental: '/car-rentals'
+    };
+
+    // الانتقال إلى صفحة الحجوزات المناسبة مع معرف الحجز
+    navigate(`${routes[type]}?bookingId=${booking.id}`);
+  };
+
   const details = getBookingDetails();
 
   return (
-    <Card className="mb-3">
+    <Card className="mb-3 hover:shadow-md transition-all duration-200 cursor-pointer group" onClick={handleViewDetails}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full flex-shrink-0">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full flex-shrink-0 group-hover:bg-blue-200 transition-colors">
               {getBookingIcon()}
             </div>
             
@@ -125,7 +141,7 @@ const CustomerBookingCard = ({ booking, type }: CustomerBookingCardProps) => {
                 {booking.status && getStatusBadge(booking.status)}
               </div>
               
-              <h4 className="font-medium text-gray-900 truncate">{details.title}</h4>
+              <h4 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">{details.title}</h4>
               
               {details.subtitle && (
                 <p className="text-sm text-gray-600 truncate">{details.subtitle}</p>
@@ -146,13 +162,25 @@ const CustomerBookingCard = ({ booking, type }: CustomerBookingCardProps) => {
             </div>
           </div>
           
-          <div className="text-left flex-shrink-0">
+          <div className="text-left flex-shrink-0 flex flex-col items-end gap-2">
             <div className="text-sm font-medium text-gray-900">
               {details.amount?.toLocaleString()} {booking.currency || 'EGP'}
             </div>
             <div className="text-xs text-gray-500">
               {formatDate(booking.created_at)}
             </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails();
+              }}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              عرض التفاصيل
+            </Button>
           </div>
         </div>
       </CardContent>
