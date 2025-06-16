@@ -104,12 +104,112 @@ export const useCustomerService = () => {
     },
   });
 
+  // Update follow-up mutation
+  const updateFollowUpMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { data: result, error } = await supabase
+        .from('customer_follow_ups')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] });
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث المتابعة بنجاح",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating follow-up:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث المتابعة",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add communication mutation
+  const addCommunicationMutation = useMutation({
+    mutationFn: async (communicationData: any) => {
+      const { data, error } = await supabase
+        .from('customer_communications')
+        .insert(communicationData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] });
+      toast({
+        title: "تم الحفظ",
+        description: "تم إضافة التواصل بنجاح",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding communication:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة التواصل",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add note mutation
+  const addNoteMutation = useMutation({
+    mutationFn: async (noteData: any) => {
+      const { data, error } = await supabase
+        .from('customer_notes')
+        .insert(noteData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] });
+      toast({
+        title: "تم الحفظ",
+        description: "تم إضافة الملاحظة بنجاح",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding note:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة الملاحظة",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createFollowUp = (data: any) => {
     createFollowUpMutation.mutate(data);
   };
 
   const markFollowUpComplete = (id: string) => {
     markCompleteMutation.mutate(id);
+  };
+
+  const updateFollowUp = (id: string, data: any) => {
+    updateFollowUpMutation.mutate({ id, data });
+  };
+
+  const addCommunication = (data: any) => {
+    addCommunicationMutation.mutate(data);
+  };
+
+  const addNote = (data: any) => {
+    addNoteMutation.mutate(data);
   };
 
   return {
@@ -119,8 +219,11 @@ export const useCustomerService = () => {
     todayTasks,
     createFollowUp,
     markFollowUpComplete,
+    updateFollowUp,
+    addCommunication,
+    addNote,
     isLoading,
     isCreating: createFollowUpMutation.isPending,
-    isUpdating: markCompleteMutation.isPending,
+    isUpdating: markCompleteMutation.isPending || updateFollowUpMutation.isPending,
   };
 };
