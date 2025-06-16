@@ -53,30 +53,48 @@ export const useEmployeeForm = () => {
   const validateForm = () => {
     console.log('🔄 فحص صحة النموذج:', newEmployee);
     
-    if (!newEmployee.full_name.trim()) {
+    // التحقق من الحقول المطلوبة
+    if (!newEmployee.full_name?.trim()) {
       toast.error('الاسم الكامل مطلوب');
       return false;
     }
     
-    if (!newEmployee.employee_code.trim()) {
+    if (!newEmployee.employee_code?.trim()) {
       toast.error('رقم الموظف مطلوب');
       return false;
     }
     
-    if (!newEmployee.position.trim()) {
+    if (!newEmployee.position?.trim()) {
       toast.error('المنصب مطلوب');
       return false;
     }
 
+    if (!newEmployee.hire_date) {
+      toast.error('تاريخ التوظيف مطلوب');
+      return false;
+    }
+
     // التحقق من صحة البريد الإلكتروني إذا تم إدخاله
-    if (newEmployee.email && !isValidEmail(newEmployee.email)) {
+    if (newEmployee.email && !isValidEmail(newEmployee.email.trim())) {
       toast.error('البريد الإلكتروني غير صحيح');
       return false;
     }
 
-    // التحقق من أن الراتب الأساسي رقم موجب
+    // التحقق من أن الراتب الأساسي رقم موجب أو صفر
     if (newEmployee.base_salary < 0) {
-      toast.error('الراتب الأساسي يجب أن يكون رقماً موجباً');
+      toast.error('الراتب الأساسي يجب أن يكون رقماً موجباً أو صفر');
+      return false;
+    }
+
+    // التحقق من البدلات
+    if (newEmployee.allowances < 0) {
+      toast.error('البدلات يجب أن تكون رقماً موجباً أو صفر');
+      return false;
+    }
+
+    // التحقق من معدل العمولة
+    if (newEmployee.commission_rate && (newEmployee.commission_rate < 0 || newEmployee.commission_rate > 100)) {
+      toast.error('معدل العمولة يجب أن يكون بين 0 و 100');
       return false;
     }
 

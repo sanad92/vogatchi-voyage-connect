@@ -4,6 +4,9 @@ import { useUnifiedData } from '@/hooks/useUnifiedData';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 import { toast } from 'sonner';
+import { RefreshCw, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import EmployeeStatsHeader from './employee-management/EmployeeStatsHeader';
 import EmployeeFilters from './employee-management/EmployeeFilters';
 import EmployeeCard from './employee-management/EmployeeCard';
@@ -37,13 +40,14 @@ interface EnhancedEmployee {
 }
 
 const EmployeeManagement = () => {
-  const { addEmployee, isAddingEmployee } = useEmployees();
+  const { addEmployee, isAddingEmployee, employeesError } = useEmployees();
   const { linkUserToEmployee } = useUserEmployeeMapping();
   const { 
     unifiedUsers, 
     unlinkedEmployees, 
     isLoading: unifiedLoading, 
-    refreshAllData 
+    refreshAllData,
+    usersError 
   } = useUnifiedData();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -55,7 +59,9 @@ const EmployeeManagement = () => {
     unifiedUsers: unifiedUsers?.length || 0,
     unlinkedEmployees: unlinkedEmployees?.length || 0,
     unifiedLoading,
-    isRefreshing
+    isRefreshing,
+    usersError,
+    employeesError
   });
 
   // دمج الموظفين من البيانات الموحدة والموظفين غير المرتبطين
@@ -146,7 +152,6 @@ const EmployeeManagement = () => {
       setIsAddDialogOpen(false);
       resetForm();
       
-      toast.success('تم إضافة الموظف بنجاح');
     } catch (error) {
       console.error('❌ خطأ في إضافة الموظف:', error);
       toast.error('حدث خطأ أثناء إضافة الموظف');
@@ -191,6 +196,31 @@ const EmployeeManagement = () => {
 
   const linkedEmployeesCount = allEmployees.filter(emp => emp.linkedToUser).length;
   const unlinkedEmployeesCount = allEmployees.filter(emp => !emp.linkedToUser).length;
+
+  // عرض رسالة الخطأ إذا كان هناك خطأ في البيانات
+  if (usersError || employeesError) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshData}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                إعادة المحاولة
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   // عرض رسالة التحميل
   if (unifiedLoading && !isRefreshing) {

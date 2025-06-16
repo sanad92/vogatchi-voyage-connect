@@ -8,18 +8,35 @@ export const useEmployees = () => {
   const queryClient = useQueryClient();
 
   // جلب الموظفين
-  const { data: employees, isLoading: employeesLoading } = useQuery({
+  const { data: employees, isLoading: employeesLoading, error } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('is_active', true)
-        .order('full_name');
+      console.log('🔄 جاري جلب الموظفين...');
+      
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('is_active', true)
+          .order('full_name');
 
-      if (error) throw error;
-      return data as Employee[];
+        if (error) {
+          console.error('❌ خطأ في جلب الموظفين:', error);
+          throw error;
+        }
+        
+        console.log('✅ تم جلب الموظفين:', data?.length || 0);
+        return data as Employee[];
+      } catch (error) {
+        console.error('❌ خطأ في useEmployees:', error);
+        toast.error('حدث خطأ في جلب بيانات الموظفين');
+        throw error;
+      }
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // إضافة موظف جديد
@@ -27,34 +44,40 @@ export const useEmployees = () => {
     mutationFn: async (employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
       console.log('🔄 إضافة موظف جديد:', employee);
       
-      const { data, error } = await supabase
-        .from('employees')
-        .insert(employee)
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .insert(employee)
+          .select()
+          .single();
 
-      if (error) {
+        if (error) {
+          console.error('❌ خطأ في إضافة الموظف:', error);
+          throw error;
+        }
+        
+        console.log('✅ تم إضافة الموظف بنجاح:', data);
+        return data;
+      } catch (error) {
         console.error('❌ خطأ في إضافة الموظف:', error);
         throw error;
       }
-      
-      console.log('✅ تم إضافة الموظف بنجاح:', data);
-      return data;
     },
     onSuccess: (data) => {
       console.log('✅ نجح إضافة الموظف - تحديث البيانات...');
       
-      // تحديث جميع الـ caches المرتبطة بالموظفين والبيانات الموحدة
+      // تحديث جميع الـ caches المرتبطة
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['unified-users-employees-all'] });
       queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       
-      toast.success('تم إضافة الموظف بنجاح');
+      toast.success(`تم إضافة الموظف "${data.full_name}" بنجاح`);
     },
     onError: (error: any) => {
       console.error('❌ خطأ في إضافة الموظف:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إضافة الموظف');
+      const errorMessage = error?.message || 'حدث خطأ أثناء إضافة الموظف';
+      toast.error(errorMessage);
     },
   });
 
@@ -66,7 +89,9 @@ export const useEmployees = () => {
   return {
     employees,
     employeesLoading,
+    employeesError: error,
     addEmployee,
     isAddingEmployee: addEmployeeMutation.isPending,
+    addEmployeeError: addEmployeeMutation.error,
   };
 };

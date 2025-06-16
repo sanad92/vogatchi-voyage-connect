@@ -12,7 +12,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
       console.log('🔄 جاري جلب البيانات الموحدة...');
       
       try {
-        // جلب الـ profiles مع employees بدون user_roles أولاً
+        // جلب الـ profiles مع employees
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -38,7 +38,6 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
 
         // دمج البيانات يدوياً
         const unified = profilesData?.map(profile => {
-          // البحث عن role للمستخدم
           const userRole = userRolesData?.find(ur => ur.user_id === profile.id);
           
           return {
@@ -48,7 +47,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
             phone: profile.phone,
             department: profile.department,
             is_active: profile.is_active,
-            role: (userRole?.role as UserRole) || 'no_role' as UserRole, // Type cast to UserRole
+            role: (userRole?.role as UserRole) || 'no_role' as UserRole,
             created_at: profile.created_at,
             updated_at: profile.updated_at,
             employee: profile.employees ? {
@@ -58,7 +57,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
               hire_date: profile.employees.hire_date,
               base_salary: profile.employees.base_salary,
               allowances: profile.employees.allowances,
-              commission_rate: profile.employees.commission_rate,
+              commission_rate: profile.employees.commission_rate || 0,
               bank_name: profile.employees.bank_name,
               bank_account_number: profile.employees.bank_account_number,
               national_id: profile.employees.national_id,
@@ -77,8 +76,10 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
       }
     },
     enabled: isSuperAdmin,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
@@ -86,17 +87,53 @@ export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
   return useQuery({
     queryKey: ['unlinked-employees-all'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .not('id', 'in', `(SELECT employee_id FROM profiles WHERE employee_id IS NOT NULL)`)
-        .eq('is_active', true)
-        .order('full_name');
+      console.log('🔄 جاري جلب الموظفين غير المرتبطين...');
       
-      if (error) throw error;
-      return data as UnlinkedEmployee[];
+      try {
+        // جلب جميع IDs الموظفين المرتبطين أولاً
+        const { data: linkedEmployeeIds, error: linkedError } = await supabase
+          .from('profiles')
+          .select('employee_id')
+          .not('employee_id', 'is', null);
+
+        if (linkedError) {
+          console.error('❌ خطأ في جلب الموظفين المرتبطين:', linkedError);
+          throw linkedError;
+        }
+
+        // استخراج الـ IDs
+        const linkedIds = linkedEmployeeIds?.map(p => p.employee_id).filter(Boolean) || [];
+        
+        // جلب الموظفين غير المرتبطين
+        let query = supabase
+          .from('employees')
+          .select('*')
+          .eq('is_active', true)
+          .order('full_name');
+
+        // إضافة filter للموظفين غير المرتبطين إذا كان هناك موظفين مرتبطين
+        if (linkedIds.length > 0) {
+          query = query.not('id', 'in', `(${linkedIds.map(id => `'${id}'`).join(',')})`);
+        }
+
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
+          throw error;
+        }
+        
+        console.log('✅ تم جلب الموظفين غير المرتبطين:', data?.length || 0);
+        return data as UnlinkedEmployee[];
+      } catch (error) {
+        console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
+        toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');
+        return [];
+      }
     },
     enabled: isSuperAdmin,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000,
   });
 };
