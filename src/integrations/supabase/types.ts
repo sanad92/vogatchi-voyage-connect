@@ -4128,6 +4128,10 @@ export type Database = {
         Args: { p_commission_id: string; p_reason?: string }
         Returns: boolean
       }
+      check_employee_deletion: {
+        Args: { p_employee_id: string }
+        Returns: Json
+      }
       check_user_permission: {
         Args: {
           p_user_id: string
@@ -4342,6 +4346,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      safe_delete_employee: {
+        Args: {
+          p_employee_id: string
+          p_force_delete?: boolean
+          p_reason?: string
+        }
+        Returns: Json
+      }
       start_impersonation: {
         Args: { p_target_user_id: string; p_reason?: string }
         Returns: {
@@ -4349,6 +4361,10 @@ export type Database = {
           message: string
           session_token: string
         }[]
+      }
+      toggle_employee_status: {
+        Args: { p_employee_id: string; p_is_active: boolean; p_reason?: string }
+        Returns: Json
       }
       unlink_user_from_employee: {
         Args: { p_user_id: string }
