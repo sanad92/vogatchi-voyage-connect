@@ -18,7 +18,7 @@ export const useUnifiedUserEmployee = () => {
       setIsUpdating(true);
       console.log('🔄 بدء تحديث البيانات الموحدة:', data);
       
-      // تحديث بيانات المستخدم
+      // تحديث بيانات المستخدم فقط
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -50,6 +50,7 @@ export const useUnifiedUserEmployee = () => {
         }
 
         if (profileData?.employee_id) {
+          // تحديث بيانات الموظف مباشرة بدون تشغيل الـ trigger
           const { error: employeeError } = await supabase
             .from('employees')
             .update({
