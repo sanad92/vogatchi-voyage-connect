@@ -29,7 +29,7 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('supplier_type', 'flight')
+        .eq('type', 'flight')
         .eq('is_active', true)
         .order('name');
       if (error) throw error;
@@ -45,7 +45,7 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
           name: supplierData.name,
           phone: supplierData.phone,
           email: supplierData.email,
-          supplier_type: 'flight',
+          type: 'flight',
           is_active: true
         })
         .select()
