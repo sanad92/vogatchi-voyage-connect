@@ -50,7 +50,12 @@ export const useCRM = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // تحويل البيانات إلى النوع المطلوب مع التأكد من صحة campaign_type
+      return data?.map(campaign => ({
+        ...campaign,
+        campaign_type: campaign.campaign_type as 'email' | 'whatsapp' | 'sms'
+      })) as MarketingCampaign[];
     },
   });
 
