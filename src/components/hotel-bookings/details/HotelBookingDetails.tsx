@@ -1,10 +1,13 @@
+
 import React, { useState } from "react";
 import { HotelBooking } from "@/types/hotelBooking";
 import { Button } from "@/components/ui/button";
-import { Ban, RotateCcw } from "lucide-react";
+import { Ban, RotateCcw, FileText } from "lucide-react";
 import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStatusSelector";
 import CancelBookingDialog from "../dialogs/CancelBookingDialog";
 import RefundBookingDialog from "../dialogs/RefundBookingDialog";
+import BookingInvoiceManager from "@/components/bookings/shared/BookingInvoiceManager";
+import HotelInvoiceCreator from "../HotelInvoiceCreator";
 
 interface Props {
   booking: HotelBooking;
@@ -13,6 +16,7 @@ interface Props {
 const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
   const [showCancel, setShowCancel] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
+  const [showInvoiceCreator, setShowInvoiceCreator] = useState(false);
 
   // always get status name_ar correctly, fallback to ""
   const statusNameAr = booking?.booking_status?.name_ar || "";
@@ -30,9 +34,9 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
   if (!booking) return null;
 
   return (
-    <div className="relative">
+    <div className="space-y-6">
       {/* أزرار الإجراءات البارزة أعلى التفاصيل */}
-      <div className="w-full flex flex-col md:flex-row gap-3 justify-start items-stretch mb-7">
+      <div className="w-full flex flex-col md:flex-row gap-3 justify-start items-stretch">
         {/* إضافة مكون تغيير الحالة الموحد */}
         <div className="flex justify-start">
           <UnifiedBookingStatusSelector
@@ -127,6 +131,22 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
           </div>
         </div>
       </div>
+
+      {/* إدارة الفواتير والمدفوعات */}
+      <BookingInvoiceManager
+        bookingId={booking.id}
+        bookingType="hotel"
+        onCreateInvoice={() => setShowInvoiceCreator(true)}
+      />
+
+      {/* حوار إنشاء الفاتورة */}
+      {showInvoiceCreator && (
+        <HotelInvoiceCreator
+          booking={booking}
+          open={showInvoiceCreator}
+          onClose={() => setShowInvoiceCreator(false)}
+        />
+      )}
     </div>
   );
 };
