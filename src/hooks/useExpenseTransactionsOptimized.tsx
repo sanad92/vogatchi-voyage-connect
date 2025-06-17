@@ -32,15 +32,34 @@ interface ExpenseTransaction {
   };
 }
 
-export const useExpenseTransactionsOptimized = () => {
+interface UseExpenseTransactionsOptions {
+  search?: string;
+  categoryId?: string;
+  status?: string;
+  paymentMethod?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+interface UsePaginationOptions {
+  page?: number;
+  pageSize?: number;
+}
+
+export const useExpenseTransactionsOptimized = (
+  filters: UseExpenseTransactionsOptions = {},
+  pagination: UsePaginationOptions = {}
+) => {
   const queryClient = useQueryClient();
+  const { page = 1, pageSize = 50 } = pagination;
 
   // جلب جميع المعاملات المالية مع التصنيفات
-  const { data: transactions, isLoading: transactionsLoading, error: transactionsError } = useQuery({
-    queryKey: ['expense-transactions-optimized'],
+  const { data: queryData, isLoading: transactionsLoading, error: transactionsError } = useQuery({
+    queryKey: ['expense-transactions-optimized', filters, page, pageSize],
     queryFn: async () => {
       console.log('Fetching optimized expense transactions...');
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('expense_transactions')
         .select(`
           *,
@@ -50,29 +69,77 @@ export const useExpenseTransactionsOptimized = () => {
             name_ar,
             color
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' });
+
+      // تطبيق الفلاتر
+      if (filters.search) {
+        query = query.or(`description.ilike.%${filters.search}%,transaction_number.ilike.%${filters.search}%,vendor_name.ilike.%${filters.search}%`);
+      }
+      
+      if (filters.categoryId) {
+        query = query.eq('category_id', filters.categoryId);
+      }
+      
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      
+      if (filters.paymentMethod) {
+        query = query.eq('payment_method', filters.paymentMethod);
+      }
+      
+      if (filters.dateFrom) {
+        query = query.gte('transaction_date', filters.dateFrom);
+      }
+      
+      if (filters.dateTo) {
+        query = query.lte('transaction_date', filters.dateTo);
+      }
+
+      // تطبيق التصفح
+      const startIndex = (page - 1) * pageSize;
+      query = query.range(startIndex, startIndex + pageSize - 1);
+      
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('Error fetching expense transactions:', error);
         throw error;
       }
+      
       console.log('Fetched expense transactions:', data);
-      return data as ExpenseTransaction[];
+      return { 
+        data: data as ExpenseTransaction[], 
+        count: count || 0 
+      };
     },
   });
+
+  const transactions = queryData?.data || [];
+  const totalCount = queryData?.count || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
 
   // إضافة معاملة مالية جديدة
   const addTransactionMutation = useMutation({
     mutationFn: async (transactionData: Partial<ExpenseTransaction>) => {
       console.log('Adding new expense transaction:', transactionData);
       
+      // التأكد من أن البيانات المطلوبة موجودة
+      const requiredData = {
+        category_id: transactionData.category_id!,
+        description: transactionData.description!,
+        amount: transactionData.amount!,
+        created_by: (await supabase.auth.getUser()).data.user?.id!,
+        ...transactionData
+      };
+
       const { data, error } = await supabase
         .from('expense_transactions')
-        .insert([{
-          ...transactionData,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        }])
+        .insert([requiredData])
         .select(`
           *,
           expense_categories!inner(
@@ -103,29 +170,20 @@ export const useExpenseTransactionsOptimized = () => {
     },
   });
 
-  // تحديث حالة المعاملة المالية
-  const updateTransactionStatusMutation = useMutation({
-    mutationFn: async ({ transactionId, status, approvedBy }: {
-      transactionId: string;
-      status: string;
-      approvedBy?: string;
-    }) => {
-      console.log('Updating transaction status:', { transactionId, status });
+  // تحديث معاملة مالية
+  const updateTransactionMutation = useMutation({
+    mutationFn: async (updateData: Partial<ExpenseTransaction> & { id: string }) => {
+      console.log('Updating expense transaction:', updateData);
       
-      const updateData: any = {
-        status,
-        updated_at: new Date().toISOString(),
-      };
-      
-      if (status === 'approved' && approvedBy) {
-        updateData.approved_by = approvedBy;
-        updateData.approved_at = new Date().toISOString();
-      }
+      const { id, ...dataToUpdate } = updateData;
 
       const { data, error } = await supabase
         .from('expense_transactions')
-        .update(updateData)
-        .eq('id', transactionId)
+        .update({
+          ...dataToUpdate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
         .select(`
           *,
           expense_categories!inner(
@@ -138,20 +196,20 @@ export const useExpenseTransactionsOptimized = () => {
         .single();
 
       if (error) {
-        console.error('Error updating transaction status:', error);
+        console.error('Error updating expense transaction:', error);
         throw error;
       }
       
-      console.log('Updated transaction status:', data);
+      console.log('Updated expense transaction:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] });
-      toast.success('تم تحديث حالة المعاملة بنجاح');
+      toast.success('تم تحديث المعاملة المالية بنجاح');
     },
     onError: (error: Error) => {
-      console.error('Error updating transaction status:', error);
-      toast.error('حدث خطأ أثناء تحديث حالة المعاملة');
+      console.error('Error updating expense transaction:', error);
+      toast.error('حدث خطأ أثناء تحديث المعاملة المالية');
     },
   });
 
@@ -213,12 +271,8 @@ export const useExpenseTransactionsOptimized = () => {
     addTransactionMutation.mutate(data);
   };
 
-  const updateTransactionStatus = (data: {
-    transactionId: string;
-    status: string;
-    approvedBy?: string;
-  }) => {
-    updateTransactionStatusMutation.mutate(data);
+  const updateTransaction = (data: Partial<ExpenseTransaction> & { id: string }) => {
+    updateTransactionMutation.mutate(data);
   };
 
   const deleteTransaction = (transactionId: string) => {
@@ -227,14 +281,24 @@ export const useExpenseTransactionsOptimized = () => {
 
   return {
     transactions,
-    transactionsLoading,
-    transactionsError,
+    totalCount,
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    currentPage: page,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
     addTransaction,
-    updateTransactionStatus,
+    updateTransaction,
     deleteTransaction,
     getTransactionsStatistics,
-    isAddingTransaction: addTransactionMutation.isPending,
-    isUpdatingStatus: updateTransactionStatusMutation.isPending,
+    isAdding: addTransactionMutation.isPending,
+    isUpdating: updateTransactionMutation.isPending,
     isDeleting: deleteTransactionMutation.isPending,
+    // للتوافق مع الأسماء القديمة
+    transactionsLoading,
+    transactionsError,
+    isAddingTransaction: addTransactionMutation.isPending,
+    isUpdatingStatus: updateTransactionMutation.isPending,
   };
 };

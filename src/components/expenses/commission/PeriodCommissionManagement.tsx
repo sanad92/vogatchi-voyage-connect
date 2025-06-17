@@ -234,7 +234,7 @@ const PeriodCommissionManagement = () => {
                       <TableCell>
                         <MultiCurrencyDisplay 
                           amount={commission.total_profit} 
-                          currency={commission.currency} 
+                          currency={commission.currency as 'EGP' | 'USD' | 'EUR'} 
                           showInEGP={false} 
                         />
                       </TableCell>
@@ -244,7 +244,7 @@ const PeriodCommissionManagement = () => {
                       <TableCell className="font-semibold text-green-600">
                         <MultiCurrencyDisplay 
                           amount={commission.commission_amount} 
-                          currency={commission.currency} 
+                          currency={commission.currency as 'EGP' | 'USD' | 'EUR'} 
                           showInEGP={false} 
                         />
                       </TableCell>

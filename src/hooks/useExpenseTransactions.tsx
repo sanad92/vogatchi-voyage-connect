@@ -2,17 +2,16 @@
 import { useExpenseTransactionsOptimized } from './useExpenseTransactionsOptimized';
 
 // تصدير النسخة المحسنة كافتراضي للتوافق مع الكود الموجود
-export const useExpenseTransactions = useExpenseTransactionsOptimized;
+export const useExpenseTransactions = () => {
+  return useExpenseTransactionsOptimized();
+};
 
 // إبقاء التصدير القديم للتوافق
 export { useExpenseTransactionsOptimized };
 
 // Hook مبسط للحصول على الإحصائيات فقط
 export const useExpenseStats = () => {
-  const { transactions, totalCount, isLoading } = useExpenseTransactionsOptimized(
-    {}, 
-    { page: 1, pageSize: 1000 } // تحميل عدد كبير للإحصائيات
-  );
+  const { transactions, totalCount, isLoading } = useExpenseTransactionsOptimized();
 
   const stats = {
     totalTransactions: totalCount,
