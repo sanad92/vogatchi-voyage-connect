@@ -8,7 +8,7 @@ import { Home, Plus, CreditCard, Bell } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import AddRentContractDialog from './rent/AddRentContractDialog';
 import RentContractsGrid from './rent/RentContractsGrid';
-import RentPaymentManagement from './rent/RentPaymentManagement';
+import ImprovedRentPaymentManagement from './rent/ImprovedRentPaymentManagement';
 import RentContractAlerts from './rent/RentContractAlerts';
 
 const RentManagement = () => {
@@ -32,7 +32,7 @@ const RentManagement = () => {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5" />
-              إدارة عقود الإيجار والمدفوعات
+              إدارة عقود الإيجار والمدفوعات المحسّنة
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -59,7 +59,7 @@ const RentManagement = () => {
               </TabsTrigger>
               <TabsTrigger value="payments" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
-                المدفوعات
+                المدفوعات المحسّنة
               </TabsTrigger>
               <TabsTrigger value="alerts" className="flex items-center gap-2">
                 <Bell className="h-4 w-4" />
@@ -72,7 +72,7 @@ const RentManagement = () => {
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-4">
-              <RentPaymentManagement />
+              <ImprovedRentPaymentManagement />
             </TabsContent>
 
             <TabsContent value="alerts" className="space-y-4">

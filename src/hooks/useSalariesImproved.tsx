@@ -100,8 +100,8 @@ export const useSalariesImproved = () => {
         throw error;
       }
 
-      // Type assertion للـ response
-      const response = data as StoredProcedureResponse;
+      // Type assertion للـ response مع التحويل إلى unknown أولاً
+      const response = data as unknown as StoredProcedureResponse;
 
       if (!response?.success) {
         console.error('فشل في حساب الراتب:', response);
@@ -157,8 +157,8 @@ export const useSalariesImproved = () => {
         throw error;
       }
 
-      // Type assertion للـ response
-      const response = data as StoredProcedureResponse;
+      // Type assertion للـ response مع التحويل إلى unknown أولاً
+      const response = data as unknown as StoredProcedureResponse;
 
       if (!response?.success) {
         console.error('فشل في تحديث حالة الراتب:', response);
