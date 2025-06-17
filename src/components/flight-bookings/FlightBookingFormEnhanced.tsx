@@ -151,22 +151,42 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
   const createBookingMutation = useMutation({
     mutationFn: async (data: FlightBookingFormData) => {
       const bookingData = {
-        ...data,
-        departure_date: format(data.departure_date, 'yyyy-MM-dd'),
-        arrival_date: format(data.arrival_date, 'yyyy-MM-dd'),
         customer_id: selectedCustomer?.id || null,
+        customer_name: data.customer_name,
+        departure_airport_id: data.departure_airport_id,
+        arrival_airport_id: data.arrival_airport_id,
+        departure_date: format(data.departure_date, 'yyyy-MM-dd'),
+        departure_time: data.departure_time || null,
+        arrival_date: format(data.arrival_date, 'yyyy-MM-dd'),
+        arrival_time: data.arrival_time || null,
+        airline_id: data.airline_id,
+        flight_class_id: data.flight_class_id,
+        flight_number: data.flight_number || null,
+        number_of_passengers: data.number_of_passengers,
+        ticket_price_per_person: data.ticket_price_per_person,
+        taxes_and_fees: data.taxes_and_fees || 0,
+        total_cost: totalCost,
+        currency: data.currency,
+        supplier_cost: data.supplier_cost,
+        supplier_name: data.supplier_name,
         booking_agent_id: getBookingAgentId(),
         booking_agent_name: getBookingAgentName(),
-        total_cost: totalCost,
         total_profit: totalProfit,
         remaining_amount: totalCost - (data.paid_amount || 0),
+        paid_amount: data.paid_amount || 0,
+        payment_method: data.payment_method || null,
+        special_requests: data.special_requests || null,
+        meal_preferences: data.meal_preferences || null,
+        seat_preferences: data.seat_preferences || null,
+        is_round_trip: data.is_round_trip || false,
         passenger_details: passengerDetails.length > 0 ? passengerDetails : null,
         exchange_rate_to_egp: 1.0,
+        booking_date: format(new Date(), 'yyyy-MM-dd'),
       };
 
       const { data: result, error } = await supabase
         .from('flight_bookings')
-        .insert([bookingData])
+        .insert(bookingData)
         .select('*')
         .single();
 
