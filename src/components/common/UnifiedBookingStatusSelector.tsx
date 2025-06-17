@@ -48,14 +48,24 @@ const UnifiedBookingStatusSelector = ({
   const updateStatusMutation = useMutation({
     mutationFn: async ({ statusId, notes }: { statusId: string; notes: string }) => {
       // تحديد الجدول المناسب حسب نوع الحجز
-      const tableMap = {
-        hotel: 'hotel_bookings',
-        flight: 'flight_bookings',
-        transport: 'transport_bookings',
-        car_rental: 'car_rentals'
-      };
-
-      const tableName = tableMap[bookingType];
+      let tableName: 'hotel_bookings' | 'flight_bookings' | 'transport_bookings' | 'car_rentals';
+      
+      switch (bookingType) {
+        case 'hotel':
+          tableName = 'hotel_bookings';
+          break;
+        case 'flight':
+          tableName = 'flight_bookings';
+          break;
+        case 'transport':
+          tableName = 'transport_bookings';
+          break;
+        case 'car_rental':
+          tableName = 'car_rentals';
+          break;
+        default:
+          throw new Error('Invalid booking type');
+      }
       
       // تحديث حالة الحجز
       const { error: updateError } = await supabase

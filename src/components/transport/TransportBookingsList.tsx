@@ -59,7 +59,12 @@ const TransportBookingsList = () => {
               <UnifiedBookingStatusSelector
                 bookingId={booking.id}
                 bookingType="transport"
-                currentStatus={booking.status}
+                currentStatus={booking.status ? {
+                  id: '', // Will be handled by the backend
+                  name: booking.status.name,
+                  name_ar: booking.status.name_ar,
+                  color: booking.status.color
+                } : undefined}
               />
             </div>
             <div className="text-sm text-gray-600">

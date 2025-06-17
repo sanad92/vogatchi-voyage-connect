@@ -58,7 +58,12 @@ const CarRentalsList = () => {
               <UnifiedBookingStatusSelector
                 bookingId={rental.id}
                 bookingType="car_rental"
-                currentStatus={rental.status}
+                currentStatus={rental.status ? {
+                  id: '', // Will be handled by the backend
+                  name: rental.status.name,
+                  name_ar: rental.status.name_ar,
+                  color: rental.status.color
+                } : undefined}
               />
             </div>
             <div className="text-sm text-gray-600">

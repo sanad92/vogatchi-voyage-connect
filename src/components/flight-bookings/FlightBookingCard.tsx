@@ -27,7 +27,7 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
           <UnifiedBookingStatusSelector
             bookingId={booking.id}
             bookingType="flight"
-            currentStatus={booking.status}
+            currentStatus={booking.booking_status}
           />
         </div>
         <div className="text-sm text-gray-600">
