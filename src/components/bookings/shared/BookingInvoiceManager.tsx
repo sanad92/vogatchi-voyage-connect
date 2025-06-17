@@ -33,24 +33,24 @@ const BookingInvoiceManager = ({ bookingId, bookingType, onCreateInvoice }: Book
     const statusConfig = {
       draft: { label: 'مسودة', variant: 'secondary' as const },
       sent: { label: 'مرسلة', variant: 'default' as const },
-      paid: { label: 'مدفوعة', variant: 'success' as const },
+      paid: { label: 'مدفوعة', variant: 'default' as const, className: 'bg-green-500 text-white' },
       overdue: { label: 'متأخرة', variant: 'destructive' as const },
       cancelled: { label: 'ملغاة', variant: 'outline' as const },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const getPaymentStatusBadge = (paymentStatus: string) => {
     const statusConfig = {
       unpaid: { label: 'غير مدفوعة', variant: 'destructive' as const },
       partially_paid: { label: 'مدفوعة جزئياً', variant: 'default' as const },
-      fully_paid: { label: 'مدفوعة كاملاً', variant: 'success' as const },
+      fully_paid: { label: 'مدفوعة كاملاً', variant: 'default' as const, className: 'bg-green-500 text-white' },
     };
     
     const config = statusConfig[paymentStatus as keyof typeof statusConfig] || statusConfig.unpaid;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   if (invoicesLoading) {
