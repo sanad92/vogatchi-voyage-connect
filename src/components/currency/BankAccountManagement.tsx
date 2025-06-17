@@ -12,6 +12,7 @@ import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { BankAccount, SupportedCurrency } from '@/types/currency';
 import CurrencySelector from './CurrencySelector';
 import MultiCurrencyDisplay from './MultiCurrencyDisplay';
+import DeleteBankAccountDialog from './DeleteBankAccountDialog';
 import { Badge } from '@/components/ui/badge';
 
 interface BankAccountFormValues {
@@ -25,7 +26,7 @@ interface BankAccountFormValues {
 }
 
 const BankAccountManagement = () => {
-  const { bankAccounts, addBankAccount, isAddingAccount } = useBankAccounts();
+  const { bankAccounts, addBankAccount, deleteBankAccount, isAddingAccount, isDeletingAccount } = useBankAccounts();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
 
@@ -54,6 +55,10 @@ const BankAccountManagement = () => {
     setValue('account_type', account.account_type as 'checking' | 'savings' | 'business');
     setValue('current_balance', account.current_balance);
     setValue('notes', account.notes || '');
+  };
+
+  const handleDelete = (accountId: string) => {
+    deleteBankAccount(accountId);
   };
 
   const onSubmit = async (data: any) => {
@@ -233,6 +238,11 @@ const BankAccountManagement = () => {
                 >
                   <Edit2 className="h-4 w-4" />
                 </Button>
+                <DeleteBankAccountDialog
+                  account={account}
+                  onDelete={handleDelete}
+                  isDeleting={isDeletingAccount}
+                />
               </div>
             </CardContent>
           </Card>

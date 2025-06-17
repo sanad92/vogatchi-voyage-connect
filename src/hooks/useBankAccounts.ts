@@ -67,6 +67,46 @@ export const useBankAccounts = () => {
     }
   });
 
+  // Delete bank account (soft delete)
+  const deleteBankAccountMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      // First, check if account has transactions
+      const { data: transactions, error: transactionError } = await supabase
+        .from('bank_account_transactions')
+        .select('id')
+        .eq('bank_account_id', accountId)
+        .limit(1);
+      
+      if (transactionError) throw transactionError;
+      
+      if (transactions && transactions.length > 0) {
+        throw new Error('لا يمكن حذف الحساب لوجود معاملات مالية مرتبطة به');
+      }
+      
+      // Soft delete by setting is_active to false
+      const { error } = await supabase
+        .from('bank_accounts')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', accountId);
+      
+      if (error) throw error;
+      return accountId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
+      toast({
+        title: "تم حذف الحساب البنكي بنجاح",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "خطأ في حذف الحساب البنكي",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Add transaction
   const addTransactionMutation = useMutation({
     mutationFn: async (transaction: Omit<BankAccountTransaction, 'id' | 'created_at'>) => {
@@ -98,9 +138,11 @@ export const useBankAccounts = () => {
     transactions,
     isLoading,
     addBankAccount: addBankAccountMutation.mutate,
+    deleteBankAccount: deleteBankAccountMutation.mutate,
     addTransaction: addTransactionMutation.mutate,
     getAccountsByCurrency,
     isAddingAccount: addBankAccountMutation.isPending,
+    isDeletingAccount: deleteBankAccountMutation.isPending,
     isAddingTransaction: addTransactionMutation.isPending
   };
 };
