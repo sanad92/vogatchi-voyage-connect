@@ -8,19 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText, Download, TrendingUp } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
-import { useEmployeeCommissions } from '@/hooks/useEmployeeCommissions';
+import { usePeriodCommissions } from '@/hooks/usePeriodCommissions';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 
 const CommissionReports = () => {
   const { employees } = useExpenses();
-  const { commissions } = useEmployeeCommissions();
+  const { commissionPeriods } = usePeriodCommissions();
   const [reportType, setReportType] = useState('monthly');
   const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  const filteredCommissions = commissions?.filter(commission => {
+  const filteredCommissions = commissionPeriods?.filter(commission => {
     const matchesEmployee = !selectedEmployee || commission.employee_id === selectedEmployee;
-    const commissionDate = new Date(commission.commission_date);
+    const commissionDate = new Date(commission.created_at);
     
     let matchesPeriod = true;
     if (reportType === 'monthly') {
@@ -36,15 +36,16 @@ const CommissionReports = () => {
   const employeeCommissionSummary = employees?.map(employee => {
     const employeeCommissions = filteredCommissions?.filter(c => c.employee_id === employee.id) || [];
     const totalCommissions = employeeCommissions.reduce((sum, c) => sum + c.commission_amount, 0);
-    const pendingCommissions = employeeCommissions.filter(c => c.payment_status === 'pending').reduce((sum, c) => sum + c.commission_amount, 0);
-    const paidCommissions = employeeCommissions.filter(c => c.payment_status === 'paid').reduce((sum, c) => sum + c.commission_amount, 0);
+    const pendingCommissions = employeeCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.commission_amount, 0);
+    const paidCommissions = employeeCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.commission_amount, 0);
     
     return {
       employee,
       totalCommissions,
       pendingCommissions,
       paidCommissions,
-      commissionsCount: employeeCommissions.length
+      commissionsCount: employeeCommissions.length,
+      totalBookings: employeeCommissions.reduce((sum, c) => sum + c.total_bookings_count, 0)
     };
   }).filter(summary => summary.totalCommissions > 0) || [];
 
@@ -169,7 +170,8 @@ const CommissionReports = () => {
                 <TableHead>الموظف</TableHead>
                 <TableHead>الكود</TableHead>
                 <TableHead>معدل العمولة</TableHead>
-                <TableHead>عدد العمليات</TableHead>
+                <TableHead>عدد الفترات</TableHead>
+                <TableHead>عدد الحجوزات</TableHead>
                 <TableHead>إجمالي العمولات</TableHead>
                 <TableHead>العمولات المعلقة</TableHead>
                 <TableHead>العمولات المدفوعة</TableHead>
@@ -185,6 +187,7 @@ const CommissionReports = () => {
                   <TableCell>{summary.employee.employee_code}</TableCell>
                   <TableCell>{summary.employee.commission_rate || 0}%</TableCell>
                   <TableCell>{summary.commissionsCount}</TableCell>
+                  <TableCell>{summary.totalBookings}</TableCell>
                   <TableCell className="font-semibold text-blue-600">
                     <MultiCurrencyDisplay 
                       amount={summary.totalCommissions} 
