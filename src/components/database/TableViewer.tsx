@@ -24,36 +24,22 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // استخدام طلب SQL خام لتجنب مشاكل TypeScript مع الجداول الديناميكية
+        // استخدام الطريقة المباشرة لجلب البيانات
         const { data: result, error } = await supabase
-          .rpc('get_table_data', { 
-            table_name: table,
-            limit_count: 30 
-          });
-
+          .from(table as any)
+          .select("*")
+          .limit(30);
+        
         if (error) {
-          // إذا فشلت الدالة، استخدم طريقة أخرى
-          const { data: fallbackResult, error: fallbackError } = await supabase
-            .from(table as any)
-            .select("*")
-            .limit(30);
-          
-          if (fallbackError) {
-            toast({ 
-              title: "حدث خطأ", 
-              description: fallbackError.message, 
-              variant: "destructive" 
-            });
-            setData([]);
-            setCols([]);
-          } else if (fallbackResult && fallbackResult.length > 0) {
-            setData(fallbackResult);
-            setCols(getColumns(fallbackResult[0]));
-          } else {
-            setData([]);
-            setCols([]);
-          }
-        } else if (result && result.length > 0) {
+          console.error('Error fetching table data:', error);
+          toast({ 
+            title: "حدث خطأ", 
+            description: error.message, 
+            variant: "destructive" 
+          });
+          setData([]);
+          setCols([]);
+        } else if (result && Array.isArray(result) && result.length > 0) {
           setData(result);
           setCols(getColumns(result[0]));
         } else {

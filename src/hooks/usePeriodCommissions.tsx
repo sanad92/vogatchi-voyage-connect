@@ -138,14 +138,19 @@ export const usePeriodCommissions = () => {
       // التعامل مع استجابة الدالة بطريقة آمنة
       let response: DatabaseFunctionResponse;
       
-      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-        response = data as DatabaseFunctionResponse;
-      } else {
-        throw new Error('استجابة غير متوقعة من الخادم');
-      }
-      
-      if (!response.success) {
-        throw new Error(response.message || 'حدث خطأ في حساب العمولة');
+      try {
+        if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+          response = data as unknown as DatabaseFunctionResponse;
+        } else {
+          throw new Error('استجابة غير متوقعة من الخادم');
+        }
+        
+        if (!response.success) {
+          throw new Error(response.message || 'حدث خطأ في حساب العمولة');
+        }
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('حدث خطأ في معالجة الاستجابة من الخادم');
       }
 
       console.log('Generated period commission:', response);
@@ -202,14 +207,19 @@ export const usePeriodCommissions = () => {
       // التعامل مع استجابة الدالة بطريقة آمنة
       let response: DatabaseFunctionResponse;
       
-      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-        response = data as DatabaseFunctionResponse;
-      } else {
-        throw new Error('استجابة غير متوقعة من الخادم');
-      }
-      
-      if (!response.success) {
-        throw new Error(response.message || 'حدث خطأ في تحديث حالة العمولة');
+      try {
+        if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+          response = data as unknown as DatabaseFunctionResponse;
+        } else {
+          throw new Error('استجابة غير متوقعة من الخادم');
+        }
+        
+        if (!response.success) {
+          throw new Error(response.message || 'حدث خطأ في تحديث حالة العمولة');
+        }
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('حدث خطأ في معالجة الاستجابة من الخادم');
       }
 
       console.log('Updated period commission status:', response);
