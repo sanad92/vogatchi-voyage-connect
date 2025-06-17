@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus } from "lucide-react";
+import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,6 +74,15 @@ const Invoices = () => {
     return statuses[status] || status;
   };
 
+  const getPaymentStatusLabel = (status) => {
+    const statuses = {
+      unpaid: "غير مدفوعة",
+      partially_paid: "مدفوعة جزئياً",
+      fully_paid: "مدفوعة بالكامل",
+    };
+    return statuses[status] || status;
+  };
+
   const getStatusColor = (status): "default" | "destructive" | "outline" | "secondary" => {
     const colors = {
       draft: "secondary" as const,
@@ -81,6 +90,15 @@ const Invoices = () => {
       paid: "default" as const,
       overdue: "destructive" as const,
       cancelled: "outline" as const,
+    };
+    return colors[status] || "default";
+  };
+
+  const getPaymentStatusColor = (status) => {
+    const colors = {
+      unpaid: "destructive",
+      partially_paid: "outline",
+      fully_paid: "default",
     };
     return colors[status] || "default";
   };
@@ -148,8 +166,8 @@ const Invoices = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* رأس الصفحة مع الإحصائيات */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* رأس الصفحة مع الإحصائيات المحدثة */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -168,10 +186,10 @@ const Invoices = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <FileText className="h-5 w-5 text-green-600" />
+                <CreditCard className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">فواتير مدفوعة</p>
+                <p className="text-sm font-medium text-gray-600">مدفوعة بالكامل</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.paidInvoices || 0}</p>
               </div>
             </div>
@@ -181,12 +199,26 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <CreditCard className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">فواتير متأخرة</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.overdueInvoices || 0}</p>
+                <p className="text-sm font-medium text-gray-600">مدفوعة جزئياً</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.partiallyPaidInvoices || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">غير مدفوعة</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.unpaidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -199,9 +231,9 @@ const Invoices = () => {
                 <FileText className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">إجمالي المبالغ</p>
+                <p className="text-sm font-medium text-gray-600">المبلغ المتبقي</p>
                 <p className="text-xl font-bold text-gray-900">
-                  {stats?.totalAmount?.toLocaleString() || 0} ج.م
+                  {stats?.totalRemainingAmount?.toLocaleString() || 0} ج.م
                 </p>
               </div>
             </div>
@@ -346,8 +378,10 @@ const Invoices = () => {
                     <th className="text-right py-3 px-4 font-medium">رقم الفاتورة</th>
                     <th className="text-right py-3 px-4 font-medium">العميل</th>
                     <th className="text-right py-3 px-4 font-medium">نوع الحجز</th>
-                    <th className="text-right py-3 px-4 font-medium">المبلغ</th>
-                    <th className="text-right py-3 px-4 font-medium">الحالة</th>
+                    <th className="text-right py-3 px-4 font-medium">المبلغ الإجمالي</th>
+                    <th className="text-right py-3 px-4 font-medium">المبلغ المدفوع</th>
+                    <th className="text-right py-3 px-4 font-medium">المبلغ المتبقي</th>
+                    <th className="text-right py-3 px-4 font-medium">حالة الدفع</th>
                     <th className="text-right py-3 px-4 font-medium">تاريخ الإصدار</th>
                     <th className="text-right py-3 px-4 font-medium">الإجراءات</th>
                   </tr>
@@ -370,9 +404,15 @@ const Invoices = () => {
                         <td className="py-3 px-4 font-medium">
                           {invoice.final_amount?.toLocaleString()} {invoice.currency}
                         </td>
+                        <td className="py-3 px-4 font-medium text-green-600">
+                          {invoice.total_paid_amount?.toLocaleString()} {invoice.currency}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-red-600">
+                          {invoice.remaining_amount?.toLocaleString()} {invoice.currency}
+                        </td>
                         <td className="py-3 px-4">
-                          <Badge variant={getStatusColor(invoice.status)}>
-                            {getStatusLabel(invoice.status)}
+                          <Badge variant={getPaymentStatusColor(invoice.payment_status)}>
+                            {getPaymentStatusLabel(invoice.payment_status)}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">

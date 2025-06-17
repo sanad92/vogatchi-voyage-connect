@@ -1,29 +1,34 @@
 
+import { useMemo } from 'react';
+
 export const useInvoiceStats = (invoices: any[]) => {
-  const getInvoiceStats = () => {
-    if (!invoices) return null;
+  const getInvoiceStats = useMemo(() => {
+    if (!invoices || invoices.length === 0) {
+      return {
+        totalInvoices: 0,
+        paidInvoices: 0,
+        partiallyPaidInvoices: 0,
+        unpaidInvoices: 0,
+        overdueInvoices: 0,
+        totalAmount: 0,
+        totalPaidAmount: 0,
+        totalRemainingAmount: 0,
+      };
+    }
 
-    const totalInvoices = invoices.length;
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-    const overdueInvoices = invoices.filter(inv => inv.status === 'overdue').length;
-    const pendingInvoices = invoices.filter(inv => inv.status === 'sent').length;
-    
-    const totalAmount = invoices.reduce((sum, inv) => sum + (inv.final_amount || 0), 0);
-    const paidAmount = invoices
-      .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + (inv.final_amount || 0), 0);
-    const outstandingAmount = totalAmount - paidAmount;
-
-    return {
-      totalInvoices,
-      paidInvoices,
-      overdueInvoices,
-      pendingInvoices,
-      totalAmount,
-      paidAmount,
-      outstandingAmount,
+    const stats = {
+      totalInvoices: invoices.length,
+      paidInvoices: invoices.filter(inv => inv.payment_status === 'fully_paid').length,
+      partiallyPaidInvoices: invoices.filter(inv => inv.payment_status === 'partially_paid').length,
+      unpaidInvoices: invoices.filter(inv => inv.payment_status === 'unpaid').length,
+      overdueInvoices: invoices.filter(inv => inv.status === 'overdue').length,
+      totalAmount: invoices.reduce((sum, inv) => sum + (inv.final_amount || 0), 0),
+      totalPaidAmount: invoices.reduce((sum, inv) => sum + (inv.total_paid_amount || 0), 0),
+      totalRemainingAmount: invoices.reduce((sum, inv) => sum + (inv.remaining_amount || 0), 0),
     };
-  };
+
+    return stats;
+  }, [invoices]);
 
   return { getInvoiceStats };
 };

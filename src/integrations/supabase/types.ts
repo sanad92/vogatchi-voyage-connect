@@ -2542,6 +2542,63 @@ export type Database = {
           },
         ]
       }
+      invoice_payments: {
+        Row: {
+          bank_account_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_amount: number
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_amount: number
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_amount?: number
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_sequences: {
         Row: {
           id: string
@@ -2580,13 +2637,16 @@ export type Database = {
           issued_date: string | null
           notes: string | null
           paid_date: string | null
+          payment_status: string | null
           payment_terms: string | null
+          remaining_amount: number | null
           status: string | null
           subtotal: number | null
           tax_amount: number | null
           total_amount: number
           total_amount_egp: number | null
           total_amount_usd: number | null
+          total_paid_amount: number | null
           updated_at: string
           vat_amount: number | null
           vat_rate: number | null
@@ -2607,13 +2667,16 @@ export type Database = {
           issued_date?: string | null
           notes?: string | null
           paid_date?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
+          remaining_amount?: number | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           total_amount: number
           total_amount_egp?: number | null
           total_amount_usd?: number | null
+          total_paid_amount?: number | null
           updated_at?: string
           vat_amount?: number | null
           vat_rate?: number | null
@@ -2634,13 +2697,16 @@ export type Database = {
           issued_date?: string | null
           notes?: string | null
           paid_date?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
+          remaining_amount?: number | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number
           total_amount_egp?: number | null
           total_amount_usd?: number | null
+          total_paid_amount?: number | null
           updated_at?: string
           vat_amount?: number | null
           vat_rate?: number | null

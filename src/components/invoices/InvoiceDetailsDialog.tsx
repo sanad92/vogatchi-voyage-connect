@@ -1,13 +1,14 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Printer, Edit, Trash2, CheckCircle, XCircle, CreditCard } from "lucide-react";
 import InvoiceHeader from "./details/InvoiceHeader";
 import InvoiceBasicInfo from "./details/InvoiceBasicInfo";
 import InvoiceBookingDetails from "./details/InvoiceBookingDetails";
 import InvoiceFinancialDetails from "./details/InvoiceFinancialDetails";
+import InvoicePaymentDetails from "./details/InvoicePaymentDetails";
+import InvoicePaymentManager from "./payments/InvoicePaymentManager";
 
 interface InvoiceDetailsDialogProps {
   invoice: any;
@@ -28,6 +29,8 @@ const InvoiceDetailsDialog = ({
   onUpdateStatus,
   onPrint,
 }: InvoiceDetailsDialogProps) => {
+  const [activeTab, setActiveTab] = useState('details');
+
   if (!invoice) return null;
 
   const getStatusLabel = (status: string) => {
@@ -94,7 +97,7 @@ const InvoiceDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <InvoiceHeader 
             invoice={invoice} 
@@ -103,69 +106,82 @@ const InvoiceDetailsDialog = ({
           />
         </DialogHeader>
 
-        <div className="space-y-6">
-          <InvoiceBasicInfo 
-            invoice={invoice} 
-            getBookingTypeLabel={getBookingTypeLabel}
-          />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="details">تفاصيل الفاتورة</TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              إدارة المدفوعات
+            </TabsTrigger>
+            <TabsTrigger value="actions">الإجراءات</TabsTrigger>
+          </TabsList>
 
-          <InvoiceBookingDetails 
-            invoice={invoice} 
-            bookingDetails={bookingDetails}
-          />
+          <TabsContent value="details" className="space-y-6">
+            <InvoiceBasicInfo 
+              invoice={invoice} 
+              getBookingTypeLabel={getBookingTypeLabel}
+            />
 
-          <InvoiceFinancialDetails invoice={invoice} />
+            <InvoiceBookingDetails 
+              invoice={invoice} 
+              bookingDetails={bookingDetails}
+            />
 
-          {/* ملاحظات */}
-          {invoice.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">ملاحظات</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{invoice.notes}</p>
-              </CardContent>
-            </Card>
-          )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <InvoiceFinancialDetails invoice={invoice} />
+              <InvoicePaymentDetails invoice={invoice} />
+            </div>
+          </TabsContent>
 
-          {/* أزرار الإجراءات */}
-          <div className="flex flex-wrap gap-2 pt-4 border-t">
-            {onPrint && (
-              <Button variant="outline" onClick={() => onPrint(invoice)}>
-                <Printer className="h-4 w-4 mr-2" />
-                طباعة
-              </Button>
-            )}
-            
-            {onEdit && (
-              <Button variant="outline" onClick={() => onEdit(invoice)}>
-                <Edit className="h-4 w-4 mr-2" />
-                تعديل
-              </Button>
-            )}
+          <TabsContent value="payments">
+            <InvoicePaymentManager invoice={invoice} />
+          </TabsContent>
 
-            {invoice.status !== 'paid' && onUpdateStatus && (
-              <Button variant="default" onClick={handleMarkAsPaid}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                تأكيد الدفع
-              </Button>
-            )}
+          <TabsContent value="actions" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {onPrint && (
+                <Button variant="outline" onClick={() => onPrint(invoice)} className="w-full">
+                  <Printer className="h-4 w-4 mr-2" />
+                  طباعة
+                </Button>
+              )}
+              
+              {onEdit && (
+                <Button variant="outline" onClick={() => onEdit(invoice)} className="w-full">
+                  <Edit className="h-4 w-4 mr-2" />
+                  تعديل
+                </Button>
+              )}
 
-            {invoice.status === 'sent' && onUpdateStatus && (
-              <Button variant="destructive" onClick={handleMarkAsOverdue}>
-                <XCircle className="h-4 w-4 mr-2" />
-                تأخير في السداد
-              </Button>
-            )}
+              {invoice.payment_status !== 'fully_paid' && onUpdateStatus && (
+                <Button variant="default" onClick={handleMarkAsPaid} className="w-full">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  تأكيد الدفع الكامل
+                </Button>
+              )}
+
+              {invoice.status === 'sent' && onUpdateStatus && (
+                <Button variant="destructive" onClick={handleMarkAsOverdue} className="w-full">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  تأخير في السداد
+                </Button>
+              )}
+            </div>
 
             {onDelete && (
-              <Button variant="destructive" onClick={() => onDelete(invoice.id)}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                حذف
-              </Button>
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => onDelete(invoice.id)}
+                  className="w-full"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  حذف الفاتورة
+                </Button>
+              </div>
             )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
