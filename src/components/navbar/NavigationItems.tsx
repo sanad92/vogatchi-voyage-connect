@@ -176,7 +176,6 @@ export const navigationItems: NavigationItem[] = [
   },
 ];
 
-// Export grouped navigation items for enhanced navigation with permissions
 export const mainNavItems: SimpleNavItem[] = [
   {
     to: "/",
@@ -250,6 +249,13 @@ export const businessNavItems: SimpleNavItem[] = [
     label: "إدارة المصروفات",
     allowedRoles: [],
     requiredPermissions: ['expenses_view']
+  },
+  {
+    to: "/bank-accounts",
+    icon: CreditCard,
+    label: "الحسابات البنكية",
+    allowedRoles: [],
+    requiredPermissions: ['banking_view']
   },
   {
     to: "/invoices",
