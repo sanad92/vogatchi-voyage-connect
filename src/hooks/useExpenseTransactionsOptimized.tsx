@@ -1,262 +1,240 @@
 
-import { useState, useMemo } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface ExpenseFilters {
-  search?: string;
-  categoryId?: string;
-  status?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  paymentMethod?: string;
-  minAmount?: number;
-  maxAmount?: number;
+interface ExpenseTransaction {
+  id: string;
+  transaction_number: string;
+  category_id: string;
+  description: string;
+  amount: number;
+  currency: string;
+  transaction_date: string;
+  payment_method: string;
+  vendor_name?: string;
+  vendor_phone?: string;
+  invoice_number?: string;
+  receipt_url?: string;
+  status: string;
+  notes?: string;
+  bank_account_id?: string;
+  created_by: string;
+  approved_by?: string;
+  approved_at?: string;
+  created_at: string;
+  updated_at: string;
+  expense_categories?: {
+    id: string;
+    name: string;
+    name_ar: string;
+    color: string;
+  };
 }
 
-interface PaginationOptions {
-  page: number;
-  pageSize: number;
-}
-
-export const useExpenseTransactionsOptimized = (
-  filters: ExpenseFilters = {},
-  pagination: PaginationOptions = { page: 1, pageSize: 50 }
-) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useExpenseTransactionsOptimized = () => {
   const queryClient = useQueryClient();
 
-  // حساب الإزاحة للصفحة
-  const offset = (pagination.page - 1) * pagination.pageSize;
-
-  // بناء query key للتخزين المؤقت
-  const queryKey = ['expense-transactions', filters, pagination];
-
-  // جلب المعاملات مع pagination
-  const { 
-    data: transactionsData, 
-    isLoading: transactionsLoading,
-    error: transactionsError 
-  } = useQuery({
-    queryKey,
+  // جلب جميع المعاملات المالية مع التصنيفات
+  const { data: transactions, isLoading: transactionsLoading, error: transactionsError } = useQuery({
+    queryKey: ['expense-transactions-optimized'],
     queryFn: async () => {
-      let query = supabase
+      console.log('Fetching optimized expense transactions...');
+      const { data, error } = await supabase
         .from('expense_transactions')
         .select(`
           *,
-          expense_categories(id, name, name_ar, color),
-          bank_accounts(id, account_name),
-          profiles!expense_transactions_created_by_fkey(id, full_name),
-          profiles!expense_transactions_approved_by_fkey(id, full_name)
+          expense_categories!inner(
+            id,
+            name,
+            name_ar,
+            color
+          )
         `)
-        .order('transaction_date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + pagination.pageSize - 1);
+        .order('created_at', { ascending: false });
 
-      // تطبيق الفلاتر
-      if (filters.search) {
-        query = query.or(`description.ilike.%${filters.search}%,vendor_name.ilike.%${filters.search}%,transaction_number.ilike.%${filters.search}%`);
-      }
-      
-      if (filters.categoryId) {
-        query = query.eq('category_id', filters.categoryId);
-      }
-      
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      
-      if (filters.paymentMethod) {
-        query = query.eq('payment_method', filters.paymentMethod);
-      }
-      
-      if (filters.dateFrom) {
-        query = query.gte('transaction_date', filters.dateFrom);
-      }
-      
-      if (filters.dateTo) {
-        query = query.lte('transaction_date', filters.dateTo);
-      }
-      
-      if (filters.minAmount) {
-        query = query.gte('amount', filters.minAmount);
-      }
-      
-      if (filters.maxAmount) {
-        query = query.lte('amount', filters.maxAmount);
-      }
-
-      const { data, error } = await query;
-      
       if (error) {
-        console.error('خطأ في جلب المعاملات:', error);
+        console.error('Error fetching expense transactions:', error);
+        throw error;
+      }
+      console.log('Fetched expense transactions:', data);
+      return data as ExpenseTransaction[];
+    },
+  });
+
+  // إضافة معاملة مالية جديدة
+  const addTransactionMutation = useMutation({
+    mutationFn: async (transactionData: Partial<ExpenseTransaction>) => {
+      console.log('Adding new expense transaction:', transactionData);
+      
+      const { data, error } = await supabase
+        .from('expense_transactions')
+        .insert([{
+          ...transactionData,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        }])
+        .select(`
+          *,
+          expense_categories!inner(
+            id,
+            name,
+            name_ar,
+            color
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error adding expense transaction:', error);
         throw error;
       }
       
-      return data || [];
-    },
-    staleTime: 5 * 60 * 1000, // 5 دقائق
-    gcTime: 10 * 60 * 1000, // 10 دقائق
-  });
-
-  // جلب العدد الإجمالي للمعاملات (منفصل للتحسين)
-  const { data: totalCount } = useQuery({
-    queryKey: ['expense-transactions-count', filters],
-    queryFn: async () => {
-      let query = supabase
-        .from('expense_transactions')
-        .select('id', { count: 'exact', head: true });
-
-      // تطبيق نفس الفلاتر
-      if (filters.search) {
-        query = query.or(`description.ilike.%${filters.search}%,vendor_name.ilike.%${filters.search}%,transaction_number.ilike.%${filters.search}%`);
-      }
-      
-      if (filters.categoryId) {
-        query = query.eq('category_id', filters.categoryId);
-      }
-      
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      
-      if (filters.paymentMethod) {
-        query = query.eq('payment_method', filters.paymentMethod);
-      }
-      
-      if (filters.dateFrom) {
-        query = query.gte('transaction_date', filters.dateFrom);
-      }
-      
-      if (filters.dateTo) {
-        query = query.lte('transaction_date', filters.dateTo);
-      }
-      
-      if (filters.minAmount) {
-        query = query.gte('amount', filters.minAmount);
-      }
-      
-      if (filters.maxAmount) {
-        query = query.lte('amount', filters.maxAmount);
-      }
-
-      const { count, error } = await query;
-      
-      if (error) throw error;
-      return count || 0;
-    },
-    staleTime: 2 * 60 * 1000, // 2 دقائق
-  });
-
-  // حساب معلومات الصفحات
-  const totalPages = useMemo(() => {
-    if (!totalCount) return 0;
-    return Math.ceil(totalCount / pagination.pageSize);
-  }, [totalCount, pagination.pageSize]);
-
-  const hasNextPage = pagination.page < totalPages;
-  const hasPrevPage = pagination.page > 1;
-
-  // إضافة معاملة جديدة
-  const addTransaction = useMutation({
-    mutationFn: async (transactionData: any) => {
-      const { data, error } = await supabase
-        .from('expense_transactions')
-        .insert([transactionData])
-        .select(`
-          *,
-          expense_categories(id, name, name_ar, color),
-          bank_accounts(id, account_name),
-          profiles!expense_transactions_created_by_fkey(id, full_name)
-        `)
-        .single();
-
-      if (error) throw error;
+      console.log('Added expense transaction:', data);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['expense-transactions-count'] });
-      toast.success('تم إضافة المعاملة بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+      toast.success('تم إضافة المعاملة المالية بنجاح');
     },
-    onError: (error: any) => {
-      toast.error(`فشل في إضافة المعاملة: ${error.message}`);
+    onError: (error: Error) => {
+      console.error('Error adding expense transaction:', error);
+      toast.error('حدث خطأ أثناء إضافة المعاملة المالية');
     },
   });
 
-  // تحديث معاملة
-  const updateTransaction = useMutation({
-    mutationFn: async ({ id, ...updateData }: any) => {
+  // تحديث حالة المعاملة المالية
+  const updateTransactionStatusMutation = useMutation({
+    mutationFn: async ({ transactionId, status, approvedBy }: {
+      transactionId: string;
+      status: string;
+      approvedBy?: string;
+    }) => {
+      console.log('Updating transaction status:', { transactionId, status });
+      
+      const updateData: any = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (status === 'approved' && approvedBy) {
+        updateData.approved_by = approvedBy;
+        updateData.approved_at = new Date().toISOString();
+      }
+
       const { data, error } = await supabase
         .from('expense_transactions')
         .update(updateData)
-        .eq('id', id)
+        .eq('id', transactionId)
         .select(`
           *,
-          expense_categories(id, name, name_ar, color),
-          bank_accounts(id, account_name),
-          profiles!expense_transactions_created_by_fkey(id, full_name),
-          profiles!expense_transactions_approved_by_fkey(id, full_name)
+          expense_categories!inner(
+            id,
+            name,
+            name_ar,
+            color
+          )
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating transaction status:', error);
+        throw error;
+      }
+      
+      console.log('Updated transaction status:', data);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense-transactions'] });
-      toast.success('تم تحديث المعاملة بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] });
+      toast.success('تم تحديث حالة المعاملة بنجاح');
     },
-    onError: (error: any) => {
-      toast.error(`فشل في تحديث المعاملة: ${error.message}`);
+    onError: (error: Error) => {
+      console.error('Error updating transaction status:', error);
+      toast.error('حدث خطأ أثناء تحديث حالة المعاملة');
     },
   });
 
-  // حذف معاملة
-  const deleteTransaction = useMutation({
-    mutationFn: async (id: string) => {
+  // حذف معاملة مالية
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      console.log('Deleting expense transaction:', transactionId);
+      
       const { error } = await supabase
         .from('expense_transactions')
         .delete()
-        .eq('id', id);
+        .eq('id', transactionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting expense transaction:', error);
+        throw error;
+      }
+      
+      console.log('Deleted expense transaction successfully');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['expense-transactions-count'] });
-      toast.success('تم حذف المعاملة بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] });
+      toast.success('تم حذف المعاملة المالية بنجاح');
     },
-    onError: (error: any) => {
-      toast.error(`فشل في حذف المعاملة: ${error.message}`);
+    onError: (error: Error) => {
+      console.error('Error deleting expense transaction:', error);
+      toast.error('حدث خطأ أثناء حذف المعاملة المالية');
     },
   });
 
+  // حساب الإحصائيات
+  const getTransactionsStatistics = () => {
+    if (!transactions) return null;
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const stats = {
+      totalTransactions: transactions.length,
+      pendingTransactions: transactions.filter(t => t.status === 'pending').length,
+      approvedTransactions: transactions.filter(t => t.status === 'approved').length,
+      rejectedTransactions: transactions.filter(t => t.status === 'rejected').length,
+      totalAmountThisMonth: transactions
+        .filter(t => {
+          const transactionDate = new Date(t.transaction_date);
+          return transactionDate.getMonth() === currentMonth && 
+                 transactionDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, t) => sum + t.amount, 0),
+      pendingAmount: transactions
+        .filter(t => t.status === 'pending')
+        .reduce((sum, t) => sum + t.amount, 0)
+    };
+
+    return stats;
+  };
+
+  const addTransaction = (data: Partial<ExpenseTransaction>) => {
+    addTransactionMutation.mutate(data);
+  };
+
+  const updateTransactionStatus = (data: {
+    transactionId: string;
+    status: string;
+    approvedBy?: string;
+  }) => {
+    updateTransactionStatusMutation.mutate(data);
+  };
+
+  const deleteTransaction = (transactionId: string) => {
+    deleteTransactionMutation.mutate(transactionId);
+  };
+
   return {
-    // البيانات
-    transactions: transactionsData || [],
-    totalCount: totalCount || 0,
-    
-    // حالة التحميل
-    isLoading: transactionsLoading || isLoading,
-    error: transactionsError,
-    
-    // معلومات الصفحات
-    currentPage: pagination.page,
-    pageSize: pagination.pageSize,
-    totalPages,
-    hasNextPage,
-    hasPrevPage,
-    
-    // العمليات
-    addTransaction: addTransaction.mutateAsync,
-    updateTransaction: updateTransaction.mutateAsync,
-    deleteTransaction: deleteTransaction.mutateAsync,
-    
-    // حالة العمليات
-    isAdding: addTransaction.isPending,
-    isUpdating: updateTransaction.isPending,
-    isDeleting: deleteTransaction.isPending,
+    transactions,
+    transactionsLoading,
+    transactionsError,
+    addTransaction,
+    updateTransactionStatus,
+    deleteTransaction,
+    getTransactionsStatistics,
+    isAddingTransaction: addTransactionMutation.isPending,
+    isUpdatingStatus: updateTransactionStatusMutation.isPending,
+    isDeleting: deleteTransactionMutation.isPending,
   };
 };
