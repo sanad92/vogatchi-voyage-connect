@@ -22,6 +22,16 @@ interface SalaryStatusUpdate {
   notes?: string;
 }
 
+interface StoredProcedureResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  salary_id?: string;
+  calculated_data?: any;
+  old_status?: string;
+  new_status?: string;
+}
+
 export const useSalariesImproved = () => {
   const queryClient = useQueryClient();
 
@@ -90,13 +100,16 @@ export const useSalariesImproved = () => {
         throw error;
       }
 
-      if (!data?.success) {
-        console.error('فشل في حساب الراتب:', data);
-        throw new Error(data?.message || 'فشل في حساب الراتب');
+      // Type assertion للـ response
+      const response = data as StoredProcedureResponse;
+
+      if (!response?.success) {
+        console.error('فشل في حساب الراتب:', response);
+        throw new Error(response?.message || 'فشل في حساب الراتب');
       }
 
-      console.log('تم حساب الراتب بنجاح:', data);
-      return data;
+      console.log('تم حساب الراتب بنجاح:', response);
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries-improved'] });
@@ -144,13 +157,16 @@ export const useSalariesImproved = () => {
         throw error;
       }
 
-      if (!data?.success) {
-        console.error('فشل في تحديث حالة الراتب:', data);
-        throw new Error(data?.message || 'فشل في تحديث حالة الراتب');
+      // Type assertion للـ response
+      const response = data as StoredProcedureResponse;
+
+      if (!response?.success) {
+        console.error('فشل في تحديث حالة الراتب:', response);
+        throw new Error(response?.message || 'فشل في تحديث حالة الراتب');
       }
 
-      console.log('تم تحديث حالة الراتب بنجاح:', data);
-      return data;
+      console.log('تم تحديث حالة الراتب بنجاح:', response);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries-improved'] });
