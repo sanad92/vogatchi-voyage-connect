@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface RentContract {
   id: string;
@@ -37,7 +37,7 @@ export const useRentContracts = () => {
         .order('contract_number');
 
       if (error) throw error;
-      return data;
+      return data as RentContract[];
     },
   });
 
@@ -55,17 +55,11 @@ export const useRentContracts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent-contracts'] });
-      toast({
-        title: "تمت الإضافة بنجاح",
-        description: "تم إضافة عقد الإيجار بنجاح",
-      });
+      toast.success('تم إضافة عقد الإيجار بنجاح');
     },
     onError: (error) => {
-      toast({
-        title: "خطأ في الإضافة",
-        description: "حدث خطأ أثناء إضافة عقد الإيجار",
-        variant: "destructive",
-      });
+      toast.error('حدث خطأ أثناء إضافة عقد الإيجار');
+      console.error('Error adding rent contract:', error);
     },
   });
 
