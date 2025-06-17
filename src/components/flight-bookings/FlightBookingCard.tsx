@@ -9,6 +9,7 @@ import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStat
 import MultiCurrencyDisplay from "@/components/currency/MultiCurrencyDisplay";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { SupportedCurrency } from "@/types/currency";
 
 interface FlightBookingCardProps {
   booking: FlightBooking;
@@ -16,6 +17,8 @@ interface FlightBookingCardProps {
 }
 
 const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
+  const currency = (booking.currency || 'EGP') as SupportedCurrency;
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -81,14 +84,14 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
           <div className="flex items-center justify-between text-sm mb-2">
             <span>التكلفة الإجمالية:</span>
             <span className="font-bold text-green-600">
-              <MultiCurrencyDisplay amount={booking.total_cost} currency={booking.currency as "EGP" | "USD" | "SAR"} />
+              <MultiCurrencyDisplay amount={booking.total_cost} currency={currency} />
             </span>
           </div>
           
           <div className="flex items-center justify-between text-sm mb-2">
             <span>المبلغ المدفوع:</span>
             <span className="text-blue-600">
-              <MultiCurrencyDisplay amount={booking.paid_amount} currency={booking.currency as "EGP" | "USD" | "SAR"} />
+              <MultiCurrencyDisplay amount={booking.paid_amount} currency={currency} />
             </span>
           </div>
           
@@ -96,7 +99,7 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
             <div className="flex items-center justify-between text-sm">
               <span>المبلغ المتبقي:</span>
               <span className="text-red-600 font-medium">
-                <MultiCurrencyDisplay amount={booking.remaining_amount} currency={booking.currency as "EGP" | "USD" | "SAR"} />
+                <MultiCurrencyDisplay amount={booking.remaining_amount} currency={currency} />
               </span>
             </div>
           )}
