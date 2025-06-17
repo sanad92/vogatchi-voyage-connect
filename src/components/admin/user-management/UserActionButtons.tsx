@@ -7,7 +7,6 @@ import UserActionDropdown from "./UserActionDropdown";
 import LoginAsUserDialog from "./LoginAsUserDialog";
 import ResetPasswordDialog from "./ResetPasswordDialog";
 import EditUserDialog, { EditFormData } from "./EditUserDialog";
-import TestButtons from "./TestButtons";
 
 interface UserActionButtonsProps {
   user: User;
@@ -21,7 +20,6 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showTestMode, setShowTestMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [loginReason, setLoginReason] = useState('');
   const [editForm, setEditForm] = useState<EditFormData>({
@@ -185,29 +183,6 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
     }
   };
 
-  // دالة اختبار مباشرة
-  const testButtonDirectly = () => {
-    console.log('🧪 اختبار مباشر للزر - معرف المستخدم:', user.id);
-    toast.success('تم النقر على الزر بنجاح! المستخدم: ' + user.email);
-  };
-
-  // اختبار وظيفة تسجيل الدخول مباشرة
-  const testLoginFunction = async () => {
-    console.log('🧪 اختبار وظيفة تسجيل الدخول مباشرة');
-    if (loginAsUser) {
-      try {
-        const result = await loginAsUser(user.id, 'اختبار مباشر');
-        console.log('🧪 نتيجة اختبار تسجيل الدخول:', result);
-        toast.success('اختبار تسجيل الدخول تم بنجاح');
-      } catch (error) {
-        console.error('🧪 خطأ في اختبار تسجيل الدخول:', error);
-        toast.error('خطأ في اختبار تسجيل الدخول');
-      }
-    } else {
-      toast.error('وظيفة تسجيل الدخول غير متوفرة');
-    }
-  };
-
   return (
     <div className="flex items-center gap-2">
       <UserActionDropdown
@@ -216,17 +191,6 @@ const UserActionButtons = ({ user, onUpdate }: UserActionButtonsProps) => {
         onLoginClick={() => setShowLoginDialog(true)}
         onEditClick={() => setShowEditDialog(true)}
         onPasswordClick={() => setShowPasswordDialog(true)}
-        onToggleActive={handleToggleActive}
-      />
-
-      <TestButtons
-        user={user}
-        showTestMode={showTestMode}
-        onToggleTestMode={() => setShowTestMode(!showTestMode)}
-        onTestButton={testButtonDirectly}
-        onTestLogin={testLoginFunction}
-        onShowPassword={() => setShowPasswordDialog(true)}
-        onShowEdit={() => setShowEditDialog(true)}
         onToggleActive={handleToggleActive}
       />
 
