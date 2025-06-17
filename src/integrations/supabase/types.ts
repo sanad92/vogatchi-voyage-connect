@@ -4116,6 +4116,17 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_monthly_salary: {
+        Args: {
+          p_employee_id: string
+          p_salary_month: string
+          p_overtime_hours?: number
+          p_bonus?: number
+          p_deductions?: number
+          p_notes?: string
+        }
+        Returns: Json
+      }
       can_delete_customers: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -4378,6 +4389,17 @@ export type Database = {
           p_notes?: string
         }
         Returns: boolean
+      }
+      update_salary_status: {
+        Args: {
+          p_salary_id: string
+          p_status: string
+          p_payment_date?: string
+          p_payment_method?: string
+          p_bank_account_id?: string
+          p_notes?: string
+        }
+        Returns: Json
       }
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }
