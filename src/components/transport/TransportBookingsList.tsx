@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Users, DollarSign, Phone, FileText } from 'lucide-react';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
+import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -55,11 +56,11 @@ const TransportBookingsList = () => {
                 <Car className="h-5 w-5 text-blue-600" />
                 {booking.booking_reference}
               </CardTitle>
-              {booking.status && (
-                <Badge style={{ backgroundColor: booking.status.color }}>
-                  {booking.status.name_ar}
-                </Badge>
-              )}
+              <UnifiedBookingStatusSelector
+                bookingId={booking.id}
+                bookingType="transport"
+                currentStatus={booking.status}
+              />
             </div>
             <div className="text-sm text-gray-600">
               {booking.customer_name}

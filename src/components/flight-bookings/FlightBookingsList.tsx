@@ -42,7 +42,7 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
             <FlightBookingCard
               key={booking.id}
               booking={booking}
-              onEdit={onEditBooking || (() => {})}
+              onEdit={onEditBooking}
             />
           ))}
         </div>

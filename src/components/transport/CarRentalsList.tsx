@@ -1,8 +1,10 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Clock, DollarSign, FileText, Settings } from 'lucide-react';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -53,11 +55,11 @@ const CarRentalsList = () => {
                 <Car className="h-5 w-5 text-green-600" />
                 {rental.rental_reference}
               </CardTitle>
-              {rental.status && (
-                <Badge style={{ backgroundColor: rental.status.color }}>
-                  {rental.status.name_ar}
-                </Badge>
-              )}
+              <UnifiedBookingStatusSelector
+                bookingId={rental.id}
+                bookingType="car_rental"
+                currentStatus={rental.status}
+              />
             </div>
             <div className="text-sm text-gray-600">
               {rental.customer_name}

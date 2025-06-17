@@ -1,8 +1,8 @@
-
 import React, { useState } from "react";
 import { HotelBooking } from "@/types/hotelBooking";
 import { Button } from "@/components/ui/button";
 import { Ban, RotateCcw } from "lucide-react";
+import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStatusSelector";
 import CancelBookingDialog from "../dialogs/CancelBookingDialog";
 import RefundBookingDialog from "../dialogs/RefundBookingDialog";
 
@@ -33,6 +33,15 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
     <div className="relative">
       {/* أزرار الإجراءات البارزة أعلى التفاصيل */}
       <div className="w-full flex flex-col md:flex-row gap-3 justify-start items-stretch mb-7">
+        {/* إضافة مكون تغيير الحالة الموحد */}
+        <div className="flex justify-start">
+          <UnifiedBookingStatusSelector
+            bookingId={booking.id}
+            bookingType="hotel"
+            currentStatus={booking.booking_status}
+          />
+        </div>
+        
         {isCancellable && (
           <>
             <Button
