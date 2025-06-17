@@ -135,9 +135,16 @@ export const usePeriodCommissions = () => {
         throw error;
       }
 
-      const response = data as DatabaseFunctionResponse;
+      // التعامل مع استجابة الدالة بطريقة آمنة
+      let response: DatabaseFunctionResponse;
       
-      if (response && !response.success) {
+      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+        response = data as DatabaseFunctionResponse;
+      } else {
+        throw new Error('استجابة غير متوقعة من الخادم');
+      }
+      
+      if (!response.success) {
         throw new Error(response.message || 'حدث خطأ في حساب العمولة');
       }
 
@@ -192,9 +199,16 @@ export const usePeriodCommissions = () => {
         throw error;
       }
 
-      const response = data as DatabaseFunctionResponse;
+      // التعامل مع استجابة الدالة بطريقة آمنة
+      let response: DatabaseFunctionResponse;
       
-      if (response && !response.success) {
+      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+        response = data as DatabaseFunctionResponse;
+      } else {
+        throw new Error('استجابة غير متوقعة من الخادم');
+      }
+      
+      if (!response.success) {
         throw new Error(response.message || 'حدث خطأ في تحديث حالة العمولة');
       }
 
