@@ -42,7 +42,7 @@ const Invoices = () => {
     isUpdatingStatus,
     isDeletingInvoice,
     isUpdatingInvoice,
-    getInvoiceStats,
+    invoiceStats,
   } = useInvoicesManagement({
     searchTerm: debouncedSearchTerm,
     status: filterStatus,
@@ -50,8 +50,6 @@ const Invoices = () => {
     dateFrom,
     dateTo,
   });
-
-  const stats = getInvoiceStats();
 
   const getBookingTypeLabel = (type) => {
     const types = {
@@ -176,7 +174,7 @@ const Invoices = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">إجمالي الفواتير</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalInvoices || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.totalInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -190,7 +188,7 @@ const Invoices = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">مدفوعة بالكامل</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.paidInvoices || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.paidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -204,7 +202,7 @@ const Invoices = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">مدفوعة جزئياً</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.partiallyPaidInvoices || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.partiallyPaidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -218,7 +216,7 @@ const Invoices = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">غير مدفوعة</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.unpaidInvoices || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.unpaidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -233,7 +231,7 @@ const Invoices = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">المبلغ المتبقي</p>
                 <p className="text-xl font-bold text-gray-900">
-                  {stats?.totalRemainingAmount?.toLocaleString() || 0} ج.م
+                  {invoiceStats?.totalRemainingAmount?.toLocaleString() || 0} ج.م
                 </p>
               </div>
             </div>

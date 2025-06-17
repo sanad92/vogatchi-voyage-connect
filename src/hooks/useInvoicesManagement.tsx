@@ -15,7 +15,7 @@ export const useInvoicesManagement = (filters?: import('./invoices/useInvoicesDa
     isDeletingInvoice, 
     isUpdatingInvoice 
   } = useInvoiceActions();
-  const { getInvoiceStats } = useInvoiceStats(invoices || []);
+  const invoiceStats = useInvoiceStats(invoices || []);
 
   return {
     invoices,
@@ -27,6 +27,6 @@ export const useInvoicesManagement = (filters?: import('./invoices/useInvoicesDa
     isUpdatingStatus,
     isDeletingInvoice,
     isUpdatingInvoice,
-    getInvoiceStats,
+    invoiceStats,
   };
 };

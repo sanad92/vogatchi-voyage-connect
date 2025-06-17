@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 
 export const useInvoiceStats = (invoices: any[]) => {
-  const getInvoiceStats = useMemo(() => {
+  const invoiceStats = useMemo(() => {
     if (!invoices || invoices.length === 0) {
       return {
         totalInvoices: 0,
@@ -30,5 +30,5 @@ export const useInvoiceStats = (invoices: any[]) => {
     return stats;
   }, [invoices]);
 
-  return { getInvoiceStats };
+  return invoiceStats;
 };
