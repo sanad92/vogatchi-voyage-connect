@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calculator, Save, Eye, AlertCircle, Loader2 } from 'lucide-react';
+import { Calculator, Save, Eye, AlertCircle, Loader2, Users } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useSalariesImproved } from '@/hooks/useSalariesImproved';
 import { toast } from 'sonner';
@@ -114,6 +115,7 @@ const ImprovedSalaryCalculation = () => {
   };
 
   const selectedEmployee = employees?.find(emp => emp.id === formData.employee_id);
+  const activeEmployees = employees?.filter(emp => emp.is_active) || [];
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-EG', {
@@ -133,6 +135,50 @@ const ImprovedSalaryCalculation = () => {
     );
   }
 
+  // التحقق من وجود موظفين نشطين
+  if (!employees || employees.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            حساب راتب الموظف (محسّن)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              لا توجد بيانات موظفين في النظام. يرجى إضافة موظفين أولاً من صفحة إدارة الموظفين.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (activeEmployees.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            حساب راتب الموظف (محسّن)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              لا توجد موظفين نشطين في النظام. جميع الموظفين المتاحين غير مفعلين. 
+              يرجى تفعيل الموظفين من صفحة إدارة الموظفين لحساب رواتبهم.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -146,7 +192,7 @@ const ImprovedSalaryCalculation = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             نظام حساب الرواتب المحسّن يستخدم stored procedures لضمان دقة الحسابات والأمان.
-            جميع الرواتب محسوبة بالجنيه المصري.
+            جميع الرواتب محسوبة بالجنيه المصري. ({activeEmployees.length} موظف نشط متاح)
           </AlertDescription>
         </Alert>
 
@@ -168,7 +214,7 @@ const ImprovedSalaryCalculation = () => {
           {/* البيانات الأساسية */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="employee">الموظف *</Label>
+              <Label htmlFor="employee">الموظف * ({activeEmployees.length} متاح)</Label>
               <Select 
                 value={formData.employee_id} 
                 onValueChange={(value) => handleInputChange('employee_id', value)}
@@ -177,7 +223,7 @@ const ImprovedSalaryCalculation = () => {
                   <SelectValue placeholder="اختر موظف" />
                 </SelectTrigger>
                 <SelectContent>
-                  {employees?.filter(emp => emp.is_active).map((employee) => (
+                  {activeEmployees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name} - {employee.employee_code}
                       <span className="text-xs text-gray-500 block">
@@ -209,6 +255,7 @@ const ImprovedSalaryCalculation = () => {
                   <p><span className="font-medium">القسم:</span> {selectedEmployee.department || 'غير محدد'}</p>
                   <p><span className="font-medium">الراتب الأساسي:</span> <EgyptianPoundDisplay amount={selectedEmployee.base_salary} /></p>
                   <p><span className="font-medium">البدلات:</span> <EgyptianPoundDisplay amount={selectedEmployee.allowances} /></p>
+                  <p><span className="font-medium">الحالة:</span> <span className="text-green-600">نشط ✓</span></p>
                 </div>
               </div>
             )}
