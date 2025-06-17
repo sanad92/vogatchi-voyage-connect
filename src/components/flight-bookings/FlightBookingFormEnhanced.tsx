@@ -12,18 +12,26 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plane, Users, CreditCard, MapPin } from "lucide-react";
+import { CalendarIcon, Plane, Users, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
+
+// Import new sections
+import TripTypeSelection from "./sections/TripTypeSelection";
+import FlightDataSelectionSection from "./sections/FlightDataSelectionSection";
+import SupplierSelectionSection from "./sections/SupplierSelectionSection";
+import PassengerDetailsEnhanced from "./sections/PassengerDetailsEnhanced";
 
 const flightBookingSchema = z.object({
   // معلومات العميل
   customer_id: z.string().optional(),
   customer_name: z.string().min(1, "اسم العميل مطلوب"),
+  
+  // نوع الرحلة
+  trip_type: z.enum(['one-way', 'round-trip', 'multi-city']),
   
   // تفاصيل الرحلة
   departure_airport_id: z.string().min(1, "مطار المغادرة مطلوب"),
@@ -38,7 +46,7 @@ const flightBookingSchema = z.object({
   number_of_passengers: z.number().min(1, "عدد المسافرين يجب أن يكون 1 على الأقل"),
   
   // معلومات المورد
-  supplier_name: z.string().min(1, "اسم المورد مطلوب"),
+  supplier_id: z.string().min(1, "المورد مطلوب"),
   supplier_cost: z.number().min(0, "تكلفة المورد مطلوبة"),
   
   // التسعير
@@ -54,9 +62,6 @@ const flightBookingSchema = z.object({
   special_requests: z.string().optional(),
   meal_preferences: z.string().optional(),
   seat_preferences: z.string().optional(),
-  
-  // إعدادات الرحلة
-  is_round_trip: z.boolean().optional(),
 });
 
 type FlightBookingFormData = z.infer<typeof flightBookingSchema>;
@@ -69,6 +74,7 @@ interface FlightBookingFormEnhancedProps {
 const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingFormEnhancedProps) => {
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<{ id: string; name: string } | null>(null);
   const { currentEmployee, getBookingAgentId, getBookingAgentName } = useCurrentEmployeeEnhanced();
   const queryClient = useQueryClient();
 
@@ -76,44 +82,17 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
       customer_name: initialData?.customer_name || "",
+      trip_type: initialData?.trip_type || "one-way",
       number_of_passengers: initialData?.number_of_passengers || 1,
       ticket_price_per_person: initialData?.ticket_price_per_person || 0,
       taxes_and_fees: initialData?.taxes_and_fees || 0,
       supplier_cost: initialData?.supplier_cost || 0,
-      supplier_name: initialData?.supplier_name || "",
       currency: initialData?.currency || "EGP",
-      is_round_trip: initialData?.is_round_trip || false,
       paid_amount: initialData?.paid_amount || 0,
     },
   });
 
   // جلب البيانات الأساسية
-  const { data: airlines = [] } = useQuery({
-    queryKey: ['airlines'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('airlines')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: airports = [] } = useQuery({
-    queryKey: ['airports'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('airports')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
-  });
-
   const { data: flightClasses = [] } = useQuery({
     queryKey: ['flight-classes'],
     queryFn: async () => {
@@ -168,7 +147,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
         total_cost: totalCost,
         currency: data.currency,
         supplier_cost: data.supplier_cost,
-        supplier_name: data.supplier_name,
+        supplier_name: selectedSupplier?.name || '',
         booking_agent_id: getBookingAgentId(),
         booking_agent_name: getBookingAgentName(),
         total_profit: totalProfit,
@@ -178,7 +157,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
         special_requests: data.special_requests || null,
         meal_preferences: data.meal_preferences || null,
         seat_preferences: data.seat_preferences || null,
-        is_round_trip: data.is_round_trip || false,
+        is_round_trip: data.trip_type === 'round-trip',
         passenger_details: passengerDetails.length > 0 ? passengerDetails : null,
         exchange_rate_to_egp: 1.0,
         booking_date: format(new Date(), 'yyyy-MM-dd'),
@@ -199,6 +178,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
       form.reset();
       setPassengerDetails([]);
       setSelectedCustomer(null);
+      setSelectedSupplier(null);
       onSuccess?.(data);
     },
     onError: (error) => {
@@ -216,6 +196,11 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
     }
   };
 
+  const handleSupplierSelect = (supplierId: string, supplierName: string) => {
+    setSelectedSupplier({ id: supplierId, name: supplierName });
+    form.setValue('supplier_id', supplierId);
+  };
+
   const onSubmit = (data: FlightBookingFormData) => {
     createBookingMutation.mutate(data);
   };
@@ -224,6 +209,20 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* نوع الرحلة */}
+          <FormField
+            control={form.control}
+            name="trip_type"
+            render={({ field }) => (
+              <FormItem>
+                <TripTypeSelection
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              </FormItem>
+            )}
+          />
+
           {/* معلومات العميل */}
           <Card>
             <CardHeader>
@@ -276,63 +275,16 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <FlightDataSelectionSection
+                departureAirportId={form.watch('departure_airport_id') || ''}
+                arrivalAirportId={form.watch('arrival_airport_id') || ''}
+                airlineId={form.watch('airline_id') || ''}
+                onDepartureAirportChange={(id) => form.setValue('departure_airport_id', id)}
+                onArrivalAirportChange={(id) => form.setValue('arrival_airport_id', id)}
+                onAirlineChange={(id) => form.setValue('airline_id', id)}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="departure_airport_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        مطار المغادرة
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر مطار المغادرة" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {airports.map((airport) => (
-                            <SelectItem key={airport.id} value={airport.id}>
-                              {airport.name} ({airport.iata_code}) - {airport.city}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="arrival_airport_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        مطار الوصول
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر مطار الوصول" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {airports.map((airport) => (
-                            <SelectItem key={airport.id} value={airport.id}>
-                              {airport.name} ({airport.iata_code}) - {airport.city}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="departure_date"
@@ -415,31 +367,6 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
 
                 <FormField
                   control={form.control}
-                  name="airline_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>شركة الطيران</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر شركة الطيران" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {airlines.map((airline) => (
-                            <SelectItem key={airline.id} value={airline.id}>
-                              {airline.name} {airline.iata_code && `(${airline.iata_code})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="flight_class_id"
                   render={({ field }) => (
                     <FormItem>
@@ -496,26 +423,15 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="is_round_trip"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>رحلة ذهاب وعودة</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
             </CardContent>
           </Card>
+
+          {/* تفاصيل المسافرين */}
+          <PassengerDetailsEnhanced
+            passengers={passengerDetails}
+            numberOfPassengers={form.watch('number_of_passengers')}
+            onChange={setPassengerDetails}
+          />
 
           {/* المعلومات المالية */}
           <Card>
@@ -526,6 +442,12 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <SupplierSelectionSection
+                value={selectedSupplier?.id || ''}
+                onChange={handleSupplierSelect}
+                label="المورد"
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -583,20 +505,6 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="supplier_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>اسم المورد</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="اسم شركة الطيران أو الوكيل" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

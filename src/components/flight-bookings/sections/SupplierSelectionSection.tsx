@@ -38,16 +38,16 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
   });
 
   const addSupplierMutation = useMutation({
-    mutationFn: async (supplierData: any) => {
+    mutationFn: async (supplierData: { name: string; phone: string; email: string }) => {
       const { data, error } = await supabase
         .from('suppliers')
-        .insert([{
+        .insert({
           name: supplierData.name,
           phone: supplierData.phone,
           email: supplierData.email,
           supplier_type: 'flight',
           is_active: true
-        }])
+        })
         .select()
         .single();
       if (error) throw error;
