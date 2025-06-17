@@ -1,8 +1,12 @@
+
 import CustomerSelection from '@/components/shared/CustomerSelection';
 import SupplierSelection from '@/components/shared/SupplierSelection';
+import CurrentEmployeeDisplay from '@/components/shared/CurrentEmployeeDisplay';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from 'lucide-react';
+import { useCurrentEmployeeEnhanced } from '@/hooks/useCurrentEmployeeEnhanced';
+import { useEffect } from 'react';
 import { Customer } from '@/types/customer';
 
 interface TransportCustomerAgentSectionProps {
@@ -40,14 +44,26 @@ const TransportCustomerAgentSection = ({
   register,
   setValue
 }: TransportCustomerAgentSectionProps) => {
+  const { currentEmployee, getBookingAgentId, getBookingAgentName } = useCurrentEmployeeEnhanced();
+
+  // تعيين الموظف الحالي تلقائياً
+  useEffect(() => {
+    if (currentEmployee) {
+      const agentId = getBookingAgentId();
+      const agentName = getBookingAgentName();
+      
+      if (agentId) {
+        onBookingAgentChange(agentId);
+      }
+      setValue('booking_agent_name', agentName);
+    }
+  }, [currentEmployee, getBookingAgentId, getBookingAgentName, onBookingAgentChange, setValue]);
+
   // Convert simple errors to the expected format
   const fieldErrors = Object.keys(errors).reduce((acc, key) => {
     acc[key] = { message: errors[key] };
     return acc;
   }, {} as any);
-
-  // Fix empty string for agent picker
-  const agentValue = bookingAgentId && bookingAgentId !== "" ? bookingAgentId : undefined;
 
   return (
     <div className="space-y-4">
@@ -55,6 +71,9 @@ const TransportCustomerAgentSection = ({
         <User className="h-5 w-5" />
         معلومات العميل والموظف والمورد
       </h3>
+      
+      {/* عرض معلومات الموظف الحالي */}
+      <CurrentEmployeeDisplay employee={currentEmployee} />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -86,18 +105,27 @@ const TransportCustomerAgentSection = ({
         
         <div>
           <Label htmlFor="booking_agent">الموظف المسؤول</Label>
-          <Select value={agentValue} onValueChange={onBookingAgentChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر موظف" />
-            </SelectTrigger>
-            <SelectContent>
-              {employees.map((employee) => (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {employee.full_name} - {employee.employee_code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {currentEmployee?.isRealEmployee ? (
+            <div className="mt-2">
+              <div className="p-2 bg-gray-100 rounded border text-sm">
+                {getBookingAgentName()}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">تم تعيين الموظف تلقائياً</p>
+            </div>
+          ) : (
+            <Select value={bookingAgentId || undefined} onValueChange={onBookingAgentChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر موظف" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.full_name} - {employee.employee_code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
     </div>

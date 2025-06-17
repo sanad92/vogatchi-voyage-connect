@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import CustomerAgentSection from "./sections/CustomerAgentSection";
 import FlightDetailsSection from "./sections/FlightDetailsSection";
 import PassengerDetailsSection from "./sections/PassengerDetailsSection";
 import FlightFinancialInfoSection from "./sections/FlightFinancialInfoSection";
+import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
 
 const flightBookingSchema = z.object({
   customer_name: z.string().min(1, "اسم العميل مطلوب"),
@@ -61,13 +62,14 @@ interface FlightBookingFormProps {
 const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) => {
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const { currentEmployee, getBookingAgentId, getBookingAgentName } = useCurrentEmployeeEnhanced();
   const queryClient = useQueryClient();
 
   const form = useForm<FlightBookingFormData>({
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
       customer_name: initialData?.customer_name || "",
-      booking_agent_name: initialData?.booking_agent_name || "",
+      booking_agent_name: getBookingAgentName(),
       number_of_passengers: initialData?.number_of_passengers || 1,
       ticket_price_per_person: initialData?.ticket_price_per_person || 0,
       taxes_and_fees: initialData?.taxes_and_fees || 0,
@@ -78,6 +80,13 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
       paid_amount: initialData?.paid_amount || 0,
     },
   });
+
+  // تحديث اسم الموظف عند تغيير الموظف الحالي
+  useEffect(() => {
+    if (currentEmployee) {
+      form.setValue('booking_agent_name', getBookingAgentName());
+    }
+  }, [currentEmployee, form, getBookingAgentName]);
 
   // جلب البيانات الأساسية
   const { data: airlines = [] } = useQuery({
@@ -138,6 +147,7 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
         departure_date: format(data.departure_date, 'yyyy-MM-dd'),
         arrival_date: format(data.arrival_date, 'yyyy-MM-dd'),
         customer_id: selectedCustomer?.id || null,
+        booking_agent_id: getBookingAgentId(), // استخدام الدالة الجديدة
         passenger_details: passengerDetails.length > 0 ? passengerDetails : null,
       };
 
