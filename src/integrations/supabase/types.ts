@@ -1657,6 +1657,87 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_commission_periods: {
+        Row: {
+          bank_account_id: string | null
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_id: string
+          id: string
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          period_end: string
+          period_start: string
+          status: string
+          total_booking_amount: number
+          total_bookings_count: number
+          total_profit: number
+          total_supplier_cost: number
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id?: string | null
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          total_booking_amount?: number
+          total_bookings_count?: number
+          total_profit?: number
+          total_supplier_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string | null
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_booking_amount?: number
+          total_bookings_count?: number
+          total_profit?: number
+          total_supplier_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_commission_periods_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_commission_periods_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_commissions: {
         Row: {
           approved_at: string | null
@@ -4108,6 +4189,21 @@ export type Database = {
         Args: { booking: string; bookingtype: string }
         Returns: boolean
       }
+      calculate_employee_bookings_profit: {
+        Args: {
+          p_employee_id: string
+          p_period_start: string
+          p_period_end: string
+        }
+        Returns: {
+          booking_type: string
+          booking_id: string
+          booking_amount: number
+          supplier_cost: number
+          profit: number
+          booking_date: string
+        }[]
+      }
       calculate_employee_commission: {
         Args: {
           p_employee_id: string
@@ -4169,6 +4265,15 @@ export type Database = {
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_period_commission: {
+        Args: {
+          p_employee_id: string
+          p_period_start: string
+          p_period_end: string
+          p_notes?: string
+        }
+        Returns: Json
       }
       get_all_user_permissions: {
         Args: Record<PropertyKey, never>
@@ -4389,6 +4494,17 @@ export type Database = {
           p_notes?: string
         }
         Returns: boolean
+      }
+      update_period_commission_status: {
+        Args: {
+          p_commission_period_id: string
+          p_status: string
+          p_payment_date?: string
+          p_payment_method?: string
+          p_bank_account_id?: string
+          p_notes?: string
+        }
+        Returns: Json
       }
       update_salary_status: {
         Args: {

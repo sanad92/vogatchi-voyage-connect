@@ -171,3 +171,37 @@ export interface MonthlySalary {
   created_at: string;
   updated_at: string;
 }
+
+// إضافة نوع جديد لفترات العمولات المجمعة
+export interface EmployeeCommissionPeriod {
+  id: string;
+  employee_id: string;
+  period_start: string;
+  period_end: string;
+  total_bookings_count: number;
+  total_booking_amount: number;
+  total_supplier_cost: number;
+  total_profit: number;
+  commission_rate: number;
+  commission_amount: number;
+  currency: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  payment_date?: string;
+  payment_method?: string;
+  bank_account_id?: string;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  employee?: Employee;
+}
+
+// إضافة نوع لتفاصيل الحجوزات والربح
+export interface BookingProfitDetail {
+  booking_type: 'hotel' | 'flight' | 'transport' | 'car_rental';
+  booking_id: string;
+  booking_amount: number;
+  supplier_cost: number;
+  profit: number;
+  booking_date: string;
+}
