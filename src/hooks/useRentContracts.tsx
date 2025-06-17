@@ -32,7 +32,25 @@ export const useRentContracts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rent_contracts')
-        .select('*')
+        .select(`
+          id,
+          contract_number,
+          landlord_name,
+          property_address,
+          property_type,
+          monthly_rent,
+          currency,
+          start_date,
+          end_date,
+          contract_terms,
+          annual_increase_percentage,
+          security_deposit,
+          utilities_included,
+          maintenance_responsibility,
+          is_active,
+          created_at,
+          updated_at
+        `)
         .eq('is_active', true)
         .order('contract_number');
 
