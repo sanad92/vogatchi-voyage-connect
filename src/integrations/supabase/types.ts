@@ -3151,6 +3151,7 @@ export type Database = {
           is_active: boolean | null
           landlord_name: string
           landlord_phone: string | null
+          maintenance_responsibility: string | null
           monthly_rent: number
           property_address: string
           property_type: string
@@ -3158,6 +3159,7 @@ export type Database = {
           security_deposit: number | null
           start_date: string
           updated_at: string
+          utilities_included: boolean | null
         }
         Insert: {
           annual_increase_percentage?: number | null
@@ -3170,6 +3172,7 @@ export type Database = {
           is_active?: boolean | null
           landlord_name: string
           landlord_phone?: string | null
+          maintenance_responsibility?: string | null
           monthly_rent: number
           property_address: string
           property_type: string
@@ -3177,6 +3180,7 @@ export type Database = {
           security_deposit?: number | null
           start_date: string
           updated_at?: string
+          utilities_included?: boolean | null
         }
         Update: {
           annual_increase_percentage?: number | null
@@ -3189,6 +3193,7 @@ export type Database = {
           is_active?: boolean | null
           landlord_name?: string
           landlord_phone?: string | null
+          maintenance_responsibility?: string | null
           monthly_rent?: number
           property_address?: string
           property_type?: string
@@ -3196,6 +3201,7 @@ export type Database = {
           security_deposit?: number | null
           start_date?: string
           updated_at?: string
+          utilities_included?: boolean | null
         }
         Relationships: []
       }
