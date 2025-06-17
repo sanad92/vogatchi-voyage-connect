@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,11 +30,11 @@ const BookingInvoiceManager = ({ bookingId, bookingType, onCreateInvoice }: Book
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: 'مسودة', variant: 'secondary' as const },
-      sent: { label: 'مرسلة', variant: 'default' as const },
+      draft: { label: 'مسودة', variant: 'secondary' as const, className: '' },
+      sent: { label: 'مرسلة', variant: 'default' as const, className: '' },
       paid: { label: 'مدفوعة', variant: 'default' as const, className: 'bg-green-500 text-white' },
-      overdue: { label: 'متأخرة', variant: 'destructive' as const },
-      cancelled: { label: 'ملغاة', variant: 'outline' as const },
+      overdue: { label: 'متأخرة', variant: 'destructive' as const, className: '' },
+      cancelled: { label: 'ملغاة', variant: 'outline' as const, className: '' },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -44,8 +43,8 @@ const BookingInvoiceManager = ({ bookingId, bookingType, onCreateInvoice }: Book
 
   const getPaymentStatusBadge = (paymentStatus: string) => {
     const statusConfig = {
-      unpaid: { label: 'غير مدفوعة', variant: 'destructive' as const },
-      partially_paid: { label: 'مدفوعة جزئياً', variant: 'default' as const },
+      unpaid: { label: 'غير مدفوعة', variant: 'destructive' as const, className: '' },
+      partially_paid: { label: 'مدفوعة جزئياً', variant: 'default' as const, className: '' },
       fully_paid: { label: 'مدفوعة كاملاً', variant: 'default' as const, className: 'bg-green-500 text-white' },
     };
     
