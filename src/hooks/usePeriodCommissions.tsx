@@ -40,6 +40,22 @@ interface BookingProfitDetail {
   booking_date: string;
 }
 
+// تعريف نوع استجابة الدالة
+interface DatabaseFunctionResponse {
+  success: boolean;
+  message: string;
+  error?: string;
+  commission_period_id?: string;
+  summary?: {
+    bookings_count: number;
+    total_profit: number;
+    commission_amount: number;
+    commission_rate: number;
+  };
+  old_status?: string;
+  new_status?: string;
+}
+
 export const usePeriodCommissions = () => {
   const queryClient = useQueryClient();
 
@@ -119,19 +135,21 @@ export const usePeriodCommissions = () => {
         throw error;
       }
 
-      if (data && !data.success) {
-        throw new Error(data.message || 'حدث خطأ في حساب العمولة');
+      const response = data as DatabaseFunctionResponse;
+      
+      if (response && !response.success) {
+        throw new Error(response.message || 'حدث خطأ في حساب العمولة');
       }
 
-      console.log('Generated period commission:', data);
-      return data;
+      console.log('Generated period commission:', response);
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['commission-periods'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast.success(data.message || 'تم حساب العمولة المجمعة بنجاح');
+      toast.success(data?.message || 'تم حساب العمولة المجمعة بنجاح');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error generating period commission:', error);
       toast.error(error.message || 'حدث خطأ أثناء حساب العمولة المجمعة');
     },
@@ -174,18 +192,20 @@ export const usePeriodCommissions = () => {
         throw error;
       }
 
-      if (data && !data.success) {
-        throw new Error(data.message || 'حدث خطأ في تحديث حالة العمولة');
+      const response = data as DatabaseFunctionResponse;
+      
+      if (response && !response.success) {
+        throw new Error(response.message || 'حدث خطأ في تحديث حالة العمولة');
       }
 
-      console.log('Updated period commission status:', data);
-      return data;
+      console.log('Updated period commission status:', response);
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['commission-periods'] });
-      toast.success(data.message || 'تم تحديث حالة العمولة بنجاح');
+      toast.success(data?.message || 'تم تحديث حالة العمولة بنجاح');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error updating period commission status:', error);
       toast.error(error.message || 'حدث خطأ أثناء تحديث حالة العمولة');
     },
@@ -216,7 +236,7 @@ export const usePeriodCommissions = () => {
       queryClient.invalidateQueries({ queryKey: ['commission-periods'] });
       toast.success('تم حذف فترة العمولة بنجاح');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting period commission:', error);
       toast.error(error.message || 'حدث خطأ أثناء حذف فترة العمولة');
     },

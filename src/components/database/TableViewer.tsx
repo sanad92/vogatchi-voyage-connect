@@ -4,17 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import type { Database } from "@/integrations/supabase/types";
 
-// Correctly access Tables from Database type
-type TableName = keyof Database["public"]["Tables"];
+// تعريف نوع الجدول كـ string بدلاً من النوع المعقد
+type TableName = string;
 
 interface TableViewerProps {
   table: TableName;
   onBack: () => void;
 }
 
-// Only use string keys for columns
+// دالة للحصول على أعمدة البيانات
 function getColumns(obj: Record<string, any>): string[] {
   return Object.keys(obj);
 }
@@ -26,7 +25,6 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
 
   useEffect(() => {
     setLoading(true);
-    // Use the table name directly without type assertion
     supabase
       .from(table)
       .select("*")
@@ -56,7 +54,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
     const csvString = csvRows.join("\n");
     const a = document.createElement("a");
     a.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csvString)}`;
-    a.download = `${String(table)}-export.csv`;
+    a.download = `${table}-export.csv`;
     a.click();
     toast({ title: "تم التصدير", description: "تم تصدير البيانات إلى CSV" });
   };
@@ -67,7 +65,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
         <Button variant="ghost" size="icon" onClick={onBack} title="رجوع للقائمة">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="font-bold text-lg flex-1">{String(table)}</h2>
+        <h2 className="font-bold text-lg flex-1">{table}</h2>
         <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex gap-1 items-center">
           <Download className="h-4 w-4" /> تصدير CSV
         </Button>
@@ -82,8 +80,8 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
             <thead>
               <tr>
                 {cols.map(col => (
-                  <th className="py-2 px-2 border-b bg-gray-50" key={String(col)}>
-                    {String(col)}
+                  <th className="py-2 px-2 border-b bg-gray-50" key={col}>
+                    {col}
                   </th>
                 ))}
               </tr>
@@ -92,10 +90,8 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
               {data.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50 transition">
                   {cols.map(col => (
-                    <td className="py-2 px-2 border-b" key={String(col)}>
-                      {typeof row[col] === "symbol"
-                        ? String(row[col])
-                        : String(row[col] ?? "")}
+                    <td className="py-2 px-2 border-b" key={col}>
+                      {String(row[col] ?? "")}
                     </td>
                   ))}
                 </tr>

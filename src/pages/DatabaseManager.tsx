@@ -7,14 +7,10 @@ import { useState } from "react";
 import TableViewer from "@/components/database/TableViewer";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import type { Database as DBType } from "@/integrations/supabase/types";
-
-// Correctly access Tables from Database type
-type TableName = keyof DBType["public"]["Tables"];
 
 const DatabaseManager = () => {
   const { isSuperAdmin } = useAuth();
-  const [selectedTable, setSelectedTable] = useState<TableName | null>(null);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showSqlEditor, setShowSqlEditor] = useState(false);
 
   if (!isSuperAdmin()) {
@@ -34,13 +30,14 @@ const DatabaseManager = () => {
     );
   }
 
-  // List of main tables with correct typing
-  const availableTables: { name: TableName; rowCount?: number; description: string }[] = [
+  // قائمة الجداول الرئيسية
+  const availableTables: { name: string; rowCount?: number; description: string }[] = [
     { name: "customers", rowCount: 112, description: "عملاء النظام" },
     { name: "suppliers", rowCount: 32, description: "الموردين" },
     { name: "hotel_bookings", rowCount: 224, description: "الحجوزات الفندقية" },
     { name: "flight_bookings", rowCount: 80, description: "حجوزات الطيران" },
     { name: "invoices", rowCount: 156, description: "الفواتير" },
+    { name: "employee_commission_periods", rowCount: 0, description: "العمولات المجمعة" },
   ];
 
   return (
@@ -73,8 +70,8 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={String(tbl.name)} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{String(tbl.name)}</td>
+                <tr key={tbl.name} className="border-b hover:bg-blue-50 transition">
+                  <td className="p-3 font-mono text-blue-800">{tbl.name}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
                   <td className="p-3 text-gray-600">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">
