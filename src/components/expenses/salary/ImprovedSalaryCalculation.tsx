@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,8 +24,8 @@ interface SalaryFormData {
 const ImprovedSalaryCalculation = () => {
   const { employees, employeesLoading } = useEmployees();
   const { 
-    calculateMonthlySalary, 
-    isCalculatingSalary,
+    calculateSalary, 
+    isCalculating,
     checkSalaryExists,
     monthlySalaries
   } = useSalariesImproved();
@@ -96,7 +95,7 @@ const ImprovedSalaryCalculation = () => {
     }
 
     try {
-      await calculateMonthlySalary(formData);
+      await calculateSalary(formData);
       
       // إعادة تعيين النموذج عند النجاح
       setFormData({
@@ -269,9 +268,9 @@ const ImprovedSalaryCalculation = () => {
         <Button 
           onClick={handleCalculateSalary}
           className="w-full"
-          disabled={!formData.employee_id || isCalculatingSalary || validationErrors.length > 0}
+          disabled={!formData.employee_id || isCalculating || validationErrors.length > 0}
         >
-          {isCalculatingSalary ? (
+          {isCalculating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               جاري حساب وحفظ الراتب...

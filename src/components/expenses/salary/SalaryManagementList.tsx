@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +13,9 @@ const SalaryManagementList = () => {
     salariesLoading, 
     salariesError,
     updateSalaryStatus,
-    isUpdatingSalary,
+    isUpdating,
     deleteSalary,
-    isDeletingSalary,
+    isDeleting,
     getSalaryStatistics
   } = useSalariesImproved();
 
@@ -220,10 +219,10 @@ const SalaryManagementList = () => {
                           <Button
                             size="sm"
                             onClick={() => handleStatusUpdate(salary.id, 'paid')}
-                            disabled={isUpdatingSalary}
+                            disabled={isUpdating}
                             className="bg-green-600 hover:bg-green-700"
                           >
-                            {isUpdatingSalary ? (
+                            {isUpdating ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               'دفع'
@@ -236,9 +235,9 @@ const SalaryManagementList = () => {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDeleteSalary(salary.id)}
-                            disabled={isDeletingSalary}
+                            disabled={isDeleting}
                           >
-                            {isDeletingSalary ? (
+                            {isDeleting ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               <Trash2 className="h-3 w-3" />
