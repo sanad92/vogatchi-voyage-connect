@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plane } from 'lucide-react';
-import FlightBookingForm from '@/components/flight-bookings/FlightBookingForm';
+import FlightBookingFormEnhanced from '@/components/flight-bookings/FlightBookingFormEnhanced';
 
 const NewFlightBooking = () => {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ const NewFlightBooking = () => {
           <CardTitle>معلومات حجز الطيران</CardTitle>
         </CardHeader>
         <CardContent>
-          <FlightBookingForm onSuccess={handleSuccess} />
+          <FlightBookingFormEnhanced onSuccess={handleSuccess} />
         </CardContent>
       </Card>
     </div>
