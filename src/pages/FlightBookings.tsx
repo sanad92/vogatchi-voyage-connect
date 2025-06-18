@@ -1,9 +1,9 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane } from "lucide-react";
-import FlightBookingForm from "@/components/flight-bookings/FlightBookingForm";
-import EnhancedFlightBookingForm from "@/components/flight-bookings/EnhancedFlightBookingForm";
+import FlightBookingFormEnhanced from "@/components/flight-bookings/FlightBookingFormEnhanced";
 import FlightBookingsList from "@/components/flight-bookings/FlightBookingsList";
 import { FlightBooking } from "@/types/flightBooking";
 import FlightBookingActions from "@/components/flight-bookings/details/FlightBookingActions";
@@ -65,7 +65,7 @@ const FlightBookings = () => {
         </TabsContent>
 
         <TabsContent value="form">
-          <EnhancedFlightBookingForm 
+          <FlightBookingFormEnhanced 
             onSuccess={handleFormSuccess}
           />
         </TabsContent>
