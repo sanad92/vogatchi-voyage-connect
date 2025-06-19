@@ -24,12 +24,12 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
   const queryClient = useQueryClient();
 
   const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers', 'flight'],
+    queryKey: ['suppliers', 'airline'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('type', 'flight')
+        .in('type', ['flight', 'airline'])
         .eq('is_active', true)
         .order('name');
       if (error) throw error;
@@ -45,7 +45,7 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
           name: supplierData.name,
           phone: supplierData.phone,
           email: supplierData.email,
-          type: 'flight',
+          type: 'airline',
           is_active: true
         })
         .select()
@@ -54,7 +54,7 @@ const SupplierSelectionSection = ({ value, onChange, label = "المورد" }: S
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'flight'] });
+      queryClient.invalidateQueries({ queryKey: ['suppliers', 'airline'] });
       onChange(data.id, data.name);
       setShowAddDialog(false);
       setNewSupplierName('');

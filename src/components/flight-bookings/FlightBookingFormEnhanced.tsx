@@ -51,7 +51,6 @@ const flightBookingSchema = z.object({
   
   // التسعير
   ticket_price_per_person: z.number().min(0, "سعر التذكرة مطلوب"),
-  taxes_and_fees: z.number().min(0).optional(),
   currency: z.string().min(1, "العملة مطلوبة"),
   
   // الدفع
@@ -85,7 +84,6 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
       trip_type: initialData?.trip_type || "one-way",
       number_of_passengers: initialData?.number_of_passengers || 1,
       ticket_price_per_person: initialData?.ticket_price_per_person || 0,
-      taxes_and_fees: initialData?.taxes_and_fees || 0,
       supplier_cost: initialData?.supplier_cost || 0,
       currency: initialData?.currency || "EGP",
       paid_amount: initialData?.paid_amount || 0,
@@ -120,11 +118,10 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
 
   // حساب التكلفة الإجمالية تلقائياً
   const ticketPrice = form.watch('ticket_price_per_person');
-  const taxesAndFees = form.watch('taxes_and_fees') || 0;
   const numberOfPassengers = form.watch('number_of_passengers');
   const supplierCost = form.watch('supplier_cost');
 
-  const totalCost = (ticketPrice * numberOfPassengers) + taxesAndFees;
+  const totalCost = ticketPrice * numberOfPassengers;
   const totalProfit = totalCost - supplierCost;
 
   const createBookingMutation = useMutation({
@@ -143,7 +140,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
         flight_number: data.flight_number || null,
         number_of_passengers: data.number_of_passengers,
         ticket_price_per_person: data.ticket_price_per_person,
-        taxes_and_fees: data.taxes_and_fees || 0,
+        taxes_and_fees: 0,
         total_cost: totalCost,
         currency: data.currency,
         supplier_cost: data.supplier_cost,
@@ -448,7 +445,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
                 label="المورد"
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="currency"
@@ -478,26 +475,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
                   name="ticket_price_per_person"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>سعر التذكرة للشخص الواحد</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="taxes_and_fees"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الضرائب والرسوم</FormLabel>
+                      <FormLabel>سعر التذكرة للشخص الواحد (شامل الضرائب)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -553,23 +531,17 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
               {/* ملخص التكاليف */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium mb-3">ملخص التكاليف:</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">إجمالي التذاكر:</span>
-                    <div className="font-semibold">
-                      {(ticketPrice * numberOfPassengers).toFixed(2)} {form.watch('currency')}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">الضرائب والرسوم:</span>
-                    <div className="font-semibold">
-                      {taxesAndFees.toFixed(2)} {form.watch('currency')}
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">إجمالي السعر:</span>
                     <div className="font-semibold">
                       {totalCost.toFixed(2)} {form.watch('currency')}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">تكلفة المورد:</span>
+                    <div className="font-semibold">
+                      {supplierCost.toFixed(2)} {form.watch('currency')}
                     </div>
                   </div>
                   <div>
