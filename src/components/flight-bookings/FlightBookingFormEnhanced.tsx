@@ -14,16 +14,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plane, Users, CreditCard } from "lucide-react";
+import { CalendarIcon, Plane, Users, CreditCard, User } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
+import { Customer } from "@/types/customer";
+import { Badge } from "@/components/ui/badge";
 
 // Import new sections
 import TripTypeSelection from "./sections/TripTypeSelection";
 import FlightDataSelectionSection from "./sections/FlightDataSelectionSection";
 import SupplierSelectionSection from "./sections/SupplierSelectionSection";
 import PassengerDetailsEnhanced from "./sections/PassengerDetailsEnhanced";
+import CustomerSelection from "@/components/shared/CustomerSelection";
 
 const flightBookingSchema = z.object({
   // معلومات العميل
@@ -72,7 +75,7 @@ interface FlightBookingFormEnhancedProps {
 
 const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingFormEnhancedProps) => {
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<{ id: string; name: string } | null>(null);
   const { currentEmployee, getBookingAgentId, getBookingAgentName } = useCurrentEmployeeEnhanced();
   const queryClient = useQueryClient();
@@ -103,19 +106,6 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
     }
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('name')
-        .limit(100);
-      if (error) throw error;
-      return data;
-    }
-  });
-
   // حساب التكلفة الإجمالية تلقائياً
   const ticketPrice = form.watch('ticket_price_per_person');
   const numberOfPassengers = form.watch('number_of_passengers');
@@ -140,7 +130,6 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
         flight_number: data.flight_number || null,
         number_of_passengers: data.number_of_passengers,
         ticket_price_per_person: data.ticket_price_per_person,
-        taxes_and_fees: 0,
         total_cost: totalCost,
         currency: data.currency,
         supplier_cost: data.supplier_cost,
@@ -184,12 +173,14 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
     }
   });
 
-  const handleCustomerSelect = (customerId: string) => {
-    const customer = customers.find(c => c.id === customerId);
+  const handleCustomerSelect = (customer: Customer | null) => {
+    setSelectedCustomer(customer);
     if (customer) {
-      setSelectedCustomer(customer);
-      form.setValue('customer_name', customer.name);
+      form.setValue('customer_name', customer.full_name || customer.name);
       form.setValue('customer_id', customer.id);
+    } else {
+      form.setValue('customer_name', '');
+      form.setValue('customer_id', '');
     }
   };
 
@@ -220,45 +211,45 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
             )}
           />
 
-          {/* معلومات العميل */}
+          {/* معلومات العميل وموظف الحجز */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                معلومات العميل
+                معلومات العميل وموظف الحجز
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">اختر عميل موجود</label>
-                  <Select onValueChange={handleCustomerSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر عميل من القائمة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name} - {customer.phone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <CardContent className="space-y-6">
+              {/* Customer Selection */}
+              <CustomerSelection
+                selectedCustomer={selectedCustomer}
+                onCustomerSelect={handleCustomerSelect}
+                register={form.register}
+                setValue={form.setValue}
+                errors={form.formState.errors}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="customer_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>اسم العميل</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="أدخل اسم العميل" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+              {/* Booking Agent Information - Read Only */}
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  موظف الحجز
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={currentEmployee?.full_name || "مستخدم غير محدد"}
+                    readOnly
+                    className="bg-gray-100 cursor-not-allowed"
+                    disabled
+                  />
+                  {currentEmployee?.employee_code && (
+                    <Badge variant="outline" className="text-xs">
+                      {currentEmployee.employee_code}
+                    </Badge>
                   )}
-                />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  يتم تعيين موظف الحجز تلقائياً من المستخدم المُسجل حالياً
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -475,7 +466,7 @@ const FlightBookingFormEnhanced = ({ onSuccess, initialData }: FlightBookingForm
                   name="ticket_price_per_person"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>سعر التذكرة للشخص الواحد (شامل الضرائب)</FormLabel>
+                      <FormLabel>سعر التذكرة للشخص الواحد (شامل كل شيء)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
