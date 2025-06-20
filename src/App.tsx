@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Customers from "@/pages/Customers";
@@ -37,67 +38,85 @@ import CustomerPortalPage from "@/pages/CustomerPortalPage";
 import BookingsCalendar from "@/pages/BookingsCalendar";
 import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
-import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import WhatsApp from "@/pages/WhatsApp";
+import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import Navbar from "@/components/navbar/Navbar";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
+
+// إنشاء Query Client مع إعدادات محسنة
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <div className="flex">
-                    <Navbar />
-                    <main className="flex-1">
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/customers" element={<Customers />} />
-                        <Route path="/new-customer" element={<NewCustomer />} />
-                        <Route path="/hotel-bookings" element={<HotelBookings />} />
-                        <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
-                        <Route path="/flight-bookings" element={<FlightBookings />} />
-                        <Route path="/new-flight-booking" element={<NewFlightBooking />} />
-                        <Route path="/car-rentals" element={<CarRentals />} />
-                        <Route path="/transport-bookings" element={<TransportBookings />} />
-                        <Route path="/invoices" element={<Invoices />} />
-                        <Route path="/suppliers" element={<Suppliers />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
-                        <Route path="/expense-management" element={<ExpenseManagement />} />
-                        <Route path="/expense-management-enhanced" element={<ExpenseManagementEnhanced />} />
-                        <Route path="/employees" element={<EmployeesPage />} />
-                        <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
-                        <Route path="/admin-settings" element={<AdminSettings />} />
-                        <Route path="/admin-import-export" element={<AdminImportExport />} />
-                        <Route path="/site-customization" element={<SiteCustomization />} />
-                        <Route path="/payment-orders" element={<PaymentOrders />} />
-                        <Route path="/bank-accounts" element={<BankAccounts />} />
-                        <Route path="/daily-operations" element={<DailyOperations />} />
-                        <Route path="/customer-service" element={<CustomerService />} />
-                        <Route path="/crm" element={<CRM />} />
-                        <Route path="/crm-dashboard" element={<CRMDashboard />} />
-                        <Route path="/customer-portal" element={<CustomerPortalPage />} />
-                        <Route path="/bookings-calendar" element={<BookingsCalendar />} />
-                        <Route path="/database-manager" element={<DatabaseManager />} />
-                        <Route path="/whatsapp" element={<WhatsApp />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </main>
-                  </div>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-          <Toaster />
-        </div>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <AuthProvider>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <div className="flex">
+                        <Navbar />
+                        <main className="flex-1">
+                          <ErrorBoundary>
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/customers" element={<Customers />} />
+                              <Route path="/new-customer" element={<NewCustomer />} />
+                              <Route path="/hotel-bookings" element={<HotelBookings />} />
+                              <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
+                              <Route path="/flight-bookings" element={<FlightBookings />} />
+                              <Route path="/new-flight-booking" element={<NewFlightBooking />} />
+                              <Route path="/car-rentals" element={<CarRentals />} />
+                              <Route path="/transport-bookings" element={<TransportBookings />} />
+                              <Route path="/invoices" element={<Invoices />} />
+                              <Route path="/suppliers" element={<Suppliers />} />
+                              <Route path="/reports" element={<Reports />} />
+                              <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
+                              <Route path="/expense-management" element={<ExpenseManagement />} />
+                              <Route path="/expense-management-enhanced" element={<ExpenseManagementEnhanced />} />
+                              <Route path="/employees" element={<EmployeesPage />} />
+                              <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
+                              <Route path="/admin-settings" element={<AdminSettings />} />
+                              <Route path="/admin-import-export" element={<AdminImportExport />} />
+                              <Route path="/site-customization" element={<SiteCustomization />} />
+                              <Route path="/payment-orders" element={<PaymentOrders />} />
+                              <Route path="/bank-accounts" element={<BankAccounts />} />
+                              <Route path="/daily-operations" element={<DailyOperations />} />
+                              <Route path="/customer-service" element={<CustomerService />} />
+                              <Route path="/crm" element={<CRM />} />
+                              <Route path="/crm-dashboard" element={<CRMDashboard />} />
+                              <Route path="/customer-portal" element={<CustomerPortalPage />} />
+                              <Route path="/bookings-calendar" element={<BookingsCalendar />} />
+                              <Route path="/database-manager" element={<DatabaseManager />} />
+                              <Route path="/whatsapp" element={<WhatsApp />} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </ErrorBoundary>
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+              <Toaster />
+            </div>
+          </AuthProvider>
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -107,7 +126,10 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
       </div>
     );
   }
