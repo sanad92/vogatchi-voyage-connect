@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -38,6 +39,7 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import WhatsApp from "@/pages/WhatsApp";
+import Navbar from "@/components/navbar/Navbar";
 
 function App() {
   return (
@@ -103,7 +105,11 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>Loading...</div>; // Show a loading indicator while checking authentication
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   if (!isLoggedIn()) {
@@ -112,7 +118,5 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
   return children;
 }
-
-import Navbar from "@/components/navbar/Navbar";
 
 export default App;

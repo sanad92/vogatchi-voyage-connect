@@ -20,10 +20,12 @@ export interface AuthContextType {
   userRole: string | null;
   session: Session | null;
   loading: boolean;
+  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isSuperAdmin: () => boolean;
+  isLoggedIn: () => boolean;
   canDelete: () => boolean;
   canEditAll: () => boolean;
   canManageSystemSettings: () => boolean;

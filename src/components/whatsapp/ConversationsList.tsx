@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, Clock, User } from 'lucide-react';
+import { Phone, Clock, User, MessageCircle } from 'lucide-react';
 import { WhatsAppConversation } from '@/types/whatsapp';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -34,7 +34,7 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent': return 'destructive';
-      case 'high': return 'orange';
+      case 'high': return 'secondary';
       case 'normal': return 'secondary';
       case 'low': return 'outline';
       default: return 'secondary';

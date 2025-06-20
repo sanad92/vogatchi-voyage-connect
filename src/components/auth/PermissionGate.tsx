@@ -51,4 +51,5 @@ const PermissionGate = ({
   return <>{children}</>;
 };
 
+export { PermissionGate };
 export default PermissionGate;

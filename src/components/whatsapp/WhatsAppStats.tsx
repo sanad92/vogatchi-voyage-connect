@@ -94,7 +94,7 @@ export const WhatsAppStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-2xl font-bold">{String(stat.value)}</p>
               </div>
               <stat.icon className={`w-8 h-8 ${stat.color}`} />
             </div>
