@@ -131,6 +131,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return canManageSystem(userRole);
   };
 
+  // إضافة الوظائف المفقودة
+  const isLoggedIn = (): boolean => {
+    const result = !!(user && profile && userRole && profile.is_active);
+    console.log('🔍 isLoggedIn() - فحص حالة تسجيل الدخول:', {
+      hasUser: !!user,
+      hasProfile: !!profile,
+      hasRole: !!userRole,
+      isActive: profile?.is_active,
+      result
+    });
+    return result;
+  };
+
   // تشخيص حالة المصادقة الحالية
   console.log('🧩 حالة المصادقة الحالية:', {
     loading,
@@ -150,10 +163,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userRole,
     session,
     loading,
+    isLoading: loading, // إضافة isLoading كـ alias لـ loading
     signIn,
     signOut,
     hasRole,
     isSuperAdmin: isSuperAdminUser,
+    isLoggedIn, // إضافة isLoggedIn
     canDelete,
     canEditAll,
     canManageSystemSettings
