@@ -200,6 +200,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_assignment_rules: {
+        Row: {
+          assignment_type: string | null
+          conditions: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          target_employees: string[] | null
+          updated_at: string | null
+          working_days: number[] | null
+          working_hours_end: string | null
+          working_hours_start: string | null
+        }
+        Insert: {
+          assignment_type?: string | null
+          conditions: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          target_employees?: string[] | null
+          updated_at?: string | null
+          working_days?: number[] | null
+          working_hours_end?: string | null
+          working_hours_start?: string | null
+        }
+        Update: {
+          assignment_type?: string | null
+          conditions?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          target_employees?: string[] | null
+          updated_at?: string | null
+          working_days?: number[] | null
+          working_hours_end?: string | null
+          working_hours_start?: string | null
+        }
+        Relationships: []
+      }
       backup_logs: {
         Row: {
           backup_type: string
@@ -3139,6 +3184,50 @@ export type Database = {
           },
         ]
       }
+      quick_replies: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_global: boolean | null
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_global?: boolean | null
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_global?: boolean | null
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_replies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rent_contracts: {
         Row: {
           annual_increase_percentage: number | null
@@ -4216,6 +4305,316 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_analytics: {
+        Row: {
+          average_response_time: unknown | null
+          conversations_closed: number | null
+          created_at: string | null
+          customer_satisfaction_score: number | null
+          date: string
+          employee_id: string | null
+          id: string
+          total_conversations: number | null
+          total_messages_received: number | null
+          total_messages_sent: number | null
+        }
+        Insert: {
+          average_response_time?: unknown | null
+          conversations_closed?: number | null
+          created_at?: string | null
+          customer_satisfaction_score?: number | null
+          date: string
+          employee_id?: string | null
+          id?: string
+          total_conversations?: number | null
+          total_messages_received?: number | null
+          total_messages_sent?: number | null
+        }
+        Update: {
+          average_response_time?: unknown | null
+          conversations_closed?: number | null
+          created_at?: string | null
+          customer_satisfaction_score?: number | null
+          date?: string
+          employee_id?: string | null
+          id?: string
+          total_conversations?: number | null
+          total_messages_received?: number | null
+          total_messages_sent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_analytics_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conversations: {
+        Row: {
+          assigned_to: string | null
+          assignment_reason: string | null
+          auto_assigned: boolean | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          last_message_at: string | null
+          phone_number: string
+          priority: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          assignment_reason?: string | null
+          auto_assigned?: boolean | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          phone_number: string
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          assignment_reason?: string | null
+          auto_assigned?: boolean | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          phone_number?: string
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          content: string | null
+          conversation_id: string
+          created_at: string | null
+          delivered_at: string | null
+          direction: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          media_mime_type: string | null
+          media_url: string | null
+          message_id: string | null
+          message_type: string | null
+          read_at: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string | null
+          template_language: string | null
+          template_name: string | null
+          template_parameters: Json | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id: string
+          created_at?: string | null
+          delivered_at?: string | null
+          direction: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_id?: string | null
+          message_type?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          template_language?: string | null
+          template_name?: string | null
+          template_parameters?: Json | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          delivered_at?: string | null
+          direction?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_id?: string | null
+          message_type?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          template_language?: string | null
+          template_name?: string | null
+          template_parameters?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_sessions: {
+        Row: {
+          active_conversations_count: number | null
+          auto_assignment_enabled: boolean | null
+          created_at: string | null
+          employee_id: string
+          id: string
+          last_activity: string | null
+          max_conversations: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_conversations_count?: number | null
+          auto_assignment_enabled?: boolean | null
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          last_activity?: string | null
+          max_conversations?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_conversations_count?: number | null
+          auto_assignment_enabled?: boolean | null
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          last_activity?: string | null
+          max_conversations?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_settings: {
+        Row: {
+          access_token: string
+          business_account_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          phone_number_id: string
+          updated_at: string | null
+          webhook_verify_token: string
+        }
+        Insert: {
+          access_token: string
+          business_account_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number_id: string
+          updated_at?: string | null
+          webhook_verify_token: string
+        }
+        Update: {
+          access_token?: string
+          business_account_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number_id?: string
+          updated_at?: string | null
+          webhook_verify_token?: string
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          body_text: string
+          buttons: Json | null
+          category: string
+          created_at: string | null
+          footer_text: string | null
+          header_text: string | null
+          header_type: string | null
+          id: string
+          language: string
+          name: string
+          status: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body_text: string
+          buttons?: Json | null
+          category: string
+          created_at?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          header_type?: string | null
+          id?: string
+          language: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body_text?: string
+          buttons?: Json | null
+          category?: string
+          created_at?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          header_type?: string | null
+          id?: string
+          language?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -4256,6 +4655,10 @@ export type Database = {
           success: boolean
           message: string
         }[]
+      }
+      auto_assign_conversation: {
+        Args: { p_phone_number: string; p_message_content?: string }
+        Returns: string
       }
       booking_exists: {
         Args: { booking: string; bookingtype: string }
@@ -4565,6 +4968,10 @@ export type Database = {
           p_changed_by?: string
           p_notes?: string
         }
+        Returns: boolean
+      }
+      update_message_status: {
+        Args: { p_message_id: string; p_status: string; p_timestamp?: string }
         Returns: boolean
       }
       update_period_commission_status: {

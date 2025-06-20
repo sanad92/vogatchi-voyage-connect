@@ -1,151 +1,107 @@
-
-import { 
-  Home, 
-  Users, 
-  Calendar, 
-  Building2, 
-  Receipt, 
-  FileText, 
-  BarChart3, 
-  Settings,
+import {
+  Home,
+  Users,
+  UserPlus,
+  Building2,
+  Plus,
   Plane,
   Car,
-  MapPin,
-  Hotel,
+  Bus,
+  FileText,
+  Truck,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
   CreditCard,
-  UserCheck,
-  Target,
-  Phone,
-} from 'lucide-react';
+  UserCog,
+  Settings,
+  Upload,
+  Palette,
+  Banknote,
+  Calendar,
+  Globe,
+  Headphones,
+  BarChart,
+  Database,
+  MessageCircle
+} from "lucide-react";
 
-export interface SimpleNavItem {
-  to: string;
+interface NavItem {
+  name: string;
+  href: string;
   icon: any;
-  label: string;
-  allowedRoles: string[];
-  requiredPermissions?: string[];
+  permission?: string;
 }
 
-export const mainNavItems: SimpleNavItem[] = [
-  {
-    to: "/",
-    icon: Home,
-    label: "الرئيسية",
-    allowedRoles: [],
-    requiredPermissions: []
-  },
-  {
-    to: "/daily-operations",
-    icon: Calendar,
-    label: "العمليات اليومية",
-    allowedRoles: [],
-    requiredPermissions: ['bookings_view']
-  }
-];
+interface NavigationSection {
+  title: string;
+  items: NavItem[];
+}
 
-export const businessNavItems: SimpleNavItem[] = [
+export const navigationItems: NavigationSection[] = [
   {
-    to: "/customers",
-    icon: UserCheck,
-    label: "العملاء",
-    allowedRoles: [],
-    requiredPermissions: ['customers_view']
+    title: "لوحة التحكم",
+    items: [
+      { name: "الرئيسية", href: "/", icon: Home },
+      { name: "العمليات اليومية", href: "/daily-operations", icon: Calendar },
+    ]
   },
   {
-    to: "/hotel-bookings",
-    icon: Hotel,
-    label: "حجوزات الفنادق",
-    allowedRoles: [],
-    requiredPermissions: ['bookings_view']
+    title: "إدارة العملاء",
+    items: [
+      { name: "العملاء", href: "/customers", icon: Users, permission: "customers_view" },
+      { name: "عميل جديد", href: "/new-customer", icon: UserPlus, permission: "customers_create" },
+      { name: "بوابة العميل", href: "/customer-portal", icon: Globe },
+      { name: "WhatsApp", href: "/whatsapp", icon: MessageCircle, permission: "customers_view" },
+    ]
   },
   {
-    to: "/flight-bookings",
-    icon: Plane,
-    label: "حجوزات الطيران",
-    allowedRoles: [],
-    requiredPermissions: ['bookings_view']
+    title: "الحجوزات",
+    items: [
+      { name: "حجوزات الفنادق", href: "/hotel-bookings", icon: Building2, permission: "hotel_bookings_view" },
+      { name: "حجز فندق جديد", href: "/new-hotel-booking", icon: Plus, permission: "hotel_bookings_create" },
+      { name: "حجوزات الطيران", href: "/flight-bookings", icon: Plane, permission: "flight_bookings_view" },
+      { name: "حجز طيران جديد", href: "/new-flight-booking", icon: Plus, permission: "flight_bookings_create" },
+      { name: "تأجير السيارات", href: "/car-rentals", icon: Car, permission: "car_rentals_view" },
+      { name: "حجوزات النقل", href: "/transport-bookings", icon: Bus, permission: "transport_bookings_view" },
+      { name: "تقويم الحجوزات", href: "/bookings-calendar", icon: Calendar, permission: "hotel_bookings_view" },
+    ]
   },
   {
-    to: "/transport-bookings",
-    icon: MapPin,
-    label: "حجوزات النقل",
-    allowedRoles: [],
-    requiredPermissions: ['bookings_view']
+    title: "المالية",
+    items: [
+      { name: "الفواتير", href: "/invoices", icon: FileText, permission: "invoices_view" },
+      { name: "إدارة المصروفات", href: "/expense-management-enhanced", icon: Truck, permission: "expenses_view" },
+      { name: "أوامر الدفع", href: "/payment-orders", icon: CreditCard, permission: "payment_orders_view" },
+      { name: "الحسابات البنكية", href: "/bank-accounts", icon: Banknote, permission: "bank_accounts_view" },
+    ]
   },
   {
-    to: "/car-rentals",
-    icon: Car,
-    label: "تأجير السيارات",
-    allowedRoles: [],
-    requiredPermissions: ['bookings_view']
+    title: "التقارير",
+    items: [
+      { name: "نظرة عامة", href: "/reports", icon: BarChart3, permission: "reports_view" },
+      { name: "الأرباح والخسائر", href: "/profit-loss-reports", icon: TrendingUp, permission: "reports_view" },
+    ]
   },
   {
-    to: "/suppliers",
-    icon: Building2,
-    label: "الموردين",
-    allowedRoles: [],
-    requiredPermissions: ['suppliers_view']
+    title: "إدارة الموردين",
+    items: [
+      { name: "الموردين", href: "/suppliers", icon: Truck, permission: "suppliers_view" },
+    ]
   },
   {
-    to: "/employees",
-    icon: Users,
-    label: "الموظفين",
-    allowedRoles: [],
-    requiredPermissions: ['employees_view']
+    title: "إدارة الموظفين",
+    items: [
+      { name: "الموظفين", href: "/employees-enhanced", icon: UserCog, permission: "employees_view" },
+    ]
   },
   {
-    to: "/expense-management",
-    icon: Receipt,
-    label: "إدارة المصروفات",
-    allowedRoles: [],
-    requiredPermissions: ['expenses_view']
+    title: "إعدادات النظام",
+    items: [
+      { name: "إعدادات المسؤول", href: "/admin-settings", icon: Settings, permission: "admin_settings_view" },
+      { name: "استيراد وتصدير", href: "/admin-import-export", icon: Upload, permission: "admin_settings_view" },
+      { name: "تخصيص الموقع", href: "/site-customization", icon: Palette, permission: "admin_settings_view" },
+      { name: "إدارة قواعد البيانات", href: "/database-manager", icon: Database, permission: "super_admin" },
+    ]
   },
-  {
-    to: "/bank-accounts",
-    icon: CreditCard,
-    label: "الحسابات البنكية",
-    allowedRoles: [],
-    requiredPermissions: ['banking_view']
-  },
-  {
-    to: "/invoices",
-    icon: FileText,
-    label: "الفواتير",
-    allowedRoles: [],
-    requiredPermissions: ['invoices_view']
-  }
-];
-
-export const communicationNavItems: SimpleNavItem[] = [
-  {
-    to: "/reports",
-    icon: BarChart3,
-    label: "التقارير",
-    allowedRoles: [],
-    requiredPermissions: ['reports_financial', 'reports_sales', 'reports_operational']
-  },
-  {
-    to: "/crm",
-    icon: Target,
-    label: "إدارة العملاء",
-    allowedRoles: [],
-    requiredPermissions: ['customers_view']
-  },
-  {
-    to: "/customer-service",
-    icon: Phone,
-    label: "خدمة العملاء",
-    allowedRoles: [],
-    requiredPermissions: ['customers_view']
-  }
-];
-
-export const adminNavItems: SimpleNavItem[] = [
-  {
-    to: "/admin-settings",
-    icon: Settings,
-    label: "إعدادات النظام",
-    allowedRoles: ['super_admin'],
-    requiredPermissions: ['system_settings']
-  }
 ];
