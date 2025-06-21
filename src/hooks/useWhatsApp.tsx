@@ -1,204 +1,272 @@
 
-import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { WhatsAppConversation, WhatsAppMessage, QuickReply, WhatsAppSession } from '@/types/whatsapp';
 import { toast } from 'sonner';
+import { WhatsAppConversation, WhatsAppMessage, QuickReply } from '@/types/whatsapp';
+import { handleError, withRetry } from '@/utils/errorHandling';
 
 export const useWhatsApp = () => {
   const queryClient = useQueryClient();
 
-  // Get conversations
-  const {
-    data: conversations,
-    isLoading: conversationsLoading,
-    error: conversationsError
+  // جلب المحادثات مع معالجة محسنة للأخطاء
+  const { 
+    data: conversations, 
+    isLoading: conversationsLoading, 
+    error: conversationsError,
+    refetch: refetchConversations 
   } = useQuery({
     queryKey: ['whatsapp-conversations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_conversations')
-        .select(`
-          *,
-          customer:customers(name, email),
-          assigned_employee:employees(full_name, employee_code)
-        `)
-        .order('last_message_at', { ascending: false });
-
-      if (error) throw error;
-      return data as WhatsAppConversation[];
-    }
-  });
-
-  // Get messages for a conversation
-  const getConversationMessages = (conversationId: string) => {
-    return useQuery({
-      queryKey: ['whatsapp-messages', conversationId],
-      queryFn: async () => {
+      return withRetry(async () => {
         const { data, error } = await supabase
-          .from('whatsapp_messages')
+          .from('whatsapp_conversations')
           .select(`
             *,
-            sender:employees(full_name)
+            customer:customers(name, phone),
+            assigned_employee:employees(full_name),
+            last_message:whatsapp_messages(content, sent_at, direction)
           `)
-          .eq('conversation_id', conversationId)
-          .order('sent_at', { ascending: true });
+          .order('updated_at', { ascending: false });
 
-        if (error) throw error;
-        return data as WhatsAppMessage[];
-      },
-      enabled: !!conversationId
-    });
-  };
+        if (error) {
+          console.error('خطأ في جلب محادثات الواتس اب:', error);
+          throw error;
+        }
 
-  // Get quick replies
-  const {
-    data: quickReplies,
-    isLoading: quickRepliesLoading
-  } = useQuery({
-    queryKey: ['quick-replies'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('quick_replies')
-        .select('*')
-        .order('usage_count', { ascending: false });
-
-      if (error) throw error;
-      return data as QuickReply[];
+        return data || [];
+      });
+    },
+    staleTime: 30000, // 30 seconds
+    retry: 2,
+    retryDelay: 1000,
+    onError: (error) => {
+      handleError(error, 'useWhatsApp - conversations');
     }
   });
 
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: {
-      conversationId: string;
-      messageType: string;
-      content?: string;
-      mediaUrl?: string;
-      templateName?: string;
-      templateLanguage?: string;
-      templateParameters?: any;
-      sentBy: string;
-    }) => {
-      const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
-        body: messageData
-      });
+  // جلب الردود السريعة
+  const { 
+    data: quickReplies, 
+    isLoading: quickRepliesLoading,
+    error: quickRepliesError 
+  } = useQuery({
+    queryKey: ['whatsapp-quick-replies'],
+    queryFn: async () => {
+      return withRetry(async () => {
+        const { data, error } = await supabase
+          .from('whatsapp_quick_replies')
+          .select('*')
+          .eq('is_active', true)
+          .order('usage_count', { ascending: false });
 
-      if (error) throw error;
+        if (error) {
+          console.error('خطأ في جلب الردود السريعة:', error);
+          throw error;
+        }
+
+        return data || [];
+      });
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      handleError(error, 'useWhatsApp - quick replies');
+    }
+  });
+
+  // إرسال رسالة
+  const sendMessage = useMutation({
+    mutationFn: async ({ 
+      conversationId, 
+      content, 
+      employeeId 
+    }: { 
+      conversationId: string; 
+      content: string; 
+      employeeId: string;
+    }) => {
+      if (!content.trim()) {
+        throw new Error('محتوى الرسالة مطلوب');
+      }
+
+      if (content.length > 4096) {
+        throw new Error('الرسالة طويلة جداً (الحد الأقصى 4096 حرف)');
+      }
+
+      const messageData = {
+        conversation_id: conversationId,
+        content: content.trim(),
+        direction: 'outbound' as const,
+        sender_id: employeeId,
+        sent_at: new Date().toISOString(),
+        status: 'sent' as const
+      };
+
+      const { data, error } = await supabase
+        .from('whatsapp_messages')
+        .insert([messageData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ في إرسال الرسالة:', error);
+        throw error;
+      }
+
+      // تحديث آخر نشاط في المحادثة
+      await supabase
+        .from('whatsapp_conversations')
+        .update({ 
+          updated_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+
       return data;
     },
     onSuccess: (data, variables) => {
       toast.success('تم إرسال الرسالة بنجاح');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-messages', variables.conversationId] });
+      
+      // تحديث cache المحادثات
       queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['whatsapp-messages', variables.conversationId] 
+      });
     },
-    onError: (error: any) => {
-      toast.error(`خطأ في إرسال الرسالة: ${error.message}`);
+    onError: (error) => {
+      console.error('خطأ في إرسال الرسالة:', error);
+      toast.error('فشل في إرسال الرسالة. يرجى المحاولة مرة أخرى.');
+      handleError(error, 'useWhatsApp - send message');
     }
   });
 
-  // Update conversation status
-  const updateConversationMutation = useMutation({
-    mutationFn: async ({ conversationId, updates }: { conversationId: string; updates: Partial<WhatsAppConversation> }) => {
-      const { data, error } = await supabase
-        .from('whatsapp_conversations')
-        .update(updates)
-        .eq('id', conversationId)
-        .select()
-        .single();
+  // جلب رسائل محادثة معينة
+  const getConversationMessages = (conversationId: string) => {
+    return useQuery({
+      queryKey: ['whatsapp-messages', conversationId],
+      queryFn: async () => {
+        if (!conversationId) {
+          throw new Error('معرف المحادثة مطلوب');
+        }
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('تم تحديث المحادثة بنجاح');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
-    },
-    onError: (error: any) => {
-      toast.error(`خطأ في تحديث المحادثة: ${error.message}`);
-    }
-  });
+        return withRetry(async () => {
+          const { data, error } = await supabase
+            .from('whatsapp_messages')
+            .select(`
+              *,
+              sender:employees(full_name)
+            `)
+            .eq('conversation_id', conversationId)
+            .order('sent_at', { ascending: true });
 
-  // Get employee session
+          if (error) {
+            console.error('خطأ في جلب رسائل المحادثة:', error);
+            throw error;
+          }
+
+          return data || [];
+        });
+      },
+      enabled: !!conversationId,
+      staleTime: 10000, // 10 seconds
+      onError: (error) => {
+        handleError(error, 'useWhatsApp - conversation messages');
+      }
+    });
+  };
+
+  // إدارة جلسة الموظف
   const getEmployeeSession = (employeeId: string) => {
     return useQuery({
       queryKey: ['whatsapp-session', employeeId],
       queryFn: async () => {
+        if (!employeeId) {
+          throw new Error('معرف الموظف مطلوب');
+        }
+
         const { data, error } = await supabase
           .from('whatsapp_sessions')
           .select('*')
           .eq('employee_id', employeeId)
           .single();
 
-        if (error && error.code !== 'PGRST116') throw error;
-        return data as WhatsAppSession | null;
+        if (error && error.code !== 'PGRST116') {
+          console.error('خطأ في جلب جلسة الموظف:', error);
+          throw error;
+        }
+
+        return data;
       },
-      enabled: !!employeeId
+      enabled: !!employeeId,
+      staleTime: 30000,
+      onError: (error) => {
+        handleError(error, 'useWhatsApp - employee session');
+      }
     });
   };
 
-  // Update session status
-  const updateSessionMutation = useMutation({
+  // تحديث حالة جلسة الموظف
+  const updateSession = useMutation({
     mutationFn: async ({ employeeId, status }: { employeeId: string; status: string }) => {
+      if (!employeeId || !status) {
+        throw new Error('معرف الموظف والحالة مطلوبان');
+      }
+
+      const validStatuses = ['online', 'busy', 'away', 'offline'];
+      if (!validStatuses.includes(status)) {
+        throw new Error('حالة غير صحيحة');
+      }
+
       const { data, error } = await supabase
         .from('whatsapp_sessions')
         .upsert({
           employee_id: employeeId,
           status,
-          last_activity: new Date().toISOString()
+          last_activity: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('خطأ في تحديث جلسة الموظف:', error);
+        throw error;
+      }
+
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-session'] });
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['whatsapp-session', variables.employeeId] 
+      });
+    },
+    onError: (error) => {
+      handleError(error, 'useWhatsApp - update session');
     }
   });
 
-  // Set up real-time subscriptions
-  useEffect(() => {
-    const conversationsChannel = supabase
-      .channel('whatsapp-conversations')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'whatsapp_conversations'
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
-      })
-      .subscribe();
-
-    const messagesChannel = supabase
-      .channel('whatsapp-messages')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'whatsapp_messages'
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['whatsapp-messages'] });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(conversationsChannel);
-      supabase.removeChannel(messagesChannel);
-    };
-  }, [queryClient]);
-
   return {
-    conversations,
+    // البيانات
+    conversations: conversations || [],
+    quickReplies: quickReplies || [],
+    
+    // حالات التحميل
     conversationsLoading,
-    conversationsError,
-    getConversationMessages,
-    quickReplies,
     quickRepliesLoading,
-    sendMessage: sendMessageMutation.mutate,
-    sendMessageLoading: sendMessageMutation.isPending,
-    updateConversation: updateConversationMutation.mutate,
+    
+    // الأخطاء
+    conversationsError,
+    quickRepliesError,
+    
+    // العمليات
+    sendMessage: sendMessage.mutate,
+    isSendingMessage: sendMessage.isPending,
+    
+    // الوظائف المساعدة
+    getConversationMessages,
     getEmployeeSession,
-    updateSession: updateSessionMutation.mutate
+    updateSession: updateSession.mutate,
+    
+    // إعادة التحميل
+    refetchConversations
   };
 };

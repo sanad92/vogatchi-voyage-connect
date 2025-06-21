@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 
 export interface AppError {
@@ -50,7 +49,7 @@ export class PermissionError extends Error {
   }
 }
 
-// معالج الأخطاء العام
+// معالج الأخطاء العام المحسن
 export const handleError = (error: any, context?: string): AppError => {
   console.error(`Error in ${context || 'Unknown context'}:`, error);
 
@@ -95,6 +94,15 @@ export const handleError = (error: any, context?: string): AppError => {
       timestamp: new Date()
     };
     toast.error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى.');
+  } else if (error?.message?.includes('Network')) {
+    // خطأ شبكة
+    appError = {
+      code: 'NETWORK_ERROR',
+      message: 'خطأ في الاتصال بالشبكة',
+      details: error,
+      timestamp: new Date()
+    };
+    toast.error('خطأ في الاتصال. يرجى التحقق من الإنترنت والمحاولة مرة أخرى.');
   } else {
     // خطأ عام
     appError = {
@@ -160,11 +168,12 @@ export const logError = (error: AppError, userId?: string) => {
   });
 };
 
-// إنشاء retry wrapper للعمليات
+// إنشاء retry wrapper محسن للعمليات
 export const withRetry = async <T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  delay: number = 1000
+  delay: number = 1000,
+  backoff: boolean = true
 ): Promise<T> => {
   let lastError: any;
   
@@ -173,11 +182,37 @@ export const withRetry = async <T>(
       return await operation();
     } catch (error) {
       lastError = error;
+      
+      // لا تعيد المحاولة لأخطاء معينة
+      if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
+        break;
+      }
+      
       if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+        const waitTime = backoff ? delay * Math.pow(2, i) : delay;
+        console.log(`Retry attempt ${i + 1}/${maxRetries} after ${waitTime}ms`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
   }
   
   throw lastError;
+};
+
+// دالة للتحقق من الاتصال بالشبكة
+export const checkNetworkConnection = (): boolean => {
+  return navigator.onLine;
+};
+
+// دالة لإضافة timeout للعمليات
+export const withTimeout = <T>(
+  promise: Promise<T>,
+  timeoutMs: number = 30000
+): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('انتهت مهلة العملية')), timeoutMs)
+    )
+  ]);
 };

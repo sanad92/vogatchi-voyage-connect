@@ -1,10 +1,11 @@
 
 import { createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { AuthContextType } from '@/types/auth';
 import { useAuthState } from './useAuthState';
 import { cleanupAuthState, hasRoleAccess, isSuperAdmin, canDeleteData, canEditAllData, canManageSystem } from '@/utils/authHelpers';
+import { handleError, withRetry } from '@/utils/errorHandling';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -26,38 +27,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       
+      // التحقق من صحة المدخلات
+      if (!email || !email.trim()) {
+        throw new Error('البريد الإلكتروني مطلوب');
+      }
+      
+      if (!password || password.length < 6) {
+        throw new Error('كلمة المرور يجب أن تكون على الأقل 6 أحرف');
+      }
+
+      // تنظيف حالة المصادقة السابقة
       cleanupAuthState();
       
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        // Continue even if this fails
+        console.warn('تحذير: فشل في تسجيل الخروج السابق:', err);
       }
       
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // محاولة تسجيل الدخول مع retry
+      const result = await withRetry(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        
+        if (error) {
+          console.error('❌ خطأ في تسجيل الدخول:', error);
+          
+          // رسائل خطأ محسنة
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+          } else if (error.message.includes('Email not confirmed')) {
+            throw new Error('يجب تأكيد البريد الإلكتروني أولاً');
+          } else if (error.message.includes('Too many requests')) {
+            throw new Error('محاولات دخول كثيرة. يرجى المحاولة لاحقاً');
+          } else {
+            throw new Error(error.message || 'فشل في تسجيل الدخول');
+          }
+        }
+        
+        return data;
+      }, 2, 1000);
+      
+      console.log('✅ تم تسجيل الدخول بنجاح');
+      toast.success('تم تسجيل الدخول بنجاح', {
+        description: 'مرحباً بك في نظام Vogatchi CRM'
       });
       
-      if (error) {
-        console.error('❌ خطأ في تسجيل الدخول:', error);
-        toast({
-          title: "خطأ في تسجيل الدخول",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        console.log('✅ تم تسجيل الدخول بنجاح');
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحباً بك في نظام Vogatchi CRM",
-        });
+      // التوجه للصفحة الرئيسية بعد تأخير قصير للسماح بتحميل البيانات
+      setTimeout(() => {
         window.location.href = '/';
-      }
+      }, 500);
       
-      return { error };
+      return { error: null };
+      
     } catch (error) {
       console.error('❌ خطأ عام في تسجيل الدخول:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
+      toast.error('خطأ في تسجيل الدخول', {
+        description: errorMessage
+      });
+      
+      handleError(error, 'signIn');
       return { error };
     } finally {
       setLoading(false);
@@ -69,6 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       console.log('👋 جاري تسجيل الخروج...');
       
+      // تنظيف حالة المصادقة أولاً
       cleanupAuthState();
       
       try {
@@ -77,19 +111,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('خطأ في تسجيل الخروج:', error);
       }
       
+      // تنظيف الحالة المحلية
       setUser(null);
       setProfile(null);
       setUserRole(null);
       setSession(null);
       
-      toast({
-        title: "تم تسجيل الخروج",
-        description: "نراك قريباً",
+      toast.success('تم تسجيل الخروج بنجاح', {
+        description: 'نراك قريباً'
       });
       
-      window.location.href = '/auth';
+      // التوجه لصفحة المصادقة
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 500);
+      
     } catch (error) {
       console.error('خطأ في تسجيل الخروج:', error);
+      handleError(error, 'signOut');
     } finally {
       setLoading(false);
     }
@@ -131,16 +170,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return canManageSystem(userRole);
   };
 
-  // إضافة الوظائف المفقودة
+  // التحقق من حالة تسجيل الدخول مع فحوصات إضافية
   const isLoggedIn = (): boolean => {
-    const result = !!(user && profile && userRole && profile.is_active);
+    const hasValidUser = !!(user && user.email);
+    const hasValidProfile = !!(profile && profile.is_active);
+    const hasValidRole = !!userRole;
+    const hasValidSession = !!(session && session.access_token);
+    
+    const result = hasValidUser && hasValidProfile && hasValidRole && hasValidSession;
+    
     console.log('🔍 isLoggedIn() - فحص حالة تسجيل الدخول:', {
-      hasUser: !!user,
-      hasProfile: !!profile,
-      hasRole: !!userRole,
-      isActive: profile?.is_active,
-      result
+      hasValidUser,
+      hasValidProfile,
+      hasValidRole,
+      hasValidSession,
+      result,
+      userEmail: user?.email,
+      profileActive: profile?.is_active,
+      userRole
     });
+    
     return result;
   };
 
@@ -150,6 +199,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     hasUser: !!user,
     hasProfile: !!profile,
     hasRole: !!userRole,
+    hasSession: !!session,
     userEmail: user?.email,
     profileEmail: profile?.email,
     userRole,
@@ -163,12 +213,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userRole,
     session,
     loading,
-    isLoading: loading, // إضافة isLoading كـ alias لـ loading
+    isLoading: loading,
     signIn,
     signOut,
     hasRole,
     isSuperAdmin: isSuperAdminUser,
-    isLoggedIn, // إضافة isLoggedIn
+    isLoggedIn,
     canDelete,
     canEditAll,
     canManageSystemSettings

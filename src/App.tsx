@@ -41,22 +41,53 @@ import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import Navbar from "@/components/navbar/Navbar";
-import ErrorBoundary from "@/components/common/ErrorBoundary";
+import EnhancedErrorBoundary from "@/components/common/EnhancedErrorBoundary";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
-// إنشاء Query Client مع إعدادات محسنة
+// إعدادات محسنة للQuery Client مع معالجة أفضل للأخطاء
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // لا تعيد المحاولة للأخطاء 401, 403, 404
+        if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
     },
+    mutations: {
+      retry: false, // لا تعيد المحاولة للmutations تلقائياً
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      }
+    }
   },
 });
 
+// مكون معالجة الأخطاء العامة
+const GlobalErrorHandler = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <EnhancedErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Global Error:', error, errorInfo);
+        // يمكن إضافة إرسال الأخطاء لخدمة مراقبة هنا
+      }}
+    >
+      {children}
+    </EnhancedErrorBoundary>
+  );
+};
+
 function App() {
   return (
-    <ErrorBoundary>
+    <GlobalErrorHandler>
       <QueryClientProvider client={queryClient}>
         <Router>
           <AuthProvider>
@@ -70,7 +101,18 @@ function App() {
                       <div className="flex">
                         <Navbar />
                         <main className="flex-1">
-                          <ErrorBoundary>
+                          <EnhancedErrorBoundary
+                            fallback={
+                              <div className="p-6">
+                                <Alert className="border-red-200 bg-red-50">
+                                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                                  <AlertDescription className="text-red-800">
+                                    حدث خطأ في تحميل الصفحة. يرجى إعادة تحميل الصفحة أو المحاولة لاحقاً.
+                                  </AlertDescription>
+                                </Alert>
+                              </div>
+                            }
+                          >
                             <Routes>
                               <Route path="/" element={<Index />} />
                               <Route path="/customers" element={<Customers />} />
@@ -104,24 +146,34 @@ function App() {
                               <Route path="/whatsapp" element={<WhatsApp />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
-                          </ErrorBoundary>
+                          </EnhancedErrorBoundary>
                         </main>
                       </div>
                     </ProtectedRoute>
                   }
                 />
               </Routes>
-              <Toaster />
+              <Toaster 
+                position="top-center"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: 'white',
+                    color: 'black',
+                    border: '1px solid #e2e8f0'
+                  }
+                }}
+              />
             </div>
           </AuthProvider>
         </Router>
       </QueryClientProvider>
-    </ErrorBoundary>
+    </GlobalErrorHandler>
   );
 }
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -135,6 +187,12 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   }
 
   if (!isLoggedIn()) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // تحقق إضافي من صحة المستخدم
+  if (!user?.email) {
+    console.warn('User logged in but missing email - redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
