@@ -45,12 +45,11 @@ import EnhancedErrorBoundary from "@/components/common/EnhancedErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-// إعدادات محسنة للQuery Client مع معالجة أفضل للأخطاء
+// إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error: any) => {
-        // لا تعيد المحاولة للأخطاء 401, 403, 404
         if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
           return false;
         }
@@ -59,11 +58,11 @@ const queryClient = new QueryClient({
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
     },
     mutations: {
-      retry: false, // لا تعيد المحاولة للmutations تلقائياً
+      retry: false,
       onError: (error) => {
         console.error('Mutation error:', error);
       }
@@ -71,26 +70,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// مكون معالجة الأخطاء العامة
-const GlobalErrorHandler = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <EnhancedErrorBoundary
-      onError={(error, errorInfo) => {
-        console.error('Global Error:', error, errorInfo);
-        // يمكن إضافة إرسال الأخطاء لخدمة مراقبة هنا
-      }}
-    >
-      {children}
-    </EnhancedErrorBoundary>
-  );
-};
-
 function App() {
   return (
-    <GlobalErrorHandler>
+    <EnhancedErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
+        <AuthProvider>
+          <Router>
             <div className="min-h-screen bg-gray-50">
               <Routes>
                 <Route path="/auth" element={<Auth />} />
@@ -165,10 +150,10 @@ function App() {
                 }}
               />
             </div>
-          </AuthProvider>
-        </Router>
+          </Router>
+        </AuthProvider>
       </QueryClientProvider>
-    </GlobalErrorHandler>
+    </EnhancedErrorBoundary>
   );
 }
 
@@ -190,7 +175,6 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // تحقق إضافي من صحة المستخدم
   if (!user?.email) {
     console.warn('User logged in but missing email - redirecting to auth');
     return <Navigate to="/auth" replace />;

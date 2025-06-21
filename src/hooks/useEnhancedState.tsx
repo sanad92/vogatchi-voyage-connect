@@ -9,7 +9,7 @@ interface StateOptions<T> {
   debounceMs?: number;
 }
 
-export const useEnhancedState = <T>({
+export const useEnhancedState = <T,>({
   initialValue,
   validate,
   onError,
