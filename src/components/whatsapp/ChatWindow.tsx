@@ -16,17 +16,13 @@ import {
   MoreVertical, 
   X, 
   Phone, 
-  User, 
   Clock,
-  Zap,
   Archive,
   UserPlus
 } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
-import { QuickRepliesPanel } from './QuickRepliesPanel';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
-import { toast } from 'sonner';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -35,14 +31,13 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose }) => {
   const [message, setMessage] = useState('');
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentEmployee } = useCurrentEmployee();
   
   const { 
     getConversationMessages, 
     sendMessage, 
-    sendMessageLoading, 
+    isSendingMessage, 
     updateConversation,
     conversations 
   } = useWhatsApp();
@@ -65,19 +60,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
     try {
       await sendMessage({
         conversationId,
-        messageType: 'text',
         content: message.trim(),
-        sentBy: currentEmployee.id
+        employeeId: currentEmployee.id
       });
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
     }
-  };
-
-  const handleQuickReplySelect = (content: string) => {
-    setMessage(content);
-    setShowQuickReplies(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -87,10 +76,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
     }
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = (newStatus: 'active' | 'pending' | 'closed' | 'transferred') => {
     updateConversation({
       conversationId,
-      updates: { status: newStatus as any }
+      updates: { status: newStatus }
     });
   };
 
@@ -154,14 +143,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowQuickReplies(!showQuickReplies)}
-            >
-              <Zap className="w-4 h-4" />
-            </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -199,14 +180,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
         </div>
       </CardHeader>
 
-      {/* Quick Replies Panel */}
-      {showQuickReplies && (
-        <QuickRepliesPanel
-          onSelect={handleQuickReplySelect}
-          onClose={() => setShowQuickReplies(false)}
-        />
-      )}
-
       {/* Messages Area */}
       <CardContent className="flex-1 p-4 overflow-y-auto">
         {messagesLoading ? (
@@ -215,8 +188,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
           </div>
         ) : (
           <div className="space-y-4">
-            {messages?.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+            {messages?.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
             ))}
             <div ref={messagesEndRef} />
           </div>
@@ -237,16 +210,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onClose 
               onKeyPress={handleKeyPress}
               placeholder="اكتب رسالتك هنا..."
               className="min-h-[40px] max-h-32 resize-none"
-              disabled={sendMessageLoading}
+              disabled={isSendingMessage}
             />
           </div>
 
           <Button 
             onClick={handleSendMessage}
-            disabled={!message.trim() || sendMessageLoading}
+            disabled={!message.trim() || isSendingMessage}
             className="px-4"
           >
-            {sendMessageLoading ? (
+            {isSendingMessage ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : (
               <Send className="w-4 h-4" />

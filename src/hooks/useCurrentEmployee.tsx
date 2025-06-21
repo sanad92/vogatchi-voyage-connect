@@ -4,27 +4,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 export const useCurrentEmployee = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   const { data: currentEmployee, isLoading } = useQuery({
-    queryKey: ['current-employee', user?.id],
+    queryKey: ['current-employee', profile?.employee_id],
     queryFn: async () => {
-      if (!user?.email) return null;
+      if (!profile?.employee_id) {
+        return null;
+      }
 
       const { data, error } = await supabase
         .from('employees')
         .select('*')
-        .eq('email', user.email)
+        .eq('id', profile.employee_id)
+        .eq('is_active', true)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching current employee:', error);
-        return null;
+      if (error) {
+        console.error('خطأ في جلب بيانات الموظف الحالي:', error);
+        throw error;
       }
 
       return data;
     },
-    enabled: !!user?.email
+    enabled: !!profile?.employee_id,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   return {

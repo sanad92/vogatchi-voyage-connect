@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, Clock, User, MessageCircle } from 'lucide-react';
+import { Phone, Clock } from 'lucide-react';
 import { WhatsAppConversation } from '@/types/whatsapp';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 interface ConversationsListProps {
   conversations: WhatsAppConversation[];
@@ -31,112 +31,84 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'destructive';
-      case 'high': return 'secondary';
-      case 'normal': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'secondary';
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active': return 'نشطة';
+      case 'pending': return 'معلقة';
+      case 'closed': return 'مغلقة';
+      case 'transferred': return 'محولة';
+      default: return 'غير محدد';
     }
   };
 
   if (loading) {
     return (
-      <div className="space-y-2">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="p-3 animate-pulse">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-full" />
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
-              </div>
-            </div>
-          </Card>
-        ))}
+      <div className="flex justify-center items-center h-32">
+        <LoadingSpinner text="جاري تحميل المحادثات..." />
+      </div>
+    );
+  }
+
+  if (!conversations.length) {
+    return (
+      <div className="text-center p-4 text-gray-500">
+        <p>لا توجد محادثات حالياً</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2 max-h-full overflow-y-auto">
+    <div className="space-y-2">
       {conversations.map((conversation) => (
         <Card
           key={conversation.id}
-          className={`p-3 cursor-pointer transition-colors hover:bg-gray-50 ${
-            selectedId === conversation.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+          className={`cursor-pointer transition-colors hover:bg-gray-50 ${
+            selectedId === conversation.id ? 'bg-blue-50 border-blue-200' : ''
           }`}
           onClick={() => onSelect(conversation.id)}
         >
-          <div className="flex items-start gap-3">
-            <div className="relative">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback className="bg-green-100 text-green-700">
-                  {conversation.customer?.name?.charAt(0) || 
-                   conversation.phone_number.slice(-2)}
-                </AvatarFallback>
-              </Avatar>
-              <div 
-                className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(conversation.status)}`}
-              />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="font-medium text-sm truncate">
-                  {conversation.customer?.name || 'عميل جديد'}
-                </h4>
-                <Badge variant={getPriorityColor(conversation.priority)} className="text-xs">
-                  {conversation.priority === 'urgent' && 'عاجل'}
-                  {conversation.priority === 'high' && 'مرتفع'}
-                  {conversation.priority === 'normal' && 'عادي'}
-                  {conversation.priority === 'low' && 'منخفض'}
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
-                <Phone className="w-3 h-3" />
-                <span>{conversation.phone_number}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>
-                    {formatDistanceToNow(new Date(conversation.last_message_at), { 
-                      addSuffix: true, 
-                      locale: ar 
-                    })}
+          <CardContent className="p-3">
+            <div className="flex items-start gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-700 font-medium text-sm">
+                    {conversation.customer?.name?.charAt(0) || conversation.phone_number.slice(-2)}
                   </span>
                 </div>
-
-                {conversation.assigned_employee && (
-                  <div className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    <span className="truncate max-w-16">
-                      {conversation.assigned_employee.full_name}
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(conversation.status)}`} />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm truncate">
+                    {conversation.customer?.name || 'عميل جديد'}
+                  </h4>
+                  <Badge variant="outline" className="text-xs">
+                    {getStatusText(conversation.status)}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
+                  <Phone className="w-3 h-3" />
+                  <span className="truncate">{conversation.phone_number}</span>
+                </div>
+                
+                {conversation.last_message_at && (
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                    <Clock className="w-3 h-3" />
+                    <span>
+                      {formatDistanceToNow(new Date(conversation.last_message_at), { 
+                        addSuffix: true, 
+                        locale: ar 
+                      })}
                     </span>
                   </div>
                 )}
               </div>
-
-              {conversation.auto_assigned && (
-                <Badge variant="outline" className="text-xs mt-1">
-                  توزيع تلقائي
-                </Badge>
-              )}
             </div>
-          </div>
+          </CardContent>
         </Card>
       ))}
-
-      {conversations.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>لا توجد محادثات حالياً</p>
-        </div>
-      )}
     </div>
   );
 };

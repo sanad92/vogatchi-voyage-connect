@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { WhatsAppConversation, WhatsAppMessage, QuickReply } from '@/types/whatsapp';
+import { WhatsAppConversation, WhatsAppMessage } from '@/types/whatsapp';
 import { handleError, withRetry } from '@/utils/errorHandling';
 
 export const useWhatsApp = () => {
@@ -33,44 +33,16 @@ export const useWhatsApp = () => {
           throw error;
         }
 
-        return data || [];
+        return (data || []).map(conv => ({
+          ...conv,
+          status: conv.status as 'active' | 'closed' | 'pending' | 'transferred',
+          priority: conv.priority as 'low' | 'normal' | 'high' | 'urgent'
+        }));
       });
     },
     staleTime: 30000, // 30 seconds
     retry: 2,
-    retryDelay: 1000,
-    onError: (error) => {
-      handleError(error, 'useWhatsApp - conversations');
-    }
-  });
-
-  // جلب الردود السريعة
-  const { 
-    data: quickReplies, 
-    isLoading: quickRepliesLoading,
-    error: quickRepliesError 
-  } = useQuery({
-    queryKey: ['whatsapp-quick-replies'],
-    queryFn: async () => {
-      return withRetry(async () => {
-        const { data, error } = await supabase
-          .from('whatsapp_quick_replies')
-          .select('*')
-          .eq('is_active', true)
-          .order('usage_count', { ascending: false });
-
-        if (error) {
-          console.error('خطأ في جلب الردود السريعة:', error);
-          throw error;
-        }
-
-        return data || [];
-      });
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error) => {
-      handleError(error, 'useWhatsApp - quick replies');
-    }
+    retryDelay: 1000
   });
 
   // إرسال رسالة
@@ -139,6 +111,43 @@ export const useWhatsApp = () => {
     }
   });
 
+  // تحديث المحادثة
+  const updateConversation = useMutation({
+    mutationFn: async ({ 
+      conversationId, 
+      updates 
+    }: { 
+      conversationId: string; 
+      updates: Partial<WhatsAppConversation>;
+    }) => {
+      const { data, error } = await supabase
+        .from('whatsapp_conversations')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ في تحديث المحادثة:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      toast.success('تم تحديث المحادثة بنجاح');
+    },
+    onError: (error) => {
+      console.error('خطأ في تحديث المحادثة:', error);
+      toast.error('فشل في تحديث المحادثة');
+      handleError(error, 'useWhatsApp - update conversation');
+    }
+  });
+
   // جلب رسائل محادثة معينة
   const getConversationMessages = (conversationId: string) => {
     return useQuery({
@@ -163,14 +172,16 @@ export const useWhatsApp = () => {
             throw error;
           }
 
-          return data || [];
+          return (data || []).map(msg => ({
+            ...msg,
+            direction: msg.direction as 'inbound' | 'outbound',
+            status: msg.status as 'sent' | 'delivered' | 'read' | 'failed',
+            message_type: msg.message_type as 'text' | 'image' | 'document' | 'audio' | 'video' | 'template'
+          }));
         });
       },
       enabled: !!conversationId,
-      staleTime: 10000, // 10 seconds
-      onError: (error) => {
-        handleError(error, 'useWhatsApp - conversation messages');
-      }
+      staleTime: 10000 // 10 seconds
     });
   };
 
@@ -197,10 +208,7 @@ export const useWhatsApp = () => {
         return data;
       },
       enabled: !!employeeId,
-      staleTime: 30000,
-      onError: (error) => {
-        handleError(error, 'useWhatsApp - employee session');
-      }
+      staleTime: 30000
     });
   };
 
@@ -211,7 +219,7 @@ export const useWhatsApp = () => {
         throw new Error('معرف الموظف والحالة مطلوبان');
       }
 
-      const validStatuses = ['online', 'busy', 'away', 'offline'];
+      const validStatuses = ['available', 'busy', 'away', 'offline'];
       if (!validStatuses.includes(status)) {
         throw new Error('حالة غير صحيحة');
       }
@@ -247,19 +255,17 @@ export const useWhatsApp = () => {
   return {
     // البيانات
     conversations: conversations || [],
-    quickReplies: quickReplies || [],
     
     // حالات التحميل
     conversationsLoading,
-    quickRepliesLoading,
     
     // الأخطاء
     conversationsError,
-    quickRepliesError,
     
     // العمليات
     sendMessage: sendMessage.mutate,
     isSendingMessage: sendMessage.isPending,
+    updateConversation: updateConversation.mutate,
     
     // الوظائف المساعدة
     getConversationMessages,
