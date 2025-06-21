@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useRealTimeStats = () => {
   // جلب البيانات الحقيقية من قاعدة البيانات
-  const { data: hotelBookings } = useQuery({
+  const { data: hotelBookings, error: hotelBookingsError } = useQuery({
     queryKey: ['dashboard-hotel-bookings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -17,7 +17,7 @@ export const useRealTimeStats = () => {
     }
   });
 
-  const { data: customers } = useQuery({
+  const { data: customers, error: customersError } = useQuery({
     queryKey: ['dashboard-customers'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,7 +30,7 @@ export const useRealTimeStats = () => {
     }
   });
 
-  const { data: monthlyBookings } = useQuery({
+  const { data: monthlyBookings, error: monthlyBookingsError } = useQuery({
     queryKey: ['dashboard-monthly-bookings'],
     queryFn: async () => {
       const currentMonth = new Date();
@@ -95,9 +95,16 @@ export const useRealTimeStats = () => {
     };
   };
 
+  // تحديد إذا كان هناك أي خطأ
+  const error = hotelBookingsError || customersError || monthlyBookingsError;
+  
+  // تحديد حالة التحميل
+  const isLoading = !hotelBookings && !customers && !monthlyBookings && !error;
+
   return {
     realStats: calculateRealStats(),
     customers,
-    isLoading: !hotelBookings && !customers && !monthlyBookings
+    isLoading,
+    error
   };
 };
