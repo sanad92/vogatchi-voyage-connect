@@ -1,0 +1,332 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { 
+  Plus, 
+  Zap, 
+  Edit, 
+  Trash2, 
+  Copy,
+  Globe,
+  User
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useWhatsAppQuickReplies } from '@/hooks/useWhatsAppQuickReplies';
+import { toast } from 'sonner';
+
+interface QuickReplyFormData {
+  title: string;
+  content: string;
+  category: string;
+  is_global: boolean;
+}
+
+export const WhatsAppQuickReplies: React.FC = () => {
+  const { 
+    quickReplies, 
+    isLoading, 
+    createQuickReply, 
+    updateQuickReply, 
+    deleteQuickReply,
+    isCreating,
+    isUpdating,
+    isDeleting 
+  } = useWhatsAppQuickReplies();
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingReply, setEditingReply] = useState<any>(null);
+  const [formData, setFormData] = useState<QuickReplyFormData>({
+    title: '',
+    content: '',
+    category: 'general',
+    is_global: true
+  });
+
+  const categories = [
+    'general',
+    'greeting',
+    'booking',
+    'support',
+    'closing'
+  ];
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      category: 'general',
+      is_global: true
+    });
+    setEditingReply(null);
+  };
+
+  const handleOpenDialog = (reply?: any) => {
+    if (reply) {
+      setEditingReply(reply);
+      setFormData({
+        title: reply.title || '',
+        content: reply.content || '',
+        category: reply.category || 'general',
+        is_global: reply.is_global || false
+      });
+    } else {
+      resetForm();
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title || !formData.content) {
+      toast.error('يرجى ملء العنوان والمحتوى');
+      return;
+    }
+
+    try {
+      if (editingReply) {
+        await updateQuickReply({
+          id: editingReply.id,
+          ...formData
+        });
+        toast.success('تم تحديث الرد السريع بنجاح');
+      } else {
+        await createQuickReply(formData);
+        toast.success('تم إنشاء الرد السريع بنجاح');
+      }
+      
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('خطأ في حفظ الرد السريع:', error);
+      toast.error('فشل في حفظ الرد السريع');
+    }
+  };
+
+  const handleDelete = async (replyId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الرد السريع؟')) {
+      return;
+    }
+
+    try {
+      await deleteQuickReply(replyId);
+      toast.success('تم حذف الرد السريع بنجاح');
+    } catch (error) {
+      console.error('خطأ في حذف الرد السريع:', error);
+      toast.error('فشل في حذف الرد السريع');
+    }
+  };
+
+  const handleCopyContent = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success('تم نسخ المحتوى');
+  };
+
+  const getCategoryName = (category: string) => {
+    const categoryNames: Record<string, string> = {
+      general: 'عام',
+      greeting: 'ترحيب',
+      booking: 'حجوزات',
+      support: 'دعم',
+      closing: 'إنهاء'
+    };
+    return categoryNames[category] || category;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Zap className="w-6 h-6" />
+            الردود السريعة
+          </h2>
+          <p className="text-gray-600 mt-1">
+            إدارة الردود السريعة لتسريع الاستجابة للعملاء
+          </p>
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => handleOpenDialog()} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              رد سريع جديد
+            </Button>
+          </DialogTrigger>
+          
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingReply ? 'تحرير الرد السريع' : 'إنشاء رد سريع جديد'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">العنوان *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    placeholder="مثال: ترحيب العملاء"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="category">التصنيف</Label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {getCategoryName(cat)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="content">المحتوى *</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData({...formData, content: e.target.value})}
+                  placeholder="محتوى الرد السريع..."
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="is_global">رد عام</Label>
+                  <p className="text-sm text-gray-500">
+                    متاح لجميع الموظفين أم خاص بك فقط
+                  </p>
+                </div>
+                <Switch
+                  id="is_global"
+                  checked={formData.is_global}
+                  onCheckedChange={(checked) => setFormData({...formData, is_global: checked})}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" disabled={isCreating || isUpdating}>
+                  {(isCreating || isUpdating) ? 'جاري الحفظ...' : 'حفظ الرد السريع'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {quickReplies?.map((reply) => (
+          <Card key={reply.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg">{reply.title}</CardTitle>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline">{getCategoryName(reply.category)}</Badge>
+                    {reply.is_global ? (
+                      <Badge className="bg-green-100 text-green-800">
+                        <Globe className="w-3 h-3 mr-1" />
+                        عام
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-blue-100 text-blue-800">
+                        <User className="w-3 h-3 mr-1" />
+                        شخصي
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="space-y-3">
+                <div className="bg-gray-50 p-3 rounded text-sm">
+                  {reply.content}
+                </div>
+                
+                <div className="text-xs text-gray-500">
+                  تم الاستخدام: {reply.usage_count || 0} مرة
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCopyContent(reply.content)}
+                    className="flex items-center gap-1"
+                  >
+                    <Copy className="w-3 h-3" />
+                    نسخ
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenDialog(reply)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="w-3 h-3" />
+                    تحرير
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDelete(reply.id)}
+                    disabled={isDeleting}
+                    className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {quickReplies?.length === 0 && (
+        <div className="text-center py-8">
+          <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد ردود سريعة</h3>
+          <p className="text-gray-500 mb-4">ابدأ بإنشاء ردود سريعة لتسريع خدمة العملاء</p>
+          <Button onClick={() => handleOpenDialog()}>
+            إنشاء رد سريع
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
