@@ -1,3 +1,4 @@
+
 export interface WhatsAppConversation {
   id: string;
   phone_number: string;
@@ -57,6 +58,9 @@ export interface WhatsAppTemplate {
   footer_text?: string;
   buttons?: any;
   variables?: any;
+  approval_status?: string;
+  template_id?: string;
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -83,4 +87,22 @@ export interface WhatsAppSession {
   auto_assignment_enabled: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface WhatsAppSettings {
+  id?: string;
+  business_name?: string;
+  phone_number_id: string;
+  access_token: string;
+  webhook_verify_token: string;
+  webhook_url?: string;
+  is_active?: boolean;
+  api_version?: string;
+  rate_limit_per_minute?: number;
+  auto_assignment_enabled?: boolean;
+  business_description?: string;
+  business_website?: string;
+  business_email?: string;
+  created_at?: string;
+  updated_at?: string;
 }
