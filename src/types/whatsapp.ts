@@ -1,4 +1,3 @@
-
 export interface WhatsAppConversation {
   id: string;
   phone_number: string;
@@ -17,7 +16,7 @@ export interface WhatsAppConversation {
   };
   assigned_employee?: {
     full_name: string;
-    employee_code: string;
+    employee_code?: string;
   };
 }
 

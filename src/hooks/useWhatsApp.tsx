@@ -23,7 +23,7 @@ export const useWhatsApp = () => {
           .select(`
             *,
             customer:customers(name, phone),
-            assigned_employee:employees(full_name),
+            assigned_employee:employees(full_name, employee_code),
             last_message:whatsapp_messages(content, sent_at, direction)
           `)
           .order('updated_at', { ascending: false });
@@ -36,7 +36,12 @@ export const useWhatsApp = () => {
         return (data || []).map(conv => ({
           ...conv,
           status: conv.status as 'active' | 'closed' | 'pending' | 'transferred',
-          priority: conv.priority as 'low' | 'normal' | 'high' | 'urgent'
+          priority: conv.priority as 'low' | 'normal' | 'high' | 'urgent',
+          // تأكد من أن assigned_employee لديه employee_code
+          assigned_employee: conv.assigned_employee ? {
+            full_name: conv.assigned_employee.full_name,
+            employee_code: conv.assigned_employee.employee_code || ''
+          } : undefined
         }));
       });
     },
@@ -68,7 +73,7 @@ export const useWhatsApp = () => {
         conversation_id: conversationId,
         content: content.trim(),
         direction: 'outbound' as const,
-        sender_id: employeeId,
+        sent_by: employeeId,
         sent_at: new Date().toISOString(),
         status: 'sent' as const
       };
