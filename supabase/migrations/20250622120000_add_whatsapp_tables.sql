@@ -18,6 +18,19 @@ ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'pending',
 ADD COLUMN IF NOT EXISTS template_id TEXT,
 ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 
+-- إنشاء جدول whatsapp_quick_replies
+CREATE TABLE IF NOT EXISTS public.whatsapp_quick_replies (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT DEFAULT 'general',
+  is_global BOOLEAN DEFAULT true,
+  created_by UUID REFERENCES public.profiles(id),
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
 -- إنشاء جدول whatsapp_conversations إذا لم يكن موجوداً
 CREATE TABLE IF NOT EXISTS public.whatsapp_conversations (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -70,11 +83,26 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_sessions (
 );
 
 -- تفعيل RLS على الجداول الجديدة
+ALTER TABLE public.whatsapp_quick_replies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
 
 -- إنشاء سياسات أمنية
+CREATE POLICY IF NOT EXISTS "Users can view quick replies" ON public.whatsapp_quick_replies
+  FOR SELECT USING (true);
+
+CREATE POLICY IF NOT EXISTS "Users can manage global quick replies" ON public.whatsapp_quick_replies
+  FOR ALL USING (
+    is_global = true OR 
+    created_by = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM public.user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('super_admin', 'admin', 'manager')
+    )
+  );
+
 CREATE POLICY IF NOT EXISTS "Users can view conversations" ON public.whatsapp_conversations
   FOR SELECT USING (true);
 
@@ -110,6 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_conversations_assigned_to ON public.what
 CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_conversation_id ON public.whatsapp_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_sent_at ON public.whatsapp_messages(sent_at);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_sessions_employee_id ON public.whatsapp_sessions(employee_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_quick_replies_created_by ON public.whatsapp_quick_replies(created_by);
 
 -- دالة للتوزيع التلقائي
 CREATE OR REPLACE FUNCTION auto_assign_conversation(p_phone_number TEXT, p_message_content TEXT DEFAULT NULL)

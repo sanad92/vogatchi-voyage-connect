@@ -1,63 +1,104 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Circle, ChevronDown } from 'lucide-react';
-import { useWhatsApp } from '@/hooks/useWhatsApp';
+import { 
+  UserCheck, 
+  UserX, 
+  Clock, 
+  MessageCircle 
+} from 'lucide-react';
 
 interface SessionManagerProps {
   employeeId: string;
 }
 
 export const SessionManager: React.FC<SessionManagerProps> = ({ employeeId }) => {
-  const [currentStatus, setCurrentStatus] = useState<'available' | 'busy' | 'away' | 'offline'>('available');
-  const { updateSession } = useWhatsApp();
+  const [status, setStatus] = useState<'available' | 'busy' | 'away' | 'offline'>('offline');
+  const [activeConversations] = useState(0);
+  const [maxConversations] = useState(5);
 
-  const statusOptions = [
-    { value: 'available', label: 'متاح', color: 'bg-green-500' },
-    { value: 'busy', label: 'مشغول', color: 'bg-red-500' },
-    { value: 'away', label: 'بعيد', color: 'bg-yellow-500' },
-    { value: 'offline', label: 'غير متصل', color: 'bg-gray-500' }
-  ];
-
-  const handleStatusChange = (newStatus: 'available' | 'busy' | 'away' | 'offline') => {
-    setCurrentStatus(newStatus);
-    updateSession({ employeeId, status: newStatus });
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'available':
+        return <UserCheck className="w-4 h-4 text-green-600" />;
+      case 'busy':
+        return <MessageCircle className="w-4 h-4 text-yellow-600" />;
+      case 'away':
+        return <Clock className="w-4 h-4 text-orange-600" />;
+      case 'offline':
+        return <UserX className="w-4 h-4 text-gray-600" />;
+    }
   };
 
-  const getCurrentStatusInfo = () => {
-    return statusOptions.find(option => option.value === currentStatus) || statusOptions[0];
+  const getStatusBadge = () => {
+    const statusConfig = {
+      available: { label: 'متاح', className: 'bg-green-100 text-green-800' },
+      busy: { label: 'مشغول', className: 'bg-yellow-100 text-yellow-800' },
+      away: { label: 'غائب', className: 'bg-orange-100 text-orange-800' },
+      offline: { label: 'غير متصل', className: 'bg-gray-100 text-gray-800' }
+    };
+    
+    const config = statusConfig[status];
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const statusInfo = getCurrentStatusInfo();
+  const handleStatusChange = (newStatus: typeof status) => {
+    setStatus(newStatus);
+    // هنا سيتم إرسال التحديث إلى قاعدة البيانات
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Circle className={`w-3 h-3 ${statusInfo.color}`} />
-          <span>{statusInfo.label}</span>
-          <ChevronDown className="w-4 h-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {statusOptions.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            onClick={() => handleStatusChange(option.value as any)}
-            className="gap-2"
+    <Card className="w-64">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {getStatusIcon()}
+            <span className="font-medium">حالة الموظف</span>
+          </div>
+          {getStatusBadge()}
+        </div>
+        
+        <div className="text-sm text-gray-600 mb-3">
+          المحادثات: {activeConversations}/{maxConversations}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            size="sm"
+            variant={status === 'available' ? 'default' : 'outline'}
+            onClick={() => handleStatusChange('available')}
+            className="text-xs"
           >
-            <Circle className={`w-3 h-3 ${option.color}`} />
-            {option.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            متاح
+          </Button>
+          <Button
+            size="sm"
+            variant={status === 'away' ? 'default' : 'outline'}
+            onClick={() => handleStatusChange('away')}
+            className="text-xs"
+          >
+            غائب
+          </Button>
+          <Button
+            size="sm"
+            variant={status === 'busy' ? 'default' : 'outline'}
+            onClick={() => handleStatusChange('busy')}
+            className="text-xs"
+          >
+            مشغول
+          </Button>
+          <Button
+            size="sm"
+            variant={status === 'offline' ? 'default' : 'outline'}
+            onClick={() => handleStatusChange('offline')}
+            className="text-xs"
+          >
+            غير متصل
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

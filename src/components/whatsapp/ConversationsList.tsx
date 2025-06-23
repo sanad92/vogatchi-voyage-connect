@@ -2,16 +2,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Clock } from 'lucide-react';
+import { MessageCircle, User, Clock } from 'lucide-react';
 import { WhatsAppConversation } from '@/types/whatsapp';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 interface ConversationsListProps {
   conversations: WhatsAppConversation[];
-  loading: boolean;
-  selectedId: string | null;
+  loading?: boolean;
+  selectedId?: string | null;
   onSelect: (id: string) => void;
 }
 
@@ -21,38 +18,51 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
   selectedId,
   onSelect
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'closed': return 'bg-gray-500';
-      case 'transferred': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: { label: 'نشط', className: 'bg-green-100 text-green-800' },
+      pending: { label: 'في الانتظار', className: 'bg-yellow-100 text-yellow-800' },
+      closed: { label: 'مغلق', className: 'bg-gray-100 text-gray-800' },
+      transferred: { label: 'محول', className: 'bg-blue-100 text-blue-800' }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'نشطة';
-      case 'pending': return 'معلقة';
-      case 'closed': return 'مغلقة';
-      case 'transferred': return 'محولة';
-      default: return 'غير محدد';
-    }
+  const getPriorityBadge = (priority: string) => {
+    const priorityConfig = {
+      low: { label: 'منخفض', className: 'bg-gray-100 text-gray-800' },
+      normal: { label: 'عادي', className: 'bg-blue-100 text-blue-800' },
+      high: { label: 'عالي', className: 'bg-orange-100 text-orange-800' },
+      urgent: { label: 'عاجل', className: 'bg-red-100 text-red-800' }
+    };
+    
+    const config = priorityConfig[priority as keyof typeof priorityConfig] || priorityConfig.normal;
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-32">
-        <LoadingSpinner text="جاري تحميل المحادثات..." />
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-4">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
-  if (!conversations.length) {
+  if (conversations.length === 0) {
     return (
-      <div className="text-center p-4 text-gray-500">
-        <p>لا توجد محادثات حالياً</p>
+      <div className="text-center py-8">
+        <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد محادثات</h3>
+        <p className="text-gray-500">لم يتم العثور على محادثات WhatsApp</p>
       </div>
     );
   }
@@ -60,50 +70,41 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
   return (
     <div className="space-y-2">
       {conversations.map((conversation) => (
-        <Card
+        <Card 
           key={conversation.id}
-          className={`cursor-pointer transition-colors hover:bg-gray-50 ${
-            selectedId === conversation.id ? 'bg-blue-50 border-blue-200' : ''
+          className={`cursor-pointer hover:shadow-md transition-shadow ${
+            selectedId === conversation.id ? 'ring-2 ring-blue-500' : ''
           }`}
           onClick={() => onSelect(conversation.id)}
         >
-          <CardContent className="p-3">
-            <div className="flex items-start gap-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-700 font-medium text-sm">
-                    {conversation.customer?.name?.charAt(0) || conversation.phone_number.slice(-2)}
-                  </span>
-                </div>
-                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(conversation.status)}`} />
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-gray-400" />
+                <span className="font-medium">
+                  {conversation.customer?.name || conversation.phone_number}
+                </span>
+              </div>
+              {getStatusBadge(conversation.status)}
+            </div>
+            
+            <div className="text-sm text-gray-600 mb-2">
+              {conversation.phone_number}
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {getPriorityBadge(conversation.priority)}
+                {conversation.assigned_employee && (
+                  <Badge variant="outline">
+                    {conversation.assigned_employee.full_name}
+                  </Badge>
+                )}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm truncate">
-                    {conversation.customer?.name || 'عميل جديد'}
-                  </h4>
-                  <Badge variant="outline" className="text-xs">
-                    {getStatusText(conversation.status)}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
-                  <Phone className="w-3 h-3" />
-                  <span className="truncate">{conversation.phone_number}</span>
-                </div>
-                
-                {conversation.last_message_at && (
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                    <Clock className="w-3 h-3" />
-                    <span>
-                      {formatDistanceToNow(new Date(conversation.last_message_at), { 
-                        addSuffix: true, 
-                        locale: ar 
-                      })}
-                    </span>
-                  </div>
-                )}
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <Clock className="w-3 h-3" />
+                {new Date(conversation.last_message_at).toLocaleString('ar-EG')}
               </div>
             </div>
           </CardContent>
