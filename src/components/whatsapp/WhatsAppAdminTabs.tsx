@@ -3,18 +3,17 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, 
+  MessageSquare, 
   FileText, 
-  Zap, 
+  Zap,
   BarChart3,
-  Users,
-  MessageSquare
+  Users
 } from 'lucide-react';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
 import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
-import WhatsAppDashboard from './WhatsAppDashboard';
 
 export const WhatsAppAdminTabs: React.FC = () => {
   return (
@@ -22,16 +21,12 @@ export const WhatsAppAdminTabs: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold">إدارة WhatsApp Business</h1>
         <p className="text-gray-600 mt-2">
-          نظام إدارة شامل لـ WhatsApp Business API مع التحكم الكامل في الإعدادات والمحادثات
+          إعداد وإدارة خدمة WhatsApp Business للتواصل مع العملاء
         </p>
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-6">
+      <Tabs defaultValue="settings" className="w-full">
         <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            المحادثات
-          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             الإعدادات
@@ -44,38 +39,48 @@ export const WhatsAppAdminTabs: React.FC = () => {
             <Zap className="w-4 h-4" />
             الردود السريعة
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            الإحصائيات
-          </TabsTrigger>
           <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            الموظفين
+            إدارة الموظفين
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            التحليلات
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            لوحة المحادثات
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard">
-          <WhatsAppDashboard />
-        </TabsContent>
-
-        <TabsContent value="settings">
+        <TabsContent value="settings" className="mt-6">
           <WhatsAppSettings />
         </TabsContent>
 
-        <TabsContent value="templates">
+        <TabsContent value="templates" className="mt-6">
           <WhatsAppTemplateManager />
         </TabsContent>
 
-        <TabsContent value="quick-replies">
+        <TabsContent value="quick-replies" className="mt-6">
           <WhatsAppQuickReplies />
         </TabsContent>
 
-        <TabsContent value="analytics">
+        <TabsContent value="employees" className="mt-6">
+          <WhatsAppEmployeeManagement />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-6">
           <WhatsAppAnalyticsDashboard />
         </TabsContent>
 
-        <TabsContent value="employees">
-          <WhatsAppEmployeeManagement />
+        <TabsContent value="dashboard" className="mt-6">
+          <div className="text-center py-8">
+            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لوحة المحادثات</h3>
+            <p className="text-gray-500 mb-4">
+              يمكن الوصول إلى لوحة المحادثات من الصفحة الرئيسية
+            </p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -10,6 +10,7 @@ import { WhatsAppStats } from './WhatsAppStats';
 import { SessionManager } from './SessionManager';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
+import { WhatsAppConversation } from '@/types/whatsapp';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 const WhatsAppDashboard = () => {
@@ -42,6 +43,17 @@ const WhatsAppDashboard = () => {
     );
   }
 
+  // Type-safe conversations conversion
+  const typedConversations: WhatsAppConversation[] = (conversations || []).map(conv => ({
+    ...conv,
+    status: ['pending', 'active', 'closed', 'transferred'].includes(conv.status as string) 
+      ? conv.status as 'pending' | 'active' | 'closed' | 'transferred'
+      : 'pending',
+    priority: ['low', 'normal', 'high', 'urgent'].includes(conv.priority as string)
+      ? conv.priority as 'low' | 'normal' | 'high' | 'urgent'
+      : 'normal'
+  }));
+
   return (
     <ErrorBoundary>
       <div className="h-screen flex flex-col">
@@ -67,7 +79,7 @@ const WhatsAppDashboard = () => {
               
               <TabsContent value="conversations" className="flex-1 p-2">
                 <ConversationsList
-                  conversations={conversations || []}
+                  conversations={typedConversations}
                   loading={conversationsLoading}
                   selectedId={selectedConversationId}
                   onSelect={setSelectedConversationId}

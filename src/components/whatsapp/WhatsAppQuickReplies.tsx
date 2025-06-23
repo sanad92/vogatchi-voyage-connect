@@ -17,8 +17,20 @@ import {
   User
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useWhatsAppQuickReplies } from '@/hooks/useWhatsAppQuickReplies';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface QuickReply {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  is_global: boolean;
+  usage_count: number;
+  created_at: string;
+  updated_at: string;
+}
 
 interface QuickReplyFormData {
   title: string;
@@ -28,24 +40,125 @@ interface QuickReplyFormData {
 }
 
 export const WhatsAppQuickReplies: React.FC = () => {
-  const { 
-    quickReplies, 
-    isLoading, 
-    createQuickReply, 
-    updateQuickReply, 
-    deleteQuickReply,
-    isCreating,
-    isUpdating,
-    isDeleting 
-  } = useWhatsAppQuickReplies();
-
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingReply, setEditingReply] = useState<any>(null);
+  const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
   const [formData, setFormData] = useState<QuickReplyFormData>({
     title: '',
     content: '',
     category: 'general',
     is_global: true
+  });
+
+  // جلب الردود السريعة
+  const { data: quickReplies = [], isLoading } = useQuery({
+    queryKey: ['whatsapp-quick-replies'],
+    queryFn: async (): Promise<QuickReply[]> => {
+      const { data, error } = await supabase
+        .from('whatsapp_quick_replies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('خطأ في جلب الردود السريعة:', error);
+        throw error;
+      }
+
+      return data as QuickReply[];
+    },
+    staleTime: 30000
+  });
+
+  // إنشاء رد سريع جديد
+  const createQuickReplyMutation = useMutation({
+    mutationFn: async (replyData: QuickReplyFormData) => {
+      const { data, error } = await supabase
+        .from('whatsapp_quick_replies')
+        .insert([{
+          ...replyData,
+          usage_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ في إنشاء رد سريع:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-quick-replies'] });
+      toast.success('تم إنشاء الرد السريع بنجاح');
+      setIsDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => {
+      console.error('خطأ في إنشاء الرد السريع:', error);
+      toast.error('فشل في إنشاء الرد السريع');
+    }
+  });
+
+  // تحديث رد سريع
+  const updateQuickReplyMutation = useMutation({
+    mutationFn: async (replyData: QuickReplyFormData & { id: string }) => {
+      const { id, ...updateData } = replyData;
+      
+      const { data, error } = await supabase
+        .from('whatsapp_quick_replies')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ في تحديث رد سريع:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-quick-replies'] });
+      toast.success('تم تحديث الرد السريع بنجاح');
+      setIsDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => {
+      console.error('خطأ في تحديث الرد السريع:', error);
+      toast.error('فشل في تحديث الرد السريع');
+    }
+  });
+
+  // حذف رد سريع
+  const deleteQuickReplyMutation = useMutation({
+    mutationFn: async (replyId: string) => {
+      const { error } = await supabase
+        .from('whatsapp_quick_replies')
+        .delete()
+        .eq('id', replyId);
+
+      if (error) {
+        console.error('خطأ في حذف رد سريع:', error);
+        throw error;
+      }
+
+      return replyId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-quick-replies'] });
+      toast.success('تم حذف الرد السريع بنجاح');
+    },
+    onError: (error) => {
+      console.error('خطأ في حذف الرد السريع:', error);
+      toast.error('فشل في حذف الرد السريع');
+    }
   });
 
   const categories = [
@@ -66,7 +179,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
     setEditingReply(null);
   };
 
-  const handleOpenDialog = (reply?: any) => {
+  const handleOpenDialog = (reply?: QuickReply) => {
     if (reply) {
       setEditingReply(reply);
       setFormData({
@@ -89,23 +202,13 @@ export const WhatsAppQuickReplies: React.FC = () => {
       return;
     }
 
-    try {
-      if (editingReply) {
-        await updateQuickReply({
-          id: editingReply.id,
-          ...formData
-        });
-        toast.success('تم تحديث الرد السريع بنجاح');
-      } else {
-        await createQuickReply(formData);
-        toast.success('تم إنشاء الرد السريع بنجاح');
-      }
-      
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('خطأ في حفظ الرد السريع:', error);
-      toast.error('فشل في حفظ الرد السريع');
+    if (editingReply) {
+      updateQuickReplyMutation.mutate({
+        id: editingReply.id,
+        ...formData
+      });
+    } else {
+      createQuickReplyMutation.mutate(formData);
     }
   };
 
@@ -114,13 +217,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
       return;
     }
 
-    try {
-      await deleteQuickReply(replyId);
-      toast.success('تم حذف الرد السريع بنجاح');
-    } catch (error) {
-      console.error('خطأ في حذف الرد السريع:', error);
-      toast.error('فشل في حذف الرد السريع');
-    }
+    deleteQuickReplyMutation.mutate(replyId);
   };
 
   const handleCopyContent = (content: string) => {
@@ -232,8 +329,13 @@ export const WhatsAppQuickReplies: React.FC = () => {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={isCreating || isUpdating}>
-                  {(isCreating || isUpdating) ? 'جاري الحفظ...' : 'حفظ الرد السريع'}
+                <Button 
+                  type="submit" 
+                  disabled={createQuickReplyMutation.isPending || updateQuickReplyMutation.isPending}
+                >
+                  {(createQuickReplyMutation.isPending || updateQuickReplyMutation.isPending) 
+                    ? 'جاري الحفظ...' 
+                    : 'حفظ الرد السريع'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   إلغاء
@@ -245,7 +347,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickReplies?.map((reply) => (
+        {quickReplies.map((reply) => (
           <Card key={reply.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -304,7 +406,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(reply.id)}
-                    disabled={isDeleting}
+                    disabled={deleteQuickReplyMutation.isPending}
                     className="flex items-center gap-1 text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -317,7 +419,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
         ))}
       </div>
 
-      {quickReplies?.length === 0 && (
+      {quickReplies.length === 0 && (
         <div className="text-center py-8">
           <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد ردود سريعة</h3>
