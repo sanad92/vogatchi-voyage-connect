@@ -6,108 +6,129 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { 
   Settings, 
-  Phone, 
-  Key, 
-  Globe, 
-  Shield, 
-  TestTube,
-  Save,
-  Eye,
-  EyeOff
+  Save, 
+  TestTube, 
+  Globe,
+  Phone,
+  Key
 } from 'lucide-react';
-import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const WhatsAppSettings: React.FC = () => {
-  const { 
-    settings, 
-    isLoading, 
-    updateSettings, 
-    testConnection,
-    isUpdating,
-    isTesting 
-  } = useWhatsAppSettings();
-  
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    business_name: settings?.business_name || '',
-    phone_number_id: settings?.phone_number_id || '',
-    access_token: settings?.access_token || '',
-    webhook_verify_token: settings?.webhook_verify_token || '',
-    webhook_url: settings?.webhook_url || '',
-    business_description: settings?.business_description || '',
-    business_website: settings?.business_website || '',
-    business_email: settings?.business_email || '',
-    api_version: settings?.api_version || 'v18.0',
-    rate_limit_per_minute: settings?.rate_limit_per_minute || 80,
-    auto_assignment_enabled: settings?.auto_assignment_enabled || true,
-    is_active: settings?.is_active || false
+    business_name: '',
+    phone_number_id: '',
+    access_token: '',
+    webhook_verify_token: '',
+    webhook_url: '',
+    business_description: '',
+    business_website: '',
+    business_email: '',
+    api_version: 'v18.0',
+    rate_limit_per_minute: 80,
+    auto_assignment_enabled: true,
+    is_active: true
   });
 
-  const [showTokens, setShowTokens] = useState({
-    access_token: false,
-    webhook_verify_token: false
+  // جلب الإعدادات الحالية
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['whatsapp-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('whatsapp_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('خطأ في جلب إعدادات WhatsApp:', error);
+        throw error;
+      }
+
+      if (data) {
+        setFormData({
+          business_name: data.business_name || '',
+          phone_number_id: data.phone_number_id || '',
+          access_token: data.access_token || '',
+          webhook_verify_token: data.webhook_verify_token || '',
+          webhook_url: data.webhook_url || '',
+          business_description: data.business_description || '',
+          business_website: data.business_website || '',
+          business_email: data.business_email || '',
+          api_version: data.api_version || 'v18.0',
+          rate_limit_per_minute: data.rate_limit_per_minute || 80,
+          auto_assignment_enabled: data.auto_assignment_enabled ?? true,
+          is_active: data.is_active ?? true
+        });
+      }
+
+      return data;
+    }
   });
 
-  React.useEffect(() => {
-    if (settings) {
-      setFormData({
-        business_name: settings.business_name || '',
-        phone_number_id: settings.phone_number_id || '',
-        access_token: settings.access_token || '',
-        webhook_verify_token: settings.webhook_verify_token || '',
-        webhook_url: settings.webhook_url || '',
-        business_description: settings.business_description || '',
-        business_website: settings.business_website || '',
-        business_email: settings.business_email || '',
-        api_version: settings.api_version || 'v18.0',
-        rate_limit_per_minute: settings.rate_limit_per_minute || 80,
-        auto_assignment_enabled: settings.auto_assignment_enabled || true,
-        is_active: settings.is_active || false
-      });
-    }
-  }, [settings]);
+  // حفظ الإعدادات
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (settingsData: typeof formData) => {
+      const { data, error } = await supabase
+        .from('whatsapp_settings')
+        .upsert(settingsData)
+        .select()
+        .single();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.business_name || !formData.phone_number_id || !formData.access_token) {
-      toast.error('يرجى ملء الحقول المطلوبة');
-      return;
-    }
+      if (error) {
+        console.error('خطأ في حفظ إعدادات WhatsApp:', error);
+        throw error;
+      }
 
-    try {
-      await updateSettings(formData);
-      toast.success('تم حفظ إعدادات WhatsApp بنجاح');
-    } catch (error) {
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
+      toast.success('تم حفظ الإعدادات بنجاح');
+    },
+    onError: (error) => {
       console.error('خطأ في حفظ الإعدادات:', error);
       toast.error('فشل في حفظ الإعدادات');
     }
-  };
+  });
 
-  const handleTestConnection = async () => {
-    if (!formData.phone_number_id || !formData.access_token) {
-      toast.error('يرجى إدخال Phone Number ID وAccess Token أولاً');
-      return;
-    }
-
-    try {
-      const result = await testConnection({
-        phone_number_id: formData.phone_number_id,
-        access_token: formData.access_token
+  // اختبار الاتصال
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('test-whatsapp-connection', {
+        body: {
+          phone_number_id: formData.phone_number_id,
+          access_token: formData.access_token
+        }
       });
-      
-      if (result.success) {
-        toast.success('تم اختبار الاتصال بنجاح! ✅');
-      } else {
-        toast.error(`فشل في الاتصال: ${result.error}`);
-      }
-    } catch (error) {
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('تم اختبار الاتصال بنجاح');
+    },
+    onError: (error) => {
       console.error('خطأ في اختبار الاتصال:', error);
       toast.error('فشل في اختبار الاتصال');
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveSettingsMutation.mutate(formData);
+  };
+
+  const handleTestConnection = () => {
+    if (!formData.phone_number_id || !formData.access_token) {
+      toast.error('يرجى إدخال Phone Number ID و Access Token أولاً');
+      return;
+    }
+    testConnectionMutation.mutate();
   };
 
   if (isLoading) {
@@ -120,22 +141,14 @@ export const WhatsAppSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-6 h-6" />
-            إعدادات WhatsApp Business
-          </h2>
-          <p className="text-gray-600 mt-1">
-            إدارة إعدادات WhatsApp Business API والتحكم في الاتصال
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant={settings?.is_active ? "default" : "secondary"}>
-            {settings?.is_active ? 'نشط' : 'غير نشط'}
-          </Badge>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Settings className="w-6 h-6" />
+          إعدادات WhatsApp Business API
+        </h2>
+        <p className="text-gray-600 mt-1">
+          إعداد وتكوين WhatsApp Business API للتكامل مع النظام
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -150,12 +163,12 @@ export const WhatsAppSettings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="business_name">اسم الأعمال *</Label>
+                <Label htmlFor="business_name">اسم الشركة *</Label>
                 <Input
                   id="business_name"
                   value={formData.business_name}
                   onChange={(e) => setFormData({...formData, business_name: e.target.value})}
-                  placeholder="مثال: شركة فيزيت تورز"
+                  placeholder="اسم شركتك"
                   required
                 />
               </div>
@@ -167,19 +180,9 @@ export const WhatsAppSettings: React.FC = () => {
                   type="email"
                   value={formData.business_email}
                   onChange={(e) => setFormData({...formData, business_email: e.target.value})}
-                  placeholder="info@visittours.com"
+                  placeholder="info@company.com"
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="business_website">موقع الويب</Label>
-              <Input
-                id="business_website"
-                value={formData.business_website}
-                onChange={(e) => setFormData({...formData, business_website: e.target.value})}
-                placeholder="https://visittours.com"
-              />
             </div>
 
             <div>
@@ -188,8 +191,19 @@ export const WhatsAppSettings: React.FC = () => {
                 id="business_description"
                 value={formData.business_description}
                 onChange={(e) => setFormData({...formData, business_description: e.target.value})}
-                placeholder="وصف قصير عن نشاط الشركة..."
+                placeholder="وصف مختصر عن أعمالك"
                 rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="business_website">موقع الويب</Label>
+              <Input
+                id="business_website"
+                type="url"
+                value={formData.business_website}
+                onChange={(e) => setFormData({...formData, business_website: e.target.value})}
+                placeholder="https://yourwebsite.com"
               />
             </div>
           </CardContent>
@@ -200,7 +214,7 @@ export const WhatsAppSettings: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="w-5 h-5" />
-              إعدادات WhatsApp API
+              إعدادات API
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -211,7 +225,7 @@ export const WhatsAppSettings: React.FC = () => {
                   id="phone_number_id"
                   value={formData.phone_number_id}
                   onChange={(e) => setFormData({...formData, phone_number_id: e.target.value})}
-                  placeholder="123456789012345"
+                  placeholder="معرف رقم الهاتف"
                   required
                 />
               </div>
@@ -229,78 +243,77 @@ export const WhatsAppSettings: React.FC = () => {
 
             <div>
               <Label htmlFor="access_token">Access Token *</Label>
-              <div className="relative">
-                <Input
-                  id="access_token"
-                  type={showTokens.access_token ? "text" : "password"}
-                  value={formData.access_token}
-                  onChange={(e) => setFormData({...formData, access_token: e.target.value})}
-                  placeholder="EAAxxxxxxxx"
-                  required
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowTokens({...showTokens, access_token: !showTokens.access_token})}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2"
-                >
-                  {showTokens.access_token ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <Input
+                id="access_token"
+                type="password"
+                value={formData.access_token}
+                onChange={(e) => setFormData({...formData, access_token: e.target.value})}
+                placeholder="رمز الوصول الخاص بك"
+                required
+              />
             </div>
 
             <div>
               <Label htmlFor="webhook_verify_token">Webhook Verify Token *</Label>
-              <div className="relative">
-                <Input
-                  id="webhook_verify_token"
-                  type={showTokens.webhook_verify_token ? "text" : "password"}
-                  value={formData.webhook_verify_token}
-                  onChange={(e) => setFormData({...formData, webhook_verify_token: e.target.value})}
-                  placeholder="your_verify_token"
-                  required
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowTokens({...showTokens, webhook_verify_token: !showTokens.webhook_verify_token})}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2"
-                >
-                  {showTokens.webhook_verify_token ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <Input
+                id="webhook_verify_token"
+                value={formData.webhook_verify_token}
+                onChange={(e) => setFormData({...formData, webhook_verify_token: e.target.value})}
+                placeholder="رمز التحقق من الـ webhook"
+                required
+              />
             </div>
 
             <div>
               <Label htmlFor="webhook_url">Webhook URL</Label>
               <Input
                 id="webhook_url"
+                type="url"
                 value={formData.webhook_url}
                 onChange={(e) => setFormData({...formData, webhook_url: e.target.value})}
-                placeholder="https://your-domain.com/webhook"
-                readOnly
+                placeholder="https://yourapp.supabase.co/functions/v1/whatsapp-webhook"
               />
-              <p className="text-sm text-gray-500 mt-1">
-                سيتم إنشاء هذا الرابط تلقائياً عند حفظ الإعدادات
-              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="rate_limit_per_minute">حد الرسائل في الدقيقة</Label>
+              <Input
+                id="rate_limit_per_minute"
+                type="number"
+                value={formData.rate_limit_per_minute}
+                onChange={(e) => setFormData({...formData, rate_limit_per_minute: parseInt(e.target.value)})}
+                min="1"
+                max="1000"
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* إعدادات متقدمة */}
+        {/* إعدادات عامة */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              الإعدادات المتقدمة
-            </CardTitle>
+            <CardTitle>الإعدادات العامة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
+                <Label htmlFor="auto_assignment_enabled">التوزيع التلقائي</Label>
+                <p className="text-sm text-gray-500">
+                  توزيع المحادثات تلقائياً على الموظفين المتاحين
+                </p>
+              </div>
+              <Switch
+                id="auto_assignment_enabled"
+                checked={formData.auto_assignment_enabled}
+                onCheckedChange={(checked) => setFormData({...formData, auto_assignment_enabled: checked})}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
                 <Label htmlFor="is_active">تفعيل WhatsApp Business</Label>
                 <p className="text-sm text-gray-500">
-                  تشغيل/إيقاف استقبال وإرسال الرسائل
+                  تفعيل أو إيقاف خدمة WhatsApp Business
                 </p>
               </div>
               <Switch
@@ -309,66 +322,29 @@ export const WhatsAppSettings: React.FC = () => {
                 onCheckedChange={(checked) => setFormData({...formData, is_active: checked})}
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="auto_assignment">التوزيع التلقائي للمحادثات</Label>
-                <p className="text-sm text-gray-500">
-                  توزيع المحادثات الجديدة تلقائياً على الموظفين
-                </p>
-              </div>
-              <Switch
-                id="auto_assignment"
-                checked={formData.auto_assignment_enabled}
-                onCheckedChange={(checked) => setFormData({...formData, auto_assignment_enabled: checked})}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="rate_limit">حد الرسائل في الدقيقة</Label>
-              <Input
-                id="rate_limit"
-                type="number"
-                min="1"
-                max="1000"
-                value={formData.rate_limit_per_minute}
-                onChange={(e) => setFormData({...formData, rate_limit_per_minute: parseInt(e.target.value) || 80})}
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                الحد الأقصى: 1000 رسالة في الدقيقة (حسب خطة Meta)
-              </p>
-            </div>
           </CardContent>
         </Card>
 
-        {/* أزرار الحفظ والاختبار */}
+        {/* أزرار الإجراءات */}
         <div className="flex gap-4">
+          <Button 
+            type="submit" 
+            disabled={saveSettingsMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {saveSettingsMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+          </Button>
+          
           <Button
             type="button"
             variant="outline"
             onClick={handleTestConnection}
-            disabled={isTesting || !formData.phone_number_id || !formData.access_token}
+            disabled={testConnectionMutation.isPending}
             className="flex items-center gap-2"
           >
-            {isTesting ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            ) : (
-              <TestTube className="w-4 h-4" />
-            )}
-            اختبار الاتصال
-          </Button>
-
-          <Button
-            type="submit"
-            disabled={isUpdating}
-            className="flex items-center gap-2"
-          >
-            {isUpdating ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            حفظ الإعدادات
+            <TestTube className="w-4 h-4" />
+            {testConnectionMutation.isPending ? 'جاري الاختبار...' : 'اختبار الاتصال'}
           </Button>
         </div>
       </form>

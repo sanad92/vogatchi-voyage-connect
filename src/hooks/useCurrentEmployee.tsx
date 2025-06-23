@@ -1,38 +1,43 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
 
 export const useCurrentEmployee = () => {
-  const { profile } = useAuth();
-
-  const { data: currentEmployee, isLoading } = useQuery({
-    queryKey: ['current-employee', profile?.employee_id],
+  const { 
+    data: currentEmployee, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['current-employee'],
     queryFn: async () => {
-      if (!profile?.employee_id) {
-        return null;
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('المستخدم غير مسجل الدخول');
       }
 
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('id', profile.employee_id)
-        .eq('is_active', true)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          employee:employees(*)
+        `)
+        .eq('id', user.id)
         .single();
 
-      if (error) {
-        console.error('خطأ في جلب بيانات الموظف الحالي:', error);
-        throw error;
+      if (profileError) {
+        console.error('خطأ في جلب الملف الشخصي:', profileError);
+        throw profileError;
       }
 
-      return data;
+      return profile?.employee || null;
     },
-    enabled: !!profile?.employee_id,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 30000 // 30 seconds
   });
 
   return {
     currentEmployee,
-    isLoading
+    isLoading,
+    error
   };
 };
