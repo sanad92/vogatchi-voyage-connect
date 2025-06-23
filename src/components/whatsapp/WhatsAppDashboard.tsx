@@ -105,8 +105,8 @@ const WhatsAppDashboard = () => {
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     اختر محادثة للبدء
                   </h3>
-                  <p className="text-gray-600">
-                    حدد محادثة من القائمة الجانبية لبدء التواصل مع العملاء
+                  <p className="text-gray-500">
+                    اختر محادثة من القائمة الجانبية لبدء التواصل مع العملاء
                   </p>
                 </div>
               </div>

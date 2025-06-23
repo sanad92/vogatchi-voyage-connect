@@ -4490,6 +4490,50 @@ export type Database = {
           },
         ]
       }
+      whatsapp_quick_replies: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_global: boolean | null
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_global?: boolean | null
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_global?: boolean | null
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_quick_replies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_sessions: {
         Row: {
           active_conversations_count: number | null
@@ -4537,32 +4581,56 @@ export type Database = {
       whatsapp_settings: {
         Row: {
           access_token: string
+          api_version: string | null
+          auto_assignment_enabled: boolean | null
           business_account_id: string | null
+          business_description: string | null
+          business_email: string | null
+          business_name: string | null
+          business_website: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
           phone_number_id: string
+          rate_limit_per_minute: number | null
           updated_at: string | null
+          webhook_url: string | null
           webhook_verify_token: string
         }
         Insert: {
           access_token: string
+          api_version?: string | null
+          auto_assignment_enabled?: boolean | null
           business_account_id?: string | null
+          business_description?: string | null
+          business_email?: string | null
+          business_name?: string | null
+          business_website?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           phone_number_id: string
+          rate_limit_per_minute?: number | null
           updated_at?: string | null
+          webhook_url?: string | null
           webhook_verify_token: string
         }
         Update: {
           access_token?: string
+          api_version?: string | null
+          auto_assignment_enabled?: boolean | null
           business_account_id?: string | null
+          business_description?: string | null
+          business_email?: string | null
+          business_name?: string | null
+          business_website?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           phone_number_id?: string
+          rate_limit_per_minute?: number | null
           updated_at?: string | null
+          webhook_url?: string | null
           webhook_verify_token?: string
         }
         Relationships: []

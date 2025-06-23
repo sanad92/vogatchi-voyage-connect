@@ -14,121 +14,65 @@ import {
   Phone,
   Key
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { toast } from 'sonner';
 
 export const WhatsAppSettings: React.FC = () => {
-  const queryClient = useQueryClient();
+  const { settings, isLoading, updateSettings, isUpdating, testConnection, isTesting } = useWhatsAppSettings();
+  
   const [formData, setFormData] = useState({
-    business_name: '',
-    phone_number_id: '',
-    access_token: '',
-    webhook_verify_token: '',
-    webhook_url: '',
-    business_description: '',
-    business_website: '',
-    business_email: '',
-    api_version: 'v18.0',
-    rate_limit_per_minute: 80,
-    auto_assignment_enabled: true,
-    is_active: true
+    business_name: settings?.business_name || '',
+    phone_number_id: settings?.phone_number_id || '',
+    access_token: settings?.access_token || '',
+    webhook_verify_token: settings?.webhook_verify_token || '',
+    webhook_url: settings?.webhook_url || '',
+    business_description: settings?.business_description || '',
+    business_website: settings?.business_website || '',
+    business_email: settings?.business_email || '',
+    api_version: settings?.api_version || 'v18.0',
+    rate_limit_per_minute: settings?.rate_limit_per_minute || 80,
+    auto_assignment_enabled: settings?.auto_assignment_enabled ?? true,
+    is_active: settings?.is_active ?? true
   });
 
-  // جلب الإعدادات الحالية
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['whatsapp-settings'],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('whatsapp_settings')
-        .select('*')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('خطأ في جلب إعدادات WhatsApp:', error);
-        throw error;
-      }
-
-      if (data) {
-        setFormData({
-          business_name: data.business_name || '',
-          phone_number_id: data.phone_number_id || '',
-          access_token: data.access_token || '',
-          webhook_verify_token: data.webhook_verify_token || '',
-          webhook_url: data.webhook_url || '',
-          business_description: data.business_description || '',
-          business_website: data.business_website || '',
-          business_email: data.business_email || '',
-          api_version: data.api_version || 'v18.0',
-          rate_limit_per_minute: data.rate_limit_per_minute || 80,
-          auto_assignment_enabled: data.auto_assignment_enabled ?? true,
-          is_active: data.is_active ?? true
-        });
-      }
-
-      return data;
-    }
-  });
-
-  // حفظ الإعدادات
-  const saveSettingsMutation = useMutation({
-    mutationFn: async (settingsData: typeof formData) => {
-      const { data, error } = await (supabase as any)
-        .from('whatsapp_settings')
-        .upsert(settingsData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('خطأ في حفظ إعدادات WhatsApp:', error);
-        throw error;
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
-      toast.success('تم حفظ الإعدادات بنجاح');
-    },
-    onError: (error) => {
-      console.error('خطأ في حفظ الإعدادات:', error);
-      toast.error('فشل في حفظ الإعدادات');
-    }
-  });
-
-  // اختبار الاتصال
-  const testConnectionMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('test-whatsapp-connection', {
-        body: {
-          phone_number_id: formData.phone_number_id,
-          access_token: formData.access_token
-        }
+  React.useEffect(() => {
+    if (settings) {
+      setFormData({
+        business_name: settings.business_name || '',
+        phone_number_id: settings.phone_number_id || '',
+        access_token: settings.access_token || '',
+        webhook_verify_token: settings.webhook_verify_token || '',
+        webhook_url: settings.webhook_url || '',
+        business_description: settings.business_description || '',
+        business_website: settings.business_website || '',
+        business_email: settings.business_email || '',
+        api_version: settings.api_version || 'v18.0',
+        rate_limit_per_minute: settings.rate_limit_per_minute || 80,
+        auto_assignment_enabled: settings.auto_assignment_enabled ?? true,
+        is_active: settings.is_active ?? true
       });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('تم اختبار الاتصال بنجاح');
-    },
-    onError: (error) => {
-      console.error('خطأ في اختبار الاتصال:', error);
-      toast.error('فشل في اختبار الاتصال');
     }
-  });
+  }, [settings]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveSettingsMutation.mutate(formData);
+    updateSettings(formData);
   };
 
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     if (!formData.phone_number_id || !formData.access_token) {
       toast.error('يرجى إدخال Phone Number ID و Access Token أولاً');
       return;
     }
-    testConnectionMutation.mutate();
+    
+    try {
+      await testConnection({
+        phone_number_id: formData.phone_number_id,
+        access_token: formData.access_token
+      });
+    } catch (error) {
+      console.error('خطأ في اختبار الاتصال:', error);
+    }
   };
 
   if (isLoading) {
@@ -329,22 +273,22 @@ export const WhatsAppSettings: React.FC = () => {
         <div className="flex gap-4">
           <Button 
             type="submit" 
-            disabled={saveSettingsMutation.isPending}
+            disabled={isUpdating}
             className="flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {saveSettingsMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+            {isUpdating ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
           </Button>
           
           <Button
             type="button"
             variant="outline"
             onClick={handleTestConnection}
-            disabled={testConnectionMutation.isPending}
+            disabled={isTesting}
             className="flex items-center gap-2"
           >
             <TestTube className="w-4 h-4" />
-            {testConnectionMutation.isPending ? 'جاري الاختبار...' : 'اختبار الاتصال'}
+            {isTesting ? 'جاري الاختبار...' : 'اختبار الاتصال'}
           </Button>
         </div>
       </form>

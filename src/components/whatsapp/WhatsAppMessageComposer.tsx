@@ -11,6 +11,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useWhatsAppMessaging } from '@/hooks/useWhatsAppMessaging';
+import { useWhatsAppQuickReplies } from '@/hooks/useWhatsAppQuickReplies';
 import { toast } from 'sonner';
 
 interface WhatsAppMessageComposerProps {
@@ -23,14 +24,10 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
   onMessageSent
 }) => {
   const [message, setMessage] = useState('');
-  const [showQuickReplies] = useState(false);
-  const [showTemplates] = useState(false);
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
   
   const { sendTextMessage, isSending } = useWhatsAppMessaging();
-
-  // Mock data for quick replies and templates (since hooks are causing issues)
-  const quickReplies: Array<{ id: string; title: string; content: string }> = [];
-  const templates: Array<{ id: string; title: string; content: string }> = [];
+  const { quickReplies } = useWhatsAppQuickReplies();
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -56,16 +53,24 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
 
   const handleQuickReplySelect = (content: string) => {
     setMessage(content);
+    setShowQuickReplies(false);
   };
 
   return (
     <div className="space-y-4">
       {/* Quick Replies */}
-      {showQuickReplies && quickReplies.length > 0 && (
+      {showQuickReplies && quickReplies && quickReplies.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium">الردود السريعة</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowQuickReplies(false)}
+              >
+                إغلاق
+              </Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {quickReplies.map((reply) => (
@@ -77,30 +82,6 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
                   onClick={() => handleQuickReplySelect(reply.content)}
                 >
                   {reply.title}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Templates */}
-      {showTemplates && templates.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium">قوالب الرسائل</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {templates.map((template) => (
-                <Button
-                  key={template.id}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs justify-start"
-                  onClick={() => handleQuickReplySelect(template.content)}
-                >
-                  {template.title}
                 </Button>
               ))}
             </div>
@@ -128,6 +109,7 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
               variant="outline"
               size="sm"
               title="الردود السريعة"
+              onClick={() => setShowQuickReplies(!showQuickReplies)}
             >
               <Zap className="w-4 h-4" />
             </Button>

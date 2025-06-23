@@ -22,7 +22,7 @@ export const useWhatsAppQuickReplies = () => {
   } = useQuery({
     queryKey: ['whatsapp-quick-replies'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('whatsapp_quick_replies')
         .select('*')
         .order('created_at', { ascending: false });
@@ -40,7 +40,7 @@ export const useWhatsAppQuickReplies = () => {
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyData) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('whatsapp_quick_replies')
         .insert([{
           ...replyData,
@@ -72,7 +72,7 @@ export const useWhatsAppQuickReplies = () => {
     mutationFn: async (replyData: QuickReplyData & { id: string }) => {
       const { id, ...updateData } = replyData;
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('whatsapp_quick_replies')
         .update({
           ...updateData,
@@ -101,7 +101,7 @@ export const useWhatsAppQuickReplies = () => {
   // حذف رد سريع
   const deleteQuickReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('whatsapp_quick_replies')
         .delete()
         .eq('id', replyId);
