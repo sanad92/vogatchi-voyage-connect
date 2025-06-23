@@ -33,7 +33,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           assigned_employee:employees(full_name, employee_code)
         `)
         .eq('id', conversationId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('خطأ في جلب تفاصيل المحادثة:', error);
