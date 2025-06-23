@@ -54,7 +54,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
   const { data: quickReplies = [], isLoading } = useQuery({
     queryKey: ['whatsapp-quick-replies'],
     queryFn: async (): Promise<QuickReply[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_quick_replies')
         .select('*')
         .order('created_at', { ascending: false });
@@ -72,7 +72,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyFormData) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_quick_replies')
         .insert([{
           ...replyData,
@@ -107,7 +107,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
     mutationFn: async (replyData: QuickReplyFormData & { id: string }) => {
       const { id, ...updateData } = replyData;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_quick_replies')
         .update({
           ...updateData,
@@ -139,7 +139,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
   // حذف رد سريع
   const deleteQuickReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('whatsapp_quick_replies')
         .delete()
         .eq('id', replyId);

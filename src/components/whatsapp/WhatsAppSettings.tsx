@@ -39,7 +39,7 @@ export const WhatsAppSettings: React.FC = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['whatsapp-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_settings')
         .select('*')
         .single();
@@ -73,7 +73,7 @@ export const WhatsAppSettings: React.FC = () => {
   // حفظ الإعدادات
   const saveSettingsMutation = useMutation({
     mutationFn: async (settingsData: typeof formData) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_settings')
         .upsert(settingsData)
         .select()

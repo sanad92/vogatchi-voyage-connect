@@ -29,8 +29,8 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
   const { sendTextMessage, isSending } = useWhatsAppMessaging();
 
   // Mock data for quick replies and templates (since hooks are causing issues)
-  const quickReplies = [];
-  const templates = [];
+  const quickReplies: Array<{ id: string; title: string; content: string }> = [];
+  const templates: Array<{ id: string; title: string; content: string }> = [];
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -54,6 +54,10 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
     }
   };
 
+  const handleQuickReplySelect = (content: string) => {
+    setMessage(content);
+  };
+
   return (
     <div className="space-y-4">
       {/* Quick Replies */}
@@ -63,7 +67,19 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium">الردود السريعة</h4>
             </div>
-            <div className="text-sm text-gray-500">لا توجد ردود سريعة متاحة</div>
+            <div className="grid grid-cols-2 gap-2">
+              {quickReplies.map((reply) => (
+                <Button
+                  key={reply.id}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs justify-start"
+                  onClick={() => handleQuickReplySelect(reply.content)}
+                >
+                  {reply.title}
+                </Button>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -75,7 +91,19 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium">قوالب الرسائل</h4>
             </div>
-            <div className="text-sm text-gray-500">لا توجد قوالب متاحة</div>
+            <div className="grid grid-cols-2 gap-2">
+              {templates.map((template) => (
+                <Button
+                  key={template.id}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs justify-start"
+                  onClick={() => handleQuickReplySelect(template.content)}
+                >
+                  {template.title}
+                </Button>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
