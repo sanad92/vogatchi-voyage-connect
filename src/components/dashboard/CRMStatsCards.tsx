@@ -10,6 +10,7 @@ interface CRMStatsCardsProps {
     totalBookings: number;
     totalRevenue: number;
     activeCustomers: number;
+    monthlyGrowth: number;
   };
 }
 
