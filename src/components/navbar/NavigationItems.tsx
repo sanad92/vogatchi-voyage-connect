@@ -157,6 +157,13 @@ export const communicationNavItems: SimpleNavItem[] = [
     requiredPermissions: ['customers_view']
   },
   { 
+    to: "/whatsapp-admin", 
+    icon: Settings, 
+    label: "إدارة WhatsApp Business", 
+    allowedRoles: ['admin', 'manager'],
+    requiredPermissions: ['system_settings']
+  },
+  { 
     to: "/customer-portal", 
     icon: Globe, 
     label: "بوابة العميل", 
