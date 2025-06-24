@@ -11,20 +11,33 @@ import RealTimeAnalytics from "@/components/dashboard/RealTimeAnalytics";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const OptimizedIndex = () => {
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
 
+  console.log('🏠 Dashboard render:', { user: !!user, dashboardData: !!dashboardData, isLoading, error: !!error });
+
   if (error) {
+    console.error('❌ Dashboard error:', error);
     return (
       <div className="container mx-auto p-6">
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
+          <AlertDescription className="text-red-800 mb-4">
             حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
           </AlertDescription>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline" 
+            size="sm"
+            className="mt-2"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            إعادة تحميل
+          </Button>
         </Alert>
       </div>
     );
@@ -37,12 +50,14 @@ const OptimizedIndex = () => {
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600">جارٍ تحميل البيانات...</p>
+            <p className="text-sm text-gray-500">قد يستغرق هذا عدة ثوانِ</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // استخدام بيانات افتراضية إذا لم تكن متوفرة
   const { realStats, crmStats, customers } = dashboardData || {
     realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0 },
     crmStats: { vipCustomers: 0, loyaltyPoints: 0 },
@@ -59,13 +74,21 @@ const OptimizedIndex = () => {
         <CRMStatsCards customers={customers} realStats={realStats} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TodayOverview />
-          <QuickActions />
+          <ErrorBoundary>
+            <TodayOverview />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <QuickActions />
+          </ErrorBoundary>
         </div>
 
-        <RealTimeAnalytics realStats={realStats} crmStats={crmStats} />
+        <ErrorBoundary>
+          <RealTimeAnalytics realStats={realStats} crmStats={crmStats} />
+        </ErrorBoundary>
 
-        <RecentActivity />
+        <ErrorBoundary>
+          <RecentActivity />
+        </ErrorBoundary>
       </div>
     </ErrorBoundary>
   );

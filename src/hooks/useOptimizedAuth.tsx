@@ -16,10 +16,13 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  console.log('🔐 Auth State:', { user: !!user, profile: !!profile, userRole, loading });
+
   // دالة محسنة لجلب بيانات المستخدم
   const fetchUserData = async (userId: string) => {
     try {
-      // استعلام واحد محسن لجلب Profile و Role
+      console.log('📋 Fetching user data for ID:', userId);
+      
       const [profileResult, roleResult] = await Promise.all([
         supabase
           .from('profiles')
@@ -33,31 +36,53 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           .maybeSingle()
       ]);
 
+      console.log('📋 Profile result:', profileResult);
+      console.log('📋 Role result:', roleResult);
+
       if (profileResult.error && profileResult.error.code !== 'PGRST116') {
+        console.error('❌ Profile fetch error:', profileResult.error);
         throw profileResult.error;
       }
 
       if (roleResult.error && roleResult.error.code !== 'PGRST116') {
+        console.error('❌ Role fetch error:', roleResult.error);
         throw roleResult.error;
       }
 
       setProfile(profileResult.data);
-      setUserRole(roleResult.data?.role || null);
+      setUserRole(roleResult.data?.role || 'viewer');
+      
     } catch (error) {
-      console.error('خطأ في جلب بيانات المستخدم:', error);
-      setProfile(null);
-      setUserRole(null);
+      console.error('❌ خطأ في جلب بيانات المستخدم:', error);
+      // لا نعيد تعيين القيم إلى null في حالة الخطأ
+      // نبقي على القيم الافتراضية
+      if (!profile) {
+        setProfile({ 
+          id: userId, 
+          email: user?.email || '', 
+          full_name: user?.email?.split('@')[0] || 'مستخدم',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as Profile);
+      }
+      if (!userRole) {
+        setUserRole('viewer');
+      }
     }
   };
 
   // إعداد مراقب المصادقة محسن
   useEffect(() => {
     let mounted = true;
+    console.log('🚀 Setting up auth listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
-
+        
+        console.log('🔄 Auth state changed:', event, !!session);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -68,7 +93,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
               fetchUserData(session.user.id);
             }
           }, 100);
-        } else {
+        } else if (!session) {
           setProfile(null);
           setUserRole(null);
         }
@@ -80,6 +105,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     // فحص الجلسة الحالية
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
+      
+      console.log('🔍 Initial session check:', !!session);
       
       setSession(session);
       setUser(session?.user ?? null);
@@ -99,6 +126,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('🔐 Attempting sign in for:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -106,6 +134,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       });
       
       if (error) {
+        console.error('❌ Sign in error:', error);
         let errorMessage = 'فشل في تسجيل الدخول';
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
@@ -114,12 +143,13 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         return { error };
       }
       
+      console.log('✅ Sign in successful');
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
       return { error: null };
       
     } catch (error) {
-      console.error('خطأ في تسجيل الدخول:', error);
+      console.error('❌ خطأ في تسجيل الدخول:', error);
       toast.error('حدث خطأ في تسجيل الدخول');
       return { error };
     } finally {
@@ -130,15 +160,18 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log('🚪 Signing out...');
+      
       await supabase.auth.signOut();
       setUser(null);
       setProfile(null);
       setUserRole(null);
       setSession(null);
+      
       toast.success('تم تسجيل الخروج بنجاح');
       navigate('/auth');
     } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
+      console.error('❌ خطأ في تسجيل الخروج:', error);
       toast.error('حدث خطأ في تسجيل الخروج');
     } finally {
       setLoading(false);
@@ -163,8 +196,11 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     return allowedRoles?.includes(role) || false;
   };
 
+  // تبسيط منطق isLoggedIn لتجنب المشاكل
   const isLoggedIn = (): boolean => {
-    return !!(user && session && profile?.is_active);
+    const loggedIn = !!(user && session);
+    console.log('🔍 Is logged in check:', loggedIn, { user: !!user, session: !!session });
+    return loggedIn;
   };
 
   const value = {

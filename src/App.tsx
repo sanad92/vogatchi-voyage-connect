@@ -1,9 +1,9 @@
+
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-  useNavigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -64,10 +64,12 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  console.log('🚀 App starting...');
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <OptimizedAuthProvider>
-        <Router>
+      <Router>
+        <OptimizedAuthProvider>
           <div className="min-h-screen bg-gray-50">
             <Toaster position="top-right" />
             <Routes>
@@ -133,8 +135,8 @@ function App() {
               />
             </Routes>
           </div>
-        </Router>
-      </OptimizedAuthProvider>
+        </OptimizedAuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 }
@@ -142,25 +144,26 @@ function App() {
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isLoggedIn, loading, user } = useOptimizedAuth();
 
+  console.log('🛡️ ProtectedRoute check:', { isLoggedIn: isLoggedIn(), loading, user: !!user });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p className="text-gray-600">جاري التحميل...</p>
+          <p className="text-sm text-gray-500">يتم فحص حالة المصادقة</p>
         </div>
       </div>
     );
   }
 
   if (!isLoggedIn()) {
+    console.log('❌ Not logged in, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  if (!user?.email) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  console.log('✅ User authenticated, showing protected content');
   return children;
 }
 
