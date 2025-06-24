@@ -1,89 +1,100 @@
+
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 const LoginForm = () => {
-  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { signIn, loading } = useOptimizedAuth();
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
-    
-    setIsLoading(true);
-    await signIn(email, password);
-    setIsLoading(false);
+    setError('');
+
+    if (!email || !password) {
+      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      return;
+    }
+
+    const result = await signIn(email, password);
+    if (result.error) {
+      setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
+    }
   };
 
   return (
-    <Card className="shadow-xl border-0">
-      <CardHeader className="text-center">
-        <CardTitle className="text-lg sm:text-xl text-gray-800">
-          تسجيل الدخول
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 sm:p-6">
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm sm:text-base">البريد الإلكتروني</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@vogatchi.com"
-              required
-              dir="ltr"
-              className="text-sm sm:text-base"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm sm:text-base">كلمة المرور</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                dir="ltr"
-                className="text-sm sm:text-base pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute left-0 top-0 h-full px-3 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <Alert className="border-red-200 bg-red-50">
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
+          </Alert>
+        )}
 
-          <Button 
-            type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base"
-            disabled={isLoading}
-          >
-            {isLoading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-right">البريد الإلكتروني</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="text-right"
+            placeholder="أدخل بريدك الإلكتروني"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-right">كلمة المرور</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="text-right pr-10"
+              placeholder="أدخل كلمة المرور"
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              disabled={loading}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loading}
+        >
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              جاري تسجيل الدخول...
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <LogIn size={16} />
+              تسجيل الدخول
+            </div>
+          )}
+        </Button>
+      </form>
+    </div>
   );
 };
 

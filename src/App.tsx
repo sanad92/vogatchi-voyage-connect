@@ -1,14 +1,14 @@
-
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
-import Index from "@/pages/Index";
+import OptimizedIndex from "@/pages/OptimizedIndex";
 import Customers from "@/pages/Customers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
@@ -40,7 +40,7 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
-import { useAuth, AuthProvider } from "@/hooks/useAuth";
+import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
 import EnhancedErrorBoundary from "@/components/common/EnhancedErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -50,13 +50,8 @@ import { AlertTriangle } from "lucide-react";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error: any) => {
-        if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
-          return false;
-        }
-        return failureCount < 2;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: 1,
+      retryDelay: 1000,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
       staleTime: 5 * 60 * 1000,
@@ -64,9 +59,6 @@ const queryClient = new QueryClient({
     },
     mutations: {
       retry: false,
-      onError: (error) => {
-        console.error('Mutation error:', error);
-      }
     }
   },
 });
@@ -74,10 +66,10 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <OptimizedAuthProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
-            <Toaster />
+            <Toaster position="top-right" />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route
@@ -100,7 +92,7 @@ function App() {
                           }
                         >
                           <Routes>
-                            <Route path="/" element={<Index />} />
+                            <Route path="/" element={<OptimizedIndex />} />
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/new-customer" element={<NewCustomer />} />
                             <Route path="/hotel-bookings" element={<HotelBookings />} />
@@ -142,19 +134,19 @@ function App() {
             </Routes>
           </div>
         </Router>
-      </AuthProvider>
+      </OptimizedAuthProvider>
     </QueryClientProvider>
   );
 }
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isLoggedIn, isLoading, user } = useAuth();
+  const { isLoggedIn, loading, user } = useOptimizedAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p className="text-gray-600">جاري التحميل...</p>
         </div>
       </div>
@@ -166,7 +158,6 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   }
 
   if (!user?.email) {
-    console.warn('User logged in but missing email - redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 

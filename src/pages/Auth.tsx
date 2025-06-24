@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
 import AuthHeader from '@/components/auth/AuthHeader';
@@ -7,9 +7,8 @@ import LoginForm from '@/components/auth/LoginForm';
 import LoadingSpinner from '@/components/auth/LoadingSpinner';
 
 const Auth = () => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useOptimizedAuth();
 
-  // إعادة توجيه المستخدمين المسجلين
   if (user && !loading) {
     return <Navigate to="/" replace />;
   }
