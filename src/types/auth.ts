@@ -1,3 +1,4 @@
+
 import { User, Session } from '@supabase/supabase-js';
 
 export interface Profile {
@@ -7,7 +8,9 @@ export interface Profile {
   department: string | null;
   phone: string | null;
   is_active: boolean;
-  employee_id?: string | null; // إضافة employee_id
+  created_at: string;
+  updated_at: string;
+  employee_id?: string | null;
 }
 
 export interface UserRole {
