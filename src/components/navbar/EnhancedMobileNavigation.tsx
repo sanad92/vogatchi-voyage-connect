@@ -3,7 +3,7 @@ import { useState } from "react";
 import { LogOut, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { User } from "@supabase/supabase-js";
 import { Location } from "react-router-dom";
 
@@ -87,7 +87,7 @@ const EnhancedMobileNavigation = ({
   signOut, 
   onClose 
 }: EnhancedMobileNavigationProps) => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   if (!isOpen) return null;
 
