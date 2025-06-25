@@ -1,6 +1,6 @@
 
 import { Location } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
 import NavigationDropdown from "./NavigationDropdown";
 import PermissionNavLink from "./PermissionNavLink";
@@ -19,7 +19,7 @@ interface EnhancedDesktopNavigationProps {
 }
 
 const EnhancedDesktopNavigation = ({ userRole, hasRole, location }: EnhancedDesktopNavigationProps) => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   return (
     <div className="hidden lg:flex items-center space-x-2 rtl:space-x-reverse">
