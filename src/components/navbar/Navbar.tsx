@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import SuperAdminBanner from "@/components/admin/SuperAdminBanner";
@@ -9,7 +9,7 @@ import EnhancedDesktopNavigation from "./EnhancedDesktopNavigation";
 import EnhancedMobileNavigation from "./EnhancedMobileNavigation";
 
 const Navbar = () => {
-  const { user, signOut, userRole, hasRole } = useAuth();
+  const { user, signOut, userRole, hasRole } = useOptimizedAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
