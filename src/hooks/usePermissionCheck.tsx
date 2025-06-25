@@ -1,12 +1,12 @@
 
 import { useUserPermissions } from './useUserPermissions';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 
 type PermissionKey = keyof Omit<import('./useUserPermissionsManagement').DetailedUserPermissions, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
 
 export const usePermissionCheck = () => {
   const { permissions } = useUserPermissions();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   const hasPermission = (permission: PermissionKey): boolean => {
     // السوبر أدمن له صلاحية على كل شيء

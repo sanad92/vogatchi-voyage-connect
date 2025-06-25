@@ -1,11 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 import { DetailedUserPermissions } from './useUserPermissionsManagement';
 
 export const useUserPermissions = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
 
   const { data: permissions, isLoading, error } = useQuery({
     queryKey: ['user-permissions', user?.id],

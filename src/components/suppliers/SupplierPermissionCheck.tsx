@@ -2,7 +2,7 @@
 import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 interface SupplierPermissionCheckProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface SupplierPermissionCheckProps {
 
 const SupplierPermissionCheck = ({ children, action = 'view' }: SupplierPermissionCheckProps) => {
   const { hasPermission } = usePermissionCheck();
-  const { user, isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useOptimizedAuth();
 
   if (!user) {
     return (

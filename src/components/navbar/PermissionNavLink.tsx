@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { usePermissionCheck } from "@/hooks/usePermissionCheck";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 interface NavItem {
   to: string;
@@ -20,7 +20,7 @@ interface PermissionNavLinkProps {
 const PermissionNavLink = ({ item, onClick }: PermissionNavLinkProps) => {
   const location = useLocation();
   const { hasAnyPermission } = usePermissionCheck();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
   
   const isActiveLink = (to: string) => {
     if (to === '/') {

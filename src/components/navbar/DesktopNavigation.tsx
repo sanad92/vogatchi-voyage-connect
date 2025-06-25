@@ -2,7 +2,7 @@
 import { Location } from "react-router-dom";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
 import PermissionNavLink from "./PermissionNavLink";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 interface DesktopNavigationProps {
   userRole: string | null;
@@ -11,7 +11,7 @@ interface DesktopNavigationProps {
 }
 
 const DesktopNavigation = ({ userRole, hasRole, location }: DesktopNavigationProps) => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   return (
     <div className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
