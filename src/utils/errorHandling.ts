@@ -8,6 +8,14 @@ export interface ErrorLog {
   route?: string;
 }
 
+export interface AppError extends Error {
+  code?: string;
+  details?: any;
+  timestamp?: Date;
+  userId?: string;
+  route?: string;
+}
+
 export const logError = (error: ErrorLog) => {
   // Log to console in development
   if (process.env.NODE_ENV === 'development') {
@@ -26,6 +34,52 @@ export const logError = (error: ErrorLog) => {
   return error;
 };
 
+export const handleError = (error: any, context?: string): AppError => {
+  const appError: AppError = error instanceof Error ? error : new Error(String(error));
+  
+  if (context) {
+    appError.code = context;
+  }
+  
+  appError.timestamp = new Date();
+  appError.route = typeof window !== 'undefined' ? window.location.pathname : undefined;
+  
+  logError({
+    code: appError.code || 'UNKNOWN_ERROR',
+    message: appError.message,
+    details: appError,
+    timestamp: appError.timestamp,
+    route: appError.route
+  });
+  
+  return appError;
+};
+
+export const withRetry = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt === maxRetries) {
+        throw handleError(error, `RETRY_FAILED_AFTER_${maxRetries}_ATTEMPTS`);
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  
+  throw lastError;
+};
+
 export const handleAsyncError = async (
   operation: () => Promise<any>,
   fallback?: any,
@@ -34,14 +88,7 @@ export const handleAsyncError = async (
   try {
     return await operation();
   } catch (error) {
-    logError({
-      code: errorCode || 'ASYNC_OPERATION_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      details: error,
-      timestamp: new Date(),
-      route: window.location.pathname
-    });
-    
+    handleError(error, errorCode || 'ASYNC_OPERATION_ERROR');
     return fallback;
   }
 };

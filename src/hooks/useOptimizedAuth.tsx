@@ -61,10 +61,12 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           id: userId, 
           email: user?.email || '', 
           full_name: user?.email?.split('@')[0] || 'مستخدم',
+          department: null,
+          phone: null,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        } as Profile);
+        });
       }
       if (!userRole) {
         setUserRole('viewer');
