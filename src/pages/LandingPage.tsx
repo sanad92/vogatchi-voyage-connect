@@ -16,11 +16,9 @@ import {
   Shield,
   Clock,
   Users,
-  ArrowRight,
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ServiceRequest {
   name: string;
@@ -47,12 +45,9 @@ const LandingPage = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('service_requests')
-        .insert([formData]);
-
-      if (error) throw error;
-
+      // محاكاة إرسال البيانات - سيتم ربطها بقاعدة البيانات لاحقاً
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast.success('تم إرسال طلبك بنجاح! سنتواصل معك قريباً');
       setFormData({
         name: '',
@@ -77,7 +72,6 @@ const LandingPage = () => {
       image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
       rating: 5,
       location: 'النيل - القاهرة',
-      price: '2500',
       features: ['إطلالة على النيل', 'سبا فاخر', 'مطاعم متنوعة']
     },
     {
@@ -86,7 +80,6 @@ const LandingPage = () => {
       image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
       rating: 5,
       location: 'نايل سيتي - القاهرة',
-      price: '2200',
       features: ['برج حديث', 'مرافق متكاملة', 'موقع متميز']
     },
     {
@@ -95,7 +88,6 @@ const LandingPage = () => {
       image: 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
       rating: 5,
       location: 'جاردن سيتي - القاهرة',
-      price: '2800',
       features: ['تصميم فاخر', 'خدمة راقية', 'مطاعم عالمية']
     }
   ];
@@ -213,7 +205,7 @@ const LandingPage = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">فنادق القاهرة الفاخرة</h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              اكتشف أفضل الفنادق الخمس نجوم في القاهرة مع إمكانية الدفع عند الوصول
+              تعرف على أفضل الفنادق الخمس نجوم في القاهرة مع إمكانية الدفع عند الوصول
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -242,27 +234,17 @@ const LandingPage = () => {
                 </div>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{hotel.name}</h3>
-                  <div className="flex items-center text-gray-600 mb-3">
+                  <div className="flex items-center text-gray-600 mb-4">
                     <MapPin className="h-4 w-4 mr-2" />
                     {hotel.location}
                   </div>
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-2">
                     {hotel.features.map((feature, index) => (
                       <div key={index} className="flex items-center text-sm text-gray-600">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                         {feature}
                       </div>
                     ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-right">
-                      <span className="text-2xl font-bold text-blue-600">{hotel.price}</span>
-                      <span className="text-gray-500 text-sm mr-1">جنيه / ليلة</span>
-                    </div>
-                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                      احجز الآن
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

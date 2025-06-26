@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Routes,
@@ -75,8 +74,12 @@ function App() {
           <div className="min-h-screen bg-gray-50">
             <Toaster position="top-right" />
             <Routes>
+              {/* صفحة الهبوط كصفحة رئيسية عامة */}
+              <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/landing" element={<LandingPage />} />
+              <Route path="/landing" element={<Navigate to="/" replace />} />
+              
+              {/* صفحات النظام المحمية */}
               <Route
                 path="/*"
                 element={
@@ -97,7 +100,7 @@ function App() {
                           }
                         >
                           <Routes>
-                            <Route path="/" element={<OptimizedIndex />} />
+                            <Route path="/dashboard" element={<OptimizedIndex />} />
                             <Route path="/landing-admin" element={<LandingAdmin />} />
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/new-customer" element={<NewCustomer />} />

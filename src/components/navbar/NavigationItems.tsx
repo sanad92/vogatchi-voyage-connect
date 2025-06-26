@@ -30,17 +30,25 @@ import {
   LandPlot
 } from "lucide-react";
 
-export const mainNavItems = [
+export interface SimpleNavItem {
+  to: string;
+  icon: any;
+  label: string;
+  allowedRoles?: string[];
+  requiredPermissions?: string[];
+}
+
+export const mainNavItems: SimpleNavItem[] = [
   {
-    to: "/",
+    to: "/dashboard",
     icon: Home,
-    label: "الرئيسية",
+    label: "لوحة التحكم",
     allowedRoles: [],
     requiredPermissions: []
   }
 ];
 
-export const businessNavItems = [
+export const businessNavItems: SimpleNavItem[] = [
   {
     to: "/daily-operations",
     icon: Calendar,
@@ -127,7 +135,7 @@ export const businessNavItems = [
   }
 ];
 
-export const communicationNavItems = [
+export const communicationNavItems: SimpleNavItem[] = [
   {
     to: "/reports",
     icon: BarChart3,
@@ -193,7 +201,7 @@ export const communicationNavItems = [
   }
 ];
 
-export const adminNavItems = [
+export const adminNavItems: SimpleNavItem[] = [
   {
     to: "/admin-settings",
     icon: Settings,

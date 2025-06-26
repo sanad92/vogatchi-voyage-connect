@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 interface ServiceRequest {
@@ -46,113 +45,60 @@ interface LandingContent {
 
 const LandingAdmin = () => {
   const { user, isSuperAdmin } = useOptimizedAuth();
-  const [requests, setRequests] = useState<ServiceRequest[]>([]);
-  const [content, setContent] = useState<LandingContent[]>([]);
+  
+  // بيانات تجريبية للطلبات
+  const [requests, setRequests] = useState<ServiceRequest[]>([
+    {
+      id: '1',
+      name: 'أحمد محمد',
+      phone: '01012345678',
+      email: 'ahmed@example.com',
+      service_type: 'hotel',
+      message: 'أريد حجز فندق في القاهرة لمدة 3 أيام',
+      preferred_contact: 'phone',
+      created_at: new Date().toISOString(),
+      status: 'pending'
+    }
+  ]);
+
+  // بيانات تجريبية للمحتوى
+  const [content, setContent] = useState<LandingContent[]>([
+    {
+      id: '1',
+      section: 'hero',
+      title: 'العنوان الرئيسي',
+      content: 'رحلتك المميزة تبدأ من هنا',
+      is_active: true
+    }
+  ]);
+
   const [editingContent, setEditingContent] = useState<LandingContent | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user && isSuperAdmin()) {
-      fetchServiceRequests();
-      fetchLandingContent();
-    }
-  }, [user]);
-
-  const fetchServiceRequests = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('service_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setRequests(data || []);
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-      toast.error('خطأ في تحميل الطلبات');
-    }
+  const updateRequestStatus = (id: string, status: string) => {
+    setRequests(prev => 
+      prev.map(req => 
+        req.id === id ? { ...req, status } : req
+      )
+    );
+    toast.success('تم تحديث حالة الطلب');
   };
 
-  const fetchLandingContent = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('landing_content')
-        .select('*')
-        .order('section');
-
-      if (error) throw error;
-      setContent(data || []);
-    } catch (error) {
-      console.error('Error fetching content:', error);
-      toast.error('خطأ في تحميل المحتوى');
-    } finally {
-      setIsLoading(false);
+  const saveContent = (contentData: LandingContent) => {
+    if (contentData.id) {
+      setContent(prev => prev.map(item => 
+        item.id === contentData.id ? contentData : item
+      ));
+    } else {
+      setContent(prev => [...prev, { ...contentData, id: Date.now().toString() }]);
     }
+    setEditingContent(null);
+    toast.success('تم حفظ المحتوى بنجاح');
   };
 
-  const updateRequestStatus = async (id: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('service_requests')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setRequests(prev => 
-        prev.map(req => 
-          req.id === id ? { ...req, status } : req
-        )
-      );
-      
-      toast.success('تم تحديث حالة الطلب');
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('خطأ في تحديث الحالة');
-    }
-  };
-
-  const saveContent = async (contentData: LandingContent) => {
-    try {
-      if (contentData.id) {
-        const { error } = await supabase
-          .from('landing_content')
-          .update(contentData)
-          .eq('id', contentData.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('landing_content')
-          .insert([contentData]);
-        
-        if (error) throw error;
-      }
-
-      await fetchLandingContent();
-      setEditingContent(null);
-      toast.success('تم حفظ المحتوى بنجاح');
-    } catch (error) {
-      console.error('Error saving content:', error);
-      toast.error('خطأ في حفظ المحتوى');
-    }
-  };
-
-  const deleteContent = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('landing_content')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchLandingContent();
-      toast.success('تم حذف المحتوى');
-    } catch (error) {
-      console.error('Error deleting content:', error);
-      toast.error('خطأ في حذف المحتوى');
-    }
+  const deleteContent = (id: string) => {
+    setContent(prev => prev.filter(item => item.id !== id));
+    toast.success('تم حذف المحتوى');
   };
 
   if (!user || !isSuperAdmin()) {
@@ -172,24 +118,11 @@ const LandingAdmin = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600">جارٍ تحميل البيانات...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">إدارة صفحة الهبوط</h1>
-        <Button onClick={() => window.open('/landing', '_blank')} variant="outline">
+        <Button onClick={() => window.open('/', '_blank')} variant="outline">
           <Eye className="h-4 w-4 mr-2" />
           معاينة الصفحة
         </Button>
