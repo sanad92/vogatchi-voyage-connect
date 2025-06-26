@@ -9,6 +9,8 @@ import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
 import OptimizedIndex from "@/pages/OptimizedIndex";
+import LandingPage from "@/pages/LandingPage";
+import LandingAdmin from "@/pages/LandingAdmin";
 import Customers from "@/pages/Customers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
@@ -74,6 +76,7 @@ function App() {
             <Toaster position="top-right" />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route
                 path="/*"
                 element={
@@ -95,6 +98,7 @@ function App() {
                         >
                           <Routes>
                             <Route path="/" element={<OptimizedIndex />} />
+                            <Route path="/landing-admin" element={<LandingAdmin />} />
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/new-customer" element={<NewCustomer />} />
                             <Route path="/hotel-bookings" element={<HotelBookings />} />
