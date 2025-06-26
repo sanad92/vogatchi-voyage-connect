@@ -4,6 +4,7 @@ export interface NavItem {
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
   allowedRoles?: string[];
+  requiredPermissions?: string[];
 }
 
 export interface NavigationItem {
@@ -11,4 +12,5 @@ export interface NavigationItem {
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
   allowedRoles?: string[];
+  requiredPermissions?: string[];
 }

@@ -8,7 +8,7 @@ interface NavItem {
   to: string;
   icon: LucideIcon;
   label: string;
-  allowedRoles: string[];
+  allowedRoles?: string[];
   requiredPermissions?: string[];
 }
 
