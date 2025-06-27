@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,11 @@ import {
   Shield,
   Clock,
   Users,
-  CheckCircle
+  CheckCircle,
+  MessageSquare,
+  Zap,
+  Building2,
+  Award
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -45,7 +48,6 @@ const LandingPage = () => {
     setIsSubmitting(true);
 
     try {
-      // محاكاة إرسال البيانات - سيتم ربطها بقاعدة البيانات لاحقاً
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success('تم إرسال طلبك بنجاح! سنتواصل معك قريباً');
@@ -64,6 +66,51 @@ const LandingPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleWhatsAppClick = () => {
+    const phoneNumber = "201103442881";
+    const message = "مرحباً، أريد الاستفسار عن الخدمات السياحية";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const cities = [
+    {
+      name: 'القاهرة',
+      image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'العاصمة وأم الدنيا'
+    },
+    {
+      name: 'الإسكندرية',
+      image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'عروس البحر المتوسط'
+    },
+    {
+      name: 'شرم الشيخ',
+      image: 'https://images.unsplash.com/photo-1544467082-8b6b2b2a39a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'جنة الغوص والشواطئ'
+    },
+    {
+      name: 'الغردقة',
+      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'بوابة البحر الأحمر'
+    },
+    {
+      name: 'مرسى علم',
+      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'لؤلؤة الصحراء الشرقية'
+    },
+    {
+      name: 'الأقصر',
+      image: 'https://images.unsplash.com/photo-1471919743851-c4df8b6ee260?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'متحف العالم المفتوح'
+    },
+    {
+      name: 'أسوان',
+      image: 'https://images.unsplash.com/photo-1525082156961-c38a5eb89054?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      description: 'لؤلؤة الجنوب'
+    }
+  ];
 
   const cairoHotels = [
     {
@@ -130,16 +177,33 @@ const LandingPage = () => {
             <div className="flex items-center space-x-4 rtl:space-x-reverse">
               <div className="flex items-center space-x-2 rtl:space-x-reverse text-gray-600">
                 <Phone className="h-5 w-5" />
-                <span className="font-medium">+20 100 123 4567</span>
+                <span className="font-medium">+20 110 344 2881</span>
               </div>
               <div className="flex items-center space-x-2 rtl:space-x-reverse text-gray-600">
                 <Mail className="h-5 w-5" />
-                <span className="font-medium">info@vogatchi.com</span>
+                <span className="font-medium">ops@vogatchitrips.com</span>
               </div>
+              <Button
+                onClick={handleWhatsAppClick}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                واتساب
+              </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* WhatsApp Fixed Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={handleWhatsAppClick}
+          className="bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-full shadow-2xl animate-pulse"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      </div>
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
@@ -166,16 +230,100 @@ const LandingPage = () => {
                 +10,000 عميل راضي
               </Badge>
               <Badge variant="secondary" className="px-4 py-2 text-sm">
+                <Building2 className="h-4 w-4 mr-2" />
+                تعاقد مباشر مع الفنادق
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm">
                 <Clock className="h-4 w-4 mr-2" />
                 خدمة 24/7
               </Badge>
+            </div>
+            
+            {/* WhatsApp CTA */}
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <MessageSquare className="h-6 w-6 text-green-600" />
+                <Zap className="h-5 w-5 text-yellow-500" />
+              </div>
+              <h3 className="text-lg font-bold text-green-800 mb-2">
+                تواصل معنا عبر الواتساب الآن واحصل على خصم فوري!
+              </h3>
+              <p className="text-green-700 mb-4">
+                استشارة مجانية وعروض حصرية لعملاء الواتساب
+              </p>
+              <Button
+                onClick={handleWhatsAppClick}
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg"
+              >
+                <MessageSquare className="h-5 w-5 mr-2" />
+                ابدأ المحادثة الآن
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* Direct Contracts Section */}
+      <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">تعاقدات مباشرة مع الفنادق</h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              نفخر بتعاقداتنا المباشرة مع أفضل الفنادق من 3 إلى 5 نجوم في جميع أنحاء مصر
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center p-6 hover:shadow-xl transition-all duration-300">
+              <Award className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">فنادق 5 نجوم</h3>
+              <p className="text-gray-600">تعاقدات حصرية مع أرقى الفنادق الفاخرة</p>
+            </Card>
+            <Card className="text-center p-6 hover:shadow-xl transition-all duration-300">
+              <Building2 className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">فنادق 4 نجوم</h3>
+              <p className="text-gray-600">أفضل الفنادق متوسطة التكلفة بجودة عالية</p>
+            </Card>
+            <Card className="text-center p-6 hover:shadow-xl transition-all duration-300">
+              <Hotel className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">فنادق 3 نجوم</h3>
+              <p className="text-gray-600">إقامة مريحة واقتصادية للميزانية المحدودة</p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Cities Section */}
       <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">وجهاتنا السياحية</h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              اكتشف أجمل المدن والوجهات السياحية في مصر مع خدماتنا المتميزة
+            </p>
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {cities.map((city, index) => (
+              <Card key={index} className="group overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={city.image} 
+                    alt={city.name}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 text-white">
+                    <h3 className="text-xl font-bold">{city.name}</h3>
+                    <p className="text-sm opacity-90">{city.description}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">خدماتنا المميزة</h2>
@@ -200,7 +348,7 @@ const LandingPage = () => {
       </section>
 
       {/* Cairo Hotels Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">فنادق القاهرة الفاخرة</h2>
@@ -254,7 +402,7 @@ const LandingPage = () => {
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -262,6 +410,18 @@ const LandingPage = () => {
               <p className="text-gray-600 text-lg">
                 املأ النموذج وسنتواصل معك خلال 24 ساعة لتقديم أفضل العروض
               </p>
+              <div className="mt-6 p-4 bg-green-100 border border-green-200 rounded-lg">
+                <p className="text-green-800 font-medium">
+                  💬 أو تواصل معنا فوراً عبر الواتساب للحصول على رد سريع وعروض حصرية!
+                </p>
+                <Button
+                  onClick={handleWhatsAppClick}
+                  className="mt-3 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  تواصل عبر الواتساب الآن
+                </Button>
+              </div>
             </div>
             
             <Card className="shadow-2xl border-0">
@@ -407,6 +567,13 @@ const LandingPage = () => {
               <p className="text-gray-400 leading-relaxed">
                 شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية بجودة عالية وأسعار تنافسية.
               </p>
+              <Button
+                onClick={handleWhatsAppClick}
+                className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                تواصل عبر الواتساب
+              </Button>
             </div>
             
             <div>
@@ -426,6 +593,9 @@ const LandingPage = () => {
                 <li>الإسكندرية</li>
                 <li>شرم الشيخ</li>
                 <li>الغردقة</li>
+                <li>مرسى علم</li>
+                <li>الأقصر</li>
+                <li>أسوان</li>
               </ul>
             </div>
             
@@ -434,11 +604,11 @@ const LandingPage = () => {
               <div className="space-y-3 text-gray-400">
                 <div className="flex items-center">
                   <Phone className="h-4 w-4 mr-2" />
-                  +20 100 123 4567
+                  +20 110 344 2881
                 </div>
                 <div className="flex items-center">
                   <Mail className="h-4 w-4 mr-2" />
-                  info@vogatchi.com
+                  ops@vogatchitrips.com
                 </div>
                 <div className="flex items-center">
                   <MapPin className="h-4 w-4 mr-2" />
