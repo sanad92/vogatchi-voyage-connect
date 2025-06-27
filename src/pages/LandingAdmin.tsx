@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, 
-  Image, 
   FileText, 
   Users, 
   Phone,
@@ -17,7 +15,8 @@ import {
   Edit,
   Save,
   Plus,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -45,23 +44,7 @@ interface LandingContent {
 
 const LandingAdmin = () => {
   const { user, isSuperAdmin } = useOptimizedAuth();
-  
-  // بيانات تجريبية للطلبات
-  const [requests, setRequests] = useState<ServiceRequest[]>([
-    {
-      id: '1',
-      name: 'أحمد محمد',
-      phone: '01012345678',
-      email: 'ahmed@example.com',
-      service_type: 'hotel',
-      message: 'أريد حجز فندق في القاهرة لمدة 3 أيام',
-      preferred_contact: 'phone',
-      created_at: new Date().toISOString(),
-      status: 'pending'
-    }
-  ]);
-
-  // بيانات تجريبية للمحتوى
+  const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [content, setContent] = useState<LandingContent[]>([
     {
       id: '1',
@@ -71,17 +54,71 @@ const LandingAdmin = () => {
       is_active: true
     }
   ]);
-
   const [editingContent, setEditingContent] = useState<LandingContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // تحميل الطلبات من localStorage
+  useEffect(() => {
+    const loadRequests = () => {
+      try {
+        const savedRequests = localStorage.getItem('vogatchi_service_requests');
+        if (savedRequests) {
+          const parsedRequests = JSON.parse(savedRequests);
+          console.log('📋 Loaded service requests:', parsedRequests);
+          setRequests(parsedRequests);
+        }
+      } catch (error) {
+        console.error('❌ Error loading requests:', error);
+      }
+    };
+
+    loadRequests();
+    
+    // تحديث كل 30 ثانية
+    const interval = setInterval(loadRequests, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const updateRequestStatus = (id: string, status: string) => {
-    setRequests(prev => 
-      prev.map(req => 
+    try {
+      const updatedRequests = requests.map(req => 
         req.id === id ? { ...req, status } : req
-      )
-    );
-    toast.success('تم تحديث حالة الطلب');
+      );
+      
+      setRequests(updatedRequests);
+      localStorage.setItem('vogatchi_service_requests', JSON.stringify(updatedRequests));
+      
+      toast.success('تم تحديث حالة الطلب');
+    } catch (error) {
+      console.error('❌ Error updating request status:', error);
+      toast.error('حدث خطأ في تحديث حالة الطلب');
+    }
+  };
+
+  const deleteRequest = (id: string) => {
+    try {
+      const updatedRequests = requests.filter(req => req.id !== id);
+      setRequests(updatedRequests);
+      localStorage.setItem('vogatchi_service_requests', JSON.stringify(updatedRequests));
+      toast.success('تم حذف الطلب');
+    } catch (error) {
+      console.error('❌ Error deleting request:', error);
+      toast.error('حدث خطأ في حذف الطلب');
+    }
+  };
+
+  const refreshRequests = () => {
+    try {
+      const savedRequests = localStorage.getItem('vogatchi_service_requests');
+      if (savedRequests) {
+        const parsedRequests = JSON.parse(savedRequests);
+        setRequests(parsedRequests);
+        toast.success('تم تحديث قائمة الطلبات');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing requests:', error);
+      toast.error('حدث خطأ في تحديث القائمة');
+    }
   };
 
   const saveContent = (contentData: LandingContent) => {
@@ -118,6 +155,26 @@ const LandingAdmin = () => {
     );
   }
 
+  const getServiceTypeLabel = (type: string) => {
+    const types = {
+      'hotel': 'حجز فندق',
+      'flight': 'حجز طيران', 
+      'package': 'باقة سياحية',
+      'transport': 'نقل ومواصلات',
+      'other': 'أخرى'
+    };
+    return types[type as keyof typeof types] || type;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statuses = {
+      'pending': 'قيد الانتظار',
+      'contacted': 'تم التواصل',
+      'completed': 'مكتمل'
+    };
+    return statuses[status as keyof typeof statuses] || status;
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -132,7 +189,7 @@ const LandingAdmin = () => {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            طلبات الخدمة
+            طلبات الخدمة ({requests.length})
           </TabsTrigger>
           <TabsTrigger value="content" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -147,15 +204,21 @@ const LandingAdmin = () => {
         <TabsContent value="requests" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                طلبات الخدمة ({requests.length})
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  طلبات الخدمة ({requests.length})
+                </CardTitle>
+                <Button onClick={refreshRequests} variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  تحديث
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {requests.map((request) => (
-                  <div key={request.id} className="border rounded-lg p-4">
+                  <div key={request.id} className="border rounded-lg p-4 bg-white shadow-sm">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="font-semibold text-lg">{request.name}</h3>
@@ -175,8 +238,7 @@ const LandingAdmin = () => {
                       <div className="flex items-center gap-2">
                         <Badge variant={request.status === 'pending' ? 'secondary' : 
                                      request.status === 'contacted' ? 'default' : 'outline'}>
-                          {request.status === 'pending' ? 'قيد الانتظار' :
-                           request.status === 'contacted' ? 'تم التواصل' : 'مكتمل'}
+                          {getStatusLabel(request.status)}
                         </Badge>
                         <select
                           value={request.status}
@@ -187,12 +249,20 @@ const LandingAdmin = () => {
                           <option value="contacted">تم التواصل</option>
                           <option value="completed">مكتمل</option>
                         </select>
+                        <Button
+                          onClick={() => deleteRequest(request.id)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div className="grid md:grid-cols-2 gap-4 text-sm mb-3">
                       <div>
-                        <strong>نوع الخدمة:</strong> {request.service_type}
+                        <strong>نوع الخدمة:</strong> {getServiceTypeLabel(request.service_type)}
                       </div>
                       <div>
                         <strong>طريقة التواصل المفضلة:</strong> {request.preferred_contact}
@@ -200,13 +270,13 @@ const LandingAdmin = () => {
                     </div>
                     
                     {request.message && (
-                      <div className="mt-3">
+                      <div className="mb-3">
                         <strong className="text-sm">الرسالة:</strong>
-                        <p className="text-sm text-gray-600 mt-1">{request.message}</p>
+                        <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-2 rounded">{request.message}</p>
                       </div>
                     )}
                     
-                    <div className="text-xs text-gray-500 mt-3">
+                    <div className="text-xs text-gray-500">
                       تاريخ الطلب: {new Date(request.created_at).toLocaleString('ar-EG')}
                     </div>
                   </div>
@@ -214,7 +284,8 @@ const LandingAdmin = () => {
                 
                 {requests.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    لا توجد طلبات حالياً
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>لا توجد طلبات حالياً</p>
                   </div>
                 )}
               </div>
