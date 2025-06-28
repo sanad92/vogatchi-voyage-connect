@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import {
   Trash2,
   RefreshCw
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
@@ -57,21 +59,8 @@ const LandingAdmin = () => {
   const [editingContent, setEditingContent] = useState<LandingContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // تحميل الطلبات من localStorage
+  // تحميل الطلبات من قاعدة البيانات
   useEffect(() => {
-    const loadRequests = () => {
-      try {
-        const savedRequests = localStorage.getItem('vogatchi_service_requests');
-        if (savedRequests) {
-          const parsedRequests = JSON.parse(savedRequests);
-          console.log('📋 Loaded service requests:', parsedRequests);
-          setRequests(parsedRequests);
-        }
-      } catch (error) {
-        console.error('❌ Error loading requests:', error);
-      }
-    };
-
     loadRequests();
     
     // تحديث كل 30 ثانية
@@ -79,14 +68,49 @@ const LandingAdmin = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const updateRequestStatus = (id: string, status: string) => {
+  const loadRequests = async () => {
     try {
-      const updatedRequests = requests.map(req => 
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('service_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error loading requests:', error);
+        toast.error('حدث خطأ في تحميل الطلبات');
+        return;
+      }
+
+      if (data) {
+        console.log('📋 Loaded service requests:', data);
+        setRequests(data);
+      }
+    } catch (error) {
+      console.error('❌ Error loading requests:', error);
+      toast.error('حدث خطأ في تحميل الطلبات');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateRequestStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('service_requests')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) {
+        console.error('❌ Error updating request status:', error);
+        toast.error('حدث خطأ في تحديث حالة الطلب');
+        return;
+      }
+
+      // تحديث الحالة محلياً
+      setRequests(prev => prev.map(req => 
         req.id === id ? { ...req, status } : req
-      );
-      
-      setRequests(updatedRequests);
-      localStorage.setItem('vogatchi_service_requests', JSON.stringify(updatedRequests));
+      ));
       
       toast.success('تم تحديث حالة الطلب');
     } catch (error) {
@@ -95,11 +119,20 @@ const LandingAdmin = () => {
     }
   };
 
-  const deleteRequest = (id: string) => {
+  const deleteRequest = async (id: string) => {
     try {
-      const updatedRequests = requests.filter(req => req.id !== id);
-      setRequests(updatedRequests);
-      localStorage.setItem('vogatchi_service_requests', JSON.stringify(updatedRequests));
+      const { error } = await supabase
+        .from('service_requests')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('❌ Error deleting request:', error);
+        toast.error('حدث خطأ في حذف الطلب');
+        return;
+      }
+
+      setRequests(prev => prev.filter(req => req.id !== id));
       toast.success('تم حذف الطلب');
     } catch (error) {
       console.error('❌ Error deleting request:', error);
@@ -108,17 +141,8 @@ const LandingAdmin = () => {
   };
 
   const refreshRequests = () => {
-    try {
-      const savedRequests = localStorage.getItem('vogatchi_service_requests');
-      if (savedRequests) {
-        const parsedRequests = JSON.parse(savedRequests);
-        setRequests(parsedRequests);
-        toast.success('تم تحديث قائمة الطلبات');
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing requests:', error);
-      toast.error('حدث خطأ في تحديث القائمة');
-    }
+    loadRequests();
+    toast.success('تم تحديث قائمة الطلبات');
   };
 
   const saveContent = (contentData: LandingContent) => {
@@ -209,8 +233,8 @@ const LandingAdmin = () => {
                   <Users className="h-5 w-5" />
                   طلبات الخدمة ({requests.length})
                 </CardTitle>
-                <Button onClick={refreshRequests} variant="outline" size="sm">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                <Button onClick={refreshRequests} variant="outline" size="sm" disabled={isLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                   تحديث
                 </Button>
               </div>
@@ -282,10 +306,17 @@ const LandingAdmin = () => {
                   </div>
                 ))}
                 
-                {requests.length === 0 && (
+                {requests.length === 0 && !isLoading && (
                   <div className="text-center py-8 text-gray-500">
                     <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                     <p>لا توجد طلبات حالياً</p>
+                  </div>
+                )}
+
+                {isLoading && requests.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل الطلبات...</p>
                   </div>
                 )}
               </div>
@@ -293,6 +324,7 @@ const LandingAdmin = () => {
           </Card>
         </TabsContent>
 
+        {/* باقي المحتوى كما هو */}
         <TabsContent value="content" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">إدارة محتوى الصفحة</h2>

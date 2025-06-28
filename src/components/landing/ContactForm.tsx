@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ServiceRequest {
@@ -58,22 +59,26 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
     try {
       console.log('📝 Submitting service request:', formData);
       
-      // حفظ الطلب في localStorage مؤقتاً
-      const existingRequests = JSON.parse(localStorage.getItem('vogatchi_service_requests') || '[]');
-      const newRequest = {
-        ...formData,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        status: 'pending'
-      };
+      // حفظ الطلب في قاعدة البيانات
+      const { data, error } = await supabase
+        .from('service_requests')
+        .insert([{
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || null,
+          service_type: formData.service_type,
+          message: formData.message.trim() || null,
+          preferred_contact: formData.preferred_contact,
+          status: 'pending'
+        }]);
+
+      if (error) {
+        console.error('❌ Error submitting request:', error);
+        toast.error('حدث خطأ في إرسال الطلب. يرجى المحاولة مرة أخرى');
+        return;
+      }
       
-      existingRequests.push(newRequest);
-      localStorage.setItem('vogatchi_service_requests', JSON.stringify(existingRequests));
-      
-      // محاكاة إرسال الطلب
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('✅ Service request submitted successfully');
+      console.log('✅ Service request submitted successfully:', data);
       
       toast.success('تم إرسال طلبك بنجاح! سنتواصل معك خلال 24 ساعة');
       

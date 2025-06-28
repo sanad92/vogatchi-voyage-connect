@@ -19,9 +19,10 @@ const Auth = () => {
 
   console.log('🔐 Auth Page - User:', !!user, 'Loading:', loading);
 
+  // إذا كان المستخدم مسجل دخول، توجيه للوحة التحكم
   if (user && !loading) {
     console.log('✅ User authenticated, redirecting to dashboard');
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (loading) {

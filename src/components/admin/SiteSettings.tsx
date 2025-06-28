@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import {
   ImageIcon
 } from 'lucide-react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface SiteConfig {
@@ -55,6 +56,52 @@ const SiteSettings = () => {
     );
   }
 
+  // تحميل الإعدادات من قاعدة البيانات
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_key, setting_value');
+
+      if (error) {
+        console.error('خطأ في تحميل الإعدادات:', error);
+        toast.error('فشل في تحميل إعدادات الموقع');
+        return;
+      }
+
+      if (data) {
+        const settingsMap = data.reduce((acc, item) => {
+          acc[item.setting_key] = item.setting_value;
+          return acc;
+        }, {} as Record<string, string>);
+
+        setConfig({
+          siteName: settingsMap.site_name || 'Vogatchi CRM',
+          siteDescription: settingsMap.site_description || 'نظام إدارة علاقات العملاء',
+          logoUrl: settingsMap.logo_url || '',
+          companyName: settingsMap.company_name || 'شركة Vogatchi للسياحة',
+          companyAddress: settingsMap.company_address || 'القاهرة، مصر',
+          companyPhone: settingsMap.company_phone || '+20 110 344 2881',
+          companyEmail: settingsMap.company_email || 'ops@vogatchitrips.com'
+        });
+
+        if (settingsMap.logo_url) {
+          setLogoPreview(settingsMap.logo_url);
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في تحميل الإعدادات:', error);
+      toast.error('حدث خطأ أثناء تحميل الإعدادات');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInputChange = (field: keyof SiteConfig, value: string) => {
     setConfig(prev => ({ ...prev, [field]: value }));
   };
@@ -86,6 +133,19 @@ const SiteSettings = () => {
     reader.readAsDataURL(file);
   };
 
+  const updateSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert(
+        { setting_key: key, setting_value: value },
+        { onConflict: 'setting_key' }
+      );
+
+    if (error) {
+      throw error;
+    }
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     
@@ -101,11 +161,16 @@ const SiteSettings = () => {
         return;
       }
 
-      // حفظ الإعدادات في localStorage مؤقتاً
-      localStorage.setItem('vogatchi_site_config', JSON.stringify(config));
-      
-      // محاكاة عملية الحفظ
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // حفظ جميع الإعدادات في قاعدة البيانات
+      await Promise.all([
+        updateSetting('site_name', config.siteName),
+        updateSetting('site_description', config.siteDescription),
+        updateSetting('logo_url', config.logoUrl),
+        updateSetting('company_name', config.companyName),
+        updateSetting('company_address', config.companyAddress),
+        updateSetting('company_phone', config.companyPhone),
+        updateSetting('company_email', config.companyEmail)
+      ]);
       
       toast.success('تم حفظ إعدادات الموقع بنجاح');
       
@@ -127,6 +192,15 @@ const SiteSettings = () => {
       toast.success('تم فتح معاينة في نافذة جديدة');
     }
   };
+
+  if (isLoading && !config.siteName) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="mr-2">جاري تحميل الإعدادات...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
