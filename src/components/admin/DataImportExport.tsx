@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import {
   Building2,
   UserCheck
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -30,7 +29,7 @@ interface ImportData {
 }
 
 const DataImportExport = () => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [importData, setImportData] = useState<ImportData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);

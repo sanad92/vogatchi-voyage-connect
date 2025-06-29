@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import DataImportExport from '@/components/admin/DataImportExport';
 import EnhancedReportExporter from '@/components/admin/EnhancedReportExporter';
 
 const AdminImportExport = () => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
 
   if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
     return (
