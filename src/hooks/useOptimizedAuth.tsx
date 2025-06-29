@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,26 @@ import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// دالة تنظيف شاملة لبيانات المصادقة
+const cleanupAuthState = () => {
+  console.log('🧹 Cleaning up auth state...');
+  
+  // إزالة جميع مفاتيح Supabase من localStorage
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+      console.log('🗑️ Removed:', key);
+    }
+  });
+  
+  // إزالة من sessionStorage أيضاً
+  Object.keys(sessionStorage || {}).forEach(key => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
+
 export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -15,7 +36,14 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  console.log('🔐 Auth State:', { user: !!user, profile: !!profile, userRole, loading });
+  console.log('🔐 Auth State:', { 
+    user: !!user, 
+    profile: !!profile, 
+    userRole, 
+    loading,
+    sessionExists: !!session,
+    sessionValid: session && !session.expires_at ? false : session ? new Date(session.expires_at * 1000) > new Date() : false
+  });
 
   // دالة محسنة لجلب بيانات المستخدم
   const fetchUserData = async (userId: string) => {
@@ -53,8 +81,6 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
-      // لا نعيد تعيين القيم إلى null في حالة الخطأ
-      // نبقي على القيم الافتراضية
       if (!profile) {
         setProfile({ 
           id: userId, 
@@ -73,6 +99,23 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
+  // التحقق من صحة الجلسة
+  const isValidSession = (session: Session | null): boolean => {
+    if (!session) return false;
+    
+    // التحقق من انتهاء صلاحية الجلسة
+    if (session.expires_at) {
+      const expiryTime = new Date(session.expires_at * 1000);
+      const now = new Date();
+      if (expiryTime <= now) {
+        console.log('⏰ Session expired:', expiryTime, 'vs now:', now);
+        return false;
+      }
+    }
+    
+    return !!(session.access_token && session.user);
+  };
+
   // إعداد مراقب المصادقة محسن
   useEffect(() => {
     let mounted = true;
@@ -84,17 +127,27 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         
         console.log('🔄 Auth state changed:', event, !!session);
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        // التحقق من صحة الجلسة
+        const validSession = isValidSession(session);
+        console.log('✅ Session valid:', validSession);
         
-        if (session?.user && event === 'SIGNED_IN') {
-          // تأخير بسيط لتجنب المشاكل
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserData(session.user.id);
-            }
-          }, 100);
-        } else if (!session) {
+        if (validSession && session) {
+          setSession(session);
+          setUser(session.user);
+          
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              if (mounted) {
+                fetchUserData(session.user.id);
+              }
+            }, 100);
+          }
+        } else {
+          // جلسة غير صالحة أو منتهية الصلاحية
+          console.log('🧹 Invalid session, cleaning up...');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
           setProfile(null);
           setUserRole(null);
         }
@@ -103,20 +156,49 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       }
     );
 
-    // فحص الجلسة الحالية
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('🔍 Initial session check:', !!session);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserData(session.user.id);
+    // فحص الجلسة الحالية مع التحقق من الصلاحية
+    const checkCurrentSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Session check error:', error);
+          cleanupAuthState();
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔍 Initial session check:', !!session);
+        
+        const validSession = isValidSession(session);
+        console.log('✅ Initial session valid:', validSession);
+        
+        if (validSession && session) {
+          setSession(session);
+          setUser(session.user);
+          fetchUserData(session.user.id);
+        } else {
+          console.log('🧹 No valid session found, cleaning up...');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setUserRole(null);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Session check failed:', error);
+        cleanupAuthState();
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setUserRole(null);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    checkCurrentSession();
 
     return () => {
       mounted = false;
@@ -128,6 +210,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     try {
       setLoading(true);
       console.log('🔐 Attempting sign in for:', email);
+      
+      // تنظيف أي بيانات مصادقة سابقة
+      cleanupAuthState();
+      
+      // محاولة تسجيل خروج عام
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('ℹ️ Global signout failed (expected):', err);
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -161,15 +253,29 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setLoading(true);
       console.log('🚪 Signing out...');
       
-      await supabase.auth.signOut();
+      // تنظيف البيانات أولاً
+      cleanupAuthState();
+      
+      // محاولة تسجيل خروج عام
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('ℹ️ Signout error (ignoring):', err);
+      }
+      
+      // تنظيف الحالة المحلية
       setUser(null);
       setProfile(null);
       setUserRole(null);
       setSession(null);
       
-      navigate('/auth');
+      // التوجيه إلى صفحة المصادقة مع إعادة تحميل كاملة
+      window.location.href = '/auth';
+      
     } catch (error) {
       console.error('❌ خطأ في تسجيل الخروج:', error);
+      // في حالة الخطأ، أعد تحميل الصفحة للتأكد من التنظيف
+      window.location.href = '/auth';
     } finally {
       setLoading(false);
     }
@@ -193,10 +299,17 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     return allowedRoles?.includes(role) || false;
   };
 
-  // تبسيط منطق isLoggedIn لتجنب المشاكل
+  // منطق محسن للتحقق من تسجيل الدخول
   const isLoggedIn = (): boolean => {
-    const loggedIn = !!(user && session);
-    console.log('🔍 Is logged in check:', loggedIn, { user: !!user, session: !!session });
+    const validSession = isValidSession(session);
+    const loggedIn = !!(user && validSession);
+    console.log('🔍 Is logged in check:', loggedIn, { 
+      user: !!user, 
+      session: !!session, 
+      validSession,
+      profile: !!profile,
+      userRole 
+    });
     return loggedIn;
   };
 

@@ -6,31 +6,62 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, EyeOff, LogIn, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const Auth = () => {
-  const { user, loading, signIn } = useOptimizedAuth();
+  const { user, loading, signIn, isLoggedIn } = useOptimizedAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forceShowLogin, setForceShowLogin] = useState(false);
 
-  console.log('🔐 Auth Page - User:', !!user, 'Loading:', loading);
+  console.log('🔐 Auth Page - User:', !!user, 'Loading:', loading, 'IsLoggedIn:', isLoggedIn());
 
-  // إذا كان المستخدم مسجل دخول، توجيه للوحة التحكم
-  if (user && !loading) {
-    console.log('✅ User authenticated, redirecting to dashboard');
+  // التحقق من حالة تسجيل الدخول مع إمكانية إجبار عرض صفحة الدخول
+  useEffect(() => {
+    // إذا كان المستخدم مسجل دخول ولم يطلب إجبار عرض صفحة الدخول
+    if (isLoggedIn() && !forceShowLogin && !loading) {
+      console.log('✅ User authenticated, redirecting to dashboard');
+    }
+  }, [user, loading, forceShowLogin, isLoggedIn]);
+
+  // دالة لإجبار تسجيل الخروج وعرض صفحة الدخول
+  const forceLogout = () => {
+    console.log('🔄 Force logout requested');
+    setForceShowLogin(true);
+    // تنظيف localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    // إعادة تحميل الصفحة للتأكد من التنظيف الكامل
+    window.location.reload();
+  };
+
+  // إذا كان المستخدم مسجل دخول ولم يطلب إجبار عرض صفحة الدخول
+  if (isLoggedIn() && !forceShowLogin && !loading) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (loading) {
+  if (loading && !forceShowLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">جاري التحميل...</p>
+          <Button 
+            variant="outline" 
+            onClick={forceLogout}
+            className="mt-4"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            إعادة تعيين
+          </Button>
         </div>
       </div>
     );
@@ -74,6 +105,15 @@ const Auth = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Vogatchi CRM</h1>
           <p className="text-gray-600">نظام إدارة علاقات العملاء</p>
         </div>
+
+        {/* تحذير إذا كان المستخدم مسجل دخول */}
+        {isLoggedIn() && forceShowLogin && (
+          <Alert className="mb-4 border-amber-200 bg-amber-50">
+            <AlertDescription className="text-amber-800">
+              أنت مسجل دخول بالفعل. إذا كنت تريد تسجيل الدخول بحساب آخر، يرجى تسجيل الخروج أولاً.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Login Form */}
         <Card className="shadow-2xl border-0">
@@ -144,6 +184,20 @@ const Auth = () => {
                 )}
               </Button>
             </form>
+
+            {/* إذا كان المستخدم مسجل دخول، أعرض خيار تسجيل الخروج */}
+            {isLoggedIn() && (
+              <div className="mt-4 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={forceLogout}
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  تسجيل خروج وإعادة الدخول
+                </Button>
+              </div>
+            )}
 
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>نظام محمي - للموظفين المصرح لهم فقط</p>
