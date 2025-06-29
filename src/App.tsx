@@ -45,8 +45,6 @@ import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
 import AuthErrorBoundary from "@/components/common/AuthErrorBoundary";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -89,18 +87,7 @@ function App() {
                       <div className="flex">
                         <Navbar />
                         <main className="flex-1">
-                          <AuthErrorBoundary
-                            fallback={
-                              <div className="p-6">
-                                <Alert className="border-red-200 bg-red-50">
-                                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                                  <AlertDescription className="text-red-800">
-                                    حدث خطأ في تحميل الصفحة. يرجى إعادة تحميل الصفحة أو المحاولة لاحقاً.
-                                  </AlertDescription>
-                                </Alert>
-                              </div>
-                            }
-                          >
+                          <AuthErrorBoundary>
                             <Routes>
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/landing-admin" element={<LandingAdmin />} />
