@@ -26,68 +26,78 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
   });
 
   const filteredBookings = useMemo(() => {
-    let filtered = [...bookings];
+    try {
+      let filtered = [...(bookings || [])];
 
-    // Search term filter
-    if (searchFilters.searchTerm.trim()) {
-      const searchLower = searchFilters.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(booking => 
-        booking.customer_name?.toLowerCase().includes(searchLower) ||
-        booking.internal_booking_number?.toLowerCase().includes(searchLower) ||
-        booking.hotel_name?.toLowerCase().includes(searchLower) ||
-        booking.destination_city?.toLowerCase().includes(searchLower) ||
-        booking.booking_reference_supplier?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Status filter
-    if (searchFilters.status !== 'all') {
-      filtered = filtered.filter(booking => {
-        if (searchFilters.status === 'confirmed') {
-          return booking.status_id && booking.status_id !== 'cancelled';
-        }
-        if (searchFilters.status === 'pending') {
-          return !booking.status_id || booking.status_id === 'pending';
-        }
-        if (searchFilters.status === 'cancelled') {
-          return booking.status_id === 'cancelled';
-        }
-        if (searchFilters.status === 'completed') {
-          return booking.status_id === 'completed';
-        }
-        return true;
-      });
-    }
-
-    // Date range filter
-    if (searchFilters.dateRange?.from && searchFilters.dateRange?.to) {
-      filtered = filtered.filter(booking => {
-        const checkInDate = new Date(booking.check_in_date);
-        return checkInDate >= searchFilters.dateRange!.from! && 
-               checkInDate <= searchFilters.dateRange!.to!;
-      });
-    }
-
-    // Amount filters
-    if (searchFilters.minAmount) {
-      const minAmount = parseFloat(searchFilters.minAmount);
-      if (!isNaN(minAmount)) {
+      // Search term filter
+      if (searchFilters.searchTerm.trim()) {
+        const searchLower = searchFilters.searchTerm.toLowerCase().trim();
         filtered = filtered.filter(booking => 
-          (booking.total_cost_customer || 0) >= minAmount
+          booking.customer_name?.toLowerCase().includes(searchLower) ||
+          booking.internal_booking_number?.toLowerCase().includes(searchLower) ||
+          booking.hotel_name?.toLowerCase().includes(searchLower) ||
+          booking.destination_city?.toLowerCase().includes(searchLower) ||
+          booking.booking_reference_supplier?.toLowerCase().includes(searchLower)
         );
       }
-    }
 
-    if (searchFilters.maxAmount) {
-      const maxAmount = parseFloat(searchFilters.maxAmount);
-      if (!isNaN(maxAmount)) {
-        filtered = filtered.filter(booking => 
-          (booking.total_cost_customer || 0) <= maxAmount
-        );
+      // Status filter
+      if (searchFilters.status !== 'all') {
+        filtered = filtered.filter(booking => {
+          if (searchFilters.status === 'confirmed') {
+            return booking.status_id && booking.status_id !== 'cancelled';
+          }
+          if (searchFilters.status === 'pending') {
+            return !booking.status_id || booking.status_id === 'pending';
+          }
+          if (searchFilters.status === 'cancelled') {
+            return booking.status_id === 'cancelled';
+          }
+          if (searchFilters.status === 'completed') {
+            return booking.status_id === 'completed';
+          }
+          return true;
+        });
       }
-    }
 
-    return filtered;
+      // Date range filter
+      if (searchFilters.dateRange?.from && searchFilters.dateRange?.to) {
+        filtered = filtered.filter(booking => {
+          try {
+            const checkInDate = new Date(booking.check_in_date);
+            return checkInDate >= searchFilters.dateRange!.from! && 
+                   checkInDate <= searchFilters.dateRange!.to!;
+          } catch (error) {
+            console.warn('تاريخ غير صالح في الحجز:', booking.id);
+            return false;
+          }
+        });
+      }
+
+      // Amount filters
+      if (searchFilters.minAmount) {
+        const minAmount = parseFloat(searchFilters.minAmount);
+        if (!isNaN(minAmount)) {
+          filtered = filtered.filter(booking => 
+            (booking.total_cost_customer || 0) >= minAmount
+          );
+        }
+      }
+
+      if (searchFilters.maxAmount) {
+        const maxAmount = parseFloat(searchFilters.maxAmount);
+        if (!isNaN(maxAmount)) {
+          filtered = filtered.filter(booking => 
+            (booking.total_cost_customer || 0) <= maxAmount
+          );
+        }
+      }
+
+      return filtered;
+    } catch (error) {
+      console.error('خطأ في فلترة الحجوزات:', error);
+      return bookings || [];
+    }
   }, [bookings, searchFilters]);
 
   const handleOpenInvoiceDialog = (booking: HotelBooking) => {
@@ -117,7 +127,7 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
 
   return (
     <div className="space-y-6">
-      <HotelBookingStats bookings={bookings} />
+      <HotelBookingStats bookings={bookings || []} />
       
       <HotelBookingSearch 
         onSearch={handleSearch}
@@ -126,7 +136,7 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
 
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          عرض {filteredBookings.length} من أصل {bookings.length} حجز
+          عرض {filteredBookings.length} من أصل {(bookings || []).length} حجز
         </div>
         <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
           حجز جديد

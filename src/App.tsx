@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -43,7 +44,7 @@ import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
-import EnhancedErrorBoundary from "@/components/common/EnhancedErrorBoundary";
+import AuthErrorBoundary from "@/components/common/AuthErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
@@ -71,77 +72,79 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <OptimizedAuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            <Toaster position="top-right" />
-            <Routes>
-              {/* صفحة الهبوط كصفحة رئيسية عامة */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/landing" element={<Navigate to="/" replace />} />
-              
-              {/* صفحات النظام المحمية */}
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex">
-                      <Navbar />
-                      <main className="flex-1">
-                        <EnhancedErrorBoundary
-                          fallback={
-                            <div className="p-6">
-                              <Alert className="border-red-200 bg-red-50">
-                                <AlertTriangle className="h-4 w-4 text-red-600" />
-                                <AlertDescription className="text-red-800">
-                                  حدث خطأ في تحميل الصفحة. يرجى إعادة تحميل الصفحة أو المحاولة لاحقاً.
-                                </AlertDescription>
-                              </Alert>
-                            </div>
-                          }
-                        >
-                          <Routes>
-                            <Route path="/dashboard" element={<OptimizedIndex />} />
-                            <Route path="/landing-admin" element={<LandingAdmin />} />
-                            <Route path="/customers" element={<Customers />} />
-                            <Route path="/new-customer" element={<NewCustomer />} />
-                            <Route path="/hotel-bookings" element={<HotelBookings />} />
-                            <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
-                            <Route path="/flight-bookings" element={<FlightBookings />} />
-                            <Route path="/new-flight-booking" element={<NewFlightBooking />} />
-                            <Route path="/car-rentals" element={<CarRentals />} />
-                            <Route path="/transport-bookings" element={<TransportBookings />} />
-                            <Route path="/invoices" element={<Invoices />} />
-                            <Route path="/suppliers" element={<Suppliers />} />
-                            <Route path="/reports" element={<Reports />} />
-                            <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
-                            <Route path="/expense-management" element={<ExpenseManagement />} />
-                            <Route path="/expense-management-enhanced" element={<ExpenseManagementEnhanced />} />
-                            <Route path="/employees" element={<EmployeesPage />} />
-                            <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
-                            <Route path="/admin-settings" element={<AdminSettings />} />
-                            <Route path="/admin-import-export" element={<AdminImportExport />} />
-                            <Route path="/site-customization" element={<SiteCustomization />} />
-                            <Route path="/payment-orders" element={<PaymentOrders />} />
-                            <Route path="/bank-accounts" element={<BankAccounts />} />
-                            <Route path="/daily-operations" element={<DailyOperations />} />
-                            <Route path="/customer-service" element={<CustomerService />} />
-                            <Route path="/crm" element={<CRM />} />
-                            <Route path="/crm-dashboard" element={<CRMDashboard />} />
-                            <Route path="/customer-portal" element={<CustomerPortalPage />} />
-                            <Route path="/bookings-calendar" element={<BookingsCalendar />} />
-                            <Route path="/database-manager" element={<DatabaseManager />} />
-                            <Route path="/whatsapp" element={<WhatsApp />} />
-                            <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </EnhancedErrorBoundary>
-                      </main>
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </div>
+          <AuthErrorBoundary>
+            <div className="min-h-screen bg-gray-50">
+              <Toaster position="top-right" />
+              <Routes>
+                {/* صفحة الهبوط كصفحة رئيسية عامة */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/landing" element={<Navigate to="/" replace />} />
+                
+                {/* صفحات النظام المحمية */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <div className="flex">
+                        <Navbar />
+                        <main className="flex-1">
+                          <AuthErrorBoundary
+                            fallback={
+                              <div className="p-6">
+                                <Alert className="border-red-200 bg-red-50">
+                                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                                  <AlertDescription className="text-red-800">
+                                    حدث خطأ في تحميل الصفحة. يرجى إعادة تحميل الصفحة أو المحاولة لاحقاً.
+                                  </AlertDescription>
+                                </Alert>
+                              </div>
+                            }
+                          >
+                            <Routes>
+                              <Route path="/dashboard" element={<OptimizedIndex />} />
+                              <Route path="/landing-admin" element={<LandingAdmin />} />
+                              <Route path="/customers" element={<Customers />} />
+                              <Route path="/new-customer" element={<NewCustomer />} />
+                              <Route path="/hotel-bookings" element={<HotelBookings />} />
+                              <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
+                              <Route path="/flight-bookings" element={<FlightBookings />} />
+                              <Route path="/new-flight-booking" element={<NewFlightBooking />} />
+                              <Route path="/car-rentals" element={<CarRentals />} />
+                              <Route path="/transport-bookings" element={<TransportBookings />} />
+                              <Route path="/invoices" element={<Invoices />} />
+                              <Route path="/suppliers" element={<Suppliers />} />
+                              <Route path="/reports" element={<Reports />} />
+                              <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
+                              <Route path="/expense-management" element={<ExpenseManagement />} />
+                              <Route path="/expense-management-enhanced" element={<ExpenseManagementEnhanced />} />
+                              <Route path="/employees" element={<EmployeesPage />} />
+                              <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
+                              <Route path="/admin-settings" element={<AdminSettings />} />
+                              <Route path="/admin-import-export" element={<AdminImportExport />} />
+                              <Route path="/site-customization" element={<SiteCustomization />} />
+                              <Route path="/payment-orders" element={<PaymentOrders />} />
+                              <Route path="/bank-accounts" element={<BankAccounts />} />
+                              <Route path="/daily-operations" element={<DailyOperations />} />
+                              <Route path="/customer-service" element={<CustomerService />} />
+                              <Route path="/crm" element={<CRM />} />
+                              <Route path="/crm-dashboard" element={<CRMDashboard />} />
+                              <Route path="/customer-portal" element={<CustomerPortalPage />} />
+                              <Route path="/bookings-calendar" element={<BookingsCalendar />} />
+                              <Route path="/database-manager" element={<DatabaseManager />} />
+                              <Route path="/whatsapp" element={<WhatsApp />} />
+                              <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </AuthErrorBoundary>
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </div>
+          </AuthErrorBoundary>
         </OptimizedAuthProvider>
       </Router>
     </QueryClientProvider>

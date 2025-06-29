@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -141,18 +140,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
         }
-        toast.error(errorMessage);
-        return { error };
+        throw new Error(errorMessage);
       }
       
       console.log('✅ Sign in successful');
-      toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/');
+      // التوجيه إلى /dashboard بدلاً من /
+      navigate('/dashboard');
       return { error: null };
       
     } catch (error) {
       console.error('❌ خطأ في تسجيل الدخول:', error);
-      toast.error('حدث خطأ في تسجيل الدخول');
       return { error };
     } finally {
       setLoading(false);
@@ -170,11 +167,9 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setUserRole(null);
       setSession(null);
       
-      toast.success('تم تسجيل الخروج بنجاح');
       navigate('/auth');
     } catch (error) {
       console.error('❌ خطأ في تسجيل الخروج:', error);
-      toast.error('حدث خطأ في تسجيل الخروج');
     } finally {
       setLoading(false);
     }

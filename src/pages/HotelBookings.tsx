@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,26 +30,57 @@ const HotelBookings = () => {
     showVoucher, setShowVoucher
   } = useHotelBookingsPage();
 
-  // تعديل الاستعلام ليجلب بيانات الحالة join مع booking_statuses ويشمل color
-  const { data: bookings = [], isLoading, refetch } = useQuery({
+  // تبسيط الاستعلام لتجنب مشاكل join المعقدة
+  const { data: bookings = [], isLoading, refetch, error } = useQuery({
     queryKey: ['hotel-bookings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hotel_bookings')
-        .select(`
-          *,
-          booking_status:status_id (
-            id,
-            name,
-            name_ar,
-            color
-          )
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        console.log('🏨 Fetching hotel bookings...');
+        
+        // جلب الحجوزات أولاً
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('hotel_bookings')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as HotelBooking[];
-    }
+        if (bookingsError) {
+          console.error('❌ Error fetching bookings:', bookingsError);
+          throw bookingsError;
+        }
+
+        console.log('✅ Bookings fetched:', bookingsData?.length || 0);
+
+        // جلب حالات الحجز بشكل منفصل
+        const { data: statusesData, error: statusesError } = await supabase
+          .from('booking_statuses')
+          .select('*');
+
+        if (statusesError) {
+          console.warn('⚠️ Could not fetch booking statuses:', statusesError);
+        }
+
+        // دمج البيانات يدوياً
+        const bookingsWithStatus = bookingsData?.map(booking => {
+          const status = statusesData?.find(s => s.id === booking.status_id);
+          return {
+            ...booking,
+            booking_status: status ? {
+              id: status.id,
+              name: status.name,
+              name_ar: status.name_ar,
+              color: status.color
+            } : null
+          };
+        }) || [];
+
+        return bookingsWithStatus as HotelBooking[];
+      } catch (error) {
+        console.error('❌ Hotel bookings query failed:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    retryDelay: 1000
   });
 
   const handleNewBooking = () => {
@@ -66,6 +98,24 @@ const HotelBookings = () => {
     setEditingBooking(null);
     refetch();
   };
+
+  if (error) {
+    console.error('❌ Hotel bookings error:', error);
+    return (
+      <div className="container mx-auto py-6">
+        <div className="text-center py-8">
+          <div className="text-red-500 mb-4">
+            <Hotel className="h-12 w-12 mx-auto mb-2" />
+            <h3 className="text-lg font-semibold">خطأ في تحميل الحجوزات</h3>
+            <p className="text-gray-600 mt-2">حدث خطأ في الاتصال بقاعدة البيانات</p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline">
+            إعادة المحاولة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
