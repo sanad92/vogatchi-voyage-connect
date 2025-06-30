@@ -15,9 +15,10 @@ interface NavItem {
 interface PermissionNavLinkProps {
   item: NavItem;
   onClick?: () => void;
+  className?: string;
 }
 
-const PermissionNavLink = ({ item, onClick }: PermissionNavLinkProps) => {
+const PermissionNavLink = ({ item, onClick, className }: PermissionNavLinkProps) => {
   const location = useLocation();
   const { hasAnyPermission } = usePermissionCheck();
   const { isSuperAdmin } = useOptimizedAuth();
@@ -50,7 +51,7 @@ const PermissionNavLink = ({ item, onClick }: PermissionNavLinkProps) => {
     <Link
       to={item.to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+      className={className || `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
         isActiveLink(item.to)
           ? 'bg-blue-100 text-blue-700 font-medium'
           : 'text-gray-700 hover:bg-gray-100'

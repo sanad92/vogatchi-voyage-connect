@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Routes,
@@ -45,6 +44,7 @@ import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
 import AuthErrorBoundary from "@/components/common/AuthErrorBoundary";
+import BookingRequest from "@/pages/BookingRequest";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -78,6 +78,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/landing" element={<Navigate to="/" replace />} />
+                <Route path="/booking-request" element={<BookingRequest />} />
                 
                 {/* صفحات النظام المحمية */}
                 <Route

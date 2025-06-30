@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,7 +82,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  // التحقق من صحة الجلسة مع فحوصات إضافية
+  // التحقق من صحة الجلسة مع فحوصات محسنة
   const isValidSession = (session: Session | null): boolean => {
     if (!session) {
       console.log('❌ لا توجد جلسة');
@@ -97,8 +96,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
     
     // التحقق من وجود user
-    if (!session.user) {
-      console.log('❌ لا يوجد user في الجلسة');
+    if (!session.user || !session.user.id) {
+      console.log('❌ لا يوجد user صالح في الجلسة');
       return false;
     }
     
@@ -106,10 +105,10 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     if (session.expires_at) {
       const expiryTime = new Date(session.expires_at * 1000);
       const now = new Date();
-      const isExpired = expiryTime <= now;
+      const bufferTime = 5 * 60 * 1000; // 5 دقائق buffer
       
-      if (isExpired) {
-        console.log('⏰ انتهت صلاحية الجلسة:', expiryTime, 'الآن:', now);
+      if (expiryTime.getTime() - now.getTime() < bufferTime) {
+        console.log('⏰ الجلسة ستنتهي قريباً أو انتهت:', expiryTime, 'الآن:', now);
         return false;
       }
     }
@@ -118,13 +117,13 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     return true;
   };
 
-  // دالة لإجبار إعادة تعيين الحالة
+  // دالة لإجبار إعادة تعيين الحالة محسنة
   const forceResetAuth = async () => {
     console.log('🔄 إجبار إعادة تعيين حالة المصادقة...');
     
     setLoading(true);
     
-    // تنظيف البيانات المخزنة
+    // تنظيف البيانات المخزنة أولاً
     cleanupAuthState();
     
     // إعادة تعيين الحالة المحلية
@@ -135,14 +134,18 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     setForceAuthCheck(true);
     
     try {
-      // محاولة تسجيل خروج عام
+      // محاولة تسجيل خروج شامل
       await supabase.auth.signOut({ scope: 'global' });
+      console.log('✅ تم تسجيل الخروج الشامل');
     } catch (error) {
-      console.log('ℹ️ خطأ في تسجيل الخروج العام (متوقع):', error);
+      console.log('ℹ️ خطأ في تسجيل الخروج الشامل (متوقع):', error);
     }
     
-    setLoading(false);
-    console.log('✅ تم إعادة تعيين حالة المصادقة');
+    // تأخير قصير للسماح بالتنظيف
+    setTimeout(() => {
+      setLoading(false);
+      console.log('✅ تم إعادة تعيين حالة المصادقة');
+    }, 500);
   };
 
   // إعداد مراقب المصادقة محسن
@@ -155,6 +158,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         if (!mounted) return;
         
         console.log('🔄 تغيرت حالة المصادقة:', event, !!session);
+        console.log('👤 معرف المستخدم:', session?.user?.id);
+        console.log('📧 بريد المستخدم:', session?.user?.email);
         
         // التحقق من صحة الجلسة
         const validSession = isValidSession(session);
@@ -164,7 +169,18 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           setSession(session);
           setUser(session.user);
           
-          if (event === 'SIGNED_IN') {
+          // جلب بيانات المستخدم مع تأخير لتجنب deadlock
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setTimeout(() => {
+              if (mounted && session.user?.id) {
+                fetchUserData(session.user.id);
+              }
+            }, 100);
+          } else if (profile?.id === session.user.id) {
+            // المستخدم نفسه، احتفظ بالبيانات الموجودة
+            console.log('ℹ️ نفس المستخدم، الاحتفاظ بالبيانات الموجودة');
+          } else {
+            // مستخدم جديد، جلب البيانات
             setTimeout(() => {
               if (mounted) {
                 fetchUserData(session.user.id);
@@ -178,6 +194,11 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           setUser(null);
           setProfile(null);
           setUserRole(null);
+          
+          // إذا كانت الجلسة منتهية، قم بتنظيف البيانات المخزنة
+          if (event === 'SIGNED_OUT' || !session) {
+            cleanupAuthState();
+          }
         }
         
         setLoading(false);
@@ -195,6 +216,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           return;
         }
         
+        console.log('🔍 فحص الجلسة الأولي...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -205,6 +227,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         }
         
         console.log('🔍 فحص الجلسة الأولي:', !!session);
+        console.log('👤 معرف المستخدم الأولي:', session?.user?.id);
+        console.log('📧 بريد المستخدم الأولي:', session?.user?.email);
         
         const validSession = isValidSession(session);
         console.log('✅ صحة الجلسة الأولية:', validSession);
@@ -212,7 +236,13 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         if (validSession && session) {
           setSession(session);
           setUser(session.user);
-          fetchUserData(session.user.id);
+          
+          // جلب بيانات المستخدم
+          setTimeout(() => {
+            if (mounted && session.user?.id) {
+              fetchUserData(session.user.id);
+            }
+          }, 100);
         } else {
           console.log('🧹 لا توجد جلسة صالحة، تنظيف...');
           cleanupAuthState();
@@ -292,9 +322,10 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       // تنظيف البيانات أولاً
       cleanupAuthState();
       
-      // محاولة تسجيل خروج عام
+      // محاولة تسجيل خروج شامل
       try {
         await supabase.auth.signOut({ scope: 'global' });
+        console.log('✅ تم تسجيل الخروج الشامل');
       } catch (err) {
         console.log('ℹ️ خطأ تسجيل الخروج (تجاهل):', err);
       }
@@ -306,12 +337,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setSession(null);
       
       // التوجيه إلى صفحة المصادقة مع إعادة تحميل كاملة
-      window.location.href = '/auth';
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 500);
       
     } catch (error) {
       console.error('❌ خطأ في تسجيل الخروج:', error);
       // في حالة الخطأ، أعد تحميل الصفحة للتأكد من التنظيف
-      window.location.href = '/auth';
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 500);
     } finally {
       setLoading(false);
     }
@@ -338,16 +373,41 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   // منطق محسن للتحقق من تسجيل الدخول
   const isLoggedIn = (): boolean => {
     const validSession = isValidSession(session);
-    const loggedIn = !!(user && validSession);
+    const hasValidUser = !!(user && user.id && user.email);
+    const hasActiveProfile = !!(profile && profile.is_active !== false);
+    const hasValidRole = !!userRole;
+    
+    const loggedIn = hasValidUser && validSession && hasValidRole;
+    
     console.log('🔍 فحص تسجيل الدخول:', loggedIn, { 
-      user: !!user, 
-      session: !!session, 
-      validSession,
-      profile: !!profile,
+      hasValidUser,
+      validSession, 
+      hasActiveProfile,
+      hasValidRole,
+      userEmail: user?.email,
+      userId: user?.id,
+      profileActive: profile?.is_active,
       userRole 
     });
+    
     return loggedIn;
   };
+
+  // تشخيص حالة المصادقة الحالية
+  console.log('🧩 حالة المصادقة الحالية:', {
+    loading,
+    hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    hasProfile: !!profile,
+    profileActive: profile?.is_active,
+    hasRole: !!userRole,
+    userRole,
+    hasSession: !!session,
+    sessionValid: isValidSession(session),
+    isSuperAdmin: userRole === 'super_admin',
+    forceAuthCheck
+  });
 
   const value = {
     user,

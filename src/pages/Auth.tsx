@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, LogIn, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, LogIn, RefreshCw, AlertTriangle, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { hasStoredAuthData, cleanupAuthState } from '@/utils/authCleanup';
+import { hasStoredAuthData, cleanupAuthState, forceAuthReset } from '@/utils/authCleanup';
 
 const Auth = () => {
   const { user, loading, signIn, isLoggedIn, forceResetAuth } = useOptimizedAuth();
@@ -19,6 +19,7 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForceLogin, setShowForceLogin] = useState(false);
   const [hasStoredAuth, setHasStoredAuth] = useState(false);
+  const [forceShowLoginForm, setForceShowLoginForm] = useState(false);
 
   console.log('🔐 صفحة Auth - المستخدم:', !!user, 'التحميل:', loading, 'مسجل دخول:', isLoggedIn());
 
@@ -46,42 +47,54 @@ const Auth = () => {
   const handleForceReset = async () => {
     console.log('🔄 إجبار إعادة تعيين المصادقة');
     setShowForceLogin(false);
+    setForceShowLoginForm(true);
     
     try {
-      // استخدام forceResetAuth من useOptimizedAuth
+      // استخدام forceResetAuth أولاً
       if (forceResetAuth) {
         await forceResetAuth();
-      } else {
-        // fallback إذا لم تكن متوفرة
-        cleanupAuthState();
-        window.location.reload();
       }
+      
+      // ثم تنظيف شامل
+      cleanupAuthState();
+      
+      // إعادة تعيين الحالات المحلية
+      setEmail('');
+      setPassword('');
+      setError('');
+      
     } catch (error) {
       console.error('خطأ في إعادة التعيين:', error);
       // إعادة تحميل الصفحة كحل أخير
-      window.location.reload();
+      forceAuthReset();
     }
+  };
+
+  // دالة لإجبار إظهار نموذج تسجيل الدخول
+  const handleForceShowLogin = () => {
+    setForceShowLoginForm(true);
+    setShowForceLogin(false);
   };
 
   // فحص تسجيل الدخول مع delay للتأكد من انتهاء التحميل
   useEffect(() => {
-    if (!loading && isLoggedIn() && !showForceLogin) {
+    if (!loading && isLoggedIn() && !showForceLogin && !forceShowLoginForm) {
       // تأخير صغير للتأكد من انتهاء جميع العمليات
       const redirectTimer = setTimeout(() => {
         console.log('✅ المستخدم مصادق عليه، التحويل إلى الداشبورد');
-        // استخدام Navigate بدلاً من window.location للحصول على routing أفضل
+        // التحويل إلى الداشبورد
       }, 100);
       
       return () => clearTimeout(redirectTimer);
     }
-  }, [user, loading, isLoggedIn, showForceLogin]);
+  }, [user, loading, isLoggedIn, showForceLogin, forceShowLoginForm]);
 
-  // إذا كان المستخدم مسجل دخول ولا نُظهر خيار إجبار تسجيل الدخول
-  if (isLoggedIn() && !showForceLogin && !loading) {
+  // إذا كان المستخدم مسجل دخول ولا نُظهر خيار إجبار تسجيل الدخول ولا نجبر إظهار النموذج
+  if (isLoggedIn() && !showForceLogin && !loading && !forceShowLoginForm) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (loading && !showForceLogin) {
+  if (loading && !showForceLogin && !forceShowLoginForm) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -94,7 +107,7 @@ const Auth = () => {
             size="sm"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            إعادة تعيين
+            إعادة تعيين إجبارية
           </Button>
         </div>
       </div>
@@ -122,6 +135,7 @@ const Auth = () => {
       } else {
         // إخفاء خيار إجبار تسجيل الدخول عند نجاح التسجيل
         setShowForceLogin(false);
+        setForceShowLoginForm(false);
       }
     } catch (error) {
       console.error('❌ خطأ تسجيل الدخول:', error);
@@ -144,7 +158,7 @@ const Auth = () => {
         </div>
 
         {/* تحذير إذا وُجدت بيانات مصادقة مخزنة */}
-        {hasStoredAuth && (
+        {hasStoredAuth && !forceShowLoginForm && (
           <Alert className="mb-4 border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-amber-800">
@@ -154,11 +168,11 @@ const Auth = () => {
         )}
 
         {/* تحذير إذا كان المستخدم مسجل دخول */}
-        {isLoggedIn() && showForceLogin && (
-          <Alert className="mb-4 border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="text-amber-800">
-              أنت مسجل دخول بالفعل. إذا كنت تريد تسجيل الدخول بحساب آخر، يرجى إعادة تعيين البيانات أولاً.
+        {isLoggedIn() && (showForceLogin || forceShowLoginForm) && (
+          <Alert className="mb-4 border-red-200 bg-red-50">
+            <LogOut className="h-4 w-4" />
+            <AlertDescription className="text-red-800">
+              أنت مسجل دخول بالفعل كـ <strong>{user?.email}</strong>. لتسجيل الدخول بحساب آخر، يجب تسجيل الخروج أولاً.
             </AlertDescription>
           </Alert>
         )}
@@ -166,7 +180,9 @@ const Auth = () => {
         {/* Login Form */}
         <Card className="shadow-2xl border-0">
           <CardHeader>
-            <CardTitle className="text-center text-xl">تسجيل الدخول</CardTitle>
+            <CardTitle className="text-center text-xl">
+              {forceShowLoginForm ? 'تسجيل دخول جديد' : 'تسجيل الدخول'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -235,16 +251,29 @@ const Auth = () => {
 
             {/* خيارات إضافية */}
             <div className="mt-4 space-y-2">
-              {/* إذا وُجدت بيانات مخزنة أو كان المستخدم مسجل دخول، أظهر زر إعادة التعيين */}
-              {(hasStoredAuth || (isLoggedIn() && showForceLogin)) && (
+              {/* زر إجبار إظهار النموذج إذا كان المستخدم مسجل دخول */}
+              {isLoggedIn() && showForceLogin && !forceShowLoginForm && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleForceShowLogin}
+                  className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                  disabled={isSubmitting}
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  تسجيل دخول بحساب جديد
+                </Button>
+              )}
+
+              {/* زر إعادة التعيين الشامل */}
+              {(hasStoredAuth || isLoggedIn() || forceShowLoginForm) && (
                 <Button 
                   variant="outline" 
                   onClick={handleForceReset}
-                  className="w-full"
+                  className="w-full border-red-200 text-red-700 hover:bg-red-50"
                   disabled={isSubmitting}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  إعادة تعيين البيانات وتسجيل دخول جديد
+                  تسجيل خروج كامل وإعادة تعيين
                 </Button>
               )}
             </div>
@@ -260,10 +289,12 @@ const Auth = () => {
           <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
             <div>حالة التصحيح:</div>
             <div>• مستخدم: {user ? '✅' : '❌'}</div>
+            <div>• بريد المستخدم: {user?.email || 'غير موجود'}</div>
             <div>• تحميل: {loading ? '✅' : '❌'}</div>
             <div>• مسجل دخول: {isLoggedIn() ? '✅' : '❌'}</div>
             <div>• بيانات مخزنة: {hasStoredAuth ? '✅' : '❌'}</div>
             <div>• إظهار إجبار: {showForceLogin ? '✅' : '❌'}</div>
+            <div>• إجبار إظهار النموذج: {forceShowLoginForm ? '✅' : '❌'}</div>
           </div>
         )}
       </div>

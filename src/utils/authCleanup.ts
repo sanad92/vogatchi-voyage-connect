@@ -1,5 +1,5 @@
 
-// دالة تنظيف شاملة لبيانات المصادقة
+// دالة تنظيف شاملة وقوية لبيانات المصادقة
 export const cleanupAuthState = () => {
   console.log('🧹 بدء عملية تنظيف شاملة لبيانات المصادقة...');
   
@@ -39,10 +39,22 @@ export const cleanupAuthState = () => {
         if (name.includes('sb-') || 
             name.includes('supabase') || 
             name.startsWith('sb.')) {
+          // حذف cookie بتعيين تاريخ انتهاء في الماضي
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
           console.log('🍪 تم حذف cookie:', name);
         }
       });
+    }
+    
+    // تنظيف IndexedDB إذا وُجد
+    if (typeof indexedDB !== 'undefined') {
+      try {
+        indexedDB.deleteDatabase('supabase-auth');
+        console.log('🗄️ تم حذف IndexedDB للمصادقة');
+      } catch (error) {
+        console.log('ℹ️ IndexedDB للمصادقة غير موجود أو لا يمكن حذفه');
+      }
     }
     
     console.log('✅ تم الانتهاء من تنظيف بيانات المصادقة');
@@ -76,4 +88,15 @@ export const hasStoredAuthData = (): boolean => {
     console.error('خطأ في فحص بيانات المصادقة المخزنة:', error);
     return false;
   }
+};
+
+// دالة لتنظيف قوي وإعادة تحميل الصفحة
+export const forceAuthReset = () => {
+  console.log('🔄 إجبار إعادة تعيين المصادقة مع إعادة تحميل');
+  cleanupAuthState();
+  
+  // تأخير قصير ثم إعادة تحميل الصفحة
+  setTimeout(() => {
+    window.location.href = '/auth';
+  }, 500);
 };
