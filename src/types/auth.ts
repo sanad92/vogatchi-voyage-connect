@@ -4,17 +4,13 @@ import { User, Session } from '@supabase/supabase-js';
 export interface Profile {
   id: string;
   email: string;
-  full_name: string;
+  full_name: string | null;
   department: string | null;
   phone: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   employee_id?: string | null;
-}
-
-export interface UserRole {
-  role: 'admin' | 'manager' | 'sales_agent' | 'accountant' | 'viewer' | 'super_admin';
 }
 
 export interface AuthContextType {
@@ -32,4 +28,5 @@ export interface AuthContextType {
   canDelete: () => boolean;
   canEditAll: () => boolean;
   canManageSystemSettings: () => boolean;
+  forceResetAuth?: () => Promise<void>;
 }

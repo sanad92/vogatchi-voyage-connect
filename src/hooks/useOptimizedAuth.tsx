@@ -5,28 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AuthContextType, Profile } from '@/types/auth';
 import { useNavigate } from 'react-router-dom';
+import { cleanupAuthState, hasStoredAuthData } from '@/utils/authCleanup';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// دالة تنظيف شاملة لبيانات المصادقة
-const cleanupAuthState = () => {
-  console.log('🧹 Cleaning up auth state...');
-  
-  // إزالة جميع مفاتيح Supabase من localStorage
-  Object.keys(localStorage).forEach(key => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-      console.log('🗑️ Removed:', key);
-    }
-  });
-  
-  // إزالة من sessionStorage أيضاً
-  Object.keys(sessionStorage || {}).forEach(key => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-};
 
 export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -34,21 +15,24 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const [userRole, setUserRole] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [forceAuthCheck, setForceAuthCheck] = useState(false);
   const navigate = useNavigate();
 
-  console.log('🔐 Auth State:', { 
+  console.log('🔐 حالة المصادقة:', { 
     user: !!user, 
     profile: !!profile, 
     userRole, 
     loading,
     sessionExists: !!session,
-    sessionValid: session && !session.expires_at ? false : session ? new Date(session.expires_at * 1000) > new Date() : false
+    sessionValid: session && !session.expires_at ? false : session ? new Date(session.expires_at * 1000) > new Date() : false,
+    hasStoredData: hasStoredAuthData(),
+    forceAuthCheck
   });
 
   // دالة محسنة لجلب بيانات المستخدم
   const fetchUserData = async (userId: string) => {
     try {
-      console.log('📋 Fetching user data for ID:', userId);
+      console.log('📋 جلب بيانات المستخدم للمعرف:', userId);
       
       const [profileResult, roleResult] = await Promise.all([
         supabase
@@ -63,16 +47,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           .maybeSingle()
       ]);
 
-      console.log('📋 Profile result:', profileResult);
-      console.log('📋 Role result:', roleResult);
+      console.log('📋 نتيجة الملف الشخصي:', profileResult);
+      console.log('📋 نتيجة الدور:', roleResult);
 
       if (profileResult.error && profileResult.error.code !== 'PGRST116') {
-        console.error('❌ Profile fetch error:', profileResult.error);
+        console.error('❌ خطأ جلب الملف الشخصي:', profileResult.error);
         throw profileResult.error;
       }
 
       if (roleResult.error && roleResult.error.code !== 'PGRST116') {
-        console.error('❌ Role fetch error:', roleResult.error);
+        console.error('❌ خطأ جلب الدور:', roleResult.error);
         throw roleResult.error;
       }
 
@@ -99,37 +83,82 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  // التحقق من صحة الجلسة
+  // التحقق من صحة الجلسة مع فحوصات إضافية
   const isValidSession = (session: Session | null): boolean => {
-    if (!session) return false;
+    if (!session) {
+      console.log('❌ لا توجد جلسة');
+      return false;
+    }
+    
+    // التحقق من وجود access_token
+    if (!session.access_token) {
+      console.log('❌ لا يوجد access_token');
+      return false;
+    }
+    
+    // التحقق من وجود user
+    if (!session.user) {
+      console.log('❌ لا يوجد user في الجلسة');
+      return false;
+    }
     
     // التحقق من انتهاء صلاحية الجلسة
     if (session.expires_at) {
       const expiryTime = new Date(session.expires_at * 1000);
       const now = new Date();
-      if (expiryTime <= now) {
-        console.log('⏰ Session expired:', expiryTime, 'vs now:', now);
+      const isExpired = expiryTime <= now;
+      
+      if (isExpired) {
+        console.log('⏰ انتهت صلاحية الجلسة:', expiryTime, 'الآن:', now);
         return false;
       }
     }
     
-    return !!(session.access_token && session.user);
+    console.log('✅ الجلسة صالحة');
+    return true;
+  };
+
+  // دالة لإجبار إعادة تعيين الحالة
+  const forceResetAuth = async () => {
+    console.log('🔄 إجبار إعادة تعيين حالة المصادقة...');
+    
+    setLoading(true);
+    
+    // تنظيف البيانات المخزنة
+    cleanupAuthState();
+    
+    // إعادة تعيين الحالة المحلية
+    setUser(null);
+    setProfile(null);
+    setUserRole(null);
+    setSession(null);
+    setForceAuthCheck(true);
+    
+    try {
+      // محاولة تسجيل خروج عام
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (error) {
+      console.log('ℹ️ خطأ في تسجيل الخروج العام (متوقع):', error);
+    }
+    
+    setLoading(false);
+    console.log('✅ تم إعادة تعيين حالة المصادقة');
   };
 
   // إعداد مراقب المصادقة محسن
   useEffect(() => {
     let mounted = true;
-    console.log('🚀 Setting up auth listener...');
+    console.log('🚀 إعداد مراقب المصادقة...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('🔄 Auth state changed:', event, !!session);
+        console.log('🔄 تغيرت حالة المصادقة:', event, !!session);
         
         // التحقق من صحة الجلسة
         const validSession = isValidSession(session);
-        console.log('✅ Session valid:', validSession);
+        console.log('✅ صحة الجلسة:', validSession);
         
         if (validSession && session) {
           setSession(session);
@@ -144,8 +173,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           }
         } else {
           // جلسة غير صالحة أو منتهية الصلاحية
-          console.log('🧹 Invalid session, cleaning up...');
-          cleanupAuthState();
+          console.log('🧹 جلسة غير صالحة، تنظيف...');
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -159,26 +187,34 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     // فحص الجلسة الحالية مع التحقق من الصلاحية
     const checkCurrentSession = async () => {
       try {
+        // إذا كان هناك إجبار للفحص، تخطي فحص الجلسة الحالية
+        if (forceAuthCheck) {
+          console.log('🔄 تم إجبار إعادة فحص المصادقة');
+          setForceAuthCheck(false);
+          setLoading(false);
+          return;
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ Session check error:', error);
+          console.error('❌ خطأ فحص الجلسة:', error);
           cleanupAuthState();
           setLoading(false);
           return;
         }
         
-        console.log('🔍 Initial session check:', !!session);
+        console.log('🔍 فحص الجلسة الأولي:', !!session);
         
         const validSession = isValidSession(session);
-        console.log('✅ Initial session valid:', validSession);
+        console.log('✅ صحة الجلسة الأولية:', validSession);
         
         if (validSession && session) {
           setSession(session);
           setUser(session.user);
           fetchUserData(session.user.id);
         } else {
-          console.log('🧹 No valid session found, cleaning up...');
+          console.log('🧹 لا توجد جلسة صالحة، تنظيف...');
           cleanupAuthState();
           setSession(null);
           setUser(null);
@@ -188,7 +224,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         
         setLoading(false);
       } catch (error) {
-        console.error('❌ Session check failed:', error);
+        console.error('❌ فشل فحص الجلسة:', error);
         cleanupAuthState();
         setSession(null);
         setUser(null);
@@ -204,12 +240,12 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [forceAuthCheck]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log('🔐 Attempting sign in for:', email);
+      console.log('🔐 محاولة تسجيل الدخول لـ:', email);
       
       // تنظيف أي بيانات مصادقة سابقة
       cleanupAuthState();
@@ -218,7 +254,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        console.log('ℹ️ Global signout failed (expected):', err);
+        console.log('ℹ️ فشل تسجيل الخروج العام (متوقع):', err);
       }
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -227,7 +263,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       });
       
       if (error) {
-        console.error('❌ Sign in error:', error);
+        console.error('❌ خطأ تسجيل الدخول:', error);
         let errorMessage = 'فشل في تسجيل الدخول';
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
@@ -235,7 +271,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         throw new Error(errorMessage);
       }
       
-      console.log('✅ Sign in successful');
+      console.log('✅ نجح تسجيل الدخول');
       // التوجيه إلى /dashboard بدلاً من /
       navigate('/dashboard');
       return { error: null };
@@ -251,7 +287,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const signOut = async () => {
     try {
       setLoading(true);
-      console.log('🚪 Signing out...');
+      console.log('🚪 تسجيل الخروج...');
       
       // تنظيف البيانات أولاً
       cleanupAuthState();
@@ -260,7 +296,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        console.log('ℹ️ Signout error (ignoring):', err);
+        console.log('ℹ️ خطأ تسجيل الخروج (تجاهل):', err);
       }
       
       // تنظيف الحالة المحلية
@@ -303,7 +339,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const isLoggedIn = (): boolean => {
     const validSession = isValidSession(session);
     const loggedIn = !!(user && validSession);
-    console.log('🔍 Is logged in check:', loggedIn, { 
+    console.log('🔍 فحص تسجيل الدخول:', loggedIn, { 
       user: !!user, 
       session: !!session, 
       validSession,
@@ -327,7 +363,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     isLoggedIn,
     canDelete: () => ['super_admin', 'admin', 'manager'].includes(userRole || ''),
     canEditAll: () => ['super_admin', 'admin'].includes(userRole || ''),
-    canManageSystemSettings: () => userRole === 'super_admin'
+    canManageSystemSettings: () => userRole === 'super_admin',
+    forceResetAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,109 +1,124 @@
 
-import { LogOut } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, LogOut, User } from "lucide-react";
 import { mainNavItems, businessNavItems, communicationNavItems, adminNavItems } from "./NavigationItems";
-import NavLink from "./NavLink";
-import { useAuth } from "@/hooks/useAuth";
-import { User } from "@supabase/supabase-js";
-import { Location } from "react-router-dom";
+import PermissionNavLink from "./PermissionNavLink";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 interface MobileNavigationProps {
-  isOpen: boolean;
   userRole: string | null;
   hasRole: (role: string) => boolean;
-  location: Location;
-  user: User;
-  signOut: () => Promise<void>;
 }
 
-const MobileNavigation = ({ isOpen, userRole, hasRole, location, user, signOut }: MobileNavigationProps) => {
-  const { isSuperAdmin } = useAuth();
+const MobileNavigation = ({ userRole, hasRole }: MobileNavigationProps) => {
+  const [open, setOpen] = useState(false);
+  const { isSuperAdmin, signOut, user, profile } = useOptimizedAuth();
 
-  if (!isOpen) return null;
-
-  const handleClose = () => {
-    // This would need to be passed from parent, but for now we'll handle it differently
+  const handleSignOut = async () => {
+    if (window.confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+      setOpen(false);
+      await signOut();
+    }
   };
 
   return (
-    <div className="lg:hidden py-4 border-t bg-white">
-      <div className="space-y-2">
-        {/* User Info */}
-        <div className="px-3 py-2 text-sm text-gray-600 border-b">
-          مرحباً، {user.email}
-        </div>
-
-        {/* Main Navigation */}
-        <div className="space-y-1">
-          <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-            العمليات الرئيسية
-          </div>
-          {mainNavItems.map((item) => (
-            <NavLink 
-              key={item.to} 
-              item={{...item, allowedRoles: item.allowedRoles || []}}
-              onClick={handleClose} 
-            />
-          ))}
-        </div>
-
-        {/* Business Navigation */}
-        <div className="space-y-1 border-t pt-2">
-          <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-            إدارة الأعمال
-          </div>
-          {businessNavItems.map((item) => (
-            <NavLink 
-              key={item.to} 
-              item={{...item, allowedRoles: item.allowedRoles || []}}
-              onClick={handleClose} 
-            />
-          ))}
-        </div>
-
-        {/* Communication Navigation */}
-        <div className="space-y-1 border-t pt-2">
-          <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-            التواصل والتقارير
-          </div>
-          {communicationNavItems.map((item) => (
-            <NavLink 
-              key={item.to} 
-              item={{...item, allowedRoles: item.allowedRoles || []}}
-              onClick={handleClose} 
-            />
-          ))}
-        </div>
-
-        {/* Admin Settings - Only for Super Admin */}
-        {isSuperAdmin() && (
-          <div className="space-y-1 border-t pt-2">
-            <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">
-              إعدادات النظام
+    <div className="md:hidden">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-80">
+          <div className="flex flex-col h-full">
+            {/* User Info */}
+            <div className="flex items-center gap-3 p-4 border-b mb-4">
+              <User className="h-8 w-8 text-gray-600" />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">
+                  {profile?.full_name || user?.email?.split('@')[0] || 'مستخدم'}
+                </div>
+                {userRole && (
+                  <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mt-1 inline-block">
+                    {userRole}
+                  </div>
+                )}
+              </div>
             </div>
-            {adminNavItems.map((item) => (
-              <NavLink 
-                key={item.to} 
-                item={{...item, allowedRoles: item.allowedRoles || []}}
-                onClick={handleClose} 
-              />
-            ))}
-          </div>
-        )}
 
-        {/* Sign Out */}
-        <div className="border-t pt-2">
-          <button
-            onClick={() => {
-              signOut();
-              handleClose();
-            }}
-            className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full"
-          >
-            <LogOut className="h-5 w-5" />
-            تسجيل خروج
-          </button>
-        </div>
-      </div>
+            {/* Navigation Items */}
+            <nav className="flex-1 space-y-2">
+              {/* Main Navigation */}
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium text-gray-500 px-2 mb-2">القائمة الرئيسية</h3>
+                {mainNavItems.map((item) => (
+                  <PermissionNavLink 
+                    key={item.to} 
+                    item={item} 
+                    onClick={() => setOpen(false)}
+                    className="block w-full"
+                  />
+                ))}
+              </div>
+
+              {/* Business Navigation */}
+              <div className="space-y-1 pt-4">
+                <h3 className="text-sm font-medium text-gray-500 px-2 mb-2">العمليات</h3>
+                {businessNavItems.map((item) => (
+                  <PermissionNavLink 
+                    key={item.to} 
+                    item={item} 
+                    onClick={() => setOpen(false)}
+                    className="block w-full"
+                  />
+                ))}
+              </div>
+
+              {/* Communication Navigation */}
+              <div className="space-y-1 pt-4">
+                <h3 className="text-sm font-medium text-gray-500 px-2 mb-2">التواصل</h3>
+                {communicationNavItems.map((item) => (
+                  <PermissionNavLink 
+                    key={item.to} 
+                    item={item} 
+                    onClick={() => setOpen(false)}
+                    className="block w-full"
+                  />
+                ))}
+              </div>
+
+              {/* Admin Settings - Only for Super Admin */}
+              {isSuperAdmin() && (
+                <div className="space-y-1 pt-4">
+                  <h3 className="text-sm font-medium text-gray-500 px-2 mb-2">الإدارة</h3>
+                  {adminNavItems.map((item) => (
+                    <PermissionNavLink 
+                      key={item.to} 
+                      item={item} 
+                      onClick={() => setOpen(false)}
+                      className="block w-full"
+                    />
+                  ))}
+                </div>
+              )}
+            </nav>
+
+            {/* Logout Button */}
+            <div className="border-t pt-4 mt-4">
+              <Button
+                variant="ghost"
+                onClick={handleSignOut}
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                تسجيل الخروج
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
