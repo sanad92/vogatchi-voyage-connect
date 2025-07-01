@@ -1,36 +1,28 @@
 
 import { ReactNode } from 'react';
-import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 
-type PermissionKey = keyof Omit<import('@/hooks/useUserPermissionsManagement').DetailedUserPermissions, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
-
 interface PermissionGateProps {
   children: ReactNode;
-  permission?: PermissionKey;
-  permissions?: PermissionKey[];
-  requireAll?: boolean;
+  requiredRole?: string;
   fallback?: ReactNode;
   showMessage?: boolean;
 }
 
 const PermissionGate = ({ 
   children, 
-  permission, 
-  permissions = [], 
-  requireAll = false,
+  requiredRole,
   fallback,
   showMessage = true 
 }: PermissionGateProps) => {
-  const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissionCheck();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
 
-  let hasAccess = false;
+  let hasAccess = true;
 
-  if (permission) {
-    hasAccess = hasPermission(permission);
-  } else if (permissions.length > 0) {
-    hasAccess = requireAll ? hasAllPermissions(permissions) : hasAnyPermission(permissions);
+  if (requiredRole) {
+    hasAccess = hasRole(requiredRole) || isSuperAdmin();
   }
 
   if (!hasAccess) {

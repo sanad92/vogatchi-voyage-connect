@@ -1,7 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
-import { usePermissionCheck } from "@/hooks/usePermissionCheck";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 interface NavItem {
@@ -20,8 +19,7 @@ interface PermissionNavLinkProps {
 
 const PermissionNavLink = ({ item, onClick, className }: PermissionNavLinkProps) => {
   const location = useLocation();
-  const { hasAnyPermission } = usePermissionCheck();
-  const { isSuperAdmin } = useOptimizedAuth();
+  const { isSuperAdmin, hasRole } = useOptimizedAuth();
   
   const isActiveLink = (to: string) => {
     if (to === '/') {
@@ -35,11 +33,11 @@ const PermissionNavLink = ({ item, onClick, className }: PermissionNavLinkProps)
     // السوبر أدمن له صلاحية على كل شيء
     if (isSuperAdmin()) return true;
     
-    // إذا لم تكن هناك صلاحيات مطلوبة، اسمح بالوصول
-    if (!item.requiredPermissions || item.requiredPermissions.length === 0) return true;
+    // إذا لم تكن هناك أدوار مطلوبة، اسمح بالوصول
+    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
     
-    // تحقق من وجود أي من الصلاحيات المطلوبة
-    return hasAnyPermission(item.requiredPermissions as any[]);
+    // تحقق من وجود أي من الأدوار المطلوبة
+    return item.allowedRoles.some(role => hasRole(role));
   };
 
   // إذا لم تكن هناك صلاحية، لا تظهر الرابط

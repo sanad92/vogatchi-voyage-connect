@@ -1,19 +1,16 @@
 
-import { useAuth } from '@/hooks/useAuth';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: string;
-  requiredPermission?: string;
 }
 
-const ProtectedRoute = ({ children, requiredRole, requiredPermission }: ProtectedRouteProps) => {
-  const { user, userRole, profile, loading, hasRole, isSuperAdmin } = useAuth();
-  const { permissions, isLoading: permissionsLoading } = useUserPermissions();
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  const { user, userRole, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useOptimizedAuth();
 
-  if (loading || permissionsLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
@@ -24,7 +21,7 @@ const ProtectedRoute = ({ children, requiredRole, requiredPermission }: Protecte
     );
   }
 
-  if (!user) {
+  if (!isLoggedIn()) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -76,22 +73,6 @@ const ProtectedRoute = ({ children, requiredRole, requiredPermission }: Protecte
         </div>
       </div>
     );
-  }
-
-  // التحقق من الصلاحية التفصيلية المطلوبة
-  if (requiredPermission && permissions && !isSuperAdmin()) {
-    const hasPermission = permissions[requiredPermission as keyof typeof permissions];
-    if (!hasPermission) {
-      return (
-        <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">ليس لديك صلاحية للوصول</h2>
-            <p className="text-gray-600 mb-4">عذراً، لا تملك الصلاحية التفصيلية المطلوبة لعرض هذه الصفحة.</p>
-            <p className="text-sm text-gray-500">الصلاحية المطلوبة: {requiredPermission}</p>
-          </div>
-        </div>
-      );
-    }
   }
 
   return <>{children}</>;
