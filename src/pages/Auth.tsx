@@ -6,109 +6,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, LogIn, RefreshCw, AlertTriangle, LogOut } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { hasStoredAuthData, cleanupAuthState, forceAuthReset } from '@/utils/authCleanup';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { useState } from 'react';
 
 const Auth = () => {
-  const { user, loading, signIn, isLoggedIn, forceResetAuth } = useOptimizedAuth();
+  const { user, loading, signIn, isLoggedIn } = useOptimizedAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForceLogin, setShowForceLogin] = useState(false);
-  const [hasStoredAuth, setHasStoredAuth] = useState(false);
-  const [forceShowLoginForm, setForceShowLoginForm] = useState(false);
 
-  console.log('🔐 صفحة Auth - المستخدم:', !!user, 'التحميل:', loading, 'مسجل دخول:', isLoggedIn());
-
-  // التحقق من وجود بيانات مصادقة مخزنة
-  useEffect(() => {
-    const checkStoredAuth = () => {
-      const hasStored = hasStoredAuthData();
-      setHasStoredAuth(hasStored);
-      console.log('🔍 فحص البيانات المخزنة:', hasStored);
-      
-      // إذا وُجدت بيانات مخزنة ولكن المستخدم ليس مسجل دخول، أظهر خيار إجبار تسجيل الدخول
-      if (hasStored && !isLoggedIn() && !loading) {
-        setShowForceLogin(true);
-      }
-    };
-    
-    checkStoredAuth();
-    
-    // فحص دوري كل ثانية
-    const interval = setInterval(checkStoredAuth, 1000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn, loading]);
-
-  // دالة لإجبار تسجيل الخروج وإعادة التعيين
-  const handleForceReset = async () => {
-    console.log('🔄 إجبار إعادة تعيين المصادقة');
-    setShowForceLogin(false);
-    setForceShowLoginForm(true);
-    
-    try {
-      // استخدام forceResetAuth أولاً
-      if (forceResetAuth) {
-        await forceResetAuth();
-      }
-      
-      // ثم تنظيف شامل
-      cleanupAuthState();
-      
-      // إعادة تعيين الحالات المحلية
-      setEmail('');
-      setPassword('');
-      setError('');
-      
-    } catch (error) {
-      console.error('خطأ في إعادة التعيين:', error);
-      // إعادة تحميل الصفحة كحل أخير
-      forceAuthReset();
-    }
-  };
-
-  // دالة لإجبار إظهار نموذج تسجيل الدخول
-  const handleForceShowLogin = () => {
-    setForceShowLoginForm(true);
-    setShowForceLogin(false);
-  };
-
-  // فحص تسجيل الدخول مع delay للتأكد من انتهاء التحميل
-  useEffect(() => {
-    if (!loading && isLoggedIn() && !showForceLogin && !forceShowLoginForm) {
-      // تأخير صغير للتأكد من انتهاء جميع العمليات
-      const redirectTimer = setTimeout(() => {
-        console.log('✅ المستخدم مصادق عليه، التحويل إلى الداشبورد');
-        // التحويل إلى الداشبورد
-      }, 100);
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [user, loading, isLoggedIn, showForceLogin, forceShowLoginForm]);
-
-  // إذا كان المستخدم مسجل دخول ولا نُظهر خيار إجبار تسجيل الدخول ولا نجبر إظهار النموذج
-  if (isLoggedIn() && !showForceLogin && !loading && !forceShowLoginForm) {
+  // إذا كان المستخدم مسجل دخول، توجهه للداشبورد
+  if (isLoggedIn() && !loading) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (loading && !showForceLogin && !forceShowLoginForm) {
+  // شاشة التحميل
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">جاري التحميل...</p>
-          <Button 
-            variant="outline" 
-            onClick={handleForceReset}
-            className="mt-4"
-            size="sm"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            إعادة تعيين إجبارية
-          </Button>
         </div>
       </div>
     );
@@ -119,8 +39,6 @@ const Auth = () => {
     setError('');
     setIsSubmitting(true);
 
-    console.log('🔐 محاولة تسجيل الدخول بالبريد الإلكتروني:', email);
-
     if (!email || !password) {
       setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       setIsSubmitting(false);
@@ -130,15 +48,9 @@ const Auth = () => {
     try {
       const result = await signIn(email.trim().toLowerCase(), password);
       if (result.error) {
-        console.error('❌ فشل تسجيل الدخول:', result.error);
         setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
-      } else {
-        // إخفاء خيار إجبار تسجيل الدخول عند نجاح التسجيل
-        setShowForceLogin(false);
-        setForceShowLoginForm(false);
       }
     } catch (error) {
-      console.error('❌ خطأ تسجيل الدخول:', error);
       setError('حدث خطأ في تسجيل الدخول');
     } finally {
       setIsSubmitting(false);
@@ -157,32 +69,10 @@ const Auth = () => {
           <p className="text-gray-600">نظام إدارة علاقات العملاء</p>
         </div>
 
-        {/* تحذير إذا وُجدت بيانات مصادقة مخزنة */}
-        {hasStoredAuth && !forceShowLoginForm && (
-          <Alert className="mb-4 border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="text-amber-800">
-              تم العثور على بيانات تسجيل دخول مخزنة. إذا كنت تواجه مشاكل، يرجى إعادة تعيين البيانات.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* تحذير إذا كان المستخدم مسجل دخول */}
-        {isLoggedIn() && (showForceLogin || forceShowLoginForm) && (
-          <Alert className="mb-4 border-red-200 bg-red-50">
-            <LogOut className="h-4 w-4" />
-            <AlertDescription className="text-red-800">
-              أنت مسجل دخول بالفعل كـ <strong>{user?.email}</strong>. لتسجيل الدخول بحساب آخر، يجب تسجيل الخروج أولاً.
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Login Form */}
         <Card className="shadow-2xl border-0">
           <CardHeader>
-            <CardTitle className="text-center text-xl">
-              {forceShowLoginForm ? 'تسجيل دخول جديد' : 'تسجيل الدخول'}
-            </CardTitle>
+            <CardTitle className="text-center text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -249,54 +139,11 @@ const Auth = () => {
               </Button>
             </form>
 
-            {/* خيارات إضافية */}
-            <div className="mt-4 space-y-2">
-              {/* زر إجبار إظهار النموذج إذا كان المستخدم مسجل دخول */}
-              {isLoggedIn() && showForceLogin && !forceShowLoginForm && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleForceShowLogin}
-                  className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
-                  disabled={isSubmitting}
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  تسجيل دخول بحساب جديد
-                </Button>
-              )}
-
-              {/* زر إعادة التعيين الشامل */}
-              {(hasStoredAuth || isLoggedIn() || forceShowLoginForm) && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleForceReset}
-                  className="w-full border-red-200 text-red-700 hover:bg-red-50"
-                  disabled={isSubmitting}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  تسجيل خروج كامل وإعادة تعيين
-                </Button>
-              )}
-            </div>
-
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>نظام محمي - للموظفين المصرح لهم فقط</p>
             </div>
           </CardContent>
         </Card>
-
-        {/* معلومات debug في وضع التطوير */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
-            <div>حالة التصحيح:</div>
-            <div>• مستخدم: {user ? '✅' : '❌'}</div>
-            <div>• بريد المستخدم: {user?.email || 'غير موجود'}</div>
-            <div>• تحميل: {loading ? '✅' : '❌'}</div>
-            <div>• مسجل دخول: {isLoggedIn() ? '✅' : '❌'}</div>
-            <div>• بيانات مخزنة: {hasStoredAuth ? '✅' : '❌'}</div>
-            <div>• إظهار إجبار: {showForceLogin ? '✅' : '❌'}</div>
-            <div>• إجبار إظهار النموذج: {forceShowLoginForm ? '✅' : '❌'}</div>
-          </div>
-        )}
       </div>
     </div>
   );
