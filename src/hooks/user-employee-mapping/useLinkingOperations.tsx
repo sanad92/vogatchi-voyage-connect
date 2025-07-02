@@ -1,12 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useOptimizedAuth } from '../useOptimizedAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { LinkUserToEmployeeResponse } from '../unified-data/types';
 
 export const useLinkingOperations = (refetchCurrentEmployee: () => Promise<void>) => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
 
   // ربط مستخدم بموظف باستخدام الدالة المحسنة

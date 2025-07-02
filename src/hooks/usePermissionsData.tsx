@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 
 export interface PermissionGroup {
   id: string;
@@ -23,7 +23,7 @@ export interface PermissionDetail {
 }
 
 export const usePermissionsData = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   // جلب مجموعات الصلاحيات
   const { data: permissionGroups } = useQuery({

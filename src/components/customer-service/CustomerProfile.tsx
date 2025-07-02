@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { User, Phone, Mail, MapPin, Calendar, MessageSquare, FileText, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useCustomerService } from '@/hooks/useCustomerService';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { CustomerNote, CustomerCommunication } from '@/types/customerService';
 
 interface CustomerProfileProps {
@@ -16,7 +16,7 @@ interface CustomerProfileProps {
 }
 
 const CustomerProfile = ({ customer, onUpdate }: CustomerProfileProps) => {
-  const { profile } = useAuth();
+  const { profile } = useOptimizedAuth();
   const { addNote, addCommunication } = useCustomerService();
   const [newNote, setNewNote] = useState('');
   const [noteType, setNoteType] = useState<CustomerNote['note_type']>('general');

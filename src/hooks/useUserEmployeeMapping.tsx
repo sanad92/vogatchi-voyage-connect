@@ -1,10 +1,10 @@
 
 import { useCurrentEmployeeFetch } from './user-employee-mapping/useCurrentEmployeeFetch';
 import { useLinkingOperations } from './user-employee-mapping/useLinkingOperations';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 
 export const useUserEmployeeMapping = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
   const {
     currentEmployee,
     isLoading,

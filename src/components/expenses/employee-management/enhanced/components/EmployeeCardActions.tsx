@@ -22,7 +22,7 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 interface EmployeeCardActionsProps {
   employee: {
@@ -54,7 +54,7 @@ const EmployeeCardActions = ({
   canDelete,
   canEdit
 }: EmployeeCardActionsProps) => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
 
   return (
     <div className="flex items-center gap-2">

@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import SiteSettings from '@/components/admin/SiteSettings';
 
 const SiteCustomization = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
 
   if (!isSuperAdmin()) {
     return (

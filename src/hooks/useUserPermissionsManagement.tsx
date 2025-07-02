@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 
 export interface DetailedUserPermissions {
   id: string;
@@ -71,7 +71,7 @@ export interface AllUserPermissions extends DetailedUserPermissions {
 }
 
 export const useUserPermissionsManagement = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
   const queryClient = useQueryClient();
 
   // جلب صلاحيات جميع المستخدمين

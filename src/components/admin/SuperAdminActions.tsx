@@ -20,7 +20,7 @@ import {
   AlertTriangle,
   Crown
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 interface SuperAdminActionsProps {
   onEdit?: () => void;
@@ -41,7 +41,7 @@ const SuperAdminActions = ({
   showDeleteButton = true,
   className = ""
 }: SuperAdminActionsProps) => {
-  const { isSuperAdmin, canEditAll, canDelete } = useAuth();
+  const { isSuperAdmin, canEditAll, canDelete } = useOptimizedAuth();
 
   // عرض المكون فقط للسوبر أدمن
   if (!isSuperAdmin()) {

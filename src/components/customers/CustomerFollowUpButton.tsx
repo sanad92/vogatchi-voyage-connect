@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { CheckCircle, MessageCircle, Clock } from "lucide-react";
 
 interface CustomerFollowUpButtonProps {
@@ -24,7 +24,7 @@ const CustomerFollowUpButton = ({
   const [isOpen, setIsOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
 
   const handleFollowUp = async () => {
     if (!user?.id) {

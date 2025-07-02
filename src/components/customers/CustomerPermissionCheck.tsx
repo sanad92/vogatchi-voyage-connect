@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserPlus, X, RefreshCw, Crown } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 interface CustomerPermissionCheckProps {
   userRole: string | null;
@@ -10,7 +10,7 @@ interface CustomerPermissionCheckProps {
 }
 
 const CustomerPermissionCheck = ({ userRole, onCancel }: CustomerPermissionCheckProps) => {
-  const { user, profile, hasRole, isSuperAdmin } = useAuth();
+  const { user, profile, hasRole, isSuperAdmin } = useOptimizedAuth();
   
   console.log('🚫 عرض رسالة عدم وجود صلاحيات:', { 
     userRole,

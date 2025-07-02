@@ -1,14 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useOptimizedAuth } from '../useOptimizedAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { CurrentEmployeeData } from './types';
 import type { LinkUserToEmployeeResponse } from '../unified-data/types';
 
 export const useCurrentEmployeeFetch = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
   const [currentEmployee, setCurrentEmployee] = useState<CurrentEmployeeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

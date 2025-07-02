@@ -2,10 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Shield } from 'lucide-react';
 import EmployeeManagement from '@/components/expenses/EmployeeManagement';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 const EnhancedEmployeesPage = () => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
 
   return (
     <div className="container mx-auto p-6 space-y-8">

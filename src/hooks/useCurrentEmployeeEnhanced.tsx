@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUserEmployeeMapping } from './useUserEmployeeMapping';
-import { useAuth } from './useAuth';
+import { useOptimizedAuth } from './useOptimizedAuth';
 
 interface EnhancedCurrentEmployee {
   id: string;
@@ -14,7 +14,7 @@ interface EnhancedCurrentEmployee {
 }
 
 export const useCurrentEmployeeEnhanced = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
   const { currentEmployee, isLoading, error } = useUserEmployeeMapping();
   const [enhancedEmployee, setEnhancedEmployee] = useState<EnhancedCurrentEmployee | null>(null);
 

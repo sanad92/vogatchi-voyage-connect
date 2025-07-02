@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useEmployeeActions } from '@/hooks/useEmployeeActions';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import ToggleEmployeeStatusDialog from '@/components/expenses/employee-management/dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '@/components/expenses/employee-management/dialogs/DeleteEmployeeDialog';
 
@@ -33,7 +33,7 @@ const UnifiedUserCardEnhanced = ({
   isLinking, 
   isUnlinking 
 }: UnifiedUserCardEnhancedProps) => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
   const { 
     isLoading, 
     toggleEmployeeStatus, 

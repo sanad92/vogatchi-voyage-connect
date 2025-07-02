@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Shield } from 'lucide-react';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
@@ -15,7 +15,7 @@ import PermissionsManagement from '@/components/admin/PermissionsManagement';
 import EnhancedAdminTabs from '@/components/admin/EnhancedAdminTabs';
 
 const AdminSettings = () => {
-  const { hasRole, isSuperAdmin } = useAuth();
+  const { hasRole, isSuperAdmin } = useOptimizedAuth();
   const [activeTab, setActiveTab] = useState('unified-management');
 
   if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {

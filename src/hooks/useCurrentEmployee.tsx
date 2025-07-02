@@ -1,10 +1,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 export const useCurrentEmployee = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
 
   const { data: currentEmployee, isLoading, error } = useQuery({
     queryKey: ['current-employee', user?.id],

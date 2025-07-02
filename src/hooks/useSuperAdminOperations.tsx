@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
 
 interface DeleteOptions {
@@ -13,7 +13,7 @@ interface DeleteOptions {
 
 export const useSuperAdminOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { isSuperAdmin, user } = useAuth();
+  const { isSuperAdmin, user } = useOptimizedAuth();
 
   // دالة عامة لحذف أي عنصر
   const deleteItem = async ({ table, id, itemName, itemType }: DeleteOptions) => {

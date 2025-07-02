@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Phone, MessageSquare, User, AlertCircle, Star, Crown } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { getFollowUpTypeLabel, getPriorityColor, getCustomerValueColor, getCustomerValueLabel } from '@/types/customerService';
 
 interface FollowUpCardProps {
@@ -16,7 +16,7 @@ interface FollowUpCardProps {
 }
 
 const FollowUpCard = ({ followUp, onUpdate, onCommunicate }: FollowUpCardProps) => {
-  const { profile } = useAuth();
+  const { profile } = useOptimizedAuth();
   const [notes, setNotes] = useState(followUp.notes || '');
   const [isExpanded, setIsExpanded] = useState(false);
 

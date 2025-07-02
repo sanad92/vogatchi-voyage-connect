@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useCustomerValidation } from "./useCustomerValidation";
 
 interface CustomerData {
@@ -35,7 +35,7 @@ export const useCustomerSubmission = ({
   isEditMode = false,
   customerId 
 }: UseCustomerSubmissionProps) => {
-  const { userRole, user } = useAuth();
+  const { userRole, user } = useOptimizedAuth();
   const { checkDuplicatePhone } = useCustomerValidation();
 
   const submitCustomer = async (data: CustomerData) => {

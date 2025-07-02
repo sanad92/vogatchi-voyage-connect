@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useAuthState } from "@/hooks/useAuthState";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useCRM } from "@/hooks/useCRM";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MainStatsCards from "@/components/dashboard/MainStatsCards";
@@ -14,7 +14,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Index = () => {
-  const { user } = useAuthState();
+  const { user } = useOptimizedAuth();
   const { customerSegments } = useCRM();
   const { realStats, customers, isLoading, error } = useRealTimeStats();
 

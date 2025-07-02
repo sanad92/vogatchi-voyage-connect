@@ -1,10 +1,10 @@
 
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useUnifiedUsersQuery, useUnlinkedEmployeesQuery } from './queries';
 import { useLinkUserToEmployeeMutation, useUnlinkUserFromEmployeeMutation } from './mutations';
 
 export const useUnifiedData = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
   
   // Queries
   const {

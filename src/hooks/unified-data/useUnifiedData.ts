@@ -1,12 +1,12 @@
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useUnifiedUsersQuery, useUnlinkedEmployeesQuery } from './queries';
 import { useLinkingMutations } from './mutations';
 import { toast } from 'sonner';
 
 export const useUnifiedData = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useOptimizedAuth();
   const queryClient = useQueryClient();
   const isSuperAdminUser = isSuperAdmin();
 

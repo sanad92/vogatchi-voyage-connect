@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -16,7 +16,7 @@ interface EmployeeActionResponse {
 
 export const useEmployeeActions = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { isSuperAdmin, hasRole } = useAuth();
+  const { isSuperAdmin, hasRole } = useOptimizedAuth();
   const queryClient = useQueryClient();
 
   // تحديد الصلاحيات
