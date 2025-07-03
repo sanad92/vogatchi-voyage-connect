@@ -2766,6 +2766,108 @@ export type Database = {
           },
         ]
       }
+      landing_content: {
+        Row: {
+          background_image_url: string | null
+          badge_text: string | null
+          button_link: string | null
+          button_text: string | null
+          content: string
+          created_at: string | null
+          icon_name: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          layout_config: Json | null
+          order_index: number | null
+          section: string
+          section_type: string | null
+          style_config: Json | null
+          subtitle: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          background_image_url?: string | null
+          badge_text?: string | null
+          button_link?: string | null
+          button_text?: string | null
+          content: string
+          created_at?: string | null
+          icon_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          layout_config?: Json | null
+          order_index?: number | null
+          section: string
+          section_type?: string | null
+          style_config?: Json | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          background_image_url?: string | null
+          badge_text?: string | null
+          button_link?: string | null
+          button_text?: string | null
+          content?: string
+          created_at?: string | null
+          icon_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          layout_config?: Json | null
+          order_index?: number | null
+          section?: string
+          section_type?: string | null
+          style_config?: Json | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      landing_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          file_size: number | null
+          id: string
+          image_name: string
+          image_url: string
+          is_active: boolean | null
+          mime_type: string | null
+          section: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          id?: string
+          image_name: string
+          image_url: string
+          is_active?: boolean | null
+          mime_type?: string | null
+          section?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          id?: string
+          image_name?: string
+          image_url?: string
+          is_active?: boolean | null
+          mime_type?: string | null
+          section?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       loyalty_rewards: {
         Row: {
           created_at: string
