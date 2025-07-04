@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { AuthContextType, Profile } from '@/types/auth';
 import { useNavigate } from 'react-router-dom';
 import { cleanupAuthState } from '@/utils/authCleanup';
+import { errorManager } from '@/utils/errorManager';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -40,7 +41,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setUserRole(roleResult.data?.role || 'viewer');
       
     } catch (error) {
-      console.error('خطأ في جلب بيانات المستخدم:', error);
+      errorManager.error('Auth', 'خطأ في جلب بيانات المستخدم', error, false);
       setUserRole('viewer');
     }
   };
@@ -107,7 +108,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         
         setLoading(false);
       } catch (error) {
-        console.error('خطأ في فحص الجلسة:', error);
+        errorManager.error('Auth', 'خطأ في فحص الجلسة', error, false);
         setLoading(false);
       }
     };
@@ -138,13 +139,13 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           : error.message);
       }
       
-      toast.success('تم تسجيل الدخول بنجاح');
+      errorManager.success('تم تسجيل الدخول بنجاح');
       navigate('/dashboard');
       return { error: null };
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
-      toast.error(errorMessage);
+      errorManager.error('Auth', errorMessage, error);
       return { error };
     } finally {
       setLoading(false);
@@ -166,14 +167,14 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setUserRole(null);
       setSession(null);
       
-      toast.success('تم تسجيل الخروج بنجاح');
+      errorManager.success('تم تسجيل الخروج بنجاح');
       
       setTimeout(() => {
         window.location.href = '/auth';
       }, 500);
       
     } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
+      errorManager.error('Auth', 'خطأ في تسجيل الخروج', error, false);
       window.location.href = '/auth';
     } finally {
       setLoading(false);

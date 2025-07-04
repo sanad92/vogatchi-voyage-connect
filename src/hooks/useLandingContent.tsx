@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { errorManager } from '@/utils/errorManager';
 
 export interface LandingContent {
   id: string;
@@ -46,7 +46,7 @@ export const useLandingContent = () => {
         .order('order_index', { ascending: true });
       
       if (error) {
-        console.error('خطأ في جلب محتوى الصفحة:', error);
+        errorManager.error('LandingContent', 'خطأ في جلب محتوى الصفحة', error, false);
         throw error;
       }
       
@@ -63,7 +63,7 @@ export const useLandingContent = () => {
         .select('*');
       
       if (error) {
-        console.error('خطأ في جلب إعدادات الموقع:', error);
+        errorManager.error('LandingContent', 'خطأ في جلب إعدادات الموقع', error, false);
         throw error;
       }
       
@@ -84,11 +84,10 @@ export const useLandingContent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['landing-content'] });
-      toast.success('تم تحديث المحتوى بنجاح');
+      errorManager.success('تم تحديث المحتوى بنجاح');
     },
     onError: (error) => {
-      console.error('خطأ في تحديث المحتوى:', error);
-      toast.error('حدث خطأ في تحديث المحتوى');
+      errorManager.error('LandingContent', 'حدث خطأ في تحديث المحتوى', error);
     }
   });
 
@@ -106,11 +105,10 @@ export const useLandingContent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['landing-content'] });
-      toast.success('تم إضافة المحتوى بنجاح');
+      errorManager.success('تم إضافة المحتوى بنجاح');
     },
     onError: (error) => {
-      console.error('خطأ في إضافة المحتوى:', error);
-      toast.error('حدث خطأ في إضافة المحتوى');
+      errorManager.error('LandingContent', 'حدث خطأ في إضافة المحتوى', error);
     }
   });
 
@@ -127,11 +125,10 @@ export const useLandingContent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['landing-content'] });
-      toast.success('تم حذف المحتوى بنجاح');
+      errorManager.success('تم حذف المحتوى بنجاح');
     },
     onError: (error) => {
-      console.error('خطأ في حذف المحتوى:', error);
-      toast.error('حدث خطأ في حذف المحتوى');
+      errorManager.error('LandingContent', 'حدث خطأ في حذف المحتوى', error);
     }
   });
 
@@ -148,11 +145,10 @@ export const useLandingContent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['site-settings'] });
-      toast.success('تم تحديث الإعدادات بنجاح');
+      errorManager.success('تم تحديث الإعدادات بنجاح');
     },
     onError: (error) => {
-      console.error('خطأ في تحديث الإعدادات:', error);
-      toast.error('حدث خطأ في تحديث الإعدادات');
+      errorManager.error('LandingContent', 'حدث خطأ في تحديث الإعدادات', error);
     }
   });
 

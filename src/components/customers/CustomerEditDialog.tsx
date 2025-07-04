@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCustomerData } from "@/hooks/useCustomerData";
-import CustomerForm from "./CustomerForm";
+import EnhancedCustomerForm from "./EnhancedCustomerForm";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -85,19 +85,12 @@ const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: 
             </div>
           </div>
         ) : customerData ? (
-          <CustomerForm
+          <EnhancedCustomerForm
             onCustomerUpdated={handleCustomerUpdated}
             onCancel={handleCancel}
-            initialData={{
-              name: customerData.name || '',
-              phone: customerData.phone || '',
-              email: customerData.email || '',
-              nationality: customerData.nationality || '',
-              address: customerData.address || '',
-              segment_id: customerData.segment_id || '',
-            }}
-            isEditMode={true}
             customerId={customerId}
+            initialData={customerData}
+            isEditMode={true}
           />
         ) : (
           <div className="text-center p-8 space-y-4">

@@ -52,6 +52,13 @@ const EnhancedAdminTabs = ({ activeTab, onTabChange, isSuperAdmin }: EnhancedAdm
       description: 'تخصيص شكل ومحتوى الموقع',
       tabs: [
         {
+          value: 'landing',
+          label: 'صفحة الهبوط',
+          icon: '🏠',
+          description: 'إدارة محتوى صفحة الهبوط',
+          disabled: !isSuperAdmin
+        },
+        {
           value: 'site',
           label: 'إعدادات الموقع',
           icon: '🎨',

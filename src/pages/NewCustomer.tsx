@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserPlus } from 'lucide-react';
-import CustomerForm from '@/components/customers/CustomerForm';
+import EnhancedCustomerForm from '@/components/customers/EnhancedCustomerForm';
 import { Customer } from '@/types/customer';
 
 const NewCustomer = () => {
@@ -31,7 +31,7 @@ const NewCustomer = () => {
         </div>
       </div>
 
-      <CustomerForm 
+      <EnhancedCustomerForm 
         onCustomerAdded={handleCustomerAdded}
         onCancel={handleCancel}
       />

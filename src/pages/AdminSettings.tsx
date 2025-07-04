@@ -6,6 +6,7 @@ import { Shield } from 'lucide-react';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 import SiteSettings from '@/components/admin/SiteSettings';
+import LandingPageCMS from '@/components/admin/LandingPageCMS';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 import BackupManagementTab from '@/components/admin/BackupManagementTab';
@@ -85,6 +86,10 @@ const AdminSettings = () => {
 
             <TabsContent value="permissions" className="mt-0">
               <PermissionsManagement />
+            </TabsContent>
+
+            <TabsContent value="landing" className="mt-0">
+              <LandingPageCMS />
             </TabsContent>
           </div>
         </Tabs>

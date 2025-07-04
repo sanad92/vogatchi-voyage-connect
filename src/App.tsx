@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import LandingPage from "@/pages/LandingPage";
-import LandingAdmin from "@/pages/LandingAdmin";
 import Customers from "@/pages/Customers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
@@ -23,9 +22,7 @@ import Invoices from "@/pages/Invoices";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
 import ProfitLossReports from "@/pages/ProfitLossReports";
-import ExpenseManagement from "@/pages/ExpenseManagement";
 import ExpenseManagementEnhanced from "@/pages/ExpenseManagementEnhanced";
-import EmployeesPage from "@/pages/EmployeesPage";
 import EnhancedEmployeesPage from "@/pages/EnhancedEmployeesPage";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminImportExport from "@/pages/AdminImportExport";
@@ -44,7 +41,7 @@ import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
-import AuthErrorBoundary from "@/components/common/AuthErrorBoundary";
+import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import BookingRequest from "@/pages/BookingRequest";
 
 // إعدادات محسنة للQuery Client
@@ -65,13 +62,12 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  console.log('🚀 App starting...');
   
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <OptimizedAuthProvider>
-          <AuthErrorBoundary>
+          <OptimizedErrorBoundary>
             <div className="min-h-screen bg-gray-50">
               <Toaster position="top-right" />
               <Routes>
@@ -89,10 +85,9 @@ function App() {
                       <div className="flex">
                         <Navbar />
                         <main className="flex-1">
-                          <AuthErrorBoundary>
+                          <OptimizedErrorBoundary>
                             <Routes>
                               <Route path="/dashboard" element={<OptimizedIndex />} />
-                              <Route path="/landing-admin" element={<LandingAdmin />} />
                               <Route path="/customers" element={<Customers />} />
                               <Route path="/new-customer" element={<NewCustomer />} />
                               <Route path="/hotel-bookings" element={<HotelBookings />} />
@@ -105,11 +100,10 @@ function App() {
                               <Route path="/suppliers" element={<Suppliers />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
-                              <Route path="/expense-management" element={<ExpenseManagement />} />
-                              <Route path="/expense-management-enhanced" element={<ExpenseManagementEnhanced />} />
-                              <Route path="/employees" element={<EmployeesPage />} />
-                              <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
+                              <Route path="/expense-management" element={<ExpenseManagementEnhanced />} />
+                              <Route path="/employees" element={<EnhancedEmployeesPage />} />
                               <Route path="/admin-settings" element={<AdminSettings />} />
+                              <Route path="/landing-admin" element={<AdminSettings />} />
                               <Route path="/admin-import-export" element={<AdminImportExport />} />
                               <Route path="/site-customization" element={<SiteCustomization />} />
                               <Route path="/payment-orders" element={<PaymentOrders />} />
@@ -125,7 +119,7 @@ function App() {
                               <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
-                          </AuthErrorBoundary>
+                          </OptimizedErrorBoundary>
                         </main>
                       </div>
                     </ProtectedRoute>
@@ -133,7 +127,7 @@ function App() {
                 />
               </Routes>
             </div>
-          </AuthErrorBoundary>
+          </OptimizedErrorBoundary>
         </OptimizedAuthProvider>
       </Router>
     </QueryClientProvider>
@@ -142,8 +136,6 @@ function App() {
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isLoggedIn, loading, user } = useOptimizedAuth();
-
-  console.log('🛡️ ProtectedRoute check:', { isLoggedIn: isLoggedIn(), loading, user: !!user });
 
   if (loading) {
     return (
@@ -158,11 +150,9 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   }
 
   if (!isLoggedIn()) {
-    console.log('❌ Not logged in, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  console.log('✅ User authenticated, showing protected content');
   return children;
 }
 
