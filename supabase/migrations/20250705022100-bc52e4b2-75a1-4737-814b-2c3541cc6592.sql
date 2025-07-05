@@ -1,0 +1,45 @@
+-- حذف البيانات الموجودة وإعادة إدخالها مع إصلاح بنية الجدول
+DELETE FROM landing_content WHERE section IN ('hero', 'services', 'cities', 'contracts', 'contact');
+DELETE FROM site_settings WHERE setting_key IN ('company_name', 'company_name_ar', 'phone_number', 'email', 'whatsapp_number', 'hero_background_image', 'primary_color', 'secondary_color', 'accent_color', 'website_title', 'website_description', 'facebook_url', 'instagram_url', 'twitter_url');
+
+-- إدخال البيانات الأساسية لصفحة الهبوط
+INSERT INTO landing_content (section, section_type, title, content, subtitle, badge_text, button_text, button_link, image_url, icon_name, is_active, order_index, layout_config, style_config) VALUES
+-- قسم البطل الرئيسي
+('hero', 'hero', 'رحلتك المميزة تبدأ من هنا', 'نحن شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية والسفر مع ضمان الجودة والأسعار التنافسية', 'Vogatchi Travel - وجهتك للسفر المميز', '', 'ابدأ المحادثة الآن', 'whatsapp', '', 'MessageSquare', true, 1, '{"background": "gradient", "layout": "centered"}', '{"textColor": "primary", "backgroundColor": "gradient-primary"}'),
+
+-- شارات المصداقية
+('hero', 'badges', 'مرخص رسمياً', 'نحن مرخصون رسمياً من وزارة السياحة المصرية', '', 'مرخص رسمياً', '', '', '', 'Shield', true, 2, '{}', '{"variant": "secondary"}'),
+('hero', 'badges', '+10,000 عميل راضي', 'أكثر من 10 آلاف عميل سعيد بخدماتنا المميزة', '', '+10,000 عميل راضي', '', '', '', 'Users', true, 3, '{}', '{"variant": "secondary"}'),
+('hero', 'badges', 'تعاقد مباشر مع الفنادق', 'تعاقد مباشر مع أفضل الفنادق العالمية لضمان أفضل الأسعار', '', 'تعاقد مباشر مع الفنادق', '', '', '', 'Building2', true, 4, '{}', '{"variant": "secondary"}'),
+('hero', 'badges', 'خدمة 24/7', 'فريق خدمة العملاء متاح على مدار الساعة لمساعدتك', '', 'خدمة 24/7', '', '', '', 'Clock', true, 5, '{}', '{"variant": "secondary"}'),
+
+-- الخدمات الرئيسية
+('services', 'service', 'حجز الفنادق', 'احجز أفضل الفنادق في مصر والعالم بأسعار تنافسية', '', '', 'احجز الآن', '/hotel-bookings', '', 'Hotel', true, 6, '{"columns": 3}', '{"iconColor": "blue-500"}'),
+('services', 'service', 'حجز الطيران', 'رحلات جوية مريحة لجميع الوجهات العالمية', '', '', 'احجز الآن', '/flight-bookings', '', 'Plane', true, 7, '{"columns": 3}', '{"iconColor": "green-500"}'),
+('services', 'service', 'تأجير السيارات', 'سيارات حديثة ومريحة لرحلتك', '', '', 'احجز الآن', '/car-rentals', '', 'Car', true, 8, '{"columns": 3}', '{"iconColor": "purple-500"}'),
+
+-- قسم المدن
+('cities', 'section', 'اكتشف أجمل المدن', 'نقدم لك رحلات مميزة لأفضل الوجهات السياحية في مصر والعالم', '', '', 'استكشف المزيد', '/destinations', '', 'MapPin', true, 9, '{"background": "white"}', '{}'),
+
+-- العقود المباشرة  
+('contracts', 'section', 'تعاقد مباشر مع أفضل الفنادق', 'نضمن لك أفضل الأسعار من خلال تعاقدنا المباشر مع الفنادق العالمية', '', '', 'تواصل معنا', 'whatsapp', '', 'Handshake', true, 10, '{"background": "gradient"}', '{}'),
+
+-- نموذج الاتصال
+('contact', 'form', 'تواصل معنا', 'نحن هنا لمساعدتك في تخطيط رحلتك المثالية', 'احصل على استشارة مجانية', '', 'إرسال الرسالة', '/contact', '', 'Phone', true, 11, '{"background": "blue-50"}', '{}');
+
+-- إعدادات الموقع الأساسية (بدون category و is_public)
+INSERT INTO site_settings (setting_key, setting_value, setting_type, description) VALUES
+('company_name', 'Vogatchi Travel', 'text', 'اسم الشركة'),
+('company_name_ar', 'فوجاتشي للسياحة والسفر', 'text', 'اسم الشركة بالعربية'),
+('phone_number', '+20 110 344 2881', 'text', 'رقم الهاتف الرئيسي'),
+('email', 'ops@vogatchitrips.com', 'email', 'البريد الإلكتروني'),
+('whatsapp_number', '201103442881', 'text', 'رقم الواتساب'),
+('hero_background_image', '/api/placeholder/1920/1080', 'url', 'صورة خلفية القسم الرئيسي'),
+('primary_color', '#3B82F6', 'color', 'اللون الأساسي'),
+('secondary_color', '#6366F1', 'color', 'اللون الثانوي'),
+('accent_color', '#10B981', 'color', 'لون التمييز'),
+('website_title', 'Vogatchi Travel - رحلتك تبدأ من هنا', 'text', 'عنوان الموقع'),
+('website_description', 'شركة Vogatchi للسياحة والسفر - نقدم أفضل العروض للفنادق والطيران وتأجير السيارات', 'text', 'وصف الموقع'),
+('facebook_url', 'https://facebook.com/vogatchitravel', 'url', 'رابط الفيسبوك'),
+('instagram_url', 'https://instagram.com/vogatchitravel', 'url', 'رابط الانستغرام'),
+('twitter_url', 'https://twitter.com/vogatchitravel', 'url', 'رابط تويتر');

@@ -23,7 +23,7 @@ const LandingPage = () => {
       <LandingHeader onWhatsAppClick={handleWhatsAppClick} />
       <WhatsAppFixedButton onWhatsAppClick={handleWhatsAppClick} />
       <LandingHero onWhatsAppClick={handleWhatsAppClick} />
-      <DirectContracts />
+      <DirectContracts onWhatsAppClick={handleWhatsAppClick} />
       <CitiesSection />
       <ServicesSection />
       <HotelsSection />
