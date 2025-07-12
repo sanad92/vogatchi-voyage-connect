@@ -23,7 +23,7 @@ const OptimizedIndex = () => {
   if (error) {
     console.error('❌ Dashboard error:', error);
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800 mb-4">
@@ -45,8 +45,8 @@ const OptimizedIndex = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
+      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+        <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600">جارٍ تحميل البيانات...</p>
@@ -66,14 +66,14 @@ const OptimizedIndex = () => {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <DashboardHeader />
 
         <MainStatsCards realStats={realStats} />
 
         <CRMStatsCards customers={customers} realStats={realStats} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           <ErrorBoundary>
             <TodayOverview />
           </ErrorBoundary>

@@ -81,12 +81,12 @@ function App() {
                 <Route
                   path="/*"
                   element={
-                    <ProtectedRoute>
-                      <div className="flex">
-                        <Navbar />
-                        <main className="flex-1">
-                          <OptimizedErrorBoundary>
-                            <Routes>
+                  <ProtectedRoute>
+                    <div className="min-h-screen w-full">
+                      <Navbar />
+                      <main className="w-full">
+                        <OptimizedErrorBoundary>
+                          <Routes>
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<Customers />} />
                               <Route path="/new-customer" element={<NewCustomer />} />

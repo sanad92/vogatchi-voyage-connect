@@ -30,75 +30,89 @@ const Navbar = () => {
     <>
       <SuperAdminBanner />
       <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
+        <div className="w-full max-w-none px-3 sm:px-4 lg:px-6">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-                <span className="text-white font-bold text-lg">V</span>
+            <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse group min-w-0 flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
+                <span className="text-white font-bold text-sm sm:text-lg">V</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden xs:block truncate">
                 Vogatchi CRM
+              </span>
+              <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent xs:hidden">
+                V
               </span>
             </Link>
 
             {/* Enhanced Desktop Navigation */}
-            <EnhancedDesktopNavigation 
-              userRole={userRole} 
-              hasRole={hasRole} 
-              location={location} 
-            />
+            <div className="hidden xl:flex">
+              <EnhancedDesktopNavigation 
+                userRole={userRole} 
+                hasRole={hasRole} 
+                location={location} 
+              />
+            </div>
 
             {/* User Menu */}
-            <div className="hidden lg:flex items-center space-x-4 rtl:space-x-reverse">
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
+            <div className="hidden md:flex items-center space-x-2 lg:space-x-4 rtl:space-x-reverse min-w-0">
+              <div className="hidden lg:flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="text-right rtl:text-left">
                   <p className="text-sm font-medium text-gray-900">مرحباً</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate max-w-20">
                     {getRoleDisplayName(userRole)}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-white text-sm font-bold">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                  <span className="text-white text-xs lg:text-sm font-bold">
                     {user.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
+              </div>
+              <div className="lg:hidden w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                <span className="text-white text-xs font-bold">
+                  {user.email?.charAt(0).toUpperCase()}
+                </span>
               </div>
               <Button 
                 variant="outline" 
                 onClick={signOut} 
                 size="sm"
-                className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200"
+                className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200 flex-shrink-0 px-2 lg:px-3"
               >
-                تسجيل الخروج
+                <span className="hidden lg:inline">تسجيل الخروج</span>
+                <span className="lg:hidden">خروج</span>
               </Button>
             </div>
 
             {/* Mobile menu button */}
-            <div className="lg:hidden">
+            <div className="md:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="inline-flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-200 min-w-[44px] min-h-[44px]"
+                aria-label="فتح القائمة"
               >
                 {isMobileMenuOpen ? (
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
                 ) : (
-                  <Menu className="h-6 w-6" />
+                  <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
                 )}
               </button>
             </div>
           </div>
 
           {/* Enhanced Mobile Navigation */}
-          <EnhancedMobileNavigation 
-            isOpen={isMobileMenuOpen}
-            userRole={userRole}
-            hasRole={hasRole}
-            location={location}
-            user={user}
-            signOut={signOut}
-            onClose={() => setIsMobileMenuOpen(false)}
-          />
+          <div className="md:hidden">
+            <EnhancedMobileNavigation 
+              isOpen={isMobileMenuOpen}
+              userRole={userRole}
+              hasRole={hasRole}
+              location={location}
+              user={user}
+              signOut={signOut}
+              onClose={() => setIsMobileMenuOpen(false)}
+            />
+          </div>
         </div>
       </nav>
     </>
