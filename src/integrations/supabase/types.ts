@@ -3145,6 +3145,66 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_intents: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          invoice_id: string | null
+          paid_at: string | null
+          status: string
+          stripe_payment_intent_id: string
+          stripe_payment_method_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          status?: string
+          stripe_payment_intent_id: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_intents_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_orders: {
         Row: {
           amount: number

@@ -28,6 +28,7 @@ import AdminSettings from "@/pages/AdminSettings";
 import AdminImportExport from "@/pages/AdminImportExport";
 import SiteCustomization from "@/pages/SiteCustomization";
 import PaymentOrders from "@/pages/PaymentOrders";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 import BankAccounts from "@/pages/BankAccounts";
 import DailyOperations from "@/pages/DailyOperations";
 import CustomerService from "@/pages/CustomerService";
@@ -107,6 +108,7 @@ function App() {
                               <Route path="/admin-import-export" element={<AdminImportExport />} />
                               <Route path="/site-customization" element={<SiteCustomization />} />
                               <Route path="/payment-orders" element={<PaymentOrders />} />
+                              <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<BankAccounts />} />
                               <Route path="/daily-operations" element={<DailyOperations />} />
                               <Route path="/customer-service" element={<CustomerService />} />
