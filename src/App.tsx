@@ -30,6 +30,7 @@ import SiteCustomization from "@/pages/SiteCustomization";
 import PaymentOrders from "@/pages/PaymentOrders";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NewInvoice from "@/pages/NewInvoice";
+import CustomerDetails from "@/pages/CustomerDetails";
 import BankAccounts from "@/pages/BankAccounts";
 import DailyOperations from "@/pages/DailyOperations";
 import CustomerService from "@/pages/CustomerService";
@@ -99,7 +100,8 @@ function App() {
                               <Route path="/car-rentals" element={<CarRentals />} />
                               <Route path="/transport-bookings" element={<TransportBookings />} />
                               <Route path="/invoices" element={<Invoices />} />
-                              <Route path="/new-invoice" element={<NewInvoice />} />
+        <Route path="/new-invoice" element={<NewInvoice />} />
+        <Route path="/customers/:customerId" element={<CustomerDetails />} />
                               <Route path="/suppliers" element={<Suppliers />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />

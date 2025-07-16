@@ -1,121 +1,178 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useCustomerData } from "@/hooks/useCustomerData";
-import EnhancedCustomerForm from "./EnhancedCustomerForm";
-import { Customer } from "@/types/customer";
-import { toast } from "sonner";
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { supabase } from "@/integrations/supabase/client";
+import { Customer } from "@/types/customer";
 
 interface CustomerEditDialogProps {
-  customerId: string | null;
-  isOpen: boolean;
+  customer: Customer;
+  open: boolean;
   onClose: () => void;
-  onCustomerUpdated: (customer: Customer) => void;
+  onSave: () => void;
 }
 
-const CustomerEditDialog = ({ customerId, isOpen, onClose, onCustomerUpdated }: CustomerEditDialogProps) => {
-  const { customerData, isLoading, refetch, error } = useCustomerData(customerId || '');
+interface EditCustomerForm {
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  nationality?: string;
+  passport_number?: string;
+}
 
-  const handleCustomerUpdated = async (customer: Customer) => {
+const CustomerEditDialog = ({ customer, open, onClose, onSave }: CustomerEditDialogProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<EditCustomerForm>({
+    defaultValues: {
+      name: customer.name || '',
+      phone: customer.phone || '',
+      email: customer.email || '',
+      address: customer.address || '',
+      nationality: customer.nationality || '',
+      passport_number: customer.passport_number || '',
+    }
+  });
+
+  useEffect(() => {
+    if (customer && open) {
+      reset({
+        name: customer.name || '',
+        phone: customer.phone || '',
+        email: customer.email || '',
+        address: customer.address || '',
+        nationality: customer.nationality || '',
+        passport_number: customer.passport_number || '',
+      });
+    }
+  }, [customer, open, reset]);
+
+  const onSubmit = async (data: EditCustomerForm) => {
+    setIsLoading(true);
+    
     try {
-      console.log('✅ تم تحديث العميل:', customer);
-      
-      // تحديث البيانات المحلية فوراً
-      onCustomerUpdated(customer);
-      
-      // إعادة تحميل البيانات للتأكد من التحديث
-      await refetch();
-      
-      // إغلاق النافذة
-      onClose();
-      
-      toast.success(`تم تحديث بيانات العميل "${customer.name}" بنجاح`);
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          name: data.name,
+          phone: data.phone,
+          email: data.email || null,
+          address: data.address || null,
+          nationality: data.nationality || null,
+          passport_number: data.passport_number || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+
+      if (error) throw error;
+
+      toast.success('تم تحديث بيانات العميل بنجاح');
+      onSave();
     } catch (error) {
-      console.error('خطأ في تحديث بيانات العميل:', error);
-      toast.error('حدث خطأ أثناء تحديث البيانات');
+      console.error('Error updating customer:', error);
+      toast.error('حدث خطأ في تحديث بيانات العميل');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCancel = () => {
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
-  const handleRetry = () => {
-    refetch();
-  };
-
-  if (!customerId) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>تعديل معلومات العميل</DialogTitle>
+          <DialogTitle>تعديل بيانات العميل</DialogTitle>
         </DialogHeader>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mr-2 text-gray-600">جاري تحميل بيانات العميل...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center p-8 space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-red-600 mb-2 font-medium">خطأ في تحميل بيانات العميل</p>
-              <p className="text-sm text-gray-600 mb-4">
-                {error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}
-              </p>
+              <Label htmlFor="name">اسم العميل *</Label>
+              <Input
+                id="name"
+                {...register('name', { required: 'اسم العميل مطلوب' })}
+                placeholder="أدخل اسم العميل"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+              )}
             </div>
-            <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={handleRetry}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                إعادة المحاولة
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={onClose}
-              >
-                إغلاق
-              </Button>
-            </div>
-          </div>
-        ) : customerData ? (
-          <EnhancedCustomerForm
-            onCustomerUpdated={handleCustomerUpdated}
-            onCancel={handleCancel}
-            customerId={customerId}
-            initialData={customerData}
-            isEditMode={true}
-          />
-        ) : (
-          <div className="text-center p-8 space-y-4">
-            <AlertCircle className="h-12 w-12 text-gray-500 mx-auto" />
+
             <div>
-              <p className="text-gray-600 mb-4">لم يتم العثور على بيانات العميل</p>
+              <Label htmlFor="phone">رقم الهاتف *</Label>
+              <Input
+                id="phone"
+                {...register('phone', { required: 'رقم الهاتف مطلوب' })}
+                placeholder="أدخل رقم الهاتف"
+              />
+              {errors.phone && (
+                <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>
+              )}
             </div>
-            <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={handleRetry}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                إعادة المحاولة
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={onClose}
-              >
-                إغلاق
-              </Button>
+
+            <div>
+              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email')}
+                placeholder="أدخل البريد الإلكتروني"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="nationality">الجنسية</Label>
+              <Input
+                id="nationality"
+                {...register('nationality')}
+                placeholder="أدخل الجنسية"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="passport_number">رقم الجواز</Label>
+              <Input
+                id="passport_number"
+                {...register('passport_number')}
+                placeholder="أدخل رقم الجواز"
+              />
             </div>
           </div>
-        )}
+
+          <div>
+            <Label htmlFor="address">العنوان</Label>
+            <Textarea
+              id="address"
+              {...register('address')}
+              placeholder="أدخل العنوان"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              إلغاء
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
