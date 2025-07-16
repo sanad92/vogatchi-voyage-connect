@@ -16,7 +16,7 @@ const QuickActions = () => {
     {
       title: 'حجز طيران جديد',
       icon: Plane,
-      href: '/flight-bookings',
+      href: '/new-flight-booking',
       color: 'bg-sky-600 hover:bg-sky-700',
       description: 'إضافة حجز طيران'
     },

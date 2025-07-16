@@ -5,13 +5,24 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import EnhancedCustomerForm from '@/components/customers/EnhancedCustomerForm';
 import { Customer } from '@/types/customer';
+import { useToast } from '@/hooks/use-toast';
 
 const NewCustomer = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleCustomerAdded = (customer: Customer) => {
-    console.log('Customer added:', customer);
-    navigate('/customers');
+    toast({
+      title: "تم إضافة العميل بنجاح",
+      description: `تم حفظ بيانات العميل ${customer.name} بنجاح`,
+    });
+    
+    // إعادة التوجيه إلى صفحة تفاصيل العميل إذا كانت متوفرة، وإلا إلى قائمة العملاء
+    if (customer.id) {
+      navigate(`/customers/${customer.id}`);
+    } else {
+      navigate('/customers');
+    }
   };
 
   const handleCancel = () => {

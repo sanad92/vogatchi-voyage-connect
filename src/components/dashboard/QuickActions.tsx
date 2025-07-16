@@ -24,7 +24,7 @@ const QuickActions = () => {
     {
       title: 'حجز فندق جديد',
       icon: Hotel,
-      href: '/hotel-bookings/new',
+      href: '/new-hotel-booking',
       color: 'bg-blue-600 hover:bg-blue-700',
       description: 'إضافة حجز فندق جديد',
       priority: 'high'
@@ -32,7 +32,7 @@ const QuickActions = () => {
     {
       title: 'عميل جديد',
       icon: Users,
-      href: '/customers/new',
+      href: '/new-customer',
       color: 'bg-green-600 hover:bg-green-700',
       description: 'تسجيل عميل جديد',
       priority: 'high'
@@ -40,7 +40,7 @@ const QuickActions = () => {
     {
       title: 'حجز طيران جديد',
       icon: Plane,
-      href: '/flight-bookings/new',
+      href: '/new-flight-booking',
       color: 'bg-sky-600 hover:bg-sky-700',
       description: 'إضافة حجز طيران',
       priority: 'high'
@@ -48,7 +48,7 @@ const QuickActions = () => {
     {
       title: 'فاتورة جديدة',
       icon: Receipt,
-      href: '/invoices/new',
+      href: '/new-invoice',
       color: 'bg-purple-600 hover:bg-purple-700',
       description: 'إنشاء فاتورة جديدة',
       priority: 'high'

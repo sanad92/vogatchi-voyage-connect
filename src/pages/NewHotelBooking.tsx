@@ -7,13 +7,25 @@ import { ArrowLeft, Hotel, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import HotelBookingForm from '@/components/hotel-bookings/HotelBookingForm';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
+import { useToast } from '@/hooks/use-toast';
 
 const NewHotelBooking = () => {
   const navigate = useNavigate();
   const { currentEmployee, isLoading } = useCurrentEmployee();
+  const { toast } = useToast();
 
-  const handleSuccess = () => {
-    navigate('/hotel-bookings');
+  const handleSuccess = (bookingData?: any) => {
+    toast({
+      title: "تم إنشاء الحجز بنجاح",
+      description: "تم حفظ حجز الفندق الجديد بنجاح",
+    });
+    
+    // إعادة التوجيه إلى صفحة تفاصيل الحجز إذا كانت متوفرة، وإلا إلى قائمة الحجوزات
+    if (bookingData?.id) {
+      navigate(`/hotel-bookings/${bookingData.id}`);
+    } else {
+      navigate('/hotel-bookings');
+    }
   };
 
   const handleCancel = () => {
