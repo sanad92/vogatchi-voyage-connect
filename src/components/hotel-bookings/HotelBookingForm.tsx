@@ -10,6 +10,7 @@ import FormActionsSection from "./sections/FormActionsSection";
 import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { User } from "lucide-react";
+import PriceCalculationDisplay from "@/components/common/PriceCalculationDisplay";
 
 interface HotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -34,7 +35,8 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
     totalProfit,
     handleCustomerSelect,
     onSubmit,
-    currentEmployee
+    currentEmployee,
+    calculations
   } = useHotelBookingForm({ booking, onSuccess });
 
   // تعيين الجنيه المصري كعملة افتراضية
@@ -104,6 +106,13 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
           suppliers={suppliers}
           totalCostCustomer={totalCostCustomer}
           totalProfit={totalProfit}
+        />
+
+        {/* عرض الحسابات التلقائية */}
+        <PriceCalculationDisplay 
+          calculations={calculations}
+          type="hotel"
+          currency={watch('currency') || 'EGP'}
         />
 
         <FormActionsSection

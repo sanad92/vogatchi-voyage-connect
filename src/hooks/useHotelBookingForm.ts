@@ -7,6 +7,7 @@ import { useBookingCalculations } from "@/hooks/useBookingCalculations";
 import { useHotelBookingData } from "@/hooks/useHotelBookingData";
 import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";
 import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
+import { useAutoCalculations } from "@/hooks/useAutoCalculations";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { toast } from "sonner";
 
@@ -73,12 +74,34 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
   const costPerNight = watch('cost_per_night');
   const sellingPricePerNight = watch('selling_price_per_night');
 
+  // إضافة الحسابات التلقائية الجديدة
+  const { calculations, updateCalculations } = useAutoCalculations({
+    calculationType: 'hotel',
+    currency: watch('currency') || 'EGP',
+    onCalculationUpdate: (calc) => {
+      // تحديث القيم المحسوبة في النموذج
+      console.log('تم تحديث الحسابات:', calc);
+    }
+  });
+
   const { numberOfNights, totalCostCustomer, totalProfit } = useBookingCalculations({
     checkInDate,
     checkOutDate,
     costPerNight,
     sellingPricePerNight
   });
+
+  // تحديث الحسابات عند تغيير البيانات
+  useEffect(() => {
+    const formData = {
+      cost_per_night: costPerNight,
+      selling_price_per_night: sellingPricePerNight,
+      check_in_date: checkInDate,
+      check_out_date: checkOutDate,
+      paid_amount: watch('paid_amount')
+    };
+    updateCalculations(formData);
+  }, [costPerNight, sellingPricePerNight, checkInDate, checkOutDate, watch('paid_amount')]);
 
   const {
     suppliers,
@@ -177,6 +200,7 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     totalProfit,
     handleCustomerSelect,
     onSubmit,
-    currentEmployee
+    currentEmployee,
+    calculations
   };
 };
