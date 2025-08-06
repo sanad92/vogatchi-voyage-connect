@@ -25,7 +25,7 @@ const AdminSettings = () => {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center space-y-6">
             <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto">
-              <Shield className="h-12 w-12 text-red-500" />
+              <Shield className="h-12 w-12 text-destructive" />
             </div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-foreground">ليس لديك صلاحية</h1>

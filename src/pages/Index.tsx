@@ -21,7 +21,7 @@ const Index = () => {
   // معالجة حالة الخطأ
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <Alert>
           <AlertDescription>
             حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
@@ -51,11 +51,11 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600">جارٍ تحميل البيانات...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">جارٍ تحميل البيانات...</p>
           </div>
         </div>
       </div>
@@ -64,7 +64,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-6">
         <DashboardHeader />
 
         {/* المؤشرات الرئيسية المحدثة بالبيانات الحقيقية */}

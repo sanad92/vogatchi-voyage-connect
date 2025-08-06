@@ -39,12 +39,12 @@ const FlightBookings = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center gap-3">
-        <Plane className="h-8 w-8 text-blue-600" />
+        <Plane className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">حجوزات الطيران</h1>
-          <p className="text-gray-600">إدارة حجوزات الطيران والتذاكر</p>
+          <h1 className="text-3xl font-bold text-foreground">حجوزات الطيران</h1>
+          <p className="text-muted-foreground">إدارة حجوزات الطيران والتذاكر</p>
         </div>
       </div>
 

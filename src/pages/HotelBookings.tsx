@@ -102,12 +102,12 @@ const HotelBookings = () => {
   if (error) {
     console.error('❌ Hotel bookings error:', error);
     return (
-      <div className="container mx-auto py-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 py-6">
         <div className="text-center py-8">
-          <div className="text-red-500 mb-4">
+          <div className="text-destructive mb-4">
             <Hotel className="h-12 w-12 mx-auto mb-2" />
             <h3 className="text-lg font-semibold">خطأ في تحميل الحجوزات</h3>
-            <p className="text-gray-600 mt-2">حدث خطأ في الاتصال بقاعدة البيانات</p>
+            <p className="text-muted-foreground mt-2">حدث خطأ في الاتصال بقاعدة البيانات</p>
           </div>
           <Button onClick={() => refetch()} variant="outline">
             إعادة المحاولة
@@ -119,22 +119,22 @@ const HotelBookings = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 py-6">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">جاري تحميل الحجوزات...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">جاري تحميل الحجوزات...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center gap-3">
-        <Hotel className="h-8 w-8 text-blue-600" />
+        <Hotel className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">حجوزات الفنادق</h1>
-          <p className="text-gray-600">إدارة حجوزات الفنادق والإقامة</p>
+          <h1 className="text-3xl font-bold text-foreground">حجوزات الفنادق</h1>
+          <p className="text-muted-foreground">إدارة حجوزات الفنادق والإقامة</p>
         </div>
       </div>
 

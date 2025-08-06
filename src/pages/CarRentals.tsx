@@ -31,11 +31,11 @@ const CarRentals = () => {
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Car className="h-6 w-6 text-green-600" />
-            إيجار السيارات - النظام المحسن
-          </h1>
-          <p className="text-gray-600">إدارة عقود إيجار السيارات والمركبات بنظام متطور</p>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Car className="h-6 w-6 text-primary" />
+          إيجار السيارات - النظام المحسن
+        </h1>
+        <p className="text-muted-foreground">إدارة عقود إيجار السيارات والمركبات بنظام متطور</p>
         </div>
         <Button onClick={() => setShowForm(true)} disabled={showForm}>
           <Plus className="h-4 w-4 mr-2" />
@@ -48,10 +48,10 @@ const CarRentals = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Car className="h-8 w-8 text-green-600" />
+              <Car className="h-8 w-8 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{totalRentals}</div>
-                <div className="text-sm text-gray-600">إجمالي العقود</div>
+                <div className="text-sm text-muted-foreground">إجمالي العقود</div>
               </div>
             </div>
           </CardContent>
@@ -60,12 +60,12 @@ const CarRentals = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
+              <BarChart3 className="h-8 w-8 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {(totalRevenue / 1000).toFixed(0)}ك
                 </div>
-                <div className="text-sm text-gray-600">إجمالي الإيرادات</div>
+                <div className="text-sm text-muted-foreground">إجمالي الإيرادات</div>
               </div>
             </div>
           </CardContent>
@@ -74,12 +74,12 @@ const CarRentals = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-8 w-8 text-purple-600" />
+              <BarChart3 className="h-8 w-8 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {(totalProfit / 1000).toFixed(0)}ك
                 </div>
-                <div className="text-sm text-gray-600">إجمالي الأرباح</div>
+                <div className="text-sm text-muted-foreground">إجمالي الأرباح</div>
               </div>
             </div>
           </CardContent>
@@ -88,10 +88,10 @@ const CarRentals = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-8 w-8 text-orange-600" />
+              <Calendar className="h-8 w-8 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{activeRentals}</div>
-                <div className="text-sm text-gray-600">عقود نشطة</div>
+                <div className="text-sm text-muted-foreground">عقود نشطة</div>
               </div>
             </div>
           </CardContent>
