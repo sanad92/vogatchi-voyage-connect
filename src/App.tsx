@@ -106,7 +106,7 @@ function App() {
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
                               <Route path="/expense-management" element={<ExpenseManagementEnhanced />} />
-                              <Route path="/employees" element={<EnhancedEmployeesPage />} />
+                              <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
                               <Route path="/admin-settings" element={<AdminSettings />} />
                               <Route path="/landing-admin" element={<AdminSettings />} />
                               <Route path="/admin-import-export" element={<AdminImportExport />} />
