@@ -28,7 +28,7 @@ const NavigationDropdown: React.FC<NavigationDropdownProps> = ({ title, icon: Ic
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="start" className="z-50 w-56 bg-popover text-popover-foreground border shadow-md">
         {items.map((item) => (
           <DropdownMenuItem key={item.to} asChild>
             <PermissionNavLink item={item} />

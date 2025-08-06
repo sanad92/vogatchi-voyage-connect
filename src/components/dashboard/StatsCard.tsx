@@ -16,14 +16,14 @@ const StatsCard = ({ title, value, icon: Icon, color, description }: StatsCardPr
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">{title}</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>
             {description && (
-              <p className="text-xs text-gray-500 mt-1">{description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}
           </div>
           <div className={`p-2 sm:p-3 rounded-lg ${color}`}>
-            <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+            <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
           </div>
         </div>
       </CardContent>
