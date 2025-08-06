@@ -36,7 +36,7 @@ const CustomerService = () => {
   ).length || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="w-full">
       <Navbar />
       <div className="w-full px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         {/* العنوان والإحصائيات */}
@@ -82,9 +82,9 @@ const CustomerService = () => {
 
         {/* تنبيهات مهمة */}
         {urgentTasks > 0 && (
-          <Card className="mb-6 border-orange-200 bg-orange-50">
+          <Card className="mb-6 bg-muted">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-orange-700">
+              <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
                   عاجل: يوجد {urgentTasks} مهام عالية الأولوية تحتاج لمتابعة فورية!
@@ -95,9 +95,9 @@ const CustomerService = () => {
         )}
 
         {overdueTasks > 0 && (
-          <Card className="mb-6 border-red-200 bg-red-50">
+          <Card className="mb-6 bg-muted">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-red-700">
+              <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
                   تنبيه: يوجد {overdueTasks} مهام متأخرة تحتاج لمتابعة فورية!
@@ -108,9 +108,9 @@ const CustomerService = () => {
         )}
 
         {vipTasks > 0 && (
-          <Card className="mb-6 border-purple-200 bg-purple-50">
+          <Card className="mb-6 bg-muted">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-purple-700">
+              <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
                   VIP: يوجد {vipTasks} مهام للعملاء المميزين تحتاج لعناية خاصة!

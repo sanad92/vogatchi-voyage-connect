@@ -27,11 +27,11 @@ const ExpenseManagementEnhanced = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">إدارة المصروفات والحسابات المحسّنة</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             نظام شامل لإدارة المصروفات مع دعم العملات المتعددة والتقارير المتقدمة
           </p>
         </div>

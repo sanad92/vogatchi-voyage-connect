@@ -48,9 +48,9 @@ const OptimizedIndex = () => {
       <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600">جارٍ تحميل البيانات...</p>
-            <p className="text-sm text-gray-500">قد يستغرق هذا عدة ثوانِ</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">جارٍ تحميل البيانات...</p>
+            <p className="text-muted-foreground text-sm">قد يستغرق هذا عدة ثوانِ</p>
           </div>
         </div>
       </div>

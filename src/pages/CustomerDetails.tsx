@@ -80,7 +80,7 @@ const CustomerDetails = () => {
     return (
       <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <div className="text-center space-y-4">
-          <p className="text-red-500 text-lg">
+          <p className="text-destructive text-lg">
             {error ? 'حدث خطأ في تحميل بيانات العميل' : 'العميل غير موجود'}
           </p>
           <Button onClick={() => navigate('/customers')}>
@@ -139,8 +139,8 @@ const CustomerDetails = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
@@ -153,8 +153,8 @@ const CustomerDetails = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي الإنفاق</p>
@@ -167,8 +167,8 @@ const CustomerDetails = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Star className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Star className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">نقاط الولاء</p>
@@ -181,8 +181,8 @@ const CustomerDetails = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Clock className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Clock className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">آخر حجز</p>

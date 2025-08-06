@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Shield } from 'lucide-react';
 import EmployeeManagement from '@/components/expenses/EmployeeManagement';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { Badge } from '@/components/ui/badge';
 
 const EnhancedEmployeesPage = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
@@ -10,7 +11,7 @@ const EnhancedEmployeesPage = () => {
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-8">
       <div className="flex items-center gap-3">
-        <Users className="h-7 w-7 text-blue-600" />
+        <Users className="h-7 w-7 text-primary" />
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground">إدارة الموظفين المحسنة</h1>
           <p className="text-muted-foreground">إدارة شاملة لبيانات الموظفين مع إمكانيات الإيقاف والحذف</p>
@@ -19,16 +20,16 @@ const EnhancedEmployeesPage = () => {
         {/* مؤشر الصلاحيات */}
         <div className="flex items-center gap-2">
           {isSuperAdmin() && (
-            <div className="flex items-center gap-1 bg-red-50 text-red-700 px-2 py-1 rounded-full text-xs">
-              <Shield className="h-3 w-3" />
+            <Badge variant="destructive" className="text-xs">
+              <Shield className="h-3 w-3 mr-1" />
               سوبر أدمن
-            </div>
+            </Badge>
           )}
           {(hasRole('admin') || hasRole('manager')) && !isSuperAdmin() && (
-            <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs">
-              <Shield className="h-3 w-3" />
+            <Badge className="text-xs">
+              <Shield className="h-3 w-3 mr-1" />
               {hasRole('admin') ? 'أدمن' : 'مدير'}
-            </div>
+            </Badge>
           )}
         </div>
       </div>

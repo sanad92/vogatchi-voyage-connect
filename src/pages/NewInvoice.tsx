@@ -76,7 +76,7 @@ const NewInvoice = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="w-full px-4 py-6">
       <div className="flex items-center gap-4 mb-6">
         <Button 
           variant="outline" 

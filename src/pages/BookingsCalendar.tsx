@@ -91,7 +91,7 @@ const BookingsCalendar = () => {
           رجوع
         </Button>
         <div className="flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-blue-600" />
+          <Calendar className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">تقويم الحجوزات</h1>
         </div>
       </div>

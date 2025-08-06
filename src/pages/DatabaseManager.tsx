@@ -43,9 +43,9 @@ const DatabaseManager = () => {
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-8">
       <div className="flex items-center gap-3 mb-6">
-        <Database className="h-7 w-7 text-blue-600" />
+        <Database className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold text-foreground">Database Manager</h1>
-        <Badge className="bg-red-100 text-red-700">سوبر أدمن فقط</Badge>
+        <Badge variant="destructive">سوبر أدمن فقط</Badge>
         <Button
           variant="outline"
           size="sm"

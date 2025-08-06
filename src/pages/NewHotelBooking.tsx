@@ -34,24 +34,24 @@ const NewHotelBooking = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full p-6">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">جاري تحميل بيانات الموظف...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">جاري تحميل بيانات الموظف...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           رجوع
         </Button>
         <div className="flex items-center gap-2">
-          <Hotel className="h-6 w-6 text-blue-600" />
+          <Hotel className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">حجز فندق جديد</h1>
         </div>
       </div>
@@ -62,8 +62,8 @@ const NewHotelBooking = () => {
             <span>معلومات الحجز</span>
             {currentEmployee && (
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-blue-600" />
-                <span className="text-gray-600">بواسطة:</span>
+                <User className="h-4 w-4 text-primary" />
+                <span className="text-muted-foreground">بواسطة:</span>
                 <Badge variant="outline">{currentEmployee.full_name}</Badge>
               </div>
             )}

@@ -11,7 +11,7 @@ const BookingRequest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="w-full p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -27,7 +27,7 @@ const BookingRequest = () => {
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card className="text-center hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <Hotel className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <Hotel className="h-8 w-8 text-primary mx-auto mb-2" />
               <h3 className="font-semibold">حجز الفنادق</h3>
                 <p className="text-sm text-muted-foreground">أفضل الأسعار</p>
             </CardContent>
@@ -35,7 +35,7 @@ const BookingRequest = () => {
 
           <Card className="text-center hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <Plane className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <Plane className="h-8 w-8 text-primary mx-auto mb-2" />
               <h3 className="font-semibold">حجز الطيران</h3>
               <p className="text-sm text-muted-foreground">رحلات مريحة</p>
             </CardContent>
@@ -43,7 +43,7 @@ const BookingRequest = () => {
 
           <Card className="text-center hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <Car className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <Car className="h-8 w-8 text-primary mx-auto mb-2" />
               <h3 className="font-semibold">تأجير السيارات</h3>
               <p className="text-sm text-muted-foreground">أحدث الموديلات</p>
             </CardContent>
@@ -51,7 +51,7 @@ const BookingRequest = () => {
 
           <Card className="text-center hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <Package className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <Package className="h-8 w-8 text-primary mx-auto mb-2" />
               <h3 className="font-semibold">باقات شاملة</h3>
               <p className="text-sm text-muted-foreground">عروض مميزة</p>
             </CardContent>
@@ -62,9 +62,9 @@ const BookingRequest = () => {
         <BookingRequestForm onSubmit={handleBookingSubmit} />
 
         {/* معلومات التواصل */}
-        <Card className="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="text-center text-white">
+            <CardTitle className="text-center">
               تحتاج مساعدة؟ تواصل معنا
             </CardTitle>
           </CardHeader>
