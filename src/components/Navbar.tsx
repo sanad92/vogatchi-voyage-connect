@@ -29,8 +29,8 @@ const Navbar = () => {
   return (
     <>
       <SuperAdminBanner />
-      <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">
-        <div className="container mx-auto px-4">
+      <nav className="bg-card shadow-lg border-b border-border sticky top-0 z-40">
+        <div className="w-full px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
@@ -53,13 +53,13 @@ const Navbar = () => {
             <div className="hidden lg:flex items-center space-x-4 rtl:space-x-reverse">
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="text-right rtl:text-left">
-                  <p className="text-sm font-medium text-gray-900">مرحباً</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-medium text-foreground">مرحباً</p>
+                  <p className="text-xs text-muted-foreground">
                     {getRoleDisplayName(userRole)}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-white text-sm font-bold">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-primary-foreground text-sm font-bold">
                     {user.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -68,7 +68,7 @@ const Navbar = () => {
                 variant="outline" 
                 onClick={signOut} 
                 size="sm"
-                className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200"
+                className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors duration-200"
               >
                 تسجيل الخروج
               </Button>
@@ -78,7 +78,7 @@ const Navbar = () => {
             <div className="lg:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                className="inline-flex items-center justify-center p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-200"
               >
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" />

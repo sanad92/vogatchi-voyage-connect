@@ -30,8 +30,8 @@ const NavLink = ({ item, onClick }: NavLinkProps) => {
       onClick={onClick}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
         isActiveLink(item.to)
-          ? 'bg-blue-100 text-blue-700 font-medium'
-          : 'text-gray-700 hover:bg-gray-100'
+          ? 'bg-primary/10 text-primary font-medium'
+          : 'text-foreground hover:bg-muted'
       }`}
     >
       <item.icon className="h-5 w-5" />
