@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { User } from "@/types/userManagement";
 import UserActionButtons from "./UserActionButtons";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserTableProps {
   users: User[];
@@ -47,70 +48,99 @@ const UserTable = ({ users, onUpdate }: UserTableProps) => {
 
   console.log('🔍 عرض المستخدمين في الجدول:', users.length);
 
+  const isMobile = useIsMobile();
+
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>المستخدم</TableHead>
-            <TableHead>القسم</TableHead>
-            <TableHead>الدور</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead>تاريخ الإنشاء</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div>
+      {isMobile ? (
+        <div className="space-y-3">
           {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
+            <div key={user.id} className="rounded-lg border bg-card text-card-foreground p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-medium">
-                    {user.full_name || 'غير محدد'}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {user.email || 'غير محدد'}
-                  </div>
+                  <div className="font-semibold">{user.full_name || 'غير محدد'}</div>
+                  <div className="text-sm text-muted-foreground">{user.email || 'غير محدد'}</div>
                   {user.phone && (
-                    <div className="text-xs text-gray-400">{user.phone}</div>
+                    <div className="text-xs text-muted-foreground">{user.phone}</div>
                   )}
                 </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm">
-                  {user.department || 'غير محدد'}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge className={getRoleBadgeColor(user.role || 'no_role')}>
-                  {getRoleLabel(user.role || 'no_role')}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={user.is_active ? "default" : "secondary"}>
-                  {user.is_active ? 'نشط' : 'معطل'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm">
-                  {user.created_at ? formatDate(user.created_at) : 'غير محدد'}
-                </span>
-              </TableCell>
-              <TableCell className="text-center">
+                <div className="text-end">
+                  <Badge className={getRoleBadgeColor(user.role || 'no_role')}>
+                    {getRoleLabel(user.role || 'no_role')}
+                  </Badge>
+                  <div className="mt-1">
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'نشط' : 'معطل'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+                <span>{user.department || 'غير محدد'}</span>
+                <span>{user.created_at ? formatDate(user.created_at) : 'غير محدد'}</span>
+              </div>
+              <div className="mt-3">
                 <UserActionButtons user={user} onUpdate={onUpdate} />
-              </TableCell>
-            </TableRow>
+              </div>
+            </div>
           ))}
-        </TableBody>
-      </Table>
-      
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>المستخدم</TableHead>
+                <TableHead>القسم</TableHead>
+                <TableHead>الدور</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>تاريخ الإنشاء</TableHead>
+                <TableHead className="text-center">الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{user.full_name || 'غير محدد'}</div>
+                      <div className="text-sm text-muted-foreground">{user.email || 'غير محدد'}</div>
+                      {user.phone && (
+                        <div className="text-xs text-muted-foreground">{user.phone}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{user.department || 'غير محدد'}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getRoleBadgeColor(user.role || 'no_role')}>
+                      {getRoleLabel(user.role || 'no_role')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'نشط' : 'معطل'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{user.created_at ? formatDate(user.created_at) : 'غير محدد'}</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <UserActionButtons user={user} onUpdate={onUpdate} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
       {/* معلومات إضافية عن البيانات المعروضة */}
-      <div className="mt-4 text-xs text-gray-500 text-center">
+      <div className="mt-4 text-xs text-muted-foreground text-center">
         عرض {users.length} مستخدم
         {process.env.NODE_ENV === 'development' && (
-          <span className="ml-2 text-yellow-600">
-            [تطوير] تم تحميل البيانات بنجاح
-          </span>
+          <span className="ml-2 text-yellow-600">[تطوير] تم تحميل البيانات بنجاح</span>
         )}
       </div>
     </div>
