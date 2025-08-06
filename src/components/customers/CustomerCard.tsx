@@ -7,6 +7,7 @@ import { useState } from "react";
 import CustomerEditDialog from "./CustomerEditDialog";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CustomerCardProps {
   customer: Customer;
@@ -40,21 +41,28 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
     onSelect();
   };
 
-  const handleCustomerUpdated = async (updatedCustomer: Customer) => {
+  const handleEditSaved = async () => {
     try {
       setIsUpdating(true);
-      
-      // تحديث البيانات في الكارد فوراً
-      onCustomerUpdated(updatedCustomer);
-      
-      // إغلاق النافذة
-      setIsEditDialogOpen(false);
-      
-      console.log('تم تحديث بيانات العميل بنجاح:', updatedCustomer);
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select(`
+          *,
+          segment:customer_segments(id, name, name_ar, color, description, minimum_bookings, minimum_total_spent, is_active, created_at, updated_at)
+        `)
+        .eq('id', customer.id)
+        .single();
+
+      if (error) throw error;
+
+      onCustomerUpdated(data as Customer);
+      toast.success('تم تحديث بيانات العميل بنجاح');
     } catch (error) {
       console.error('خطأ في تحديث بيانات العميل:', error);
       toast.error('حدث خطأ أثناء حفظ التحديثات');
     } finally {
+      setIsEditDialogOpen(false);
       setIsUpdating(false);
     }
   };
@@ -163,10 +171,10 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
       </Card>
 
       <CustomerEditDialog
-        customerId={customer.id}
-        isOpen={isEditDialogOpen}
+        customer={customer}
+        open={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
-        onCustomerUpdated={handleCustomerUpdated}
+        onSave={handleEditSaved}
       />
     </>
   );
