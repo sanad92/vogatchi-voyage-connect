@@ -13,7 +13,7 @@ const NewFlightBooking = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />

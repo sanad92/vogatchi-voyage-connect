@@ -20,7 +20,7 @@ const demoCustomer: Customer = {
 
 const CustomerPortalPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <CustomerPortal customer={demoCustomer} />
     </div>
   );
