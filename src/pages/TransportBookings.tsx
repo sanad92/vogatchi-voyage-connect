@@ -28,7 +28,7 @@ const TransportBookings = () => {
   const pendingBookings = transportBookings?.filter(booking => !booking.invoice_sent).length || 0;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

@@ -40,29 +40,22 @@ const DailyOperations = () => {
   const todayBookingsCount = todayBookings?.length || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="w-full px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         {/* العنوان والإحصائيات السريعة */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-blue-700 flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
                 <Calendar className="h-6 w-6 sm:h-8 sm:w-8" />
                 العمليات اليومية
               </h2>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 جميع مهامك وأنشطتك لليوم في مكان واحد
               </p>
             </div>
-            <div className="text-sm text-gray-600">
-              {new Date().toLocaleDateString('ar-EG', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </div>
+            <div className="text-sm text-muted-foreground">\n              {new Date().toLocaleDateString('ar-EG', { \n                weekday: 'long', \n                year: 'numeric', \n                month: 'long', \n                day: 'numeric' \n              })}\n            </div>
           </div>
 
           {/* الإحصائيات السريعة */}

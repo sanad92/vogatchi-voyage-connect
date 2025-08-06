@@ -163,7 +163,7 @@ const Invoices = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
       {/* رأس الصفحة مع الإحصائيات المحدثة */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
@@ -186,10 +186,7 @@ const Invoices = () => {
               <div className="p-2 bg-green-100 rounded-lg">
                 <CreditCard className="h-5 w-5 text-green-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">مدفوعة بالكامل</p>
-                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.paidInvoices || 0}</p>
-              </div>
+              <div>\n                <p className=\"text-sm font-medium text-muted-foreground\">مدفوعة بالكامل</p>\n                <p className=\"text-2xl font-bold text-foreground\">{invoiceStats?.paidInvoices || 0}</p>\n              </div>
             </div>
           </CardContent>
         </Card>
@@ -201,8 +198,7 @@ const Invoices = () => {
                 <CreditCard className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">مدفوعة جزئياً</p>
-                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.partiallyPaidInvoices || 0}</p>
+                <p className=\"text-sm font-medium text-muted-foreground\">مدفوعة جزئياً</p>\n                <p className=\"text-2xl font-bold text-foreground\">{invoiceStats?.partiallyPaidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -215,8 +211,7 @@ const Invoices = () => {
                 <AlertCircle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">غير مدفوعة</p>
-                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.unpaidInvoices || 0}</p>
+                <p className=\"text-sm font-medium text-muted-foreground\">غير مدفوعة</p>\n                <p className=\"text-2xl font-bold text-foreground\">{invoiceStats?.unpaidInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -229,10 +224,7 @@ const Invoices = () => {
                 <FileText className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">المبلغ المتبقي</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {invoiceStats?.totalRemainingAmount?.toLocaleString() || 0} ج.م
-                </p>
+                <p className=\"text-sm font-medium text-muted-foreground\">المبلغ المتبقي</p>\n                <p className=\"text-xl font-bold text-foreground\">\n                  {invoiceStats?.totalRemainingAmount?.toLocaleString() || 0} ج.م\n                </p>
               </div>
             </div>
           </CardContent>
@@ -361,9 +353,7 @@ const Invoices = () => {
             </div>
           ) : invoices?.length === 0 ? (
             <div className="text-center py-10 space-y-4">
-              <div className="text-gray-500">
-                لا توجد فواتير تطابق معايير البحث
-              </div>
+              <div className=\"text-muted-foreground\">\n                لا توجد فواتير تطابق معايير البحث\n              </div>
               <Button onClick={() => setShowCreateDialog(true)}>
                 إنشاء أول فاتورة
               </Button>
@@ -388,24 +378,14 @@ const Invoices = () => {
                   {invoices?.map((invoice) => {
                     const bookingDetails = getBookingDetails(invoice);
                     return (
-                      <tr key={invoice.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">{invoice.invoice_number}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{invoice.customer?.name || "غير محدد"}</div>
-                          {invoice.customer?.email && (
-                            <div className="text-sm text-gray-500">{invoice.customer.email}</div>
-                          )}
-                        </td>
+                      <tr key={invoice.id} className="border-b hover:bg-muted">\n                        <td className="py-3 px-4 font-medium">{invoice.invoice_number}</td>\n                        <td className="py-3 px-4">\n                          <div className="font-medium">{invoice.customer?.name || "غير محدد"}</div>\n                          {invoice.customer?.email && (\n                            <div className="text-sm text-muted-foreground">{invoice.customer.email}</div>\n                          )}\n                        </td>
                         <td className="py-3 px-4">
                           {getBookingTypeLabel(invoice.booking_type)}
                         </td>
                         <td className="py-3 px-4 font-medium">
                           {invoice.final_amount?.toLocaleString()} {invoice.currency}
                         </td>
-                        <td className="py-3 px-4 font-medium text-green-600">
-                          {invoice.total_paid_amount?.toLocaleString()} {invoice.currency}
-                        </td>
-                        <td className="py-3 px-4 font-medium text-red-600">
+                        <td className="py-3 px-4 font-medium text-primary">\n                          {invoice.total_paid_amount?.toLocaleString()} {invoice.currency}\n                        </td>\n                        <td className="py-3 px-4 font-medium text-destructive">
                           {invoice.remaining_amount?.toLocaleString()} {invoice.currency}
                         </td>
                         <td className="py-3 px-4">

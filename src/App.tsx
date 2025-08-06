@@ -71,7 +71,7 @@ function App() {
       <Router>
         <OptimizedAuthProvider>
           <OptimizedErrorBoundary>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
               <Routes>
                 {/* صفحة الهبوط كصفحة رئيسية عامة */}
