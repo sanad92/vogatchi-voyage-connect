@@ -29,7 +29,7 @@ const Navbar = () => {
   return (
     <>
       <SuperAdminBanner />
-      <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">
+      <nav className="bg-background shadow-lg border-b border-border sticky top-0 z-40">
         <div className="w-full max-w-none px-3 sm:px-4 lg:px-6">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
@@ -56,10 +56,10 @@ const Navbar = () => {
 
             {/* User Menu */}
             <div className="hidden md:flex items-center space-x-2 lg:space-x-4 rtl:space-x-reverse min-w-0">
-              <div className="hidden lg:flex items-center space-x-3 rtl:space-x-reverse">
-                <div className="text-right rtl:text-left">
-                  <p className="text-sm font-medium text-gray-900">مرحباً</p>
-                  <p className="text-xs text-gray-500 truncate max-w-20">
+              <div className="hidden lg:flex items-center space-x-3 rtl:space-x-reverse min-w-0">
+                <div className="text-right rtl:text-left min-w-0 max-w-[10rem]">
+                  <p className="text-sm font-medium text-foreground truncate">مرحباً</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     {getRoleDisplayName(userRole)}
                   </p>
                 </div>
