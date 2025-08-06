@@ -55,7 +55,14 @@ const DailyOperations = () => {
                 جميع مهامك وأنشطتك لليوم في مكان واحد
               </p>
             </div>
-            <div className="text-sm text-muted-foreground">\n              {new Date().toLocaleDateString('ar-EG', { \n                weekday: 'long', \n                year: 'numeric', \n                month: 'long', \n                day: 'numeric' \n              })}\n            </div>
+            <div className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('ar-EG', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
           </div>
 
           {/* الإحصائيات السريعة */}
