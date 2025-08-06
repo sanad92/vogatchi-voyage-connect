@@ -22,7 +22,7 @@ const NavigationDropdown: React.FC<NavigationDropdownProps> = ({ title, icon: Ic
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+        <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:text-primary">
           <Icon className="h-4 w-4" />
           {title}
           <ChevronDown className="h-4 w-4" />
