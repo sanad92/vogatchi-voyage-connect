@@ -169,12 +169,12 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">إجمالي الفواتير</p>
-                <p className="text-2xl font-bold text-gray-900">{invoiceStats?.totalInvoices || 0}</p>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الفواتير</p>
+                <p className="text-2xl font-bold text-foreground">{invoiceStats?.totalInvoices || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -183,8 +183,8 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CreditCard className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <CreditCard className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">مدفوعة بالكامل</p>
@@ -197,8 +197,8 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <CreditCard className="h-5 w-5 text-yellow-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <CreditCard className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">مدفوعة جزئياً</p>
@@ -211,8 +211,8 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-red-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">غير مدفوعة</p>
@@ -225,8 +225,8 @@ const Invoices = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <FileText className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">المبلغ المتبقي</p>

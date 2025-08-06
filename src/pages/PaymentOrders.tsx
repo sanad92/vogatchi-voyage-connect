@@ -267,14 +267,14 @@ const PaymentOrders = () => {
   });
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      pending: "bg-yellow-100 text-yellow-800",
-      processing: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      failed: "bg-red-100 text-red-800",
-      cancelled: "bg-gray-100 text-gray-800"
+    const colors: Record<string, string> = {
+      pending: "bg-muted text-muted-foreground",
+      processing: "bg-primary/10 text-primary",
+      completed: "bg-primary/10 text-primary",
+      failed: "bg-destructive/10 text-destructive",
+      cancelled: "bg-muted text-muted-foreground"
     };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-muted text-foreground";
   };
 
   const getStatusLabel = (status: string) => {
@@ -361,25 +361,24 @@ const PaymentOrders = () => {
     .reduce((sum, order) => sum + order.amount, 0);
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-orange-900 flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             <CreditCard className="h-8 w-8" />
             أوامر الدفع
           </h1>
-          <p className="text-gray-600 mt-1">إدارة ومتابعة أوامر الدفع متعددة العملات</p>
+          <p className="text-muted-foreground mt-1">إدارة ومتابعة أوامر الدفع متعددة العملات</p>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             onClick={() => setShowConverter(!showConverter)}
-            className="bg-blue-50 hover:bg-blue-100"
           >
             <Building2 className="w-4 h-4 ml-2" />
             محول العملات
           </Button>
-          <Button onClick={() => setShowForm(!showForm)} className="bg-orange-600 hover:bg-orange-700">
+          <Button onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4 ml-2" />
             إنشاء أمر دفع جديد
           </Button>
@@ -397,9 +396,9 @@ const PaymentOrders = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <CreditCard className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-gray-600">إجمالي الأوامر</p>
+                <p className="text-sm text-muted-foreground">إجمالي الأوامر</p>
                 <p className="text-2xl font-bold">{totalOrders}</p>
               </div>
             </div>
@@ -409,9 +408,9 @@ const PaymentOrders = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-purple-600" />
+              <CreditCard className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-gray-600">إجمالي المبلغ</p>
+                <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
                 <p className="text-2xl font-bold">{totalAmount.toFixed(2)}</p>
               </div>
             </div>
@@ -421,10 +420,10 @@ const PaymentOrders = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-gray-600">المكتمل</p>
-                <p className="text-2xl font-bold text-green-600">{completedAmount.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">المكتمل</p>
+                <p className="text-2xl font-bold text-primary">{completedAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -433,10 +432,10 @@ const PaymentOrders = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-600" />
+              <Clock className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-gray-600">المعلق</p>
-                <p className="text-2xl font-bold text-orange-600">{pendingAmount.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">المعلق</p>
+                <p className="text-2xl font-bold text-primary">{pendingAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -449,7 +448,7 @@ const PaymentOrders = () => {
           <div className="flex gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="البحث برقم الأمر أو رقم الفاتورة أو اسم العميل..."
                   value={searchTerm}
@@ -581,26 +580,26 @@ const PaymentOrders = () => {
         {isLoading ? (
           <div className="text-center py-8">جاري تحميل أوامر الدفع...</div>
         ) : filteredPaymentOrders.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">لا توجد أوامر دفع مطابقة للبحث</p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredPaymentOrders.map((order) => (
-            <Card key={order.id} className={`hover:shadow-lg transition-shadow ${isOverdue(order.due_date, order.status) ? 'border-red-300 bg-red-50' : ''}`}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <CreditCard className="w-5 h-5" />
-                      أمر دفع #{order.order_number}
-                    </h3>
-                    <p className="text-gray-600">فاتورة: {order.invoice.invoice_number}</p>
-                    <p className="text-gray-600">العميل: {order.invoice.customers.name}</p>
+            <Card>
+              <CardContent className="text-center py-8">
+                <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">لا توجد أوامر دفع مطابقة للبحث</p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredPaymentOrders.map((order) => (
+              <Card key={order.id} className={`hover:shadow-lg transition-shadow ${isOverdue(order.due_date, order.status) ? 'border-destructive/30 bg-destructive/10' : ''}`}>
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        أمر دفع #{order.order_number}
+                      </h3>
+                      <p className="text-muted-foreground">فاتورة: {order.invoice.invoice_number}</p>
+                      <p className="text-muted-foreground">العميل: {order.invoice.customers.name}</p>
                     {order.bank_account && (
-                      <p className="text-sm text-blue-600">
+                      <p className="text-sm text-primary">
                         حساب: {order.bank_account.account_name} ({order.bank_account.currency})
                       </p>
                     )}
@@ -626,8 +625,8 @@ const PaymentOrders = () => {
                 </div>
 
                 {isOverdue(order.due_date, order.status) && (
-                  <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
-                    <p className="text-red-700 text-sm font-medium">⚠️ هذا الأمر متأخر عن موعد الاستحقاق</p>
+                  <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive text-sm font-medium">⚠️ هذا الأمر متأخر عن موعد الاستحقاق</p>
                   </div>
                 )}
 
@@ -638,7 +637,7 @@ const PaymentOrders = () => {
                   </div>
                   <div>
                     <span className="font-medium">تاريخ الاستحقاق:</span>
-                    <p className={isOverdue(order.due_date, order.status) ? 'text-red-600 font-medium' : ''}>
+                    <p className={isOverdue(order.due_date, order.status) ? 'text-destructive font-medium' : ''}>
                       {new Date(order.due_date).toLocaleDateString('ar-EG')}
                     </p>
                   </div>
@@ -654,8 +653,8 @@ const PaymentOrders = () => {
 
                 {order.exchange_rate !== 1.0 && (
                   <div className="mb-4 p-3 bg-blue-50 rounded">
-                    <span className="font-medium text-blue-800">سعر الصرف:</span>
-                    <p className="text-sm text-blue-700">
+                    <span className="font-medium text-primary">سعر الصرف:</span>
+                    <p className="text-sm text-primary">
                       1 {order.invoice.currency} = {order.exchange_rate.toFixed(4)} {order.bank_account?.currency}
                     </p>
                   </div>
@@ -682,7 +681,6 @@ const PaymentOrders = () => {
                     <>
                       <Button 
                         size="sm" 
-                        className="bg-green-600 hover:bg-green-700"
                         onClick={() => updatePaymentStatusMutation.mutate({
                           id: order.id,
                           status: 'completed',

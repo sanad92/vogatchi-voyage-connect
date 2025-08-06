@@ -24,9 +24,9 @@ const OptimizedIndex = () => {
     console.error('❌ Dashboard error:', error);
     return (
       <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800 mb-4">
+        <Alert className="border-destructive/20 bg-destructive/10">
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive mb-4">
             حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
           </AlertDescription>
           <Button 

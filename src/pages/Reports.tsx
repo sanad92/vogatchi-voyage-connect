@@ -131,7 +131,7 @@ const Reports = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge variant="outline">
             البيانات الحقيقية
           </Badge>
           <Button
@@ -225,19 +225,19 @@ const Reports = () => {
                   <div className="space-y-3">
                     <div className="p-3 border rounded-lg">
                       <div className="font-medium">إجمالي الحجوزات</div>
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-2xl font-bold text-primary">
                         {hotelBookings?.length || 0}
                       </div>
                     </div>
                     <div className="p-3 border rounded-lg">
                       <div className="font-medium">إجمالي العملاء</div>
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-primary">
                         {customers?.length || 0}
                       </div>
                     </div>
                     <div className="p-3 border rounded-lg">
                       <div className="font-medium">الإيرادات الإجمالية</div>
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-2xl font-bold text-primary">
                         {financialData?.revenue.toLocaleString() || 0} ج.م
                       </div>
                     </div>
@@ -278,28 +278,28 @@ const Reports = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-2xl font-bold text-primary">
                         {hotelBookings?.length || 0}
                       </div>
-                      <div className="text-sm text-gray-600">إجمالي الحجوزات</div>
+                      <div className="text-sm text-muted-foreground">إجمالي الحجوزات</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-primary">
                         {customers?.length || 0}
                       </div>
-                      <div className="text-sm text-gray-600">إجمالي العملاء</div>
+                      <div className="text-sm text-muted-foreground">إجمالي العملاء</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-2xl font-bold text-primary">
                         {financialData?.revenue.toLocaleString() || 0}
                       </div>
-                      <div className="text-sm text-gray-600">الإيرادات (ج.م)</div>
+                      <div className="text-sm text-muted-foreground">الإيرادات (ج.م)</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">
+                      <div className="text-2xl font-bold text-primary">
                         {financialData?.profitMargin.toFixed(1) || 0}%
                       </div>
-                      <div className="text-sm text-gray-600">هامش الربح</div>
+                      <div className="text-sm text-muted-foreground">هامش الربح</div>
                     </div>
                   </div>
                 </CardContent>

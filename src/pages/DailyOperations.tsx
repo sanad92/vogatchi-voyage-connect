@@ -98,8 +98,8 @@ const DailyOperations = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p>لا توجد مهام متابعة لهذا اليوم</p>
                   </div>
                 )}
@@ -126,7 +126,7 @@ const DailyOperations = () => {
                           <Badge variant="outline">{booking.status}</Badge>
                         </div>
                         
-                        <div className="space-y-2 text-sm text-gray-600">
+                        <div className="space-y-2 text-sm text-muted-foreground">
                           <div className="flex items-center gap-2">
                             <Phone className="h-4 w-4" />
                             {booking.customers?.phone}
@@ -154,8 +154,8 @@ const DailyOperations = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p>لا يوجد عملاء وصول لهذا اليوم</p>
                   </div>
                 )}
