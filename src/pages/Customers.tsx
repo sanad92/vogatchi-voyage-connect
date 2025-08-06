@@ -219,18 +219,18 @@ const Customers = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Users className="h-8 w-8" />
+    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <Users className="h-6 w-6 sm:h-8 sm:w-8" />
           إدارة العملاء
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <CustomerDataExporter 
             customers={filteredCustomers}
             selectedCustomers={selectedCustomers}
           />
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
               size="sm"
@@ -248,7 +248,7 @@ const Customers = () => {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="whitespace-nowrap">
                 <Plus className="h-4 w-4 mr-2" />
                 إضافة عميل جديد
               </Button>
@@ -287,35 +287,35 @@ const Customers = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-10">
-          <TabsTrigger value="all">جميع العملاء</TabsTrigger>
-          <TabsTrigger value="vip" className="flex items-center gap-2">
+        <TabsList className="flex w-full overflow-x-auto gap-2 p-1 rounded-md bg-muted/40">
+          <TabsTrigger value="all" className="shrink-0">جميع العملاء</TabsTrigger>
+          <TabsTrigger value="vip" className="flex items-center gap-2 shrink-0">
             <Star className="h-4 w-4" />
             VIP
           </TabsTrigger>
-          <TabsTrigger value="new">عملاء جدد</TabsTrigger>
-          <TabsTrigger value="inactive">غير نشطين</TabsTrigger>
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+          <TabsTrigger value="new" className="shrink-0">عملاء جدد</TabsTrigger>
+          <TabsTrigger value="inactive" className="shrink-0">غير نشطين</TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex items-center gap-2 shrink-0">
             <TrendingUp className="h-4 w-4" />
             لوحتي
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="analytics" className="flex items-center gap-2 shrink-0">
             <BarChart3 className="h-4 w-4" />
             تحليلات
           </TabsTrigger>
-          <TabsTrigger value="loyalty" className="flex items-center gap-2">
+          <TabsTrigger value="loyalty" className="flex items-center gap-2 shrink-0">
             <Star className="h-4 w-4" />
             الولاء
           </TabsTrigger>
-          <TabsTrigger value="automation" className="flex items-center gap-2">
+          <TabsTrigger value="automation" className="flex items-center gap-2 shrink-0">
             <MessageCircle className="h-4 w-4" />
             الأتمتة
           </TabsTrigger>
-          <TabsTrigger value="segmentation" className="flex items-center gap-2">
+          <TabsTrigger value="segmentation" className="flex items-center gap-2 shrink-0">
             <Brain className="h-4 w-4" />
             التقسيم الذكي
           </TabsTrigger>
-          <TabsTrigger value="complaints" className="flex items-center gap-2">
+          <TabsTrigger value="complaints" className="flex items-center gap-2 shrink-0">
             <AlertTriangle className="h-4 w-4" />
             الشكاوى
           </TabsTrigger>
@@ -358,7 +358,7 @@ const Customers = () => {
         <TabsContent value={activeTab} className="space-y-4" 
           style={{ display: ['all', 'vip', 'new', 'inactive'].includes(activeTab) ? 'block' : 'none' }}>
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               عرض {filteredCustomers.length} من أصل {customers?.length || 0} عميل
             </p>
           </div>

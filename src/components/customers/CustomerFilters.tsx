@@ -11,11 +11,12 @@ const CustomerFilters = ({ activeSegment, onSegmentChange }: CustomerFiltersProp
   const { customerSegments } = useCRM();
 
   return (
-    <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg">
+    <div className="flex gap-2 p-3 sm:p-4 bg-muted/40 rounded-lg overflow-x-auto whitespace-nowrap">
       <Button
         variant={activeSegment === null ? "default" : "outline"}
         onClick={() => onSegmentChange(null)}
         size="sm"
+        className="shrink-0"
       >
         جميع العملاء
       </Button>
@@ -25,6 +26,7 @@ const CustomerFilters = ({ activeSegment, onSegmentChange }: CustomerFiltersProp
           variant={activeSegment === segment.id ? "default" : "outline"}
           onClick={() => onSegmentChange(segment.id)}
           size="sm"
+          className="shrink-0"
           style={{
             backgroundColor: activeSegment === segment.id ? segment.color : 'transparent',
             borderColor: segment.color,

@@ -97,10 +97,9 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
     <Card className="mb-6">
       <CardContent className="p-4">
         <div className="space-y-4">
-          {/* البحث الأساسي */}
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="البحث بالاسم، الهاتف، البريد الإلكتروني، أو رقم جواز السفر..."
                 value={searchTerm}
@@ -109,32 +108,34 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch} className="px-6">
-              <Search className="h-4 w-4 mr-2" />
-              بحث
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="relative"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              فلاتر متقدمة
-              {getActiveFiltersCount() > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                >
-                  {getActiveFiltersCount()}
-                </Badge>
-              )}
-            </Button>
-            {getActiveFiltersCount() > 0 && (
-              <Button variant="outline" onClick={handleClear}>
-                <X className="h-4 w-4 mr-2" />
-                مسح
+            <div className="flex gap-2 md:ml-2">
+              <Button onClick={handleSearch} className="px-6 w-full md:w-auto">
+                <Search className="h-4 w-4 mr-2" />
+                بحث
               </Button>
-            )}
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="relative w-full md:w-auto"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                فلاتر متقدمة
+                {getActiveFiltersCount() > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {getActiveFiltersCount()}
+                  </Badge>
+                )}
+              </Button>
+              {getActiveFiltersCount() > 0 && (
+                <Button variant="outline" onClick={handleClear} className="w-full md:w-auto">
+                  <X className="h-4 w-4 mr-2" />
+                  مسح
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* الفلاتر المتقدمة */}
