@@ -40,9 +40,11 @@ const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">{companyName.charAt(0)}</span>
-            </div>
+            <img
+              src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
+              alt="Vogatchi logo"
+              className="w-12 h-12 rounded-md object-contain shadow-lg"
+            />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {companyName}
             </span>
