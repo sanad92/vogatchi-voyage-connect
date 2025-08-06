@@ -2,7 +2,8 @@
 import React from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import SiteSettings from '@/components/admin/SiteSettings';
-
+import LandingPageCMS from '@/components/admin/LandingPageCMS';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const SiteCustomization = () => {
   const { isSuperAdmin } = useOptimizedAuth();
 
@@ -25,7 +26,21 @@ const SiteCustomization = () => {
           <p className="text-muted-foreground">إدارة شاملة لمظهر وإعدادات الموقع</p>
         </div>
 
-        <SiteSettings />
+        {/* تبويبات إدارة التخصيص */}
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">الإعدادات العامة</TabsTrigger>
+            <TabsTrigger value="landing">صفحة الهبوط والمحتوى</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general">
+            <SiteSettings />
+          </TabsContent>
+
+          <TabsContent value="landing">
+            <LandingPageCMS />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
