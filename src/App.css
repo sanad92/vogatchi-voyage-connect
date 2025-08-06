@@ -40,3 +40,45 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Global overrides to align legacy utilities with design tokens and full-width layout */
+/* Make container full-width with responsive padding */
+.container {
+  max-width: 100% !important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 768px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Map common fixed colors to semantic tokens */
+.text-gray-900, .text-gray-800, .text-gray-700 { color: hsl(var(--foreground)) !important; }
+.text-gray-600, .text-gray-500, .text-gray-400 { color: hsl(var(--muted-foreground)) !important; }
+.text-red-600, .text-red-700 { color: hsl(var(--destructive)) !important; }
+.text-green-600 { color: hsl(var(--primary)) !important; }
+
+.bg-white { background-color: hsl(var(--card)) !important; }
+.bg-gray-50 { background-color: hsl(var(--background)) !important; }
+.bg-gray-100 { background-color: hsl(var(--muted)) !important; }
+.bg-gray-200 { background-color: hsl(var(--muted)) !important; }
+.bg-red-50 { background-color: hsl(var(--destructive) / 0.08) !important; }
+.bg-red-100 { background-color: hsl(var(--destructive) / 0.12) !important; }
+.bg-green-100 { background-color: hsl(var(--primary) / 0.12) !important; }
+
+.border-gray-200, .border-gray-300 { border-color: hsl(var(--border)) !important; }
+.border-red-200 { border-color: hsl(var(--destructive) / 0.2) !important; }
+
+/* Hover states */
+.hover\:bg-gray-100:hover { background-color: hsl(var(--muted)) !important; }
+.hover\:text-gray-700:hover { color: hsl(var(--foreground)) !important; }
+.hover\:bg-red-50:hover { background-color: hsl(var(--destructive) / 0.08) !important; }
