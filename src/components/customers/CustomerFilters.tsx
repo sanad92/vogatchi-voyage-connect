@@ -11,7 +11,7 @@ const CustomerFilters = ({ activeSegment, onSegmentChange }: CustomerFiltersProp
   const { customerSegments } = useCRM();
 
   return (
-    <div className="flex gap-2 p-3 sm:p-4 bg-muted/40 rounded-lg overflow-x-auto whitespace-nowrap">
+    <div className="w-full flex gap-2 p-3 sm:p-4 bg-muted/40 rounded-lg overflow-x-auto whitespace-nowrap">
       <Button
         variant={activeSegment === null ? "default" : "outline"}
         onClick={() => onSegmentChange(null)}

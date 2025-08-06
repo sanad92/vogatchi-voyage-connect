@@ -57,9 +57,9 @@ const CustomerGrid = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-48 bg-gray-200 rounded-lg animate-pulse" />
+          <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -68,7 +68,7 @@ const CustomerGrid = ({
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600 mb-4">خطأ في تحميل العملاء: {error.message}</p>
+        <p className="text-destructive mb-4">خطأ في تحميل العملاء: {error.message}</p>
         <div className="flex gap-2 justify-center">
           <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -85,11 +85,11 @@ const CustomerGrid = ({
   if (!localCustomers || localCustomers.length === 0) {
     return (
       <div className="text-center py-12">
-        <UserPlus className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <UserPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">
           {activeTab === 'all' ? 'لا توجد عملاء بعد' : `لا توجد عملاء في فئة "${activeTab}"`}
         </h3>
-        <p className="text-gray-500 mb-6">
+        <p className="text-muted-foreground mb-6">
           {activeTab === 'all' ? 'ابدأ بإضافة عميلك الأول' : 'جرب البحث في فئة أخرى أو أضف عميل جديد'}
         </p>
         <Button onClick={onAddNewCustomer}>
@@ -103,7 +103,7 @@ const CustomerGrid = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           {localCustomers.length} عميل
         </p>
         <Button 
@@ -117,7 +117,7 @@ const CustomerGrid = ({
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {localCustomers.map((customer) => (
           <CustomerCard
             key={customer.id}

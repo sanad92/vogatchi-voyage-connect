@@ -94,8 +94,8 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
   };
 
   return (
-    <Card className="mb-6">
-      <CardContent className="p-4">
+    <Card className="mb-6 border bg-card rounded-lg shadow-sm">
+      <CardContent className="p-4 md:p-6">
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row gap-2">
             <div className="flex-1 relative">
