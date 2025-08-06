@@ -38,7 +38,7 @@ const CustomerService = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Navbar />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="w-full px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         {/* العنوان والإحصائيات */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -47,7 +47,7 @@ const CustomerService = () => {
                 <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8" />
                 خدمة العملاء
               </h2>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 إدارة ومتابعة جميع مهام خدمة العملاء والتواصل معهم
               </p>
             </div>

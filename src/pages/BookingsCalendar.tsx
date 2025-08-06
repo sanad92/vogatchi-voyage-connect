@@ -80,11 +80,11 @@ const BookingsCalendar = () => {
   const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
   if (isLoading) {
-    return <div className="container mx-auto p-6 text-center">جاري تحميل التقويم...</div>;
+    return <div className="w-full px-4 md:px-6 lg:px-8 p-6 text-center">جاري تحميل التقويم...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -127,7 +127,7 @@ const BookingsCalendar = () => {
         <CardContent>
           <div className="grid grid-cols-7 gap-2 mb-4">
             {dayNames.map(day => (
-              <div key={day} className="p-2 text-center font-medium text-gray-600 border-b">
+              <div key={day} className="p-2 text-center font-medium text-muted-foreground border-b">
                 {day}
               </div>
             ))}
@@ -139,7 +139,7 @@ const BookingsCalendar = () => {
               
               return (
                 <div key={index} className={`min-h-[100px] p-2 border rounded-lg ${
-                  day ? 'bg-white hover:bg-gray-50' : 'bg-gray-100'
+                  day ? 'bg-card hover:bg-muted' : 'bg-muted'
                 }`}>
                   {day && (
                     <>

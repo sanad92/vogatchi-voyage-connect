@@ -8,12 +8,12 @@ const EnhancedEmployeesPage = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-8">
       <div className="flex items-center gap-3">
         <Users className="h-7 w-7 text-blue-600" />
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">إدارة الموظفين المحسنة</h1>
-          <p className="text-gray-600">إدارة شاملة لبيانات الموظفين مع إمكانيات الإيقاف والحذف</p>
+          <h1 className="text-3xl font-bold text-foreground">إدارة الموظفين المحسنة</h1>
+          <p className="text-muted-foreground">إدارة شاملة لبيانات الموظفين مع إمكانيات الإيقاف والحذف</p>
         </div>
         
         {/* مؤشر الصلاحيات */}
@@ -37,7 +37,7 @@ const EnhancedEmployeesPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>قائمة الموظفين</span>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               {isSuperAdmin() && '• إمكانية الحذف متاحة'}
               {(hasRole('admin') || hasRole('manager')) && !isSuperAdmin() && '• إمكانية الإيقاف/التفعيل متاحة'}
             </div>

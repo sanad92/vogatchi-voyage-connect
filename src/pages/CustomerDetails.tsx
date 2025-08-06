@@ -52,9 +52,9 @@ const CustomerDetails = () => {
 
   if (!customerId) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <div className="text-center">
-          <p className="text-red-500">معرف العميل غير صحيح</p>
+          <p className="text-destructive">معرف العميل غير صحيح</p>
           <Button onClick={() => navigate('/customers')} className="mt-4">
             العودة لقائمة العملاء
           </Button>
@@ -65,7 +65,7 @@ const CustomerDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center space-y-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -78,7 +78,7 @@ const CustomerDetails = () => {
 
   if (error || !customerData) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full px-4 md:px-6 lg:px-8 p-6">
         <div className="text-center space-y-4">
           <p className="text-red-500 text-lg">
             {error ? 'حدث خطأ في تحميل بيانات العميل' : 'العميل غير موجود'}
@@ -106,7 +106,7 @@ const CustomerDetails = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

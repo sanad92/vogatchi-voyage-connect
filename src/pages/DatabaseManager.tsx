@@ -15,13 +15,13 @@ const DatabaseManager = () => {
 
   if (!isSuperAdmin()) {
     return (
-      <div className="container mx-auto px-4 py-10 flex justify-center items-center min-h-[60vh]">
+      <div className="w-full px-4 md:px-6 lg:px-8 py-10 flex justify-center items-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
           <ShieldOff className="h-6 w-6 mb-2" />
           <div>
             <div className="font-bold mb-1 text-lg">صلاحية غير كافية</div>
-            <div className="text-gray-700 mb-1">هذه الصفحة متاحة فقط للسوبر أدمن.</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-foreground mb-1">هذه الصفحة متاحة فقط للسوبر أدمن.</div>
+            <div className="text-xs text-muted-foreground">
               إذا كنت بحاجة للوصول، يرجى التواصل مع مدير النظام.
             </div>
           </div>
@@ -41,10 +41,10 @@ const DatabaseManager = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-8">
       <div className="flex items-center gap-3 mb-6">
         <Database className="h-7 w-7 text-blue-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Database Manager</h1>
+        <h1 className="text-2xl font-bold text-foreground">Database Manager</h1>
         <Badge className="bg-red-100 text-red-700">سوبر أدمن فقط</Badge>
         <Button
           variant="outline"
@@ -53,15 +53,15 @@ const DatabaseManager = () => {
           onClick={() => setShowSqlEditor(true)}
         >محرر SQL تجريبي</Button>
       </div>
-      <p className="mb-5 text-gray-600 max-w-2xl">
+      <p className="mb-5 text-muted-foreground max-w-2xl">
         يمكنك هنا استعراض الجداول الأساسية للنظام وإجراء العمليات الإدارية المتقدمة.
-        <span className="text-blue-700 font-bold"> الآن يمكنك تصفح كل جدول أو تصدير بياناته أو فتح محرر SQL.</span>
+        <span className="text-foreground font-bold"> الآن يمكنك تصفح كل جدول أو تصدير بياناته أو فتح محرر SQL.</span>
       </p>
       {!selectedTable ? (
         <div className="overflow-x-auto">
-          <table className="min-w-[450px] w-full bg-white border rounded-xl shadow-sm divide-y">
+          <table className="min-w-[450px] w-full bg-card border rounded-xl shadow-sm divide-y">
             <thead>
-              <tr className="bg-gray-50 border-b text-gray-700">
+              <tr className="bg-muted border-b text-foreground">
                 <th className="p-3 text-right">اسم الجدول</th>
                 <th className="p-3 text-center">عدد السجلات</th>
                 <th className="p-3 text-right">الوصف</th>
@@ -70,10 +70,10 @@ const DatabaseManager = () => {
             </thead>
             <tbody>
               {availableTables.map((tbl) => (
-                <tr key={tbl.name} className="border-b hover:bg-blue-50 transition">
-                  <td className="p-3 font-mono text-blue-800">{tbl.name}</td>
+                <tr key={tbl.name} className="border-b hover:bg-muted transition">
+                  <td className="p-3 font-mono text-foreground">{tbl.name}</td>
                   <td className="p-3 text-center">{tbl.rowCount ?? "?"}</td>
-                  <td className="p-3 text-gray-600">{tbl.description}</td>
+                  <td className="p-3 text-muted-foreground">{tbl.description}</td>
                   <td className="flex gap-2 items-center justify-center p-3">
                     <Button size="sm" onClick={() => setSelectedTable(tbl.name)}>تصفح</Button>
                   </td>
@@ -89,9 +89,9 @@ const DatabaseManager = () => {
         <DialogContent>
           <div className="p-4">
             <div className="text-lg font-bold mb-2">محرر SQL (تجريبي)</div>
-            <div className="text-gray-600 mb-2">سيتم إضافة وظيفة التنفيذ قريبًا!</div>
+            <div className="text-muted-foreground mb-2">سيتم إضافة وظيفة التنفيذ قريبًا!</div>
             <textarea
-              className="w-full min-h-[120px] p-2 border rounded bg-gray-50 text-sm"
+              className="w-full min-h-[120px] p-2 border rounded bg-muted text-sm"
               defaultValue="-- اكتب استعلام SQL هنا مثل: SELECT * FROM customers LIMIT 10"
               readOnly
             />

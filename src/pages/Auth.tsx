@@ -28,7 +28,7 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
+          <p className="text-muted-foreground">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -65,8 +65,8 @@ const Auth = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-white font-bold text-2xl">V</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Vogatchi CRM</h1>
-          <p className="text-gray-600">نظام إدارة علاقات العملاء</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Vogatchi CRM</h1>
+          <p className="text-muted-foreground">نظام إدارة علاقات العملاء</p>
         </div>
 
         {/* Login Form */}
@@ -112,7 +112,7 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     disabled={isSubmitting}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -139,7 +139,7 @@ const Auth = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>نظام محمي - للموظفين المصرح لهم فقط</p>
             </div>
           </CardContent>
