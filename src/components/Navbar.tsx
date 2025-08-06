@@ -34,9 +34,11 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-                <span className="text-white font-bold text-lg">V</span>
-              </div>
+              <img 
+                src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
+                alt="Vogatchi logo"
+                className="h-10 w-10 object-contain rounded-lg shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Vogatchi CRM
               </span>
