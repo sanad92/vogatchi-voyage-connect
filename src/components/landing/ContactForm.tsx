@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,34 +32,46 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // التحقق من صحة البيانات
+  const validateForm = () => {
     if (!formData.name.trim()) {
       toast.error('يرجى إدخال الاسم الكامل');
-      return;
+      return false;
     }
 
     if (!formData.phone.trim()) {
       toast.error('يرجى إدخال رقم الهاتف');
-      return;
+      return false;
     }
 
-    // التحقق من صحة رقم الهاتف
     const phoneRegex = /^(01|02|\+201|\+202)[0-9]{8,9}$/;
     if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
       toast.error('يرجى إدخال رقم هاتف صحيح');
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      phone: '',
+      email: '',
+      service_type: 'hotel',
+      message: '',
+      preferred_contact: 'phone'
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
-      console.log('📝 Submitting service request:', formData);
-      
-      // حفظ الطلب في قاعدة البيانات
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('service_requests')
         .insert([{
           name: formData.name.trim(),
@@ -72,35 +83,15 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
           status: 'pending'
         }]);
 
-      if (error) {
-        console.error('❌ Error submitting request:', error);
-        toast.error('حدث خطأ في إرسال الطلب. يرجى المحاولة مرة أخرى');
-        return;
-      }
-      
-      console.log('✅ Service request submitted successfully:', data);
+      if (error) throw error;
       
       toast.success('تم إرسال طلبك بنجاح! سنتواصل معك خلال 24 ساعة');
-      
-      // إعادة تعيين النموذج
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        service_type: 'hotel',
-        message: '',
-        preferred_contact: 'phone'
-      });
-      
+      resetForm();
       setIsSubmitted(true);
       
-      // إخفاء رسالة النجاح بعد 5 ثوان
-      setTimeout(() => {
-        setIsSubmitted(false);
-      }, 5000);
+      setTimeout(() => setIsSubmitted(false), 5000);
       
     } catch (error) {
-      console.error('❌ Error submitting request:', error);
       toast.error('حدث خطأ في إرسال الطلب. يرجى المحاولة مرة أخرى');
     } finally {
       setIsSubmitting(false);
@@ -113,7 +104,7 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
 
   if (isSubmitted) {
     return (
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <section className="py-16 bg-gradient-to-br from-background to-secondary/20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-2xl border-0 bg-green-50 border-green-200">
@@ -150,12 +141,12 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+    <section className="py-16 bg-gradient-to-br from-background to-secondary/20">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">اطلب خدمتك الآن</h2>
-            <p className="text-gray-600 text-lg">
+            <h2 className="text-4xl font-bold text-foreground mb-4">اطلب خدمتك الآن</h2>
+            <p className="text-muted-foreground text-lg">
               املأ النموذج وسنتواصل معك خلال 24 ساعة لتقديم أفضل العروض
             </p>
             <div className="mt-6 p-4 bg-green-100 border border-green-200 rounded-lg">
@@ -177,7 +168,7 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       الاسم الكامل *
                     </label>
                     <Input
@@ -185,14 +176,13 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                       required
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="w-full"
                       placeholder="ادخل اسمك الكامل"
                       disabled={isSubmitting}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       رقم الهاتف *
                     </label>
                     <Input
@@ -200,7 +190,6 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                       required
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full"
                       placeholder="01xxxxxxxxx"
                       disabled={isSubmitting}
                     />
@@ -208,28 +197,27 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     البريد الإلكتروني
                   </label>
                   <Input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="w-full"
                     placeholder="example@email.com"
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     نوع الخدمة المطلوبة *
                   </label>
                   <select
                     required
                     value={formData.service_type}
                     onChange={(e) => handleInputChange('service_type', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     disabled={isSubmitting}
                   >
                     <option value="hotel">حجز فندق</option>
@@ -241,13 +229,12 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     تفاصيل الطلب
                   </label>
                   <Textarea
                     value={formData.message}
                     onChange={(e) => handleInputChange('message', e.target.value)}
-                    className="w-full"
                     rows={4}
                     placeholder="اكتب تفاصيل طلبك هنا..."
                     disabled={isSubmitting}
@@ -255,50 +242,34 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     طريقة التواصل المفضلة
                   </label>
                   <div className="flex space-x-4 rtl:space-x-reverse">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="phone"
-                        checked={formData.preferred_contact === 'phone'}
-                        onChange={(e) => handleInputChange('preferred_contact', e.target.value)}
-                        className="mr-2"
-                        disabled={isSubmitting}
-                      />
-                      مكالمة هاتفية
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="whatsapp"
-                        checked={formData.preferred_contact === 'whatsapp'}
-                        onChange={(e) => handleInputChange('preferred_contact', e.target.value)}
-                        className="mr-2"
-                        disabled={isSubmitting}
-                      />
-                      واتساب
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="email"
-                        checked={formData.preferred_contact === 'email'}
-                        onChange={(e) => handleInputChange('preferred_contact', e.target.value)}
-                        className="mr-2"
-                        disabled={isSubmitting}
-                      />
-                      إيميل
-                    </label>
+                    {[
+                      { value: 'phone', label: 'مكالمة هاتفية' },
+                      { value: 'whatsapp', label: 'واتساب' },
+                      { value: 'email', label: 'إيميل' }
+                    ].map(option => (
+                      <label key={option.value} className="flex items-center">
+                        <input
+                          type="radio"
+                          value={option.value}
+                          checked={formData.preferred_contact === option.value}
+                          onChange={(e) => handleInputChange('preferred_contact', e.target.value)}
+                          className="mr-2"
+                          disabled={isSubmitting}
+                        />
+                        {option.label}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3 text-lg"
+                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 py-3 text-lg"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">

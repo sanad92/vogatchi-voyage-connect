@@ -9,17 +9,14 @@ import HotelsSection from '@/components/landing/HotelsSection';
 import ContactForm from '@/components/landing/ContactForm';
 import LandingFooter from '@/components/landing/LandingFooter';
 import WhatsAppFixedButton from '@/components/landing/WhatsAppFixedButton';
+import { useLandingWhatsApp } from '@/hooks/useLandingWhatsApp';
 
 const LandingPage = () => {
-  const handleWhatsAppClick = () => {
-    const phoneNumber = "201103442881";
-    const message = "مرحباً، أريد الاستفسار عن الخدمات السياحية";
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
+  const { createWhatsAppHandler } = useLandingWhatsApp();
+  const handleWhatsAppClick = createWhatsAppHandler();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <LandingHeader onWhatsAppClick={handleWhatsAppClick} />
       <WhatsAppFixedButton onWhatsAppClick={handleWhatsAppClick} />
       <LandingHero onWhatsAppClick={handleWhatsAppClick} />
