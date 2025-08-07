@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BlockData } from '@/types/blocks';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // مؤقتاً حتى يتم تحديث أنواع Supabase
 export const useBlocks = (section?: string) => {
@@ -9,9 +10,35 @@ export const useBlocks = (section?: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const loadDynamicContent = async () => {
+    try {
+      // Load destinations
+      const { data: destinations } = await supabase
+        .from('destinations')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      // Load hotels
+      const { data: hotels } = await supabase
+        .from('hotels')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      return { destinations: destinations || [], hotels: hotels || [] };
+    } catch (error) {
+      console.error('Error loading dynamic content:', error);
+      return { destinations: [], hotels: [] };
+    }
+  };
+
   useEffect(() => {
-    // البيانات التجريبية
-    const mockBlocks: BlockData[] = [
+    const initializeBlocks = async () => {
+      const { destinations, hotels } = await loadDynamicContent();
+      
+      // البيانات التجريبية
+      const mockBlocks: BlockData[] = [
       {
         id: '1',
         type: 'hero',
@@ -88,11 +115,13 @@ export const useBlocks = (section?: string) => {
           section_title: 'الوجهات السياحية الشائعة',
           section_description: 'اكتشف أجمل الوجهات السياحية حول العالم',
           explore_button_text: 'استكشف المزيد',
-          destinations: [
-            { id: '1', name: 'دبي', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['برج خليفة', 'نافورة دبي', 'مول دبي'] },
-            { id: '2', name: 'القاهرة', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d5b770?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['الأهرامات', 'المتحف المصري', 'خان الخليلي'] },
-            { id: '3', name: 'إسطنبول', image: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['آيا صوفيا', 'البازار الكبير', 'برج غلطة'] }
-          ]
+          destinations: destinations.map(dest => ({
+            id: dest.id,
+            name: dest.name_ar,
+            image: dest.image_url || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            rating: dest.rating,
+            attractions: dest.attractions_ar || []
+          })),
         },
         layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 3, background_type: 'gradient' },
         style_settings: { background_color: 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900' },
@@ -107,13 +136,16 @@ export const useBlocks = (section?: string) => {
         type: 'hotels',
         title: 'الفنادق المميزة',
         content: {
-          section_title: 'فنادق القاهرة الفاخرة',
-          section_description: 'تعرف على أفضل الفنادق الخمس نجوم في القاهرة',
-          hotels: [
-            { id: '1', name: 'فور سيزونز القاهرة', image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'النيل - القاهرة', features: ['إطلالة على النيل', 'سبا فاخر', 'مطاعم متنوعة'] },
-            { id: '2', name: 'فيرمونت نايل سيتي', image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'نايل سيتي - القاهرة', features: ['برج حديث', 'مرافق متكاملة', 'موقع متميز'] },
-            { id: '3', name: 'كيمبينسكي نايل هوتل', image: 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'جاردن سيتي - القاهرة', features: ['تصميم فاخر', 'خدمة راقية', 'مطاعم عالمية'] }
-          ]
+          section_title: 'أفضل الفنادق المختارة',
+          section_description: 'تعرف على أفضل الفنادق الفاخرة حول العالم',
+          hotels: hotels.map(hotel => ({
+            id: hotel.id,
+            name: hotel.name_ar,
+            image: hotel.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            rating: hotel.rating,
+            location: hotel.location_ar,
+            features: hotel.features_ar || []
+          })),
         },
         layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 3, background_type: 'color' },
         style_settings: {},
@@ -148,8 +180,11 @@ export const useBlocks = (section?: string) => {
       }
     ];
 
-    setBlocks(section ? mockBlocks.filter(b => b.section === section) : mockBlocks);
-    setIsLoading(false);
+      setBlocks(section ? mockBlocks.filter(b => b.section === section) : mockBlocks);
+      setIsLoading(false);
+    };
+    
+    initializeBlocks();
   }, [section]);
 
   const updateBlock = (block: Partial<BlockData> & { id: string }) => {

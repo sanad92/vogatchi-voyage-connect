@@ -1513,6 +1513,72 @@ export type Database = {
           },
         ]
       }
+      destinations: {
+        Row: {
+          attractions: Json | null
+          attractions_ar: Json | null
+          country: string
+          country_ar: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          description_ar: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          name: string
+          name_ar: string
+          rating: number | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          attractions?: Json | null
+          attractions_ar?: Json | null
+          country: string
+          country_ar: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name: string
+          name_ar: string
+          rating?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          attractions?: Json | null
+          attractions_ar?: Json | null
+          country?: string
+          country_ar?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string
+          name_ar?: string
+          rating?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       detailed_permissions: {
         Row: {
           created_at: string
@@ -2544,6 +2610,95 @@ export type Database = {
         }
         Relationships: []
       }
+      hotels: {
+        Row: {
+          contact_info: Json | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          description: string | null
+          description_ar: string | null
+          destination_id: string | null
+          features: Json | null
+          features_ar: Json | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          location: string
+          location_ar: string
+          meta_description: string | null
+          meta_title: string | null
+          name: string
+          name_ar: string
+          price_range: string | null
+          rating: number | null
+          sort_order: number | null
+          star_rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_info?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          description_ar?: string | null
+          destination_id?: string | null
+          features?: Json | null
+          features_ar?: Json | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          location: string
+          location_ar: string
+          meta_description?: string | null
+          meta_title?: string | null
+          name: string
+          name_ar: string
+          price_range?: string | null
+          rating?: number | null
+          sort_order?: number | null
+          star_rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_info?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          description_ar?: string | null
+          destination_id?: string | null
+          features?: Json | null
+          features_ar?: Json | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          location?: string
+          location_ar?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string
+          name_ar?: string
+          price_range?: string | null
+          rating?: number | null
+          sort_order?: number | null
+          star_rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotels_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -2961,6 +3116,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      media_library: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          category: string | null
+          created_at: string | null
+          file_path: string
+          file_size: number | null
+          filename: string
+          height: number | null
+          id: string
+          is_public: boolean | null
+          mime_type: string | null
+          original_name: string
+          tags: Json | null
+          updated_at: string | null
+          uploaded_by: string | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          category?: string | null
+          created_at?: string | null
+          file_path: string
+          file_size?: number | null
+          filename: string
+          height?: number | null
+          id?: string
+          is_public?: boolean | null
+          mime_type?: string | null
+          original_name: string
+          tags?: Json | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          category?: string | null
+          created_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          filename?: string
+          height?: number | null
+          id?: string
+          is_public?: boolean | null
+          mime_type?: string | null
+          original_name?: string
+          tags?: Json | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {
