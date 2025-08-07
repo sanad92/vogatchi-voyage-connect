@@ -4,6 +4,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import SiteSettings from '@/components/admin/SiteSettings';
 import LandingPageCMS from '@/components/admin/LandingPageCMS';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BlockManager from '@/components/admin/BlockManager';
 const SiteCustomization = () => {
   const { isSuperAdmin } = useOptimizedAuth();
 
@@ -28,9 +29,10 @@ const SiteCustomization = () => {
 
         {/* تبويبات إدارة التخصيص */}
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">الإعدادات العامة</TabsTrigger>
             <TabsTrigger value="landing">صفحة الهبوط والمحتوى</TabsTrigger>
+            <TabsTrigger value="blocks">إدارة البلوكات</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -39,6 +41,10 @@ const SiteCustomization = () => {
 
           <TabsContent value="landing">
             <LandingPageCMS />
+          </TabsContent>
+
+          <TabsContent value="blocks">
+            <BlockManager />
           </TabsContent>
         </Tabs>
       </div>

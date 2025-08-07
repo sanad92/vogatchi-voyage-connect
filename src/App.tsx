@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import LandingPage from "@/pages/LandingPage";
+import BlockBasedLanding from "@/pages/BlockBasedLanding";
 import Customers from "@/pages/Customers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
@@ -75,7 +76,8 @@ function App() {
               <Toaster position="top-right" />
               <Routes>
                 {/* صفحة الهبوط كصفحة رئيسية عامة */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<BlockBasedLanding />} />
+                <Route path="/old-landing" element={<LandingPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/landing" element={<Navigate to="/" replace />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
