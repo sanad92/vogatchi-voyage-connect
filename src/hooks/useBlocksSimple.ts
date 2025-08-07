@@ -24,13 +24,14 @@ export const useBlocks = (section?: string) => {
           primary_button_action: 'whatsapp',
           secondary_button_text: 'تصفح العروض',
           secondary_button_action: '/offers',
+          background_image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
           stats: [
             { number: '1000+', label: 'عميل سعيد' },
             { number: '50+', label: 'وجهة سياحية' },
             { number: '5', label: 'سنوات خبرة' }
           ]
         },
-        layout_settings: { container_width: 'container', padding_y: 'xl', padding_x: 'md', text_align: 'center' },
+        layout_settings: { container_width: 'container', padding_y: 'xl', padding_x: 'md', text_align: 'center', background_type: 'image' },
         style_settings: {},
         is_active: true,
         order_index: 1,
@@ -88,12 +89,13 @@ export const useBlocks = (section?: string) => {
           section_description: 'اكتشف أجمل الوجهات السياحية حول العالم',
           explore_button_text: 'استكشف المزيد',
           destinations: [
-            { id: '1', name: 'دبي', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800', rating: 5, attractions: ['برج خليفة', 'نافورة دبي', 'مول دبي'] },
-            { id: '2', name: 'القاهرة', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d5b770?w=800', rating: 5, attractions: ['الأهرامات', 'المتحف المصري', 'خان الخليلي'] }
+            { id: '1', name: 'دبي', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['برج خليفة', 'نافورة دبي', 'مول دبي'] },
+            { id: '2', name: 'القاهرة', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d5b770?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['الأهرامات', 'المتحف المصري', 'خان الخليلي'] },
+            { id: '3', name: 'إسطنبول', image: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, attractions: ['آيا صوفيا', 'البازار الكبير', 'برج غلطة'] }
           ]
         },
-        layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 2 },
-        style_settings: {},
+        layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 3, background_type: 'gradient' },
+        style_settings: { background_color: 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900' },
         is_active: true,
         order_index: 4,
         section: 'landing',
@@ -108,10 +110,12 @@ export const useBlocks = (section?: string) => {
           section_title: 'فنادق القاهرة الفاخرة',
           section_description: 'تعرف على أفضل الفنادق الخمس نجوم في القاهرة',
           hotels: [
-            { id: '1', name: 'فور سيزونز القاهرة', image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800', rating: 5, location: 'النيل - القاهرة', features: ['إطلالة على النيل', 'سبا فاخر', 'مطاعم متنوعة'] }
+            { id: '1', name: 'فور سيزونز القاهرة', image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'النيل - القاهرة', features: ['إطلالة على النيل', 'سبا فاخر', 'مطاعم متنوعة'] },
+            { id: '2', name: 'فيرمونت نايل سيتي', image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'نايل سيتي - القاهرة', features: ['برج حديث', 'مرافق متكاملة', 'موقع متميز'] },
+            { id: '3', name: 'كيمبينسكي نايل هوتل', image: 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', rating: 5, location: 'جاردن سيتي - القاهرة', features: ['تصميم فاخر', 'خدمة راقية', 'مطاعم عالمية'] }
           ]
         },
-        layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 1 },
+        layout_settings: { container_width: 'container', padding_y: 'lg', padding_x: 'md', columns: 3, background_type: 'color' },
         style_settings: {},
         is_active: true,
         order_index: 5,

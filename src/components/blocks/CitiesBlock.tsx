@@ -37,7 +37,13 @@ const CitiesBlock: React.FC<CitiesBlockProps> = ({ block }) => {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 relative">
+      {/* خلفية متحركة للسياحة */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-blue-500 rounded-full animate-bounce delay-100" />
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-green-500 rounded-full animate-bounce delay-300" />
+        <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-yellow-500 rounded-full animate-bounce delay-500" />
+      </div>
       <div className="text-center space-y-4">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground">
           {content.section_title}
@@ -47,14 +53,14 @@ const CitiesBlock: React.FC<CitiesBlockProps> = ({ block }) => {
         </p>
       </div>
 
-      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]}`}>
+      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]} relative z-10`}>
         {content.destinations.map((destination) => (
-          <Card key={destination.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <Card key={destination.id} className="group overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-3 animate-fade-in hover-scale">
             <div className="relative overflow-hidden">
               <img 
                 src={destination.image} 
                 alt={destination.name}
-                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                className="w-full h-48 object-cover group-hover:scale-125 transition-transform duration-700 animate-fade-in"
               />
               <div className="absolute top-4 right-4">
                 <Badge className="bg-primary text-primary-foreground">

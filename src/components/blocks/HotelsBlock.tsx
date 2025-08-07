@@ -29,7 +29,14 @@ const HotelsBlock: React.FC<HotelsBlockProps> = ({ block }) => {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 relative overflow-hidden">
+      {/* خلفية متحركة للفنادق */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 animate-pulse delay-300" />
+        <div className="absolute top-1/4 right-10 w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full animate-bounce delay-200" />
+        <div className="absolute bottom-1/4 left-10 w-16 h-16 bg-gradient-to-br from-blue-300 to-purple-400 rounded-full animate-bounce delay-400" />
+      </div>
       <div className="text-center space-y-4">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground">
           {content.section_title}
@@ -39,16 +46,16 @@ const HotelsBlock: React.FC<HotelsBlockProps> = ({ block }) => {
         </p>
       </div>
 
-      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]}`}>
+      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]} relative z-10`}>
         {content.hotels.map((hotel) => (
-          <Card key={hotel.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <Card key={hotel.id} className="group overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-fade-in hover-scale border-2 border-transparent hover:border-yellow-400">
             <div className="relative overflow-hidden">
               <img 
                 src={hotel.image} 
                 alt={hotel.name}
-                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 group-hover:brightness-110"
               />
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 animate-bounce">
                 <Badge className="bg-yellow-500 text-white px-3 py-1">
                   <div className="flex items-center">
                     {Array.from({ length: hotel.rating }).map((_, i) => (
@@ -57,7 +64,7 @@ const HotelsBlock: React.FC<HotelsBlockProps> = ({ block }) => {
                   </div>
                 </Badge>
               </div>
-              <div className="absolute bottom-4 left-4 right-4">
+              <div className="absolute bottom-4 left-4 right-4 animate-fade-in delay-300">
                 <Badge className="bg-green-500 text-white w-full justify-center py-2">
                   الدفع عند الوصول متاح
                 </Badge>

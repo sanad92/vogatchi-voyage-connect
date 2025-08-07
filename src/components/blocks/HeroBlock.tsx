@@ -26,36 +26,44 @@ const HeroBlock: React.FC<HeroBlockProps> = ({ block }) => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center relative overflow-hidden">
       {content.background_image && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-          style={{ backgroundImage: `url(${content.background_image})` }}
-        />
+        <>
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-pulse"
+            style={{ backgroundImage: `url(${content.background_image})` }}
+          />
+          <div className="absolute inset-0 bg-black/40 animate-fade-in" />
+          <div className="absolute inset-0">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full animate-bounce delay-100" />
+            <div className="absolute bottom-20 right-20 w-16 h-16 bg-white/10 rounded-full animate-bounce delay-300" />
+            <div className="absolute top-1/3 right-1/4 w-12 h-12 bg-white/10 rounded-full animate-bounce delay-500" />
+          </div>
+        </>
       )}
       
-      <div className="relative z-10 text-center max-w-4xl mx-auto space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
+      <div className="relative z-10 text-center max-w-4xl mx-auto space-y-8 animate-fade-in">
+        <div className="space-y-4 animate-scale-in">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight hover-scale">
             {content.main_title}
           </h1>
           
           {content.subtitle && (
-            <p className="text-xl md:text-2xl text-primary font-semibold">
+            <p className="text-xl md:text-2xl text-yellow-300 font-semibold animate-fade-in delay-200">
               {content.subtitle}
             </p>
           )}
           
           {content.description && (
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed animate-fade-in delay-300">
               {content.description}
             </p>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in delay-500">
           <Button
             size="lg"
             onClick={() => handleButtonClick(content.primary_button_action)}
-            className="text-lg px-8 py-6 h-auto"
+            className="text-lg px-8 py-6 h-auto hover-scale bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0 shadow-lg"
           >
             {content.primary_button_text}
           </Button>

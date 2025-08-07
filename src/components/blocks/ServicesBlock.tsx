@@ -61,7 +61,13 @@ const ServicesBlock: React.FC<ServicesBlockProps> = ({ block }) => {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 relative">
+      {/* خلفية متحركة للخدمات */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse" />
+        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-pulse delay-300" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce delay-100" />
+      </div>
       <div className="text-center space-y-4">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground">
           {content.section_title}
@@ -71,15 +77,15 @@ const ServicesBlock: React.FC<ServicesBlockProps> = ({ block }) => {
         </p>
       </div>
 
-      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]}`}>
+      <div className={`grid ${gridClasses[columns as keyof typeof gridClasses]} ${gapClasses[gap as keyof typeof gapClasses]} relative z-10`}>
         {content.services.map((service) => {
           const IconComponent = getIconComponent(service.icon);
           const colorClass = getColorClass(service.color);
 
           return (
-            <Card key={service.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <Card key={service.id} className="group hover:shadow-xl transition-all duration-500 hover:-translate-y-2 animate-fade-in hover-scale bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6 text-center space-y-4">
-                <div className={`w-16 h-16 ${colorClass} rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-16 h-16 ${colorClass} rounded-full flex items-center justify-center mx-auto group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-lg animate-bounce`}>
                   <IconComponent className="h-8 w-8 text-white" />
                 </div>
                 
