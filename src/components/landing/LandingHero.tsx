@@ -48,26 +48,32 @@ const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
   }
 
   return (
-    <section className="relative py-20 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10"></div>
-      <div className="container mx-auto px-4 relative">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            {heroContent?.title || 'رحلتك المميزة تبدأ من هنا'}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent block">
-              {heroContent?.subtitle ? heroContent.subtitle.split(' - ')[0] : 'من هنا'}
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-            {heroContent?.content || 'نحن شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية والسفر مع ضمان الجودة والأسعار التنافسية'}
-          </p>
+    <section className="relative py-16 lg:py-24 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/10"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="max-w-5xl mx-auto text-center">
+          {/* Main Heading */}
+          <div className="space-y-6 mb-12">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+              {heroContent?.title || 'رحلتك المميزة تبدأ من هنا'}
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent block mt-2">
+                {heroContent?.subtitle ? heroContent.subtitle.split(' - ')[0] : 'من هنا'}
+              </span>
+            </h1>
+            
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              {heroContent?.content || 'نحن شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية والسفر مع ضمان الجودة والأسعار التنافسية'}
+            </p>
+          </div>
           
+          {/* Badges */}
           {badges.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <div className="flex flex-wrap justify-center gap-3 lg:gap-4 mb-12">
               {badges.map((badge, index) => {
                 const IconComponent = getIconComponent(badge.icon_name || 'Shield');
                 return (
-                  <Badge key={index} variant="secondary" className="px-4 py-2 text-sm">
+                  <Badge key={index} variant="secondary" className="px-4 py-2 text-sm lg:text-base bg-secondary/60 hover:bg-secondary/80 transition-colors">
                     <IconComponent className="h-4 w-4 mr-2" />
                     {badge.badge_text || badge.title}
                   </Badge>
@@ -76,21 +82,25 @@ const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
             </div>
           )}
           
-          {/* WhatsApp CTA */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <MessageSquare className="h-6 w-6 text-green-600" />
-              <Zap className="h-5 w-5 text-yellow-500" />
+          {/* WhatsApp CTA Card */}
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 lg:p-8 max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <MessageSquare className="h-6 w-6 lg:h-7 lg:w-7 text-green-600" />
+              <Zap className="h-5 w-5 lg:h-6 lg:w-6 text-yellow-500 animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-green-800 mb-2">
+            
+            <h3 className="text-lg lg:text-xl font-bold text-green-800 dark:text-green-400 mb-3">
               تواصل معنا عبر الواتساب الآن واحصل على خصم فوري!
             </h3>
-            <p className="text-green-700 mb-4">
+            
+            <p className="text-green-700 dark:text-green-300 mb-6 text-sm lg:text-base">
               استشارة مجانية وعروض حصرية لعملاء الواتساب
             </p>
+            
             <Button
               onClick={onWhatsAppClick}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg"
+              size="lg"
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
             >
               <MessageSquare className="h-5 w-5 mr-2" />
               {heroContent?.button_text || 'ابدأ المحادثة الآن'}
