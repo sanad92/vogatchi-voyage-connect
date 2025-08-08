@@ -21,7 +21,13 @@ export type BlockType =
   | 'direct_contracts'
   | 'custom_text' 
   | 'image_gallery' 
-  | 'statistics';
+  | 'statistics'
+  | 'auth_form'
+  | 'booking_form'
+  | 'page_header'
+  | 'text_content'
+  | 'feature_list'
+  | 'pricing_table';
 
 export interface LayoutSettings {
   container_width?: 'full' | 'container' | 'narrow';

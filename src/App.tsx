@@ -81,9 +81,11 @@ function App() {
                 {/* صفحة الهبوط كصفحة رئيسية ديناميكية */}
                 <Route path="/" element={<DynamicPage />} />
                 <Route path="/old-landing" element={<LandingPage />} />
-                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth" element={<DynamicPage />} />
+                <Route path="/about" element={<DynamicPage />} />
+                <Route path="/contact" element={<DynamicPage />} />
                 <Route path="/landing" element={<Navigate to="/" replace />} />
-                <Route path="/booking-request" element={<BookingRequest />} />
+                <Route path="/booking-request" element={<DynamicPage />} />
                 <Route path="/p/:slug" element={<DynamicPage />} />
                 
                 {/* صفحات النظام المحمية */}

@@ -6,6 +6,11 @@ import ServicesBlock from "./blocks/ServicesBlock";
 import ImageGalleryBlock from "./blocks/ImageGalleryBlock";
 import StatisticsBlock from "./blocks/StatisticsBlock";
 import CustomTextBlock from "./blocks/CustomTextBlock";
+import PageHeaderBlock from "./blocks/PageHeaderBlock";
+import AuthFormBlock from "./blocks/AuthFormBlock";
+import TextContentBlock from "./blocks/TextContentBlock";
+import FeatureListBlock from "./blocks/FeatureListBlock";
+import BookingFormBlock from "./blocks/BookingFormBlock";
 
 interface Props {
   blocks: BlockData[];
@@ -27,6 +32,18 @@ const BlockRenderer: React.FC<Props> = ({ blocks }) => {
             return <ImageGalleryBlock key={key} block={block} />;
           case "statistics":
             return <StatisticsBlock key={key} block={block} />;
+          case "page_header":
+            return <PageHeaderBlock key={key} block={block} />;
+          case "auth_form":
+            return <AuthFormBlock key={key} block={block} />;
+          case "text_content":
+            return <TextContentBlock key={key} block={block} />;
+          case "feature_list":
+            return <FeatureListBlock key={key} block={block} />;
+          case "booking_form":
+            return <BookingFormBlock key={key} block={block} />;
+          case "contact":
+            return <CustomTextBlock key={key} block={block} />;
           case "custom_text":
           default:
             return <CustomTextBlock key={key} block={block} />;
