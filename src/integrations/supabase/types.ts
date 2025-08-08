@@ -392,6 +392,59 @@ export type Database = {
         }
         Relationships: []
       }
+      blocks: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          layout_settings: Json
+          order_index: number
+          page_id: string
+          section: string | null
+          style_settings: Json
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_settings?: Json
+          order_index?: number
+          page_id: string
+          section?: string | null
+          style_settings?: Json
+          title?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_settings?: Json
+          order_index?: number
+          page_id?: string
+          section?: string | null
+          style_settings?: Json
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_special_requests: {
         Row: {
           booking_id: string
@@ -2410,6 +2463,151 @@ export type Database = {
         }
         Relationships: []
       }
+      form_fields: {
+        Row: {
+          created_at: string
+          form_id: string
+          help_text: string | null
+          id: string
+          label: string
+          name: string
+          options: Json
+          order_index: number
+          placeholder: string | null
+          required: boolean
+          type: string
+          updated_at: string
+          validation: Json
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          label: string
+          name: string
+          options?: Json
+          order_index?: number
+          placeholder?: string | null
+          required?: boolean
+          type: string
+          updated_at?: string
+          validation?: Json
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          label?: string
+          name?: string
+          options?: Json
+          order_index?: number
+          placeholder?: string | null
+          required?: boolean
+          type?: string
+          updated_at?: string
+          validation?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          data: Json
+          form_id: string
+          id: string
+          ip_address: unknown | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          data: Json
+          form_id: string
+          id?: string
+          ip_address?: unknown | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          data?: Json
+          form_id?: string
+          id?: string
+          ip_address?: unknown | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          captcha_enabled: boolean
+          created_at: string
+          description: string | null
+          destination_email: string | null
+          failure_message: string | null
+          id: string
+          is_active: boolean
+          is_public: boolean
+          key: string
+          name: string
+          submit_action: string | null
+          success_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          captcha_enabled?: boolean
+          created_at?: string
+          description?: string | null
+          destination_email?: string | null
+          failure_message?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          key: string
+          name: string
+          submit_action?: string | null
+          success_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          captcha_enabled?: boolean
+          created_at?: string
+          description?: string | null
+          destination_email?: string | null
+          failure_message?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          key?: string
+          name?: string
+          submit_action?: string | null
+          success_message?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hotel_bookings: {
         Row: {
           booking_agent_id: string | null
@@ -3174,6 +3372,93 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          created_at: string
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          label: string
+          menu_id: string
+          order_index: number
+          parent_id: string | null
+          target: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          menu_id: string
+          order_index?: number
+          parent_id?: string | null
+          target?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          menu_id?: string
+          order_index?: number
+          parent_id?: string | null
+          target?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           conversation_id: string
@@ -3354,6 +3639,48 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      pages: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          og_image_url: string | null
+          seo_description: string | null
+          seo_keywords: string[] | null
+          seo_title: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          og_image_url?: string | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          og_image_url?: string | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
