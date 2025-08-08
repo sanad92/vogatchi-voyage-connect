@@ -5351,6 +5351,20 @@ export type Database = {
           created_at: string
         }[]
       }
+      get_duplicate_customers: {
+        Args: {
+          p_search?: string
+          p_type?: string
+          p_min_count?: number
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          group_type: string
+          key: string
+          customers: Json
+        }[]
+      }
       get_permission_groups: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -5452,6 +5466,10 @@ export type Database = {
           p_description?: string
         }
         Returns: undefined
+      }
+      normalize_phone_sql: {
+        Args: { p_phone: string }
+        Returns: string
       }
       safe_delete_employee: {
         Args: {
