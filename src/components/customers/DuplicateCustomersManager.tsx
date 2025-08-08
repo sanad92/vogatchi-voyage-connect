@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   RefreshCw 
 } from "lucide-react";
-import { useEnhancedCustomerValidation } from "@/hooks/useEnhancedCustomerValidation";
+
 
 interface DuplicateGroup {
   phone?: string;
@@ -35,87 +35,42 @@ interface DuplicateGroup {
 const DuplicateCustomersManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
-  const { normalizePhoneNumber, generatePhoneVariants } = useEnhancedCustomerValidation();
+  
 
-  const { data: customers, isLoading, refetch } = useQuery({
-    queryKey: ['all-customers-for-duplicates'],
+  const { data: rpcGroups, isLoading, refetch } = useQuery({
+    queryKey: ['duplicate-customers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, name, phone, email, created_at')
-        .order('created_at', { ascending: false });
-      
+      const { data, error } = await supabase.rpc('get_duplicate_customers', {
+        p_search: null,
+        p_type: null,
+        p_min_count: 2,
+        p_limit: 500,
+        p_offset: 0
+      });
       if (error) throw error;
       return data;
     }
   });
 
-  // تحليل البيانات للعثور على المكررات
+  // استخدام نتائج RPC لتحويلها إلى مجموعات مكررة
   useEffect(() => {
-    if (!customers) return;
+    if (!rpcGroups) return;
 
-    const phoneGroups = new Map<string, any[]>();
-    const emailGroups = new Map<string, any[]>();
+    const mapped: DuplicateGroup[] = rpcGroups.map((row: any) => ({
+      type: row.group_type === 'phone' ? 'phone' : 'email',
+      phone: row.group_type === 'phone' ? row.key : undefined,
+      email: row.group_type === 'email' ? row.key : undefined,
+      customers: (row.customers || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email,
+        created_at: c.created_at
+      }))
+    }));
 
-    // تجميع العملاء حسب الهاتف المنسق
-    customers.forEach(customer => {
-      if (customer.phone) {
-        const normalizedPhone = normalizePhoneNumber(customer.phone);
-        const variants = generatePhoneVariants(customer.phone);
-        
-        // البحث عن مجموعة موجودة لأي من الصيغ
-        let existingGroup = null;
-        for (const variant of variants) {
-          const normalized = normalizePhoneNumber(variant);
-          if (phoneGroups.has(normalized)) {
-            existingGroup = normalized;
-            break;
-          }
-        }
-
-        const groupKey = existingGroup || normalizedPhone;
-        if (!phoneGroups.has(groupKey)) {
-          phoneGroups.set(groupKey, []);
-        }
-        phoneGroups.get(groupKey)!.push(customer);
-      }
-
-      // تجميع العملاء حسب البريد الإلكتروني
-      if (customer.email) {
-        const normalizedEmail = customer.email.toLowerCase().trim();
-        if (!emailGroups.has(normalizedEmail)) {
-          emailGroups.set(normalizedEmail, []);
-        }
-        emailGroups.get(normalizedEmail)!.push(customer);
-      }
-    });
-
-    const duplicates: DuplicateGroup[] = [];
-
-    // إضافة مجموعات الهاتف المكررة
-    phoneGroups.forEach((customers, phone) => {
-      if (customers.length > 1) {
-        duplicates.push({
-          phone,
-          customers: customers.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-          type: 'phone'
-        });
-      }
-    });
-
-    // إضافة مجموعات البريد المكررة
-    emailGroups.forEach((customers, email) => {
-      if (customers.length > 1) {
-        duplicates.push({
-          email,
-          customers: customers.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-          type: 'email'
-        });
-      }
-    });
-
-    setDuplicateGroups(duplicates);
-  }, [customers, normalizePhoneNumber, generatePhoneVariants]);
+    setDuplicateGroups(mapped);
+  }, [rpcGroups]);
 
   const filteredGroups = duplicateGroups.filter(group => {
     if (!searchTerm) return true;
@@ -231,7 +186,7 @@ const DuplicateCustomersManager = () => {
                               الأقدم
                             </Badge>
                           )}
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" aria-label={`عرض العميل ${customer.name}`}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
