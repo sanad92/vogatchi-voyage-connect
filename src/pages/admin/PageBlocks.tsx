@@ -1,228 +1,263 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import ReactJson from "react-json-view";
 import { toast } from "sonner";
+import type { BlockType } from "@/types/blocks";
 
-interface PageRow { id: string; name: string; slug: string; }
+interface PageRow {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface BlockRow {
   id: string;
   page_id: string;
-  type: string;
-  title?: string;
+  type: BlockType;
+  title: string | null;
   content: any;
   layout_settings: any;
   style_settings: any;
   is_active: boolean;
   order_index: number;
-  section?: string;
+  section: string | null;
+  created_at: string;
 }
 
-const typeOptions = ["hero","services","image_gallery","statistics","custom_text"];
+const BLOCK_TYPES: BlockType[] = [
+  "hero",
+  "services",
+  "cities",
+  "hotels",
+  "contact",
+  "direct_contracts",
+  "custom_text",
+  "image_gallery",
+  "statistics",
+];
 
 const PageBlocks: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [page, setPage] = useState<PageRow | null>(null);
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [newBlock, setNewBlock] = useState({ title: "", type: "hero", is_active: true });
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [form, setForm] = useState<{
+    type: BlockType;
+    title: string;
+    section: string;
+    is_active: boolean;
+    order_index: number;
+    content: string; // JSON string
+  }>({
+    type: "custom_text",
+    title: "",
+    section: "main",
+    is_active: true,
+    order_index: 0,
+    content: JSON.stringify({ content: "نص مخصص" }, null, 2),
+  });
 
-  const load = async () => {
+  const loadData = async () => {
     if (!id) return;
     setLoading(true);
-    const { data: p, error: pe } = await supabase.from("pages").select("id,name,slug").eq("id", id).maybeSingle();
-    if (pe) toast.error("تعذر جلب الصفحة");
-    setPage(p as PageRow);
-    const { data: bs, error: be } = await supabase.from("blocks").select("*").eq("page_id", id).order("order_index", { ascending: true });
-    if (be) toast.error("تعذر جلب الأقسام");
-    setBlocks((bs || []) as BlockRow[]);
+
+    const [{ data: pageData, error: pageErr }, { data: blocksData, error: blocksErr }] = await Promise.all([
+      supabase.from("pages").select("id,name,slug").eq("id", id).maybeSingle<PageRow>(),
+      supabase
+        .from("blocks")
+        .select("*")
+        .eq("page_id", id)
+        .order("order_index", { ascending: true })
+        .returns<BlockRow[]>(),
+    ]);
+
+    if (pageErr) toast.error("فشل في جلب الصفحة");
+    if (blocksErr) toast.error("فشل في جلب الأقسام");
+
+    setPage(pageData || null);
+    setBlocks(blocksData || []);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  const addBlock = async () => {
+  const addBlock = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!id) return;
+
+    let parsed: any;
+    try {
+      parsed = form.content ? JSON.parse(form.content) : {};
+    } catch (err) {
+      toast.error("صيغة JSON غير صحيحة للمحتوى");
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase.from("blocks").insert({
       page_id: id,
-      type: newBlock.type,
-      title: newBlock.title || null,
-      is_active: newBlock.is_active,
-      order_index: blocks.length,
-      content: {},
+      type: form.type,
+      title: form.title || null,
+      content: parsed,
       layout_settings: {},
-      style_settings: {}
+      style_settings: {},
+      is_active: form.is_active,
+      order_index: form.order_index,
+      section: form.section || null,
     });
     setSaving(false);
+
     if (error) return toast.error("تعذر إضافة القسم");
-    toast.success("تمت الإضافة");
-    setNewBlock({ title: "", type: "hero", is_active: true });
-    load();
+    toast.success("تمت إضافة القسم");
+    setForm((f) => ({ ...f, title: "", content: JSON.stringify({}, null, 2) }));
+    loadData();
   };
 
-  const saveBlock = async (b: BlockRow) => {
-    setSaving(true);
-    const { error } = await supabase.from("blocks").update({
-      title: b.title || null,
-      type: b.type,
-      is_active: b.is_active,
-      order_index: b.order_index,
-      content: b.content || {},
-      layout_settings: b.layout_settings || {},
-      style_settings: b.style_settings || {}
-    }).eq("id", b.id);
-    setSaving(false);
-    if (error) return toast.error("تعذر الحفظ");
-    toast.success("تم الحفظ");
-    load();
+  const toggleActive = async (block: BlockRow) => {
+    const { error } = await supabase
+      .from("blocks")
+      .update({ is_active: !block.is_active })
+      .eq("id", block.id);
+    if (error) return toast.error("فشل تحديث الحالة");
+    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, is_active: !b.is_active } : b)));
   };
 
-  const deleteBlock = async (blockId: string) => {
+  const removeBlock = async (blockId: string) => {
     const { error } = await supabase.from("blocks").delete().eq("id", blockId);
-    if (error) return toast.error("تعذر الحذف");
-    toast.success("تم الحذف");
-    load();
+    if (error) return toast.error("تعذر حذف القسم");
+    toast.success("تم حذف القسم");
+    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
   };
 
-  const move = async (index: number, dir: -1 | 1) => {
-    const target = index + dir;
-    if (target < 0 || target >= blocks.length) return;
-    const a = blocks[index];
-    const b = blocks[target];
-    // swap order_index
-    const { error: e1 } = await supabase.from("blocks").update({ order_index: b.order_index }).eq("id", a.id);
-    const { error: e2 } = await supabase.from("blocks").update({ order_index: a.order_index }).eq("id", b.id);
-    if (e1 || e2) return toast.error("تعذر إعادة الترتيب");
-    load();
-  };
+  const moveBlock = async (block: BlockRow, direction: "up" | "down") => {
+    const index = blocks.findIndex((b) => b.id === block.id);
+    const swapWith = direction === "up" ? index - 1 : index + 1;
+    if (swapWith < 0 || swapWith >= blocks.length) return;
 
-  const setBlockState = (id: string, updater: (b: BlockRow) => BlockRow) => {
-    setBlocks(prev => prev.map(b => (b.id === id ? updater({ ...b }) : b)));
-  };
+    const other = blocks[swapWith];
 
-  if (loading) return <div className="p-4 text-muted-foreground">جاري التحميل...</div>;
-  if (!page) return <div className="p-4 text-muted-foreground">لم يتم العثور على الصفحة</div>;
+    const [res1, res2] = await Promise.all([
+      supabase.from("blocks").update({ order_index: other.order_index }).eq("id", block.id),
+      supabase.from("blocks").update({ order_index: block.order_index }).eq("id", other.id),
+    ]);
+
+    if (res1.error || res2.error) {
+      return toast.error("تعذر تغيير الترتيب");
+    }
+    await loadData();
+  };
 
   return (
     <div className="p-4">
       <button onClick={() => navigate(-1)} className="text-sm underline mb-2">عودة</button>
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">بلوكات الصفحة: {page.name} <span className="text-sm text-muted-foreground">/{page.slug}</span></h1>
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold">أقسام الصفحة</h1>
+        {page && (
+          <p className="text-muted-foreground mt-1">
+            الصفحة: {page.name} <span className="text-xs">/{page.slug}</span>
+          </p>
+        )}
       </header>
 
-      <section className="mb-6 rounded-lg border bg-card p-4">
-        <h2 className="font-semibold mb-3">إضافة قسم جديد</h2>
-        <div className="grid gap-3 md:grid-cols-3 items-end">
-          <input className="border rounded-md bg-card px-3 py-2" placeholder="العنوان (اختياري)" value={newBlock.title}
-            onChange={e => setNewBlock({ ...newBlock, title: e.target.value })} />
-          <select className="border rounded-md bg-card px-3 py-2" value={newBlock.type}
-            onChange={e => setNewBlock({ ...newBlock, type: e.target.value })}>
-            {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-3">إضافة قسم</h2>
+        <form onSubmit={addBlock} className="grid gap-3 md:grid-cols-2">
+          <select
+            className="border rounded-md bg-card px-3 py-2"
+            value={form.type}
+            onChange={(e) => setForm({ ...form, type: e.target.value as BlockType })}
+          >
+            {BLOCK_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={newBlock.is_active}
-                onChange={e => setNewBlock({ ...newBlock, is_active: e.target.checked })} />
-              <span>فعّال</span>
-            </label>
-            <button disabled={saving} onClick={addBlock} className="border rounded-md px-4 py-2 bg-primary text-primary-foreground">
-              {saving ? "..." : "إضافة"}
-            </button>
+          <input
+            className="border rounded-md bg-card px-3 py-2"
+            placeholder="عنوان القسم (اختياري)"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+          <input
+            className="border rounded-md bg-card px-3 py-2"
+            placeholder="المكان/القسم (مثلاً main)"
+            value={form.section}
+            onChange={(e) => setForm({ ...form, section: e.target.value })}
+          />
+          <input
+            type="number"
+            className="border rounded-md bg-card px-3 py-2"
+            placeholder="ترتيب العرض"
+            value={form.order_index}
+            onChange={(e) => setForm({ ...form, order_index: Number(e.target.value) })}
+          />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+            />
+            <span>فعّال</span>
+          </label>
+          <div className="md:col-span-2">
+            <label className="text-sm mb-1 block">محتوى القسم (JSON)</label>
+            <textarea
+              className="border rounded-md bg-card px-3 py-2 w-full h-48 font-mono text-sm"
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+            />
           </div>
-        </div>
+          <button
+            disabled={saving}
+            className="border rounded-md px-4 py-2 bg-primary text-primary-foreground md:justify-self-start"
+          >
+            {saving ? "يتم الحفظ..." : "إضافة"}
+          </button>
+        </form>
       </section>
 
-      <section className="grid gap-4">
-        {blocks.map((b, idx) => (
-          <article key={b.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="font-semibold">{b.title || `قسم ${idx+1}`} <span className="text-xs text-muted-foreground">({b.type})</span></div>
-                <div className="text-xs text-muted-foreground">الترتيب: {b.order_index}</div>
+      <section>
+        <div className="flex items-center justify_between mb-3">
+          <h2 className="text-lg font-semibold">الأقسام الحالية</h2>
+          <button onClick={loadData} className="text-sm underline">
+            تحديث
+          </button>
+        </div>
+        {loading && <div className="text-muted-foreground">جاري التحميل...</div>}
+        {!loading && blocks.length === 0 && (
+          <div className="text-muted-foreground">لا توجد أقسام بعد</div>
+        )}
+        <div className="grid gap-3">
+          {blocks.map((b, idx) => (
+            <div key={b.id} className="rounded-lg border bg-card p-4 flex items-center justify-between">
+              <div>
+                <div className="font-semibold">
+                  #{b.order_index} — {b.type}
+                  {b.title ? <span className="text-xs text-muted-foreground"> — {b.title}</span> : null}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {b.is_active ? "فعّال" : "معطّل"} • {b.section || "main"}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => move(idx, -1)} className="border rounded-md px-3 py-1">أعلى</button>
-                <button onClick={() => move(idx, 1)} className="border rounded-md px-3 py-1">أسفل</button>
-                <button onClick={() => setExpanded(prev => ({ ...prev, [b.id]: !prev[b.id] }))} className="border rounded-md px-3 py-1">{expanded[b.id] ? "إخفاء" : "تعديل"}</button>
-                <button onClick={() => deleteBlock(b.id)} className="border rounded-md px-3 py-1">حذف</button>
+                <button className="border rounded-md px-3 py-1" onClick={() => moveBlock(b, "up")}>أعلى</button>
+                <button className="border rounded-md px-3 py-1" onClick={() => moveBlock(b, "down")}>أسفل</button>
+                <button className="border rounded-md px-3 py-1" onClick={() => toggleActive(b)}>
+                  {b.is_active ? "تعطيل" : "تفعيل"}
+                </button>
+                <button className="border rounded-md px-3 py-1" onClick={() => removeBlock(b.id)}>
+                  حذف
+                </button>
               </div>
             </div>
-
-            {expanded[b.id] && (
-              <div className="mt-4 grid gap-4">
-                <div className="grid gap-3 md:grid-cols-4">
-                  <input className="border rounded-md bg-card px-3 py-2" placeholder="العنوان" value={b.title || ""}
-                    onChange={e => setBlockState(b.id, bb => ({ ...bb, title: e.target.value }))} />
-                  <select className="border rounded-md bg-card px-3 py-2" value={b.type}
-                    onChange={e => setBlockState(b.id, bb => ({ ...bb, type: e.target.value }))}>
-                    {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <input className="border rounded-md bg-card px-3 py-2" type="number" value={b.order_index}
-                    onChange={e => setBlockState(b.id, bb => ({ ...bb, order_index: parseInt(e.target.value || '0', 10) }))} />
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={b.is_active}
-                      onChange={e => setBlockState(b.id, bb => ({ ...bb, is_active: e.target.checked }))} />
-                    <span>فعّال</span>
-                  </label>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">المحتوى</h3>
-                  <ReactJson
-                    name={false}
-                    src={b.content || {}}
-                    onEdit={(e) => setBlockState(b.id, bb => ({ ...bb, content: e.updated_src }))}
-                    onAdd={(e) => setBlockState(b.id, bb => ({ ...bb, content: e.updated_src }))}
-                    onDelete={(e) => setBlockState(b.id, bb => ({ ...bb, content: e.updated_src }))}
-                    enableClipboard={false}
-                    displayDataTypes={false}
-                    collapsed={2}
-                    theme="harmonic"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium mb-2">إعدادات التخطيط</h3>
-                    <ReactJson
-                      name={false}
-                      src={b.layout_settings || {}}
-                      onEdit={(e) => setBlockState(b.id, bb => ({ ...bb, layout_settings: e.updated_src }))}
-                      onAdd={(e) => setBlockState(b.id, bb => ({ ...bb, layout_settings: e.updated_src }))}
-                      onDelete={(e) => setBlockState(b.id, bb => ({ ...bb, layout_settings: e.updated_src }))}
-                      enableClipboard={false}
-                      displayDataTypes={false}
-                      collapsed={2}
-                      theme="harmonic"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">إعدادات المظهر</h3>
-                    <ReactJson
-                      name={false}
-                      src={b.style_settings || {}}
-                      onEdit={(e) => setBlockState(b.id, bb => ({ ...bb, style_settings: e.updated_src }))}
-                      onAdd={(e) => setBlockState(b.id, bb => ({ ...bb, style_settings: e.updated_src }))}
-                      onDelete={(e) => setBlockState(b.id, bb => ({ ...bb, style_settings: e.updated_src }))}
-                      enableClipboard={false}
-                      displayDataTypes={false}
-                      collapsed={2}
-                      theme="harmonic"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button disabled={saving} onClick={() => saveBlock(b)} className="border rounded-md px-4 py-2 bg-primary text-primary-foreground">حفظ</button>
-                </div>
-              </div>
-            )}
-          </article>
-        ))}
+          ))}
+        </div>
       </section>
     </div>
   );
