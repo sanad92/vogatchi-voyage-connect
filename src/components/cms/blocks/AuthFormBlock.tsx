@@ -1,6 +1,6 @@
 import React from "react";
 import type { BlockData } from "@/types/blocks";
-import Auth from "@/pages/Auth";
+import AuthPage from "@/components/auth/AuthPage";
 
 interface AuthFormBlockContent {
   form_type: 'login_register' | 'login_only' | 'register_only';
@@ -45,7 +45,7 @@ const AuthFormBlock: React.FC<Props> = ({ block }) => {
   return (
     <section className="w-full">
       <div className={getContainerClasses()}>
-        <Auth />
+        <AuthPage />
         {content.terms_text && (
           <p className="text-sm text-muted-foreground mt-4 text-center">
             {content.terms_text}

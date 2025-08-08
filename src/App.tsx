@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Auth from "@/pages/Auth";
+
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import LandingPage from "@/pages/LandingPage";
 import Customers from "@/pages/Customers";
