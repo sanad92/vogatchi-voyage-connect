@@ -64,6 +64,13 @@ export const businessNavItems: SimpleNavItem[] = [
     requiredPermissions: ['customers_view']
   },
   {
+    to: "/duplicate-customers",
+    icon: Users,
+    label: "العملاء المكررين",
+    allowedRoles: [],
+    requiredPermissions: ['customers_view']
+  },
+  {
     to: "/hotel-bookings",
     icon: Hotel,
     label: "حجوزات الفنادق",

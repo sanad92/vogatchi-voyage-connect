@@ -12,6 +12,7 @@ import OptimizedIndex from "@/pages/OptimizedIndex";
 import LandingPage from "@/pages/LandingPage";
 import BlockBasedLanding from "@/pages/BlockBasedLanding";
 import Customers from "@/pages/Customers";
+import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
 import NewHotelBooking from "@/pages/NewHotelBooking";
@@ -94,6 +95,7 @@ function App() {
                           <Routes>
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<Customers />} />
+                              <Route path="/duplicate-customers" element={<DuplicateCustomersPage />} />
                               <Route path="/new-customer" element={<NewCustomer />} />
                               <Route path="/hotel-bookings" element={<HotelBookings />} />
                               <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
