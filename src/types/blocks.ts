@@ -27,7 +27,10 @@ export type BlockType =
   | 'page_header'
   | 'text_content'
   | 'feature_list'
-  | 'pricing_table';
+  | 'pricing_table'
+  | 'company_info'
+  | 'contact_form'
+  | 'about_us';
 
 export interface LayoutSettings {
   container_width?: 'full' | 'container' | 'narrow';

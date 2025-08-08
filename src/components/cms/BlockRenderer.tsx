@@ -12,6 +12,11 @@ import TextContentBlock from "./blocks/TextContentBlock";
 import FeatureListBlock from "./blocks/FeatureListBlock";
 import BookingFormBlock from "./blocks/BookingFormBlock";
 
+// Lazy load new blocks
+const CompanyInfoBlock = React.lazy(() => import("./blocks/CompanyInfoBlock"));
+const ContactFormBlock = React.lazy(() => import("./blocks/ContactFormBlock"));
+const AboutUsBlock = React.lazy(() => import("./blocks/AboutUsBlock"));
+
 interface Props {
   blocks: BlockData[];
 }
@@ -42,6 +47,24 @@ const BlockRenderer: React.FC<Props> = ({ blocks }) => {
             return <FeatureListBlock key={key} block={block} />;
           case "booking_form":
             return <BookingFormBlock key={key} block={block} />;
+          case "company_info":
+            return (
+              <React.Suspense key={key} fallback={<div className="p-8 text-center">جاري التحميل...</div>}>
+                <CompanyInfoBlock block={block} />
+              </React.Suspense>
+            );
+          case "contact_form":
+            return (
+              <React.Suspense key={key} fallback={<div className="p-8 text-center">جاري التحميل...</div>}>
+                <ContactFormBlock block={block} />
+              </React.Suspense>
+            );
+          case "about_us":
+            return (
+              <React.Suspense key={key} fallback={<div className="p-8 text-center">جاري التحميل...</div>}>
+                <AboutUsBlock block={block} />
+              </React.Suspense>
+            );
           case "contact":
             return <CustomTextBlock key={key} block={block} />;
           case "custom_text":
