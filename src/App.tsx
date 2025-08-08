@@ -48,6 +48,9 @@ import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAut
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import BookingRequest from "@/pages/BookingRequest";
+import CMSPages from "@/pages/admin/CMSPages";
+import PageBlocks from "@/pages/admin/PageBlocks";
+import DynamicPage from "@/pages/DynamicPage";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -82,6 +85,7 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/landing" element={<Navigate to="/" replace />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
+                <Route path="/p/:slug" element={<DynamicPage />} />
                 
                 {/* صفحات النظام المحمية */}
                 <Route
@@ -127,6 +131,8 @@ function App() {
                               <Route path="/database-manager" element={<DatabaseManager />} />
                               <Route path="/whatsapp" element={<WhatsApp />} />
                               <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
+                              <Route path="/admin/cms" element={<CMSPages />} />
+                              <Route path="/admin/cms/pages/:id/blocks" element={<PageBlocks />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </OptimizedErrorBoundary>

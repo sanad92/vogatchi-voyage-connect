@@ -238,6 +238,13 @@ export const adminNavItems: SimpleNavItem[] = [
     requiredPermissions: ['admin_settings']
   },
   {
+    to: "/admin/cms",
+    icon: LandPlot,
+    label: "إدارة المحتوى",
+    allowedRoles: ['super_admin','admin','manager'],
+    requiredPermissions: ['admin_settings']
+  },
+  {
     to: "/database-manager",
     icon: Database,
     label: "إدارة قاعدة البيانات",
