@@ -4,7 +4,8 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import SiteSettings from '@/components/admin/SiteSettings';
 import LandingPageCMS from '@/components/admin/LandingPageCMS';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BlockManager from '@/components/admin/BlockManager';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 const SiteCustomization = () => {
   const { isSuperAdmin } = useOptimizedAuth();
 
@@ -44,7 +45,19 @@ const SiteCustomization = () => {
           </TabsContent>
 
           <TabsContent value="blocks">
-            <BlockManager />
+            <div className="space-y-6">
+              <div className="text-center space-y-4">
+                <h3 className="text-lg font-semibold">إدارة البلوكات</h3>
+                <p className="text-muted-foreground">
+                  تم نقل إدارة البلوكات إلى نظام إدارة المحتوى الجديد
+                </p>
+                <Link to="/admin/cms">
+                  <Button size="lg">
+                    انتقل إلى إدارة المحتوى
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

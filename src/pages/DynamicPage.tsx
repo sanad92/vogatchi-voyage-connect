@@ -5,7 +5,9 @@ import BlockRenderer from "@/components/cms/BlockRenderer";
 
 const DynamicPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { page, blocks, isLoading, error } = usePageBlocks(slug || "");
+  // Use 'home' as default slug when no slug is provided (for homepage)
+  const pageSlug = slug || 'home';
+  const { page, blocks, isLoading, error } = usePageBlocks(pageSlug);
 
   useEffect(() => {
     if (!page) return;

@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "@/pages/Auth";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import LandingPage from "@/pages/LandingPage";
-import BlockBasedLanding from "@/pages/BlockBasedLanding";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
@@ -79,8 +78,8 @@ function App() {
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
               <Routes>
-                {/* صفحة الهبوط كصفحة رئيسية عامة */}
-                <Route path="/" element={<BlockBasedLanding />} />
+                {/* صفحة الهبوط كصفحة رئيسية ديناميكية */}
+                <Route path="/" element={<DynamicPage />} />
                 <Route path="/old-landing" element={<LandingPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/landing" element={<Navigate to="/" replace />} />
