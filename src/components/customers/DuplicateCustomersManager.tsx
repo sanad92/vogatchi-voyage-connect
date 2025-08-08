@@ -38,10 +38,10 @@ const DuplicateCustomersManager = () => {
   
 
   const { data: rpcGroups, isLoading, refetch } = useQuery({
-    queryKey: ['duplicate-customers'],
+    queryKey: ['duplicate-customers', searchTerm],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_duplicate_customers', {
-        p_search: null,
+        p_search: searchTerm || null,
         p_type: null,
         p_min_count: 2,
         p_limit: 500,
@@ -122,6 +122,7 @@ const DuplicateCustomersManager = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="ابحث في العملاء المكررين..."
+              aria-label="بحث عن العملاء المكررين"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -130,7 +131,7 @@ const DuplicateCustomersManager = () => {
 
           <div className="grid gap-4">
             {filteredGroups.map((group, index) => (
-              <Card key={index} className="border-orange-200 bg-orange-50">
+              <Card key={index} className="border-orange-200 bg-orange-50 animate-fade-in">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between text-lg">
                     <div className="flex items-center gap-2">
