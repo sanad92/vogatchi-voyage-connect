@@ -2,6 +2,10 @@ import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { usePageBlocks } from "@/hooks/cms/usePageBlocks";
 import BlockRenderer from "@/components/cms/BlockRenderer";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
+import CTASection from "@/components/layout/CTASection";
+import BookingRequestForm from "@/components/forms/BookingRequestForm";
 
 const DynamicPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -105,9 +109,32 @@ const DynamicPage: React.FC = () => {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-      <BlockRenderer blocks={blocks} />
-    </main>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+      <SiteHeader />
+      
+      <main>
+        <BlockRenderer blocks={blocks} />
+        
+        {/* Call to Action Section */}
+        <CTASection 
+          variant="compact" 
+          title="هل تحتاج مساعدة في التخطيط لرحلتك؟"
+          description="فريقنا المختص جاهز لمساعدتك في كل خطوة"
+        />
+        
+        {/* Booking Request Form - Only show on homepage */}
+        {pageSlug === 'home' && <BookingRequestForm />}
+        
+        {/* Final CTA Banner */}
+        <CTASection 
+          variant="banner"
+          title="احجز رحلتك اليوم واستمتع بتجربة لا تُنسى"
+          description="أكثر من 15 سنة من الخبرة في خدمتك"
+        />
+      </main>
+      
+      <SiteFooter />
+    </div>
   );
 };
 
