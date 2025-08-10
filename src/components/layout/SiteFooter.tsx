@@ -39,7 +39,7 @@ const SiteFooter = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
                 ف
               </div>
-              <span className="font-bold text-lg">فوجاتچي للتسويق السياحي</span>
+              <span className="font-bold text-lg">فوجاتشي للتسويق السياحي</span>
             </div>
             
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -53,7 +53,7 @@ const SiteFooter = () => {
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-primary" />
-                <span>info@fugacity.com</span>
+                <span>info@vogatchi.com</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-primary" />
@@ -151,7 +151,7 @@ const SiteFooter = () => {
         {/* Bottom Bar */}
         <div className="mt-8 pt-8 border-t border-border">
           <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-muted-foreground">
-            <p>© 2024 فوجاتچي للتسويق السياحي. جميع الحقوق محفوظة.</p>
+            <p>© 2024 فوجاتشي للتسويق السياحي. جميع الحقوق محفوظة.</p>
             <div className="flex gap-4 mt-2 sm:mt-0">
               <Link to="/p/contact" className="hover:text-primary transition-colors">
                 شروط الاستخدام

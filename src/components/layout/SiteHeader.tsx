@@ -35,7 +35,7 @@ const SiteHeader = () => {
               </div>
               <div className="flex items-center gap-1">
                 <Mail className="h-3 w-3" />
-                <span>info@fugacity.com</span>
+                <span>info@vogatchi.com</span>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-1">
@@ -50,11 +50,11 @@ const SiteHeader = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2" aria-label="فوجاتچي للتسويق السياحي">
+          <Link to="/" className="flex items-center space-x-2" aria-label="فوجاتشي للتسويق السياحي">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
               ف
             </div>
-            <span className="hidden font-bold sm:inline-block">فوجاتچي للتسويق السياحي</span>
+            <span className="hidden font-bold sm:inline-block">فوجاتشي للتسويق السياحي</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -99,7 +99,7 @@ const SiteHeader = () => {
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
                       ف
                     </div>
-                    <span className="font-bold">فوجاتچي</span>
+                    <span className="font-bold">فوجاتشي</span>
                   </Link>
                   
                   <nav className="flex flex-col space-y-2">
