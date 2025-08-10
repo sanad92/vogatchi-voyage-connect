@@ -38,8 +38,23 @@ const AuthPage = () => {
     setError('');
     setIsSubmitting(true);
 
-    if (!email || !password) {
-      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+    // التحقق من صحة البيانات
+    if (!email?.trim()) {
+      setError('يرجى إدخال البريد الإلكتروني');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!password?.trim()) {
+      setError('يرجى إدخال كلمة المرور');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // التحقق من صحة البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError('يرجى إدخال بريد إلكتروني صحيح');
       setIsSubmitting(false);
       return;
     }
@@ -47,10 +62,22 @@ const AuthPage = () => {
     try {
       const result = await signIn(email.trim().toLowerCase(), password);
       if (result.error) {
-        setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
+        // تحسين رسائل الخطأ بناءً على نوع الخطأ
+        const errorMessage = result.error.message || result.error;
+        if (errorMessage.includes('Invalid login credentials') || 
+            errorMessage.includes('البريد الإلكتروني أو كلمة المرور غير صحيحة')) {
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        } else if (errorMessage.includes('Email not confirmed')) {
+          setError('يرجى تأكيد البريد الإلكتروني أولاً');
+        } else if (errorMessage.includes('Too many requests')) {
+          setError('محاولات كثيرة، يرجى المحاولة لاحقاً');
+        } else {
+          setError('فشل في تسجيل الدخول. يرجى المحاولة مرة أخرى.');
+        }
       }
     } catch (error) {
-      setError('حدث خطأ في تسجيل الدخول');
+      console.error('Login error:', error);
+      setError('حدث خطأ في الاتصال. يرجى التحقق من الإنترنت والمحاولة مرة أخرى.');
     } finally {
       setIsSubmitting(false);
     }
@@ -60,10 +87,14 @@ const AuthPage = () => {
     <div className="w-full max-w-md mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <span className="text-white font-bold text-2xl">V</span>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden">
+          <img
+            src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
+            alt="Vogatchi logo"
+            className="w-full h-full object-contain"
+          />
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Vogatchi CRM</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">فوجاتشي CRM</h1>
         <p className="text-muted-foreground">نظام إدارة علاقات العملاء</p>
       </div>
 
@@ -120,8 +151,8 @@ const AuthPage = () => {
 
             <Button 
               type="submit" 
-              className="w-full" 
-              disabled={isSubmitting}
+              className="w-full h-12 text-base font-medium" 
+              disabled={isSubmitting || !email?.trim() || !password?.trim()}
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
@@ -130,7 +161,7 @@ const AuthPage = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <LogIn size={16} />
+                  <LogIn size={18} />
                   تسجيل الدخول
                 </div>
               )}

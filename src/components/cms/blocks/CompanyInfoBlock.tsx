@@ -29,8 +29,8 @@ const CompanyInfoBlock: React.FC<Props> = ({ block }) => {
   const companyData = {
     name: "شركة فوجاتشي للتسويق السياحي",
     address: content.custom_address || "08 شارع الدكتور المحروقي- المهندسين- الجيزه - مصر",
-    phone: content.custom_phone || "+201103442881",
-    email: content.custom_email || "res@vogatchitrips.com",
+    phone: content.custom_phone || "01103442881",
+    email: content.custom_email || "ops@vogatchitrips.com",
     website: content.custom_website || "https://vogatchitrips.com",
     working_hours: content.working_hours || "السبت - الخميس: 9:00 ص - 6:00 م"
   };

@@ -12,7 +12,7 @@ const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
   const { getSetting, isLoading } = useLandingContent();
   
   const companyName = getSetting('company_name') || 'Vogatchi Travel';
-  const phoneNumber = getSetting('phone_number') || '+20 110 344 2881';
+  const phoneNumber = getSetting('phone_number') || '01103442881';
   const email = getSetting('email') || 'ops@vogatchitrips.com';
 
   if (isLoading) {

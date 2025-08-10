@@ -59,7 +59,7 @@ const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
             <div className="space-y-3 text-gray-400">
               <div className="flex items-center">
                 <Phone className="h-4 w-4 mr-2" />
-                +20 110 344 2881
+                01103442881
               </div>
               <div className="flex items-center">
                 <Mail className="h-4 w-4 mr-2" />

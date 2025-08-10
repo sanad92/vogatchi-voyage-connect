@@ -35,7 +35,7 @@ const SiteSettings = () => {
     logoUrl: '',
     companyName: 'شركة Vogatchi للسياحة',
     companyAddress: 'القاهرة، مصر',
-    companyPhone: '+20 110 344 2881',
+    companyPhone: '01103442881',
     companyEmail: 'ops@vogatchitrips.com'
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +86,7 @@ const SiteSettings = () => {
           logoUrl: settingsMap.logo_url || '',
           companyName: settingsMap.company_name || 'شركة Vogatchi للسياحة',
           companyAddress: settingsMap.company_address || 'القاهرة، مصر',
-          companyPhone: settingsMap.company_phone || '+20 110 344 2881',
+          companyPhone: settingsMap.company_phone || '01103442881',
           companyEmail: settingsMap.company_email || 'ops@vogatchitrips.com'
         });
 
@@ -294,7 +294,7 @@ const SiteSettings = () => {
                 <Input
                   value={config.companyPhone}
                   onChange={(e) => handleInputChange('companyPhone', e.target.value)}
-                  placeholder="+20 110 344 2881"
+                  placeholder="01103442881"
                 />
               </div>
               <div>

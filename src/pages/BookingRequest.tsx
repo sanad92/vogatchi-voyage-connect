@@ -76,7 +76,7 @@ const BookingRequest = () => {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">البريد الإلكتروني</h4>
-                <p>info@vogatchi.com</p>
+                <p>ops@vogatchitrips.com</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">ساعات العمل</h4>

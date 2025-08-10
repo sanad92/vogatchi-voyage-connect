@@ -69,7 +69,7 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
             <div className="text-3xl font-bold text-blue-600 mb-2">Vogatchi Trips</div>
             <div className="text-lg text-gray-600">شركة فوجاتشي للسياحة والسفر</div>
             <div className="text-sm text-gray-500 mt-2">
-              العنوان: شارع الهرم - الجيزة | تليفون: 01234567890 | info@vogatchitrips.com
+              العنوان: شارع الهرم - الجيزة | تليفون: 01103442881 | ops@vogatchitrips.com
             </div>
           </div>
 
