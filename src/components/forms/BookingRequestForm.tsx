@@ -76,7 +76,7 @@ ${formData.checkInDate ? `- تاريخ الوصول: ${formData.checkInDate}` : 
 ${formData.checkOutDate ? `- تاريخ المغادرة: ${formData.checkOutDate}` : ''}`;
       
       setTimeout(() => {
-        window.open(`https://wa.me/966501234567?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+        window.open(`https://wa.me/201103442881?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
       }, 2000);
 
     } catch (error) {
@@ -273,7 +273,7 @@ ${formData.checkOutDate ? `- تاريخ المغادرة: ${formData.checkOutDat
                     type="button"
                     variant="outline"
                     size="lg"
-                    onClick={() => window.open('https://wa.me/966501234567?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank')}
+                    onClick={() => window.open('https://wa.me/201103442881?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank')}
                   >
                     تواصل مباشر عبر واتساب
                   </Button>

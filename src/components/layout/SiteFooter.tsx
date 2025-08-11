@@ -5,21 +5,21 @@ import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'luc
 
 const SiteFooter = () => {
   const handleWhatsAppClick = () => {
-    window.open('https://wa.me/966501234567?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
+    window.open('https://wa.me/201103442881?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
   };
 
   const quickLinks = [
-    { name: 'حجز الفنادق', href: '/p/booking-request' },
-    { name: 'حجز الطيران', href: '/p/booking-request' },
-    { name: 'تأجير السيارات', href: '/p/booking-request' },
-    { name: 'الباقات السياحية', href: '/p/booking-request' },
+    { name: 'حجز الفنادق', href: '/booking-request' },
+    { name: 'حجز الطيران', href: '/booking-request' },
+    { name: 'تأجير السيارات', href: '/booking-request' },
+    { name: 'الباقات السياحية', href: '/booking-request' },
   ];
 
   const supportLinks = [
-    { name: 'اتصل بنا', href: '/p/contact' },
-    { name: 'عنا', href: '/p/about' },
-    { name: 'الأسئلة الشائعة', href: '/p/contact' },
-    { name: 'سياسة الخصوصية', href: '/p/contact' },
+    { name: 'اتصل بنا', href: '/contact' },
+    { name: 'عنا', href: '/about' },
+    { name: 'الأسئلة الشائعة', href: '/contact' },
+    { name: 'سياسة الخصوصية', href: '/contact' },
   ];
 
   const destinations = [
@@ -143,7 +143,7 @@ const SiteFooter = () => {
               احجز عبر واتساب
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link to="/p/booking-request">طلب عرض سعر</Link>
+              <Link to="/booking-request">طلب عرض سعر</Link>
             </Button>
           </div>
         </div>
@@ -153,10 +153,10 @@ const SiteFooter = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-muted-foreground">
             <p>© 2024 فوجاتشي للتسويق السياحي. جميع الحقوق محفوظة.</p>
             <div className="flex gap-4 mt-2 sm:mt-0">
-              <Link to="/p/contact" className="hover:text-primary transition-colors">
+              <Link to="/contact" className="hover:text-primary transition-colors">
                 شروط الاستخدام
               </Link>
-              <Link to="/p/contact" className="hover:text-primary transition-colors">
+              <Link to="/contact" className="hover:text-primary transition-colors">
                 سياسة الخصوصية
               </Link>
             </div>

@@ -9,9 +9,9 @@ const SiteHeader = () => {
 
   const navItems = [
     { name: 'الرئيسية', href: '/', ariaLabel: 'الصفحة الرئيسية' },
-    { name: 'عنا', href: '/p/about', ariaLabel: 'حول الشركة' },
+    { name: 'عنا', href: '/about', ariaLabel: 'حول الشركة' },
     { name: 'الخدمات', href: '/#services', ariaLabel: 'خدماتنا' },
-    { name: 'اتصل بنا', href: '/p/contact', ariaLabel: 'تواصل معنا' },
+    { name: 'اتصل بنا', href: '/contact', ariaLabel: 'تواصل معنا' },
   ];
 
   const handleNavClick = () => {
@@ -19,7 +19,7 @@ const SiteHeader = () => {
   };
 
   const handleWhatsAppClick = () => {
-    window.open('https://wa.me/966501234567?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
+    window.open('https://wa.me/201103442881?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
   };
 
   return (

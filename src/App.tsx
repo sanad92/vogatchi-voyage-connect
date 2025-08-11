@@ -50,6 +50,9 @@ import BookingRequest from "@/pages/BookingRequest";
 import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
 import DynamicPage from "@/pages/DynamicPage";
+import About from "@/pages/About";
+import Contact from "@/pages/Contact";
+import BookingRequestStatic from "@/pages/BookingRequestStatic";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -82,10 +85,13 @@ function App() {
                 <Route path="/" element={<DynamicPage />} />
                 <Route path="/old-landing" element={<LandingPage />} />
                 <Route path="/auth" element={<DynamicPage />} />
-                <Route path="/about" element={<DynamicPage />} />
-                <Route path="/contact" element={<DynamicPage />} />
+                
+                {/* صفحات ثابتة مع fallback للـ CMS */}
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/booking-request" element={<BookingRequestStatic />} />
+                
                 <Route path="/landing" element={<Navigate to="/" replace />} />
-                <Route path="/booking-request" element={<DynamicPage />} />
                 <Route path="/p/:slug" element={<DynamicPage />} />
                 
                 {/* صفحات النظام المحمية */}

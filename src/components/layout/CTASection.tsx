@@ -18,11 +18,11 @@ const CTASection: React.FC<CTASectionProps> = ({
   className = ''
 }) => {
   const handleWhatsAppClick = () => {
-    window.open('https://wa.me/966501234567?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
+    window.open('https://wa.me/201103442881?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
   };
 
   const handlePhoneClick = () => {
-    window.open('tel:+966501234567', '_self');
+    window.open('tel:+201103442881', '_self');
   };
 
   if (variant === 'compact') {
