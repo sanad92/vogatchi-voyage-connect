@@ -38,7 +38,7 @@ const CTASection: React.FC<CTASectionProps> = ({
                 واتساب
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/p/booking-request">
+                <Link to="/booking-request">
                   <Calendar className="h-4 w-4 mr-2" />
                   طلب عرض
                 </Link>
@@ -75,12 +75,12 @@ const CTASection: React.FC<CTASectionProps> = ({
               <Phone className="h-5 w-5 mr-2" />
               اتصل الآن
             </Button>
-            <Button size="lg" variant="secondary" asChild className="text-primary">
-              <Link to="/p/booking-request">
-                <Calendar className="h-5 w-5 mr-2" />
-                احجز رحلتك
-              </Link>
-            </Button>
+              <Button size="lg" variant="secondary" asChild className="text-primary">
+                <Link to="/booking-request">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  احجز رحلتك
+                </Link>
+              </Button>
           </div>
         </div>
       </div>
@@ -119,7 +119,7 @@ const CTASection: React.FC<CTASectionProps> = ({
               </Button>
               
               <Button size="lg" variant="secondary" asChild className="w-full">
-                <Link to="/p/booking-request">
+                <Link to="/booking-request">
                   <Calendar className="h-5 w-5 mr-2" />
                   احجز الآن
                 </Link>

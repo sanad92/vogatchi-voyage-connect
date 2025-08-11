@@ -49,7 +49,7 @@ const SiteFooter = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Phone className="h-4 w-4 text-primary" />
-                <span>+966 50 123 4567</span>
+                <span>01103442881</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-primary" />
@@ -110,6 +110,14 @@ const SiteFooter = () => {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  to="/auth"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  تسجيل دخول الموظفين
+                </Link>
+              </li>
             </ul>
 
             <div className="pt-4">

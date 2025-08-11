@@ -74,6 +74,14 @@ const SiteHeader = () => {
           {/* CTA Buttons */}
           <div className="flex items-center gap-2">
             <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="hidden lg:inline-flex"
+            >
+              <Link to="/auth">تسجيل الدخول</Link>
+            </Button>
+            <Button
               onClick={handleWhatsAppClick}
               className="hidden sm:inline-flex"
               size="sm"
@@ -116,7 +124,16 @@ const SiteHeader = () => {
                     ))}
                   </nav>
 
-                  <div className="border-t pt-4">
+                  <div className="border-t pt-4 space-y-2">
+                    <Button
+                      variant="outline"
+                      asChild
+                      className="w-full"
+                      size="sm"
+                      onClick={handleNavClick}
+                    >
+                      <Link to="/auth">تسجيل الدخول</Link>
+                    </Button>
                     <Button
                       onClick={() => {
                         handleWhatsAppClick();
