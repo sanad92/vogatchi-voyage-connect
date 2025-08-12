@@ -6,6 +6,7 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import CTASection from "@/components/layout/CTASection";
 import BookingRequestForm from "@/components/forms/BookingRequestForm";
+import StaffLoginSection from "@/components/layout/StaffLoginSection";
 
 const DynamicPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -124,6 +125,9 @@ const DynamicPage: React.FC = () => {
         
         {/* Booking Request Form - Only show on homepage */}
         {pageSlug === 'home' && <BookingRequestForm />}
+        
+        {/* Staff Login Section - Only show on homepage */}
+        {pageSlug === 'home' && <StaffLoginSection />}
         
         {/* Final CTA Banner */}
         <CTASection 

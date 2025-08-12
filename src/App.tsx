@@ -53,6 +53,7 @@ import DynamicPage from "@/pages/DynamicPage";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import BookingRequestStatic from "@/pages/BookingRequestStatic";
+import AuthPage from "@/components/auth/AuthPage";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -84,7 +85,7 @@ function App() {
                 {/* صفحة الهبوط كصفحة رئيسية ديناميكية */}
                 <Route path="/" element={<DynamicPage />} />
                 <Route path="/old-landing" element={<LandingPage />} />
-                <Route path="/auth" element={<DynamicPage />} />
+                <Route path="/auth" element={<AuthPage />} />
                 
                 {/* صفحات ثابتة مع fallback للـ CMS */}
                 <Route path="/about" element={<About />} />
