@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { usePhpAuth } from '@/hooks/usePhpAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 
@@ -17,7 +17,7 @@ const PermissionGate = ({
   fallback,
   showMessage = true 
 }: PermissionGateProps) => {
-  const { hasRole, isSuperAdmin } = useOptimizedAuth();
+  const { hasRole, isSuperAdmin } = usePhpAuth();
 
   let hasAccess = true;
 

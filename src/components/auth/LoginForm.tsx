@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { usePhpAuth } from '@/hooks/usePhpAuth';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 const LoginForm = () => {
@@ -12,7 +12,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, loading } = useOptimizedAuth();
+  const { signIn, isLoading } = usePhpAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +23,8 @@ const LoginForm = () => {
       return;
     }
 
-    const result = await signIn(email, password);
-    if (result.error) {
+    const success = await signIn({ email, password });
+    if (!success) {
       setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
     }
   };
@@ -48,7 +48,7 @@ const LoginForm = () => {
             required
             className="text-right"
             placeholder="أدخل بريدك الإلكتروني"
-            disabled={loading}
+            disabled={isLoading}
           />
         </div>
 
@@ -63,13 +63,13 @@ const LoginForm = () => {
               required
               className="text-right pr-10"
               placeholder="أدخل كلمة المرور"
-              disabled={loading}
+              disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              disabled={loading}
+              disabled={isLoading}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -79,9 +79,9 @@ const LoginForm = () => {
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               جاري تسجيل الدخول...

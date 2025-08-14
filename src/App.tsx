@@ -43,7 +43,8 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
-import { useOptimizedAuth, OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
+import { AuthProvider } from "@/hooks/usePhpAuth";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import BookingRequest from "@/pages/BookingRequest";
@@ -77,7 +78,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <OptimizedAuthProvider>
+        <AuthProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
@@ -152,32 +153,11 @@ function App() {
               </Routes>
             </div>
           </OptimizedErrorBoundary>
-        </OptimizedAuthProvider>
+        </AuthProvider>
       </Router>
     </QueryClientProvider>
   );
 }
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isLoggedIn, loading, user } = useOptimizedAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
-          <p className="text-sm text-gray-500">يتم فحص حالة المصادقة</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoggedIn()) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return children;
-}
 
 export default App;

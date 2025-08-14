@@ -1,4 +1,4 @@
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { usePhpAuth } from '@/hooks/usePhpAuth';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useState } from 'react';
 
 const AuthPage = () => {
-  const { user, loading, signIn, isLoggedIn } = useOptimizedAuth();
+  const { user, isLoading, signIn, isAuthenticated } = usePhpAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,12 +17,12 @@ const AuthPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // إذا كان المستخدم مسجل دخول، توجهه للداشبورد
-  if (isLoggedIn() && !loading) {
+  if (isAuthenticated && !isLoading) {
     return <Navigate to="/dashboard" replace />;
   }
 
   // شاشة التحميل
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -60,20 +60,9 @@ const AuthPage = () => {
     }
 
     try {
-      const result = await signIn(email.trim().toLowerCase(), password);
-      if (result.error) {
-        // تحسين رسائل الخطأ بناءً على نوع الخطأ
-        const errorMessage = result.error.message || result.error;
-        if (errorMessage.includes('Invalid login credentials') || 
-            errorMessage.includes('البريد الإلكتروني أو كلمة المرور غير صحيحة')) {
-          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-        } else if (errorMessage.includes('Email not confirmed')) {
-          setError('يرجى تأكيد البريد الإلكتروني أولاً');
-        } else if (errorMessage.includes('Too many requests')) {
-          setError('محاولات كثيرة، يرجى المحاولة لاحقاً');
-        } else {
-          setError('فشل في تسجيل الدخول. يرجى المحاولة مرة أخرى.');
-        }
+      const success = await signIn({ email: email.trim().toLowerCase(), password });
+      if (!success) {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
     } catch (error) {
       console.error('Login error:', error);
