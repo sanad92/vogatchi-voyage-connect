@@ -96,13 +96,13 @@ export interface NewHotelBooking {
   check_in_date: string;
   check_out_date: string;
   room_type: string;
-  number_of_adults: number;
-  number_of_children: number;
+  adults: number;
+  children: number;
   children_ages?: string;
   meal_plan: string;
   booking_reference_supplier?: string;
   cancellation_policy?: string;
-  supplier_id?: string; // أصبحت مطلوبة فعليا
+  supplier_id?: string;
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;

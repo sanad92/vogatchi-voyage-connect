@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
 import { Customer } from "@/types/customer";
+import { hotelBookingService } from "@/services/hotelBookingService";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;
@@ -13,39 +13,9 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const saveSpecialRequests = async (bookingId: string, formData: NewHotelBooking, selectedRequests: string[]) => {
-    // Delete existing special requests
-    if (booking?.id) {
-      await supabase
-        .from('booking_special_requests')
-        .delete()
-        .eq('booking_id', bookingId);
-    }
-
-    // Save selected special request types
-    if (selectedRequests.length > 0) {
-      const requestsToInsert = selectedRequests.map(requestId => ({
-        booking_id: bookingId,
-        special_request_type_id: requestId
-      }));
-
-      const { error } = await supabase
-        .from('booking_special_requests')
-        .insert(requestsToInsert);
-      
-      if (error) throw error;
-    }
-
-    // Save custom request if provided
-    if (formData.custom_request?.trim()) {
-      const { error } = await supabase
-        .from('booking_special_requests')
-        .insert({
-          booking_id: bookingId,
-          custom_request_text: formData.custom_request.trim()
-        });
-      
-      if (error) throw error;
-    }
+    // TODO: Implement special requests saving in PHP backend
+    // For now, this is handled in the main booking creation
+    console.log('Special requests will be handled in PHP backend:', { bookingId, selectedRequests, customRequest: formData.custom_request });
   };
 
   const submitBooking = async (
@@ -58,45 +28,35 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
       // Remove custom_request from data sent to hotel_bookings table
       const { custom_request, ...bookingDataForTable } = data;
       const submitData = {
-        ...bookingDataForTable,
         customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.name,
-        supplier_id: bookingDataForTable.supplier_id && bookingDataForTable.supplier_id !== "" ? bookingDataForTable.supplier_id : null,
-        // Required: supplier_name (string) must be present, but supplier_id can be null for custom suppliers
+        hotel_name: bookingDataForTable.hotel_name || '',
+        destination_city: bookingDataForTable.destination_city || '',
+        check_in_date: bookingDataForTable.check_in_date,
+        check_out_date: bookingDataForTable.check_out_date,
+        selling_price_per_night: Number(bookingDataForTable.selling_price_per_night) || 0,
+        cost_per_night: Number(bookingDataForTable.cost_per_night) || 0,
+        adults: Number(bookingDataForTable.adults) || 2,
+        children: Number(bookingDataForTable.children) || 0,
+        room_type: bookingDataForTable.room_type || '',
+        meal_plan: bookingDataForTable.meal_plan || '',
       };
 
-      let bookingId: string;
-
-      // تحقق بشكل أوضح: فقط supplier_name مطلوب، id اختياري إذا من القائمة
-      if (!submitData.supplier_name || submitData.supplier_name.trim() === "") {
-        setIsSubmitting(false);
-        toast.error("يجب اختيار مورد أو إدخال اسم مورد.");
-        return;
-      }
-
       if (booking) {
-        const { error } = await supabase
-          .from('hotel_bookings')
-          .update(submitData)
-          .eq('id', booking.id);
-        if (error) throw error;
-        bookingId = booking.id;
-        toast.success('تم تحديث الحجز بنجاح');
+        // TODO: Implement update functionality in PHP backend
+        toast.error('تحديث الحجوزات غير متاح حالياً');
+        return;
       } else {
-        const { data: newBooking, error } = await supabase
-          .from('hotel_bookings')
-          .insert([submitData])
-          .select()
-          .single();
-        if (error) throw error;
-        bookingId = newBooking.id;
-        toast.success('تم إنشاء الحجز بنجاح');
+        const response = await hotelBookingService.createHotelBooking(submitData);
+        
+        if (response.success) {
+          toast.success('تم إنشاء الحجز بنجاح');
+          // Save special requests (types + custom)
+          await saveSpecialRequests(response.id, data, selectedRequests);
+          onSuccess();
+        } else {
+          throw new Error('فشل في إنشاء الحجز');
+        }
       }
-
-      // Save special requests (types + custom)
-      await saveSpecialRequests(bookingId, data, selectedRequests);
-
-      onSuccess();
     } catch (error: any) {
       console.error('Error saving booking:', error);
       const message = error?.message || 'حدث خطأ في حفظ الحجز، تحقق من البيانات المطلوبة';

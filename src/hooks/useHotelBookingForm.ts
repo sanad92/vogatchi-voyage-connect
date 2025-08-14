@@ -29,8 +29,8 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       check_in_date: booking.check_in_date,
       check_out_date: booking.check_out_date,
       room_type: booking.room_type,
-      number_of_adults: booking.number_of_adults,
-      number_of_children: booking.number_of_children,
+      adults: booking.number_of_adults,
+      children: booking.number_of_children,
       children_ages: booking.children_ages,
       meal_plan: booking.meal_plan,
       booking_reference_supplier: booking.booking_reference_supplier,
@@ -132,8 +132,8 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     };
 
     const parsedHotelStarRating = parseOptionalNumber(data.hotel_star_rating, null);
-    const parsedNumAdults = parseOptionalNumber(data.number_of_adults, 1);
-    const parsedNumChildren = parseOptionalNumber(data.number_of_children, 0);
+    const parsedNumAdults = parseOptionalNumber(data.adults, 1);
+    const parsedNumChildren = parseOptionalNumber(data.children, 0);
     const parsedCostPerNight = parseOptionalNumber(data.cost_per_night, 0);
     const parsedSellingPrice = parseOptionalNumber(data.selling_price_per_night, 0);
     const parsedPaidAmount = parseOptionalNumber(data.paid_amount, 0);
@@ -153,8 +153,8 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
     return {
       ...data,
       hotel_star_rating: parsedHotelStarRating,
-      number_of_adults: parsedNumAdults,
-      number_of_children: parsedNumChildren,
+      adults: parsedNumAdults,
+      children: parsedNumChildren,
       cost_per_night: parsedCostPerNight,
       selling_price_per_night: parsedSellingPrice,
       paid_amount: parsedPaidAmount,

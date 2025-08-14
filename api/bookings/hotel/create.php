@@ -20,6 +20,12 @@ try {
   $children = (int)($input['children'] ?? 0);
   $room_type = trim($input['room_type'] ?? '');
   $meal_plan = trim($input['meal_plan'] ?? '');
+  
+  // Handle nullable values properly
+  $hotel_name = $hotel_name ?: null;
+  $destination_city = $destination_city ?: null;
+  $room_type = $room_type ?: null;
+  $meal_plan = $meal_plan ?: null;
 
   if ($customer_id === '' || $check_in_date === '' || $check_out_date === '') {
     json_response(['error' => 'بيانات الحجز الأساسية مطلوبة'], 400);
@@ -44,9 +50,12 @@ try {
 
   // Generate booking number simple
   $booking_number = 'VT-'.date('Y').'-'.substr(str_replace('-', '', uuid()), 0, 6);
-  $status_id = null; -- optional, keep null or set default
+  $status_id = null; // optional, keep null or set default
 
   $id = uuid();
+  // Get current user ID for booking_agent_id
+  $booking_agent_id = $user['id'] ?? null;
+  
   $stmt = $pdo->prepare('INSERT INTO hotel_bookings (
     id, booking_number, customer_id, customer_name, hotel_name, destination_city, check_in_date, check_out_date,
     number_of_nights, adults, children, room_type, meal_plan, selling_price_per_night, cost_per_night,
@@ -54,7 +63,7 @@ try {
   ) VALUES (
     :id, :booking_number, :customer_id, :customer_name, :hotel_name, :destination_city, :check_in_date, :check_out_date,
     :nights, :adults, :children, :room_type, :meal_plan, :selling, :cost,
-    :total_cost_customer, :total_profit, 0, :remaining_amount, :status_id, NULL
+    :total_cost_customer, :total_profit, 0, :remaining_amount, :status_id, :booking_agent_id
   )');
 
   $stmt->execute([
@@ -62,21 +71,22 @@ try {
     ':booking_number' => $booking_number,
     ':customer_id' => $customer_id,
     ':customer_name' => $cust['name'],
-    ':hotel_name' => $hotel_name ?: null,
-    ':destination_city' => $destination_city ?: null,
+    ':hotel_name' => $hotel_name,
+    ':destination_city' => $destination_city,
     ':check_in_date' => $check_in_date,
     ':check_out_date' => $check_out_date,
     ':nights' => $nights,
     ':adults' => $adults,
     ':children' => $children,
-    ':room_type' => $room_type ?: null,
-    ':meal_plan' => $meal_plan ?: null,
+    ':room_type' => $room_type,
+    ':meal_plan' => $meal_plan,
     ':selling' => $selling,
     ':cost' => $cost,
     ':total_cost_customer' => $total_cost_customer,
     ':total_profit' => $total_profit,
     ':remaining_amount' => $total_cost_customer,
     ':status_id' => $status_id,
+    ':booking_agent_id' => $booking_agent_id,
   ]);
 
   // update customer last_booking_date

@@ -41,23 +41,23 @@ const RoomDetailsSection = ({ register, setValue, errors }: RoomDetailsSectionPr
         </div>
 
         <div>
-          <Label htmlFor="number_of_adults">عدد البالغين *</Label>
+          <Label htmlFor="adults">عدد البالغين *</Label>
           <Input 
-            id="number_of_adults"
+            id="adults"
             type="number"
             min="1"
-            {...register('number_of_adults', { required: 'عدد البالغين مطلوب', min: 1 })}
+            {...register('adults', { required: 'عدد البالغين مطلوب', min: 1 })}
           />
-          {errors.number_of_adults && <p className="text-red-500 text-sm">{errors.number_of_adults.message}</p>}
+          {errors.adults && <p className="text-red-500 text-sm">{errors.adults.message}</p>}
         </div>
 
         <div>
-          <Label htmlFor="number_of_children">عدد الأطفال</Label>
+          <Label htmlFor="children">عدد الأطفال</Label>
           <Input 
-            id="number_of_children"
+            id="children"
             type="number"
             min="0"
-            {...register('number_of_children')}
+            {...register('children')}
           />
         </div>
 
