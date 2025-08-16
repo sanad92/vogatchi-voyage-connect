@@ -1,5 +1,4 @@
-
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
@@ -8,9 +7,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { user, userRole, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useOptimizedAuth();
+  const { user, isLoading, hasRole, isSuperAdmin, isLoggedIn } = useSimpleAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
@@ -25,20 +24,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // التحقق من أن المستخدم له profile وأنه نشط
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-orange-600 mb-4">حسابك قيد المراجعة</h2>
-          <p className="text-gray-600 mb-4">حسابك في انتظار تفعيل السوبر أدمن.</p>
-          <p className="text-sm text-gray-500">يرجى الانتظار أو التواصل مع الإدارة.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile.is_active) {
+  // التحقق من أن الحساب نشط
+  if (user && !user.is_active) {
     return (
       <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
@@ -50,7 +37,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     );
   }
 
-  if (!userRole) {
+  // التحقق من وجود دور للمستخدم
+  if (user && !user.role) {
     return (
       <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
@@ -69,7 +57,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">ليس لديك صلاحية للوصول</h2>
           <p className="text-gray-600 mb-4">عذراً، لا تملك الصلاحيات المطلوبة لعرض هذه الصفحة.</p>
-          <p className="text-sm text-gray-500">دورك الحالي: {userRole}</p>
+          <p className="text-sm text-gray-500">دورك الحالي: {user?.role}</p>
         </div>
       </div>
     );

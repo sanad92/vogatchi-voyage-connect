@@ -43,8 +43,8 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
-import { AuthProvider } from "@/hooks/usePhpAuth";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { SimpleAuthProvider } from "@/hooks/useSimpleAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import BookingRequest from "@/pages/BookingRequest";
@@ -78,7 +78,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <AuthProvider>
+        <SimpleAuthProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
@@ -153,7 +153,7 @@ function App() {
               </Routes>
             </div>
           </OptimizedErrorBoundary>
-        </AuthProvider>
+        </SimpleAuthProvider>
       </Router>
     </QueryClientProvider>
   );
