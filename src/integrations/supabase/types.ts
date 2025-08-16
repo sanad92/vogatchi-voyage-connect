@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -5465,42 +5465,42 @@ export type Database = {
     Functions: {
       admin_create_user: {
         Args: {
-          p_email: string
-          p_password: string
-          p_full_name: string
           p_department?: string
+          p_email: string
+          p_full_name: string
+          p_password: string
           p_phone?: string
           p_role?: Database["public"]["Enums"]["user_role"]
         }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
           user_id: string
         }[]
       }
       admin_reset_user_password: {
-        Args: { p_user_id: string; p_new_password: string }
+        Args: { p_new_password: string; p_user_id: string }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
         }[]
       }
       admin_update_user_profile: {
         Args: {
-          p_user_id: string
+          p_department?: string
           p_email?: string
           p_full_name?: string
-          p_department?: string
-          p_phone?: string
           p_is_active?: boolean
+          p_phone?: string
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
         }[]
       }
       auto_assign_conversation: {
-        Args: { p_phone_number: string; p_message_content?: string }
+        Args: { p_message_content?: string; p_phone_number: string }
         Returns: string
       }
       booking_exists: {
@@ -5510,34 +5510,34 @@ export type Database = {
       calculate_employee_bookings_profit: {
         Args: {
           p_employee_id: string
-          p_period_start: string
           p_period_end: string
+          p_period_start: string
         }
         Returns: {
-          booking_type: string
-          booking_id: string
           booking_amount: number
-          supplier_cost: number
-          profit: number
           booking_date: string
+          booking_id: string
+          booking_type: string
+          profit: number
+          supplier_cost: number
         }[]
       }
       calculate_employee_commission: {
         Args: {
-          p_employee_id: string
           p_booking_amount: number
           p_commission_rate?: number
+          p_employee_id: string
         }
         Returns: number
       }
       calculate_monthly_salary: {
         Args: {
-          p_employee_id: string
-          p_salary_month: string
-          p_overtime_hours?: number
           p_bonus?: number
           p_deductions?: number
+          p_employee_id: string
           p_notes?: string
+          p_overtime_hours?: number
+          p_salary_month: string
         }
         Returns: Json
       }
@@ -5559,9 +5559,9 @@ export type Database = {
       }
       check_user_permission: {
         Args: {
-          p_user_id: string
-          p_permission_type: string
           p_access_type: string
+          p_permission_type: string
+          p_user_id: string
         }
         Returns: boolean
       }
@@ -5572,8 +5572,8 @@ export type Database = {
       end_impersonation: {
         Args: { p_session_id: string }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
         }[]
       }
       generate_booking_number: {
@@ -5587,74 +5587,74 @@ export type Database = {
       generate_period_commission: {
         Args: {
           p_employee_id: string
-          p_period_start: string
-          p_period_end: string
           p_notes?: string
+          p_period_end: string
+          p_period_start: string
         }
         Returns: Json
       }
       get_all_user_permissions: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          user_id: string
-          email: string
-          full_name: string
-          is_active: boolean
-          customers_view: boolean
-          customers_create: boolean
-          customers_edit: boolean
-          customers_delete: boolean
-          customers_export: boolean
-          bookings_view: boolean
-          bookings_create: boolean
-          bookings_edit: boolean
-          bookings_delete: boolean
-          bookings_cancel: boolean
-          bookings_confirm: boolean
-          invoices_view: boolean
-          invoices_create: boolean
-          invoices_edit: boolean
-          invoices_delete: boolean
-          invoices_send: boolean
-          invoices_payment: boolean
-          suppliers_view: boolean
-          suppliers_create: boolean
-          suppliers_edit: boolean
-          suppliers_delete: boolean
-          suppliers_contracts: boolean
-          reports_financial: boolean
-          reports_sales: boolean
-          reports_operational: boolean
-          reports_export: boolean
-          reports_advanced: boolean
-          employees_view: boolean
-          employees_create: boolean
-          employees_edit: boolean
-          employees_delete: boolean
-          employees_salary: boolean
-          employees_commission: boolean
-          expenses_view: boolean
-          expenses_create: boolean
-          expenses_approve: boolean
-          expenses_reports: boolean
-          system_users: boolean
-          system_settings: boolean
-          system_backup: boolean
-          system_audit: boolean
-          banking_view: boolean
           banking_transactions: boolean
           banking_transfer: boolean
+          banking_view: boolean
+          bookings_cancel: boolean
+          bookings_confirm: boolean
+          bookings_create: boolean
+          bookings_delete: boolean
+          bookings_edit: boolean
+          bookings_view: boolean
           created_at: string
+          customers_create: boolean
+          customers_delete: boolean
+          customers_edit: boolean
+          customers_export: boolean
+          customers_view: boolean
+          email: string
+          employees_commission: boolean
+          employees_create: boolean
+          employees_delete: boolean
+          employees_edit: boolean
+          employees_salary: boolean
+          employees_view: boolean
+          expenses_approve: boolean
+          expenses_create: boolean
+          expenses_reports: boolean
+          expenses_view: boolean
+          full_name: string
+          id: string
+          invoices_create: boolean
+          invoices_delete: boolean
+          invoices_edit: boolean
+          invoices_payment: boolean
+          invoices_send: boolean
+          invoices_view: boolean
+          is_active: boolean
+          reports_advanced: boolean
+          reports_export: boolean
+          reports_financial: boolean
+          reports_operational: boolean
+          reports_sales: boolean
+          suppliers_contracts: boolean
+          suppliers_create: boolean
+          suppliers_delete: boolean
+          suppliers_edit: boolean
+          suppliers_view: boolean
+          system_audit: boolean
+          system_backup: boolean
+          system_settings: boolean
+          system_users: boolean
           updated_at: string
+          user_id: string
         }[]
       }
       get_current_booking_status: {
         Args: { p_booking_id: string }
         Returns: {
+          color: string
           status_name: string
           status_name_ar: string
-          color: string
         }[]
       }
       get_current_exchange_rate: {
@@ -5668,40 +5668,40 @@ export type Database = {
       get_detailed_permissions: {
         Args: Record<PropertyKey, never>
         Returns: {
+          created_at: string
+          description: string
+          group_id: string
           id: string
+          is_active: boolean
           permission_key: string
           permission_name: string
           permission_name_ar: string
-          description: string
-          group_id: string
-          is_active: boolean
-          created_at: string
         }[]
       }
       get_duplicate_customers: {
         Args: {
+          p_limit?: number
+          p_min_count?: number
+          p_offset?: number
           p_search?: string
           p_type?: string
-          p_min_count?: number
-          p_limit?: number
-          p_offset?: number
         }
         Returns: {
+          customers: Json
           group_type: string
           key: string
-          customers: Json
         }[]
       }
       get_permission_groups: {
         Args: Record<PropertyKey, never>
         Returns: {
+          color: string
+          created_at: string
+          description: string
           id: string
+          is_active: boolean
           name: string
           name_ar: string
-          description: string
-          color: string
-          is_active: boolean
-          created_at: string
         }[]
       }
       get_system_setting: {
@@ -5711,54 +5711,54 @@ export type Database = {
       get_user_permissions: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          user_id: string
-          customers_view: boolean
-          customers_create: boolean
-          customers_edit: boolean
-          customers_delete: boolean
-          customers_export: boolean
-          bookings_view: boolean
-          bookings_create: boolean
-          bookings_edit: boolean
-          bookings_delete: boolean
-          bookings_cancel: boolean
-          bookings_confirm: boolean
-          invoices_view: boolean
-          invoices_create: boolean
-          invoices_edit: boolean
-          invoices_delete: boolean
-          invoices_send: boolean
-          invoices_payment: boolean
-          suppliers_view: boolean
-          suppliers_create: boolean
-          suppliers_edit: boolean
-          suppliers_delete: boolean
-          suppliers_contracts: boolean
-          reports_financial: boolean
-          reports_sales: boolean
-          reports_operational: boolean
-          reports_export: boolean
-          reports_advanced: boolean
-          employees_view: boolean
-          employees_create: boolean
-          employees_edit: boolean
-          employees_delete: boolean
-          employees_salary: boolean
-          employees_commission: boolean
-          expenses_view: boolean
-          expenses_create: boolean
-          expenses_approve: boolean
-          expenses_reports: boolean
-          system_users: boolean
-          system_settings: boolean
-          system_backup: boolean
-          system_audit: boolean
-          banking_view: boolean
           banking_transactions: boolean
           banking_transfer: boolean
+          banking_view: boolean
+          bookings_cancel: boolean
+          bookings_confirm: boolean
+          bookings_create: boolean
+          bookings_delete: boolean
+          bookings_edit: boolean
+          bookings_view: boolean
           created_at: string
+          customers_create: boolean
+          customers_delete: boolean
+          customers_edit: boolean
+          customers_export: boolean
+          customers_view: boolean
+          employees_commission: boolean
+          employees_create: boolean
+          employees_delete: boolean
+          employees_edit: boolean
+          employees_salary: boolean
+          employees_view: boolean
+          expenses_approve: boolean
+          expenses_create: boolean
+          expenses_reports: boolean
+          expenses_view: boolean
+          id: string
+          invoices_create: boolean
+          invoices_delete: boolean
+          invoices_edit: boolean
+          invoices_payment: boolean
+          invoices_send: boolean
+          invoices_view: boolean
+          reports_advanced: boolean
+          reports_export: boolean
+          reports_financial: boolean
+          reports_operational: boolean
+          reports_sales: boolean
+          suppliers_contracts: boolean
+          suppliers_create: boolean
+          suppliers_delete: boolean
+          suppliers_edit: boolean
+          suppliers_view: boolean
+          system_audit: boolean
+          system_backup: boolean
+          system_settings: boolean
+          system_users: boolean
           updated_at: string
+          user_id: string
         }[]
       }
       get_user_role: {
@@ -5767,30 +5767,30 @@ export type Database = {
       }
       has_role: {
         Args: {
-          user_id: string
           required_role: Database["public"]["Enums"]["user_role"]
+          user_id: string
         }
         Returns: boolean
       }
       has_role_or_higher: {
         Args: {
-          user_id: string
           required_role: Database["public"]["Enums"]["user_role"]
+          user_id: string
         }
         Returns: boolean
       }
       link_user_to_employee: {
-        Args: { p_user_id: string; p_employee_id: string }
+        Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
       }
       log_admin_action: {
         Args: {
           p_action_type: string
-          p_target_table?: string
-          p_target_id?: string
-          p_old_values?: Json
-          p_new_values?: Json
           p_description?: string
+          p_new_values?: Json
+          p_old_values?: Json
+          p_target_id?: string
+          p_target_table?: string
         }
         Returns: undefined
       }
@@ -5807,11 +5807,11 @@ export type Database = {
         Returns: Json
       }
       start_impersonation: {
-        Args: { p_target_user_id: string; p_reason?: string }
+        Args: { p_reason?: string; p_target_user_id: string }
         Returns: {
-          success: boolean
           message: string
           session_token: string
+          success: boolean
         }[]
       }
       toggle_employee_status: {
@@ -5825,9 +5825,9 @@ export type Database = {
       update_booking_status: {
         Args: {
           p_booking_id: string
-          p_status_id: string
           p_changed_by?: string
           p_notes?: string
+          p_status_id: string
         }
         Returns: boolean
       }
@@ -5837,23 +5837,23 @@ export type Database = {
       }
       update_period_commission_status: {
         Args: {
+          p_bank_account_id?: string
           p_commission_period_id: string
-          p_status: string
+          p_notes?: string
           p_payment_date?: string
           p_payment_method?: string
-          p_bank_account_id?: string
-          p_notes?: string
+          p_status: string
         }
         Returns: Json
       }
       update_salary_status: {
         Args: {
-          p_salary_id: string
-          p_status: string
-          p_payment_date?: string
-          p_payment_method?: string
           p_bank_account_id?: string
           p_notes?: string
+          p_payment_date?: string
+          p_payment_method?: string
+          p_salary_id: string
+          p_status: string
         }
         Returns: Json
       }
@@ -5862,18 +5862,18 @@ export type Database = {
         Returns: undefined
       }
       update_user_permissions: {
-        Args: { p_user_id: string; p_permissions: Json }
+        Args: { p_permissions: Json; p_user_id: string }
         Returns: string
       }
       user_has_permission: {
-        Args: { p_user_id: string; p_permission_key: string }
+        Args: { p_permission_key: string; p_user_id: string }
         Returns: boolean
       }
       validate_employee_commissions: {
         Args: { p_employee_id: string }
         Returns: {
-          commission_id: string
           booking_id: string
+          commission_id: string
           issue_description: string
         }[]
       }
