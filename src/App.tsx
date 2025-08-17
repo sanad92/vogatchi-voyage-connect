@@ -43,8 +43,8 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
-import { SimpleAuthProvider } from "@/hooks/useSimpleAuth";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
+import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import BookingRequest from "@/pages/BookingRequest";
@@ -78,7 +78,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <SimpleAuthProvider>
+        <SupabaseAuthProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
@@ -100,7 +100,7 @@ function App() {
                 <Route
                   path="/*"
                   element={
-                  <ProtectedRoute>
+                  <SupabaseProtectedRoute>
                     <div className="min-h-screen w-full">
                       <Navbar />
                       <main className="w-full">
@@ -147,13 +147,13 @@ function App() {
                           </OptimizedErrorBoundary>
                         </main>
                       </div>
-                    </ProtectedRoute>
+                    </SupabaseProtectedRoute>
                   }
                 />
               </Routes>
             </div>
           </OptimizedErrorBoundary>
-        </SimpleAuthProvider>
+        </SupabaseAuthProvider>
       </Router>
     </QueryClientProvider>
   );

@@ -1,4 +1,4 @@
 
-import { useSimplePermissions } from './useSimplePermissions';
+import { useSupabasePermissions } from './useSupabasePermissions';
 
-export const usePermissionCheck = useSimplePermissions;
+export const usePermissionCheck = useSupabasePermissions;
