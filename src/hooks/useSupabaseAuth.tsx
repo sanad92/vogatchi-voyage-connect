@@ -208,7 +208,7 @@ export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
