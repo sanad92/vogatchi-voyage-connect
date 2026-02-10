@@ -94,18 +94,14 @@ const DynamicPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  // If error or no page found, fall back to LandingPage for homepage, show error for other pages
+  if (error || !page) {
+    if (pageSlug === 'home') {
+      return <LandingPage />;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        حدث خطأ أثناء تحميل الصفحة
-      </div>
-    );
-  }
-
-  if (!page) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        الصفحة غير موجودة
+        {error ? 'حدث خطأ أثناء تحميل الصفحة' : 'الصفحة غير موجودة'}
       </div>
     );
   }
