@@ -7,6 +7,7 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import CTASection from "@/components/layout/CTASection";
 import BookingRequestForm from "@/components/forms/BookingRequestForm";
 import StaffLoginSection from "@/components/layout/StaffLoginSection";
+import LandingPage from "@/pages/LandingPage";
 
 const DynamicPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -93,18 +94,14 @@ const DynamicPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  // If error or no page found, fall back to LandingPage for homepage, show error for other pages
+  if (error || !page) {
+    if (pageSlug === 'home') {
+      return <LandingPage />;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        حدث خطأ أثناء تحميل الصفحة
-      </div>
-    );
-  }
-
-  if (!page) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        الصفحة غير موجودة
+        {error ? 'حدث خطأ أثناء تحميل الصفحة' : 'الصفحة غير موجودة'}
       </div>
     );
   }
