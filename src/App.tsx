@@ -3,13 +3,11 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import OptimizedIndex from "@/pages/OptimizedIndex";
-import LandingPage from "@/pages/LandingPage";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
@@ -47,13 +45,8 @@ import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
-import BookingRequest from "@/pages/BookingRequest";
 import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
-import DynamicPage from "@/pages/DynamicPage";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import BookingRequestStatic from "@/pages/BookingRequestStatic";
 import AuthPage from "@/components/auth/AuthPage";
 
 // إعدادات محسنة للQuery Client
@@ -83,18 +76,9 @@ function App() {
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
               <Routes>
-                {/* صفحة الهبوط كصفحة رئيسية ديناميكية */}
-                <Route path="/" element={<DynamicPage />} />
-                <Route path="/old-landing" element={<LandingPage />} />
+                {/* صفحة تسجيل الدخول كصفحة رئيسية */}
+                <Route path="/" element={<AuthPage />} />
                 <Route path="/auth" element={<AuthPage />} />
-                
-                {/* صفحات ثابتة مع fallback للـ CMS */}
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/booking-request" element={<BookingRequestStatic />} />
-                
-                <Route path="/landing" element={<Navigate to="/" replace />} />
-                <Route path="/p/:slug" element={<DynamicPage />} />
                 
                 {/* صفحات النظام المحمية */}
                 <Route

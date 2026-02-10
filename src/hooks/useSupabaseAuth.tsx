@@ -208,7 +208,7 @@ export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
@@ -262,12 +262,12 @@ export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(null);
       
       toast.success('تم تسجيل الخروج بنجاح');
-      navigate('/auth');
+      navigate('/');
       
     } catch (error) {
       console.error('خطأ في تسجيل الخروج:', error);
       toast.error('حدث خطأ أثناء تسجيل الخروج');
-      navigate('/auth');
+      navigate('/');
     } finally {
       setLoading(false);
     }
