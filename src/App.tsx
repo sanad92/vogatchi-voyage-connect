@@ -83,18 +83,9 @@ function App() {
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
               <Routes>
-                {/* صفحة الهبوط كصفحة رئيسية ديناميكية */}
-                <Route path="/" element={<DynamicPage />} />
-                <Route path="/old-landing" element={<LandingPage />} />
+                {/* صفحة تسجيل الدخول كصفحة رئيسية */}
+                <Route path="/" element={<AuthPage />} />
                 <Route path="/auth" element={<AuthPage />} />
-                
-                {/* صفحات ثابتة مع fallback للـ CMS */}
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/booking-request" element={<BookingRequestStatic />} />
-                
-                <Route path="/landing" element={<Navigate to="/" replace />} />
-                <Route path="/p/:slug" element={<DynamicPage />} />
                 
                 {/* صفحات النظام المحمية */}
                 <Route

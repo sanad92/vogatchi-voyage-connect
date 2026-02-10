@@ -21,7 +21,7 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
   }
 
   if (!isLoggedIn()) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // التحقق من أن الحساب نشط
