@@ -7,6 +7,7 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import CTASection from "@/components/layout/CTASection";
 import BookingRequestForm from "@/components/forms/BookingRequestForm";
 import StaffLoginSection from "@/components/layout/StaffLoginSection";
+import LandingPage from "@/pages/LandingPage";
 
 const DynamicPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
