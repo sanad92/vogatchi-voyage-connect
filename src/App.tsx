@@ -43,6 +43,7 @@ import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
+import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import CMSPages from "@/pages/admin/CMSPages";
@@ -72,6 +73,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <SupabaseAuthProvider>
+          <OptimizedAuthProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
@@ -137,6 +139,7 @@ function App() {
               </Routes>
             </div>
           </OptimizedErrorBoundary>
+          </OptimizedAuthProvider>
         </SupabaseAuthProvider>
       </Router>
     </QueryClientProvider>
