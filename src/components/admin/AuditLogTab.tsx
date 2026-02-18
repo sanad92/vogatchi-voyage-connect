@@ -14,20 +14,13 @@ import { format } from "date-fns";
 
 interface AuditLog {
   id: string;
-  admin_id: string;
-  action_type: string;
+  user_id: string;
+  action: string;
   target_table: string;
   target_id: string;
-  old_values: any;
-  new_values: any;
-  description: string;
+  details: any;
   ip_address: string;
-  user_agent: string;
   created_at: string;
-  admin: {
-    full_name: string;
-    email: string;
-  };
 }
 
 const AuditLogTab = () => {
@@ -35,54 +28,34 @@ const AuditLogTab = () => {
   const [actionFilter, setActionFilter] = useState("all");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  // جلب سجل العمليات
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ['audit-logs', searchTerm, actionFilter],
     queryFn: async () => {
       let query = supabase
         .from('admin_audit_log')
-        .select(`
-          *,
-          admin:profiles!admin_audit_log_admin_id_fkey(full_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (actionFilter !== 'all') {
-        query = query.eq('action_type', actionFilter);
+        query = query.eq('action', actionFilter);
       }
 
       if (searchTerm) {
-        query = query.or(`description.ilike.%${searchTerm}%,action_type.ilike.%${searchTerm}%`);
+        query = query.ilike('action', `%${searchTerm}%`);
       }
 
       const { data, error } = await query;
-      
       if (error) throw error;
-      return data as AuditLog[];
+      return (data || []) as AuditLog[];
     }
   });
 
-  const getActionBadgeColor = (actionType: string) => {
-    switch (actionType) {
-      case 'user_created': return 'bg-green-100 text-green-800';
-      case 'user_activated': return 'bg-blue-100 text-blue-800';
-      case 'user_deactivated': return 'bg-red-100 text-red-800';
-      case 'setting_updated': return 'bg-purple-100 text-purple-800';
-      case 'role_changed': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getActionLabel = (actionType: string) => {
-    switch (actionType) {
-      case 'user_created': return 'إنشاء مستخدم';
-      case 'user_activated': return 'تفعيل مستخدم';
-      case 'user_deactivated': return 'تعطيل مستخدم';
-      case 'setting_updated': return 'تحديث إعداد';
-      case 'role_changed': return 'تغيير دور';
-      default: return actionType;
-    }
+  const getActionBadgeColor = (action: string) => {
+    if (action?.includes('creat')) return 'bg-green-100 text-green-800';
+    if (action?.includes('delet')) return 'bg-red-100 text-red-800';
+    if (action?.includes('updat')) return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   if (isLoading) {
@@ -91,7 +64,6 @@ const AuditLogTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* أدوات التصفية */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -108,16 +80,13 @@ const AuditLogTab = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">جميع العمليات</SelectItem>
-            <SelectItem value="user_created">إنشاء مستخدم</SelectItem>
-            <SelectItem value="user_activated">تفعيل مستخدم</SelectItem>
-            <SelectItem value="user_deactivated">تعطيل مستخدم</SelectItem>
-            <SelectItem value="setting_updated">تحديث إعداد</SelectItem>
-            <SelectItem value="role_changed">تغيير دور</SelectItem>
+            <SelectItem value="create">إنشاء</SelectItem>
+            <SelectItem value="update">تحديث</SelectItem>
+            <SelectItem value="delete">حذف</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* جدول سجل العمليات */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -130,8 +99,8 @@ const AuditLogTab = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>العملية</TableHead>
-                <TableHead>المستخدم</TableHead>
-                <TableHead>الوصف</TableHead>
+                <TableHead>الجدول</TableHead>
+                <TableHead>عنوان IP</TableHead>
                 <TableHead>التاريخ</TableHead>
                 <TableHead>التفاصيل</TableHead>
               </TableRow>
@@ -140,19 +109,12 @@ const AuditLogTab = () => {
               {auditLogs?.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell>
-                    <Badge className={getActionBadgeColor(log.action_type)}>
-                      {getActionLabel(log.action_type)}
+                    <Badge className={getActionBadgeColor(log.action)}>
+                      {log.action}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{log.admin.full_name}</div>
-                      <div className="text-sm text-gray-500">{log.admin.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs truncate">{log.description}</div>
-                  </TableCell>
+                  <TableCell>{log.target_table || '-'}</TableCell>
+                  <TableCell>{log.ip_address || 'غير محدد'}</TableCell>
                   <TableCell>
                     <div className="text-sm">
                       {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
@@ -161,7 +123,7 @@ const AuditLogTab = () => {
                   <TableCell>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => setSelectedLog(log)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
@@ -171,51 +133,17 @@ const AuditLogTab = () => {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <strong>نوع العملية:</strong>
-                              <p>{getActionLabel(log.action_type)}</p>
-                            </div>
-                            <div>
-                              <strong>المستخدم:</strong>
-                              <p>{log.admin.full_name}</p>
-                            </div>
-                            <div>
-                              <strong>التاريخ:</strong>
-                              <p>{format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')}</p>
-                            </div>
-                            <div>
-                              <strong>عنوان IP:</strong>
-                              <p>{log.ip_address || 'غير محدد'}</p>
-                            </div>
+                            <div><strong>العملية:</strong><p>{log.action}</p></div>
+                            <div><strong>الجدول:</strong><p>{log.target_table || '-'}</p></div>
+                            <div><strong>التاريخ:</strong><p>{format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')}</p></div>
+                            <div><strong>IP:</strong><p>{log.ip_address || 'غير محدد'}</p></div>
                           </div>
-                          
-                          <div>
-                            <strong>الوصف:</strong>
-                            <p>{log.description}</p>
-                          </div>
-
-                          {log.old_values && (
+                          {log.details && (
                             <div>
-                              <strong>القيم القديمة:</strong>
+                              <strong>التفاصيل:</strong>
                               <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
-                                {JSON.stringify(log.old_values, null, 2)}
+                                {JSON.stringify(log.details, null, 2)}
                               </pre>
-                            </div>
-                          )}
-
-                          {log.new_values && (
-                            <div>
-                              <strong>القيم الجديدة:</strong>
-                              <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
-                                {JSON.stringify(log.new_values, null, 2)}
-                              </pre>
-                            </div>
-                          )}
-
-                          {log.user_agent && (
-                            <div>
-                              <strong>المتصفح:</strong>
-                              <p className="text-sm text-gray-600">{log.user_agent}</p>
                             </div>
                           )}
                         </div>
@@ -224,6 +152,13 @@ const AuditLogTab = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              {(!auditLogs || auditLogs.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    لا توجد سجلات عمليات بعد
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
