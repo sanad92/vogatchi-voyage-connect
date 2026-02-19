@@ -10,6 +10,16 @@ interface HotelSupplierPaymentGeneratorProps {
   onClose: () => void;
 }
 
+const escapeHtml = (unsafe: string | null | undefined): string => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const HotelSupplierPaymentGenerator = ({ booking, onClose }: HotelSupplierPaymentGeneratorProps) => {
   const printRef = useRef<HTMLDivElement>(null);
 
