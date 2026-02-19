@@ -25,6 +25,16 @@ interface CustomerQuickActionsProps {
   customer: Customer;
 }
 
+const escapeHtml = (unsafe: string | null | undefined): string => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
