@@ -27,12 +27,9 @@ class Database {
         try {
             $this->connection = new PDO($dsn, $this->username, $this->password, $options);
         } catch (PDOException $e) {
-            if (DEBUG_MODE) {
-                throw new PDOException($e->getMessage(), (int)$e->getCode());
-            } else {
-                error_log("Database connection failed: " . $e->getMessage());
-                die("خطأ في الاتصال بقاعدة البيانات");
-            }
+            error_log("Database connection failed: " . $e->getMessage());
+            throw new PDOException("خطأ في الاتصال بقاعدة البيانات");
+        }
         }
     }
 
