@@ -25,6 +25,16 @@ interface CustomerQuickActionsProps {
   customer: Customer;
 }
 
+const escapeHtml = (unsafe: string | null | undefined): string => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +109,7 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>ملف العميل - ${customer.name}</title>
+          <title>ملف العميل - ${escapeHtml(customer.name)}</title>
           <style>
             body { font-family: Arial, sans-serif; direction: rtl; padding: 20px; }
             .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
@@ -113,30 +123,30 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
         <body>
           <div class="header">
             <h1>ملف العميل</h1>
-            <h2>${customer.name}</h2>
+            <h2>${escapeHtml(customer.name)}</h2>
           </div>
           
           <div class="info-section">
             <h3>المعلومات الأساسية</h3>
             <div class="info-row">
               <span class="label">الاسم:</span>
-              <span class="value">${customer.name}</span>
+              <span class="value">${escapeHtml(customer.name)}</span>
             </div>
             <div class="info-row">
               <span class="label">الهاتف:</span>
-              <span class="value">${customer.phone}</span>
+              <span class="value">${escapeHtml(customer.phone)}</span>
             </div>
             <div class="info-row">
               <span class="label">البريد الإلكتروني:</span>
-              <span class="value">${customer.email || 'غير محدد'}</span>
+              <span class="value">${escapeHtml(customer.email) || 'غير محدد'}</span>
             </div>
             <div class="info-row">
               <span class="label">العنوان:</span>
-              <span class="value">${customer.address || 'غير محدد'}</span>
+              <span class="value">${escapeHtml(customer.address) || 'غير محدد'}</span>
             </div>
             <div class="info-row">
               <span class="label">الجنسية:</span>
-              <span class="value">${customer.nationality || 'غير محددة'}</span>
+              <span class="value">${escapeHtml(customer.nationality) || 'غير محددة'}</span>
             </div>
           </div>
 
