@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { BlockData, CustomTextBlockContent } from '@/types/blocks';
 
 interface CustomTextBlockProps {
@@ -36,7 +37,7 @@ const CustomTextBlock: React.FC<CustomTextBlockProps> = ({ block }) => {
       {block.title && getHeadingComponent()}
       <div 
         className="text-muted-foreground leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: content.content }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content || '') }}
       />
     </div>
   );

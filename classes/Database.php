@@ -50,12 +50,9 @@ class Database {
             $stmt->execute($params);
             return $stmt;
         } catch (PDOException $e) {
-            if (DEBUG_MODE) {
-                throw new PDOException("Query failed: " . $e->getMessage() . " SQL: " . $sql);
-            } else {
-                error_log("Query failed: " . $e->getMessage() . " SQL: " . $sql);
-                return false;
-            }
+            error_log("Query failed: " . $e->getMessage() . " SQL: " . $sql);
+            return false;
+        }
         }
     }
 
