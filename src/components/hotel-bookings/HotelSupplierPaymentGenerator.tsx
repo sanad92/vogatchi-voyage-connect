@@ -30,7 +30,7 @@ const HotelSupplierPaymentGenerator = ({ booking, onClose }: HotelSupplierPaymen
         printWindow.document.write(`
           <html>
             <head>
-              <title>أمر دفع - ${booking.supplier_name}</title>
+              <title>أمر دفع - ${escapeHtml(booking.supplier_name)}</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
                 .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }

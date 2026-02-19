@@ -30,7 +30,7 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
         printWindow.document.write(`
           <html>
             <head>
-              <title>فاتورة - ${booking.customer_name}</title>
+              <title>فاتورة - ${escapeHtml(booking.customer_name)}</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
                 .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
