@@ -1,4 +1,5 @@
 import React from "react";
+import DOMPurify from "dompurify";
 import type { BlockData } from "@/types/blocks";
 
 interface TextContentBlockContent {
@@ -18,12 +19,10 @@ const TextContentBlock: React.FC<Props> = ({ block }) => {
     
     let classes = "w-full ";
     
-    // Container width
     if (container_width === 'full') classes += "w-full ";
     else if (container_width === 'narrow') classes += "max-w-4xl mx-auto px-4 ";
     else classes += "container mx-auto px-4 ";
     
-    // Padding
     if (padding_y === 'none') classes += "py-0 ";
     else if (padding_y === 'sm') classes += "py-8 ";
     else if (padding_y === 'md') classes += "py-12 ";
@@ -31,7 +30,6 @@ const TextContentBlock: React.FC<Props> = ({ block }) => {
     else if (padding_y === 'xl') classes += "py-24 ";
     else classes += "py-16 ";
     
-    // Text alignment
     if (text_align === 'center') classes += "text-center ";
     else if (text_align === 'right') classes += "text-right ";
     else classes += "text-left ";
@@ -44,7 +42,7 @@ const TextContentBlock: React.FC<Props> = ({ block }) => {
       <div className={getContainerClasses()}>
         <div 
           className="prose prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground"
-          dangerouslySetInnerHTML={{ __html: content.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content || '') }}
         />
       </div>
     </section>

@@ -1,7 +1,16 @@
 <?php
 // Common bootstrap for API endpoints
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowed_origins = [
+  'https://vogatchi-voyage-connect.lovable.app',
+  'https://id-preview--49aa510d-479d-4612-891c-0963e841fe97.lovable.app',
+];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowed_origins)) {
+  header("Access-Control-Allow-Origin: $origin");
+} else {
+  header('Access-Control-Allow-Origin: https://vogatchi-voyage-connect.lovable.app');
+}
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 

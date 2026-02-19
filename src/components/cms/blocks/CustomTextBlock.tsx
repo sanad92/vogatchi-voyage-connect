@@ -1,5 +1,6 @@
 
 import React from "react";
+import DOMPurify from "dompurify";
 import type { CustomTextBlockContent, BlockData } from "@/types/blocks";
 import { getContainerClass, getSectionClasses } from "@/utils/cms/layout";
 
@@ -22,7 +23,7 @@ const CustomTextBlock: React.FC<Props> = ({ block }) => {
         )}
         <div
           className="prose prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: content.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content || '') }}
         />
       </div>
     </section>
@@ -30,4 +31,3 @@ const CustomTextBlock: React.FC<Props> = ({ block }) => {
 };
 
 export default CustomTextBlock;
-
