@@ -35,11 +35,11 @@ export const useProfitLossCalculations = () => {
       queryFn: async (): Promise<ProfitLossData> => {
         try {
           // حساب إيرادات الفنادق
-          const { data: hotelRevenue } = await supabase
+          const { data: hotelRevenue } = await (supabase
             .from('hotel_bookings')
-            .select('total_cost_customer_egp')
+            .select('total_cost_customer, total_profit')
             .gte('booking_date', startDate)
-            .lte('booking_date', endDate);
+            .lte('booking_date', endDate) as any);
 
           // حساب إيرادات الطيران
           const { data: flightRevenue } = await supabase
