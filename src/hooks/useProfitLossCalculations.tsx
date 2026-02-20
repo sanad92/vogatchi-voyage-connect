@@ -86,13 +86,13 @@ export const useProfitLossCalculations = () => {
 
           // حساب الإيرادات الإجمالية
           const totalRevenue = 
-            (hotelRevenue?.reduce((sum, item) => sum + (item.total_cost_customer_egp || 0), 0) || 0) +
-            (flightRevenue?.reduce((sum, item) => sum + (item.total_cost_egp || 0), 0) || 0);
+            (hotelRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_customer || 0), 0) || 0) +
+            (flightRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_egp || 0), 0) || 0);
 
           // حساب التكاليف المباشرة
           const directCosts = 
-            (hotelCosts?.reduce((sum, item) => sum + ((item.cost_per_night_egp || 0) * (item.number_of_nights || 0)), 0) || 0) +
-            (flightCosts?.reduce((sum, item) => sum + (item.supplier_cost_egp || 0), 0) || 0);
+            (hotelCosts?.reduce((sum: number, item: any) => sum + ((item.cost_per_night || 0) * (item.number_of_nights || 0)), 0) || 0) +
+            (flightCosts?.reduce((sum: number, item: any) => sum + (item.supplier_cost_egp || 0), 0) || 0);
 
           // حساب التكاليف غير المباشرة
           const indirectCosts = 
