@@ -34,17 +34,15 @@ const CMSPages: React.FC = () => {
     }
 
     try {
-      const { data: pageData, error: pageError } = await supabase
+      const { data: pageData, error: pageError } = await (supabase
         .from("pages")
-        .insert({
-          name: pageName,
+        .insert([{
+          title: pageName,
           slug: slug,
-          is_active: true,
-          seo_title: `${pageName} - Vogatchi`,
-          seo_description: `صفحة ${pageName} في موقع Vogatchi`
-        })
+          description: `صفحة ${pageName} في موقع Vogatchi`
+        }])
         .select()
-        .single();
+        .single() as any);
 
       if (pageError) throw pageError;
 
