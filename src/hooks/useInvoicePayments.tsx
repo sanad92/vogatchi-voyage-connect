@@ -96,8 +96,8 @@ export const useInvoicePayments = (invoiceId?: string) => {
   // حذف دفعة
   const deletePaymentMutation = useMutation({
     mutationFn: async (paymentId: string) => {
-      const { error } = await supabase
-        .from('invoice_payments')
+      const { error } = await (supabase
+        .from('invoice_payments' as any)
         .delete()
         .eq('id', paymentId);
 
