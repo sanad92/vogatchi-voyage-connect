@@ -92,7 +92,7 @@ export const useSalaryOperations = () => {
         throw new Error('بيانات غير صحيحة لتحديث حالة الراتب');
       }
 
-      const { data, error } = await supabase.rpc('update_salary_status', {
+      const { data, error } = await supabase.rpc('update_salary_status' as any, {
         p_salary_id: statusData.salary_id,
         p_status: statusData.status,
         p_payment_date: statusData.payment_date || null,
