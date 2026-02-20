@@ -94,8 +94,8 @@ export const useLandingContent = () => {
   // إضافة محتوى جديد
   const addContentMutation = useMutation({
     mutationFn: async (newContent: any) => {
-      const { data, error } = await supabase
-        .from('landing_content')
+      const { data, error } = await (supabase
+        .from('landing_content' as any)
         .insert(newContent)
         .select()
         .single();
