@@ -135,8 +135,8 @@ export const useLandingContent = () => {
   // تحديث إعدادات الموقع
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase
-        .from('site_settings')
+      const { error } = await (supabase
+        .from('site_settings' as any)
         .update({ setting_value: value })
         .eq('setting_key', key);
       
