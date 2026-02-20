@@ -12,13 +12,13 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
       
       try {
         // جلب الـ profiles مع employees
-        const { data: profilesData, error: profilesError } = await supabase
+        const { data: profilesData, error: profilesError } = await (supabase
           .from('profiles')
           .select(`
             *,
             employees(*)
           `)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as any);
         
         if (profilesError) {
           console.error('❌ خطأ في جلب بيانات profiles:', profilesError);

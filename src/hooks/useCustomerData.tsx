@@ -108,7 +108,7 @@ export const useCustomerData = (customerId: string) => {
 
         // Loyalty transactions
         supabase
-          .from('customer_loyalty_points')
+          .from('loyalty_points')
           .select(`
             *,
             booking:hotel_bookings(internal_booking_number)

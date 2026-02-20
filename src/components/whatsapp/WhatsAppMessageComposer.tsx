@@ -27,7 +27,7 @@ export const WhatsAppMessageComposer: React.FC<WhatsAppMessageComposerProps> = (
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   
   const { sendTextMessage, isSending } = useWhatsAppMessaging();
-  const { quickReplies } = useWhatsAppQuickReplies();
+  const { quickReplies } = useWhatsAppQuickReplies() as { quickReplies: Array<{ id: string; title: string; content: string }> | undefined };
 
   const handleSendMessage = async () => {
     if (!message.trim()) {

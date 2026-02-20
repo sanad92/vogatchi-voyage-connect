@@ -196,8 +196,8 @@ const CustomerFollowUps = () => {
                       <div>📞 {followUp.customer?.phone}</div>
                       {followUp.customer?.email && <div>📧 {followUp.customer.email}</div>}
                       <div>📅 موعد المتابعة: {format(new Date(followUp.scheduled_date), 'PPP', { locale: ar })}</div>
-                      {followUp.assigned_to_profile && (
-                        <div>👤 مسؤول المتابعة: {followUp.assigned_to_profile.full_name}</div>
+                      {followUp.assigned_to && (
+                         <div>👤 مسؤول المتابعة: {followUp.assigned_to}</div>
                       )}
                     </div>
                     
