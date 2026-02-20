@@ -22,10 +22,10 @@ export const useWhatsAppQuickReplies = () => {
   } = useQuery({
     queryKey: ['whatsapp-quick-replies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) {
         console.error('خطأ في جلب الردود السريعة:', error);
