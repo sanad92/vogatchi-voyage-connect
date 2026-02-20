@@ -58,8 +58,8 @@ export const useLandingContent = () => {
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ['site-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
+      const { data, error } = await (supabase
+        .from('site_settings' as any)
         .select('*');
       
       if (error) {
