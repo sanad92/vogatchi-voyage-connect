@@ -113,8 +113,8 @@ export const useEmployeeCommissions = () => {
       }
       return data;
     },
-    onSuccess: (data) => {
-      if (data && data.length > 0) {
+    onSuccess: (data: any) => {
+      if (data && Array.isArray(data) && data.length > 0) {
         toast({
           title: "تم العثور على مشاكل في العمولات",
           description: `عدد المشاكل المكتشفة: ${data.length}`,
