@@ -73,8 +73,8 @@ const PaymentOrders = () => {
   const { data: paymentOrders = [], isLoading } = useQuery({
     queryKey: ['payment-orders'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('payment_orders')
+      const { data, error } = await (supabase
+        .from('payment_orders' as any)
         .select(`
           *,
           invoices!inner(
@@ -89,17 +89,17 @@ const PaymentOrders = () => {
             bank_name
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
       
       if (error) throw error;
 
       // جلب تفاصيل الحجوزات
       const ordersWithBookings = await Promise.all(
-        data.map(async (order) => {
+        (data || []).map(async (order: any) => {
           const invoice = order.invoices;
           let bookingDetails = {};
 
-          if (invoice.booking_type === 'hotel') {
+          if (invoice?.booking_type === 'hotel') {
             const { data: hotelData } = await supabase
               .from('hotel_bookings')
               .select('internal_booking_number, hotel_name')
@@ -109,7 +109,7 @@ const PaymentOrders = () => {
             if (hotelData) {
               bookingDetails = { hotel_booking: hotelData };
             }
-          } else if (invoice.booking_type === 'flight') {
+          } else if (invoice?.booking_type === 'flight') {
             const { data: flightData } = await supabase
               .from('flight_bookings')
               .select('booking_reference')
@@ -131,7 +131,7 @@ const PaymentOrders = () => {
         })
       );
 
-      return ordersWithBookings as PaymentOrder[];
+      return ordersWithBookings as unknown as PaymentOrder[];
     }
   });
 
