@@ -309,7 +309,7 @@ export const useEmployeeCommissions = () => {
     mutationFn: async ({ commissionId, reason }: { commissionId: string; reason?: string }) => {
       console.log('Cancelling commission:', { commissionId, reason });
       
-      const { data, error } = await supabase.rpc('cancel_commission', {
+      const { data, error } = await supabase.rpc('cancel_commission' as any, {
         p_commission_id: commissionId,
         p_reason: reason
       });
