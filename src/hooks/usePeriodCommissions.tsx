@@ -87,7 +87,7 @@ export const usePeriodCommissions = () => {
       queryKey: ['employee-bookings-profit', employeeId, periodStart, periodEnd],
       queryFn: async () => {
         console.log('Fetching employee bookings profit:', { employeeId, periodStart, periodEnd });
-        const { data, error } = await supabase.rpc('calculate_employee_bookings_profit', {
+        const { data, error } = await supabase.rpc('calculate_employee_bookings_profit' as any, {
           p_employee_id: employeeId,
           p_period_start: periodStart,
           p_period_end: periodEnd
