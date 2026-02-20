@@ -40,8 +40,8 @@ export const useWhatsAppQuickReplies = () => {
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyData) => {
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .insert([{
           ...replyData,
           usage_count: 0,
@@ -49,7 +49,7 @@ export const useWhatsAppQuickReplies = () => {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .single();
+        .single() as any);
 
       if (error) {
         console.error('خطأ في إنشاء رد سريع:', error);
