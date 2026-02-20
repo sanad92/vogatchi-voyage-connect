@@ -74,8 +74,8 @@ export const useLandingContent = () => {
   // تحديث المحتوى
   const updateContentMutation = useMutation({
     mutationFn: async (updatedContent: any) => {
-      const { error } = await supabase
-        .from('landing_content')
+      const { error } = await (supabase
+        .from('landing_content' as any)
         .update(updatedContent)
         .eq('id', updatedContent.id);
       
