@@ -181,7 +181,7 @@ export const useEmployeeActionsOptimized = () => {
     try {
       setActionLoading(actionKey, true);
 
-      const { data, error } = await supabase.rpc('safe_delete_employee', {
+      const { data, error } = await supabase.rpc('safe_delete_employee' as any, {
         p_employee_id: employeeId,
         p_force_delete: forceDelete,
         p_reason: reason

@@ -51,7 +51,7 @@ export const useCustomerSubmission = ({
       // التحقق من صلاحيات المستخدم
       console.log('🔐 التحقق من الصلاحيات...');
       const { data: permissionCheck, error: permissionError } = await supabase
-        .rpc('can_manage_customers');
+        .rpc('can_manage_customers' as any);
       
       if (permissionError) {
         console.error('❌ خطأ في فحص الصلاحيات:', permissionError);

@@ -369,7 +369,7 @@ export const useEmployeeCommissions = () => {
       // إضافة العمولة يدوياً
       const { data, error: insertError } = await supabase
         .from('employee_commissions')
-        .insert({
+        .insert([{
           employee_id: employeeId,
           booking_id: bookingId,
           booking_type: bookingType,
@@ -377,9 +377,8 @@ export const useEmployeeCommissions = () => {
           commission_rate: commissionRate || 0,
           commission_amount: commissionAmount,
           currency: 'EGP',
-          created_by: (await supabase.auth.getUser()).data.user?.id,
           notes: 'تم إضافتها يدوياً'
-        })
+        }])
         .select()
         .single();
 

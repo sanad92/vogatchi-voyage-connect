@@ -80,7 +80,7 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
         }
         
         breakdown[key].total_revenue += invoice.final_amount || 0;
-        breakdown[key].total_revenue_egp += invoice.total_amount_egp || invoice.final_amount || 0;
+        breakdown[key].total_revenue_egp += invoice.final_amount || 0;
         breakdown[key].booking_count += 1;
       }
 

@@ -103,9 +103,9 @@ export const useDestinations = () => {
       if (error) throw error;
 
       const formattedDestination = {
-        ...data,
-        attractions: Array.isArray(data.attractions) ? data.attractions.map(String) : [],
-        attractions_ar: Array.isArray(data.attractions_ar) ? data.attractions_ar.map(String) : [],
+        ...(data as any),
+        attractions: Array.isArray((data as any).attractions) ? (data as any).attractions.map(String) : [],
+        attractions_ar: Array.isArray((data as any).attractions_ar) ? (data as any).attractions_ar.map(String) : [],
       } as Destination;
 
       setDestinations(prev => prev.map(dest => dest.id === id ? formattedDestination : dest));
