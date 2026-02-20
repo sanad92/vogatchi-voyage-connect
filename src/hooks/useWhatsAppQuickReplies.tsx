@@ -72,15 +72,15 @@ export const useWhatsAppQuickReplies = () => {
     mutationFn: async (replyData: QuickReplyData & { id: string }) => {
       const { id, ...updateData } = replyData;
       
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .update({
           ...updateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
-        .single();
+        .single() as any);
 
       if (error) {
         console.error('خطأ في تحديث رد سريع:', error);
