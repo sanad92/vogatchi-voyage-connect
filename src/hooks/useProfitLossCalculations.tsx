@@ -148,11 +148,11 @@ export const useProfitLossCalculations = () => {
 
           try {
             // حساب الإيرادات لهذا الشهر
-            const { data: hotelRevenue } = await supabase
+            const { data: hotelRevenue } = await (supabase
               .from('hotel_bookings')
-              .select('total_cost_customer_egp')
+              .select('total_cost_customer, total_profit')
               .gte('booking_date', startDate)
-              .lte('booking_date', endDate);
+              .lte('booking_date', endDate) as any);
 
             const { data: flightRevenue } = await supabase
               .from('flight_bookings')
@@ -161,15 +161,15 @@ export const useProfitLossCalculations = () => {
               .lte('booking_date', endDate);
 
             const totalRevenue = 
-              (hotelRevenue?.reduce((sum, item) => sum + (item.total_cost_customer_egp || 0), 0) || 0) +
-              (flightRevenue?.reduce((sum, item) => sum + (item.total_cost_egp || 0), 0) || 0);
+              (hotelRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_customer || 0), 0) || 0) +
+              (flightRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_egp || 0), 0) || 0);
 
             // حساب التكاليف المباشرة
-            const { data: hotelCosts } = await supabase
+            const { data: hotelCosts } = await (supabase
               .from('hotel_bookings')
-              .select('cost_per_night_egp, number_of_nights')
+              .select('cost_per_night, number_of_nights')
               .gte('booking_date', startDate)
-              .lte('booking_date', endDate);
+              .lte('booking_date', endDate) as any);
 
             const { data: flightCosts } = await supabase
               .from('flight_bookings')
@@ -178,23 +178,23 @@ export const useProfitLossCalculations = () => {
               .lte('booking_date', endDate);
 
             const directCosts = 
-              (hotelCosts?.reduce((sum, item) => sum + ((item.cost_per_night_egp || 0) * (item.number_of_nights || 0)), 0) || 0) +
-              (flightCosts?.reduce((sum, item) => sum + (item.supplier_cost_egp || 0), 0) || 0);
+              (hotelCosts?.reduce((sum: number, item: any) => sum + ((item.cost_per_night || 0) * (item.number_of_nights || 0)), 0) || 0) +
+              (flightCosts?.reduce((sum: number, item: any) => sum + (item.supplier_cost_egp || 0), 0) || 0);
 
             // حساب التكاليف غير المباشرة
-            const { data: salaries } = await supabase
-              .from('monthly_salaries')
+            const { data: salaries } = await (supabase
+              .from('monthly_salaries' as any)
               .select('net_salary_egp')
               .gte('salary_month', startDate)
               .lte('salary_month', endDate)
-              .eq('status', 'paid');
+              .eq('status', 'paid') as any);
 
-            const { data: rentPayments } = await supabase
-              .from('rent_payments')
+            const { data: rentPayments } = await (supabase
+              .from('rent_payments' as any)
               .select('amount_egp')
               .gte('payment_month', startDate)
               .lte('payment_month', endDate)
-              .eq('status', 'paid');
+              .eq('status', 'paid') as any);
 
             const { data: expenses } = await supabase
               .from('expense_transactions')
@@ -205,9 +205,9 @@ export const useProfitLossCalculations = () => {
               .eq('currency', 'EGP');
 
             const indirectCosts = 
-              (salaries?.reduce((sum, item) => sum + (item.net_salary_egp || 0), 0) || 0) +
-              (rentPayments?.reduce((sum, item) => sum + (item.amount_egp || 0), 0) || 0) +
-              (expenses?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0);
+              (salaries?.reduce((sum: number, item: any) => sum + (item.net_salary_egp || 0), 0) || 0) +
+              (rentPayments?.reduce((sum: number, item: any) => sum + (item.amount_egp || 0), 0) || 0) +
+              (expenses?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) || 0);
 
             const grossProfit = totalRevenue - directCosts;
             const netProfit = grossProfit - indirectCosts;
