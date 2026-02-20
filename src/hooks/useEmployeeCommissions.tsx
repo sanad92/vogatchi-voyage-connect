@@ -49,7 +49,7 @@ export const useEmployeeCommissions = () => {
         throw error;
       }
       console.log('Fetched commissions:', data);
-      return data as EmployeeCommissionWithEmployee[];
+      return (data as unknown) as EmployeeCommissionWithEmployee[];
     },
   });
 
