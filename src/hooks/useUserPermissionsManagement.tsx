@@ -90,7 +90,7 @@ export const useUserPermissionsManagement = () => {
     return useQuery({
       queryKey: ['detailed-user-permissions', userId],
       queryFn: async () => {
-        const { data, error } = await supabase.rpc('get_user_permissions', { 
+        const { data, error } = await supabase.rpc('get_user_permissions' as any, { 
           p_user_id: userId 
         });
         if (error) throw error;
