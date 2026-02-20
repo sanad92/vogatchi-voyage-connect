@@ -49,11 +49,11 @@ export const useProfitLossCalculations = () => {
             .lte('booking_date', endDate);
 
           // حساب التكاليف المباشرة
-          const { data: hotelCosts } = await supabase
+          const { data: hotelCosts } = await (supabase
             .from('hotel_bookings')
-            .select('cost_per_night_egp, number_of_nights')
+            .select('cost_per_night, number_of_nights')
             .gte('booking_date', startDate)
-            .lte('booking_date', endDate);
+            .lte('booking_date', endDate) as any);
 
           const { data: flightCosts } = await supabase
             .from('flight_bookings')
