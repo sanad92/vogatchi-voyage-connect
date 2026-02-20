@@ -71,7 +71,7 @@ export const useEmployeeCommissions = () => {
         throw error;
       }
       console.log('Fetched commission payments:', data);
-      return data as CommissionPayment[];
+      return (data as unknown) as CommissionPayment[];
     },
   });
 
