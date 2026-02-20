@@ -46,7 +46,6 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
           booking_type,
           currency,
           final_amount,
-          total_amount_egp,
           created_at
         `)
         .eq('status', 'paid');
