@@ -103,7 +103,7 @@ export const useEmployeeCommissions = () => {
   const validateEmployeeCommissionsMutation = useMutation({
     mutationFn: async (employeeId: string) => {
       console.log('Validating commissions for employee:', employeeId);
-      const { data, error } = await supabase.rpc('validate_employee_commissions', {
+      const { data, error } = await supabase.rpc('validate_employee_commissions' as any, {
         p_employee_id: employeeId
       });
 
@@ -113,8 +113,8 @@ export const useEmployeeCommissions = () => {
       }
       return data;
     },
-    onSuccess: (data) => {
-      if (data && data.length > 0) {
+    onSuccess: (data: any) => {
+      if (data && Array.isArray(data) && data.length > 0) {
         toast({
           title: "تم العثور على مشاكل في العمولات",
           description: `عدد المشاكل المكتشفة: ${data.length}`,
@@ -309,7 +309,7 @@ export const useEmployeeCommissions = () => {
     mutationFn: async ({ commissionId, reason }: { commissionId: string; reason?: string }) => {
       console.log('Cancelling commission:', { commissionId, reason });
       
-      const { data, error } = await supabase.rpc('cancel_commission', {
+      const { data, error } = await supabase.rpc('cancel_commission' as any, {
         p_commission_id: commissionId,
         p_reason: reason
       });
@@ -356,7 +356,7 @@ export const useEmployeeCommissions = () => {
       console.log('Calculating commission manually:', { employeeId, bookingAmount, commissionRate });
       
       // حساب العمولة باستخدام دالة قاعدة البيانات
-      const { data: commissionAmount, error } = await supabase.rpc('calculate_employee_commission', {
+      const { data: commissionAmount, error } = await supabase.rpc('calculate_employee_commission' as any, {
         p_employee_id: employeeId,
         p_booking_amount: bookingAmount,
         p_commission_rate: commissionRate
@@ -369,7 +369,7 @@ export const useEmployeeCommissions = () => {
       // إضافة العمولة يدوياً
       const { data, error: insertError } = await supabase
         .from('employee_commissions')
-        .insert({
+        .insert([{
           employee_id: employeeId,
           booking_id: bookingId,
           booking_type: bookingType,
@@ -377,9 +377,8 @@ export const useEmployeeCommissions = () => {
           commission_rate: commissionRate || 0,
           commission_amount: commissionAmount,
           currency: 'EGP',
-          created_by: (await supabase.auth.getUser()).data.user?.id,
           notes: 'تم إضافتها يدوياً'
-        })
+        }])
         .select()
         .single();
 

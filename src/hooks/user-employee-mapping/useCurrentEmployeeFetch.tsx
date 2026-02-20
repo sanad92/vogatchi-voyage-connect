@@ -46,9 +46,9 @@ export const useCurrentEmployeeFetch = () => {
       }
 
       // إذا كان هناك موظف مرتبط، استخدمه
-      if (profileData?.employees) {
-        console.log('✅ تم العثور على موظف مرتبط:', profileData.employees);
-        setCurrentEmployee(profileData.employees);
+      if ((profileData as any)?.employees) {
+        console.log('✅ تم العثور على موظف مرتبط:', (profileData as any).employees);
+        setCurrentEmployee((profileData as any).employees);
         setError(null);
       } else {
         console.log('⚠️ لا يوجد موظف مرتبط - البحث بالبريد الإلكتروني...');

@@ -12,7 +12,7 @@ export const useUserPermissions = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase.rpc('get_user_permissions', { 
+      const { data, error } = await supabase.rpc('get_user_permissions' as any, { 
         p_user_id: user.id 
       });
       

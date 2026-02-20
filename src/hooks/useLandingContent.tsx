@@ -39,18 +39,18 @@ export const useLandingContent = () => {
   const { data: content, isLoading: contentLoading } = useQuery({
     queryKey: ['landing-content'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('landing_content')
+      const { data, error } = await (supabase
+        .from('landing_content' as any)
         .select('*')
         .eq('is_active', true)
-        .order('order_index', { ascending: true });
+        .order('order_index', { ascending: true }) as any);
       
       if (error) {
         errorManager.error('LandingContent', 'خطأ في جلب محتوى الصفحة', error, false);
         throw error;
       }
       
-      return data as LandingContent[];
+      return (data || []) as unknown as LandingContent[];
     }
   });
 
@@ -58,9 +58,9 @@ export const useLandingContent = () => {
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ['site-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*');
+      const { data, error } = await (supabase
+        .from('site_settings' as any)
+        .select('*') as any);
       
       if (error) {
         errorManager.error('LandingContent', 'خطأ في جلب إعدادات الموقع', error, false);
@@ -74,10 +74,10 @@ export const useLandingContent = () => {
   // تحديث المحتوى
   const updateContentMutation = useMutation({
     mutationFn: async (updatedContent: any) => {
-      const { error } = await supabase
-        .from('landing_content')
+      const { error } = await (supabase
+        .from('landing_content' as any)
         .update(updatedContent)
-        .eq('id', updatedContent.id);
+        .eq('id', updatedContent.id) as any);
       
       if (error) throw error;
       return updatedContent;
@@ -94,11 +94,11 @@ export const useLandingContent = () => {
   // إضافة محتوى جديد
   const addContentMutation = useMutation({
     mutationFn: async (newContent: any) => {
-      const { data, error } = await supabase
-        .from('landing_content')
+      const { data, error } = await (supabase
+        .from('landing_content' as any)
         .insert(newContent)
         .select()
-        .single();
+        .single() as any);
       
       if (error) throw error;
       return data;
@@ -115,10 +115,10 @@ export const useLandingContent = () => {
   // حذف المحتوى
   const deleteContentMutation = useMutation({
     mutationFn: async (contentId: string) => {
-      const { error } = await supabase
-        .from('landing_content')
+      const { error } = await (supabase
+        .from('landing_content' as any)
         .delete()
-        .eq('id', contentId);
+        .eq('id', contentId) as any);
       
       if (error) throw error;
       return contentId;
@@ -135,10 +135,10 @@ export const useLandingContent = () => {
   // تحديث إعدادات الموقع
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase
-        .from('site_settings')
+      const { error } = await (supabase
+        .from('site_settings' as any)
         .update({ setting_value: value })
-        .eq('setting_key', key);
+        .eq('setting_key', key) as any);
       
       if (error) throw error;
       return { key, value };

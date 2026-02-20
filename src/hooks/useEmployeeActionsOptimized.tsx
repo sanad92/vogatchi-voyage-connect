@@ -107,7 +107,7 @@ export const useEmployeeActionsOptimized = () => {
     try {
       setActionLoading(actionKey, true);
 
-      const { data, error } = await supabase.rpc('toggle_employee_status', {
+      const { data, error } = await supabase.rpc('toggle_employee_status' as any, {
         p_employee_id: employeeId,
         p_is_active: isActive,
         p_reason: reason
@@ -143,7 +143,7 @@ export const useEmployeeActionsOptimized = () => {
   // التحقق من إمكانية حذف الموظف - محسن
   const checkEmployeeDeletion = useCallback(async (employeeId: string) => {
     try {
-      const { data, error } = await supabase.rpc('check_employee_deletion', {
+      const { data, error } = await supabase.rpc('check_employee_deletion' as any, {
         p_employee_id: employeeId
       });
 
@@ -181,7 +181,7 @@ export const useEmployeeActionsOptimized = () => {
     try {
       setActionLoading(actionKey, true);
 
-      const { data, error } = await supabase.rpc('safe_delete_employee', {
+      const { data, error } = await supabase.rpc('safe_delete_employee' as any, {
         p_employee_id: employeeId,
         p_force_delete: forceDelete,
         p_reason: reason

@@ -51,7 +51,7 @@ export const useHotels = (destinationId?: string) => {
 
       if (error) throw error;
       
-      const formattedHotels = (data || []).map(hotel => ({
+      const formattedHotels = (data || []).map((hotel: any) => ({
         ...hotel,
         features: Array.isArray(hotel.features) ? hotel.features.map(String) : [],
         features_ar: Array.isArray(hotel.features_ar) ? hotel.features_ar.map(String) : [],
@@ -82,10 +82,10 @@ export const useHotels = (destinationId?: string) => {
       if (error) throw error;
 
       const formattedHotel = {
-        ...data,
-        features: Array.isArray(data.features) ? data.features.map(String) : [],
-        features_ar: Array.isArray(data.features_ar) ? data.features_ar.map(String) : [],
-        contact_info: typeof data.contact_info === 'object' ? data.contact_info : {},
+        ...(data as any),
+        features: Array.isArray((data as any).features) ? (data as any).features.map(String) : [],
+        features_ar: Array.isArray((data as any).features_ar) ? (data as any).features_ar.map(String) : [],
+        contact_info: typeof (data as any).contact_info === 'object' ? (data as any).contact_info : {},
       } as Hotel;
 
       setHotels(prev => [...prev, formattedHotel]);
@@ -116,10 +116,10 @@ export const useHotels = (destinationId?: string) => {
       if (error) throw error;
 
       const formattedHotel = {
-        ...data,
-        features: Array.isArray(data.features) ? data.features.map(String) : [],
-        features_ar: Array.isArray(data.features_ar) ? data.features_ar.map(String) : [],
-        contact_info: typeof data.contact_info === 'object' ? data.contact_info : {},
+        ...(data as any),
+        features: Array.isArray((data as any).features) ? (data as any).features.map(String) : [],
+        features_ar: Array.isArray((data as any).features_ar) ? (data as any).features_ar.map(String) : [],
+        contact_info: typeof (data as any).contact_info === 'object' ? (data as any).contact_info : {},
       } as Hotel;
 
       setHotels(prev => prev.map(hotel => hotel.id === id ? formattedHotel : hotel));

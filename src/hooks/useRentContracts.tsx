@@ -30,43 +30,25 @@ export const useRentContracts = () => {
   const { data: rentContracts, isLoading: contractsLoading } = useQuery({
     queryKey: ['rent-contracts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rent_contracts')
-        .select(`
-          id,
-          contract_number,
-          landlord_name,
-          property_address,
-          property_type,
-          monthly_rent,
-          currency,
-          start_date,
-          end_date,
-          contract_terms,
-          annual_increase_percentage,
-          security_deposit,
-          utilities_included,
-          maintenance_responsibility,
-          is_active,
-          created_at,
-          updated_at
-        `)
+      const { data, error } = await (supabase
+        .from('rent_contracts' as any)
+        .select('*')
         .eq('is_active', true)
-        .order('contract_number');
+        .order('contract_number') as any);
 
       if (error) throw error;
-      return data as RentContract[];
+      return (data || []) as unknown as RentContract[];
     },
   });
 
   // إضافة عقد إيجار
   const addRentContractMutation = useMutation({
     mutationFn: async (contract: Omit<RentContract, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('rent_contracts')
-        .insert(contract)
+      const { data, error } = await (supabase
+        .from('rent_contracts' as any)
+        .insert([contract])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;

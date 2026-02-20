@@ -44,7 +44,7 @@ export const useSalaryOperations = () => {
 
       const salaryMonth = new Date(salaryData.salary_month + '-01').toISOString().split('T')[0];
 
-      const { data, error } = await supabase.rpc('calculate_monthly_salary', {
+      const { data, error } = await supabase.rpc('calculate_monthly_salary' as any, {
         p_employee_id: salaryData.employee_id,
         p_salary_month: salaryMonth,
         p_overtime_hours: salaryData.overtime_hours || 0,
@@ -92,7 +92,7 @@ export const useSalaryOperations = () => {
         throw new Error('بيانات غير صحيحة لتحديث حالة الراتب');
       }
 
-      const { data, error } = await supabase.rpc('update_salary_status', {
+      const { data, error } = await supabase.rpc('update_salary_status' as any, {
         p_salary_id: statusData.salary_id,
         p_status: statusData.status,
         p_payment_date: statusData.payment_date || null,
@@ -132,10 +132,10 @@ export const useSalaryOperations = () => {
     mutationFn: async (salaryId: string) => {
       if (!salaryId) throw new Error('معرف الراتب مطلوب');
 
-      const { error } = await supabase
-        .from('monthly_salaries')
+      const { error } = await (supabase
+        .from('monthly_salaries' as any)
         .delete()
-        .eq('id', salaryId);
+        .eq('id', salaryId) as any);
 
       if (error) throw error;
       return salaryId;

@@ -21,7 +21,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formKey, onSuccess }) => {
       const { data: f, error: formErr } = await supabase
         .from("forms")
         .select("*")
-        .eq("key", formKey)
+        .eq("name", formKey)
         .maybeSingle();
       if (formErr) throw formErr;
       if (!f) return null;
@@ -30,11 +30,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formKey, onSuccess }) => {
         .from("form_fields")
         .select("*")
         .eq("form_id", f.id)
-        .order("order_index", { ascending: true });
+        .order("sort_order", { ascending: true });
 
       if (fieldsErr) throw fieldsErr;
 
-      return { form: f, fields: fields || [] };
+      return { form: f, fields: (fields || []) as any[] };
     },
   });
 

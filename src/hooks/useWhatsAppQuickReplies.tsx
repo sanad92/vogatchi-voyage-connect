@@ -22,10 +22,10 @@ export const useWhatsAppQuickReplies = () => {
   } = useQuery({
     queryKey: ['whatsapp-quick-replies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) {
         console.error('خطأ في جلب الردود السريعة:', error);
@@ -40,8 +40,8 @@ export const useWhatsAppQuickReplies = () => {
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyData) => {
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .insert([{
           ...replyData,
           usage_count: 0,
@@ -49,7 +49,7 @@ export const useWhatsAppQuickReplies = () => {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .single();
+        .single() as any);
 
       if (error) {
         console.error('خطأ في إنشاء رد سريع:', error);
@@ -72,15 +72,15 @@ export const useWhatsAppQuickReplies = () => {
     mutationFn: async (replyData: QuickReplyData & { id: string }) => {
       const { id, ...updateData } = replyData;
       
-      const { data, error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { data, error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .update({
           ...updateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
-        .single();
+        .single() as any);
 
       if (error) {
         console.error('خطأ في تحديث رد سريع:', error);
@@ -101,10 +101,10 @@ export const useWhatsAppQuickReplies = () => {
   // حذف رد سريع
   const deleteQuickReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
-      const { error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .delete()
-        .eq('id', replyId);
+        .eq('id', replyId) as any);
 
       if (error) {
         console.error('خطأ في حذف رد سريع:', error);

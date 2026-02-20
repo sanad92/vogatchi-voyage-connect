@@ -87,7 +87,7 @@ export const usePeriodCommissions = () => {
       queryKey: ['employee-bookings-profit', employeeId, periodStart, periodEnd],
       queryFn: async () => {
         console.log('Fetching employee bookings profit:', { employeeId, periodStart, periodEnd });
-        const { data, error } = await supabase.rpc('calculate_employee_bookings_profit', {
+        const { data, error } = await supabase.rpc('calculate_employee_bookings_profit' as any, {
           p_employee_id: employeeId,
           p_period_start: periodStart,
           p_period_end: periodEnd
@@ -98,7 +98,7 @@ export const usePeriodCommissions = () => {
           throw error;
         }
         console.log('Fetched bookings profit:', data);
-        return data as BookingProfitDetail[];
+        return data as unknown as BookingProfitDetail[];
       },
       enabled: !!employeeId && !!periodStart && !!periodEnd,
     });
@@ -123,7 +123,7 @@ export const usePeriodCommissions = () => {
         throw new Error('بيانات غير مكتملة لحساب العمولة');
       }
 
-      const { data, error } = await supabase.rpc('generate_period_commission', {
+      const { data, error } = await supabase.rpc('generate_period_commission' as any, {
         p_employee_id: employeeId,
         p_period_start: periodStart,
         p_period_end: periodEnd,
@@ -190,7 +190,7 @@ export const usePeriodCommissions = () => {
         throw new Error('بيانات غير مكتملة لتحديث حالة العمولة');
       }
 
-      const { data, error } = await supabase.rpc('update_period_commission_status', {
+      const { data, error } = await supabase.rpc('update_period_commission_status' as any, {
         p_commission_period_id: commissionPeriodId,
         p_status: status,
         p_payment_date: paymentDate,

@@ -130,7 +130,7 @@ const CustomerDetails = () => {
             <Edit className="h-4 w-4 mr-2" />
             تعديل البيانات
           </Button>
-          <CustomerQuickActions customer={customerData} />
+          <CustomerQuickActions customer={customerData as any} />
         </div>
       </div>
 

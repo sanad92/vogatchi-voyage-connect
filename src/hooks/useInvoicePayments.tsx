@@ -26,14 +26,14 @@ export const useInvoicePayments = (invoiceId?: string) => {
     queryFn: async () => {
       if (!invoiceId) return [];
       
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .select(`
           *,
           bank_account:bank_accounts(account_name)
         `)
         .eq('invoice_id', invoiceId)
-        .order('payment_date', { ascending: false });
+        .order('payment_date', { ascending: false }) as any);
 
       if (error) throw error;
       return data as InvoicePayment[];
@@ -46,14 +46,14 @@ export const useInvoicePayments = (invoiceId?: string) => {
     mutationFn: async (paymentData: Omit<InvoicePayment, 'id' | 'created_at' | 'updated_at'>) => {
       const { data: user } = await supabase.auth.getUser();
       
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .insert([{
           ...paymentData,
           created_by: user.user?.id,
         }])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;
@@ -72,12 +72,12 @@ export const useInvoicePayments = (invoiceId?: string) => {
   // تحديث دفعة
   const updatePaymentMutation = useMutation({
     mutationFn: async ({ paymentId, updateData }: { paymentId: string; updateData: Partial<InvoicePayment> }) => {
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .update(updateData)
         .eq('id', paymentId)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;
@@ -96,10 +96,10 @@ export const useInvoicePayments = (invoiceId?: string) => {
   // حذف دفعة
   const deletePaymentMutation = useMutation({
     mutationFn: async (paymentId: string) => {
-      const { error } = await supabase
-        .from('invoice_payments')
+      const { error } = await (supabase
+        .from('invoice_payments' as any)
         .delete()
-        .eq('id', paymentId);
+        .eq('id', paymentId) as any);
 
       if (error) throw error;
     },

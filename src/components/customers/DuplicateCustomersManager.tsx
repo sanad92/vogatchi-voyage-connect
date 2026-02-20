@@ -40,13 +40,7 @@ const DuplicateCustomersManager = () => {
   const { data: rpcGroups, isLoading, refetch } = useQuery({
     queryKey: ['duplicate-customers', searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_duplicate_customers', {
-        p_search: searchTerm || null,
-        p_type: null,
-        p_min_count: 2,
-        p_limit: 500,
-        p_offset: 0
-      });
+      const { data, error } = await supabase.rpc('get_duplicate_customers' as any);
       if (error) throw error;
       return data;
     }

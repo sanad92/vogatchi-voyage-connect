@@ -49,7 +49,7 @@ export const WhatsAppQuickReplies: React.FC = () => {
   });
 
   const {
-    quickReplies,
+    quickReplies: rawQuickReplies,
     isLoading,
     createQuickReply,
     updateQuickReply,
@@ -58,6 +58,8 @@ export const WhatsAppQuickReplies: React.FC = () => {
     isUpdating,
     isDeleting
   } = useWhatsAppQuickReplies();
+
+  const quickReplies = rawQuickReplies as QuickReply[] | undefined;
 
   const categories = [
     'general',

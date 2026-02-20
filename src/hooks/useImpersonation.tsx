@@ -11,7 +11,7 @@ export const useImpersonation = () => {
       setIsLoading(true);
       console.log('🔄 بدء تسجيل الدخول كمستخدم:', userId, 'السبب:', reason);
       
-      const { data, error } = await supabase.rpc('start_impersonation', {
+      const { data, error } = await supabase.rpc('start_impersonation' as any, {
         p_target_user_id: userId,
         p_reason: reason || 'إدارة الحساب'
       });
@@ -65,7 +65,7 @@ export const useImpersonation = () => {
       }
 
       console.log('📤 إرسال طلب إنهاء تسجيل الدخول...');
-      const { data, error } = await supabase.rpc('end_impersonation', {
+      const { data, error } = await supabase.rpc('end_impersonation' as any, {
         p_session_id: sessionToken
       });
 

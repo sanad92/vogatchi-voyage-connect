@@ -74,7 +74,7 @@ export const usePayment = () => {
       setIsLoading(true);
       setError(null);
 
-      let query = supabase.from('payment_intents').select('*');
+      let query = (supabase.from('payment_intents' as any) as any).select('*');
       
       if (invoiceId) {
         query = query.eq('invoice_id', invoiceId);

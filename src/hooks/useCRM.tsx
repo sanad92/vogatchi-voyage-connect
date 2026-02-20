@@ -108,7 +108,7 @@ export const useCRM = () => {
 
       // تسجيل عملية الاسترداد
       const { data, error } = await supabase
-        .from('customer_loyalty_points')
+        .from('loyalty_points')
         .insert({
           customer_id: customerId,
           points_used: pointsToRedeem,

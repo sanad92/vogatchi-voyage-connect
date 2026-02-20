@@ -34,17 +34,15 @@ const CMSPages: React.FC = () => {
     }
 
     try {
-      const { data: pageData, error: pageError } = await supabase
+      const { data: pageData, error: pageError } = await (supabase
         .from("pages")
-        .insert({
-          name: pageName,
+        .insert([{
+          title: pageName,
           slug: slug,
-          is_active: true,
-          seo_title: `${pageName} - Vogatchi`,
-          seo_description: `صفحة ${pageName} في موقع Vogatchi`
-        })
+          description: `صفحة ${pageName} في موقع Vogatchi`
+        }])
         .select()
-        .single();
+        .single() as any);
 
       if (pageError) throw pageError;
 
@@ -80,7 +78,7 @@ const CMSPages: React.FC = () => {
     if (error) {
       toast.error("فشل في جلب الصفحات");
     } else {
-      setPages((data || []) as PageRow[]);
+      setPages((data || []) as unknown as PageRow[]);
     }
     setLoading(false);
   };
@@ -93,13 +91,11 @@ const CMSPages: React.FC = () => {
     e.preventDefault();
     if (!form.name || !form.slug) return toast.error("الاسم والـ slug مطلوبان");
     setCreating(true);
-    const { error } = await supabase.from("pages").insert({
-      name: form.name,
+    const { error } = await (supabase.from("pages").insert([{
+      title: form.name,
       slug: form.slug,
-      is_active: form.is_active,
-      seo_title: form.seo_title || null,
-      seo_description: form.seo_description || null,
-    });
+      description: form.seo_description || null,
+    }]) as any);
     setCreating(false);
     if (error) return toast.error("تعذر إنشاء الصفحة");
     toast.success("تم إنشاء الصفحة");
@@ -108,7 +104,7 @@ const CMSPages: React.FC = () => {
   };
 
   const toggleActive = async (id: string, next: boolean) => {
-    const { error } = await supabase.from("pages").update({ is_active: next }).eq("id", id);
+    const { error } = await (supabase.from("pages").update({ is_published: next } as any).eq("id", id) as any);
     if (error) return toast.error("تعذر التحديث");
     setPages(prev => prev.map(p => (p.id === id ? { ...p, is_active: next } : p)));
     toast.success("تم تحديث الحالة");

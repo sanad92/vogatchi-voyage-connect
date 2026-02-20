@@ -11,7 +11,7 @@ export const useUserManagement = () => {
       setIsLoading(true);
       console.log('🔄 بدء إعادة تعيين كلمة المرور للمستخدم:', userId);
       
-      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+      const { data, error } = await supabase.rpc('admin_reset_user_password' as any, {
         p_user_id: userId,
         p_new_password: newPassword
       });
@@ -65,7 +65,7 @@ export const useUserManagement = () => {
       const validRole = userData.role as ValidRole;
       console.log('✅ دور المستخدم صالح:', validRole);
       
-      const { data, error } = await supabase.rpc('admin_create_user', {
+      const { data, error } = await supabase.rpc('admin_create_user' as any, {
         p_email: userData.email,
         p_password: userData.password,
         p_full_name: userData.full_name,
@@ -109,7 +109,7 @@ export const useUserManagement = () => {
       setIsLoading(true);
       console.log('🔄 بدء تحديث ملف المستخدم:', userId, updates);
       
-      const { data, error } = await supabase.rpc('admin_update_user_profile', {
+      const { data, error } = await supabase.rpc('admin_update_user_profile' as any, {
         p_user_id: userId,
         p_email: updates.email,
         p_full_name: updates.full_name,
