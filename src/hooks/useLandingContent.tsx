@@ -77,7 +77,7 @@ export const useLandingContent = () => {
       const { error } = await (supabase
         .from('landing_content' as any)
         .update(updatedContent)
-        .eq('id', updatedContent.id);
+        .eq('id', updatedContent.id) as any);
       
       if (error) throw error;
       return updatedContent;
