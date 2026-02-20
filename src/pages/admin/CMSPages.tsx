@@ -78,7 +78,7 @@ const CMSPages: React.FC = () => {
     if (error) {
       toast.error("فشل في جلب الصفحات");
     } else {
-      setPages((data || []) as PageRow[]);
+      setPages((data || []) as unknown as PageRow[]);
     }
     setLoading(false);
   };
