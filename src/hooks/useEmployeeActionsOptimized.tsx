@@ -143,7 +143,7 @@ export const useEmployeeActionsOptimized = () => {
   // التحقق من إمكانية حذف الموظف - محسن
   const checkEmployeeDeletion = useCallback(async (employeeId: string) => {
     try {
-      const { data, error } = await supabase.rpc('check_employee_deletion', {
+      const { data, error } = await supabase.rpc('check_employee_deletion' as any, {
         p_employee_id: employeeId
       });
 
