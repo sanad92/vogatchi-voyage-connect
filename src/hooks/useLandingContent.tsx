@@ -138,7 +138,7 @@ export const useLandingContent = () => {
       const { error } = await (supabase
         .from('site_settings' as any)
         .update({ setting_value: value })
-        .eq('setting_key', key);
+        .eq('setting_key', key) as any);
       
       if (error) throw error;
       return { key, value };

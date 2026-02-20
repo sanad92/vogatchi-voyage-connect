@@ -96,9 +96,9 @@ export const useProfitLossCalculations = () => {
 
           // حساب التكاليف غير المباشرة
           const indirectCosts = 
-            (salaries?.reduce((sum, item) => sum + (item.net_salary_egp || 0), 0) || 0) +
-            (rentPayments?.reduce((sum, item) => sum + (item.amount_egp || 0), 0) || 0) +
-            (expenses?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0);
+            (salaries?.reduce((sum: number, item: any) => sum + (item.net_salary_egp || 0), 0) || 0) +
+            (rentPayments?.reduce((sum: number, item: any) => sum + (item.amount_egp || 0), 0) || 0) +
+            (expenses?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) || 0);
 
           const grossProfit = totalRevenue - directCosts;
           const netProfit = grossProfit - indirectCosts;

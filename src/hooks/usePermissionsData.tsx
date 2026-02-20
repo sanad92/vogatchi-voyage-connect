@@ -40,9 +40,9 @@ export const usePermissionsData = () => {
   const { data: permissionDetails } = useQuery({
     queryKey: ['permission-details'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_detailed_permissions');
+      const { data, error } = await supabase.rpc('get_detailed_permissions' as any);
       if (error) throw error;
-      return data as PermissionDetail[];
+      return data as unknown as PermissionDetail[];
     },
     enabled: isSuperAdmin(),
   });

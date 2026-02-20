@@ -190,7 +190,7 @@ export const usePeriodCommissions = () => {
         throw new Error('بيانات غير مكتملة لتحديث حالة العمولة');
       }
 
-      const { data, error } = await supabase.rpc('update_period_commission_status', {
+      const { data, error } = await supabase.rpc('update_period_commission_status' as any, {
         p_commission_period_id: commissionPeriodId,
         p_status: status,
         p_payment_date: paymentDate,

@@ -99,7 +99,7 @@ export const useInvoicePayments = (invoiceId?: string) => {
       const { error } = await (supabase
         .from('invoice_payments' as any)
         .delete()
-        .eq('id', paymentId);
+        .eq('id', paymentId) as any);
 
       if (error) throw error;
     },

@@ -65,7 +65,7 @@ export const useImpersonation = () => {
       }
 
       console.log('📤 إرسال طلب إنهاء تسجيل الدخول...');
-      const { data, error } = await supabase.rpc('end_impersonation', {
+      const { data, error } = await supabase.rpc('end_impersonation' as any, {
         p_session_id: sessionToken
       });
 
