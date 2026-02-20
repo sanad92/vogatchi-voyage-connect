@@ -356,7 +356,7 @@ export const useEmployeeCommissions = () => {
       console.log('Calculating commission manually:', { employeeId, bookingAmount, commissionRate });
       
       // حساب العمولة باستخدام دالة قاعدة البيانات
-      const { data: commissionAmount, error } = await supabase.rpc('calculate_employee_commission', {
+      const { data: commissionAmount, error } = await supabase.rpc('calculate_employee_commission' as any, {
         p_employee_id: employeeId,
         p_booking_amount: bookingAmount,
         p_commission_rate: commissionRate
