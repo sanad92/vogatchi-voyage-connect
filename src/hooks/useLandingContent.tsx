@@ -98,7 +98,7 @@ export const useLandingContent = () => {
         .from('landing_content' as any)
         .insert(newContent)
         .select()
-        .single();
+        .single() as any);
       
       if (error) throw error;
       return data;
