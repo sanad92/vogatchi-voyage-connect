@@ -51,7 +51,7 @@ export const useHotels = (destinationId?: string) => {
 
       if (error) throw error;
       
-      const formattedHotels = (data || []).map(hotel => ({
+      const formattedHotels = (data || []).map((hotel: any) => ({
         ...hotel,
         features: Array.isArray(hotel.features) ? hotel.features.map(String) : [],
         features_ar: Array.isArray(hotel.features_ar) ? hotel.features_ar.map(String) : [],
