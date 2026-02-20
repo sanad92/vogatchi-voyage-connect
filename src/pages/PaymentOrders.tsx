@@ -174,7 +174,7 @@ const PaymentOrders = () => {
           bank_account_id: paymentOrder.bank_account_id || null
         }])
         .select()
-        .single();
+        .single() as any);
       
       if (error) throw error;
       return data;
