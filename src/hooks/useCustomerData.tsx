@@ -145,7 +145,7 @@ export const useCustomerData = (customerId: string) => {
 
       // Combine all data
       const combinedData = {
-        ...basicData,
+        ...(basicData as any),
         hotel_bookings: hotelBookings || [],
         flight_bookings: flightBookings || [],
         transport_bookings: transportBookings || [],
