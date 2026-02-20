@@ -132,10 +132,10 @@ export const useSalaryOperations = () => {
     mutationFn: async (salaryId: string) => {
       if (!salaryId) throw new Error('معرف الراتب مطلوب');
 
-      const { error } = await supabase
-        .from('monthly_salaries')
+      const { error } = await (supabase
+        .from('monthly_salaries' as any)
         .delete()
-        .eq('id', salaryId);
+        .eq('id', salaryId) as any);
 
       if (error) throw error;
       return salaryId;

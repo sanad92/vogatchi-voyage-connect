@@ -109,7 +109,7 @@ export const useUserManagement = () => {
       setIsLoading(true);
       console.log('🔄 بدء تحديث ملف المستخدم:', userId, updates);
       
-      const { data, error } = await supabase.rpc('admin_update_user_profile', {
+      const { data, error } = await supabase.rpc('admin_update_user_profile' as any, {
         p_user_id: userId,
         p_email: updates.email,
         p_full_name: updates.full_name,

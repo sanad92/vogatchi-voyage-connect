@@ -32,11 +32,11 @@ export const useVehicleTypes = () => {
         if (error) throw error;
         
         // تحويل البيانات إلى تنسيق نوع المركبة
-        return data.map(item => ({
+        return (data as any[]).map((item: any) => ({
           id: item.id,
           name: item.name,
           name_ar: item.name_ar,
-          description: item.description,
+          description: item.description || '',
           created_at: item.created_at
         })) as VehicleType[];
       } catch (error) {

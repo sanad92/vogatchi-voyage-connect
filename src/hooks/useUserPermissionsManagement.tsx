@@ -130,7 +130,7 @@ export const useUserPermissionsManagement = () => {
   // إنشاء صلاحيات افتراضية لمستخدم جديد
   const createPermissionsMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.rpc('create_default_permissions', {
+      const { data, error } = await supabase.rpc('create_default_permissions' as any, {
         p_user_id: userId
       });
       

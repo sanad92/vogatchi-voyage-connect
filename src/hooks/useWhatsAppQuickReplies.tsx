@@ -101,10 +101,10 @@ export const useWhatsAppQuickReplies = () => {
   // حذف رد سريع
   const deleteQuickReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
-      const { error } = await supabase
-        .from('whatsapp_quick_replies')
+      const { error } = await (supabase
+        .from('whatsapp_quick_replies' as any)
         .delete()
-        .eq('id', replyId);
+        .eq('id', replyId) as any);
 
       if (error) {
         console.error('خطأ في حذف رد سريع:', error);

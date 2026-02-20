@@ -44,11 +44,11 @@ export const useRentContracts = () => {
   // إضافة عقد إيجار
   const addRentContractMutation = useMutation({
     mutationFn: async (contract: Omit<RentContract, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('rent_contracts')
-        .insert(contract)
+      const { data, error } = await (supabase
+        .from('rent_contracts' as any)
+        .insert([contract])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;
