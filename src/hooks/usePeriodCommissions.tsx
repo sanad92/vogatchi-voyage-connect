@@ -98,7 +98,7 @@ export const usePeriodCommissions = () => {
           throw error;
         }
         console.log('Fetched bookings profit:', data);
-        return data as BookingProfitDetail[];
+        return data as unknown as BookingProfitDetail[];
       },
       enabled: !!employeeId && !!periodStart && !!periodEnd,
     });
