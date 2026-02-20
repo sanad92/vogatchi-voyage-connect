@@ -249,11 +249,11 @@ export const useProfitLossCalculations = () => {
       queryKey: ['total-revenue', startDate, endDate],
       queryFn: async (): Promise<number> => {
         try {
-          const { data: hotelRevenue } = await supabase
+          const { data: hotelRevenue } = await (supabase
             .from('hotel_bookings')
-            .select('total_cost_customer_egp')
+            .select('total_cost_customer')
             .gte('booking_date', startDate)
-            .lte('booking_date', endDate);
+            .lte('booking_date', endDate) as any);
 
           const { data: flightRevenue } = await supabase
             .from('flight_bookings')
@@ -262,8 +262,8 @@ export const useProfitLossCalculations = () => {
             .lte('booking_date', endDate);
 
           return (
-            (hotelRevenue?.reduce((sum, item) => sum + (item.total_cost_customer_egp || 0), 0) || 0) +
-            (flightRevenue?.reduce((sum, item) => sum + (item.total_cost_egp || 0), 0) || 0)
+            (hotelRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_customer || 0), 0) || 0) +
+            (flightRevenue?.reduce((sum: number, item: any) => sum + (item.total_cost_egp || 0), 0) || 0)
           );
         } catch (error) {
           console.error('Error calculating revenue:', error);
@@ -280,11 +280,11 @@ export const useProfitLossCalculations = () => {
       queryKey: ['direct-costs', startDate, endDate],
       queryFn: async (): Promise<number> => {
         try {
-          const { data: hotelCosts } = await supabase
+          const { data: hotelCosts } = await (supabase
             .from('hotel_bookings')
-            .select('cost_per_night_egp, number_of_nights')
+            .select('cost_per_night, number_of_nights')
             .gte('booking_date', startDate)
-            .lte('booking_date', endDate);
+            .lte('booking_date', endDate) as any);
 
           const { data: flightCosts } = await supabase
             .from('flight_bookings')
@@ -293,8 +293,8 @@ export const useProfitLossCalculations = () => {
             .lte('booking_date', endDate);
 
           return (
-            (hotelCosts?.reduce((sum, item) => sum + ((item.cost_per_night_egp || 0) * (item.number_of_nights || 0)), 0) || 0) +
-            (flightCosts?.reduce((sum, item) => sum + (item.supplier_cost_egp || 0), 0) || 0)
+            (hotelCosts?.reduce((sum: number, item: any) => sum + ((item.cost_per_night || 0) * (item.number_of_nights || 0)), 0) || 0) +
+            (flightCosts?.reduce((sum: number, item: any) => sum + (item.supplier_cost_egp || 0), 0) || 0)
           );
         } catch (error) {
           console.error('Error calculating direct costs:', error);
