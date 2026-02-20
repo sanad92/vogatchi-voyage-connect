@@ -29,9 +29,9 @@ export const usePermissionsData = () => {
   const { data: permissionGroups } = useQuery({
     queryKey: ['permission-groups'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_permission_groups');
+      const { data, error } = await supabase.rpc('get_permission_groups' as any);
       if (error) throw error;
-      return data as PermissionGroup[];
+      return data as unknown as PermissionGroup[];
     },
     enabled: isSuperAdmin(),
   });
