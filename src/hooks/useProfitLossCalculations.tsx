@@ -62,19 +62,19 @@ export const useProfitLossCalculations = () => {
             .lte('booking_date', endDate);
 
           // حساب التكاليف غير المباشرة
-          const { data: salaries } = await supabase
-            .from('monthly_salaries')
+          const { data: salaries } = await (supabase
+            .from('monthly_salaries' as any)
             .select('net_salary_egp')
             .gte('salary_month', startDate)
             .lte('salary_month', endDate)
-            .eq('status', 'paid');
+            .eq('status', 'paid') as any);
 
-          const { data: rentPayments } = await supabase
-            .from('rent_payments')
+          const { data: rentPayments } = await (supabase
+            .from('rent_payments' as any)
             .select('amount_egp')
             .gte('payment_month', startDate)
             .lte('payment_month', endDate)
-            .eq('status', 'paid');
+            .eq('status', 'paid') as any);
 
           const { data: expenses } = await supabase
             .from('expense_transactions')
