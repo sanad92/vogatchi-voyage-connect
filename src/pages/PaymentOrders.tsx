@@ -219,7 +219,7 @@ const PaymentOrders = () => {
         .update(updateData)
         .eq('id', id)
         .select()
-        .single();
+        .single());
       
       if (error) throw error;
 
