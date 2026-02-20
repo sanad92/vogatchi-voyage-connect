@@ -49,7 +49,7 @@ export const useEmployeeCommissions = () => {
         throw error;
       }
       console.log('Fetched commissions:', data);
-      return data as EmployeeCommissionWithEmployee[];
+      return (data as unknown) as EmployeeCommissionWithEmployee[];
     },
   });
 
@@ -71,7 +71,7 @@ export const useEmployeeCommissions = () => {
         throw error;
       }
       console.log('Fetched commission payments:', data);
-      return data as CommissionPayment[];
+      return (data as unknown) as CommissionPayment[];
     },
   });
 
@@ -93,7 +93,7 @@ export const useEmployeeCommissions = () => {
           throw error;
         }
         console.log('Fetched employee commissions:', data);
-        return data as EmployeeCommissionWithEmployee[];
+        return (data as unknown) as EmployeeCommissionWithEmployee[];
       },
       enabled: !!employeeId,
     });
