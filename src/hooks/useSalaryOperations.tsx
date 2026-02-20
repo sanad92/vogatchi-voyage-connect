@@ -44,7 +44,7 @@ export const useSalaryOperations = () => {
 
       const salaryMonth = new Date(salaryData.salary_month + '-01').toISOString().split('T')[0];
 
-      const { data, error } = await supabase.rpc('calculate_monthly_salary', {
+      const { data, error } = await supabase.rpc('calculate_monthly_salary' as any, {
         p_employee_id: salaryData.employee_id,
         p_salary_month: salaryMonth,
         p_overtime_hours: salaryData.overtime_hours || 0,
