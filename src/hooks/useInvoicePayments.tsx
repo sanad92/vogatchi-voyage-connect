@@ -53,7 +53,7 @@ export const useInvoicePayments = (invoiceId?: string) => {
           created_by: user.user?.id,
         }])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;
