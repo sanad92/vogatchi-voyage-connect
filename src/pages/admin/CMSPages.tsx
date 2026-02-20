@@ -91,13 +91,11 @@ const CMSPages: React.FC = () => {
     e.preventDefault();
     if (!form.name || !form.slug) return toast.error("الاسم والـ slug مطلوبان");
     setCreating(true);
-    const { error } = await supabase.from("pages").insert({
-      name: form.name,
+    const { error } = await (supabase.from("pages").insert([{
+      title: form.name,
       slug: form.slug,
-      is_active: form.is_active,
-      seo_title: form.seo_title || null,
-      seo_description: form.seo_description || null,
-    });
+      description: form.seo_description || null,
+    }]) as any);
     setCreating(false);
     if (error) return toast.error("تعذر إنشاء الصفحة");
     toast.success("تم إنشاء الصفحة");
