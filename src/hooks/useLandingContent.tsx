@@ -60,7 +60,7 @@ export const useLandingContent = () => {
     queryFn: async () => {
       const { data, error } = await (supabase
         .from('site_settings' as any)
-        .select('*');
+        .select('*') as any);
       
       if (error) {
         errorManager.error('LandingContent', 'خطأ في جلب إعدادات الموقع', error, false);
