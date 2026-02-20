@@ -109,7 +109,7 @@ export const useUserPermissionsManagement = () => {
       userId: string; 
       permissions: Partial<DetailedUserPermissions> 
     }) => {
-      const { data, error } = await supabase.rpc('update_user_permissions', {
+      const { data, error } = await supabase.rpc('update_user_permissions' as any, {
         p_user_id: userId,
         p_permissions: permissions
       });
