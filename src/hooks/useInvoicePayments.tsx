@@ -46,8 +46,8 @@ export const useInvoicePayments = (invoiceId?: string) => {
     mutationFn: async (paymentData: Omit<InvoicePayment, 'id' | 'created_at' | 'updated_at'>) => {
       const { data: user } = await supabase.auth.getUser();
       
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .insert([{
           ...paymentData,
           created_by: user.user?.id,
