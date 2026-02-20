@@ -78,9 +78,9 @@ export const useUserPermissionsManagement = () => {
   const { data: allUserPermissions, isLoading, error } = useQuery({
     queryKey: ['detailed-user-permissions'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_all_user_permissions');
+      const { data, error } = await supabase.rpc('get_all_user_permissions' as any);
       if (error) throw error;
-      return data as AllUserPermissions[];
+      return data as unknown as AllUserPermissions[];
     },
     enabled: isSuperAdmin(),
   });
