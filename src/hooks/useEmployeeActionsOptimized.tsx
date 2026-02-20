@@ -107,7 +107,7 @@ export const useEmployeeActionsOptimized = () => {
     try {
       setActionLoading(actionKey, true);
 
-      const { data, error } = await supabase.rpc('toggle_employee_status', {
+      const { data, error } = await supabase.rpc('toggle_employee_status' as any, {
         p_employee_id: employeeId,
         p_is_active: isActive,
         p_reason: reason
