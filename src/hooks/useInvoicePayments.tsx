@@ -33,7 +33,7 @@ export const useInvoicePayments = (invoiceId?: string) => {
           bank_account:bank_accounts(account_name)
         `)
         .eq('invoice_id', invoiceId)
-        .order('payment_date', { ascending: false });
+        .order('payment_date', { ascending: false }) as any);
 
       if (error) throw error;
       return data as InvoicePayment[];
