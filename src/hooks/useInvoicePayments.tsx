@@ -77,7 +77,7 @@ export const useInvoicePayments = (invoiceId?: string) => {
         .update(updateData)
         .eq('id', paymentId)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return data;
