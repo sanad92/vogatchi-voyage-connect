@@ -118,7 +118,7 @@ export const useLandingContent = () => {
       const { error } = await (supabase
         .from('landing_content' as any)
         .delete()
-        .eq('id', contentId);
+        .eq('id', contentId) as any);
       
       if (error) throw error;
       return contentId;
