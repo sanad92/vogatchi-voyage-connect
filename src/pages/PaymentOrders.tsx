@@ -162,8 +162,8 @@ const PaymentOrders = () => {
   // إنشاء أمر دفع جديد
   const createPaymentOrderMutation = useMutation({
     mutationFn: async (paymentOrder: typeof newPaymentOrder) => {
-      const { data, error } = await supabase
-        .from('payment_orders')
+      const { data, error } = await (supabase
+        .from('payment_orders' as any)
         .insert([{
           invoice_id: paymentOrder.invoice_id,
           amount: paymentOrder.amount,
