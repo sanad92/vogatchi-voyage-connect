@@ -115,8 +115,8 @@ export const useLandingContent = () => {
   // حذف المحتوى
   const deleteContentMutation = useMutation({
     mutationFn: async (contentId: string) => {
-      const { error } = await supabase
-        .from('landing_content')
+      const { error } = await (supabase
+        .from('landing_content' as any)
         .delete()
         .eq('id', contentId);
       
