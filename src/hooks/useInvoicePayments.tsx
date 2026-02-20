@@ -26,8 +26,8 @@ export const useInvoicePayments = (invoiceId?: string) => {
     queryFn: async () => {
       if (!invoiceId) return [];
       
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .select(`
           *,
           bank_account:bank_accounts(account_name)
