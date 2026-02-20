@@ -39,18 +39,18 @@ export const useLandingContent = () => {
   const { data: content, isLoading: contentLoading } = useQuery({
     queryKey: ['landing-content'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('landing_content')
+      const { data, error } = await (supabase
+        .from('landing_content' as any)
         .select('*')
         .eq('is_active', true)
-        .order('order_index', { ascending: true });
+        .order('order_index', { ascending: true }) as any);
       
       if (error) {
         errorManager.error('LandingContent', 'خطأ في جلب محتوى الصفحة', error, false);
         throw error;
       }
       
-      return data as LandingContent[];
+      return (data || []) as unknown as LandingContent[];
     }
   });
 
