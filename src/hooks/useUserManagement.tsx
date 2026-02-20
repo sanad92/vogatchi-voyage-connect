@@ -11,7 +11,7 @@ export const useUserManagement = () => {
       setIsLoading(true);
       console.log('🔄 بدء إعادة تعيين كلمة المرور للمستخدم:', userId);
       
-      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+      const { data, error } = await supabase.rpc('admin_reset_user_password' as any, {
         p_user_id: userId,
         p_new_password: newPassword
       });
