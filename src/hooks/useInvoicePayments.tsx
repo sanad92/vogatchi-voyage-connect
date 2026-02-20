@@ -72,8 +72,8 @@ export const useInvoicePayments = (invoiceId?: string) => {
   // تحديث دفعة
   const updatePaymentMutation = useMutation({
     mutationFn: async ({ paymentId, updateData }: { paymentId: string; updateData: Partial<InvoicePayment> }) => {
-      const { data, error } = await supabase
-        .from('invoice_payments')
+      const { data, error } = await (supabase
+        .from('invoice_payments' as any)
         .update(updateData)
         .eq('id', paymentId)
         .select()
