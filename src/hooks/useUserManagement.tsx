@@ -65,7 +65,7 @@ export const useUserManagement = () => {
       const validRole = userData.role as ValidRole;
       console.log('✅ دور المستخدم صالح:', validRole);
       
-      const { data, error } = await supabase.rpc('admin_create_user', {
+      const { data, error } = await supabase.rpc('admin_create_user' as any, {
         p_email: userData.email,
         p_password: userData.password,
         p_full_name: userData.full_name,
