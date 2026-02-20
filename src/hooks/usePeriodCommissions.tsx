@@ -123,7 +123,7 @@ export const usePeriodCommissions = () => {
         throw new Error('بيانات غير مكتملة لحساب العمولة');
       }
 
-      const { data, error } = await supabase.rpc('generate_period_commission', {
+      const { data, error } = await supabase.rpc('generate_period_commission' as any, {
         p_employee_id: employeeId,
         p_period_start: periodStart,
         p_period_end: periodEnd,
