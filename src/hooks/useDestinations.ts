@@ -40,7 +40,7 @@ export const useDestinations = () => {
 
       if (error) throw error;
       
-      const formattedDestinations = (data || []).map(dest => ({
+      const formattedDestinations = (data || []).map((dest: any) => ({
         ...dest,
         attractions: Array.isArray(dest.attractions) ? dest.attractions.map(String) : [],
         attractions_ar: Array.isArray(dest.attractions_ar) ? dest.attractions_ar.map(String) : [],
