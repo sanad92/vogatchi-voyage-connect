@@ -22,8 +22,7 @@ const CustomerFollowUps = () => {
         .from('customer_follow_ups')
         .select(`
           *,
-          customer:customers(name, phone, email),
-          assigned_to_profile:profiles!customer_follow_ups_assigned_to_fkey(full_name)
+          customer:customers(name, phone, email)
         `)
         .order('scheduled_date', { ascending: true });
 
