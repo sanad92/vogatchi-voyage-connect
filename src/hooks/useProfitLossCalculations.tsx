@@ -311,19 +311,19 @@ export const useProfitLossCalculations = () => {
       queryKey: ['indirect-costs', startDate, endDate],
       queryFn: async (): Promise<number> => {
         try {
-          const { data: salaries } = await supabase
-            .from('monthly_salaries')
+          const { data: salaries } = await (supabase
+            .from('monthly_salaries' as any)
             .select('net_salary_egp')
             .gte('salary_month', startDate)
             .lte('salary_month', endDate)
-            .eq('status', 'paid');
+            .eq('status', 'paid') as any);
 
-          const { data: rentPayments } = await supabase
-            .from('rent_payments')
+          const { data: rentPayments } = await (supabase
+            .from('rent_payments' as any)
             .select('amount_egp')
             .gte('payment_month', startDate)
             .lte('payment_month', endDate)
-            .eq('status', 'paid');
+            .eq('status', 'paid') as any);
 
           const { data: expenses } = await supabase
             .from('expense_transactions')
@@ -334,9 +334,9 @@ export const useProfitLossCalculations = () => {
             .eq('currency', 'EGP');
 
           return (
-            (salaries?.reduce((sum, item) => sum + (item.net_salary_egp || 0), 0) || 0) +
-            (rentPayments?.reduce((sum, item) => sum + (item.amount_egp || 0), 0) || 0) +
-            (expenses?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0)
+            (salaries?.reduce((sum: number, item: any) => sum + (item.net_salary_egp || 0), 0) || 0) +
+            (rentPayments?.reduce((sum: number, item: any) => sum + (item.amount_egp || 0), 0) || 0) +
+            (expenses?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) || 0)
           );
         } catch (error) {
           console.error('Error calculating indirect costs:', error);

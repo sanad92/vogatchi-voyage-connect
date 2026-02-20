@@ -104,7 +104,7 @@ const CMSPages: React.FC = () => {
   };
 
   const toggleActive = async (id: string, next: boolean) => {
-    const { error } = await supabase.from("pages").update({ is_active: next }).eq("id", id);
+    const { error } = await (supabase.from("pages").update({ is_published: next } as any).eq("id", id) as any);
     if (error) return toast.error("تعذر التحديث");
     setPages(prev => prev.map(p => (p.id === id ? { ...p, is_active: next } : p)));
     toast.success("تم تحديث الحالة");

@@ -19,17 +19,17 @@ const DailyOperations = () => {
     queryKey: ['today-bookings'],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('bookings')
+      const { data, error } = await (supabase
+        .from('bookings' as any)
         .select(`
           *,
           customers(name, phone, email)
         `)
         .eq('check_in_date', today)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as any);
 
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
   });
 

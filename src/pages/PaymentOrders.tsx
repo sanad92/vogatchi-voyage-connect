@@ -214,8 +214,8 @@ const PaymentOrders = () => {
         updateData.payment_date = payment_date;
       }
 
-      const { data, error } = await supabase
-        .from('payment_orders')
+      const { data, error } = await (supabase
+        .from('payment_orders' as any)
         .update(updateData)
         .eq('id', id)
         .select()
