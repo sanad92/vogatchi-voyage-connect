@@ -103,7 +103,7 @@ export const useEmployeeCommissions = () => {
   const validateEmployeeCommissionsMutation = useMutation({
     mutationFn: async (employeeId: string) => {
       console.log('Validating commissions for employee:', employeeId);
-      const { data, error } = await supabase.rpc('validate_employee_commissions', {
+      const { data, error } = await supabase.rpc('validate_employee_commissions' as any, {
         p_employee_id: employeeId
       });
 
