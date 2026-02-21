@@ -267,7 +267,7 @@ export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('خطأ في تسجيل الخروج:', error);
       toast.error('حدث خطأ أثناء تسجيل الخروج');
-      navigate('/');
+      navigate('/auth');
     } finally {
       setLoading(false);
     }
