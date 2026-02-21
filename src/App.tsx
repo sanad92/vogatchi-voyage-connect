@@ -7,6 +7,7 @@ import {
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import SaaSLanding from "@/pages/SaaSLanding";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
@@ -44,11 +45,13 @@ import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Navbar from "@/components/navbar/Navbar";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
 import AuthPage from "@/components/auth/AuthPage";
+import RegisterOrganization from "@/pages/RegisterOrganization";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -74,13 +77,19 @@ function App() {
       <Router>
         <SupabaseAuthProvider>
           <OptimizedAuthProvider>
+          <OrganizationProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
               <Routes>
-                {/* صفحة تسجيل الدخول كصفحة رئيسية */}
-                <Route path="/" element={<AuthPage />} />
+                {/* صفحة الهبوط التسويقية */}
+                <Route path="/" element={<SaaSLanding />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/register-organization" element={
+                  <SupabaseProtectedRoute>
+                    <RegisterOrganization />
+                  </SupabaseProtectedRoute>
+                } />
                 
                 {/* صفحات النظام المحمية */}
                 <Route
@@ -139,6 +148,7 @@ function App() {
               </Routes>
             </div>
           </OptimizedErrorBoundary>
+          </OrganizationProvider>
           </OptimizedAuthProvider>
         </SupabaseAuthProvider>
       </Router>

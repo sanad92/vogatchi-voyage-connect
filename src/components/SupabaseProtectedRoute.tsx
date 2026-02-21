@@ -1,4 +1,5 @@
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { Navigate } from 'react-router-dom';
 
 interface SupabaseProtectedRouteProps {
@@ -8,30 +9,36 @@ interface SupabaseProtectedRouteProps {
 
 const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRouteProps) => {
   const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useSupabaseAuth();
+  const { hasOrganization, loading: orgLoading } = useOrganization();
 
-  if (loading) {
+  if (loading || orgLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جارٍ التحميل...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p>
         </div>
       </div>
     );
   }
 
   if (!isLoggedIn()) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth" replace />;
+  }
+
+  // إذا المستخدم ليس لديه مؤسسة (وليس سوبر أدمن)، وجهه لتسجيل المؤسسة
+  if (!hasOrganization && !isSuperAdmin()) {
+    return <Navigate to="/register-organization" replace />;
   }
 
   // التحقق من أن الحساب نشط
   if (profile && !profile.is_active) {
     return (
-      <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-orange-600 mb-4">حسابك غير مفعل</h2>
-          <p className="text-gray-600 mb-4">حسابك غير مفعل حالياً.</p>
-          <p className="text-sm text-gray-500">يرجى التواصل مع السوبر أدمن لتفعيل حسابك.</p>
+          <h2 className="text-2xl font-bold text-destructive mb-4">حسابك غير مفعل</h2>
+          <p className="text-muted-foreground mb-4">حسابك غير مفعل حالياً.</p>
+          <p className="text-sm text-muted-foreground">يرجى التواصل مع المدير لتفعيل حسابك.</p>
         </div>
       </div>
     );
@@ -40,11 +47,10 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
   // التحقق من الدور المطلوب
   if (requiredRole && !hasRole(requiredRole) && !isSuperAdmin()) {
     return (
-      <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">ليس لديك صلاحية للوصول</h2>
-          <p className="text-gray-600 mb-4">عذراً، لا تملك الصلاحيات المطلوبة لعرض هذه الصفحة.</p>
-          <p className="text-sm text-gray-500">دورك الحالي: {profile?.employee_id ? 'موظف' : 'مستخدم'}</p>
+          <h2 className="text-2xl font-bold text-destructive mb-4">ليس لديك صلاحية للوصول</h2>
+          <p className="text-muted-foreground">عذراً، لا تملك الصلاحيات المطلوبة لعرض هذه الصفحة.</p>
         </div>
       </div>
     );
