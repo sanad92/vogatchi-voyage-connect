@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Customer } from '@/types/customer';
+import { useOrgId } from './useOrgId';
 
 export const useCustomers = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
   const { data: customers, isLoading, error, refetch } = useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customers')
@@ -21,13 +23,14 @@ export const useCustomers = () => {
       if (error) throw error;
       return data as Customer[];
     },
+    enabled: !!orgId,
   });
 
   const addCustomerMutation = useMutation({
     mutationFn: async (customer: any) => {
       const { data, error } = await supabase
         .from('customers')
-        .insert(customer)
+        .insert({ ...customer, organization_id: orgId })
         .select()
         .single();
 
@@ -36,18 +39,11 @@ export const useCustomers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast({
-        title: "تم الحفظ بنجاح",
-        description: "تم إضافة العميل بنجاح",
-      });
+      toast({ title: "تم الحفظ بنجاح", description: "تم إضافة العميل بنجاح" });
     },
     onError: (error) => {
       console.error('Error adding customer:', error);
-      toast({
-        title: "خطأ في الحفظ",
-        description: "حدث خطأ أثناء إضافة العميل",
-        variant: "destructive",
-      });
+      toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء إضافة العميل", variant: "destructive" });
     },
   });
 
@@ -58,9 +54,9 @@ export const useCustomers = () => {
   return {
     customers,
     isLoading,
-    customersLoading: isLoading, // إضافة alias للتوافق
+    customersLoading: isLoading,
     error,
-    customersError: error, // إضافة alias للتوافق
+    customersError: error,
     refetch,
     addCustomer,
     isAddingCustomer: addCustomerMutation.isPending,

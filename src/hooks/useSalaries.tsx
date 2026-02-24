@@ -3,134 +3,61 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { MonthlySalary } from '@/types/expenses';
 import { toast } from 'sonner';
+import { useOrgId } from './useOrgId';
 
 export const useSalaries = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
-  // جلب الرواتب الشهرية
   const { data: monthlySalaries, isLoading: salariesLoading } = useQuery({
-    queryKey: ['monthly-salaries'],
+    queryKey: ['monthly-salaries', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('monthly_salaries')
-        .select(`
-          *,
-          employee:employees(full_name, employee_code, position)
-        `)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.from('monthly_salaries').select(`*, employee:employees(full_name, employee_code, position)`).order('created_at', { ascending: false });
       if (error) throw error;
       return data as (MonthlySalary & { employee?: any })[];
     },
+    enabled: !!orgId,
   });
 
-  // حساب راتب شهري جديد (جميع الرواتب بالجنيه المصري)
   const { mutateAsync: calculateMonthlySalary, isPending: isCalculatingSalary } = useMutation({
     mutationFn: async (salaryData: Omit<MonthlySalary, 'id' | 'created_at' | 'updated_at'>) => {
-      // التأكد من أن العملة هي الجنيه المصري
       const salaryDataWithEGP = {
-        ...salaryData,
-        currency: 'EGP',
-        exchange_rate: 1.00,
-        net_salary_egp: salaryData.net_salary,
-        created_by: (await supabase.auth.getUser()).data.user?.id
+        ...salaryData, currency: 'EGP', exchange_rate: 1.00, net_salary_egp: salaryData.net_salary,
+        created_by: (await supabase.auth.getUser()).data.user?.id, organization_id: orgId,
       };
-
-      console.log('Creating salary with data:', salaryDataWithEGP);
-
-      const { data, error } = await supabase
-        .from('monthly_salaries')
-        .insert(salaryDataWithEGP)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating salary:', error);
-        throw error;
-      }
-      
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
-      toast.success('تم حفظ الراتب بنجاح');
-    },
-    onError: (error: any) => {
-      console.error('Error saving salary:', error);
-      toast.error('حدث خطأ أثناء حفظ الراتب: ' + (error.message || 'خطأ غير محدد'));
-    },
-  });
-
-  // تحديث حالة راتب
-  const { mutateAsync: updateSalaryStatus, isPending: isUpdatingSalary } = useMutation({
-    mutationFn: async ({ id, status, payment_date }: { 
-      id: string; 
-      status: 'pending' | 'paid' | 'cancelled';
-      payment_date?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('monthly_salaries')
-        .update({ status, payment_date })
-        .eq('id', id)
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from('monthly_salaries').insert(salaryDataWithEGP).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] });
-      toast.success('تم تحديث حالة الراتب بنجاح');
-    },
-    onError: (error: any) => {
-      console.error('Error updating salary status:', error);
-      toast.error('حدث خطأ أثناء تحديث حالة الراتب');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] }); toast.success('تم حفظ الراتب بنجاح'); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء حفظ الراتب: ' + (error.message || 'خطأ غير محدد')); },
   });
 
-  // حساب إجمالي الرواتب (جميعها بالجنيه المصري)
-  const calculateTotalSalariesInEGP = (salaries: MonthlySalary[]) => {
-    return salaries.reduce((total, salary) => {
-      // جميع الرواتب بالجنيه المصري، لذا نجمع net_salary مباشرة
-      return total + (salary.net_salary || 0);
-    }, 0);
-  };
+  const { mutateAsync: updateSalaryStatus, isPending: isUpdatingSalary } = useMutation({
+    mutationFn: async ({ id, status, payment_date }: { id: string; status: 'pending' | 'paid' | 'cancelled'; payment_date?: string; }) => {
+      const { data, error } = await supabase.from('monthly_salaries').update({ status, payment_date }).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] }); toast.success('تم تحديث حالة الراتب بنجاح'); },
+    onError: () => { toast.error('حدث خطأ أثناء تحديث حالة الراتب'); },
+  });
 
-  // إحصائيات الرواتب
+  const calculateTotalSalariesInEGP = (salaries: MonthlySalary[]) => salaries.reduce((total, salary) => total + (salary.net_salary || 0), 0);
+
   const getSalaryStatistics = () => {
     if (!monthlySalaries) return null;
-
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const currentMonthSalaries = monthlySalaries.filter(
-      salary => salary.salary_month.startsWith(currentMonth)
-    );
-
-    const totalSalariesThisMonth = calculateTotalSalariesInEGP(currentMonthSalaries);
-    const paidSalariesThisMonth = calculateTotalSalariesInEGP(
-      currentMonthSalaries.filter(salary => salary.status === 'paid')
-    );
-    const pendingSalariesThisMonth = calculateTotalSalariesInEGP(
-      currentMonthSalaries.filter(salary => salary.status === 'pending')
-    );
-
+    const currentMonthSalaries = monthlySalaries.filter(s => s.salary_month.startsWith(currentMonth));
     return {
-      totalSalariesThisMonth,
-      paidSalariesThisMonth,
-      pendingSalariesThisMonth,
+      totalSalariesThisMonth: calculateTotalSalariesInEGP(currentMonthSalaries),
+      paidSalariesThisMonth: calculateTotalSalariesInEGP(currentMonthSalaries.filter(s => s.status === 'paid')),
+      pendingSalariesThisMonth: calculateTotalSalariesInEGP(currentMonthSalaries.filter(s => s.status === 'pending')),
       salariesCount: currentMonthSalaries.length,
       paidCount: currentMonthSalaries.filter(s => s.status === 'paid').length,
       pendingCount: currentMonthSalaries.filter(s => s.status === 'pending').length,
     };
   };
 
-  return {
-    monthlySalaries,
-    salariesLoading,
-    calculateMonthlySalary,
-    isCalculatingSalary,
-    updateSalaryStatus,
-    isUpdatingSalary,
-    calculateTotalSalariesInEGP,
-    getSalaryStatistics,
-  };
+  return { monthlySalaries, salariesLoading, calculateMonthlySalary, isCalculatingSalary, updateSalaryStatus, isUpdatingSalary, calculateTotalSalariesInEGP, getSalaryStatistics };
 };

@@ -1,136 +1,62 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ExchangeRate, SupportedCurrency, PRIMARY_CURRENCY } from "@/types/currency";
 import { useToast } from "@/hooks/use-toast";
+import { useOrgId } from './useOrgId';
 
 export const useExchangeRates = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
-  // Get all exchange rates
   const { data: exchangeRates = [], isLoading } = useQuery({
-    queryKey: ['exchange-rates'],
+    queryKey: ['exchange-rates', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .select('*')
-        .eq('is_active', true)
-        .order('effective_date', { ascending: false });
-      
+      const { data, error } = await supabase.from('exchange_rates').select('*').eq('is_active', true).order('effective_date', { ascending: false });
       if (error) throw error;
       return data as ExchangeRate[];
-    }
+    },
+    enabled: !!orgId,
   });
 
-  // Get current exchange rate
   const getCurrentRate = async (fromCurrency: SupportedCurrency, toCurrency: SupportedCurrency): Promise<number> => {
     if (fromCurrency === toCurrency) return 1.0;
-    
-    const { data, error } = await supabase
-      .from('exchange_rates')
-      .select('rate')
-      .eq('from_currency', fromCurrency)
-      .eq('to_currency', toCurrency)
-      .eq('is_active', true)
-      .order('effective_date', { ascending: false })
-      .limit(1)
-      .single();
-    
-    if (error || !data) {
-      console.warn(`No exchange rate found for ${fromCurrency} to ${toCurrency}, using 1.0`);
-      return 1.0;
-    }
-    
+    const { data, error } = await supabase.from('exchange_rates').select('rate').eq('from_currency', fromCurrency).eq('to_currency', toCurrency).eq('is_active', true).order('effective_date', { ascending: false }).limit(1).single();
+    if (error || !data) return 1.0;
     return data.rate;
   };
 
-  // Convert amount between currencies
-  const convertCurrency = async (
-    amount: number,
-    fromCurrency: SupportedCurrency,
-    toCurrency: SupportedCurrency
-  ): Promise<number> => {
+  const convertCurrency = async (amount: number, fromCurrency: SupportedCurrency, toCurrency: SupportedCurrency): Promise<number> => {
     if (fromCurrency === toCurrency) return amount;
-    
-    const rate = await getCurrentRate(fromCurrency, toCurrency);
-    return amount * rate;
+    return amount * await getCurrentRate(fromCurrency, toCurrency);
   };
 
-  // Convert amount to primary currency (EGP)
-  const convertToPrimaryCurrency = async (
-    amount: number,
-    fromCurrency: SupportedCurrency
-  ): Promise<number> => {
-    return convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
-  };
+  const convertToPrimaryCurrency = async (amount: number, fromCurrency: SupportedCurrency): Promise<number> => convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
+  const convertFromPrimaryCurrency = async (amount: number, toCurrency: SupportedCurrency): Promise<number> => convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
 
-  // Convert amount from primary currency (EGP)
-  const convertFromPrimaryCurrency = async (
-    amount: number,
-    toCurrency: SupportedCurrency
-  ): Promise<number> => {
-    return convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
-  };
-
-  // Add new exchange rate
   const addExchangeRateMutation = useMutation({
     mutationFn: async (newRate: Omit<ExchangeRate, 'id' | 'created_at'>) => {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .insert(newRate)
-        .select()
-        .single();
-      
+      const { data, error } = await supabase.from('exchange_rates').insert({ ...newRate, organization_id: orgId }).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
-      toast({
-        title: "تم إضافة سعر الصرف بنجاح",
-        description: "تم تحديث أسعار الصرف",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "خطأ في إضافة سعر الصرف",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exchange-rates'] }); toast({ title: "تم إضافة سعر الصرف بنجاح" }); },
+    onError: (error) => { toast({ title: "خطأ في إضافة سعر الصرف", description: error.message, variant: "destructive" }); }
   });
 
-  // Update exchange rate (for manual edits - keeps same effective_date)
   const updateExchangeRateMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ExchangeRate> & { id: string }) => {
-      // Remove effective_date from updates if not explicitly provided to keep original date
-      const updateData = { ...updates };
-      
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-      
+      const { data, error } = await supabase.from('exchange_rates').update(updates).eq('id', id).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exchange-rates'] }); }
   });
 
   return {
-    exchangeRates,
-    isLoading,
-    getCurrentRate,
-    convertCurrency,
-    convertToPrimaryCurrency,
-    convertFromPrimaryCurrency,
-    addExchangeRate: addExchangeRateMutation.mutate,
-    updateExchangeRate: updateExchangeRateMutation.mutate,
-    isAddingRate: addExchangeRateMutation.isPending,
-    isUpdatingRate: updateExchangeRateMutation.isPending
+    exchangeRates, isLoading, getCurrentRate, convertCurrency, convertToPrimaryCurrency, convertFromPrimaryCurrency,
+    addExchangeRate: addExchangeRateMutation.mutate, updateExchangeRate: updateExchangeRateMutation.mutate,
+    isAddingRate: addExchangeRateMutation.isPending, isUpdatingRate: updateExchangeRateMutation.isPending
   };
 };
