@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import SuperAdminBanner from "@/components/admin/SuperAdminBanner";
 import EnhancedDesktopNavigation from "./EnhancedDesktopNavigation";
 import EnhancedMobileNavigation from "./EnhancedMobileNavigation";
+import OrgSwitcher from "@/components/org/OrgSwitcher";
 
 const Navbar = () => {
   const { user, signOut, userRole, hasRole } = useOptimizedAuth();
@@ -56,9 +57,9 @@ const Navbar = () => {
 
             {/* User Menu */}
             <div className="hidden md:flex items-center space-x-2 lg:space-x-4 rtl:space-x-reverse min-w-0">
+              <OrgSwitcher />
               <div className="hidden lg:flex items-center space-x-3 rtl:space-x-reverse min-w-0">
                 <div className="text-right rtl:text-left min-w-0 max-w-[10rem]">
-                  <p className="text-sm font-medium text-foreground truncate">مرحباً</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {getRoleDisplayName(userRole)}
                   </p>
