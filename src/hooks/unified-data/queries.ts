@@ -4,14 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { UnifiedUser, UnlinkedEmployee } from './types';
 
-export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
+export const useUnifiedUsersQuery = (isOwner: boolean, organizationId: string | null) => {
   return useQuery({
-    queryKey: ['unified-users-employees-all'],
+    queryKey: ['unified-users-employees', organizationId],
     queryFn: async () => {
-      console.log('🔄 جاري جلب البيانات الموحدة...');
-      
+      if (!organizationId) return [];
+
       try {
-        // جلب الـ profiles مع employees
+        // Fetch profiles with employees
         const { data: profilesData, error: profilesError } = await (supabase
           .from('profiles')
           .select(`
@@ -25,19 +25,21 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
           throw profilesError;
         }
 
-        // جلب user_roles بشكل منفصل
-        const { data: userRolesData, error: userRolesError } = await supabase
-          .from('user_roles')
-          .select('user_id, role');
+        // Fetch organization members for role info
+        const { data: membersData, error: membersError } = await supabase
+          .from('organization_members')
+          .select('user_id, role')
+          .eq('organization_id', organizationId)
+          .eq('is_active', true);
         
-        if (userRolesError) {
-          console.error('❌ خطأ في جلب بيانات user_roles:', userRolesError);
-          throw userRolesError;
+        if (membersError) {
+          console.error('❌ خطأ في جلب بيانات organization_members:', membersError);
+          throw membersError;
         }
 
-        // دمج البيانات يدوياً
-        const unified = profilesData?.map(profile => {
-          const userRole = userRolesData?.find(ur => ur.user_id === profile.id);
+        // Merge data
+        const unified = profilesData?.map((profile: any) => {
+          const member = membersData?.find(m => m.user_id === profile.id);
           
           return {
             id: profile.id,
@@ -46,7 +48,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
             phone: profile.phone,
             department: profile.department,
             is_active: profile.is_active,
-            role: (userRole?.role || 'no_role') as string,
+            role: (member?.role || 'viewer') as string,
             created_at: profile.created_at,
             updated_at: profile.updated_at,
             employee: profile.employees ? {
@@ -68,7 +70,6 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
           };
         }) || [];
 
-        console.log('✅ تم جلب البيانات الموحدة:', unified.length);
         return unified as UnifiedUser[];
       } catch (error) {
         console.error('❌ خطأ في جلب البيانات الموحدة:', error);
@@ -76,7 +77,7 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
         throw error;
       }
     },
-    enabled: isSuperAdmin,
+    enabled: isOwner && !!organizationId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 2,
@@ -84,82 +85,42 @@ export const useUnifiedUsersQuery = (isSuperAdmin: boolean) => {
   });
 };
 
-export const useUnlinkedEmployeesQuery = (isSuperAdmin: boolean) => {
+export const useUnlinkedEmployeesQuery = (isOwner: boolean) => {
   return useQuery({
     queryKey: ['unlinked-employees-all'],
     queryFn: async () => {
-      console.log('🔄 جاري جلب الموظفين غير المرتبطين...');
-      
       try {
-        // الخطوة 1: جلب جميع الموظفين النشطين
-        console.log('📋 الخطوة 1: جلب جميع الموظفين النشطين...');
         const { data: allEmployees, error: employeesError } = await supabase
           .from('employees')
           .select('*')
           .eq('is_active', true)
           .order('full_name');
         
-        if (employeesError) {
-          console.error('❌ خطأ في جلب الموظفين:', employeesError);
-          throw employeesError;
-        }
+        if (employeesError) throw employeesError;
         
-        console.log(`📊 تم جلب ${allEmployees?.length || 0} موظف نشط`);
-        
-        // الخطوة 2: جلب IDs الموظفين المرتبطين بالمستخدمين
-        console.log('📋 الخطوة 2: جلب الموظفين المرتبطين...');
         const { data: linkedProfiles, error: profilesError } = await supabase
           .from('profiles')
           .select('employee_id')
           .not('employee_id', 'is', null);
         
-        if (profilesError) {
-          console.error('❌ خطأ في جلب الملفات الشخصية:', profilesError);
-          throw profilesError;
-        }
+        if (profilesError) throw profilesError;
         
-        // استخراج IDs الموظفين المرتبطين
         const linkedEmployeeIds = linkedProfiles?.map(p => p.employee_id).filter(Boolean) || [];
-        console.log(`🔗 تم العثور على ${linkedEmployeeIds.length} موظف مرتبط:`, linkedEmployeeIds);
         
-        // الخطوة 3: فلترة الموظفين غير المرتبطين
-        console.log('📋 الخطوة 3: فلترة الموظفين غير المرتبطين...');
         const unlinkedEmployees = allEmployees?.filter(emp => 
           !linkedEmployeeIds.includes(emp.id)
         ) || [];
         
-        console.log(`✅ تم العثور على ${unlinkedEmployees.length} موظف غير مرتبط`);
-        
-        // طباعة تفاصيل للمراجعة
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 تفاصيل الموظفين غير المرتبطين:', {
-            total_employees: allEmployees?.length || 0,
-            linked_employees: linkedEmployeeIds.length,
-            unlinked_employees: unlinkedEmployees.length,
-            unlinked_names: unlinkedEmployees.map(emp => emp.full_name)
-          });
-        }
-        
         return unlinkedEmployees as UnlinkedEmployee[];
-      } catch (error) {
-        console.error('❌ خطأ شامل في جلب الموظفين غير المرتبطين:', error);
-        
-        // معالجة أنواع مختلفة من الأخطاء
-        if (error?.message?.includes('permission')) {
-          toast.error('ليس لديك صلاحية لجلب بيانات الموظفين');
-        } else if (error?.message?.includes('network')) {
-          toast.error('خطأ في الاتصال بالشبكة، يرجى المحاولة مرة أخرى');
-        } else {
-          toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');
-        }
-        
-        // إرجاع مصفوفة فارغة بدلاً من throw لتجنب كسر التطبيق
+      } catch (error: any) {
+        console.error('❌ خطأ في جلب الموظفين غير المرتبطين:', error);
+        toast.error('حدث خطأ في جلب الموظفين غير المرتبطين');
         return [];
       }
     },
-    enabled: isSuperAdmin,
+    enabled: isOwner,
     staleTime: 5 * 60 * 1000,
-    retry: 3, // زيادة عدد المحاولات
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // تأخير متدرج
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 };

@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { usePhpAuth } from "@/hooks/usePhpAuth";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -7,9 +7,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = usePhpAuth();
+  const { isLoggedIn, loading } = useOptimizedAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isLoggedIn()) {
     return <Navigate to="/auth" replace />;
   }
 

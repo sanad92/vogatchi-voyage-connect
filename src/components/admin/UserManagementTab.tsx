@@ -54,7 +54,7 @@ const UserManagementTab = () => {
     total: users?.length || 0,
     active: users?.filter(u => u.is_active).length || 0,
     inactive: users?.filter(u => !u.is_active).length || 0,
-    noRole: users?.filter(u => !u.role || u.role === 'no_role').length || 0,
+    noRole: users?.filter(u => !u.role).length || 0,
     linked: unifiedUsers?.filter(u => u.employee).length || 0
   };
 

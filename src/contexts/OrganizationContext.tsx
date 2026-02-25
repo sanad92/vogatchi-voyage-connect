@@ -35,23 +35,23 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useOptimizedAuth();
+  const { user, setOrgRole } = useOptimizedAuth();
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [orgRole, setOrgRole] = useState<string | null>(null);
+  const [orgRole, setLocalOrgRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchOrganizations = async () => {
     if (!user?.id) {
       setCurrentOrganization(null);
       setOrganizations([]);
+      setLocalOrgRole(null);
       setOrgRole(null);
       setLoading(false);
       return;
     }
 
     try {
-      // Fetch memberships
       const { data: memberships, error: memError } = await supabase
         .from('organization_members')
         .select('organization_id, role, is_active')
@@ -61,6 +61,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
       if (memError || !memberships?.length) {
         setCurrentOrganization(null);
         setOrganizations([]);
+        setLocalOrgRole(null);
         setOrgRole(null);
         setLoading(false);
         return;
@@ -77,6 +78,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
       if (orgError || !orgs?.length) {
         setCurrentOrganization(null);
         setOrganizations([]);
+        setLocalOrgRole(null);
         setOrgRole(null);
         setLoading(false);
         return;
@@ -84,7 +86,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
       setOrganizations(orgs as Organization[]);
 
-      // Use saved org or first one
       const savedOrgId = localStorage.getItem(`current_org_${user.id}`);
       const selectedOrg = savedOrgId 
         ? orgs.find((o: Organization) => o.id === savedOrgId) || orgs[0]
@@ -95,7 +96,9 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
       const membership = memberships.find(
         (m: OrganizationMember) => m.organization_id === selectedOrg.id
       );
-      setOrgRole(membership?.role || 'viewer');
+      const role = membership?.role || 'viewer';
+      setLocalOrgRole(role);
+      setOrgRole(role); // Sync to auth context
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -108,12 +111,25 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     fetchOrganizations();
   }, [user?.id]);
 
-  const switchOrganization = (orgId: string) => {
+  const switchOrganization = async (orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
-    if (org && user?.id) {
-      setCurrentOrganization(org);
-      localStorage.setItem(`current_org_${user.id}`, orgId);
-    }
+    if (!org || !user?.id) return;
+
+    setCurrentOrganization(org);
+    localStorage.setItem(`current_org_${user.id}`, orgId);
+
+    // Fetch role for the new org
+    const { data: membership } = await supabase
+      .from('organization_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('organization_id', orgId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    const role = membership?.role || 'viewer';
+    setLocalOrgRole(role);
+    setOrgRole(role); // Sync to auth context
   };
 
   const value: OrganizationContextType = {

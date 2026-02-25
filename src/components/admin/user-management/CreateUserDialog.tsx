@@ -33,9 +33,7 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
   const createUserRequestMutation = useMutation({
     mutationFn: async (userData: NewUser) => {
       // Only allow valid database roles
-      if (userData.role === "no_role") {
-        throw new Error("يجب تحديد دور صالح للمستخدم");
-      }
+      // All roles in UserRole are valid now
 
       const { error } = await supabase
         .from('user_creation_requests')

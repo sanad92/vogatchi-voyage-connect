@@ -1,5 +1,6 @@
 
-export type UserRole = "admin" | "manager" | "sales_agent" | "accountant" | "viewer" | "super_admin" | "no_role";
+// Aligned with org_role enum: owner | admin | manager | agent | viewer
+export type UserRole = "owner" | "admin" | "manager" | "agent" | "viewer";
 
 export interface User {
   id: string;

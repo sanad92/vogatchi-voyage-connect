@@ -157,11 +157,9 @@ const CreateUserDialogEnhanced = ({ isOpen, onOpenChange, onSuccess }: CreateUse
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="super_admin">سوبر أدمن</SelectItem>
                 <SelectItem value="admin">أدمن</SelectItem>
                 <SelectItem value="manager">مدير</SelectItem>
-                <SelectItem value="sales_agent">مندوب مبيعات</SelectItem>
-                <SelectItem value="accountant">محاسب</SelectItem>
+                <SelectItem value="agent">وكيل</SelectItem>
                 <SelectItem value="viewer">مشاهد</SelectItem>
               </SelectContent>
             </Select>
