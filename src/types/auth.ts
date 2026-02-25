@@ -23,6 +23,7 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  setOrgRole: (role: string | null) => void;
   isSuperAdmin: () => boolean;
   isLoggedIn: () => boolean;
   canDelete: () => boolean;

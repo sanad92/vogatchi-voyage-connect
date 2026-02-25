@@ -2,16 +2,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 
-// جدول الصلاحيات المخصصة غير موجود في قاعدة البيانات حالياً
-// الصلاحيات تُدار عبر جدول user_roles
+// Permissions are managed via organization_members.role
+// Role hierarchy: owner > admin > manager > agent > viewer
 
 const PermissionsTab = () => {
   const rolePermissions = [
-    { role: 'super_admin', label: 'سوبر أدمن', permissions: ['جميع الصلاحيات'] },
-    { role: 'admin', label: 'أدمن', permissions: ['إدارة المستخدمين', 'إدارة الحجوزات', 'إدارة العملاء', 'إدارة الفواتير', 'عرض التقارير'] },
-    { role: 'manager', label: 'مدير', permissions: ['إدارة الحجوزات', 'إدارة العملاء', 'إدارة الفواتير', 'عرض التقارير'] },
-    { role: 'sales_agent', label: 'مندوب مبيعات', permissions: ['إنشاء حجوزات', 'عرض العملاء', 'إنشاء فواتير'] },
-    { role: 'accountant', label: 'محاسب', permissions: ['إدارة الفواتير', 'إدارة المدفوعات', 'عرض التقارير المالية'] },
+    { role: 'owner', label: 'مالك', permissions: ['جميع الصلاحيات', 'إدارة الأعضاء', 'إعدادات النظام', 'حذف المؤسسة'] },
+    { role: 'admin', label: 'أدمن', permissions: ['إدارة المستخدمين', 'إدارة الحجوزات', 'إدارة العملاء', 'إدارة الفواتير', 'عرض التقارير', 'إدارة النظام'] },
+    { role: 'manager', label: 'مدير', permissions: ['إدارة الحجوزات', 'إدارة العملاء', 'إدارة الفواتير', 'عرض التقارير', 'إدارة المصروفات'] },
+    { role: 'agent', label: 'وكيل', permissions: ['إنشاء حجوزات', 'إدارة العملاء', 'إنشاء فواتير', 'عرض التقارير'] },
     { role: 'viewer', label: 'مشاهد', permissions: ['عرض البيانات فقط'] },
   ];
 
@@ -27,7 +26,7 @@ const PermissionsTab = () => {
               </div>
               <ul className="space-y-1">
                 {role.permissions.map((perm, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
+                  <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                     {perm}
                   </li>
@@ -37,8 +36,8 @@ const PermissionsTab = () => {
           </Card>
         ))}
       </div>
-      <p className="text-sm text-gray-500 text-center">
-        يتم إدارة الأدوار والصلاحيات من خلال نظام المستخدمين
+      <p className="text-sm text-muted-foreground text-center">
+        يتم إدارة الأدوار عبر عضوية المؤسسة (organization_members)
       </p>
     </div>
   );

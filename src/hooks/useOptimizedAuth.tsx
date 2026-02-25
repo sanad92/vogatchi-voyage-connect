@@ -10,6 +10,15 @@ import { errorManager } from '@/utils/errorManager';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Role hierarchy: owner > admin > manager > agent > viewer
+const ROLE_LEVELS: Record<string, number> = {
+  owner: 5,
+  admin: 4,
+  manager: 3,
+  agent: 2,
+  viewer: 1,
+};
+
 export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -18,50 +27,31 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // دالة جلب بيانات المستخدم
+  // Fetch profile only; role comes from OrganizationContext
   const fetchUserData = async (userId: string) => {
     try {
-      const [profileResult, roleResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle(),
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle()
-      ]);
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (profileResult.data) {
-        setProfile(profileResult.data);
+      if (profileData) {
+        setProfile(profileData);
       }
-      
-      setUserRole(roleResult.data?.role || 'viewer');
-      
     } catch (error) {
       errorManager.error('Auth', 'خطأ في جلب بيانات المستخدم', error, false);
-      setUserRole('viewer');
     }
   };
 
-  // التحقق من صحة الجلسة
   const isValidSession = (session: Session | null): boolean => {
-    if (!session?.access_token || !session?.user?.id) {
-      return false;
-    }
-    
+    if (!session?.access_token || !session?.user?.id) return false;
     if (session.expires_at) {
-      const expiryTime = new Date(session.expires_at * 1000);
-      const now = new Date();
-      return expiryTime.getTime() > now.getTime();
+      return new Date(session.expires_at * 1000).getTime() > Date.now();
     }
-    
     return true;
   };
 
-  // إعداد مراقب المصادقة
   useEffect(() => {
     let mounted = true;
 
@@ -72,8 +62,6 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         if (isValidSession(session) && session) {
           setSession(session);
           setUser(session.user);
-          
-          // جلب بيانات المستخدم
           setTimeout(() => {
             if (mounted && session.user?.id) {
               fetchUserData(session.user.id);
@@ -85,27 +73,22 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           setProfile(null);
           setUserRole(null);
         }
-        
         setLoading(false);
       }
     );
 
-    // فحص الجلسة الحالية
     const checkCurrentSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (isValidSession(session) && session) {
           setSession(session);
           setUser(session.user);
-          
           setTimeout(() => {
             if (mounted && session.user?.id) {
               fetchUserData(session.user.id);
             }
           }, 100);
         }
-        
         setLoading(false);
       } catch (error) {
         errorManager.error('Auth', 'خطأ في فحص الجلسة', error, false);
@@ -124,8 +107,6 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      
-      // تنظيف البيانات السابقة
       cleanupAuthState();
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -142,7 +123,6 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       errorManager.success('تم تسجيل الدخول بنجاح');
       navigate('/dashboard');
       return { error: null };
-      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
       errorManager.error('Auth', errorMessage, error);
@@ -155,24 +135,14 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const signOut = async () => {
     try {
       setLoading(true);
-      
-      // تنظيف البيانات
       cleanupAuthState();
-      
       await supabase.auth.signOut();
-      
-      // تنظيف الحالة المحلية
       setUser(null);
       setProfile(null);
       setUserRole(null);
       setSession(null);
-      
       errorManager.success('تم تسجيل الخروج بنجاح');
-      
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 500);
-      
+      setTimeout(() => { window.location.href = '/auth'; }, 500);
     } catch (error) {
       errorManager.error('Auth', 'خطأ في تسجيل الخروج', error, false);
       window.location.href = '/auth';
@@ -181,26 +151,27 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
+  /**
+   * setOrgRole: called by OrganizationProvider to sync the current org role.
+   * This keeps userRole in sync with the selected organization.
+   */
+  const setOrgRole = (role: string | null) => {
+    setUserRole(role);
+  };
+
+  /**
+   * Role hierarchy check: owner > admin > manager > agent > viewer
+   * Returns true if the user's role is >= the required role.
+   */
   const hasRole = (role: string): boolean => {
     if (!userRole) return false;
-    if (userRole === 'super_admin') return true;
-    
-    const roleHierarchy = {
-      'admin': ['admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-      'manager': ['manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-      'sales_agent': ['sales_agent', 'viewer'],
-      'customer_service': ['customer_service', 'viewer'],
-      'booking_agent': ['booking_agent', 'viewer'],
-      'accountant': ['accountant', 'viewer'],
-      'viewer': ['viewer']
-    };
-    
-    const allowedRoles = roleHierarchy[userRole as keyof typeof roleHierarchy];
-    return allowedRoles?.includes(role) || false;
+    const userLevel = ROLE_LEVELS[userRole] ?? 0;
+    const requiredLevel = ROLE_LEVELS[role] ?? 0;
+    return userLevel >= requiredLevel;
   };
 
   const isLoggedIn = (): boolean => {
-    return !!(user && user.id && isValidSession(session) && userRole);
+    return !!(user && user.id && isValidSession(session));
   };
 
   const value = {
@@ -213,11 +184,12 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     signIn,
     signOut,
     hasRole,
-    isSuperAdmin: () => userRole === 'super_admin',
+    setOrgRole,
+    isSuperAdmin: () => userRole === 'owner',
     isLoggedIn,
-    canDelete: () => ['super_admin', 'admin', 'manager'].includes(userRole || ''),
-    canEditAll: () => ['super_admin', 'admin'].includes(userRole || ''),
-    canManageSystemSettings: () => userRole === 'super_admin'
+    canDelete: () => hasRole('manager'),
+    canEditAll: () => hasRole('admin'),
+    canManageSystemSettings: () => userRole === 'owner',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

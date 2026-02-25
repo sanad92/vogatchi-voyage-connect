@@ -36,8 +36,16 @@ interface SupabaseAuthContextType {
   canManageSystemSettings: () => boolean;
 }
 
+const ROLE_LEVELS: Record<string, number> = {
+  owner: 5, admin: 4, manager: 3, agent: 2, viewer: 1,
+};
+
 const SupabaseAuthContext = createContext<SupabaseAuthContextType | undefined>(undefined);
 
+/**
+ * @deprecated Use OptimizedAuthProvider + OrganizationProvider instead.
+ * This hook is kept for backward compatibility but will be removed.
+ */
 export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -46,274 +54,155 @@ export const SupabaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // فحص صحة الجلسة
   const isValidSession = (session: Session | null): boolean => {
-    if (!session?.access_token || !session?.user?.id) {
-      return false;
-    }
-    
+    if (!session?.access_token || !session?.user?.id) return false;
     if (session.expires_at) {
-      const expiryTime = new Date(session.expires_at * 1000);
-      const now = new Date();
-      return expiryTime.getTime() > now.getTime();
+      return new Date(session.expires_at * 1000).getTime() > Date.now();
     }
-    
     return true;
   };
 
-  // جلب بيانات المستخدم
   const fetchUserData = async (userId: string) => {
     try {
-      // استخدام id بدلاً من user_id مؤقتاً
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('id, full_name, email, phone, is_active, employee_id, department, created_at, updated_at')
         .eq('id', userId)
         .maybeSingle();
 
-      if (profileError) {
-        console.error('خطأ في جلب البروفايل:', profileError);
-        return;
-      }
-
       if (profileData) {
-        // إضافة user_id للتوافق مع Interface
-        const profileWithUserId = {
+        setProfile({
           ...profileData,
           user_id: userId,
           position: '',
           hire_date: ''
-        };
-        setProfile(profileWithUserId as Profile);
+        } as Profile);
       }
 
-      // جلب الدور
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
+      // Get role from first active org membership
+      const { data: memberData } = await supabase
+        .from('organization_members')
         .select('role')
         .eq('user_id', userId)
+        .eq('is_active', true)
+        .limit(1)
         .maybeSingle();
 
-      if (roleError) {
-        console.error('خطأ في جلب الدور:', roleError);
-        setUserRole('viewer');
-        return;
-      }
-
-      setUserRole(roleData?.role || 'viewer');
-      
+      setUserRole(memberData?.role || 'viewer');
     } catch (error) {
       console.error('خطأ في جلب بيانات المستخدم:', error);
       setUserRole('viewer');
     }
   };
 
-  // إعداد مراقب المصادقة
   useEffect(() => {
     let mounted = true;
 
-    // مراقب تغيرات المصادقة
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
-        
         setSession(session);
         setUser(session?.user ?? null);
-        
         if (isValidSession(session) && session?.user) {
-          // تأجيل جلب البيانات لتجنب المشاكل
           setTimeout(() => {
-            if (mounted && session.user?.id) {
-              fetchUserData(session.user.id);
-            }
+            if (mounted && session.user?.id) fetchUserData(session.user.id);
           }, 100);
         } else {
           setProfile(null);
           setUserRole(null);
         }
-        
-        if (event === 'SIGNED_OUT') {
-          setProfile(null);
-          setUserRole(null);
-        }
-        
+        if (event === 'SIGNED_OUT') { setProfile(null); setUserRole(null); }
         setLoading(false);
       }
     );
 
-    // فحص الجلسة الحالية
     const checkCurrentSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (isValidSession(session) && session) {
           setSession(session);
           setUser(session.user);
-          
           setTimeout(() => {
-            if (mounted && session.user?.id) {
-              fetchUserData(session.user.id);
-            }
+            if (mounted && session.user?.id) fetchUserData(session.user.id);
           }, 100);
         }
-        
         setLoading(false);
-      } catch (error) {
-        console.error('خطأ في فحص الجلسة:', error);
-        setLoading(false);
-      }
+      } catch { setLoading(false); }
     };
 
     checkCurrentSession();
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(), password,
       });
-      
-      if (error) {
-        let errorMessage = 'فشل في تسجيل الدخول';
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'يرجى تأكيد بريدك الإلكتروني أولاً';
-        }
-        throw new Error(errorMessage);
-      }
-      
+      if (error) throw new Error(error.message.includes('Invalid login credentials') 
+        ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : error.message);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/dashboard');
       return { error: null };
-      
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'فشل في تسجيل الدخول');
       return { error };
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
       setLoading(true);
-      
-      const redirectUrl = `${window.location.origin}/dashboard`;
-      
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
+        email: email.trim().toLowerCase(), password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName || '',
-          }
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: fullName || '' }
         }
       });
-      
-      if (error) {
-        let errorMessage = 'فشل في إنشاء الحساب';
-        if (error.message.includes('User already registered')) {
-          errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً';
-        } else if (error.message.includes('Password should be at least')) {
-          errorMessage = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-        }
-        throw new Error(errorMessage);
-      }
-      
+      if (error) throw new Error(error.message);
       if (data.user && !data.user.email_confirmed_at) {
-        toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني لتأكيد الحساب');
+        toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
       } else {
         toast.success('تم إنشاء الحساب بنجاح');
         navigate('/dashboard');
       }
-      
       return { error: null };
-      
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'فشل في إنشاء الحساب';
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'فشل في إنشاء الحساب');
       return { error };
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const signOut = async () => {
     try {
       setLoading(true);
-      
       await supabase.auth.signOut();
-      
-      // تنظيف الحالة المحلية
-      setUser(null);
-      setProfile(null);
-      setUserRole(null);
-      setSession(null);
-      
+      setUser(null); setProfile(null); setUserRole(null); setSession(null);
       toast.success('تم تسجيل الخروج بنجاح');
       navigate('/auth');
-      
-    } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
-      toast.error('حدث خطأ أثناء تسجيل الخروج');
-      navigate('/auth');
-    } finally {
-      setLoading(false);
-    }
+    } catch { navigate('/auth'); } finally { setLoading(false); }
   };
 
-  // التحقق من الأدوار مع التسلسل الهرمي
   const hasRole = (role: string): boolean => {
     if (!userRole) return false;
-    if (userRole === 'super_admin') return true;
-    
-    const roleHierarchy = {
-      'admin': ['admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-      'manager': ['manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-      'sales_agent': ['sales_agent', 'viewer'],
-      'customer_service': ['customer_service', 'viewer'],
-      'booking_agent': ['booking_agent', 'viewer'],
-      'accountant': ['accountant', 'viewer'],
-      'viewer': ['viewer']
-    };
-    
-    const allowedRoles = roleHierarchy[userRole as keyof typeof roleHierarchy];
-    return allowedRoles?.includes(role) || false;
+    const userLevel = ROLE_LEVELS[userRole] ?? 0;
+    const requiredLevel = ROLE_LEVELS[role] ?? 0;
+    return userLevel >= requiredLevel;
   };
 
   const value: SupabaseAuthContextType = {
-    user,
-    profile,
-    userRole,
-    session,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    hasRole,
-    isSuperAdmin: () => userRole === 'super_admin',
+    user, profile, userRole, session, loading,
+    signIn, signUp, signOut, hasRole,
+    isSuperAdmin: () => userRole === 'owner',
     isLoggedIn: () => !!user && !!profile && profile.is_active,
-    canDelete: () => ['super_admin', 'admin', 'manager'].includes(userRole || ''),
-    canEditAll: () => ['super_admin', 'admin'].includes(userRole || ''),
-    canManageSystemSettings: () => userRole === 'super_admin'
+    canDelete: () => hasRole('manager'),
+    canEditAll: () => hasRole('admin'),
+    canManageSystemSettings: () => userRole === 'owner',
   };
 
-  return (
-    <SupabaseAuthContext.Provider value={value}>
-      {children}
-    </SupabaseAuthContext.Provider>
-  );
+  return <SupabaseAuthContext.Provider value={value}>{children}</SupabaseAuthContext.Provider>;
 };
 
 export const useSupabaseAuth = () => {

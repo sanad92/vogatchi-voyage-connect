@@ -8,22 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import { useSuperAdminActions } from "@/hooks/useSuperAdminActions";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { 
-  Users, 
-  UserPlus, 
-  UserCheck, 
-  UserX, 
-  Shield, 
-  Eye, 
-  Settings,
-  Calendar,
-  Activity,
-  Lock,
-  Unlock
+  Users, UserPlus, Eye, Settings, Calendar, Activity, Lock, Unlock
 } from "lucide-react";
 
 interface UserProfile {
@@ -34,23 +24,14 @@ interface UserProfile {
   phone?: string;
   is_active: boolean;
   created_at: string;
-  last_sign_in_at?: string;
   role?: string;
-}
-
-interface UserSession {
-  user_id: string;
-  session_count: number;
-  last_activity: string;
-  total_login_time: number;
 }
 
 const AdvancedUserManagementTab = () => {
   const queryClient = useQueryClient();
   const { loginAsUser, resetUserPassword, createUser, updateUserProfile } = useSuperAdminActions();
+  const { organizationId } = useOrganization();
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [userFilter, setUserFilter] = useState({
     status: 'all',
     role: 'all',
@@ -67,144 +48,84 @@ const AdvancedUserManagementTab = () => {
     role: 'viewer'
   });
 
-  // جلب قائمة المستخدمين مع التفاصيل
+  // Fetch users with roles from organization_members
   const { data: users, isLoading: usersLoading } = useQuery({
-    queryKey: ['advanced-users', userFilter],
+    queryKey: ['advanced-users', userFilter, organizationId],
     queryFn: async () => {
-      let profilesQuery = supabase
-        .from('profiles')
-        .select('*');
+      if (!organizationId) return [];
 
-      // تطبيق الفلاتر
+      let profilesQuery = supabase.from('profiles').select('*');
       if (userFilter.status !== 'all') {
         profilesQuery = profilesQuery.eq('is_active', userFilter.status === 'active');
       }
-
       if (userFilter.department !== 'all') {
         profilesQuery = profilesQuery.eq('department', userFilter.department);
       }
-
       if (userFilter.search) {
         profilesQuery = profilesQuery.or(`full_name.ilike.%${userFilter.search}%,email.ilike.%${userFilter.search}%`);
       }
 
       const { data: profilesData, error: profilesError } = await profilesQuery.order('created_at', { ascending: false });
-      
       if (profilesError) throw profilesError;
 
-      // جلب أدوار المستخدمين بشكل منفصل
-      const userIds = profilesData.map(profile => profile.id);
-      const { data: rolesData } = await supabase
-        .from('user_roles')
+      // Get roles from organization_members
+      const userIds = profilesData.map(p => p.id);
+      const { data: membersData } = await supabase
+        .from('organization_members')
         .select('user_id, role')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
         .in('user_id', userIds);
 
-      // دمج البيانات
       const usersWithRoles = profilesData.map(profile => {
-        const userRole = rolesData?.find(role => role.user_id === profile.id);
+        const member = membersData?.find(m => m.user_id === profile.id);
         return {
           ...profile,
-          role: userRole?.role || 'no_role'
+          role: member?.role || 'no_role'
         } as UserProfile;
       });
       
       return usersWithRoles;
-    }
-  });
-
-  // جلب إحصائيات جلسات المستخدمين (محاكاة البيانات)
-  const { data: userSessions } = useQuery({
-    queryKey: ['user-sessions'],
-    queryFn: async () => {
-      // محاكاة بيانات الجلسات
-      const sessions: UserSession[] = [];
-      if (users) {
-        users.forEach(user => {
-          sessions.push({
-            user_id: user.id,
-            session_count: Math.floor(Math.random() * 5) + 1,
-            last_activity: new Date().toISOString(),
-            total_login_time: Math.floor(Math.random() * 480) + 60
-          });
-        });
-      }
-      return sessions;
     },
-    enabled: !!users
+    enabled: !!organizationId,
   });
 
-  // إنشاء مستخدم جديد
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof newUser) => {
       const result = await createUser(userData);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
+      if (!result.success) throw new Error(result.error);
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['advanced-users'] });
       setIsCreateUserOpen(false);
-      setNewUser({
-        email: '',
-        password: '',
-        full_name: '',
-        department: '',
-        phone: '',
-        role: 'viewer'
-      });
-      toast({
-        title: "تم إنشاء المستخدم",
-        description: "تم إنشاء المستخدم الجديد بنجاح",
-      });
+      setNewUser({ email: '', password: '', full_name: '', department: '', phone: '', role: 'viewer' });
+      toast({ title: "تم إنشاء المستخدم", description: "تم إنشاء المستخدم الجديد بنجاح" });
     }
   });
 
-  // تعديل حالة المستخدم
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string, isActive: boolean }) => {
       const result = await updateUserProfile(userId, { is_active: isActive });
-      if (!result.success) {
-        throw new Error(result.error);
-      }
+      if (!result.success) throw new Error(result.error);
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['advanced-users'] });
-      toast({
-        title: "تم التحديث",
-        description: "تم تحديث حالة المستخدم بنجاح",
-      });
+      toast({ title: "تم التحديث", description: "تم تحديث حالة المستخدم بنجاح" });
     }
   });
 
-  const getDepartments = () => {
-    if (!users) return [];
-    const departments = [...new Set(users.map(user => user.department).filter(Boolean))];
-    return departments;
-  };
-
-  const getRoles = () => {
-    if (!users) return [];
-    const roles = [...new Set(users.map(user => user.role).filter(Boolean))];
-    return roles;
-  };
-
-  const getStatusBadge = (isActive: boolean) => {
-    return isActive ? (
-      <Badge className="bg-green-100 text-green-800">نشط</Badge>
-    ) : (
-      <Badge className="bg-red-100 text-red-800">معطل</Badge>
-    );
-  };
-
-  const getUserSession = (userId: string) => {
-    return userSessions?.find(session => session.user_id === userId);
+  const getRoleBadge = (role: string) => {
+    const labels: Record<string, string> = {
+      owner: 'مالك', admin: 'أدمن', manager: 'مدير', agent: 'وكيل', viewer: 'مشاهد'
+    };
+    return <Badge variant="outline">{labels[role] || role}</Badge>;
   };
 
   return (
     <div className="space-y-6">
-      {/* فلاتر البحث */}
+      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,55 +136,32 @@ const AdvancedUserManagementTab = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="search">البحث</Label>
-              <Input
-                id="search"
-                placeholder="البحث بالاسم أو البريد الإلكتروني"
-                value={userFilter.search}
-                onChange={(e) => setUserFilter(prev => ({ ...prev, search: e.target.value }))}
-              />
+              <Label>البحث</Label>
+              <Input placeholder="البحث بالاسم أو البريد" value={userFilter.search}
+                onChange={(e) => setUserFilter(prev => ({ ...prev, search: e.target.value }))} />
             </div>
-            
             <div>
-              <Label htmlFor="status">الحالة</Label>
-              <Select value={userFilter.status} onValueChange={(value) => setUserFilter(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الحالة" />
-                </SelectTrigger>
+              <Label>الحالة</Label>
+              <Select value={userFilter.status} onValueChange={(v) => setUserFilter(prev => ({ ...prev, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
+                  <SelectItem value="all">الكل</SelectItem>
                   <SelectItem value="active">نشط</SelectItem>
                   <SelectItem value="inactive">معطل</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
             <div>
-              <Label htmlFor="role">الدور</Label>
-              <Select value={userFilter.role} onValueChange={(value) => setUserFilter(prev => ({ ...prev, role: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الدور" />
-                </SelectTrigger>
+              <Label>الدور</Label>
+              <Select value={userFilter.role} onValueChange={(v) => setUserFilter(prev => ({ ...prev, role: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">جميع الأدوار</SelectItem>
-                  {getRoles().map(role => (
-                    <SelectItem key={role} value={role!}>{role}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="department">القسم</Label>
-              <Select value={userFilter.department} onValueChange={(value) => setUserFilter(prev => ({ ...prev, department: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر القسم" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الأقسام</SelectItem>
-                  {getDepartments().map(dept => (
-                    <SelectItem key={dept} value={dept!}>{dept}</SelectItem>
-                  ))}
+                  <SelectItem value="all">الكل</SelectItem>
+                  <SelectItem value="owner">مالك</SelectItem>
+                  <SelectItem value="admin">أدمن</SelectItem>
+                  <SelectItem value="manager">مدير</SelectItem>
+                  <SelectItem value="agent">وكيل</SelectItem>
+                  <SelectItem value="viewer">مشاهد</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -271,9 +169,9 @@ const AdvancedUserManagementTab = () => {
         </CardContent>
       </Card>
 
-      {/* شريط الإجراءات */}
+      {/* Actions bar */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">إدارة المستخدمين المتقدمة</h2>
+        <h2 className="text-2xl font-bold">إدارة المستخدمين</h2>
         <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
@@ -282,72 +180,37 @@ const AdvancedUserManagementTab = () => {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>إنشاء مستخدم جديد</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>إنشاء مستخدم جديد</DialogTitle></DialogHeader>
             <div className="space-y-4">
+              <div><Label>البريد الإلكتروني</Label><Input type="email" value={newUser.email}
+                onChange={(e) => setNewUser(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><Label>كلمة المرور</Label><Input type="password" value={newUser.password}
+                onChange={(e) => setNewUser(p => ({ ...p, password: e.target.value }))} /></div>
+              <div><Label>الاسم الكامل</Label><Input value={newUser.full_name}
+                onChange={(e) => setNewUser(p => ({ ...p, full_name: e.target.value }))} /></div>
+              <div><Label>القسم</Label><Input value={newUser.department}
+                onChange={(e) => setNewUser(p => ({ ...p, department: e.target.value }))} /></div>
               <div>
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">كلمة المرور</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="full_name">الاسم الكامل</Label>
-                <Input
-                  id="full_name"
-                  value={newUser.full_name}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, full_name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="department">القسم</Label>
-                <Input
-                  id="department"
-                  value={newUser.department}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, department: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">الدور</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label>الدور</Label>
+                <Select value={newUser.role} onValueChange={(v) => setNewUser(p => ({ ...p, role: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">أدمن</SelectItem>
                     <SelectItem value="manager">مدير</SelectItem>
-                    <SelectItem value="sales_agent">مندوب مبيعات</SelectItem>
-                    <SelectItem value="accountant">محاسب</SelectItem>
+                    <SelectItem value="agent">وكيل</SelectItem>
                     <SelectItem value="viewer">مشاهد</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                onClick={() => createUserMutation.mutate(newUser)}
+              <Button onClick={() => createUserMutation.mutate(newUser)}
                 disabled={createUserMutation.isPending || !newUser.email || !newUser.password || !newUser.full_name}
-                className="w-full"
-              >
-                إنشاء المستخدم
-              </Button>
+                className="w-full">إنشاء المستخدم</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* قائمة المستخدمين */}
+      {/* Users list */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -360,98 +223,42 @@ const AdvancedUserManagementTab = () => {
             <div className="text-center py-8">جاري تحميل المستخدمين...</div>
           ) : users && users.length > 0 ? (
             <div className="space-y-4">
-              {users.map((user) => {
-                const session = getUserSession(user.id);
-                return (
-                  <div key={user.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <h3 className="font-medium">{user.full_name}</h3>
-                          <p className="text-sm text-gray-600">{user.email}</p>
-                        </div>
-                        {getStatusBadge(user.is_active)}
-                        {user.role && (
-                          <Badge variant="outline">{user.role}</Badge>
-                        )}
+              {users.map((user) => (
+                <div key={user.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h3 className="font-medium">{user.full_name}</h3>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => loginAsUser(user.id, 'إدارة متقدمة')}
-                        >
-                          <Eye className="h-4 w-4" />
-                          دخول كمستخدم
-                        </Button>
-                        
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleUserStatusMutation.mutate({ 
-                            userId: user.id, 
-                            isActive: !user.is_active 
-                          })}
-                          disabled={toggleUserStatusMutation.isPending}
-                        >
-                          {user.is_active ? (
-                            <>
-                              <Lock className="h-4 w-4" />
-                              تعطيل
-                            </>
-                          ) : (
-                            <>
-                              <Unlock className="h-4 w-4" />
-                              تفعيل
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      <Badge className={user.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {user.is_active ? 'نشط' : 'معطل'}
+                      </Badge>
+                      {user.role && getRoleBadge(user.role)}
                     </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">القسم:</span>
-                        <div>{user.department || '-'}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">الهاتف:</span>
-                        <div>{user.phone || '-'}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">تاريخ الانضمام:</span>
-                        <div>{new Date(user.created_at).toLocaleDateString('ar-SA')}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">آخر تسجيل دخول:</span>
-                        <div>
-                          {session ? new Date(session.last_activity).toLocaleDateString('ar-SA') : 'لم يسجل دخول'}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => loginAsUser(user.id, 'إدارة')}>
+                        <Eye className="h-4 w-4" /> دخول كمستخدم
+                      </Button>
+                      <Button size="sm" variant="outline"
+                        onClick={() => toggleUserStatusMutation.mutate({ userId: user.id, isActive: !user.is_active })}
+                        disabled={toggleUserStatusMutation.isPending}>
+                        {user.is_active ? <><Lock className="h-4 w-4" /> تعطيل</> : <><Unlock className="h-4 w-4" /> تفعيل</>}
+                      </Button>
                     </div>
-                    
-                    {session && (
-                      <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Activity className="h-3 w-3" />
-                          {session.session_count} جلسة نشطة
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          آخر نشاط: {new Date(session.last_activity).toLocaleString('ar-SA')}
-                        </span>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div><span className="text-muted-foreground">القسم:</span> {user.department || '-'}</div>
+                    <div><span className="text-muted-foreground">الهاتف:</span> {user.phone || '-'}</div>
+                    <div><span className="text-muted-foreground">تاريخ الانضمام:</span> {new Date(user.created_at).toLocaleDateString('ar-SA')}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد نتائج</h3>
-              <p className="text-gray-600">لم يتم العثور على مستخدمين مطابقين للفلاتر المحددة</p>
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">لا توجد نتائج</h3>
             </div>
           )}
         </CardContent>
