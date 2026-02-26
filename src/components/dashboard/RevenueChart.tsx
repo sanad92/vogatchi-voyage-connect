@@ -39,13 +39,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const RevenueChart = () => {
   return (
-    <Card className="col-span-full xl:col-span-2">
+    <Card className="col-span-full xl:col-span-2 shadow-md border-border/60">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </div>
           الإيرادات الشهرية
         </CardTitle>
-        <span className="text-xs text-muted-foreground">2026</span>
+        <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">2026</span>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] sm:h-[350px]">

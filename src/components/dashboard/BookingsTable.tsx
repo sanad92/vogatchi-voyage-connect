@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -99,10 +100,12 @@ const BookingsTable = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="shadow-md border-border/60">
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
           آخر الحجوزات
         </CardTitle>
         {selected.size > 0 && (
@@ -115,34 +118,34 @@ const BookingsTable = () => {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
+              <TableRow className="hover:bg-transparent bg-muted/40 border-b-2 border-border/60">
                 <TableHead className="w-10">
                   <Checkbox
                     checked={bookings.length > 0 && selected.size === bookings.length}
                     onCheckedChange={toggleAll}
                   />
                 </TableHead>
-                <TableHead className="text-right">المرجع</TableHead>
-                <TableHead className="text-right">العميل</TableHead>
-                <TableHead className="text-right hidden sm:table-cell">الفندق</TableHead>
-                <TableHead className="text-right hidden md:table-cell">تاريخ الدخول</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-left">المبلغ</TableHead>
+                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">المرجع</TableHead>
+                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">العميل</TableHead>
+                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground hidden sm:table-cell">الفندق</TableHead>
+                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground hidden md:table-cell">تاريخ الدخول</TableHead>
+                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">الحالة</TableHead>
+                <TableHead className="text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground">المبلغ</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings.map((booking) => {
+              {bookings.map((booking, idx) => {
                 const status = (booking.booking_statuses as any);
                 return (
-                  <TableRow key={booking.id} className="group">
+                  <TableRow key={booking.id} className={cn("group transition-colors", idx % 2 === 0 ? "bg-transparent" : "bg-muted/20")}>
                     <TableCell>
                       <Checkbox
                         checked={selected.has(booking.id)}
                         onCheckedChange={() => toggleSelect(booking.id)}
                       />
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-primary">
+                    <TableCell className="font-mono text-xs font-semibold text-primary">
                       {booking.internal_booking_number}
                     </TableCell>
                     <TableCell className="font-medium text-sm">
@@ -156,14 +159,17 @@ const BookingsTable = () => {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant="secondary"
-                        className="text-xs"
-                        style={status?.color ? { backgroundColor: `${status.color}20`, color: status.color, borderColor: `${status.color}40` } : {}}
+                        className="text-xs font-semibold border"
+                        style={status?.color ? {
+                          backgroundColor: `${status.color}18`,
+                          color: status.color,
+                          borderColor: `${status.color}50`,
+                        } : {}}
                       >
                         {status?.name_ar || 'غير محدد'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-left font-semibold text-sm tabular-nums">
+                    <TableCell className="text-left font-bold text-sm tabular-nums">
                       {booking.total_cost_customer?.toLocaleString() || '0'} ج.م
                     </TableCell>
                     <TableCell>
