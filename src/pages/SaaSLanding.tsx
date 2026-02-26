@@ -127,7 +127,7 @@ const SaaSLanding = () => {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing Preview */}
       <section id="pricing" className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -173,6 +173,13 @@ const SaaSLanding = () => {
                 </Link>
               </div>
             ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link to="/pricing">
+              <Button variant="link" className="text-primary text-base">
+                عرض المقارنة التفصيلية للخطط ←
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import SaaSLanding from "@/pages/SaaSLanding";
+import PricingPage from "@/pages/PricingPage";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
@@ -92,6 +93,7 @@ function App() {
               <Routes>
                 {/* صفحة الهبوط التسويقية */}
                 <Route path="/" element={<SaaSLanding />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/register-organization" element={
                   <SupabaseProtectedRoute>
