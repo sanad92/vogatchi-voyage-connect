@@ -6,6 +6,9 @@ export interface SubscriptionStatus {
   active: boolean;
   expired: boolean;
   expires_at: string | null;
+  status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'none';
+  is_trialing: boolean;
+  trial_days_remaining: number | null;
   plan_name: string;
   plan_name_ar: string;
   limits: {
@@ -42,6 +45,8 @@ export const useSubscriptionEnforcement = () => {
   const canAddBooking = data?.can_add_booking ?? false;
   const isExpired = data?.expired ?? false;
   const isActive = data?.active ?? false;
+  const isTrialing = data?.is_trialing ?? false;
+  const trialDaysRemaining = data?.trial_days_remaining ?? null;
 
   const getUserLimitMessage = (): string | null => {
     if (!data) return null;
@@ -64,6 +69,8 @@ export const useSubscriptionEnforcement = () => {
     loading: isLoading,
     isActive,
     isExpired,
+    isTrialing,
+    trialDaysRemaining,
     canAddUser,
     canAddBooking,
     getUserLimitMessage,

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useDemoData } from '@/hooks/useDemoData';
+
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const { generateDemoData } = useDemoData();
+  
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -67,8 +67,7 @@ const RegisterOrganization = () => {
 
       if (memberError) throw memberError;
 
-      // Generate demo data in background
-      generateDemoData(org.id);
+      // Trial subscription is auto-assigned via database trigger
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
       

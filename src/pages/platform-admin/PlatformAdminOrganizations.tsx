@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Ban, CheckCircle } from 'lucide-react';
+import { Ban, CheckCircle, CalendarPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface OrgRow {
   id: string;
@@ -22,6 +23,8 @@ interface OrgRow {
   booking_count: number;
   subscription_plan_id: string | null;
   subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_expires_at: string | null;
 }
 
 const PlatformAdminOrganizations = () => {
@@ -46,7 +49,7 @@ const PlatformAdminOrganizations = () => {
       const { data: members } = await supabase.from('organization_members').select('organization_id');
       
       // Fetch subscriptions
-      const { data: subs } = await supabase.from('subscriptions').select('id, organization_id, plan_id, status');
+      const { data: subs } = await supabase.from('subscriptions').select('id, organization_id, plan_id, status, expires_at');
 
       // Fetch booking counts (hotel as proxy)
       const { data: bookings } = await supabase.from('hotel_bookings').select('organization_id');
@@ -54,13 +57,15 @@ const PlatformAdminOrganizations = () => {
       return orgsData.map((org): OrgRow => {
         const memberCount = members?.filter(m => m.organization_id === org.id).length ?? 0;
         const bookingCount = bookings?.filter(b => b.organization_id === org.id).length ?? 0;
-        const activeSub = subs?.find(s => s.organization_id === org.id && s.status === 'active');
+        const activeSub = subs?.find(s => s.organization_id === org.id && (s.status === 'active' || s.status === 'trialing'));
         return {
           ...org,
           member_count: memberCount,
           booking_count: bookingCount,
           subscription_plan_id: activeSub?.plan_id ?? null,
           subscription_id: activeSub?.id ?? null,
+          subscription_status: activeSub?.status ?? null,
+          subscription_expires_at: activeSub?.expires_at ?? null,
         };
       });
     },
@@ -100,6 +105,22 @@ const PlatformAdminOrganizations = () => {
     onError: () => toast.error('فشل في تغيير الخطة'),
   });
 
+  const extendTrial = useMutation({
+    mutationFn: async ({ orgId, days }: { orgId: string; days: number }) => {
+      const { data, error } = await supabase.rpc('extend_trial', {
+        _org_id: orgId,
+        _extra_days: days,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
+      toast.success('تم تمديد الفترة التجريبية بنجاح');
+    },
+    onError: () => toast.error('فشل في تمديد الفترة التجريبية'),
+  });
+
   return (
     <PlatformAdminLayout>
       <div className="space-y-6">
@@ -115,14 +136,15 @@ const PlatformAdminOrganizations = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">المؤسسة</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">الخطة</TableHead>
-                      <TableHead className="text-right">المستخدمون</TableHead>
-                      <TableHead className="text-right">الحجوزات</TableHead>
-                      <TableHead className="text-right">تاريخ التسجيل</TableHead>
-                      <TableHead className="text-right">إجراءات</TableHead>
+                     <TableRow>
+                       <TableHead className="text-right">المؤسسة</TableHead>
+                       <TableHead className="text-right">الحالة</TableHead>
+                       <TableHead className="text-right">الاشتراك</TableHead>
+                       <TableHead className="text-right">الخطة</TableHead>
+                       <TableHead className="text-right">المستخدمون</TableHead>
+                       <TableHead className="text-right">الحجوزات</TableHead>
+                       <TableHead className="text-right">تاريخ التسجيل</TableHead>
+                       <TableHead className="text-right">إجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -138,6 +160,24 @@ const PlatformAdminOrganizations = () => {
                           <Badge variant={org.is_active ? 'default' : 'destructive'}>
                             {org.is_active ? 'نشطة' : 'معلّقة'}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <Badge variant={
+                              org.subscription_status === 'trialing' ? 'secondary' :
+                              org.subscription_status === 'active' ? 'default' : 'destructive'
+                            }>
+                              {org.subscription_status === 'trialing' ? 'تجريبي' :
+                               org.subscription_status === 'active' ? 'نشط' :
+                               org.subscription_status === 'expired' ? 'منتهٍ' : 
+                               org.subscription_status === 'cancelled' ? 'ملغي' : 'بدون'}
+                            </Badge>
+                            {org.subscription_expires_at && (
+                              <p className="text-xs text-muted-foreground">
+                                حتى {new Date(org.subscription_expires_at).toLocaleDateString('ar-EG')}
+                              </p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Select
@@ -164,17 +204,29 @@ const PlatformAdminOrganizations = () => {
                           {new Date(org.created_at).toLocaleDateString('ar-EG')}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant={org.is_active ? 'destructive' : 'default'}
-                            onClick={() => toggleStatus.mutate({ id: org.id, is_active: !org.is_active })}
-                          >
-                            {org.is_active ? (
-                              <><Ban className="h-3 w-3 ml-1" /> تعليق</>
-                            ) : (
-                              <><CheckCircle className="h-3 w-3 ml-1" /> تفعيل</>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={org.is_active ? 'destructive' : 'default'}
+                              onClick={() => toggleStatus.mutate({ id: org.id, is_active: !org.is_active })}
+                            >
+                              {org.is_active ? (
+                                <><Ban className="h-3 w-3 ml-1" /> تعليق</>
+                              ) : (
+                                <><CheckCircle className="h-3 w-3 ml-1" /> تفعيل</>
+                              )}
+                            </Button>
+                            {(org.subscription_status === 'trialing' || org.subscription_status === 'expired') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => extendTrial.mutate({ orgId: org.id, days: 14 })}
+                                title="تمديد 14 يوم"
+                              >
+                                <CalendarPlus className="h-3 w-3 ml-1" /> تمديد
+                              </Button>
                             )}
-                          </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
