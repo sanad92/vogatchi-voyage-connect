@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +37,12 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
+
+    // Rate limit: 30 WhatsApp messages per minute per user
+    const rl = rateLimit(`whatsapp:${userId}`, 30, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
