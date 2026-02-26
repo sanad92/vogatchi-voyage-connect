@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
+    const rl = rateLimit(`stripe:${userId}`, 10, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
     const { amount, currency = 'egp', bookingId, invoiceId, description } = await req.json();
 

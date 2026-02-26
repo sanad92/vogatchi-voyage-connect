@@ -12,6 +12,7 @@ import PricingPage from "@/pages/PricingPage";
 import PaymentPage from "@/pages/PaymentPage";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import MonitoringDashboard from "@/pages/MonitoringDashboard";
+import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
@@ -153,10 +154,10 @@ function App() {
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
                               <Route path="/expense-management" element={<ExpenseManagementEnhanced />} />
                               <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
-                              <Route path="/admin-settings" element={<AdminSettings />} />
-                              <Route path="/landing-admin" element={<AdminSettings />} />
-                              <Route path="/admin-import-export" element={<AdminImportExport />} />
-                              <Route path="/site-customization" element={<SiteCustomization />} />
+                              <Route path="/admin-settings" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />
+                              <Route path="/landing-admin" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />
+                              <Route path="/admin-import-export" element={<AdminRouteGuard><AdminImportExport /></AdminRouteGuard>} />
+                              <Route path="/site-customization" element={<AdminRouteGuard><SiteCustomization /></AdminRouteGuard>} />
                               <Route path="/payment-orders" element={<PaymentOrders />} />
                               <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<BankAccounts />} />
@@ -166,12 +167,12 @@ function App() {
                               <Route path="/crm-dashboard" element={<CRMDashboard />} />
                               <Route path="/customer-portal" element={<CustomerPortalPage />} />
                               <Route path="/bookings-calendar" element={<BookingsCalendar />} />
-                              <Route path="/database-manager" element={<DatabaseManager />} />
+                              <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/whatsapp" element={<WhatsApp />} />
-                              <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
-                              <Route path="/admin/cms" element={<CMSPages />} />
-                              <Route path="/admin/cms/pages/:id/blocks" element={<PageBlocks />} />
-                              <Route path="/monitoring" element={<MonitoringDashboard />} />
+                              <Route path="/whatsapp-admin" element={<AdminRouteGuard><WhatsAppAdmin /></AdminRouteGuard>} />
+                              <Route path="/admin/cms" element={<AdminRouteGuard><CMSPages /></AdminRouteGuard>} />
+                              <Route path="/admin/cms/pages/:id/blocks" element={<AdminRouteGuard><PageBlocks /></AdminRouteGuard>} />
+                              <Route path="/monitoring" element={<AdminRouteGuard><MonitoringDashboard /></AdminRouteGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </SubscriptionRedirectGuard>

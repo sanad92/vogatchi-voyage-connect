@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,20 +13,31 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
-    // Verify user from token
-    const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!)
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace('Bearer ', ''))
-    if (authError || !user) {
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token)
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
+
+    const userId = claimsData.claims.sub as string
+
+    // Rate limit: 3 requests per minute per user
+    const rl = rateLimit(`demo-data:${userId}`, 3, 60_000)
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders)
+
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
     const { organization_id } = await req.json()
     if (!organization_id) {
@@ -37,7 +49,7 @@ Deno.serve(async (req) => {
       .from('organization_members')
       .select('id')
       .eq('organization_id', organization_id)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .single()
 

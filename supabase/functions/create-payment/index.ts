@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -154,6 +155,11 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const userId = claimsData.claims.sub as string;
+
+    // Rate limit: 10 payment requests per minute per user
+    const rl = rateLimit(`payment:${userId}`, 10, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
     // Parse request body
     const body: PaymentRequest = await req.json();
