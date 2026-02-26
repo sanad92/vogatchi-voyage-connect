@@ -3060,6 +3060,80 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount_cents: number
+          billing_email: string | null
+          billing_name: string | null
+          billing_phone: string | null
+          card_brand: string | null
+          card_last_four: string | null
+          created_at: string
+          currency: string | null
+          error_message: string | null
+          hmac_valid: boolean | null
+          id: string
+          organization_id: string | null
+          payment_method: string | null
+          paymob_order_id: string | null
+          paymob_transaction_id: string | null
+          processed_at: string | null
+          raw_payload: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          billing_email?: string | null
+          billing_name?: string | null
+          billing_phone?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          hmac_valid?: boolean | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          paymob_order_id?: string | null
+          paymob_transaction_id?: string | null
+          processed_at?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          billing_email?: string | null
+          billing_name?: string | null
+          billing_phone?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          hmac_valid?: boolean | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          paymob_order_id?: string | null
+          paymob_transaction_id?: string | null
+          processed_at?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_roles: {
         Row: {
           assigned_by: string | null
