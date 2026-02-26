@@ -5,29 +5,37 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 export const usePlatformAdmin = () => {
   const { user, loading: authLoading } = useOptimizedAuth();
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [platformRole, setPlatformRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user?.id) {
       setIsPlatformAdmin(false);
+      setPlatformRole(null);
       setLoading(false);
       return;
     }
 
     const check = async () => {
       const { data } = await supabase
-        .from('profiles')
-        .select('is_platform_admin')
-        .eq('id', user.id)
+        .from('platform_roles')
+        .select('role')
+        .eq('user_id', user.id)
         .maybeSingle();
 
-      setIsPlatformAdmin(data?.is_platform_admin === true);
+      setIsPlatformAdmin(!!data);
+      setPlatformRole(data?.role ?? null);
       setLoading(false);
     };
 
     check();
   }, [user?.id, authLoading]);
 
-  return { isPlatformAdmin, loading: loading || authLoading };
+  return {
+    isPlatformAdmin,
+    platformRole,
+    isPlatformOwner: platformRole === 'platform_owner',
+    loading: loading || authLoading,
+  };
 };
