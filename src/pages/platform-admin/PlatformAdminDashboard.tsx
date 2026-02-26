@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, CreditCard } from 'lucide-react';
+import { Building2, Users, CreditCard, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import PlatformAdminLayout from '@/components/platform-admin/PlatformAdminLayout';
 
 const PlatformAdminDashboard = () => {
   const { data: stats } = useQuery({
@@ -23,31 +22,33 @@ const PlatformAdminDashboard = () => {
   });
 
   const cards = [
-    { label: 'إجمالي المؤسسات', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'text-primary' },
-    { label: 'مؤسسات نشطة', value: stats?.activeOrgs ?? 0, icon: Building2, color: 'text-green-500' },
-    { label: 'إجمالي المستخدمين', value: stats?.totalUsers ?? 0, icon: Users, color: 'text-blue-500' },
-    { label: 'اشتراكات نشطة', value: stats?.activeSubs ?? 0, icon: CreditCard, color: 'text-amber-500' },
+    { label: 'إجمالي المؤسسات', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'bg-primary text-primary-foreground' },
+    { label: 'مؤسسات نشطة', value: stats?.activeOrgs ?? 0, icon: Building2, color: 'bg-success text-success-foreground' },
+    { label: 'إجمالي المستخدمين', value: stats?.totalUsers ?? 0, icon: Users, color: 'bg-info text-info-foreground' },
+    { label: 'اشتراكات نشطة', value: stats?.activeSubs ?? 0, icon: CreditCard, color: 'bg-warning text-warning-foreground' },
   ];
 
   return (
-    <PlatformAdminLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-foreground">نظرة عامة</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {cards.map((c) => (
-            <Card key={c.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
-                <c.icon className={`h-5 w-5 ${c.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{c.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <div className="p-4 lg:p-6 space-y-6" dir="rtl">
+      <h2 className="text-2xl font-bold text-foreground">نظرة عامة على المنصة</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {cards.map((c) => (
+          <Card key={c.label} className="overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">{c.label}</p>
+                  <p className="text-3xl font-bold text-foreground">{c.value}</p>
+                </div>
+                <div className={`p-3 rounded-xl ${c.color}`}>
+                  <c.icon className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    </PlatformAdminLayout>
+    </div>
   );
 };
 
