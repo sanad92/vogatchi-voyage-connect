@@ -50,7 +50,7 @@ import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
-import Navbar from "@/components/navbar/Navbar";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import CMSPages from "@/pages/admin/CMSPages";
@@ -132,10 +132,8 @@ function App() {
                   <SupabaseProtectedRoute>
                     <SubscriptionProvider>
                     <OnboardingGuard>
-                    <div className="min-h-screen w-full">
-                      <Navbar />
-                      <SubscriptionBanner />
-                      <main className="w-full">
+                    <DashboardLayout>
+                        <SubscriptionBanner />
                         <OptimizedErrorBoundary>
                           <SubscriptionRedirectGuard>
                           <Routes>
@@ -183,8 +181,7 @@ function App() {
                             </Routes>
                           </SubscriptionRedirectGuard>
                         </OptimizedErrorBoundary>
-                      </main>
-                    </div>
+                    </DashboardLayout>
                     </OnboardingGuard>
                     </SubscriptionProvider>
                   </SupabaseProtectedRoute>
