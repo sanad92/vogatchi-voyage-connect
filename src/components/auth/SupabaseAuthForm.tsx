@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -18,7 +18,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, signUp, loading } = useSupabaseAuth();
+  const { signIn, signUp, loading } = useOptimizedAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

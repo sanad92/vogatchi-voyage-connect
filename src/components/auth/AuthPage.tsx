@@ -1,10 +1,10 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import SupabaseAuthForm from '@/components/auth/SupabaseAuthForm';
 
 const AuthPage = () => {
-  const { user, loading, isLoggedIn } = useSupabaseAuth();
+  const { user, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';

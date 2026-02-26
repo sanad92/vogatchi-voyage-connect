@@ -1,22 +1,16 @@
-
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { AuthContextType, Profile } from '@/types/auth';
 import { useNavigate } from 'react-router-dom';
 import { cleanupAuthState } from '@/utils/authCleanup';
 import { errorManager } from '@/utils/errorManager';
+import { toast } from 'sonner';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Role hierarchy: owner > admin > manager > agent > viewer
 const ROLE_LEVELS: Record<string, number> = {
-  owner: 5,
-  admin: 4,
-  manager: 3,
-  agent: 2,
-  viewer: 1,
+  owner: 5, admin: 4, manager: 3, agent: 2, viewer: 1,
 };
 
 export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -26,9 +20,20 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const mountedRef = useRef(true);
+  const fetchingRef = useRef(false);
 
-  // Fetch profile only; role comes from OrganizationContext
-  const fetchUserData = async (userId: string) => {
+  const isValidSession = useCallback((s: Session | null): boolean => {
+    if (!s?.access_token || !s?.user?.id) return false;
+    if (s.expires_at) {
+      return s.expires_at * 1000 > Date.now();
+    }
+    return true;
+  }, []);
+
+  const fetchUserData = useCallback(async (userId: string) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -36,96 +41,128 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         .eq('id', userId)
         .maybeSingle();
 
-      if (profileData) {
+      if (mountedRef.current && profileData) {
         setProfile(profileData);
       }
     } catch (error) {
       errorManager.error('Auth', 'خطأ في جلب بيانات المستخدم', error, false);
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, []);
 
-  const isValidSession = (session: Session | null): boolean => {
-    if (!session?.access_token || !session?.user?.id) return false;
-    if (session.expires_at) {
-      return new Date(session.expires_at * 1000).getTime() > Date.now();
-    }
-    return true;
-  };
+  const clearState = useCallback(() => {
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setUserRole(null);
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
+    let initialised = false;
 
+    // 1. Set up listener FIRST (per Supabase docs)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        if (isValidSession(session) && session) {
-          setSession(session);
-          setUser(session.user);
-          setTimeout(() => {
-            if (mounted && session.user?.id) {
-              fetchUserData(session.user.id);
-            }
-          }, 100);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setUserRole(null);
+      async (event, currentSession) => {
+        if (!mountedRef.current) return;
+
+        if (event === 'SIGNED_OUT') {
+          clearState();
+          setLoading(false);
+          return;
         }
-        setLoading(false);
+
+        if (isValidSession(currentSession) && currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          // Defer data fetch to avoid Supabase deadlock in callback
+          fetchUserData(currentSession.user.id);
+        } else if (!currentSession) {
+          clearState();
+        }
+
+        // Only stop loading from listener after initial session check
+        if (initialised) {
+          setLoading(false);
+        }
       }
     );
 
-    const checkCurrentSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (isValidSession(session) && session) {
-          setSession(session);
-          setUser(session.user);
-          setTimeout(() => {
-            if (mounted && session.user?.id) {
-              fetchUserData(session.user.id);
-            }
-          }, 100);
-        }
-        setLoading(false);
-      } catch (error) {
-        errorManager.error('Auth', 'خطأ في فحص الجلسة', error, false);
-        setLoading(false);
-      }
-    };
+    // 2. Then get current session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mountedRef.current) return;
+      initialised = true;
 
-    checkCurrentSession();
+      if (isValidSession(currentSession) && currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
+        fetchUserData(currentSession.user.id);
+      }
+      setLoading(false);
+    }).catch(() => {
+      if (mountedRef.current) setLoading(false);
+    });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isValidSession, fetchUserData, clearState]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       cleanupAuthState();
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
-      
+
       if (error) {
-        throw new Error(error.message.includes('Invalid login credentials') 
-          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
-          : error.message);
+        throw new Error(
+          error.message.includes('Invalid login credentials')
+            ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+            : error.message
+        );
       }
-      
-      errorManager.success('تم تسجيل الدخول بنجاح');
+
+      toast.success('تم تسجيل الدخول بنجاح');
       navigate('/dashboard');
       return { error: null };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
-      errorManager.error('Auth', errorMessage, error);
+      const msg = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
+      toast.error(msg);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: fullName || '' },
+        },
+      });
+      if (error) throw new Error(error.message);
+
+      if (data.user && !data.user.email_confirmed_at) {
+        toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
+      } else {
+        toast.success('تم إنشاء الحساب بنجاح');
+        navigate('/dashboard');
+      }
+      return { error: null };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'فشل في إنشاء الحساب';
+      toast.error(msg);
       return { error };
     } finally {
       setLoading(false);
@@ -137,44 +174,31 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       setLoading(true);
       cleanupAuthState();
       await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      setUserRole(null);
-      setSession(null);
-      errorManager.success('تم تسجيل الخروج بنجاح');
-      setTimeout(() => { window.location.href = '/auth'; }, 500);
-    } catch (error) {
-      errorManager.error('Auth', 'خطأ في تسجيل الخروج', error, false);
-      window.location.href = '/auth';
+      clearState();
+      toast.success('تم تسجيل الخروج بنجاح');
+      navigate('/auth');
+    } catch {
+      clearState();
+      navigate('/auth');
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * setOrgRole: called by OrganizationProvider to sync the current org role.
-   * This keeps userRole in sync with the selected organization.
-   */
-  const setOrgRole = (role: string | null) => {
+  const setOrgRole = useCallback((role: string | null) => {
     setUserRole(role);
-  };
+  }, []);
 
-  /**
-   * Role hierarchy check: owner > admin > manager > agent > viewer
-   * Returns true if the user's role is >= the required role.
-   */
-  const hasRole = (role: string): boolean => {
+  const hasRole = useCallback((role: string): boolean => {
     if (!userRole) return false;
-    const userLevel = ROLE_LEVELS[userRole] ?? 0;
-    const requiredLevel = ROLE_LEVELS[role] ?? 0;
-    return userLevel >= requiredLevel;
-  };
+    return (ROLE_LEVELS[userRole] ?? 0) >= (ROLE_LEVELS[role] ?? 0);
+  }, [userRole]);
 
-  const isLoggedIn = (): boolean => {
-    return !!(user && user.id && isValidSession(session));
-  };
+  const isLoggedIn = useCallback((): boolean => {
+    return !!(user?.id && isValidSession(session));
+  }, [user, session, isValidSession]);
 
-  const value = {
+  const value: AuthContextType = {
     user,
     profile,
     userRole,
@@ -182,6 +206,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     loading,
     isLoading: loading,
     signIn,
+    signUp,
     signOut,
     hasRole,
     setOrgRole,
@@ -202,3 +227,8 @@ export const useOptimizedAuth = () => {
   }
   return context;
 };
+
+/**
+ * @deprecated Use useOptimizedAuth instead. This alias exists for backward compatibility.
+ */
+export const useSupabaseAuth = useOptimizedAuth;

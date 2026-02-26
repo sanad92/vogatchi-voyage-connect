@@ -42,7 +42,6 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
-import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
@@ -85,8 +84,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <SupabaseAuthProvider>
-          <OptimizedAuthProvider>
+        <OptimizedAuthProvider>
           <OrganizationProvider>
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
@@ -182,7 +180,6 @@ function App() {
           </OptimizedErrorBoundary>
           </OrganizationProvider>
           </OptimizedAuthProvider>
-        </SupabaseAuthProvider>
       </Router>
     </QueryClientProvider>
   );
