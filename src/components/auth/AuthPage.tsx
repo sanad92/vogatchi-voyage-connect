@@ -24,6 +24,7 @@ const AuthPage = () => {
     if (!hasOrganization) {
       return <Navigate to="/register-organization" replace />;
     }
+    // Let OnboardingGuard handle onboarding redirect
     return <Navigate to="/dashboard" replace />;
   }
 

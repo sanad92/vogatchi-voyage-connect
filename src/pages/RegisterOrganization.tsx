@@ -71,6 +71,11 @@ const RegisterOrganization = () => {
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
       
+      // Trigger welcome email (non-blocking)
+      supabase.functions.invoke('send-welcome-email', {
+        body: { organizationName: form.name.trim() },
+      }).catch(() => {/* non-critical */});
+      
       // Redirect to onboarding wizard
       setTimeout(() => {
         window.location.href = '/onboarding';

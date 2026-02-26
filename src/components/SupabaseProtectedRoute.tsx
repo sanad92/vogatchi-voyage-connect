@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Navigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SupabaseProtectedRouteProps {
   children: React.ReactNode;
@@ -8,8 +10,17 @@ interface SupabaseProtectedRouteProps {
 }
 
 const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRouteProps) => {
-  const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useOptimizedAuth();
+  const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn, session } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
+
+  // Proactively refresh session if it's about to expire (within 5 min)
+  useEffect(() => {
+    if (!session?.expires_at) return;
+    const expiresInMs = session.expires_at * 1000 - Date.now();
+    if (expiresInMs > 0 && expiresInMs < 5 * 60 * 1000) {
+      supabase.auth.refreshSession().catch(() => {});
+    }
+  }, [session?.expires_at]);
 
   if (loading || orgLoading) {
     return (
