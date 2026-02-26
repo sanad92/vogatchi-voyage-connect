@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useSubscriptionEnforcement } from '@/hooks/useSubscriptionEnforcement';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { AlertTriangle, CreditCard, Lock, Clock } from 'lucide-react';
@@ -58,9 +59,11 @@ const SubscriptionExpiredPage = () => {
                 : 'تواصل مع مدير المنصة لتجديد اشتراكك أو ترقية خطتك.'}
             </p>
             <div className="flex gap-2 justify-center">
-              <Button variant="default">
-                ترقية الخطة
-              </Button>
+              <Link to="/pricing">
+                <Button variant="default">
+                  ترقية الخطة
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
                 عرض البيانات (قراءة فقط)
               </Button>
