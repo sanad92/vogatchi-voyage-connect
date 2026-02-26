@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,11 @@ const CustomerDetails = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 p-6 space-y-6">
-      {/* Header */}
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'إدارة العملاء', href: '/customers' },
+        { label: customerData.name }
+      ]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button 
