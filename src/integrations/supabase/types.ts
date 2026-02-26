@@ -4408,6 +4408,10 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      extend_trial: {
+        Args: { _extra_days?: number; _org_id: string }
+        Returns: Json
+      }
       generate_invoice_number: { Args: never; Returns: string }
       get_duplicate_customers: {
         Args: never

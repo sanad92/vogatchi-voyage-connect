@@ -6,6 +6,8 @@ interface SubscriptionContextType {
   isReadOnly: boolean;
   isExpired: boolean;
   isActive: boolean;
+  isTrialing: boolean;
+  trialDaysRemaining: number | null;
   subscription: SubscriptionStatus | null;
   loading: boolean;
   canWrite: boolean;
@@ -24,10 +26,13 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const isExpired = !isPlatformAdmin && enforcement.isExpired;
   const isReadOnly = !isPlatformAdmin && (enforcement.isExpired || !enforcement.isActive);
   const canWrite = isPlatformAdmin || enforcement.isActive;
+  const isTrialing = !isPlatformAdmin && enforcement.isTrialing;
+  const trialDaysRemaining = enforcement.trialDaysRemaining;
 
   const getBlockMessage = (): string | null => {
     if (isPlatformAdmin) return null;
     if (!enforcement.subscription) return 'لا يوجد اشتراك نشط.';
+    if (enforcement.isExpired && enforcement.isTrialing) return 'انتهت الفترة التجريبية. يرجى ترقية خطتك للاستمرار.';
     if (enforcement.isExpired) return 'الاشتراك منتهٍ. النظام في وضع القراءة فقط.';
     if (!enforcement.isActive) return 'الاشتراك غير نشط.';
     return null;
@@ -39,6 +44,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         isReadOnly,
         isExpired,
         isActive: canWrite,
+        isTrialing,
+        trialDaysRemaining,
         subscription: enforcement.subscription ?? null,
         loading: enforcement.loading,
         canWrite,
