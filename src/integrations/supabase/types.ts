@@ -3060,6 +3060,30 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_roles: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["platform_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["platform_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["platform_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -3070,7 +3094,6 @@ export type Database = {
           hire_date: string | null
           id: string
           is_active: boolean
-          is_platform_admin: boolean
           linked_employee_id: string | null
           phone: string | null
           position: string | null
@@ -3085,7 +3108,6 @@ export type Database = {
           hire_date?: string | null
           id: string
           is_active?: boolean
-          is_platform_admin?: boolean
           linked_employee_id?: string | null
           phone?: string | null
           position?: string | null
@@ -3100,7 +3122,6 @@ export type Database = {
           hire_date?: string | null
           id?: string
           is_active?: boolean
-          is_platform_admin?: boolean
           linked_employee_id?: string | null
           phone?: string | null
           position?: string | null
@@ -4434,7 +4455,15 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      has_platform_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["platform_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
@@ -4461,6 +4490,7 @@ export type Database = {
     }
     Enums: {
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
+      platform_role: "platform_admin" | "platform_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4589,6 +4619,7 @@ export const Constants = {
   public: {
     Enums: {
       org_role: ["owner", "admin", "manager", "agent", "viewer"],
+      platform_role: ["platform_admin", "platform_owner"],
     },
   },
 } as const
