@@ -34,7 +34,7 @@ const Navbar = () => {
         <div className="w-full max-w-none px-3 sm:px-4 lg:px-6">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse group min-w-0 flex-shrink-0">
+            <Link to="/dashboard" className="flex items-center space-x-2 rtl:space-x-reverse group min-w-0 flex-shrink-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
                 <span className="text-white font-bold text-sm sm:text-lg">V</span>
               </div>

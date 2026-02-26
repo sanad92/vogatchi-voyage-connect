@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useSubscriptionEnforcement } from '@/hooks/useSubscriptionEnforcement';
 import { AlertTriangle, XCircle, Clock, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,11 +40,11 @@ const SubscriptionBanner = () => {
               متبقي <strong className="text-foreground">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'يوم' : 'أيام'}</strong> من الفترة التجريبية
               {' '}— خطة <strong>{subscription.plan_name_ar}</strong>
             </p>
-            <a href="/pricing">
+            <Link to="/pricing">
               <Button size="sm" variant={urgency === 'destructive' ? 'destructive' : 'default'}>
                 ترقية الآن
               </Button>
-            </a>
+            </Link>
           </div>
           <Progress value={trialPercent} className="h-2" />
           <p className="text-xs text-muted-foreground">
@@ -63,11 +64,11 @@ const SubscriptionBanner = () => {
         <AlertTitle>الاشتراك منتهٍ</AlertTitle>
         <AlertDescription className="flex items-center justify-between">
           <span>انتهت صلاحية اشتراكك. لا يمكن إجراء عمليات جديدة حتى يتم تجديد الاشتراك.</span>
-          <a href="/pricing">
+          <Link to="/pricing">
             <Button size="sm" variant="outline" className="mr-2">
               ترقية الآن
             </Button>
-          </a>
+          </Link>
         </AlertDescription>
       </Alert>
     );
