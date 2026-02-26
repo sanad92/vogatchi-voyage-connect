@@ -6,12 +6,17 @@ import BankAccountManagement from '@/components/currency/BankAccountManagement';
 import BankTransactionManager from '@/components/currency/BankTransactionManager';
 import ExchangeRateManager from '@/components/currency/ExchangeRateManager';
 import CurrencyConverter from '@/components/currency/CurrencyConverter';
+import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 
 const BankAccounts = () => {
   const [activeTab, setActiveTab] = useState('accounts');
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'الحسابات البنكية' }
+      ]} />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">إدارة الحسابات البنكية والعملات</h1>
       </div>
