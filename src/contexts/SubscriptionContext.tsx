@@ -20,7 +20,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const enforcement = useSubscriptionEnforcement();
-  const { isPlatformAdmin } = usePlatformAdmin();
+  const { isPlatformAdmin, loading: adminLoading } = usePlatformAdmin();
 
   // Platform admins bypass all restrictions
   const isExpired = !isPlatformAdmin && enforcement.isExpired;
@@ -47,7 +47,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         isTrialing,
         trialDaysRemaining,
         subscription: enforcement.subscription ?? null,
-        loading: enforcement.loading,
+        loading: enforcement.loading || adminLoading,
         canWrite,
         canAddUser: isPlatformAdmin || enforcement.canAddUser,
         canAddBooking: isPlatformAdmin || enforcement.canAddBooking,
