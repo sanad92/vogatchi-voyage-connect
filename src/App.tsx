@@ -52,6 +52,9 @@ import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
 import AuthPage from "@/components/auth/AuthPage";
 import RegisterOrganization from "@/pages/RegisterOrganization";
+import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
+import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
+import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -89,6 +92,14 @@ function App() {
                   <SupabaseProtectedRoute>
                     <RegisterOrganization />
                   </SupabaseProtectedRoute>
+                } />
+
+                {/* Platform Admin routes */}
+                <Route path="/platform-admin" element={
+                  <PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>
+                } />
+                <Route path="/platform-admin/organizations" element={
+                  <PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>
                 } />
                 
                 {/* صفحات النظام المحمية */}
