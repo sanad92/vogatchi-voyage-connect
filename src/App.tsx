@@ -60,6 +60,7 @@ import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboar
 import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import SubscriptionExpiredPage from "@/pages/SubscriptionExpired";
+import SubscriptionManagement from "@/pages/SubscriptionManagement";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
 import OnboardingGuard from "@/components/onboarding/OnboardingGuard";
@@ -132,6 +133,7 @@ function App() {
                           <SubscriptionRedirectGuard>
                           <Routes>
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
+                              <Route path="/subscription" element={<SubscriptionManagement />} />
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<Customers />} />
                               <Route path="/duplicate-customers" element={<DuplicateCustomersPage />} />
