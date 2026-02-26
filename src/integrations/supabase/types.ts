@@ -1328,6 +1328,68 @@ export type Database = {
           },
         ]
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          max_attempts: number
+          organization_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          organization_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          organization_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_queue_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_commission_periods: {
         Row: {
           bank_account_id: string | null
