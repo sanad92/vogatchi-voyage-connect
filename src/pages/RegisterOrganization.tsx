@@ -67,9 +67,9 @@ const RegisterOrganization = () => {
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
       
-      // Small delay then navigate
+      // Redirect to onboarding wizard
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = '/onboarding';
       }, 500);
 
     } catch (error: any) {

@@ -53,12 +53,14 @@ import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
 import AuthPage from "@/components/auth/AuthPage";
 import RegisterOrganization from "@/pages/RegisterOrganization";
+import OnboardingWizard from "@/pages/OnboardingWizard";
 import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
 import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import SubscriptionExpiredPage from "@/pages/SubscriptionExpired";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
+import OnboardingGuard from "@/components/onboarding/OnboardingGuard";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -97,6 +99,11 @@ function App() {
                     <RegisterOrganization />
                   </SupabaseProtectedRoute>
                 } />
+                <Route path="/onboarding" element={
+                  <SupabaseProtectedRoute>
+                    <OnboardingWizard />
+                  </SupabaseProtectedRoute>
+                } />
 
                 {/* Platform Admin routes */}
                 <Route path="/platform-admin" element={
@@ -112,6 +119,7 @@ function App() {
                   element={
                   <SupabaseProtectedRoute>
                     <SubscriptionProvider>
+                    <OnboardingGuard>
                     <div className="min-h-screen w-full">
                       <Navbar />
                       <SubscriptionBanner />
@@ -162,6 +170,7 @@ function App() {
                         </OptimizedErrorBoundary>
                       </main>
                     </div>
+                    </OnboardingGuard>
                     </SubscriptionProvider>
                   </SupabaseProtectedRoute>
                   }
