@@ -37,7 +37,7 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
   }
 
   if (!isLoggedIn()) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Don't redirect to register-organization if we're already there

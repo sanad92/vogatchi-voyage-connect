@@ -112,7 +112,7 @@ const SiteFooter = () => {
               ))}
               <li>
                 <Link
-                  to="/auth"
+                  to="/login"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   تسجيل دخول الموظفين

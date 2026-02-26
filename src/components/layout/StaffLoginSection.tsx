@@ -58,7 +58,7 @@ const StaffLoginSection = () => {
               استخدم بيانات الدخول الخاصة بك للوصول إلى لوحة التحكم
             </p>
             <Button size="lg" asChild>
-              <Link to="/auth">
+              <Link to="/login">
                 <Shield className="h-5 w-5 mr-2" />
                 تسجيل الدخول
               </Link>

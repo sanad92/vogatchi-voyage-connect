@@ -34,7 +34,7 @@ const AcceptInvite = () => {
             <X className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-bold text-foreground mb-2">رابط غير صالح</h2>
             <p className="text-muted-foreground">رابط الدعوة غير صحيح أو مفقود</p>
-            <Button onClick={() => navigate('/auth')} className="mt-4">تسجيل الدخول</Button>
+            <Button onClick={() => navigate('/login')} className="mt-4">تسجيل الدخول</Button>
           </CardContent>
         </Card>
       </div>
@@ -53,7 +53,7 @@ const AcceptInvite = () => {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-muted-foreground mb-4">يجب تسجيل الدخول أولاً لقبول الدعوة</p>
-            <Button onClick={() => navigate(`/auth?redirect=/accept-invite?token=${token}`)}>
+            <Button onClick={() => navigate(`/login?redirect=/accept-invite?token=${token}`)}>
               تسجيل الدخول
             </Button>
           </CardContent>
