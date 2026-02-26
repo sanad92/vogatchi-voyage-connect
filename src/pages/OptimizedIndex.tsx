@@ -3,41 +3,68 @@ import React from 'react';
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import MainStatsCards from "@/components/dashboard/MainStatsCards";
+import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import CRMStatsCards from "@/components/dashboard/CRMStatsCards";
 import ProductTour, { useProductTour } from "@/components/onboarding/ProductTour";
 import TodayOverview from "@/components/dashboard/TodayOverview";
 import QuickActions from "@/components/dashboard/QuickActions";
-import RealTimeAnalytics from "@/components/dashboard/RealTimeAnalytics";
+import RevenueChart from "@/components/dashboard/RevenueChart";
+import BookingsTable from "@/components/dashboard/BookingsTable";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+
+const DashboardSkeleton = () => (
+  <div className="space-y-6 p-4 lg:p-6">
+    <div className="flex items-center justify-between">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48 rounded-lg" />
+        <Skeleton className="h-4 w-72 rounded" />
+      </div>
+      <Skeleton className="h-10 w-32 rounded-lg" />
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i}>
+          <CardContent className="p-5">
+            <div className="space-y-3">
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="h-8 w-24 rounded" />
+              <Skeleton className="h-3 w-32 rounded" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+    <Skeleton className="h-[350px] w-full rounded-xl" />
+    <Skeleton className="h-[300px] w-full rounded-xl" />
+  </div>
+);
 
 const OptimizedIndex = () => {
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
   const { showTour, completeTour } = useProductTour();
 
-  console.log('🏠 Dashboard render:', { user: !!user, dashboardData: !!dashboardData, isLoading, error: !!error });
-
   if (error) {
-    console.error('❌ Dashboard error:', error);
     return (
-      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+      <div className="p-4 lg:p-6">
         <Alert className="border-destructive/20 bg-destructive/10">
           <AlertTriangle className="h-4 w-4 text-destructive" />
           <AlertDescription className="text-destructive mb-4">
             حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
           </AlertDescription>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline" 
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
             size="sm"
             className="mt-2"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 ml-2" />
             إعادة تحميل
           </Button>
         </Alert>
@@ -45,21 +72,8 @@ const OptimizedIndex = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-        <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">جارٍ تحميل البيانات...</p>
-            <p className="text-muted-foreground text-sm">قد يستغرق هذا عدة ثوانِ</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <DashboardSkeleton />;
 
-  // استخدام بيانات افتراضية إذا لم تكن متوفرة
   const { realStats, crmStats, customers } = dashboardData || {
     realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0 },
     crmStats: { vipCustomers: 0, loyaltyPoints: 0 },
@@ -69,28 +83,37 @@ const OptimizedIndex = () => {
   return (
     <ErrorBoundary>
       {showTour && <ProductTour onComplete={completeTour} />}
-      <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="p-4 lg:p-6 space-y-6" dir="rtl">
         <DashboardHeader />
 
-        <MainStatsCards realStats={realStats} />
+        <EnhancedStatsCards realStats={realStats} />
 
-        <CRMStatsCards customers={customers} realStats={realStats} />
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <ErrorBoundary>
-            <TodayOverview />
+            <RevenueChart />
           </ErrorBoundary>
+          <div className="space-y-6">
+            <ErrorBoundary>
+              <TodayOverview />
+            </ErrorBoundary>
+          </div>
+        </div>
+
+        <ErrorBoundary>
+          <BookingsTable />
+        </ErrorBoundary>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <ErrorBoundary>
             <QuickActions />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <RecentActivity />
           </ErrorBoundary>
         </div>
 
         <ErrorBoundary>
-          <RealTimeAnalytics realStats={realStats} crmStats={crmStats} />
-        </ErrorBoundary>
-
-        <ErrorBoundary>
-          <RecentActivity />
+          <CRMStatsCards customers={customers} realStats={realStats} />
         </ErrorBoundary>
       </div>
     </ErrorBoundary>
