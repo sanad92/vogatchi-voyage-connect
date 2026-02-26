@@ -96,6 +96,11 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
                   <div className="flex items-center gap-2"><LogIn size={16} /> تسجيل الدخول</div>
                 )}
               </Button>
+              <div className="text-center">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
             </form>
           </TabsContent>
           

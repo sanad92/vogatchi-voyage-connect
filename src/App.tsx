@@ -56,6 +56,8 @@ import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
 import AuthPage from "@/components/auth/AuthPage";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import RegisterOrganization from "@/pages/RegisterOrganization";
 import OnboardingWizard from "@/pages/OnboardingWizard";
 import AcceptInvite from "@/pages/AcceptInvite";
@@ -101,6 +103,8 @@ function App() {
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/register-organization" element={
                   <SupabaseProtectedRoute>
                     <RegisterOrganization />

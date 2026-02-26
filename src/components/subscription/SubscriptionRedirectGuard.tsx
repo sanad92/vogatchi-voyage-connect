@@ -13,7 +13,7 @@ const SubscriptionRedirectGuard = ({ children }: { children: React.ReactNode }) 
   if (loading) return <>{children}</>;
 
   // Allow subscription/payment pages themselves
-  const allowedAlways = ['/subscription-expired', '/subscription', '/pricing', '/payment', '/payment-success'];
+  const allowedAlways = ['/subscription-expired', '/subscription', '/pricing', '/payment', '/payment-success', '/forgot-password', '/reset-password', '/auth'];
   if (allowedAlways.some(r => pathname === r || pathname.startsWith(r + '?'))) return <>{children}</>;
 
   // Read-only routes still accessible when expired

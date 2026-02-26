@@ -16,6 +16,7 @@ import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
 import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 
 const Invoices = () => {
   useInitialInvoices();
@@ -164,6 +165,10 @@ const Invoices = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'الفواتير' }
+      ]} />
       {/* رأس الصفحة مع الإحصائيات المحدثة */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>

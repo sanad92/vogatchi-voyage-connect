@@ -1848,6 +1848,8 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           bank_account_id: string | null
+          booking_id: string | null
+          booking_type: string | null
           category_id: string | null
           created_at: string | null
           created_by: string | null
@@ -1871,6 +1873,8 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           bank_account_id?: string | null
+          booking_id?: string | null
+          booking_type?: string | null
           category_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -1894,6 +1898,8 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           bank_account_id?: string | null
+          booking_id?: string | null
+          booking_type?: string | null
           category_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -4749,6 +4755,7 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
       extend_trial: {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
@@ -4790,6 +4797,7 @@ export type Database = {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
       }
+      supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
       update_booking_status: {
         Args: {
@@ -4809,6 +4817,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      user_has_any_org: { Args: never; Returns: boolean }
     }
     Enums: {
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"

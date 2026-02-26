@@ -22,12 +22,17 @@ import SalaryManagementImproved from '@/components/expenses/salary/SalaryManagem
 import EnhancedExpenseReports from '@/components/expenses/reports/EnhancedExpenseReports';
 import CommissionManagement from '@/components/expenses/CommissionManagement';
 import ExchangeRateManager from '@/components/currency/ExchangeRateManager';
+import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 
 const ExpenseManagementEnhanced = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'إدارة المصروفات' }
+      ]} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">إدارة المصروفات والحسابات المحسّنة</h1>
