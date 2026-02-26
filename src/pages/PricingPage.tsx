@@ -217,7 +217,7 @@ const PricingPage = () => {
 
                     {/* CTA */}
                     <div className="p-6 pt-4 border-t border-border">
-                      <Link to="/auth?tab=signup">
+                      <Link to={plan.price_monthly === 0 ? '/auth?tab=signup' : `/payment?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`}>
                         <Button
                           className={`w-full text-base ${
                             isRecommended
@@ -227,7 +227,7 @@ const PricingPage = () => {
                           variant={isRecommended ? 'default' : 'outline'}
                           size="lg"
                         >
-                          {plan.price_monthly === 0 ? 'ابدأ مجاناً' : 'ابدأ التجربة المجانية'}
+                          {plan.price_monthly === 0 ? 'ابدأ مجاناً' : 'اشترك الآن'}
                           <ArrowLeft className="w-4 h-4 mr-2" />
                         </Button>
                       </Link>
