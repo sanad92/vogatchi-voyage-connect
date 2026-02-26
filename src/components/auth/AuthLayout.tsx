@@ -1,5 +1,7 @@
-
 import { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Plane, Hotel, Car, BarChart3 } from 'lucide-react';
+import authSideImage from '@/assets/auth-side-image.jpg';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -7,9 +9,83 @@ interface AuthLayoutProps {
 
 const AuthLayout = ({ children }: AuthLayoutProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-white to-orange-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm sm:max-w-md">
-        {children}
+    <div className="min-h-screen flex" dir="rtl">
+      {/* Right side - Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
+        <div className="w-full max-w-sm sm:max-w-md">
+          {children}
+        </div>
+      </div>
+
+      {/* Left side - Image & Branding (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] relative overflow-hidden">
+        {/* Background image */}
+        <img
+          src={authSideImage}
+          alt="Vogatchi CRM"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(231,48%,20%)] via-[hsl(231,48%,25%)/0.85] to-[hsl(263,45%,14%)/0.7]" />
+
+        {/* Content overlay */}
+        <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 w-full text-white">
+          {/* Top - Logo */}
+          <div>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
+                <span className="font-bold text-xl">V</span>
+              </div>
+              <span className="text-xl font-bold">Vogatchi CRM</span>
+            </Link>
+          </div>
+
+          {/* Middle - Value Props */}
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl xl:text-4xl font-bold leading-tight mb-4">
+                أدِر شركة السياحة
+                <br />
+                بكفاءة واحترافية
+              </h2>
+              <p className="text-white/70 text-lg leading-relaxed max-w-md">
+                نظام متكامل لإدارة الحجوزات، العملاء، والتقارير المالية في مكان واحد.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: Hotel, label: 'حجوزات الفنادق' },
+                { icon: Plane, label: 'حجوزات الطيران' },
+                { icon: Car, label: 'تأجير السيارات' },
+                { icon: BarChart3, label: 'تقارير مالية' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+                  <item.icon className="w-5 h-5 text-white/80 flex-shrink-0" />
+                  <span className="text-sm text-white/90">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom - Stats */}
+          <div className="flex items-center gap-8">
+            <div>
+              <div className="text-2xl font-bold">+500</div>
+              <div className="text-xs text-white/60">شركة سياحة</div>
+            </div>
+            <div className="w-px h-10 bg-white/20" />
+            <div>
+              <div className="text-2xl font-bold">+50K</div>
+              <div className="text-xs text-white/60">حجز شهرياً</div>
+            </div>
+            <div className="w-px h-10 bg-white/20" />
+            <div>
+              <div className="text-2xl font-bold">99.9%</div>
+              <div className="text-xs text-white/60">وقت التشغيل</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

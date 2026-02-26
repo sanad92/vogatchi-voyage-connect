@@ -6,9 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
-import AuthHeader from '@/components/auth/AuthHeader';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -31,9 +30,7 @@ const SignupPage = () => {
   }
 
   if (isLoggedIn()) {
-    if (!hasOrganization) {
-      return <Navigate to="/register-organization" replace />;
-    }
+    if (!hasOrganization) return <Navigate to="/register-organization" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -56,10 +53,24 @@ const SignupPage = () => {
 
   return (
     <AuthLayout>
-      <AuthHeader />
-      <div className="bg-card p-6 sm:p-8 rounded-2xl shadow-xl border border-border">
-        <h2 className="text-xl font-semibold text-foreground text-center mb-6">إنشاء حساب جديد</h2>
-        <form onSubmit={handleSignUp} className="space-y-4">
+      {/* Mobile logo */}
+      <div className="lg:hidden text-center mb-8">
+        <Link to="/" className="inline-flex items-center gap-2">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-xl">V</span>
+          </div>
+        </Link>
+        <h1 className="text-2xl font-bold text-foreground mt-3">Vogatchi CRM</h1>
+        <p className="text-muted-foreground text-sm mt-1">نظام إدارة شركة السياحة</p>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">إنشاء حساب جديد</h2>
+          <p className="text-muted-foreground mt-1">سجّل شركتك وابدأ تجربتك المجانية لـ 14 يوم</p>
+        </div>
+
+        <form onSubmit={handleSignUp} className="space-y-5">
           {error && (
             <Alert className="border-destructive/50 bg-destructive/10">
               <AlertDescription className="text-destructive">{error}</AlertDescription>
@@ -67,38 +78,86 @@ const SignupPage = () => {
           )}
           <div className="space-y-2">
             <Label htmlFor="signup-fullname">الاسم الكامل</Label>
-            <Input id="signup-fullname" type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className="text-right" placeholder="أدخل اسمك الكامل" disabled={loading} />
+            <div className="relative">
+              <Input
+                id="signup-fullname"
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                required
+                className="text-right pr-10 h-12"
+                placeholder="أدخل اسمك الكامل"
+                disabled={loading}
+              />
+              <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-email">البريد الإلكتروني</Label>
-            <Input id="signup-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="text-right" placeholder="أدخل بريدك الإلكتروني" disabled={loading} />
+            <div className="relative">
+              <Input
+                id="signup-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="text-right pr-10 h-12"
+                placeholder="name@company.com"
+                disabled={loading}
+              />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-password">كلمة المرور</Label>
             <div className="relative">
-              <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required className="text-right pr-10" placeholder="6 أحرف على الأقل" disabled={loading} minLength={6} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
+              <Input
+                id="signup-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="text-right pr-10 h-12"
+                placeholder="6 أحرف على الأقل"
+                disabled={loading}
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                disabled={loading}
+              >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
+              <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
             {loading ? (
-              <div className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" /> جاري إنشاء الحساب...</div>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
+                جاري إنشاء الحساب...
+              </div>
             ) : (
-              <div className="flex items-center gap-2"><UserPlus size={16} /> إنشاء حساب</div>
+              <div className="flex items-center gap-2">
+                <UserPlus size={18} />
+                إنشاء حساب
+              </div>
             )}
           </Button>
         </form>
-        <div className="mt-6 text-center text-sm text-muted-foreground">
+
+        <div className="text-center text-sm text-muted-foreground">
           لديك حساب بالفعل؟{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link to="/login" className="text-primary font-semibold hover:underline">
             سجّل دخول
           </Link>
         </div>
-      </div>
-      <div className="text-center text-sm text-muted-foreground mt-4">
-        <p>بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.</p>
+
+        <p className="text-center text-xs text-muted-foreground">
+          بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.
+        </p>
       </div>
     </AuthLayout>
   );
