@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp, Brain, AlertTriangle } from "lucide-react";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -220,6 +221,10 @@ const Customers = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'إدارة العملاء' }
+      ]} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6 sm:h-8 sm:w-8" />
