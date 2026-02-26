@@ -3325,6 +3325,7 @@ export type Database = {
           id: string
           is_active: boolean
           max_bookings_per_month: number
+          max_storage_mb: number
           max_users: number
           name: string
           name_ar: string
@@ -3338,6 +3339,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_bookings_per_month?: number
+          max_storage_mb?: number
           max_users?: number
           name: string
           name_ar: string
@@ -3351,6 +3353,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_bookings_per_month?: number
+          max_storage_mb?: number
           max_users?: number
           name?: string
           name_ar?: string
@@ -4344,6 +4347,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
+      check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
+      count_org_bookings_this_month: {
+        Args: { _org_id: string }
+        Returns: number
+      }
+      count_org_members: { Args: { _org_id: string }; Returns: number }
       generate_invoice_number: { Args: never; Returns: string }
       get_duplicate_customers: {
         Args: never
@@ -4351,6 +4361,14 @@ export type Database = {
           count: number
           customer_ids: string[]
           phone: string
+        }[]
+      }
+      get_org_plan_limits: {
+        Args: { _org_id: string }
+        Returns: {
+          max_bookings_per_month: number
+          max_storage_mb: number
+          max_users: number
         }[]
       }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }

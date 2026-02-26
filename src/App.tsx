@@ -47,6 +47,7 @@ import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Navbar from "@/components/navbar/Navbar";
+import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import CMSPages from "@/pages/admin/CMSPages";
 import PageBlocks from "@/pages/admin/PageBlocks";
@@ -109,6 +110,7 @@ function App() {
                   <SupabaseProtectedRoute>
                     <div className="min-h-screen w-full">
                       <Navbar />
+                      <SubscriptionBanner />
                       <main className="w-full">
                         <OptimizedErrorBoundary>
                           <Routes>
