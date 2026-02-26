@@ -43,6 +43,7 @@ import CRMDashboard from "@/pages/CRMDashboard";
 import CustomerPortalPage from "@/pages/CustomerPortalPage";
 import BookingsCalendar from "@/pages/BookingsCalendar";
 import DatabaseManager from "@/pages/DatabaseManager";
+import TeamManagement from "@/pages/TeamManagement";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
 import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
@@ -168,6 +169,7 @@ function App() {
                               <Route path="/customer-portal" element={<CustomerPortalPage />} />
                               <Route path="/bookings-calendar" element={<BookingsCalendar />} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
+                              <Route path="/team" element={<AdminRouteGuard><TeamManagement /></AdminRouteGuard>} />
                               <Route path="/whatsapp" element={<WhatsApp />} />
                               <Route path="/whatsapp-admin" element={<AdminRouteGuard><WhatsAppAdmin /></AdminRouteGuard>} />
                               <Route path="/admin/cms" element={<AdminRouteGuard><CMSPages /></AdminRouteGuard>} />
