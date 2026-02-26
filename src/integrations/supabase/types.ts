@@ -134,6 +134,59 @@ export type Database = {
           },
         ]
       }
+      api_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          ip_address: string | null
+          method: string
+          organization_id: string | null
+          request_body: Json | null
+          response_summary: string | null
+          response_time_ms: number | null
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          organization_id?: string | null
+          request_body?: Json | null
+          response_summary?: string | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          organization_id?: string | null
+          request_body?: Json | null
+          response_summary?: string | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       backup_logs: {
         Row: {
           backup_type: string
@@ -1629,6 +1682,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_logs: {
+        Row: {
+          component_name: string | null
+          created_at: string
+          error_message: string
+          error_stack: string | null
+          error_type: string
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          component_name?: string | null
+          created_at?: string
+          error_message: string
+          error_stack?: string | null
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          component_name?: string | null
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3189,6 +3304,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "payment_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_logs: {
+        Row: {
+          cls: number | null
+          connection_type: string | null
+          created_at: string
+          fcp_ms: number | null
+          fid_ms: number | null
+          id: string
+          lcp_ms: number | null
+          load_time_ms: number | null
+          metadata: Json | null
+          organization_id: string | null
+          page_url: string
+          ttfb_ms: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cls?: number | null
+          connection_type?: string | null
+          created_at?: string
+          fcp_ms?: number | null
+          fid_ms?: number | null
+          id?: string
+          lcp_ms?: number | null
+          load_time_ms?: number | null
+          metadata?: Json | null
+          organization_id?: string | null
+          page_url: string
+          ttfb_ms?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cls?: number | null
+          connection_type?: string | null
+          created_at?: string
+          fcp_ms?: number | null
+          fid_ms?: number | null
+          id?: string
+          lcp_ms?: number | null
+          load_time_ms?: number | null
+          metadata?: Json | null
+          organization_id?: string | null
+          page_url?: string
+          ttfb_ms?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_logs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

@@ -11,6 +11,7 @@ import SaaSLanding from "@/pages/SaaSLanding";
 import PricingPage from "@/pages/PricingPage";
 import PaymentPage from "@/pages/PaymentPage";
 import OptimizedIndex from "@/pages/OptimizedIndex";
+import MonitoringDashboard from "@/pages/MonitoringDashboard";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
@@ -170,6 +171,7 @@ function App() {
                               <Route path="/whatsapp-admin" element={<WhatsAppAdmin />} />
                               <Route path="/admin/cms" element={<CMSPages />} />
                               <Route path="/admin/cms/pages/:id/blocks" element={<PageBlocks />} />
+                              <Route path="/monitoring" element={<MonitoringDashboard />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </SubscriptionRedirectGuard>
