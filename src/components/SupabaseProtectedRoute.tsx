@@ -1,4 +1,4 @@
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Navigate } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ interface SupabaseProtectedRouteProps {
 }
 
 const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRouteProps) => {
-  const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useSupabaseAuth();
+  const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
 
   if (loading || orgLoading) {
@@ -26,12 +26,10 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     return <Navigate to="/auth" replace />;
   }
 
-  // إذا المستخدم ليس لديه مؤسسة (وليس سوبر أدمن)، وجهه لتسجيل المؤسسة
   if (!hasOrganization && !isSuperAdmin()) {
     return <Navigate to="/register-organization" replace />;
   }
 
-  // التحقق من أن الحساب نشط
   if (profile && !profile.is_active) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -44,7 +42,6 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     );
   }
 
-  // التحقق من الدور المطلوب
   if (requiredRole && !hasRole(requiredRole) && !isSuperAdmin()) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
