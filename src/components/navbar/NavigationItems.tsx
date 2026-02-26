@@ -113,7 +113,7 @@ export const businessNavItems: SimpleNavItem[] = [
     requiredPermissions: ['suppliers_view']
   },
   {
-    to: "/expense-management-enhanced",
+    to: "/expense-management",
     icon: DollarSign,
     label: "إدارة المصروفات",
     allowedRoles: [],

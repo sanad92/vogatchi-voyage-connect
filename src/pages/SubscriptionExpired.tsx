@@ -64,9 +64,11 @@ const SubscriptionExpiredPage = () => {
                   ترقية الخطة
                 </Button>
               </Link>
-              <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
-                عرض البيانات (قراءة فقط)
-              </Button>
+              <Link to="/dashboard">
+                <Button variant="outline">
+                  عرض البيانات (قراءة فقط)
+                </Button>
+              </Link>
             </div>
           </div>
 
