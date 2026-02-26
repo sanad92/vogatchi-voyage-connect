@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { Building2, ArrowLeft } from 'lucide-react';
 
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
+  const { hasOrganization, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
@@ -21,6 +23,12 @@ const RegisterOrganization = () => {
     email: '',
     address: '',
   });
+
+  // If user already has an organization, redirect to dashboard
+  if (!orgLoading && hasOrganization) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
 
   const generateSlug = (name: string) => {
     return name
