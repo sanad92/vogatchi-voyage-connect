@@ -56,6 +56,9 @@ import RegisterOrganization from "@/pages/RegisterOrganization";
 import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
 import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
+import SubscriptionExpiredPage from "@/pages/SubscriptionExpired";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
 
 // إعدادات محسنة للQuery Client
 const queryClient = new QueryClient({
@@ -108,12 +111,15 @@ function App() {
                   path="/*"
                   element={
                   <SupabaseProtectedRoute>
+                    <SubscriptionProvider>
                     <div className="min-h-screen w-full">
                       <Navbar />
                       <SubscriptionBanner />
                       <main className="w-full">
                         <OptimizedErrorBoundary>
+                          <SubscriptionRedirectGuard>
                           <Routes>
+                              <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<Customers />} />
                               <Route path="/duplicate-customers" element={<DuplicateCustomersPage />} />
@@ -125,8 +131,8 @@ function App() {
                               <Route path="/car-rentals" element={<CarRentals />} />
                               <Route path="/transport-bookings" element={<TransportBookings />} />
                               <Route path="/invoices" element={<Invoices />} />
-        <Route path="/new-invoice" element={<NewInvoice />} />
-        <Route path="/customers/:customerId" element={<CustomerDetails />} />
+                              <Route path="/new-invoice" element={<NewInvoice />} />
+                              <Route path="/customers/:customerId" element={<CustomerDetails />} />
                               <Route path="/suppliers" element={<Suppliers />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
@@ -152,10 +158,12 @@ function App() {
                               <Route path="/admin/cms/pages/:id/blocks" element={<PageBlocks />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
-                          </OptimizedErrorBoundary>
-                        </main>
-                      </div>
-                    </SupabaseProtectedRoute>
+                          </SubscriptionRedirectGuard>
+                        </OptimizedErrorBoundary>
+                      </main>
+                    </div>
+                    </SubscriptionProvider>
+                  </SupabaseProtectedRoute>
                   }
                 />
               </Routes>
