@@ -13,6 +13,8 @@ interface SupabaseProtectedRouteProps {
 const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRouteProps) => {
   const { user, profile, loading, hasRole, isSuperAdmin, isLoggedIn, session } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
+  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
+  const location = useLocation();
 
   // Proactively refresh session if it's about to expire (within 5 min)
   useEffect(() => {
@@ -23,7 +25,7 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     }
   }, [session?.expires_at]);
 
-  if (loading || orgLoading) {
+  if (loading || orgLoading || platformLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -38,7 +40,11 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     return <Navigate to="/auth" replace />;
   }
 
-  if (!hasOrganization && !isSuperAdmin()) {
+  // Don't redirect to register-organization if we're already there
+  const isOnRegisterOrg = location.pathname === '/register-organization';
+  const isOnOnboarding = location.pathname === '/onboarding';
+  
+  if (!hasOrganization && !isSuperAdmin() && !isPlatformAdmin && !isOnRegisterOrg && !isOnOnboarding) {
     return <Navigate to="/register-organization" replace />;
   }
 
