@@ -39,9 +39,11 @@ const SubscriptionBanner = () => {
               متبقي <strong className="text-foreground">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'يوم' : 'أيام'}</strong> من الفترة التجريبية
               {' '}— خطة <strong>{subscription.plan_name_ar}</strong>
             </p>
-            <Button size="sm" variant={urgency === 'destructive' ? 'destructive' : 'default'}>
-              ترقية الآن
-            </Button>
+            <a href="/pricing">
+              <Button size="sm" variant={urgency === 'destructive' ? 'destructive' : 'default'}>
+                ترقية الآن
+              </Button>
+            </a>
           </div>
           <Progress value={trialPercent} className="h-2" />
           <p className="text-xs text-muted-foreground">
@@ -61,9 +63,11 @@ const SubscriptionBanner = () => {
         <AlertTitle>الاشتراك منتهٍ</AlertTitle>
         <AlertDescription className="flex items-center justify-between">
           <span>انتهت صلاحية اشتراكك. لا يمكن إجراء عمليات جديدة حتى يتم تجديد الاشتراك.</span>
-          <Button size="sm" variant="outline" className="mr-2">
-            ترقية الآن
-          </Button>
+          <a href="/pricing">
+            <Button size="sm" variant="outline" className="mr-2">
+              ترقية الآن
+            </Button>
+          </a>
         </AlertDescription>
       </Alert>
     );
