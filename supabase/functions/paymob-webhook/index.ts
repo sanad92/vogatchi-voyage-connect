@@ -188,21 +188,21 @@ Deno.serve(async (req) => {
 
     // Update subscription if payment succeeded and we have an org
     if (status === "success" && organizationId) {
-      // Activate subscription / extend expiry
       const { data: currentSub } = await supabase
         .from("subscriptions")
-        .select("id, plan_id, status, expires_at")
+        .select("id, plan_id, status, expires_at, subscription_plans(duration_days)")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (currentSub) {
-        // Extend by 30 days from now or from current expiry (whichever is later)
+        // Use plan's duration_days (default 30)
+        const durationDays = (currentSub as any).subscription_plans?.duration_days || 30;
         const currentExpiry = currentSub.expires_at ? new Date(currentSub.expires_at) : new Date();
         const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
         const newExpiry = new Date(baseDate);
-        newExpiry.setDate(newExpiry.getDate() + 30);
+        newExpiry.setDate(newExpiry.getDate() + durationDays);
 
         await supabase
           .from("subscriptions")
@@ -211,17 +211,20 @@ Deno.serve(async (req) => {
             expires_at: newExpiry.toISOString(),
             payment_method: "paymob",
             payment_reference: String(txn.id),
+            paymob_transaction_id: String(txn.id),
+            grace_period_days: 2,
             updated_at: new Date().toISOString(),
           })
           .eq("id", currentSub.id);
 
-        console.log(`Subscription ${currentSub.id} activated until ${newExpiry.toISOString()}`);
+        console.log(`Subscription ${currentSub.id} activated for ${durationDays} days until ${newExpiry.toISOString()}`);
       }
     }
 
-    // Handle failed payments - log warning
+    // Handle failed payments
     if (status === "failed" && organizationId) {
       console.warn(`Payment failed for org ${organizationId}: ${errorMessage}`);
+      // Do NOT change subscription status on failed payment - keep current state
     }
 
     console.log(`Webhook processed: txn=${txn.id}, status=${status}, hmac=${hmacValid}`);

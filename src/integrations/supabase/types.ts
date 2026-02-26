@@ -3469,6 +3469,7 @@ export type Database = {
       subscription_plans: {
         Row: {
           created_at: string
+          duration_days: number | null
           features: Json
           id: string
           is_active: boolean
@@ -3483,6 +3484,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          duration_days?: number | null
           features?: Json
           id?: string
           is_active?: boolean
@@ -3497,6 +3499,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          duration_days?: number | null
           features?: Json
           id?: string
           is_active?: boolean
@@ -3516,11 +3519,13 @@ export type Database = {
           activated_by: string | null
           created_at: string
           expires_at: string | null
+          grace_period_days: number | null
           id: string
           notes: string | null
           organization_id: string
           payment_method: string | null
           payment_reference: string | null
+          paymob_transaction_id: string | null
           plan_id: string
           starts_at: string
           status: string
@@ -3530,11 +3535,13 @@ export type Database = {
           activated_by?: string | null
           created_at?: string
           expires_at?: string | null
+          grace_period_days?: number | null
           id?: string
           notes?: string | null
           organization_id: string
           payment_method?: string | null
           payment_reference?: string | null
+          paymob_transaction_id?: string | null
           plan_id: string
           starts_at?: string
           status?: string
@@ -3544,11 +3551,13 @@ export type Database = {
           activated_by?: string | null
           created_at?: string
           expires_at?: string | null
+          grace_period_days?: number | null
           id?: string
           notes?: string | null
           organization_id?: string
           payment_method?: string | null
           payment_reference?: string | null
+          paymob_transaction_id?: string | null
           plan_id?: string
           starts_at?: string
           status?: string
@@ -4537,6 +4546,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_expired: { Args: { _org_id: string }; Returns: boolean }
+      is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
       link_user_to_employee: {
