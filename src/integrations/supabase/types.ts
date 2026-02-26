@@ -3017,6 +3017,7 @@ export type Database = {
           hire_date: string | null
           id: string
           is_active: boolean
+          is_platform_admin: boolean
           linked_employee_id: string | null
           phone: string | null
           position: string | null
@@ -3031,6 +3032,7 @@ export type Database = {
           hire_date?: string | null
           id: string
           is_active?: boolean
+          is_platform_admin?: boolean
           linked_employee_id?: string | null
           phone?: string | null
           position?: string | null
@@ -3045,6 +3047,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           is_active?: boolean
+          is_platform_admin?: boolean
           linked_employee_id?: string | null
           phone?: string | null
           position?: string | null
@@ -4355,6 +4358,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
