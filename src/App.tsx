@@ -54,6 +54,7 @@ import PageBlocks from "@/pages/admin/PageBlocks";
 import AuthPage from "@/components/auth/AuthPage";
 import RegisterOrganization from "@/pages/RegisterOrganization";
 import OnboardingWizard from "@/pages/OnboardingWizard";
+import AcceptInvite from "@/pages/AcceptInvite";
 import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
 import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
@@ -104,6 +105,7 @@ function App() {
                     <OnboardingWizard />
                   </SupabaseProtectedRoute>
                 } />
+                <Route path="/accept-invite" element={<AcceptInvite />} />
 
                 {/* Platform Admin routes */}
                 <Route path="/platform-admin" element={
