@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +30,10 @@ const CarRentals = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'إيجار السيارات' }
+      ]} />
       <div className="flex items-center justify-between">
         <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
