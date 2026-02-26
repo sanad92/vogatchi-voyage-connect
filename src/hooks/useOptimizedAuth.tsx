@@ -22,6 +22,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const navigate = useNavigate();
   const mountedRef = useRef(true);
   const fetchingRef = useRef(false);
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const isValidSession = useCallback((s: Session | null): boolean => {
     if (!s?.access_token || !s?.user?.id) return false;
@@ -32,26 +34,49 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   }, []);
 
   const fetchUserData = useCallback(async (userId: string) => {
-    if (fetchingRef.current) return;
+    // Skip if already fetching for same user
+    if (fetchingRef.current && lastFetchedUserIdRef.current === userId) return;
+    
+    // Abort previous request if different user
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     fetchingRef.current = true;
+    lastFetchedUserIdRef.current = userId;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const { data: profileData } = await supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (mountedRef.current && profileData) {
+      // Check if this request was aborted or component unmounted
+      if (controller.signal.aborted || !mountedRef.current) return;
+
+      if (!error && profileData) {
         setProfile(profileData);
       }
     } catch (error) {
+      if (controller.signal.aborted) return;
       errorManager.error('Auth', 'خطأ في جلب بيانات المستخدم', error, false);
     } finally {
-      fetchingRef.current = false;
+      if (!controller.signal.aborted) {
+        fetchingRef.current = false;
+      }
     }
   }, []);
 
   const clearState = useCallback(() => {
+    // Abort any pending fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    lastFetchedUserIdRef.current = null;
+    fetchingRef.current = false;
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -64,7 +89,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
     // 1. Set up listener FIRST (per Supabase docs)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         if (!mountedRef.current) return;
 
         if (event === 'SIGNED_OUT') {
@@ -77,7 +102,11 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           setSession(currentSession);
           setUser(currentSession.user);
           // Defer data fetch to avoid Supabase deadlock in callback
-          fetchUserData(currentSession.user.id);
+          setTimeout(() => {
+            if (mountedRef.current) {
+              fetchUserData(currentSession.user.id);
+            }
+          }, 0);
         } else if (!currentSession) {
           clearState();
         }
@@ -106,6 +135,9 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
     return () => {
       mountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       subscription.unsubscribe();
     };
   }, [isValidSession, fetchUserData, clearState]);
@@ -129,7 +161,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       }
 
       toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/dashboard');
+      // Don't navigate here - let SupabaseProtectedRoute handle routing
       return { error: null };
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
@@ -147,7 +179,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/register-organization`,
           data: { full_name: fullName || '' },
         },
       });
@@ -157,7 +189,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
       } else {
         toast.success('تم إنشاء الحساب بنجاح');
-        navigate('/dashboard');
+        // Navigate to register-organization (not dashboard)
+        navigate('/register-organization');
       }
       return { error: null };
     } catch (error) {

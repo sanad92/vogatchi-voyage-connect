@@ -5,6 +5,7 @@ import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MainStatsCards from "@/components/dashboard/MainStatsCards";
 import CRMStatsCards from "@/components/dashboard/CRMStatsCards";
+import ProductTour, { useProductTour } from "@/components/onboarding/ProductTour";
 import TodayOverview from "@/components/dashboard/TodayOverview";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RealTimeAnalytics from "@/components/dashboard/RealTimeAnalytics";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 const OptimizedIndex = () => {
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
+  const { showTour, completeTour } = useProductTour();
 
   console.log('🏠 Dashboard render:', { user: !!user, dashboardData: !!dashboardData, isLoading, error: !!error });
 
@@ -66,6 +68,7 @@ const OptimizedIndex = () => {
 
   return (
     <ErrorBoundary>
+      {showTour && <ProductTour onComplete={completeTour} />}
       <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <DashboardHeader />
 
