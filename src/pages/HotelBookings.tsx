@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,6 +131,10 @@ const HotelBookings = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'الرئيسية', href: '/dashboard' },
+        { label: 'حجوزات الفنادق' }
+      ]} />
       <div className="flex items-center gap-3">
         <Hotel className="h-8 w-8 text-primary" />
         <div>
