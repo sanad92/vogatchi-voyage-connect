@@ -2939,6 +2939,7 @@ export type Database = {
           logo_url: string | null
           max_users: number
           name: string
+          onboarding_completed: boolean
           phone: string | null
           plan: string
           plan_expires_at: string | null
@@ -2954,6 +2955,7 @@ export type Database = {
           logo_url?: string | null
           max_users?: number
           name: string
+          onboarding_completed?: boolean
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
@@ -2969,6 +2971,7 @@ export type Database = {
           logo_url?: string | null
           max_users?: number
           name?: string
+          onboarding_completed?: boolean
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
