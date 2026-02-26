@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 interface SupabaseProtectedRouteProps {
   children: React.ReactNode;
