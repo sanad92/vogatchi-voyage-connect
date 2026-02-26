@@ -1,4 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon, Calendar, DollarSign, Users, TrendingUp, AlertTriangle, Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,48 +7,33 @@ interface StatCardProps {
   icon: LucideIcon;
   trend?: string;
   trendUp?: boolean;
-  accent: 'primary' | 'success' | 'warning' | 'info' | 'destructive';
+  gradient: string;
 }
 
-const accentStyles: Record<string, string> = {
-  primary: 'from-primary/10 to-primary/5 text-primary',
-  success: 'from-success/10 to-success/5 text-success',
-  warning: 'from-warning/10 to-warning/5 text-warning',
-  info: 'from-info/10 to-info/5 text-info',
-  destructive: 'from-destructive/10 to-destructive/5 text-destructive',
-};
-
-const iconBg: Record<string, string> = {
-  primary: 'bg-primary/10 text-primary',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/10 text-warning',
-  info: 'bg-info/10 text-info',
-  destructive: 'bg-destructive/10 text-destructive',
-};
-
-const StatCard = ({ title, value, icon: Icon, trend, trendUp, accent }: StatCardProps) => (
-  <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
-    <CardContent className="p-5">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2 min-w-0 flex-1">
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">{value}</p>
-          {trend && (
-            <p className={cn(
-              "text-xs font-medium flex items-center gap-1",
-              trendUp ? "text-success" : "text-destructive"
-            )}>
-              <TrendingUp className={cn("h-3 w-3", !trendUp && "rotate-180")} />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("p-3 rounded-xl transition-transform group-hover:scale-110", iconBg[accent])}>
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </div>
+const StatCard = ({ title, value, icon: Icon, trend, trendUp, gradient }: StatCardProps) => (
+  <div className={cn(
+    "rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5",
+    gradient
+  )}>
+    <div className="flex items-start justify-between">
+      <div className="space-y-2 min-w-0 flex-1">
+        <p className="text-sm font-medium text-white/80">{title}</p>
+        <p className="text-2xl sm:text-3xl font-bold tabular-nums">{value}</p>
+        {trend && (
+          <p className={cn(
+            "text-xs font-medium flex items-center gap-1",
+            trendUp ? "text-white/90" : "text-white/70"
+          )}>
+            <TrendingUp className={cn("h-3 w-3", !trendUp && "rotate-180")} />
+            {trend}
+          </p>
+        )}
       </div>
-    </CardContent>
-  </Card>
+      <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+        <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
+      </div>
+    </div>
+  </div>
 );
 
 interface EnhancedStatsCardsProps {
@@ -69,7 +53,7 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: Calendar,
       trend: '+12% من الشهر السابق',
       trendUp: true,
-      accent: 'primary',
+      gradient: 'bg-gradient-to-br from-[hsl(231,48%,48%)] to-[hsl(231,48%,35%)]',
     },
     {
       title: 'الإيرادات',
@@ -77,7 +61,7 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: DollarSign,
       trend: `${realStats.monthlyGrowth >= 0 ? '+' : ''}${realStats.monthlyGrowth.toFixed(1)}%`,
       trendUp: realStats.monthlyGrowth >= 0,
-      accent: 'success',
+      gradient: 'bg-gradient-to-br from-[hsl(160,60%,45%)] to-[hsl(160,60%,32%)]',
     },
     {
       title: 'العملاء النشطين',
@@ -85,7 +69,7 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: Users,
       trend: '+5 عملاء جدد',
       trendUp: true,
-      accent: 'info',
+      gradient: 'bg-gradient-to-br from-[hsl(205,85%,50%)] to-[hsl(205,85%,38%)]',
     },
     {
       title: 'تنبيهات معلقة',
@@ -93,7 +77,7 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: AlertTriangle,
       trend: '3 عاجلة',
       trendUp: false,
-      accent: 'warning',
+      gradient: 'bg-gradient-to-br from-[hsl(38,92%,50%)] to-[hsl(38,92%,38%)]',
     },
     {
       title: 'حجوزات الطيران',
@@ -101,7 +85,7 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: Plane,
       trend: '+8% هذا الأسبوع',
       trendUp: true,
-      accent: 'primary',
+      gradient: 'bg-gradient-to-br from-[hsl(270,50%,55%)] to-[hsl(270,50%,42%)]',
     },
     {
       title: 'معدل النمو',
@@ -109,7 +93,9 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       icon: TrendingUp,
       trend: 'مقارنة بالشهر السابق',
       trendUp: realStats.monthlyGrowth >= 0,
-      accent: realStats.monthlyGrowth >= 0 ? 'success' : 'destructive',
+      gradient: realStats.monthlyGrowth >= 0
+        ? 'bg-gradient-to-br from-[hsl(160,60%,45%)] to-[hsl(160,60%,32%)]'
+        : 'bg-gradient-to-br from-[hsl(0,84%,60%)] to-[hsl(0,84%,45%)]',
     },
   ];
 

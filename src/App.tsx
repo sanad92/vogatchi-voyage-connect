@@ -63,6 +63,7 @@ import OnboardingWizard from "@/pages/OnboardingWizard";
 import AcceptInvite from "@/pages/AcceptInvite";
 import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
 import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
+import PlatformAdminSubscriptions from "@/pages/platform-admin/PlatformAdminSubscriptions";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import SubscriptionExpiredPage from "@/pages/SubscriptionExpired";
 import SubscriptionManagement from "@/pages/SubscriptionManagement";
@@ -117,14 +118,6 @@ function App() {
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
 
-                {/* Platform Admin routes */}
-                <Route path="/platform-admin" element={
-                  <PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>
-                } />
-                <Route path="/platform-admin/organizations" element={
-                  <PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>
-                } />
-                
                 {/* صفحات النظام المحمية */}
                 <Route
                   path="/*"
@@ -177,6 +170,9 @@ function App() {
                               <Route path="/admin/cms" element={<AdminRouteGuard><CMSPages /></AdminRouteGuard>} />
                               <Route path="/admin/cms/pages/:id/blocks" element={<AdminRouteGuard><PageBlocks /></AdminRouteGuard>} />
                               <Route path="/monitoring" element={<AdminRouteGuard><MonitoringDashboard /></AdminRouteGuard>} />
+                              <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
+                              <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
+                              <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </SubscriptionRedirectGuard>

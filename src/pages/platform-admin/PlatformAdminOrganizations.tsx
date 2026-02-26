@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import PlatformAdminLayout from '@/components/platform-admin/PlatformAdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, CalendarPlus } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Ban, CheckCircle, CalendarPlus, Building2 } from 'lucide-react';
 
 interface OrgRow {
   id: string;
@@ -41,17 +40,11 @@ const PlatformAdminOrganizations = () => {
   const { data: orgs, isLoading } = useQuery({
     queryKey: ['platform-admin-orgs'],
     queryFn: async () => {
-      // Fetch orgs
       const { data: orgsData } = await supabase.from('organizations').select('*');
       if (!orgsData) return [];
 
-      // Fetch member counts
       const { data: members } = await supabase.from('organization_members').select('organization_id');
-      
-      // Fetch subscriptions
       const { data: subs } = await supabase.from('subscriptions').select('id, organization_id, plan_id, status, expires_at');
-
-      // Fetch booking counts (hotel as proxy)
       const { data: bookings } = await supabase.from('hotel_bookings').select('organization_id');
 
       return orgsData.map((org): OrgRow => {
@@ -122,122 +115,129 @@ const PlatformAdminOrganizations = () => {
   });
 
   return (
-    <PlatformAdminLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">قائمة المؤسسات</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-muted-foreground text-center py-8">جارٍ التحميل...</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                     <TableRow>
-                       <TableHead className="text-right">المؤسسة</TableHead>
-                       <TableHead className="text-right">الحالة</TableHead>
-                       <TableHead className="text-right">الاشتراك</TableHead>
-                       <TableHead className="text-right">الخطة</TableHead>
-                       <TableHead className="text-right">المستخدمون</TableHead>
-                       <TableHead className="text-right">الحجوزات</TableHead>
-                       <TableHead className="text-right">تاريخ التسجيل</TableHead>
-                       <TableHead className="text-right">إجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orgs?.map((org) => (
-                      <TableRow key={org.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-foreground">{org.name}</p>
-                            <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={org.is_active ? 'default' : 'destructive'}>
-                            {org.is_active ? 'نشطة' : 'معلّقة'}
+    <div className="p-4 lg:p-6 space-y-6" dir="rtl">
+      <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            قائمة المؤسسات
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-6 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded" />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right min-w-[150px]">المؤسسة</TableHead>
+                    <TableHead className="text-right min-w-[80px]">الحالة</TableHead>
+                    <TableHead className="text-right min-w-[100px]">الاشتراك</TableHead>
+                    <TableHead className="text-right min-w-[130px]">الخطة</TableHead>
+                    <TableHead className="text-right min-w-[80px]">المستخدمون</TableHead>
+                    <TableHead className="text-right min-w-[80px]">الحجوزات</TableHead>
+                    <TableHead className="text-right min-w-[110px]">تاريخ التسجيل</TableHead>
+                    <TableHead className="text-right min-w-[180px]">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orgs?.map((org) => (
+                    <TableRow key={org.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-foreground">{org.name}</p>
+                          <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={org.is_active ? 'default' : 'destructive'}>
+                          {org.is_active ? 'نشطة' : 'معلّقة'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <Badge variant={
+                            org.subscription_status === 'trialing' ? 'secondary' :
+                            org.subscription_status === 'active' ? 'default' : 'destructive'
+                          }>
+                            {org.subscription_status === 'trialing' ? 'تجريبي' :
+                             org.subscription_status === 'active' ? 'نشط' :
+                             org.subscription_status === 'expired' ? 'منتهٍ' :
+                             org.subscription_status === 'cancelled' ? 'ملغي' : 'بدون'}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <Badge variant={
-                              org.subscription_status === 'trialing' ? 'secondary' :
-                              org.subscription_status === 'active' ? 'default' : 'destructive'
-                            }>
-                              {org.subscription_status === 'trialing' ? 'تجريبي' :
-                               org.subscription_status === 'active' ? 'نشط' :
-                               org.subscription_status === 'expired' ? 'منتهٍ' : 
-                               org.subscription_status === 'cancelled' ? 'ملغي' : 'بدون'}
-                            </Badge>
-                            {org.subscription_expires_at && (
-                              <p className="text-xs text-muted-foreground">
-                                حتى {new Date(org.subscription_expires_at).toLocaleDateString('ar-EG')}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={org.subscription_plan_id ?? ''}
-                            onValueChange={(planId) =>
-                              changePlan.mutate({ orgId: org.id, planId, subId: org.subscription_id })
-                            }
+                          {org.subscription_expires_at && (
+                            <p className="text-xs text-muted-foreground">
+                              حتى {new Date(org.subscription_expires_at).toLocaleDateString('ar-EG')}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={org.subscription_plan_id ?? ''}
+                          onValueChange={(planId) =>
+                            changePlan.mutate({ orgId: org.id, planId, subId: org.subscription_id })
+                          }
+                        >
+                          <SelectTrigger className="w-28 h-8 text-xs">
+                            <SelectValue placeholder={org.plan || 'بدون خطة'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {plans?.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name_ar}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-foreground text-center">{org.member_count}</TableCell>
+                      <TableCell className="text-foreground text-center">{org.booking_count}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(org.created_at).toLocaleDateString('ar-EG')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          <Button
+                            size="sm"
+                            variant={org.is_active ? 'destructive' : 'default'}
+                            className="h-7 text-xs"
+                            onClick={() => toggleStatus.mutate({ id: org.id, is_active: !org.is_active })}
                           >
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder={org.plan || 'بدون خطة'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {plans?.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.name_ar}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-foreground">{org.member_count}</TableCell>
-                        <TableCell className="text-foreground">{org.booking_count}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {new Date(org.created_at).toLocaleDateString('ar-EG')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
+                            {org.is_active ? (
+                              <><Ban className="h-3 w-3 ml-1" /> تعليق</>
+                            ) : (
+                              <><CheckCircle className="h-3 w-3 ml-1" /> تفعيل</>
+                            )}
+                          </Button>
+                          {(org.subscription_status === 'trialing' || org.subscription_status === 'expired') && (
                             <Button
                               size="sm"
-                              variant={org.is_active ? 'destructive' : 'default'}
-                              onClick={() => toggleStatus.mutate({ id: org.id, is_active: !org.is_active })}
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => extendTrial.mutate({ orgId: org.id, days: 14 })}
+                              title="تمديد 14 يوم"
                             >
-                              {org.is_active ? (
-                                <><Ban className="h-3 w-3 ml-1" /> تعليق</>
-                              ) : (
-                                <><CheckCircle className="h-3 w-3 ml-1" /> تفعيل</>
-                              )}
+                              <CalendarPlus className="h-3 w-3 ml-1" /> تمديد
                             </Button>
-                            {(org.subscription_status === 'trialing' || org.subscription_status === 'expired') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => extendTrial.mutate({ orgId: org.id, days: 14 })}
-                                title="تمديد 14 يوم"
-                              >
-                                <CalendarPlus className="h-3 w-3 ml-1" /> تمديد
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </PlatformAdminLayout>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
