@@ -79,7 +79,7 @@ const SiteHeader = () => {
               asChild
               className="hidden lg:inline-flex"
             >
-              <Link to="/auth">تسجيل الدخول</Link>
+              <Link to="/login">تسجيل الدخول</Link>
             </Button>
             <Button
               onClick={handleWhatsAppClick}
@@ -132,7 +132,7 @@ const SiteHeader = () => {
                       size="sm"
                       onClick={handleNavClick}
                     >
-                      <Link to="/auth">تسجيل الدخول</Link>
+                      <Link to="/login">تسجيل الدخول</Link>
                     </Button>
                     <Button
                       onClick={() => {

@@ -47,7 +47,7 @@ const ResetPassword = () => {
       if (error) throw error;
       setSuccess(true);
       toast.success('تم تغيير كلمة المرور بنجاح');
-      setTimeout(() => navigate('/auth'), 3000);
+      setTimeout(() => navigate('/login'), 3000);
     } catch {
       setError('فشل في تحديث كلمة المرور. قد يكون الرابط منتهي الصلاحية.');
     } finally {

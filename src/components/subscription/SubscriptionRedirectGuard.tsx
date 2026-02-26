@@ -17,7 +17,7 @@ const SubscriptionRedirectGuard = ({ children }: { children: React.ReactNode }) 
   if (!isReadOnly) return <>{children}</>;
 
   // Allow subscription/payment pages themselves
-  const allowedAlways = ['/subscription-expired', '/subscription', '/pricing', '/payment', '/payment-success', '/forgot-password', '/reset-password', '/auth'];
+  const allowedAlways = ['/subscription-expired', '/subscription', '/pricing', '/payment', '/payment-success', '/forgot-password', '/reset-password', '/login', '/signup'];
   if (allowedAlways.some(r => pathname === r || pathname.startsWith(r + '?'))) return <>{children}</>;
 
   // Platform admin routes always allowed

@@ -155,10 +155,10 @@ const SaaSLanding = () => {
             <a href="#faq" className="hover:text-foreground transition-colors">الأسئلة الشائعة</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/auth">
+            <Link to="/login">
               <Button variant="ghost" size="sm">تسجيل الدخول</Button>
             </Link>
-            <Link to="/auth?tab=signup">
+            <Link to="/signup">
               <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                 ابدأ مجاناً
               </Button>
@@ -187,7 +187,7 @@ const SaaSLanding = () => {
             سجّل شركتك الآن وابدأ في دقائق.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth?tab=signup">
+            <Link to="/signup">
               <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 text-lg shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow">
                 ابدأ تجربتك المجانية — 14 يوم
                 <ArrowLeft className="w-5 h-5 mr-2" />
@@ -274,7 +274,7 @@ const SaaSLanding = () => {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/auth?tab=signup">
+                  <Link to="/signup">
                     <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white mt-4">
                       جرّب الآن مجاناً
                       <ArrowLeft className="w-4 h-4 mr-2" />
@@ -305,7 +305,7 @@ const SaaSLanding = () => {
           <p className="text-blue-100 mb-6 max-w-lg mx-auto">
             14 يوم تجربة مجانية — بدون بطاقة ائتمان — إلغاء في أي وقت
           </p>
-          <Link to="/auth?tab=signup">
+          <Link to="/signup">
             <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 px-8 text-lg font-semibold shadow-lg">
               سجّل شركتك الآن
             </Button>
@@ -384,7 +384,7 @@ const SaaSLanding = () => {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth?tab=signup">
+                <Link to="/signup">
                   <Button 
                     className={`w-full ${plan.highlighted ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : ''}`}
                     variant={plan.highlighted ? 'default' : 'outline'}
@@ -440,7 +440,7 @@ const SaaSLanding = () => {
             انضم لمئات شركات السياحة التي تستخدم Vogatchi CRM. ابدأ تجربتك المجانية اليوم.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth?tab=signup">
+            <Link to="/signup">
               <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 px-8 text-lg font-semibold shadow-lg">
                 ابدأ تجربتك المجانية — 14 يوم
                 <ArrowLeft className="w-5 h-5 mr-2" />

@@ -77,10 +77,10 @@ const PricingPage = () => {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link to="/auth">
+            <Link to="/login">
               <Button variant="ghost" size="sm">تسجيل الدخول</Button>
             </Link>
-            <Link to="/auth?tab=signup">
+            <Link to="/signup">
               <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                 ابدأ مجاناً
               </Button>
@@ -217,7 +217,7 @@ const PricingPage = () => {
 
                     {/* CTA */}
                     <div className="p-6 pt-4 border-t border-border">
-                      <Link to={plan.price_monthly === 0 ? '/auth?tab=signup' : `/payment?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`}>
+                      <Link to={plan.price_monthly === 0 ? '/signup' : `/payment?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`}>
                         <Button
                           className={`w-full text-base ${
                             isRecommended
@@ -336,7 +336,7 @@ const PricingPage = () => {
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
             جرّب أي خطة مجاناً لمدة 14 يوم. بدون بطاقة ائتمان، بدون التزامات.
           </p>
-          <Link to="/auth?tab=signup">
+          <Link to="/signup">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8">
               ابدأ التجربة المجانية الآن
               <ArrowLeft className="w-5 h-5 mr-2" />

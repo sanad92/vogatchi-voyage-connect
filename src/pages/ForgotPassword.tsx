@@ -66,7 +66,7 @@ const ForgotPassword = () => {
                   يرجى فحص صندوق الوارد (والبريد غير المرغوب فيه).
                   الرابط صالح لمدة 24 ساعة.
                 </p>
-                <Link to="/auth">
+                <Link to="/login">
                   <Button variant="outline" className="mt-4 gap-2">
                     <ArrowRight className="h-4 w-4" />
                     العودة لتسجيل الدخول
@@ -100,7 +100,7 @@ const ForgotPassword = () => {
                   {loading ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
                 </Button>
                 <div className="text-center">
-                  <Link to="/auth" className="text-sm text-primary hover:underline">
+                  <Link to="/login" className="text-sm text-primary hover:underline">
                     العودة لتسجيل الدخول
                   </Link>
                 </div>

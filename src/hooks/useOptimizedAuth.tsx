@@ -209,10 +209,10 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       await supabase.auth.signOut();
       clearState();
       toast.success('تم تسجيل الخروج بنجاح');
-      navigate('/auth');
+      navigate('/login');
     } catch {
       clearState();
-      navigate('/auth');
+      navigate('/login');
     } finally {
       setLoading(false);
     }
