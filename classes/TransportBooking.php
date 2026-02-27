@@ -19,6 +19,10 @@ class TransportBooking {
             }
         }
         
+        if (class_exists('SubscriptionMiddleware')) {
+            SubscriptionMiddleware::requireFeature('bookings');
+        }
+
         $bookingData = [
             'id' => $this->db->generateUUID(),
             'customer_id' => $data['customer_id'],
@@ -59,7 +63,19 @@ class TransportBooking {
         // Calculate profit
         $bookingData['total_profit'] = $bookingData['total_cost_customer'] - $bookingData['supplier_cost'];
         
-        return $this->db->insert('transport_bookings', $bookingData);
+        $res = $this->db->insert('transport_bookings', $bookingData);
+        if ($res) {
+            if (class_exists('Logger')) {
+                Logger::audit('INSERT','transport_bookings',$bookingData['id'],null,$bookingData);
+                Logger::activity('booking_created',['booking_id'=>$bookingData['id'],'type'=>'transport']);
+            }
+            if (class_exists('SubscriptionMiddleware')) {
+                SubscriptionMiddleware::recordUsage('bookings');
+            }            if (class_exists('UsageTracker')) {
+                $tracker = new UsageTracker($this->db);
+                $tracker->trackBookingCreated();
+            }        }
+        return $res;
     }
     
     public function update($id, $data) {
@@ -101,7 +117,13 @@ class TransportBooking {
             throw new Exception("لا توجد بيانات للتحديث");
         }
         
-        return $this->db->update('transport_bookings', $updateData, 'id = :id', ['id' => $id]);
+        $old = $this->getById($id);
+        $res = $this->db->update('transport_bookings', $updateData, 'id = :id', ['id' => $id]);
+        if ($res && class_exists('Logger')) {
+            Logger::audit('UPDATE','transport_bookings',$id,$old,$updateData);
+            Logger::activity('booking_updated',['booking_id'=>$id,'changes'=>$updateData]);
+        }
+        return $res;
     }
     
     public function getById($id) {
@@ -164,11 +186,23 @@ class TransportBooking {
             throw new Exception("حالة الحجز غير صحيحة");
         }
         
-        return $this->db->update('transport_bookings', ['booking_status' => $status], 'id = :id', ['id' => $id]);
+        $old = $this->getById($id);
+        $res = $this->db->update('transport_bookings', ['booking_status' => $status], 'id = :id', ['id' => $id]);
+        if ($res && class_exists('Logger')) {
+            Logger::audit('UPDATE','transport_bookings',$id,$old,['booking_status'=>$status]);
+            Logger::activity('booking_status_changed',['booking_id'=>$id,'status'=>$status]);
+        }
+        return $res;
     }
     
     public function updatePayment($id, $paidAmount) {
-        return $this->db->update('transport_bookings', ['paid_amount' => $paidAmount], 'id = :id', ['id' => $id]);
+        $old = $this->getById($id);
+        $res = $this->db->update('transport_bookings', ['paid_amount' => $paidAmount], 'id = :id', ['id' => $id]);
+        if ($res && class_exists('Logger')) {
+            Logger::audit('UPDATE','transport_bookings',$id,$old,['paid_amount'=>$paidAmount]);
+            Logger::activity('payment_updated',['booking_id'=>$id,'amount'=>$paidAmount]);
+        }
+        return $res;
     }
     
     public function getStats() {
@@ -202,6 +236,31 @@ class TransportBooking {
             'voucher_sent' => 1,
             'voucher_sent_date' => date('Y-m-d H:i:s')
         ], 'id = :id', ['id' => $id]);
+    }
+
+    /**
+     * Create an invoice for this transport booking
+     */
+    public function createInvoice($id) {
+        $booking = $this->getById($id);
+        if (!$booking) {
+            throw new Exception('Booking not found');
+        }
+        require_once __DIR__ . '/services/InvoiceService.php';
+        $svc = new InvoiceService();
+        $invoiceData = [
+            'booking_id' => $id,
+            'booking_type' => 'transport',
+            'customer_id' => $booking['customer_id'],
+            'customer_name' => $booking['customer_name'],
+            'subtotal' => $booking['total_cost_customer'],
+            'vat_rate' => 0,
+            'discount_amount' => 0,
+            'final_amount' => $booking['total_cost_customer'],
+            'status' => 'draft',
+            'issued_date' => date('Y-m-d')
+        ];
+        return $svc->create($invoiceData);
     }
 }
 ?>

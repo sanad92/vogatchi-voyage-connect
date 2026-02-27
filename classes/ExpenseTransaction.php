@@ -4,6 +4,8 @@
  * Tourism Management System
  */
 
+require_once __DIR__ . '/services/AccountingService.php';
+
 class ExpenseTransaction {
     private $db;
     
@@ -166,11 +168,28 @@ class ExpenseTransaction {
             throw new Exception("المعاملة معتمدة بالفعل");
         }
         
-        return $this->db->update('expense_transactions', [
+        $res = $this->db->update('expense_transactions', [
             'status' => 'approved',
             'approved_by' => $approvedBy,
             'approved_at' => date('Y-m-d H:i:s')
         ], 'id = :id', ['id' => $id]);
+        if ($res && class_exists('AccountingService')) {
+            // post accounting entry: debit expense account, credit cash/bank
+            $acc = new AccountingService();
+            try {
+                $desc = "Expense {$transaction['id']} ({$transaction['description']})";
+                $lines = [
+                    ['account_code' => '5000', 'debit' => $transaction['amount']], // Expense category (generic)
+                    ['account_code' => '1000', 'credit' => $transaction['amount']] // cash/bank
+                ];
+                $acc->postEntry($transaction['transaction_date'], $desc, $lines, $transaction['id']);
+            } catch (Exception $e) {
+                if (class_exists('Logger')) {
+                    Logger::error('accounting_expense_post_error', ['error'=>$e->getMessage()]);
+                }
+            }
+        }
+        return $res;
     }
     
     public function reject($id, $rejectedBy = null, $rejectionReason = null) {
