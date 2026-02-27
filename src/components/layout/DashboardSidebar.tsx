@@ -255,8 +255,8 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
       {/* Mobile sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 w-72 bg-sidebar transform transition-transform duration-300 lg:hidden shadow-2xl",
-        mobileOpen ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"
+        "fixed inset-y-0 right-0 z-50 w-72 bg-sidebar transition-transform duration-300 lg:hidden shadow-2xl",
+        mobileOpen ? "translate-x-0" : "ltr:translate-x-full rtl:-translate-x-full"
       )}>
         <button
           onClick={onMobileClose}
