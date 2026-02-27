@@ -56,7 +56,6 @@ const RegisterOrganization = () => {
           phone: form.phone || null,
           email: form.email || null,
           address: form.address || null,
-          created_by: user.id,
         })
         .select('id')
         .single();
