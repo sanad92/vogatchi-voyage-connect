@@ -46,7 +46,12 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
     }
     const result = await signUp(email, password, fullName);
     if (result.error) {
-      setError('فشل في إنشاء الحساب. يرجى المحاولة مرة أخرى.');
+      const errorMsg = (result.error as any)?.message || (result.error as any)?.code || '';
+      if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
+        setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
+      } else {
+        setError('فشل في إنشاء الحساب. يرجى المحاولة مرة أخرى.');
+      }
     }
   };
 
