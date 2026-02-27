@@ -30,7 +30,7 @@ const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
   if (isLoading) {
     return (
       <section className="relative py-20 overflow-hidden">
-        <div className="container mx-auto px-4 relative">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12 relative">
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-pulse space-y-8">
               <div className="h-16 bg-gray-200 rounded mx-auto max-w-lg"></div>
@@ -51,8 +51,8 @@ const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
     <section className="relative py-16 lg:py-24 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/10"></div>
       
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="max-w-5xl mx-auto text-center">
+      <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12 relative">
+        <div className="max-w-6xl mx-auto text-center">
           {/* Main Heading */}
           <div className="space-y-6 mb-12">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">

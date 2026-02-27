@@ -89,6 +89,8 @@ const navLinks = [
   { href: '#faq', label: 'الأسئلة الشائعة' },
 ];
 
+const pageContainer = 'mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12';
+
 const SaaSLanding = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -96,10 +98,10 @@ const SaaSLanding = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className={`${pageContainer} h-16 flex items-center justify-between`}>
           <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-base sm:text-lg">V</span>
+              <span className="text-primary-foreground font-bold text-base sm:text-lg">H</span>
             </div>
             <span className="text-lg sm:text-xl font-bold text-primary">
               Hostretor.online — Travel ERP System
@@ -109,7 +111,7 @@ const SaaSLanding = () => {
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-6 text-sm text-muted-foreground">
             {navLinks.map(link => (
-              <a key={link.href} href={link.href} className="hover:text-foreground transition-colors">{link.label}</a>
+              <a key={link.href} href={link.href} className="hover:text-foreground transition-colors hover:-translate-y-px">{link.label}</a>
             ))}
           </nav>
 
@@ -134,7 +136,7 @@ const SaaSLanding = () => {
                 <div className="flex flex-col gap-4 mt-6">
                   <Link to="/" className="flex items-center gap-2 mb-4" onClick={() => setMobileMenuOpen(false)}>
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">V</span>
+                      <span className="text-primary-foreground font-bold text-sm">H</span>
                     </div>
                     <span className="font-bold text-foreground">Hostretor.online — Travel ERP System</span>
                   </Link>
@@ -168,7 +170,7 @@ const SaaSLanding = () => {
       {/* Hero */}
       <section className="py-12 sm:py-16 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-        <div className="container mx-auto px-4 sm:px-6 text-center relative z-10">
+        <div className={`${pageContainer} text-center relative z-10`}>
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-6 border border-primary/20">
             <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             منصة SaaS متكاملة لإدارة شركات السياحة
@@ -205,7 +207,7 @@ const SaaSLanding = () => {
 
       {/* Social Proof Stats */}
       <section className="py-10 sm:py-12 border-y border-border bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
@@ -221,7 +223,7 @@ const SaaSLanding = () => {
 
       {/* Features Grid */}
       <section id="features" className="py-14 sm:py-20">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="text-center mb-10 sm:mb-16">
             <span className="text-sm font-medium text-primary mb-2 block">المميزات</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
@@ -245,7 +247,7 @@ const SaaSLanding = () => {
 
       {/* Product Screenshots */}
       <section id="screenshots" className="py-14 sm:py-20 bg-muted/50">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="text-center mb-10 sm:mb-16">
             <span className="text-sm font-medium text-primary mb-2 block">جولة في النظام</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">شاهد النظام من الداخل</h2>
@@ -291,7 +293,7 @@ const SaaSLanding = () => {
       {/* Mid-page CTA */}
       <section className="py-12 sm:py-16 bg-primary relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,_white_0%,_transparent_60%)]" />
-        <div className="container mx-auto px-4 sm:px-6 text-center relative z-10">
+        <div className={`${pageContainer} text-center relative z-10`}>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-foreground mb-3">ابدأ تجربتك المجانية اليوم</h2>
           <p className="text-primary-foreground/70 mb-6 max-w-lg mx-auto text-sm sm:text-base">
             14 يوم تجربة مجانية — بدون بطاقة ائتمان — إلغاء في أي وقت
@@ -306,7 +308,7 @@ const SaaSLanding = () => {
 
       {/* Testimonials */}
       <section id="testimonials" className="py-14 sm:py-20">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="text-center mb-10 sm:mb-16">
             <span className="text-sm font-medium text-primary mb-2 block">آراء العملاء</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">ماذا يقول عملاؤنا</h2>
@@ -340,7 +342,7 @@ const SaaSLanding = () => {
 
       {/* Pricing */}
       <section id="pricing" className="py-14 sm:py-20 bg-muted/50">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="text-center mb-10 sm:mb-16">
             <span className="text-sm font-medium text-primary mb-2 block">الأسعار</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">خطط أسعار مرنة</h2>
@@ -398,7 +400,7 @@ const SaaSLanding = () => {
 
       {/* FAQ */}
       <section id="faq" className="py-14 sm:py-20">
-        <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+        <div className={`${pageContainer} max-w-3xl`}>
           <div className="text-center mb-10 sm:mb-16">
             <span className="text-sm font-medium text-primary mb-2 block">الأسئلة الشائعة</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">أسئلة متكررة</h2>
@@ -424,7 +426,7 @@ const SaaSLanding = () => {
       {/* Final CTA */}
       <section className="py-14 sm:py-20 bg-primary relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_70%_30%,_white_0%,_transparent_60%)]" />
-        <div className="container mx-auto px-4 sm:px-6 text-center relative z-10">
+        <div className={`${pageContainer} text-center relative z-10`}>
           <Award className="w-12 h-12 sm:w-16 sm:h-16 text-primary-foreground/50 mx-auto mb-4 sm:mb-6" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-foreground mb-3 sm:mb-4">جاهز لتطوير شركتك؟</h2>
           <p className="text-sm sm:text-lg text-primary-foreground/70 mb-6 sm:mb-8 max-w-xl mx-auto">
@@ -446,11 +448,11 @@ const SaaSLanding = () => {
 
       {/* Footer */}
       <footer className="py-8 sm:py-12 border-t border-border bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className={pageContainer}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">V</span>
+                <span className="text-primary-foreground font-bold text-sm">H</span>
               </div>
               <span className="font-semibold text-foreground">Hostretor.online — Travel ERP System</span>
             </div>

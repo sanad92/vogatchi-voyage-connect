@@ -9,13 +9,13 @@ interface LandingFooterProps {
 
 const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
   return (
-    <footer className="bg-gray-900 text-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8">
+    <footer className="bg-gray-900 text-white py-12 lg:py-14">
+      <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12">
+        <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 rtl:space-x-reverse mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold">V</span>
+                <span className="text-white font-bold">H</span>
               </div>
               <span className="text-xl font-bold">Hostretor.online — Travel ERP System</span>
             </div>
@@ -24,7 +24,7 @@ const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
             </p>
             <Button
               onClick={onWhatsAppClick}
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+              className="mt-4 bg-green-600 hover:bg-green-700 text-white transition-all duration-200 hover:-translate-y-px"
             >
               <MessageSquare className="h-4 w-4 mr-2" />
               تواصل عبر الواتساب

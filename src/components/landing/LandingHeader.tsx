@@ -37,7 +37,7 @@ const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
 
   return (
     <header className="bg-background/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-border/40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo and Brand */}
           <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
             <Button
               onClick={onWhatsAppClick}
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg"
+              className="bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg transition-all duration-200 hover:-translate-y-px"
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
