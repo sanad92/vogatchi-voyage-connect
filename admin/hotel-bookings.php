@@ -98,7 +98,7 @@ $stats = $hotelBooking->getStats();
 $allCustomers = $customer->getAll(1, 1000);
 
 renderAdminLayoutStart([
-    'htmlTitle' => 'حجوزات الفنادق - Vogatchi Travel',
+    'htmlTitle' => 'حجوزات الفنادق - Hostretor.online — Travel ERP System',
     'pageTitle' => 'حجوزات الفنادق',
     'userName' => 'أهلاً، ' . ($user['name'] ?? ''),
     'currentPage' => 'hotel-bookings',

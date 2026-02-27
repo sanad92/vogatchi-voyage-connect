@@ -20,7 +20,7 @@ const LoginWelcome = () => {
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">البريد:</span>
-                    <code className="bg-white px-2 py-1 rounded text-xs">admin@vogatchi.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-xs">admin@hostretor.online</code>
                   </div>
                   <div className="flex items-center gap-2">
                     <Lock className="h-3 w-3 text-gray-500" />
@@ -38,7 +38,7 @@ const LoginWelcome = () => {
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">البريد:</span>
-                    <code className="bg-white px-2 py-1 rounded text-xs">manager@vogatchi.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-xs">manager@hostretor.online</code>
                   </div>
                   <div className="flex items-center gap-2">
                     <Lock className="h-3 w-3 text-gray-500" />
@@ -56,7 +56,7 @@ const LoginWelcome = () => {
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">البريد:</span>
-                    <code className="bg-white px-2 py-1 rounded text-xs">sales@vogatchi.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-xs">sales@hostretor.online</code>
                   </div>
                   <div className="flex items-center gap-2">
                     <Lock className="h-3 w-3 text-gray-500" />
@@ -74,7 +74,7 @@ const LoginWelcome = () => {
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">البريد:</span>
-                    <code className="bg-white px-2 py-1 rounded text-xs">booking@vogatchi.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-xs">booking@hostretor.online</code>
                   </div>
                   <div className="flex items-center gap-2">
                     <Lock className="h-3 w-3 text-gray-500" />

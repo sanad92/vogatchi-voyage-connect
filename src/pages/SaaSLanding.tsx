@@ -102,7 +102,7 @@ const SaaSLanding = () => {
               <span className="text-primary-foreground font-bold text-base sm:text-lg">V</span>
             </div>
             <span className="text-lg sm:text-xl font-bold text-primary">
-              Vogatchi CRM
+              Hostretor.online — Travel ERP System
             </span>
           </Link>
 
@@ -136,7 +136,7 @@ const SaaSLanding = () => {
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                       <span className="text-primary-foreground font-bold text-sm">V</span>
                     </div>
-                    <span className="font-bold text-foreground">Vogatchi CRM</span>
+                    <span className="font-bold text-foreground">Hostretor.online — Travel ERP System</span>
                   </Link>
                   <nav className="flex flex-col gap-1">
                     {navLinks.map(link => (
@@ -428,7 +428,7 @@ const SaaSLanding = () => {
           <Award className="w-12 h-12 sm:w-16 sm:h-16 text-primary-foreground/50 mx-auto mb-4 sm:mb-6" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-foreground mb-3 sm:mb-4">جاهز لتطوير شركتك؟</h2>
           <p className="text-sm sm:text-lg text-primary-foreground/70 mb-6 sm:mb-8 max-w-xl mx-auto">
-            انضم لمئات شركات السياحة التي تستخدم Vogatchi CRM. ابدأ تجربتك المجانية اليوم.
+            انضم لمئات شركات السياحة التي تستخدم Hostretor.online — Travel ERP System. ابدأ تجربتك المجانية اليوم.
           </p>
           <Link to="/signup">
             <Button size="lg" variant="secondary" className="px-6 sm:px-8 text-base sm:text-lg font-semibold shadow-lg">
@@ -452,7 +452,7 @@ const SaaSLanding = () => {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">V</span>
               </div>
-              <span className="font-semibold text-foreground">Vogatchi CRM</span>
+              <span className="font-semibold text-foreground">Hostretor.online — Travel ERP System</span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
               <a href="#features" className="hover:text-foreground transition-colors">المميزات</a>
@@ -460,7 +460,7 @@ const SaaSLanding = () => {
               <a href="#faq" className="hover:text-foreground transition-colors">الأسئلة الشائعة</a>
               <Link to="/pricing" className="hover:text-foreground transition-colors">مقارنة الخطط</Link>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">© {new Date().getFullYear()} Vogatchi CRM. جميع الحقوق محفوظة.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">© {new Date().getFullYear()} Hostretor.online — Travel ERP System. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>

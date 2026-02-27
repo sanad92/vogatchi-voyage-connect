@@ -17,7 +17,7 @@ const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold">V</span>
               </div>
-              <span className="text-xl font-bold">Vogatchi Travel</span>
+              <span className="text-xl font-bold">Hostretor.online — Travel ERP System</span>
             </div>
             <p className="text-gray-400 leading-relaxed">
               شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية بجودة عالية وأسعار تنافسية.
@@ -63,7 +63,7 @@ const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
               </div>
               <div className="flex items-center">
                 <Mail className="h-4 w-4 mr-2" />
-                ops@vogatchitrips.com
+                ops@hostretor.online
               </div>
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2" />
@@ -74,7 +74,7 @@ const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Vogatchi Travel. جميع الحقوق محفوظة.</p>
+          <p>&copy; 2024 Hostretor.online — Travel ERP System. جميع الحقوق محفوظة.</p>
         </div>
       </div>
     </footer>

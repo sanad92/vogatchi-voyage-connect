@@ -114,7 +114,7 @@ const ContactForm = ({ onWhatsAppClick }: ContactFormProps) => {
                   تم إرسال طلبك بنجاح!
                 </h2>
                 <p className="text-green-700 mb-6">
-                  شكراً لك على اختيارك Vogatchi Travel. سنتواصل معك خلال 24 ساعة لتقديم أفضل العروض.
+                  شكراً لك على اختيارك Hostretor.online — Travel ERP System. سنتواصل معك خلال 24 ساعة لتقديم أفضل العروض.
                 </p>
                 <div className="space-y-3">
                   <Button

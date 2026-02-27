@@ -12,7 +12,7 @@ function renderAdminSidebar(string $currentPage = 'dashboard', string $dir = 'rt
 
     echo '<aside id="appSidebar" class="fixed inset-y-0 z-40 w-72 -translate-x-full border-e border-slate-200/80 bg-white/95 shadow-sm transition-transform duration-300 dark:border-slate-800 dark:bg-slate-900/95 laptop:translate-x-0 rtl:translate-x-full laptop:rtl:translate-x-0">';
     echo '<div class="flex h-16 items-center border-b border-slate-200/80 px-6 dark:border-slate-800">';
-    echo '<span class="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">Vogatchi Admin</span>';
+    echo '<span class="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">Hostretor.online — Travel ERP System</span>';
     echo '</div>';
     echo '<nav class="p-5">';
     echo '<ul class="space-y-1.5">';

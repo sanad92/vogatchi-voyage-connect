@@ -21,7 +21,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $settings['website_title'] ?? 'Vogatchi Travel'; ?></title>
+    <title><?php echo $settings['website_title'] ?? 'Hostretor.online — Travel ERP System'; ?></title>
     <meta name="description" content="<?php echo $settings['website_description'] ?? ''; ?>">
     
     <!-- Tailwind CSS -->

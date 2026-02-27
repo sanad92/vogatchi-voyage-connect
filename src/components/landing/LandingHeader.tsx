@@ -11,9 +11,9 @@ interface LandingHeaderProps {
 const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
   const { getSetting, isLoading } = useLandingContent();
   
-  const companyName = getSetting('company_name') || 'Vogatchi Travel';
+  const companyName = getSetting('company_name') || 'Hostretor.online — Travel ERP System';
   const phoneNumber = getSetting('phone_number') || '01103442881';
-  const email = getSetting('email') || 'ops@vogatchitrips.com';
+  const email = getSetting('email') || 'ops@hostretor.online';
 
   if (isLoading) {
     return (
@@ -43,7 +43,7 @@ const LandingHeader = ({ onWhatsAppClick }: LandingHeaderProps) => {
           <div className="flex items-center gap-3">
             <img
               src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
-              alt="Vogatchi logo"
+              alt="Hostretor.online logo"
               className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg object-contain shadow-md"
             />
             <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">

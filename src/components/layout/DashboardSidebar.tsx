@@ -123,7 +123,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         </div>
         {!collapsed && (
           <span className="text-sidebar-foreground font-bold text-lg truncate">
-            Vogatchi
+            Hostretor.online
           </span>
         )}
       </div>

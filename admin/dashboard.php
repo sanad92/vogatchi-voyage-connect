@@ -32,7 +32,7 @@ $stats = [
 ];
 
 renderAdminLayoutStart([
-    'htmlTitle' => 'لوحة التحكم - Vogatchi Travel',
+    'htmlTitle' => 'لوحة التحكم - Hostretor.online — Travel ERP System',
     'pageTitle' => 'لوحة التحكم',
     'userName' => 'أهلاً، ' . ($user['name'] ?? ''),
     'currentPage' => 'dashboard',

@@ -73,7 +73,7 @@ const PricingPage = () => {
               <span className="text-white font-bold text-lg">V</span>
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Vogatchi CRM
+              Hostretor.online — Travel ERP System
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -348,7 +348,7 @@ const PricingPage = () => {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Vogatchi CRM. جميع الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} Hostretor.online — Travel ERP System. جميع الحقوق محفوظة.</p>
         </div>
       </footer>
     </div>

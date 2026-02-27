@@ -36,11 +36,11 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
               <img 
                 src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
-                alt="Vogatchi logo"
+                alt="Hostretor.online logo"
                 className="h-10 w-10 object-contain rounded-lg shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105"
               />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Vogatchi CRM
+                Hostretor.online — Travel ERP System
               </span>
             </Link>
 

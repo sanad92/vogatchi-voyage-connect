@@ -22,7 +22,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         {/* Background image */}
         <img
           src={authSideImage}
-          alt="Vogatchi CRM"
+          alt="Hostretor.online — Travel ERP System"
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Overlay */}
@@ -36,7 +36,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
               <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
                 <span className="font-bold text-xl">V</span>
               </div>
-              <span className="text-xl font-bold">Vogatchi CRM</span>
+              <span className="text-xl font-bold">Hostretor.online — Travel ERP System</span>
             </Link>
           </div>
 

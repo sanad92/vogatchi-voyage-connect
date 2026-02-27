@@ -39,7 +39,7 @@ const Navbar = () => {
                 <span className="text-white font-bold text-sm sm:text-lg">V</span>
               </div>
               <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden xs:block truncate">
-                Vogatchi CRM
+                Hostretor.online — Travel ERP System
               </span>
               <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent xs:hidden">
                 V

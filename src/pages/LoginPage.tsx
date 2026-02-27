@@ -55,7 +55,7 @@ const LoginPage = () => {
             <span className="text-primary-foreground font-bold text-xl">V</span>
           </div>
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-3">Vogatchi CRM</h1>
+        <h1 className="text-2xl font-bold text-foreground mt-3">Hostretor.online — Travel ERP System</h1>
         <p className="text-muted-foreground text-sm mt-1">نظام إدارة شركة السياحة</p>
       </div>
 

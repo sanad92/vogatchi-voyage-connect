@@ -84,7 +84,7 @@ $customersData = $customer->getAll($page, 20, $search, $segment);
 $stats = $customer->getStats();
 
 renderAdminLayoutStart([
-    'htmlTitle' => 'إدارة العملاء - Vogatchi Travel',
+    'htmlTitle' => 'إدارة العملاء - Hostretor.online — Travel ERP System',
     'pageTitle' => 'إدارة العملاء',
     'userName' => 'أهلاً، ' . ($user['name'] ?? ''),
     'currentPage' => 'customers',
