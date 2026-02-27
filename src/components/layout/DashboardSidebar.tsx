@@ -255,12 +255,12 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
       {/* Mobile sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 w-72 bg-sidebar transform transition-transform duration-300 lg:hidden shadow-2xl",
-        mobileOpen ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"
+        "fixed inset-y-0 right-0 z-50 w-72 bg-sidebar transition-transform duration-300 lg:hidden shadow-2xl",
+        mobileOpen ? "translate-x-0" : "translate-x-full"
       )}>
         <button
           onClick={onMobileClose}
-          className="absolute top-4 left-4 rtl:left-auto rtl:right-4 p-1 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          className="absolute top-4 left-4 p-1 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
         >
           <X className="h-5 w-5" />
         </button>
