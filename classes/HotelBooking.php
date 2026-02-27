@@ -4,6 +4,8 @@
  * Tourism Management System
  */
 
+require_once __DIR__ . '/TenantMiddleware.php';
+
 class HotelBooking {
     private $db;
     
@@ -107,19 +109,25 @@ class HotelBooking {
     }
     
     public function getById($id) {
+        // P1 fix: enforce tenant scope on booking reads.
+        $orgId = TenantMiddleware::requireTenant();
         return $this->db->selectOne("
             SELECT hb.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                    s.name as supplier_name, s.contact_person as supplier_contact
             FROM hotel_bookings hb
             LEFT JOIN customers c ON hb.customer_id = c.id
             LEFT JOIN suppliers s ON hb.supplier_id = s.id
-            WHERE hb.id = :id
-        ", ['id' => $id]);
+            WHERE hb.id = :id AND hb.organization_id = :org
+        ", ['id' => $id, 'org' => $orgId]);
     }
     
     public function getAll($page = 1, $perPage = 20, $filters = []) {
+        // P1 fix: enforce tenant scope on booking lists.
+        $orgId = TenantMiddleware::requireTenant();
         $conditions = ['1=1'];
         $params = [];
+        $conditions[] = 'hb.organization_id = :org';
+        $params['org'] = $orgId;
         
         if (!empty($filters['search'])) {
             $conditions[] = "(hb.customer_name LIKE :search OR hb.hotel_name LIKE :search OR hb.destination_city LIKE :search OR hb.internal_booking_number LIKE :search)";
@@ -181,6 +189,8 @@ class HotelBooking {
     }
     
     public function getStats() {
+        // P1 fix: enforce tenant scope on aggregate dashboard stats.
+        $orgId = TenantMiddleware::requireTenant();
         $stats = $this->db->selectOne("
             SELECT 
                 COUNT(*) as total,
@@ -192,7 +202,8 @@ class HotelBooking {
                 SUM(total_profit) as total_profit,
                 SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as recent
             FROM hotel_bookings
-        ");
+            WHERE organization_id = :org
+        ", ['org' => $orgId]);
         
         return $stats;
     }

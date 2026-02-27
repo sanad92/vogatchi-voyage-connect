@@ -91,7 +91,14 @@ class Auth {
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['full_name'];
         $_SESSION['user_roles'] = $user['roles'] ? explode(',', $user['roles']) : ['viewer'];
+        // P0 fix: keep organization context in session for API/runtime consistency.
+        $_SESSION['organization_id'] = $user['organization_id'] ?? null;
         $_SESSION['login_time'] = time();
+
+        // P0 fix: set authoritative tenant context for current request.
+        if (class_exists('TenantMiddleware')) {
+            TenantMiddleware::setTenantContext($_SESSION['organization_id'] ?? null, $user['id'] ?? null, true);
+        }
         
         // Update last login
         $this->db->update('users', 
@@ -121,6 +128,8 @@ class Auth {
             'id' => $_SESSION['user_id'],
             'email' => $_SESSION['user_email'],
             'name' => $_SESSION['user_name'],
+            // P0 fix: always expose tenant context to API/controller layers.
+            'organization_id' => $_SESSION['organization_id'] ?? null,
             'roles' => $_SESSION['user_roles']
         ];
     }
@@ -152,6 +161,11 @@ class Auth {
                 header('Location: /login.php');
                 exit;
             }
+        }
+
+        // P0/P1 fix: refresh authoritative tenant context for each authenticated request.
+        if (class_exists('TenantMiddleware')) {
+            TenantMiddleware::setTenantContext($_SESSION['organization_id'] ?? null, $_SESSION['user_id'] ?? null, true);
         }
     }
     

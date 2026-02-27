@@ -15,6 +15,7 @@ require_once __DIR__ . '/Sanitizer.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/Response.php';
 require_once __DIR__ . '/RBACMiddleware.php';
+require_once __DIR__ . '/TenantMiddleware.php';
 
 class ApiController {
     protected $db;
@@ -38,6 +39,10 @@ class ApiController {
         // sessions must provide user info
         if ($this->auth->isLoggedIn()) {
             $user = $this->auth->getCurrentUser();
+            // P0 fix: normalize tenant context from the same source used by Auth.
+            TenantMiddleware::setTenantContext($user['organization_id'] ?? null, $user['id'] ?? null, true);
+            // P1 fix: authenticated API requests must always have tenant context.
+            TenantMiddleware::requireTenant();
             $this->rbac = new RBACMiddleware($db, $user['id'], $user['organization_id']);
         }
 

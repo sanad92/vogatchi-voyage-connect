@@ -13,11 +13,84 @@ abstract class TenantMiddleware {
     protected $currentUserId = null;
     protected $allowedTables = [];
     
+    // P0 fix: single authoritative in-process tenant context.
+    protected static $tenantContextOrganizationId = null;
+    protected static $tenantContextUserId = null;
+    
     /**
      * Constructor - Initialize with database connection
      */
     public function __construct() {
         $this->db = Database::getInstance();
+        // P0 fix: hydrate instance tenant context from authoritative static/session source.
+        $this->tenantId = self::getOrganizationId();
+    }
+
+    /**
+     * P0 fix: set authoritative tenant context for current request.
+     *
+     * @param string|null $organizationId
+     * @param string|null $userId
+     * @param bool $persistSession
+     * @return void
+     */
+    public static function setTenantContext(?string $organizationId, ?string $userId = null, bool $persistSession = true): void {
+        self::$tenantContextOrganizationId = $organizationId;
+        self::$tenantContextUserId = $userId;
+
+        if ($persistSession && session_status() === PHP_SESSION_ACTIVE) {
+            if ($organizationId !== null) {
+                $_SESSION['organization_id'] = $organizationId;
+            }
+            if ($userId !== null) {
+                $_SESSION['user_id'] = $userId;
+            }
+        }
+    }
+
+    /**
+     * P0 fix: authoritative organization accessor used across services/controllers.
+     *
+     * @return string|null
+     */
+    public static function getOrganizationId(): ?string {
+        if (self::$tenantContextOrganizationId) {
+            return self::$tenantContextOrganizationId;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['organization_id'])) {
+            return (string) $_SESSION['organization_id'];
+        }
+
+        // Optional API fallback for internal/service-to-service calls.
+        $headerOrg = $_SERVER['HTTP_X_ORGANIZATION_ID'] ?? null;
+        if (!empty($headerOrg)) {
+            return (string) $headerOrg;
+        }
+
+        return null;
+    }
+
+    /**
+     * P0 fix: explicit tenant guard for request handling.
+     *
+     * @throws Exception
+     */
+    public static function requireTenant(): string {
+        $orgId = self::getOrganizationId();
+        if (empty($orgId)) {
+            throw new Exception('Organization context is required', 400);
+        }
+        return $orgId;
+    }
+
+    /**
+     * P0 fix: backward-compatible static request validation used by legacy endpoints.
+     *
+     * @throws Exception
+     */
+    public static function validateRequest(): void {
+        self::requireTenant();
     }
     
     /**

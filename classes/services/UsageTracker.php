@@ -34,8 +34,8 @@ class UsageTracker
         $today = date('Y-m-d');
         
         try {
-            // Try to increment existing record
-            $result = $this->db->execute(
+            // P0 fix: use supported Database::query API and PDO rowCount.
+            $stmt = $this->db->query(
                 "UPDATE org_usage_summary 
                  SET bookings_created = bookings_created + 1, updated_at = NOW()
                  WHERE organization_id = :org AND date = :date",
@@ -43,7 +43,7 @@ class UsageTracker
             );
 
             // If no record exists, create one
-            if ($this->db->rowCount == 0) {
+            if (!$stmt || $stmt->rowCount() === 0) {
                 $this->db->insert('org_usage_summary', [
                     'organization_id' => $this->organization_id,
                     'date' => $today,
@@ -133,7 +133,8 @@ class UsageTracker
         }
 
         try {
-            $this->db->execute(
+            // P0 fix: use supported Database::query API.
+            $this->db->query(
                 "UPDATE storage_usage SET deleted_at = NOW() WHERE id = :id AND organization_id = :org",
                 ['id' => $file_id, 'org' => $this->organization_id]
             );
@@ -285,7 +286,8 @@ class UsageTracker
             $api = $api_data[0] ?? [];
 
             // Upsert monthly report
-            $this->db->execute(
+            // P0 fix: use supported Database::query API.
+            $this->db->query(
                 "INSERT INTO monthly_usage_report 
                  (organization_id, year, month, total_bookings_created, max_active_users, avg_active_users, 
                   total_storage_mb, total_api_calls, avg_api_response_ms, api_error_count)
@@ -384,14 +386,15 @@ class UsageTracker
         $today = date('Y-m-d');
         
         try {
-            $this->db->execute(
+            // P0 fix: use supported Database::query API and PDO rowCount.
+            $stmt = $this->db->query(
                 "UPDATE org_usage_summary 
                  SET api_calls = api_calls + 1, updated_at = NOW()
                  WHERE organization_id = :org AND date = :date",
                 ['org' => $this->organization_id, 'date' => $today]
             );
 
-            if ($this->db->rowCount == 0) {
+            if (!$stmt || $stmt->rowCount() === 0) {
                 $this->db->insert('org_usage_summary', [
                     'organization_id' => $this->organization_id,
                     'date' => $today,
@@ -412,14 +415,15 @@ class UsageTracker
         $storage_mb = $this->getTotalStorageUsageMb();
 
         try {
-            $this->db->execute(
+            // P0 fix: use supported Database::query API and PDO rowCount.
+            $stmt = $this->db->query(
                 "UPDATE org_usage_summary 
                  SET storage_used_mb = :storage, updated_at = NOW()
                  WHERE organization_id = :org AND date = :date",
                 ['org' => $this->organization_id, 'date' => $today, 'storage' => $storage_mb]
             );
 
-            if ($this->db->rowCount == 0) {
+            if (!$stmt || $stmt->rowCount() === 0) {
                 $this->db->insert('org_usage_summary', [
                     'organization_id' => $this->organization_id,
                     'date' => $today,

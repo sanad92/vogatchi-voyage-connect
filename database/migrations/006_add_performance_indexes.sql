@@ -43,7 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_invoices_amount ON invoices(final_amount, organiz
 CREATE INDEX IF NOT EXISTS idx_users_org_email ON users(organization_id, email);
 CREATE INDEX IF NOT EXISTS idx_users_org_active ON users(organization_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_org_members_org_user ON organization_members(organization_id, user_id);
-CREATE INDEX IF NOT EXISTS idx_org_members_role ON organization_members(role_id);
+-- P2 fix: organization_members has `role` column, not `role_id`.
+CREATE INDEX IF NOT EXISTS idx_org_members_role ON organization_members(role);
 
 -- ========== USAGE TRACKING INDEXES ==========
 CREATE INDEX IF NOT EXISTS idx_api_calls_endpoint_date ON api_calls_log(endpoint, created_at);
@@ -54,7 +55,8 @@ CREATE INDEX IF NOT EXISTS idx_storage_usage_org_date ON storage_usage(organizat
 CREATE INDEX IF NOT EXISTS idx_activity_logs_org_date ON activity_logs(organization_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_user ON activity_logs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_error_logs_org_date ON error_logs(organization_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_org_table ON audit_logs(organization_id, table_name);
+-- P2 fix: audit_logs tracks `entity_type`, not `table_name`.
+CREATE INDEX IF NOT EXISTS idx_audit_logs_org_table ON audit_logs(organization_id, entity_type);
 
 -- ========== ACCOUNTING INDEXES ==========
 CREATE INDEX IF NOT EXISTS idx_journal_entries_org_date ON journal_entries(organization_id, created_at);
@@ -73,11 +75,11 @@ CREATE INDEX IF NOT EXISTS idx_bookings_full_search ON hotel_bookings(organizati
 
 -- ========== ANALYSIS & VERIFICATION ==========
 
--- Verify index creations
-SHOW CREATE TABLE customers\G;
-SHOW CREATE TABLE hotel_bookings\G;
-SHOW CREATE TABLE invoices\G;
-SHOW CREATE TABLE users\G;
+-- P2 fix: keep verification commands commented to avoid migration execution failure.
+-- SHOW CREATE TABLE customers;
+-- SHOW CREATE TABLE hotel_bookings;
+-- SHOW CREATE TABLE invoices;
+-- SHOW CREATE TABLE users;
 
 -- Get index usage statistics (requires performance_schema enabled)
 -- SELECT object_name, count_read, count_write, count_delete, count_update

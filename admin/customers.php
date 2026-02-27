@@ -3,6 +3,8 @@ require_once '../config/database.php';
 require_once '../classes/Database.php';
 require_once '../classes/Auth.php';
 require_once '../classes/Customer.php';
+require_once '../classes/TenantMiddleware.php';
+require_once __DIR__ . '/layout/shell.php';
 
 $auth = new Auth();
 $auth->requireLogin();
@@ -10,11 +12,39 @@ $auth->requireLogin();
 $customer = new Customer();
 $user = $auth->getCurrentUser();
 
+$uiDir = $_SESSION['ui_dir'] ?? 'rtl';
+if (isset($_GET['dir']) && in_array($_GET['dir'], ['rtl', 'ltr'], true)) {
+    $uiDir = $_GET['dir'];
+    $_SESSION['ui_dir'] = $uiDir;
+}
+$uiLang = $uiDir === 'rtl' ? 'ar' : 'en';
+
+// P1 fix: bind tenant context for automatic query scoping in this request.
+TenantMiddleware::setTenantContext($user['organization_id'] ?? null, $user['id'] ?? null, true);
+TenantMiddleware::requireTenant();
+
+// P1 fix: initialize CSRF token once per session.
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// P1 fix: helper for CSRF validation for state-changing admin requests.
+function isValidCsrfToken(?string $token): bool {
+    return !empty($token) && !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
     try {
+        // P1 fix: enforce CSRF token on POST requests.
+        if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+            http_response_code(419);
+            echo json_encode(['success' => false, 'message' => 'CSRF token mismatch']);
+            exit;
+        }
+
         $action = $_POST['action'] ?? '';
         
         switch ($action) {
@@ -37,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 echo json_encode(['success' => false, 'message' => 'عملية غير صحيحة']);
         }
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        // P1 fix: avoid leaking sensitive internal errors outside debug mode.
+        $isDebug = filter_var((string)(getenv('APP_DEBUG') ?: '0'), FILTER_VALIDATE_BOOLEAN);
+        echo json_encode(['success' => false, 'message' => $isDebug ? $e->getMessage() : 'حدث خطأ غير متوقع']);
     }
     exit;
 }
@@ -50,38 +82,17 @@ $segment = $_GET['segment'] ?? '';
 // Get customers data
 $customersData = $customer->getAll($page, 20, $search, $segment);
 $stats = $customer->getStats();
-?>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة العملاء - Vogatchi Travel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-gray-100">
-    <!-- Header -->
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <a href="dashboard.php" class="text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-arrow-right"></i> العودة للوحة التحكم
-                    </a>
-                    <h1 class="text-2xl font-bold text-gray-900">إدارة العملاء</h1>
-                </div>
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <span class="text-gray-700">أهلاً، <?php echo $user['name']; ?></span>
-                    <a href="/logout.php" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
-                        تسجيل الخروج
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+renderAdminLayoutStart([
+    'htmlTitle' => 'إدارة العملاء - Vogatchi Travel',
+    'pageTitle' => 'إدارة العملاء',
+    'userName' => 'أهلاً، ' . ($user['name'] ?? ''),
+    'currentPage' => 'customers',
+    'dir' => $uiDir,
+    'lang' => $uiLang,
+]);
+?>
+<div class="space-y-8">
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
@@ -149,23 +160,23 @@ $stats = $customer->getStats();
         <div class="bg-white rounded-lg shadow p-6 mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                 <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 md:space-x-reverse">
-                    <input type="text" id="searchInput" placeholder="البحث بالاسم أو الهاتف أو البريد..." 
+                          <input type="text" id="searchInput" placeholder="البحث بالاسم أو الهاتف أو البريد..." 
                            value="<?php echo htmlspecialchars($search); ?>"
-                           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                              class="ui-input ui-input-md">
                     
-                    <select id="segmentFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select id="segmentFilter" class="ui-select ui-select-md">
                         <option value="">جميع الفئات</option>
                         <option value="new" <?php echo $segment === 'new' ? 'selected' : ''; ?>>عملاء جدد</option>
                         <option value="regular" <?php echo $segment === 'regular' ? 'selected' : ''; ?>>عملاء منتظمون</option>
                         <option value="vip" <?php echo $segment === 'vip' ? 'selected' : ''; ?>>عملاء VIP</option>
                     </select>
                     
-                    <button onclick="applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <button onclick="applyFilters()" class="ui-btn ui-btn-md ui-btn-primary">
                         <i class="fas fa-search ml-2"></i>بحث
                     </button>
                 </div>
                 
-                <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                <button onclick="openAddModal()" class="ui-btn ui-btn-md ui-btn-success">
                     <i class="fas fa-plus ml-2"></i>إضافة عميل جديد
                 </button>
             </div>
@@ -222,13 +233,13 @@ $stats = $customer->getStats();
                                 <?php echo date('Y/m/d', strtotime($cust['created_at'])); ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="editCustomer('<?php echo $cust['id']; ?>')" class="text-indigo-600 hover:text-indigo-900 ml-4">
+                                <button onclick="editCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn ml-2">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="viewCustomer('<?php echo $cust['id']; ?>')" class="text-green-600 hover:text-green-900 ml-4">
+                                <button onclick="viewCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn ml-2">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="deleteCustomer('<?php echo $cust['id']; ?>')" class="text-red-600 hover:text-red-900">
+                                <button onclick="deleteCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -280,9 +291,9 @@ $stats = $customer->getStats();
     </div>
 
     <!-- Add/Edit Customer Modal -->
-    <div id="customerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div id="customerModal" class="fixed inset-0 ui-modal-overlay hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="ui-modal-panel max-w-md w-full p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 id="modalTitle" class="text-lg font-medium text-gray-900">إضافة عميل جديد</h3>
                     <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
@@ -293,48 +304,49 @@ $stats = $customer->getStats();
                 <form id="customerForm">
                     <input type="hidden" id="customerId" name="id">
                     <input type="hidden" id="formAction" name="action" value="create">
+                    <input type="hidden" id="csrfTokenInput" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">الاسم *</label>
                             <input type="text" id="customerName" name="name" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف *</label>
                             <input type="tel" id="customerPhone" name="phone" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
                             <input type="email" id="customerEmail" name="email" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">العنوان</label>
                             <textarea id="customerAddress" name="address" rows="2" 
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                      class="ui-textarea"></textarea>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">الجنسية</label>
                             <input type="text" id="customerNationality" name="nationality" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الجواز</label>
                             <input type="text" id="customerPassport" name="passport_number" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">فئة العميل</label>
                             <select id="customerSegment" name="customer_segment" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    class="ui-select ui-select-md">
                                 <option value="new">جديد</option>
                                 <option value="regular">منتظم</option>
                                 <option value="vip">VIP</option>
@@ -344,17 +356,17 @@ $stats = $customer->getStats();
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">ملاحظات</label>
                             <textarea id="customerNotes" name="notes" rows="2" 
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                      class="ui-textarea"></textarea>
                         </div>
                     </div>
                     
                     <div class="flex justify-end space-x-3 space-x-reverse mt-6">
                         <button type="button" onclick="closeModal()" 
-                                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                class="ui-btn ui-btn-md ui-btn-secondary">
                             إلغاء
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                class="ui-btn ui-btn-md ui-btn-primary">
                             حفظ
                         </button>
                     </div>
@@ -364,6 +376,9 @@ $stats = $customer->getStats();
     </div>
 
     <script>
+        // P1 fix: shared CSRF token for all AJAX state-changing requests.
+        const csrfToken = '<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>';
+
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const segment = document.getElementById('segmentFilter').value;
@@ -400,6 +415,7 @@ $stats = $customer->getStats();
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
+                formData.append('csrf_token', csrfToken);
 
                 fetch('', {
                     method: 'POST',
@@ -432,6 +448,7 @@ $stats = $customer->getStats();
             e.preventDefault();
             
             const formData = new FormData(this);
+            formData.set('csrf_token', csrfToken);
             
             fetch('', {
                 method: 'POST',
@@ -461,5 +478,4 @@ $stats = $customer->getStats();
             }
         });
     </script>
-</body>
-</html>
+<?php renderAdminLayoutEnd(); ?>

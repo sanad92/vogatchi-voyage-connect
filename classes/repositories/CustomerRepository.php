@@ -27,28 +27,39 @@ class CustomerRepository extends BaseRepository {
     }
 
     public function getAll(int $page = 1, int $perPage = 20, string $search = '', string $segment = '') {
-        $conditions = ['is_active = 1'];
+        $conditions = ['c.is_active = 1'];
         $params = [];
 
         if (!empty($search)) {
-            $conditions[] = "(name LIKE :search OR phone LIKE :search OR email LIKE :search)";
+            $conditions[] = "(c.name LIKE :search OR c.phone LIKE :search OR c.email LIKE :search)";
             $params['search'] = "%$search%";
         }
 
         if (!empty($segment)) {
-            $conditions[] = "customer_segment = :segment";
+            $conditions[] = "c.customer_segment = :segment";
             $params['segment'] = $segment;
         }
 
         $whereClause = implode(' AND ', $conditions);
-        $sql = "SELECT *, 
-                (SELECT COUNT(*) FROM hotel_bookings WHERE customer_id = {$this->table}.id) +
-                (SELECT COUNT(*) FROM flight_bookings WHERE customer_id = {$this->table}.id) +
-                (SELECT COUNT(*) FROM car_rentals WHERE customer_id = {$this->table}.id) +
-                (SELECT COUNT(*) FROM transport_bookings WHERE customer_id = {$this->table}.id) as total_bookings
-                FROM {$this->table} 
-                WHERE $whereClause 
-                ORDER BY created_at DESC";
+
+        // P2 fix: remove N+1 subqueries by joining one aggregated booking-count derived table.
+        $sql = "SELECT c.*, COALESCE(bc.total_bookings, 0) AS total_bookings
+                FROM {$this->table} c
+                LEFT JOIN (
+                    SELECT customer_id, COUNT(*) AS total_bookings
+                    FROM (
+                        SELECT customer_id FROM hotel_bookings
+                        UNION ALL
+                        SELECT customer_id FROM flight_bookings
+                        UNION ALL
+                        SELECT customer_id FROM car_rentals
+                        UNION ALL
+                        SELECT customer_id FROM transport_bookings
+                    ) all_bookings
+                    GROUP BY customer_id
+                ) bc ON bc.customer_id = c.id
+                WHERE $whereClause
+                ORDER BY c.created_at DESC";
 
         return $this->paginate($sql, $params, $page, $perPage);
     }

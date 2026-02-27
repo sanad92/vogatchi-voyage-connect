@@ -13,6 +13,18 @@ class Database {
     private $password = DB_PASS;
     private $charset = DB_CHARSET;
 
+    // P1 fix: tenant-scoped tables list used by automatic enforcement layer.
+    private $tenantScopedTables = [
+        'users', 'customers', 'suppliers', 'employees', 'customer_segments', 'booking_statuses',
+        'hotel_bookings', 'flight_bookings', 'car_rentals', 'transport_bookings', 'invoices',
+        'invoice_items', 'customer_communications', 'service_requests', 'expense_transactions',
+        'whatsapp_conversations', 'bank_accounts', 'site_settings', 'landing_content',
+        'org_usage_summary', 'api_calls_log', 'storage_usage', 'monthly_usage_report',
+        'subscriptions', 'usage_records', 'activity_logs', 'audit_logs', 'error_logs',
+        'jobs_queue', 'job_failures', 'generated_invoices', 'report_exports', 'chart_of_accounts',
+        'journal_entries', 'salary_payments'
+    ];
+
     private function __construct() {
         $dsn = "mysql:host=$this->host;dbname=$this->database;charset=$this->charset";
         
@@ -29,7 +41,6 @@ class Database {
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
             throw new PDOException("خطأ في الاتصال بقاعدة البيانات");
-        }
         }
     }
 
@@ -50,9 +61,9 @@ class Database {
             $stmt->execute($params);
             return $stmt;
         } catch (PDOException $e) {
+            // P2 fix: never fail silently, always log and throw.
             error_log("Query failed: " . $e->getMessage() . " SQL: " . $sql);
-            return false;
-        }
+            throw $e;
         }
     }
 
@@ -67,6 +78,14 @@ class Database {
     }
 
     public function insert($table, $data) {
+        // P1 fix: automatically enforce tenant_id on scoped tables when context exists.
+        if ($this->isTenantScopedTable($table)) {
+            $orgId = $this->getCurrentOrganizationId();
+            if ($orgId && !isset($data['organization_id'])) {
+                $data['organization_id'] = $orgId;
+            }
+        }
+
         $fields = implode(',', array_keys($data));
         $placeholders = ':' . implode(', :', array_keys($data));
         
@@ -77,6 +96,11 @@ class Database {
     }
 
     public function update($table, $data, $where, $whereParams = []) {
+        // P1 fix: enforce organization filter automatically on scoped tables.
+        if ($this->isTenantScopedTable($table)) {
+            [$where, $whereParams] = $this->appendTenantFilter($where, $whereParams);
+        }
+
         $fields = [];
         foreach ($data as $key => $value) {
             $fields[] = "$key = :$key";
@@ -88,14 +112,87 @@ class Database {
     }
 
     public function delete($table, $where, $params = []) {
+        // P1 fix: enforce organization filter automatically on scoped tables.
+        if ($this->isTenantScopedTable($table)) {
+            [$where, $params] = $this->appendTenantFilter($where, $params);
+        }
+
         $sql = "DELETE FROM $table WHERE $where";
         return $this->query($sql, $params);
     }
 
     public function count($table, $where = '1=1', $params = []) {
+        // P1/P0 compatibility fix: support array filters used by some controllers.
+        if (is_array($where)) {
+            $filters = $where;
+            $where = '1=1';
+            $params = [];
+            foreach ($filters as $column => $value) {
+                $paramName = 'count_' . preg_replace('/[^a-zA-Z0-9_]/', '_', (string)$column);
+                $where .= " AND {$column} = :{$paramName}";
+                $params[$paramName] = $value;
+            }
+        }
+
+        // P1 fix: enforce organization filter automatically on scoped tables.
+        if ($this->isTenantScopedTable($table)) {
+            [$where, $params] = $this->appendTenantFilter($where, $params);
+        }
+
         $sql = "SELECT COUNT(*) as total FROM $table WHERE $where";
         $result = $this->selectOne($sql, $params);
         return $result ? (int)$result['total'] : 0;
+    }
+
+    /**
+     * P1 fix: determine whether table must be tenant-scoped.
+     */
+    private function isTenantScopedTable($table): bool {
+        return in_array(strtolower((string)$table), $this->tenantScopedTables, true);
+    }
+
+    /**
+     * P1 fix: resolve current tenant context for automatic query scoping.
+     */
+    private function getCurrentOrganizationId(): ?string {
+        if (class_exists('TenantMiddleware')) {
+            $org = TenantMiddleware::getOrganizationId();
+            if (!empty($org)) {
+                return $org;
+            }
+        }
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['organization_id'])) {
+            return (string)$_SESSION['organization_id'];
+        }
+        return null;
+    }
+
+    /**
+     * P1 fix: append tenant filter when missing, preserving positional or named params.
+     */
+    private function appendTenantFilter($where, $params): array {
+        $orgId = $this->getCurrentOrganizationId();
+        if (!$orgId) {
+            return [$where, $params];
+        }
+
+        if (stripos((string)$where, 'organization_id') !== false) {
+            return [$where, $params];
+        }
+
+        if (is_array($params) && array_is_list($params)) {
+            $where = (string)$where . ' AND organization_id = ?';
+            $params[] = $orgId;
+            return [$where, $params];
+        }
+
+        $where = (string)$where . ' AND organization_id = :__tenant_org_id__';
+        if (!is_array($params)) {
+            $params = [];
+        }
+        $params['__tenant_org_id__'] = $orgId;
+
+        return [$where, $params];
     }
 
     public function beginTransaction() {

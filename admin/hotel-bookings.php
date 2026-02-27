@@ -4,6 +4,8 @@ require_once '../classes/Database.php';
 require_once '../classes/Auth.php';
 require_once '../classes/HotelBooking.php';
 require_once '../classes/Customer.php';
+require_once '../classes/TenantMiddleware.php';
+require_once __DIR__ . '/layout/shell.php';
 
 $auth = new Auth();
 $auth->requireLogin();
@@ -12,11 +14,39 @@ $hotelBooking = new HotelBooking();
 $customer = new Customer();
 $user = $auth->getCurrentUser();
 
+$uiDir = $_SESSION['ui_dir'] ?? 'rtl';
+if (isset($_GET['dir']) && in_array($_GET['dir'], ['rtl', 'ltr'], true)) {
+    $uiDir = $_GET['dir'];
+    $_SESSION['ui_dir'] = $uiDir;
+}
+$uiLang = $uiDir === 'rtl' ? 'ar' : 'en';
+
+// P1 fix: bind tenant context for automatic query scoping in this request.
+TenantMiddleware::setTenantContext($user['organization_id'] ?? null, $user['id'] ?? null, true);
+TenantMiddleware::requireTenant();
+
+// P1 fix: initialize CSRF token once per session.
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// P1 fix: helper for CSRF validation for state-changing admin requests.
+function isValidCsrfToken(?string $token): bool {
+    return !empty($token) && !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
     try {
+        // P1 fix: enforce CSRF token on POST requests.
+        if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+            http_response_code(419);
+            echo json_encode(['success' => false, 'message' => 'CSRF token mismatch']);
+            exit;
+        }
+
         $action = $_POST['action'] ?? '';
         
         switch ($action) {
@@ -44,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 echo json_encode(['success' => false, 'message' => 'عملية غير صحيحة']);
         }
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        // P1 fix: avoid leaking sensitive internal errors outside debug mode.
+        $isDebug = filter_var((string)(getenv('APP_DEBUG') ?: '0'), FILTER_VALIDATE_BOOLEAN);
+        echo json_encode(['success' => false, 'message' => $isDebug ? $e->getMessage() : 'حدث خطأ غير متوقع']);
     }
     exit;
 }
@@ -64,38 +96,17 @@ $stats = $hotelBooking->getStats();
 
 // Get customers for dropdown
 $allCustomers = $customer->getAll(1, 1000);
-?>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حجوزات الفنادق - Vogatchi Travel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-gray-100">
-    <!-- Header -->
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <a href="dashboard.php" class="text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-arrow-right"></i> العودة للوحة التحكم
-                    </a>
-                    <h1 class="text-2xl font-bold text-gray-900">حجوزات الفنادق</h1>
-                </div>
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <span class="text-gray-700">أهلاً، <?php echo $user['name']; ?></span>
-                    <a href="/logout.php" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
-                        تسجيل الخروج
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+renderAdminLayoutStart([
+    'htmlTitle' => 'حجوزات الفنادق - Vogatchi Travel',
+    'pageTitle' => 'حجوزات الفنادق',
+    'userName' => 'أهلاً، ' . ($user['name'] ?? ''),
+    'currentPage' => 'hotel-bookings',
+    'dir' => $uiDir,
+    'lang' => $uiLang,
+]);
+?>
+<div class="space-y-8">
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
@@ -151,11 +162,11 @@ $allCustomers = $customer->getAll(1, 1000);
         <div class="bg-white rounded-lg shadow p-6 mb-8">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="text" id="searchInput" placeholder="البحث..." 
+                          <input type="text" id="searchInput" placeholder="البحث..." 
                            value="<?php echo htmlspecialchars($filters['search']); ?>"
-                           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                              class="ui-input ui-input-md">
                     
-                    <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select id="statusFilter" class="ui-select ui-select-md">
                         <option value="">جميع الحالات</option>
                         <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>معلقة</option>
                         <option value="confirmed" <?php echo $filters['status'] === 'confirmed' ? 'selected' : ''; ?>>مؤكدة</option>
@@ -163,18 +174,18 @@ $allCustomers = $customer->getAll(1, 1000);
                         <option value="completed" <?php echo $filters['status'] === 'completed' ? 'selected' : ''; ?>>مكتملة</option>
                     </select>
                     
-                    <input type="date" id="dateFromFilter" value="<?php echo $filters['date_from']; ?>"
-                           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                          <input type="date" id="dateFromFilter" value="<?php echo $filters['date_from']; ?>"
+                              class="ui-input ui-input-md">
                     
-                    <input type="date" id="dateToFilter" value="<?php echo $filters['date_to']; ?>"
-                           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                          <input type="date" id="dateToFilter" value="<?php echo $filters['date_to']; ?>"
+                              class="ui-input ui-input-md">
                 </div>
                 
                 <div class="flex space-x-2 space-x-reverse">
-                    <button onclick="applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <button onclick="applyFilters()" class="ui-btn ui-btn-md ui-btn-primary">
                         <i class="fas fa-search ml-2"></i>بحث
                     </button>
-                    <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                    <button onclick="openAddModal()" class="ui-btn ui-btn-md ui-btn-success">
                         <i class="fas fa-plus ml-2"></i>حجز جديد
                     </button>
                 </div>
@@ -249,16 +260,16 @@ $allCustomers = $customer->getAll(1, 1000);
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="viewBooking('<?php echo $booking['id']; ?>')" class="text-blue-600 hover:text-blue-900 ml-4">
+                                <button onclick="viewBooking('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="editBooking('<?php echo $booking['id']; ?>')" class="text-indigo-600 hover:text-indigo-900 ml-4">
+                                <button onclick="editBooking('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="updateStatus('<?php echo $booking['id']; ?>')" class="text-green-600 hover:text-green-900 ml-4">
+                                <button onclick="updateStatus('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
                                     <i class="fas fa-refresh"></i>
                                 </button>
-                                <button onclick="updatePayment('<?php echo $booking['id']; ?>')" class="text-purple-600 hover:text-purple-900">
+                                <button onclick="updatePayment('<?php echo $booking['id']; ?>')" class="ui-icon-btn">
                                     <i class="fas fa-money-bill"></i>
                                 </button>
                             </td>
@@ -310,9 +321,9 @@ $allCustomers = $customer->getAll(1, 1000);
     </div>
 
     <!-- Add/Edit Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div id="bookingModal" class="fixed inset-0 ui-modal-overlay hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg max-w-4xl w-full p-6 max-h-screen overflow-y-auto">
+            <div class="ui-modal-panel max-w-4xl w-full p-6 max-h-screen overflow-y-auto">
                 <div class="flex items-center justify-between mb-6">
                     <h3 id="modalTitle" class="text-lg font-medium text-gray-900">حجز فندق جديد</h3>
                     <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
@@ -323,6 +334,7 @@ $allCustomers = $customer->getAll(1, 1000);
                 <form id="bookingForm">
                     <input type="hidden" id="bookingId" name="id">
                     <input type="hidden" id="formAction" name="action" value="create">
+                    <input type="hidden" id="csrfTokenInput" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Customer Information -->
@@ -332,7 +344,7 @@ $allCustomers = $customer->getAll(1, 1000);
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">العميل *</label>
                                 <select id="customerId" name="customer_id" required 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        class="ui-select ui-select-md">
                                     <option value="">اختر العميل</option>
                                     <?php foreach ($allCustomers['data'] as $cust): ?>
                                     <option value="<?php echo $cust['id']; ?>"><?php echo htmlspecialchars($cust['name']) . ' - ' . htmlspecialchars($cust['phone']); ?></option>
@@ -343,7 +355,7 @@ $allCustomers = $customer->getAll(1, 1000);
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">اسم العميل *</label>
                                 <input type="text" id="customerName" name="customer_name" required 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                         </div>
 
@@ -354,25 +366,25 @@ $allCustomers = $customer->getAll(1, 1000);
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">اسم الفندق *</label>
                                 <input type="text" id="hotelName" name="hotel_name" required 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">المدينة *</label>
                                 <input type="text" id="destinationCity" name="destination_city" required 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">نوع الغرفة</label>
                                 <input type="text" id="roomType" name="room_type" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">تقييم الفندق</label>
                                 <select id="hotelStarRating" name="hotel_star_rating" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        class="ui-select ui-select-md">
                                     <option value="">غير محدد</option>
                                     <option value="1">نجمة واحدة</option>
                                     <option value="2">نجمتان</option>
@@ -391,13 +403,13 @@ $allCustomers = $customer->getAll(1, 1000);
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ الدخول *</label>
                                     <input type="date" id="checkInDate" name="check_in_date" required 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                           class="ui-input ui-input-md">
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ الخروج *</label>
                                     <input type="date" id="checkOutDate" name="check_out_date" required 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                           class="ui-input ui-input-md">
                                 </div>
                             </div>
                             
@@ -405,26 +417,26 @@ $allCustomers = $customer->getAll(1, 1000);
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">عدد البالغين *</label>
                                     <input type="number" id="numberOfAdults" name="number_of_adults" value="1" min="1" required 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                           class="ui-input ui-input-md">
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">عدد الأطفال</label>
                                     <input type="number" id="numberOfChildren" name="number_of_children" value="0" min="0" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                           class="ui-input ui-input-md">
                                 </div>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">أعمار الأطفال</label>
                                 <input type="text" id="childrenAges" name="children_ages" placeholder="مثال: 5، 8، 12" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">نظام الوجبات</label>
                                 <select id="mealPlan" name="meal_plan" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        class="ui-select ui-select-md">
                                     <option value="room_only">الغرفة فقط</option>
                                     <option value="breakfast" selected>إفطار</option>
                                     <option value="half_board">نصف بورد</option>
@@ -441,19 +453,19 @@ $allCustomers = $customer->getAll(1, 1000);
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">تكلفة الليلة (مورد) *</label>
                                 <input type="number" id="costPerNight" name="cost_per_night" step="0.01" required 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">سعر البيع للليلة *</label>
                                 <input type="number" id="sellingPricePerNight" name="selling_price_per_night" step="0.01" required 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="ui-input ui-input-md">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">العملة</label>
                                 <select id="currency" name="currency" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        class="ui-select ui-select-md">
                                     <option value="EGP" selected>جنيه مصري</option>
                                     <option value="USD">دولار أمريكي</option>
                                     <option value="EUR">يورو</option>
@@ -464,7 +476,7 @@ $allCustomers = $customer->getAll(1, 1000);
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">طريقة الدفع</label>
                                 <select id="paymentMethod" name="payment_method" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        class="ui-select ui-select-md">
                                     <option value="">اختر طريقة الدفع</option>
                                     <option value="cash">نقدي</option>
                                     <option value="credit_card">بطاقة ائتمان</option>
@@ -479,23 +491,23 @@ $allCustomers = $customer->getAll(1, 1000);
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الحجز عند المورد</label>
                             <input type="text" id="bookingReferenceSupplier" name="booking_reference_supplier" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="ui-input ui-input-md">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">سياسة الإلغاء</label>
                             <textarea id="cancellationPolicy" name="cancellation_policy" rows="2" 
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                      class="ui-textarea"></textarea>
                         </div>
                     </div>
                     
                     <div class="flex justify-end space-x-3 space-x-reverse mt-6">
                         <button type="button" onclick="closeModal()" 
-                                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                class="ui-btn ui-btn-md ui-btn-secondary">
                             إلغاء
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                class="ui-btn ui-btn-md ui-btn-primary">
                             حفظ
                         </button>
                     </div>
@@ -505,6 +517,9 @@ $allCustomers = $customer->getAll(1, 1000);
     </div>
 
     <script>
+        // P1 fix: shared CSRF token for all AJAX state-changing requests.
+        const csrfToken = '<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>';
+
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const status = document.getElementById('statusFilter').value;
@@ -548,6 +563,7 @@ $allCustomers = $customer->getAll(1, 1000);
                 formData.append('action', 'update_status');
                 formData.append('id', id);
                 formData.append('status', status);
+                formData.append('csrf_token', csrfToken);
 
                 fetch('', {
                     method: 'POST',
@@ -578,6 +594,7 @@ $allCustomers = $customer->getAll(1, 1000);
                 formData.append('action', 'update_payment');
                 formData.append('id', id);
                 formData.append('paid_amount', amount);
+                formData.append('csrf_token', csrfToken);
 
                 fetch('', {
                     method: 'POST',
@@ -621,6 +638,7 @@ $allCustomers = $customer->getAll(1, 1000);
             e.preventDefault();
             
             const formData = new FormData(this);
+            formData.set('csrf_token', csrfToken);
             
             fetch('', {
                 method: 'POST',
@@ -650,5 +668,4 @@ $allCustomers = $customer->getAll(1, 1000);
             }
         });
     </script>
-</body>
-</html>
+<?php renderAdminLayoutEnd(); ?>

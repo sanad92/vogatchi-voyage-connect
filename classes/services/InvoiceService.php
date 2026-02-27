@@ -9,10 +9,14 @@ class InvoiceService extends BaseService {
     private $repo;
     /** @var AccountingService */
     private $accounting;
+    /** @var Database */
+    private $db;
 
     public function __construct(InvoiceRepository $repo = null) {
         $this->repo = $repo ?? new InvoiceRepository();
         $this->accounting = new AccountingService();
+        // P0 fix: initialize DB dependency used by usage tracking path.
+        $this->db = Database::getInstance();
     }
 
     public function setTenant(string $tenantId) {
@@ -60,6 +64,7 @@ class InvoiceService extends BaseService {
                 SubscriptionMiddleware::recordUsage('invoices');
             }
             if (class_exists('UsageTracker')) {
+                // P0 fix: use initialized DB dependency and resolved tenant context.
                 $tracker = new UsageTracker($this->db);
                 $tracker->trackBookingCreated();
             }
@@ -69,7 +74,8 @@ class InvoiceService extends BaseService {
             } catch (Exception $e) {
                 // logging but don't break the flow
                 if (class_exists('Logger')) {
-                    Logger::error('accounting_invoice_post_error', ['error'=>$e->getMessage()]);
+                    // P0 fix: use Logger::error(message, severity, context) signature.
+                    Logger::error('accounting_invoice_post_error', 'error', ['error'=>$e->getMessage()]);
                 }
             }
         }
@@ -135,7 +141,8 @@ class InvoiceService extends BaseService {
             $this->postPaymentEntry($invoice, $paidAmount, $status);
         } catch (Exception $e) {
             if (class_exists('Logger')) {
-                Logger::error('accounting_invoice_payment_error', ['error'=>$e->getMessage()]);
+                // P0 fix: use Logger::error(message, severity, context) signature.
+                Logger::error('accounting_invoice_payment_error', 'error', ['error'=>$e->getMessage()]);
             }
         }
         return true;

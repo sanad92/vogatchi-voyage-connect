@@ -14,15 +14,21 @@ class CustomersApi extends ApiController {
 
         // validation rules
         $rules = [
-            'first_name' => 'required|string|min:2',
-            'last_name'  => 'string|max:100',
-            'email'      => 'required|email',
-            'phone'      => 'string',
+            // P2 fix: normalize fields with CustomerService contract (name, phone).
+            'name'       => 'required|string|min:2',
+            'email'      => 'email',
+            'phone'      => 'required|string',
         ];
 
         $this->validate($rules);
 
         $data = $this->requestData;
+
+        // P2 fix: backward-compat mapping for legacy first_name/last_name payloads.
+        if (empty($data['name']) && !empty($data['first_name'])) {
+            $data['name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+        }
+
         $data['created_by'] = $this->auth->getCurrentUser()['id'];
 
         $customerService = new CustomerService(new CustomerRepository());

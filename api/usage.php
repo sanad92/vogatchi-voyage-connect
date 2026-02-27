@@ -17,14 +17,21 @@ require_once __DIR__ . '/../classes/services/UsageTracker.php';
 require_once __DIR__ . '/../classes/ApiUsageMiddleware.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+
+// P1 fix: CORS allowlist instead of wildcard.
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = array_filter(array_map('trim', explode(',', (string)(getenv('APP_ALLOWED_ORIGINS') ?: ''))));
+if (!empty($origin) && in_array($origin, $allowedOrigins, true)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin');
+}
 
 // Tenant isolation
 TenantMiddleware::validateRequest();
 
 $db = Database::getInstance();
-$org_id = TenantMiddleware::getOrganizationId();
+$org_id = TenantMiddleware::requireTenant();
 $tracker = new UsageTracker($db, $org_id);
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -184,9 +191,12 @@ try {
 } catch (Exception $e) {
     error_log("UsageAnalyticsApi error: " . $e->getMessage());
     http_response_code(500);
+
+    // P1 fix: never leak internal exception details in production.
+    $isDebug = filter_var((string)(getenv('APP_DEBUG') ?: '0'), FILTER_VALIDATE_BOOLEAN);
     echo json_encode([
         'error' => 'Internal server error',
-        'message' => $e->getMessage()
+        'message' => $isDebug ? $e->getMessage() : 'An unexpected error occurred'
     ]);
     exit;
 }
