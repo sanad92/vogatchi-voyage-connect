@@ -260,7 +260,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       )}>
         <button
           onClick={onMobileClose}
-          className="absolute top-4 left-4 rtl:left-auto rtl:right-4 p-1 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          className="absolute top-4 left-4 p-1 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
         >
           <X className="h-5 w-5" />
         </button>
