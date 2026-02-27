@@ -14,7 +14,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, loading, isLoggedIn } = useOptimizedAuth();
+  const { signIn, signOut, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
 
   if (loading || orgLoading) {
@@ -29,8 +29,12 @@ const LoginPage = () => {
   }
 
   if (isLoggedIn()) {
-    if (!hasOrganization) return <Navigate to="/register-organization" replace />;
-    return <Navigate to="/dashboard" replace />;
+    if (!hasOrganization) {
+      // Keep login page accessible for account switching from landing/login buttons.
+      // Organization creation remains available as an explicit user action.
+    } else {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -66,6 +70,22 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSignIn} className="space-y-5">
+          {isLoggedIn() && !hasOrganization && (
+            <Alert className="border-amber-300/80 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700/70">
+              <AlertDescription className="text-amber-900 dark:text-amber-200 space-y-3">
+                <p>الحساب مسجل دخول بالفعل، لكن لا توجد مؤسسة مرتبطة به حتى الآن.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Link to="/register-organization">
+                    <Button type="button" size="sm" variant="secondary">إكمال إنشاء المؤسسة</Button>
+                  </Link>
+                  <Button type="button" size="sm" variant="outline" onClick={() => signOut()}>
+                    تسجيل الخروج والدخول بحساب آخر
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {error && (
             <Alert className="border-destructive/50 bg-destructive/10">
               <AlertDescription className="text-destructive">{error}</AlertDescription>
