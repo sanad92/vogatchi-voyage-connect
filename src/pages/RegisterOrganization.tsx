@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -14,7 +14,6 @@ import { Building2, ArrowLeft } from 'lucide-react';
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
   const [form, setForm] = useState({
@@ -39,28 +38,75 @@ const RegisterOrganization = () => {
       .trim() || `org-${Date.now()}`;
   };
 
+  const generateShortSuffix = () => {
+    return Math.random().toString(36).slice(2, 6);
+  };
+
+  const buildSlugCandidate = (baseSlug: string, attempt: number) => {
+    if (attempt === 0) return baseSlug;
+    return `${baseSlug}-${generateShortSuffix()}`;
+  };
+
+  const isDuplicateConstraintError = (error: any) => {
+    const message = String(error?.message || '').toLowerCase();
+    const code = String(error?.code || '').toLowerCase();
+    return (
+      code === '23505' ||
+      message.includes('unique') ||
+      message.includes('duplicate key') ||
+      message.includes('slug')
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !form.name.trim()) return;
+    const trimmedName = form.name.trim();
+    if (!user?.id || !trimmedName) return;
 
     setLoading(true);
     try {
-      const slug = generateSlug(form.name);
+      const baseSlug = generateSlug(trimmedName);
+      const organizationEmail = form.email.trim() || user.email || null;
 
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: form.name.trim(),
-          slug,
-          phone: form.phone || null,
-          email: form.email || null,
-          address: form.address || null,
-        })
-        .select('id')
-        .single();
+      let org: { id: string } | null = null;
+      let lastOrgError: any = null;
 
-      if (orgError) throw orgError;
+      // Create organization with retry strategy for unique slug collisions
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const slugCandidate = buildSlugCandidate(baseSlug, attempt);
+
+        const { data: insertedOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: trimmedName,
+            slug: slugCandidate,
+            phone: form.phone || null,
+            email: organizationEmail,
+            address: form.address || null,
+          })
+          .select('id')
+          .single();
+
+        if (!orgError && insertedOrg) {
+          org = insertedOrg;
+          break;
+        }
+
+        if (isDuplicateConstraintError(orgError)) {
+          lastOrgError = orgError;
+          continue;
+        }
+
+        throw orgError;
+      }
+
+      if (!org) {
+        if (isDuplicateConstraintError(lastOrgError)) {
+          toast.error('تعذر إنشاء المؤسسة حالياً رغم توليد معرف فريد تلقائياً. يرجى إعادة المحاولة.');
+          return;
+        }
+        throw lastOrgError || new Error('Failed to create organization');
+      }
 
       // Add user as owner
       const { error: memberError } = await supabase
@@ -91,8 +137,8 @@ const RegisterOrganization = () => {
     } catch (error: any) {
       console.error('Error creating organization:', error);
       const message = String(error?.message || '').toLowerCase();
-      if (message.includes('unique') || message.includes('duplicate key') || message.includes('slug')) {
-        toast.error('اسم المؤسسة مستخدم مسبقاً');
+      if (isDuplicateConstraintError(error)) {
+        toast.error('اسم المؤسسة أو المعرف الخاص بها مستخدم مسبقاً. تم إنشاء معرف بديل تلقائياً، يرجى إعادة المحاولة.');
       } else if (message.includes('rls') || message.includes('permission')) {
         toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. يرجى إعادة تسجيل الدخول.');
       } else if (message) {
