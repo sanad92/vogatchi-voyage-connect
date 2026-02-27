@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Clock, Users, Building2, MessageSquare, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useLandingContent } from '@/hooks/useLandingContent';
 
 interface LandingHeroProps {
@@ -10,7 +11,7 @@ interface LandingHeroProps {
 }
 
 const getIconComponent = (iconName: string) => {
-  const icons: Record<string, any> = {
+  const icons: Record<string, LucideIcon> = {
     Shield,
     Users,
     Building2,

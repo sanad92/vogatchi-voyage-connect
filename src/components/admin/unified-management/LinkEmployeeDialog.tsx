@@ -28,7 +28,7 @@ const LinkEmployeeDialog = ({ user, unlinkedEmployees, isOpen, onOpenChange, onL
   };
 
   const handleGoToEmployeesPage = () => {
-    window.open('/employees', '_blank');
+    window.open('/employees-enhanced', '_blank');
   };
 
   return (

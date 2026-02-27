@@ -19,60 +19,54 @@ export const cleanupAuthState = () => {
 };
 
 export const hasRoleAccess = (userRole: string | null, requiredRole: string): boolean => {
-  console.log('🔍 فحص الصلاحيات التفصيلي:', { userRole, requiredRole });
-  
-  if (!userRole) {
-    console.log('❌ لا يوجد دور للمستخدم');
+  if (!userRole || !requiredRole) {
     return false;
   }
-  
-  // السوبر أدمن له صلاحية كاملة على كل شيء
-  if (userRole === 'super_admin') {
-    console.log('✅ السوبر أدمن: صلاحية كاملة');
-    return true;
-  }
-  
-  const roleHierarchy = {
-    'admin': ['admin', 'manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-    'manager': ['manager', 'sales_agent', 'customer_service', 'booking_agent', 'accountant', 'viewer'],
-    'sales_agent': ['sales_agent', 'viewer'],
-    'customer_service': ['customer_service', 'viewer'],
-    'booking_agent': ['booking_agent', 'viewer'],
-    'accountant': ['accountant', 'viewer'],
-    'viewer': ['viewer']
+
+  const roleAliases: Record<string, string> = {
+    super_admin: 'owner',
+    sales_agent: 'agent',
+    customer_service: 'agent',
+    booking_agent: 'agent',
+    accountant: 'manager',
   };
-  
-  const allowedRoles = roleHierarchy[userRole as keyof typeof roleHierarchy];
-  const hasAccess = allowedRoles?.includes(requiredRole) || false;
-  
-  console.log('✅ نتيجة فحص الصلاحيات التفصيلية:', { 
-    userRole, 
-    requiredRole, 
-    allowedRoles, 
-    hasAccess,
-    hierarchyExists: !!allowedRoles,
-    includesRole: allowedRoles?.includes(requiredRole)
-  });
-  
-  return hasAccess;
+
+  const normalizeRole = (role: string): string => roleAliases[role] ?? role;
+
+  const roleLevels: Record<string, number> = {
+    owner: 5,
+    admin: 4,
+    manager: 3,
+    agent: 2,
+    viewer: 1,
+  };
+
+  const normalizedUserRole = normalizeRole(userRole);
+  const normalizedRequiredRole = normalizeRole(requiredRole);
+
+  if (!(normalizedUserRole in roleLevels) || !(normalizedRequiredRole in roleLevels)) {
+    return false;
+  }
+
+  return roleLevels[normalizedUserRole] >= roleLevels[normalizedRequiredRole];
 };
 
 // دالة جديدة للتحقق من صلاحيات السوبر أدمن
 export const isSuperAdmin = (userRole: string | null): boolean => {
-  return userRole === 'super_admin';
+  return userRole === 'super_admin' || userRole === 'owner';
 };
 
 // دالة للتحقق من صلاحيات الحذف
 export const canDeleteData = (userRole: string | null): boolean => {
-  return userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager';
+  return userRole === 'super_admin' || userRole === 'owner' || userRole === 'admin' || userRole === 'manager';
 };
 
 // دالة للتحقق من صلاحيات التعديل الكاملة
 export const canEditAllData = (userRole: string | null): boolean => {
-  return userRole === 'super_admin' || userRole === 'admin';
+  return userRole === 'super_admin' || userRole === 'owner' || userRole === 'admin';
 };
 
 // دالة للتحقق من صلاحيات إدارة النظام
 export const canManageSystem = (userRole: string | null): boolean => {
-  return userRole === 'super_admin';
+  return userRole === 'super_admin' || userRole === 'owner';
 };

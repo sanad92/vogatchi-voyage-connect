@@ -4,7 +4,6 @@
  * returns JSON stats, protected by RBAC
  */
 require_once __DIR__ . '/../../classes/ApiController.php';
-require_once __DIR__ . '/../../classes/Task.php'; // if needed
 
 class DashboardApi extends ApiController {
     public function get() {

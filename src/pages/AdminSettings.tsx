@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Shield } from 'lucide-react';
-import UserManagementTab from '@/components/admin/UserManagementTab';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 import SiteSettings from '@/components/admin/SiteSettings';
 import LandingPageCMS from '@/components/admin/LandingPageCMS';
@@ -54,10 +53,6 @@ const AdminSettings = () => {
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <TabsContent value="unified-management" className="mt-0">
               <UnifiedUserEmployeeManagement />
-            </TabsContent>
-
-            <TabsContent value="users" className="mt-0">
-              <UserManagementTab />
             </TabsContent>
 
             <TabsContent value="site" className="mt-0">

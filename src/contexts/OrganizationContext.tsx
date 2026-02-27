@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
@@ -40,30 +40,40 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [orgRole, setLocalOrgRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetchOrganizations = async () => {
-    if (!user?.id) {
+    const targetUserId = user?.id ?? null;
+    const requestId = ++requestIdRef.current;
+
+    if (!targetUserId) {
       setCurrentOrganization(null);
       setOrganizations([]);
       setLocalOrgRole(null);
       setOrgRole(null);
+      setLoadedForUserId(null);
       setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     try {
       const { data: memberships, error: memError } = await supabase
         .from('organization_members')
         .select('organization_id, role, is_active')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .eq('is_active', true);
+
+      if (requestId !== requestIdRef.current) return;
 
       if (memError || !memberships?.length) {
         setCurrentOrganization(null);
         setOrganizations([]);
         setLocalOrgRole(null);
         setOrgRole(null);
-        setLoading(false);
+        setLoadedForUserId(targetUserId);
         return;
       }
 
@@ -75,18 +85,20 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         .in('id', orgIds)
         .eq('is_active', true);
 
+      if (requestId !== requestIdRef.current) return;
+
       if (orgError || !orgs?.length) {
         setCurrentOrganization(null);
         setOrganizations([]);
         setLocalOrgRole(null);
         setOrgRole(null);
-        setLoading(false);
+        setLoadedForUserId(targetUserId);
         return;
       }
 
       setOrganizations(orgs as Organization[]);
 
-      const savedOrgId = localStorage.getItem(`current_org_${user.id}`);
+      const savedOrgId = localStorage.getItem(`current_org_${targetUserId}`);
       const selectedOrg = savedOrgId 
         ? orgs.find((o: Organization) => o.id === savedOrgId) || orgs[0]
         : orgs[0];
@@ -99,17 +111,32 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
       const role = membership?.role || 'viewer';
       setLocalOrgRole(role);
       setOrgRole(role); // Sync to auth context
+      setLoadedForUserId(targetUserId);
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
+      if (requestId !== requestIdRef.current) return;
+      setCurrentOrganization(null);
+      setOrganizations([]);
+      setLocalOrgRole(null);
+      setOrgRole(null);
+      setLoadedForUserId(targetUserId);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    if (user?.id && loadedForUserId !== user.id) {
+      setLoading(true);
+    }
     fetchOrganizations();
   }, [user?.id]);
+
+  const effectiveLoading = loading || (!!user?.id && loadedForUserId !== user.id);
+  const hasOrganization = !!currentOrganization && !!user?.id && loadedForUserId === user.id;
 
   const switchOrganization = async (orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
@@ -137,8 +164,8 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     organizationId: currentOrganization?.id || null,
     orgRole,
     organizations,
-    loading,
-    hasOrganization: !!currentOrganization,
+    loading: effectiveLoading,
+    hasOrganization,
     switchOrganization,
     refetchOrganization: fetchOrganizations,
   };

@@ -30,19 +30,13 @@ const EnhancedAdminTabs = ({ activeTab, onTabChange, isSuperAdmin }: EnhancedAdm
     {
       id: 'management',
       title: 'إدارة المستخدمين',
-      description: 'إدارة شاملة للمستخدمين والموظفين',
+      description: 'إدارة موحدة للمستخدمين والموظفين',
       tabs: [
         {
           value: 'unified-management',
           label: 'الإدارة الموحدة',
           icon: '👥',
           description: 'إدارة موحدة للمستخدمين والموظفين'
-        },
-        {
-          value: 'users',
-          label: 'المستخدمين',
-          icon: '👤',
-          description: 'إدارة حسابات المستخدمين'
         }
       ]
     },

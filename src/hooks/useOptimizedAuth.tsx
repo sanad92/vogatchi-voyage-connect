@@ -224,7 +224,10 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
   const hasRole = useCallback((role: string): boolean => {
     if (!userRole) return false;
-    return (ROLE_LEVELS[userRole] ?? 0) >= (ROLE_LEVELS[role] ?? 0);
+    if (!(userRole in ROLE_LEVELS) || !(role in ROLE_LEVELS)) {
+      return false;
+    }
+    return ROLE_LEVELS[userRole] >= ROLE_LEVELS[role];
   }, [userRole]);
 
   const isLoggedIn = useCallback((): boolean => {

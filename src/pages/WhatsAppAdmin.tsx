@@ -5,7 +5,7 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 
 const WhatsAppAdmin: React.FC = () => {
   return (
-    <PermissionGate requiredRole="super_admin">
+    <PermissionGate requiredRole="owner">
       <div className="w-full px-4 md:px-6 lg:px-8 py-6">
         <WhatsAppAdminTabs />
       </div>
