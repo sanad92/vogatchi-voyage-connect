@@ -40,12 +40,14 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     return <Navigate to="/login" replace />;
   }
 
-  // Don't redirect to register-organization if we're already there
-  const isOnRegisterOrg = location.pathname === '/register-organization';
+  // Don't redirect to create-organization flow if we're already there
+  const isOnRegisterOrg =
+    location.pathname === '/register-organization' ||
+    location.pathname === '/create-organization';
   const isOnOnboarding = location.pathname === '/onboarding';
   
   if (!hasOrganization && !isSuperAdmin() && !isPlatformAdmin && !isOnRegisterOrg && !isOnOnboarding) {
-    return <Navigate to="/register-organization" replace />;
+    return <Navigate to="/create-organization" replace />;
   }
 
   if (profile && !profile.is_active) {

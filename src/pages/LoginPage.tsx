@@ -29,12 +29,8 @@ const LoginPage = () => {
   }
 
   if (isLoggedIn()) {
-    if (!hasOrganization) {
-      // Keep login page accessible for account switching from landing/login buttons.
-      // Organization creation remains available as an explicit user action.
-    } else {
-      return <Navigate to="/dashboard" replace />;
-    }
+    if (!hasOrganization) return <Navigate to="/create-organization" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -75,7 +71,7 @@ const LoginPage = () => {
               <AlertDescription className="text-amber-900 dark:text-amber-200 space-y-3">
                 <p>الحساب مسجل دخول بالفعل، لكن لا توجد مؤسسة مرتبطة به حتى الآن.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Link to="/register-organization">
+                  <Link to="/create-organization">
                     <Button type="button" size="sm" variant="secondary">إكمال إنشاء المؤسسة</Button>
                   </Link>
                   <Button type="button" size="sm" variant="outline" onClick={() => signOut()}>

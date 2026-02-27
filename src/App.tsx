@@ -110,6 +110,11 @@ function App() {
                 <Route path="/auth" element={<Navigate to="/login" replace />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/create-organization" element={
+                  <SupabaseProtectedRoute>
+                    <RegisterOrganization />
+                  </SupabaseProtectedRoute>
+                } />
                 <Route path="/register-organization" element={
                   <SupabaseProtectedRoute>
                     <RegisterOrganization />

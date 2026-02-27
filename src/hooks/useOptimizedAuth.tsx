@@ -179,7 +179,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/register-organization`,
+          emailRedirectTo: `${window.location.origin}/create-organization`,
           data: { full_name: fullName || '' },
         },
       });
@@ -189,8 +189,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
       } else {
         toast.success('تم إنشاء الحساب بنجاح');
-        // Navigate to register-organization (not dashboard)
-        navigate('/register-organization');
+        // Navigate to create-organization (not dashboard)
+        navigate('/create-organization');
       }
       return { error: null };
     } catch (error) {

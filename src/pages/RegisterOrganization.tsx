@@ -13,7 +13,7 @@ import { Building2, ArrowLeft } from 'lucide-react';
 
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
-  const { hasOrganization, loading: orgLoading } = useOrganization();
+  const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   
   const [form, setForm] = useState({
@@ -28,24 +28,6 @@ const RegisterOrganization = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim() || `org-${Date.now()}`;
-  };
-
-  const generateShortSuffix = () => {
-    return Math.random().toString(36).slice(2, 6);
-  };
-
-  const buildSlugCandidate = (baseSlug: string, attempt: number) => {
-    if (attempt === 0) return baseSlug;
-    return `${baseSlug}-${generateShortSuffix()}`;
-  };
 
   const isDuplicateConstraintError = (error: any) => {
     const message = String(error?.message || '').toLowerCase();
@@ -65,73 +47,36 @@ const RegisterOrganization = () => {
 
     setLoading(true);
     try {
-      const baseSlug = generateSlug(trimmedName);
       const organizationEmail = form.email.trim() || user.email || null;
 
-      let org: { id: string } | null = null;
-      let lastOrgError: any = null;
+      const { data: onboardingResult, error: onboardingError } = await supabase.functions.invoke('create-organization-onboarding', {
+        body: {
+          name: trimmedName,
+          phone: form.phone || null,
+          email: organizationEmail,
+          address: form.address || null,
+        },
+      });
 
-      // Create organization with retry strategy for unique slug collisions
-      for (let attempt = 0; attempt < 6; attempt++) {
-        const slugCandidate = buildSlugCandidate(baseSlug, attempt);
-
-        const { data: insertedOrg, error: orgError } = await supabase
-          .from('organizations')
-          .insert({
-            name: trimmedName,
-            slug: slugCandidate,
-            phone: form.phone || null,
-            email: organizationEmail,
-            address: form.address || null,
-          })
-          .select('id')
-          .single();
-
-        if (!orgError && insertedOrg) {
-          org = insertedOrg;
-          break;
-        }
-
-        if (isDuplicateConstraintError(orgError)) {
-          lastOrgError = orgError;
-          continue;
-        }
-
-        throw orgError;
+      if (onboardingError) {
+        throw onboardingError;
       }
 
-      if (!org) {
-        if (isDuplicateConstraintError(lastOrgError)) {
-          toast.error('تعذر إنشاء المؤسسة حالياً رغم توليد معرف فريد تلقائياً. يرجى إعادة المحاولة.');
-          return;
-        }
-        throw lastOrgError || new Error('Failed to create organization');
+      if (!onboardingResult?.organizationId) {
+        throw new Error('Failed to create organization');
       }
-
-      // Add user as owner
-      const { error: memberError } = await supabase
-        .from('organization_members')
-        .insert({
-          organization_id: org.id,
-          user_id: user.id,
-          role: 'owner',
-          is_active: true,
-        });
-
-      if (memberError) throw memberError;
-
-      // Trial subscription is auto-assigned via database trigger
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
+      await refetchOrganization();
       
       // Trigger welcome email (non-blocking)
       supabase.functions.invoke('send-welcome-email', {
         body: { organizationName: form.name.trim() },
       }).catch(() => {/* non-critical */});
       
-      // Redirect to onboarding wizard
+      // Redirect to dashboard after onboarding transaction completes
       setTimeout(() => {
-        window.location.href = '/onboarding';
+        window.location.href = '/dashboard';
       }, 500);
 
     } catch (error: any) {
