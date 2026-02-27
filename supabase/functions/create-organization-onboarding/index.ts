@@ -13,31 +13,6 @@ type OnboardingRequest = {
   address?: string | null;
 };
 
-const toSlug = (name: string): string => {
-  const normalized = name
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-
-  return normalized || `org-${Date.now()}`;
-};
-
-const randomSuffix = (): string => Math.random().toString(36).slice(2, 6);
-
-const isDuplicateError = (error: unknown): boolean => {
-  const payload = String((error as { message?: string; code?: string })?.message || "").toLowerCase();
-  const code = String((error as { code?: string })?.code || "").toLowerCase();
-
-  return (
-    code === "23505" ||
-    payload.includes("duplicate") ||
-    payload.includes("unique") ||
-    payload.includes("slug")
-  );
-};
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -91,44 +66,17 @@ Deno.serve(async (req) => {
     const phone = (body?.phone || null)?.trim?.() || null;
     const address = (body?.address || null)?.trim?.() || null;
 
-    const baseSlug = toSlug(name);
-    let organizationId: string | null = null;
-    let lastError: unknown = null;
+    const { data: organizationId, error } = await supabase.rpc("create_organization_onboarding", {
+      _name: name,
+      _slug: "",
+      _phone: phone,
+      _email: email,
+      _address: address,
+    });
 
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const slugCandidate = attempt === 0 ? baseSlug : `${baseSlug}-${randomSuffix()}`;
-
-      const { data, error } = await supabase.rpc("create_organization_onboarding", {
-        _name: name,
-        _slug: slugCandidate,
-        _phone: phone,
-        _email: email,
-        _address: address,
-      });
-
-      if (!error && data) {
-        organizationId = data;
-        break;
-      }
-
-      if (isDuplicateError(error)) {
-        lastError = error;
-        continue;
-      }
-
-      return new Response(JSON.stringify({ error: error?.message || "Onboarding failed" }), {
+    if (error || !organizationId) {
+      return new Response(JSON.stringify({ error: "Could not create organization" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!organizationId) {
-      const errorMessage = isDuplicateError(lastError)
-        ? "Could not generate unique organization slug"
-        : ((lastError as { message?: string })?.message || "Onboarding failed");
-
-      return new Response(JSON.stringify({ error: errorMessage }), {
-        status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -137,6 +85,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         organizationId,
+        redirectTo: "/dashboard",
       }),
       {
         status: 200,

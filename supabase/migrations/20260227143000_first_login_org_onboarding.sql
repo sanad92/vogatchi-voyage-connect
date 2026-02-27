@@ -173,7 +173,7 @@ CREATE TRIGGER trg_z_auto_add_org_owner_membership
 -- API endpoint (RPC): create organization in one atomic transaction
 CREATE OR REPLACE FUNCTION public.create_organization_onboarding(
   _name text,
-  _slug text,
+  _slug text DEFAULT NULL,
   _phone text DEFAULT NULL,
   _email text DEFAULT NULL,
   _address text DEFAULT NULL
@@ -185,9 +185,11 @@ SET search_path = public
 AS $$
 DECLARE
   v_org_id uuid;
-  v_has_owner boolean;
   v_has_subscription boolean;
   v_plan_id uuid;
+  v_base_slug text;
+  v_slug_candidate text;
+  v_attempt integer := 0;
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
@@ -197,40 +199,50 @@ BEGIN
     RAISE EXCEPTION 'Organization name is required';
   END IF;
 
-  IF COALESCE(BTRIM(_slug), '') = '' THEN
-    RAISE EXCEPTION 'Organization slug is required';
+  v_base_slug := LOWER(BTRIM(_name));
+  v_base_slug := regexp_replace(v_base_slug, '[^a-z0-9\s-]', '', 'g');
+  v_base_slug := regexp_replace(v_base_slug, '\s+', '-', 'g');
+  v_base_slug := regexp_replace(v_base_slug, '-+', '-', 'g');
+  v_base_slug := BTRIM(v_base_slug, '-');
+
+  IF v_base_slug = '' THEN
+    v_base_slug := 'org';
   END IF;
 
-  INSERT INTO public.organizations (
-    name,
-    slug,
-    phone,
-    email,
-    address
-  )
-  VALUES (
-    BTRIM(_name),
-    LOWER(BTRIM(_slug)),
-    NULLIF(BTRIM(_phone), ''),
-    NULLIF(BTRIM(_email), ''),
-    NULLIF(BTRIM(_address), '')
-  )
-  RETURNING id INTO v_org_id;
+  LOOP
+    EXIT WHEN v_attempt > 20;
 
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.organization_members om
-    WHERE om.organization_id = v_org_id
-      AND om.user_id = auth.uid()
-      AND om.role = 'owner'
-      AND om.is_active = true
-  ) INTO v_has_owner;
+    v_slug_candidate := CASE
+      WHEN v_attempt = 0 THEN v_base_slug
+      ELSE v_base_slug || '-' || substr(md5(gen_random_uuid()::text), 1, 6)
+    END;
 
-  IF NOT v_has_owner THEN
-    INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
-    VALUES (v_org_id, auth.uid(), 'owner', true)
-    ON CONFLICT (organization_id, user_id)
-    DO UPDATE SET role = 'owner', is_active = true;
+    BEGIN
+      INSERT INTO public.organizations (
+        name,
+        slug,
+        phone,
+        email,
+        address
+      )
+      VALUES (
+        BTRIM(_name),
+        v_slug_candidate,
+        NULLIF(BTRIM(_phone), ''),
+        NULLIF(BTRIM(_email), ''),
+        NULLIF(BTRIM(_address), '')
+      )
+      RETURNING id INTO v_org_id;
+
+      EXIT;
+    EXCEPTION
+      WHEN unique_violation THEN
+        v_attempt := v_attempt + 1;
+    END;
+  END LOOP;
+
+  IF v_org_id IS NULL THEN
+    RAISE EXCEPTION 'Could not create organization. Please try again.';
   END IF;
 
   SELECT EXISTS (

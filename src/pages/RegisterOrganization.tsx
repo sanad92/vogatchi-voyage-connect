@@ -28,69 +28,25 @@ const RegisterOrganization = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-
-  const isDuplicateConstraintError = (error: any) => {
-    const message = String(error?.message || '').toLowerCase();
-    const code = String(error?.code || '').toLowerCase();
-    return (
-      code === '23505' ||
-      message.includes('unique') ||
-      message.includes('duplicate key') ||
-      message.includes('slug')
-    );
-  };
-
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim() || `org-${Date.now()}`;
-  };
-
-  const generateShortSuffix = () => {
-    return Math.random().toString(36).slice(2, 6);
-  };
-
-  const buildSlugCandidate = (baseSlug: string, attempt: number) => {
-    if (attempt === 0) return baseSlug;
-    return `${baseSlug}-${generateShortSuffix()}`;
-  };
-
   const createViaRpcFallback = async (params: {
     name: string;
     email: string | null;
     phone: string | null;
     address: string | null;
   }) => {
-    const baseSlug = generateSlug(params.name);
-    let lastOrgError: any = null;
+    const { data: insertedOrg, error: orgError } = await supabase.rpc('create_organization_onboarding', {
+      _name: params.name,
+      _slug: '',
+      _phone: params.phone,
+      _email: params.email,
+      _address: params.address,
+    });
 
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const slugCandidate = buildSlugCandidate(baseSlug, attempt);
-
-      const { data: insertedOrg, error: orgError } = await supabase.rpc('create_organization_onboarding', {
-        _name: params.name,
-        _slug: slugCandidate,
-        _phone: params.phone,
-        _email: params.email,
-        _address: params.address,
-      });
-
-      if (!orgError && insertedOrg) {
-        return insertedOrg as string;
-      }
-
-      if (isDuplicateConstraintError(orgError)) {
-        lastOrgError = orgError;
-        continue;
-      }
-
-      throw orgError;
+    if (orgError || !insertedOrg) {
+      throw orgError || new Error('Failed to create organization');
     }
 
-    throw lastOrgError || new Error('Failed to create organization');
+    return insertedOrg as string;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,18 +99,14 @@ const RegisterOrganization = () => {
       
       // Redirect to dashboard after onboarding transaction completes
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = onboardingResult?.redirectTo || '/dashboard';
       }, 500);
 
     } catch (error: any) {
       console.error('Error creating organization:', error);
       const message = String(error?.message || '').toLowerCase();
-      if (isDuplicateConstraintError(error)) {
-        toast.error('اسم المؤسسة أو المعرف الخاص بها مستخدم مسبقاً. تم إنشاء معرف بديل تلقائياً، يرجى إعادة المحاولة.');
-      } else if (message.includes('rls') || message.includes('permission')) {
+      if (message.includes('rls') || message.includes('permission')) {
         toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. يرجى إعادة تسجيل الدخول.');
-      } else if (message) {
-        toast.error(error.message);
       } else {
         toast.error('حدث خطأ أثناء إنشاء المؤسسة');
       }
