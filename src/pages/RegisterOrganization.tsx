@@ -90,8 +90,13 @@ const RegisterOrganization = () => {
 
     } catch (error: any) {
       console.error('Error creating organization:', error);
-      if (error.message?.includes('unique')) {
+      const message = String(error?.message || '').toLowerCase();
+      if (message.includes('unique') || message.includes('duplicate key') || message.includes('slug')) {
         toast.error('اسم المؤسسة مستخدم مسبقاً');
+      } else if (message.includes('rls') || message.includes('permission')) {
+        toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. يرجى إعادة تسجيل الدخول.');
+      } else if (message) {
+        toast.error(error.message);
       } else {
         toast.error('حدث خطأ أثناء إنشاء المؤسسة');
       }
