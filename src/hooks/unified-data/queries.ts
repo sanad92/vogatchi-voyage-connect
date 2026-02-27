@@ -16,7 +16,7 @@ export const useUnifiedUsersQuery = (isOwner: boolean, organizationId: string | 
           .from('profiles')
           .select(`
             *,
-            employees(*)
+            employees!profiles_linked_employee_id_fkey(*)
           `)
           .order('created_at', { ascending: false }) as any);
         
