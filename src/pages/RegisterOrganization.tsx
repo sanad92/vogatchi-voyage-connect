@@ -40,6 +40,59 @@ const RegisterOrganization = () => {
     );
   };
 
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim() || `org-${Date.now()}`;
+  };
+
+  const generateShortSuffix = () => {
+    return Math.random().toString(36).slice(2, 6);
+  };
+
+  const buildSlugCandidate = (baseSlug: string, attempt: number) => {
+    if (attempt === 0) return baseSlug;
+    return `${baseSlug}-${generateShortSuffix()}`;
+  };
+
+  const createViaRpcFallback = async (params: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  }) => {
+    const baseSlug = generateSlug(params.name);
+    let lastOrgError: any = null;
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const slugCandidate = buildSlugCandidate(baseSlug, attempt);
+
+      const { data: insertedOrg, error: orgError } = await supabase.rpc('create_organization_onboarding', {
+        _name: params.name,
+        _slug: slugCandidate,
+        _phone: params.phone,
+        _email: params.email,
+        _address: params.address,
+      });
+
+      if (!orgError && insertedOrg) {
+        return insertedOrg as string;
+      }
+
+      if (isDuplicateConstraintError(orgError)) {
+        lastOrgError = orgError;
+        continue;
+      }
+
+      throw orgError;
+    }
+
+    throw lastOrgError || new Error('Failed to create organization');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = form.name.trim();
@@ -48,6 +101,7 @@ const RegisterOrganization = () => {
     setLoading(true);
     try {
       const organizationEmail = form.email.trim() || user.email || null;
+      let organizationId: string | null = null;
 
       const { data: onboardingResult, error: onboardingError } = await supabase.functions.invoke('create-organization-onboarding', {
         body: {
@@ -58,11 +112,24 @@ const RegisterOrganization = () => {
         },
       });
 
-      if (onboardingError) {
-        throw onboardingError;
+      if (!onboardingError && onboardingResult?.organizationId) {
+        organizationId = onboardingResult.organizationId as string;
+      } else {
+        const failedToSend = String(onboardingError?.message || '').toLowerCase().includes('failed to send a request');
+
+        if (failedToSend) {
+          organizationId = await createViaRpcFallback({
+            name: trimmedName,
+            email: organizationEmail,
+            phone: form.phone || null,
+            address: form.address || null,
+          });
+        } else {
+          throw onboardingError;
+        }
       }
 
-      if (!onboardingResult?.organizationId) {
+      if (!organizationId) {
         throw new Error('Failed to create organization');
       }
 
