@@ -25,9 +25,24 @@ if ($_POST) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - Vogatchi Travel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        mobile: '0px',
+                        tablet: '768px',
+                        laptop: '1024px',
+                        desktop: '1280px',
+                        ultrawide: '1600px'
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+<body class="bg-gray-100 min-h-screen overflow-x-hidden flex items-center justify-center px-4 py-6 tablet:px-6">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-md p-6 tablet:p-8">
         <div class="text-center mb-8">
             <h1 class="text-2xl font-bold text-gray-900">تسجيل الدخول</h1>
             <p class="text-gray-600 mt-2">نظام إدارة السياحة</p>

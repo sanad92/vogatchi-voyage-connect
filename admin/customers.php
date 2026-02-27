@@ -93,8 +93,12 @@ renderAdminLayoutStart([
 ]);
 ?>
 <div class="space-y-8">
+    <section>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">ملخص العملاء</h3>
+        <p class="ui-helper-text">اقرأ الأرقام بسرعة لمعرفة نمو العملاء ونشاط الشرائح.</p>
+    </section>
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 ultrawide:grid-cols-5 gap-4 tablet:gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -156,10 +160,14 @@ renderAdminLayoutStart([
             </div>
         </div>
 
+        <section>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">البحث والتصفية</h3>
+            <p class="ui-helper-text">استخدم الفلاتر لتقليل النتائج والوصول السريع لبيانات العميل.</p>
+        </section>
         <!-- Filters and Actions -->
         <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 md:space-x-reverse">
+            <div class="flex flex-col laptop:flex-row laptop:items-center laptop:justify-between space-y-4 laptop:space-y-0">
+                <div class="flex flex-col tablet:flex-row space-y-4 tablet:space-y-0 tablet:space-x-4 tablet:space-x-reverse">
                           <input type="text" id="searchInput" placeholder="البحث بالاسم أو الهاتف أو البريد..." 
                            value="<?php echo htmlspecialchars($search); ?>"
                               class="ui-input ui-input-md">
@@ -182,39 +190,55 @@ renderAdminLayoutStart([
             </div>
         </div>
 
+        <section>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">قائمة العملاء</h3>
+            <p class="ui-helper-text">جميع العملاء مرتبين مع إجراءات سريعة لكل سجل.</p>
+        </section>
         <!-- Customers Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="ui-table-skeleton">
+                <?php for ($i = 0; $i < 6; $i++): ?>
+                <div class="ui-skeleton-row">
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table>
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الاسم</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الهاتف</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">البريد الإلكتروني</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الفئة</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحجوزات</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ الإضافة</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                            <th class="ui-col-start">الاسم</th>
+                            <th class="ui-col-start">الهاتف</th>
+                            <th class="ui-col-start">البريد الإلكتروني</th>
+                            <th class="ui-col-center">الفئة</th>
+                            <th class="ui-col-center">الحجوزات</th>
+                            <th class="ui-col-center">تاريخ الإضافة</th>
+                            <th class="ui-col-end">الإجراءات</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
+                        <?php if (!empty($customersData['data'])): ?>
                         <?php foreach ($customersData['data'] as $cust): ?>
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td>
                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($cust['name']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td>
                                 <div class="text-sm text-gray-900"><?php echo htmlspecialchars($cust['phone']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td>
                                 <div class="text-sm text-gray-900"><?php echo htmlspecialchars($cust['email'] ?? '-'); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="ui-col-center">
                                 <?php
                                 $segmentColors = [
-                                    'new' => 'bg-blue-100 text-blue-800',
-                                    'regular' => 'bg-green-100 text-green-800',
-                                    'vip' => 'bg-purple-100 text-purple-800'
+                                    'new' => 'ui-badge ui-badge-info',
+                                    'regular' => 'ui-badge ui-badge-success',
+                                    'vip' => 'ui-badge ui-badge-warning'
                                 ];
                                 $segmentNames = [
                                     'new' => 'جديد',
@@ -222,63 +246,80 @@ renderAdminLayoutStart([
                                     'vip' => 'VIP'
                                 ];
                                 ?>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $segmentColors[$cust['customer_segment']]; ?>">
-                                    <?php echo $segmentNames[$cust['customer_segment']]; ?>
+                                <span class="<?php echo $segmentColors[$cust['customer_segment']] ?? 'ui-badge ui-badge-neutral'; ?>">
+                                    <?php echo $segmentNames[$cust['customer_segment']] ?? 'غير محدد'; ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="ui-col-center text-sm text-gray-900">
                                 <?php echo number_format($cust['total_bookings'] ?? 0); ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="ui-col-center text-sm text-gray-900">
                                 <?php echo date('Y/m/d', strtotime($cust['created_at'])); ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="editCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn ml-2">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="viewCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn ml-2">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="deleteCustomer('<?php echo $cust['id']; ?>')" class="ui-icon-btn">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                            <td class="ui-col-end">
+                                <div class="ui-row-actions">
+                                    <button type="button" class="ui-btn ui-btn-ghost ui-action-trigger" data-action-trigger="customer-actions-<?php echo $cust['id']; ?>">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div id="customer-actions-<?php echo $cust['id']; ?>" class="ui-action-menu">
+                                        <button type="button" onclick="viewCustomer('<?php echo $cust['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-eye"></i><span>عرض</span>
+                                        </button>
+                                        <button type="button" onclick="editCustomer('<?php echo $cust['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-edit"></i><span>تعديل</span>
+                                        </button>
+                                        <button type="button" onclick="deleteCustomer('<?php echo $cust['id']; ?>')" class="ui-action-item ui-action-item-danger">
+                                            <i class="fas fa-trash"></i><span>حذف</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr>
+                            <td colspan="7">
+                                <div class="ui-empty flex items-center justify-center">
+                                    <i class="fas fa-users ui-empty-icon"></i>
+                                    <span>لا توجد بيانات عملاء مطابقة للبحث الحالي</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
             
             <!-- Pagination -->
             <?php if ($customersData['total_pages'] > 1): ?>
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+            <div class="ui-table-footer">
                 <div class="flex-1 flex justify-between sm:hidden">
                     <?php if ($customersData['has_prev']): ?>
                     <a href="?page=<?php echo $customersData['current_page'] - 1; ?>&search=<?php echo urlencode($search); ?>&segment=<?php echo urlencode($segment); ?>" 
-                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                       class="ui-btn ui-btn-sm ui-btn-secondary">
                         السابق
                     </a>
                     <?php endif; ?>
                     <?php if ($customersData['has_next']): ?>
                     <a href="?page=<?php echo $customersData['current_page'] + 1; ?>&search=<?php echo urlencode($search); ?>&segment=<?php echo urlencode($segment); ?>" 
-                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                       class="ui-btn ui-btn-sm ui-btn-secondary">
                         التالي
                     </a>
                     <?php endif; ?>
                 </div>
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm text-gray-700">
+                        <p class="text-sm text-gray-700 dark:text-slate-300">
                             عرض <?php echo (($customersData['current_page'] - 1) * $customersData['per_page']) + 1; ?> إلى 
                             <?php echo min($customersData['current_page'] * $customersData['per_page'], $customersData['total']); ?> من 
                             <?php echo $customersData['total']; ?> نتيجة
                         </p>
                     </div>
                     <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <nav class="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
                             <?php for ($i = 1; $i <= $customersData['total_pages']; $i++): ?>
                             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&segment=<?php echo urlencode($segment); ?>" 
-                               class="<?php echo $i === $customersData['current_page'] ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'; ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                               class="<?php echo $i === $customersData['current_page'] ? 'ui-btn ui-btn-sm ui-btn-primary' : 'ui-btn ui-btn-sm ui-btn-secondary'; ?>">
                                 <?php echo $i; ?>
                             </a>
                             <?php endfor; ?>
@@ -311,18 +352,22 @@ renderAdminLayoutStart([
                             <label class="block text-sm font-medium text-gray-700 mb-2">الاسم *</label>
                             <input type="text" id="customerName" name="name" required 
                                    class="ui-input ui-input-md">
+                            <p class="ui-field-error"></p>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف *</label>
                             <input type="tel" id="customerPhone" name="phone" required 
                                    class="ui-input ui-input-md">
+                            <p class="ui-helper-text">مثال: 010xxxxxxxx</p>
+                            <p class="ui-field-error"></p>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
                             <input type="email" id="customerEmail" name="email" 
                                    class="ui-input ui-input-md">
+                            <p class="ui-field-error"></p>
                         </div>
                         
                         <div>
@@ -366,6 +411,7 @@ renderAdminLayoutStart([
                             إلغاء
                         </button>
                         <button type="submit" 
+                                id="customerSubmitBtn"
                                 class="ui-btn ui-btn-md ui-btn-primary">
                             حفظ
                         </button>
@@ -406,37 +452,47 @@ renderAdminLayoutStart([
         }
 
         function viewCustomer(id) {
-            // TODO: Open customer details modal
-            alert('عرض تفاصيل العميل - سيتم تطويرها قريباً');
+            showToast('عرض تفاصيل العميل سيتم إضافته في التحديث القادم', 'info');
         }
 
-        function deleteCustomer(id) {
-            if (confirm('هل أنت متأكد من حذف هذا العميل؟')) {
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id', id);
-                formData.append('csrf_token', csrfToken);
+        async function deleteCustomer(id) {
+            const confirmed = await showConfirmDialog({
+                title: 'تأكيد حذف العميل',
+                text: 'سيتم حذف العميل نهائياً من القائمة. هل تريد الاستمرار؟',
+                confirmText: 'نعم، حذف',
+                cancelText: 'إلغاء'
+            });
 
-                fetch('', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('حدث خطأ أثناء حذف العميل');
-                });
-            }
+            if (!confirmed) return;
+
+            const formData = new FormData();
+            formData.append('action', 'delete');
+            formData.append('id', id);
+            formData.append('csrf_token', csrfToken);
+
+            setGlobalLoading(true, 'جاري حذف العميل...');
+            fetch('', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 650);
+                } else {
+                    showToast(data.message || 'تعذر حذف العميل', 'error');
+                }
+            })
+            .catch(() => {
+                showToast('حدث خطأ أثناء حذف العميل', 'error');
+            })
+            .finally(() => {
+                setGlobalLoading(false);
+            });
         }
 
         function closeModal() {
@@ -446,9 +502,18 @@ renderAdminLayoutStart([
         // Handle form submission
         document.getElementById('customerForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            if (!validateFormInline(this)) {
+                showToast('يرجى مراجعة الحقول المميزة باللون الأحمر', 'error');
+                return;
+            }
             
             const formData = new FormData(this);
             formData.set('csrf_token', csrfToken);
+            const submitButton = document.getElementById('customerSubmitBtn');
+            const actionText = document.getElementById('formAction').value === 'update' ? 'جاري تحديث العميل...' : 'جاري إضافة العميل...';
+            setButtonLoading(submitButton, true);
+            setGlobalLoading(true, actionText);
             
             fetch('', {
                 method: 'POST',
@@ -460,14 +525,18 @@ renderAdminLayoutStart([
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
-                    location.reload();
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 650);
                 } else {
-                    alert(data.message);
+                    showToast(data.message || 'تعذر حفظ البيانات', 'error');
                 }
             })
-            .catch(error => {
-                alert('حدث خطأ أثناء حفظ البيانات');
+            .catch(() => {
+                showToast('حدث خطأ أثناء حفظ البيانات', 'error');
+            })
+            .finally(() => {
+                setButtonLoading(submitButton, false);
+                setGlobalLoading(false);
             });
         });
 

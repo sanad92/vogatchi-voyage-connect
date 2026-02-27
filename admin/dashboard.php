@@ -41,8 +41,12 @@ renderAdminLayoutStart([
 ]);
 ?>
 <div class="space-y-8">
+    <section>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">نظرة عامة سريعة</h3>
+        <p class="ui-helper-text">هذه البطاقات تعرض أهم الأرقام التشغيلية خلال لحظات.</p>
+    </section>
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 tablet:gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -92,8 +96,12 @@ renderAdminLayoutStart([
             </div>
         </div>
 
+        <section>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">إجراءات سريعة</h3>
+            <p class="ui-helper-text">ابدأ أكثر المهام شيوعاً مباشرة من هنا بدون البحث داخل القوائم.</p>
+        </section>
         <!-- Quick Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-4 tablet:gap-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">إدارة العملاء</h3>
                 <p class="text-gray-600 mb-4">إضافة وتعديل بيانات العملاء</p>

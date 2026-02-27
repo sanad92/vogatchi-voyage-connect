@@ -30,6 +30,13 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
         tailwind.config = {
             theme: {
                 extend: {
+                    screens: {
+                        mobile: '0px',
+                        tablet: '768px',
+                        laptop: '1024px',
+                        desktop: '1280px',
+                        ultrawide: '1600px'
+                    },
                     colors: {
                         primary: '<?php echo $settings['primary_color'] ?? '#3B82F6'; ?>',
                         secondary: '<?php echo $settings['secondary_color'] ?? '#6366F1'; ?>',
@@ -63,7 +70,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
         }
     </style>
 </head>
-<body class="font-sans bg-gray-50">
+<body class="font-sans bg-gray-50 overflow-x-hidden">
 
     <!-- Header -->
     <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
@@ -78,11 +85,11 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
                     </span>
                 </div>
                 <div class="flex items-center space-x-4 space-x-reverse">
-                    <div class="hidden md:flex items-center space-x-2 space-x-reverse text-gray-600">
+                    <div class="hidden tablet:flex items-center space-x-2 space-x-reverse text-gray-600">
                         <i class="fas fa-phone h-5 w-5"></i>
                         <span class="font-medium"><?php echo $settings['phone_number'] ?? ''; ?></span>
                     </div>
-                    <div class="hidden md:flex items-center space-x-2 space-x-reverse text-gray-600">
+                    <div class="hidden tablet:flex items-center space-x-2 space-x-reverse text-gray-600">
                         <i class="fas fa-envelope h-5 w-5"></i>
                         <span class="font-medium"><?php echo $settings['email'] ?? ''; ?></span>
                     </div>
@@ -100,7 +107,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
         <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10"></div>
         <div class="container mx-auto px-4 relative">
             <div class="text-center max-w-4xl mx-auto animate-fade-in">
-                <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+                <h1 class="text-4xl tablet:text-5xl laptop:text-6xl font-bold text-gray-900 mb-6 break-words">
                     <?php echo $heroContent['title'] ?? 'رحلتك المميزة تبدأ من هنا'; ?>
                     <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent block">
                         <?php echo $settings['company_name_ar'] ?? 'فوجاتشي للسياحة'; ?>
@@ -151,7 +158,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
                     نقدم لك مجموعة شاملة من الخدمات السياحية لجعل رحلتك مثالية
                 </p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-6 tablet:gap-8 max-w-5xl mx-auto">
                 <?php foreach ($services as $service): ?>
                 <div class="bg-white/80 backdrop-blur-sm rounded-lg p-8 text-center shadow-lg hover-scale">
                     <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -182,7 +189,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
                 </div>
                 
                 <form id="contactForm" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 tablet:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-gray-700 font-semibold mb-2">الاسم</label>
                             <input type="text" name="name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
@@ -226,7 +233,7 @@ $services = $db->select("SELECT * FROM landing_content WHERE section = 'services
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-6 tablet:gap-8">
                 <div>
                     <h3 class="text-xl font-bold mb-4"><?php echo $settings['company_name_ar'] ?? 'فوجاتشي للسياحة'; ?></h3>
                     <p class="text-gray-400">

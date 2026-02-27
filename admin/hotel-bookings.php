@@ -107,8 +107,12 @@ renderAdminLayoutStart([
 ]);
 ?>
 <div class="space-y-8">
+    <section>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">ملخص الحجوزات</h3>
+        <p class="ui-helper-text">تعرف بسرعة على حجم الحجوزات والحالة العامة للإيرادات.</p>
+    </section>
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 tablet:gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -158,10 +162,14 @@ renderAdminLayoutStart([
             </div>
         </div>
 
+        <section>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">البحث والتصفية</h3>
+            <p class="ui-helper-text">حدد الحالة والفترة للوصول للحجز المطلوب في ثوانٍ.</p>
+        </section>
         <!-- Filters and Actions -->
         <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="flex flex-col laptop:flex-row laptop:items-center laptop:justify-between space-y-4 laptop:space-y-0">
+                <div class="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
                           <input type="text" id="searchInput" placeholder="البحث..." 
                            value="<?php echo htmlspecialchars($filters['search']); ?>"
                               class="ui-input ui-input-md">
@@ -192,45 +200,61 @@ renderAdminLayoutStart([
             </div>
         </div>
 
+        <section>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">قائمة الحجوزات</h3>
+            <p class="ui-helper-text">استعرض تفاصيل كل حجز واستخدم الإجراءات السريعة للتعديل.</p>
+        </section>
         <!-- Bookings Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="ui-table-skeleton">
+                <?php for ($i = 0; $i < 6; $i++): ?>
+                <div class="ui-skeleton-row">
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                    <div class="ui-skeleton-line"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table>
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الحجز</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الفندق</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التواريخ</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المبلغ</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                            <th class="ui-col-start">رقم الحجز</th>
+                            <th class="ui-col-start">العميل</th>
+                            <th class="ui-col-start">الفندق</th>
+                            <th class="ui-col-center">التواريخ</th>
+                            <th class="ui-col-center">المبلغ</th>
+                            <th class="ui-col-center">الحالة</th>
+                            <th class="ui-col-end">الإجراءات</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
+                        <?php if (!empty($bookingsData['data'])): ?>
                         <?php foreach ($bookingsData['data'] as $booking): ?>
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td>
                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($booking['internal_booking_number']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td>
                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($booking['customer_name']); ?></div>
                                 <?php if ($booking['customer_phone']): ?>
                                 <div class="text-sm text-gray-500"><?php echo htmlspecialchars($booking['customer_phone']); ?></div>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-6 py-4">
+                            <td>
                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($booking['hotel_name']); ?></div>
                                 <div class="text-sm text-gray-500"><?php echo htmlspecialchars($booking['destination_city']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="ui-col-center">
                                 <div class="text-sm text-gray-900">
                                     <?php echo date('Y/m/d', strtotime($booking['check_in_date'])); ?> - 
                                     <?php echo date('Y/m/d', strtotime($booking['check_out_date'])); ?>
                                 </div>
                                 <div class="text-sm text-gray-500"><?php echo $booking['number_of_nights']; ?> ليالي</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="ui-col-center">
                                 <div class="text-sm font-medium text-gray-900">
                                     <?php echo number_format($booking['total_cost_customer']); ?> <?php echo $booking['currency']; ?>
                                 </div>
@@ -238,14 +262,14 @@ renderAdminLayoutStart([
                                 <div class="text-sm text-green-600">مدفوع: <?php echo number_format($booking['paid_amount']); ?></div>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="ui-col-center">
                                 <?php
                                 $statusColors = [
-                                    'pending' => 'bg-yellow-100 text-yellow-800',
-                                    'confirmed' => 'bg-green-100 text-green-800',
-                                    'cancelled' => 'bg-red-100 text-red-800',
-                                    'completed' => 'bg-blue-100 text-blue-800',
-                                    'no_show' => 'bg-gray-100 text-gray-800'
+                                    'pending' => 'ui-badge ui-badge-warning',
+                                    'confirmed' => 'ui-badge ui-badge-success',
+                                    'cancelled' => 'ui-badge ui-badge-danger',
+                                    'completed' => 'ui-badge ui-badge-info',
+                                    'no_show' => 'ui-badge ui-badge-neutral'
                                 ];
                                 $statusNames = [
                                     'pending' => 'معلقة',
@@ -255,60 +279,77 @@ renderAdminLayoutStart([
                                     'no_show' => 'لم يحضر'
                                 ];
                                 ?>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $statusColors[$booking['booking_status']] ?? 'bg-gray-100 text-gray-800'; ?>">
+                                <span class="<?php echo $statusColors[$booking['booking_status']] ?? 'ui-badge ui-badge-neutral'; ?>">
                                     <?php echo $statusNames[$booking['booking_status']] ?? $booking['booking_status']; ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="viewBooking('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="editBooking('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="updateStatus('<?php echo $booking['id']; ?>')" class="ui-icon-btn ml-2">
-                                    <i class="fas fa-refresh"></i>
-                                </button>
-                                <button onclick="updatePayment('<?php echo $booking['id']; ?>')" class="ui-icon-btn">
-                                    <i class="fas fa-money-bill"></i>
-                                </button>
+                            <td class="ui-col-end">
+                                <div class="ui-row-actions">
+                                    <button type="button" class="ui-btn ui-btn-ghost ui-action-trigger" data-action-trigger="booking-actions-<?php echo $booking['id']; ?>">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div id="booking-actions-<?php echo $booking['id']; ?>" class="ui-action-menu">
+                                        <button type="button" onclick="viewBooking('<?php echo $booking['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-eye"></i><span>عرض</span>
+                                        </button>
+                                        <button type="button" onclick="editBooking('<?php echo $booking['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-edit"></i><span>تعديل</span>
+                                        </button>
+                                        <button type="button" onclick="updateStatus('<?php echo $booking['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-refresh"></i><span>تحديث الحالة</span>
+                                        </button>
+                                        <button type="button" onclick="updatePayment('<?php echo $booking['id']; ?>')" class="ui-action-item">
+                                            <i class="fas fa-money-bill"></i><span>تحديث الدفعة</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr>
+                            <td colspan="7">
+                                <div class="ui-empty flex items-center justify-center">
+                                    <i class="fas fa-hotel ui-empty-icon"></i>
+                                    <span>لا توجد حجوزات مطابقة للفلاتر الحالية</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
             
             <!-- Pagination -->
             <?php if ($bookingsData['total_pages'] > 1): ?>
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <div class="ui-table-footer">
                 <div class="flex-1 flex justify-between sm:hidden">
                     <?php if ($bookingsData['has_prev']): ?>
-                    <a href="?page=<?php echo $bookingsData['current_page'] - 1; ?><?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
-                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                          <a href="?page=<?php echo $bookingsData['current_page'] - 1; ?>&<?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
+                              class="ui-btn ui-btn-sm ui-btn-secondary">
                         السابق
                     </a>
                     <?php endif; ?>
                     <?php if ($bookingsData['has_next']): ?>
-                    <a href="?page=<?php echo $bookingsData['current_page'] + 1; ?><?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
-                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                          <a href="?page=<?php echo $bookingsData['current_page'] + 1; ?>&<?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
+                              class="ui-btn ui-btn-sm ui-btn-secondary">
                         التالي
                     </a>
                     <?php endif; ?>
                 </div>
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm text-gray-700">
+                        <p class="text-sm text-gray-700 dark:text-slate-300">
                             عرض <?php echo (($bookingsData['current_page'] - 1) * $bookingsData['per_page']) + 1; ?> إلى 
                             <?php echo min($bookingsData['current_page'] * $bookingsData['per_page'], $bookingsData['total']); ?> من 
                             <?php echo $bookingsData['total']; ?> نتيجة
                         </p>
                     </div>
                     <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <nav class="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
                             <?php for ($i = 1; $i <= $bookingsData['total_pages']; $i++): ?>
-                            <a href="?page=<?php echo $i; ?><?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
-                               class="<?php echo $i === $bookingsData['current_page'] ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'; ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            <a href="?page=<?php echo $i; ?>&<?php echo http_build_query($filters, '', '&', PHP_QUERY_RFC3986); ?>" 
+                               class="<?php echo $i === $bookingsData['current_page'] ? 'ui-btn ui-btn-sm ui-btn-primary' : 'ui-btn ui-btn-sm ui-btn-secondary'; ?>">
                                 <?php echo $i; ?>
                             </a>
                             <?php endfor; ?>
@@ -350,12 +391,14 @@ renderAdminLayoutStart([
                                     <option value="<?php echo $cust['id']; ?>"><?php echo htmlspecialchars($cust['name']) . ' - ' . htmlspecialchars($cust['phone']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <p class="ui-field-error"></p>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">اسم العميل *</label>
                                 <input type="text" id="customerName" name="customer_name" required 
                                        class="ui-input ui-input-md">
+                                    <p class="ui-field-error"></p>
                             </div>
                         </div>
 
@@ -367,12 +410,14 @@ renderAdminLayoutStart([
                                 <label class="block text-sm font-medium text-gray-700 mb-2">اسم الفندق *</label>
                                 <input type="text" id="hotelName" name="hotel_name" required 
                                        class="ui-input ui-input-md">
+                                    <p class="ui-field-error"></p>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">المدينة *</label>
                                 <input type="text" id="destinationCity" name="destination_city" required 
                                        class="ui-input ui-input-md">
+                                    <p class="ui-field-error"></p>
                             </div>
                             
                             <div>
@@ -404,12 +449,14 @@ renderAdminLayoutStart([
                                     <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ الدخول *</label>
                                     <input type="date" id="checkInDate" name="check_in_date" required 
                                            class="ui-input ui-input-md">
+                                     <p class="ui-field-error"></p>
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ الخروج *</label>
                                     <input type="date" id="checkOutDate" name="check_out_date" required 
                                            class="ui-input ui-input-md">
+                                     <p class="ui-field-error"></p>
                                 </div>
                             </div>
                             
@@ -418,6 +465,7 @@ renderAdminLayoutStart([
                                     <label class="block text-sm font-medium text-gray-700 mb-2">عدد البالغين *</label>
                                     <input type="number" id="numberOfAdults" name="number_of_adults" value="1" min="1" required 
                                            class="ui-input ui-input-md">
+                                     <p class="ui-field-error"></p>
                                 </div>
                                 
                                 <div>
@@ -454,12 +502,15 @@ renderAdminLayoutStart([
                                 <label class="block text-sm font-medium text-gray-700 mb-2">تكلفة الليلة (مورد) *</label>
                                 <input type="number" id="costPerNight" name="cost_per_night" step="0.01" required 
                                        class="ui-input ui-input-md">
+                                    <p class="ui-field-error"></p>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">سعر البيع للليلة *</label>
                                 <input type="number" id="sellingPricePerNight" name="selling_price_per_night" step="0.01" required 
                                        class="ui-input ui-input-md">
+                                    <p class="ui-helper-text">يساعدك هذا الحقل في متابعة هامش الربح لكل حجز.</p>
+                                    <p class="ui-field-error"></p>
                             </div>
                             
                             <div>
@@ -507,6 +558,7 @@ renderAdminLayoutStart([
                             إلغاء
                         </button>
                         <button type="submit" 
+                                id="bookingSubmitBtn"
                                 class="ui-btn ui-btn-md ui-btn-primary">
                             حفظ
                         </button>
@@ -552,70 +604,104 @@ renderAdminLayoutStart([
         }
 
         function viewBooking(id) {
-            // TODO: Open booking details modal
-            alert('عرض تفاصيل الحجز - سيتم تطويرها قريباً');
+            showToast('عرض تفاصيل الحجز سيتم إضافته في التحديث القادم', 'info');
         }
 
-        function updateStatus(id) {
+        async function updateStatus(id) {
             const status = prompt('أدخل الحالة الجديدة (pending, confirmed, cancelled, completed, no_show):');
-            if (status) {
-                const formData = new FormData();
-                formData.append('action', 'update_status');
-                formData.append('id', id);
-                formData.append('status', status);
-                formData.append('csrf_token', csrfToken);
+            if (!status) return;
 
-                fetch('', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('حدث خطأ أثناء تحديث الحالة');
-                });
+            const normalizedStatus = status.trim();
+            const allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'];
+            if (!allowedStatuses.includes(normalizedStatus)) {
+                showToast('الحالة غير صحيحة. القيم المتاحة: pending, confirmed, cancelled, completed, no_show', 'error');
+                return;
             }
+
+            const confirmed = await showConfirmDialog({
+                title: 'تأكيد تحديث الحالة',
+                text: 'سيتم تحديث حالة الحجز الحالية. هل تريد الاستمرار؟',
+                confirmText: 'تحديث',
+                cancelText: 'إلغاء'
+            });
+            if (!confirmed) return;
+
+            const formData = new FormData();
+            formData.append('action', 'update_status');
+            formData.append('id', id);
+            formData.append('status', normalizedStatus);
+            formData.append('csrf_token', csrfToken);
+
+            setGlobalLoading(true, 'جاري تحديث حالة الحجز...');
+            fetch('', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 650);
+                } else {
+                    showToast(data.message || 'تعذر تحديث الحالة', 'error');
+                }
+            })
+            .catch(() => {
+                showToast('حدث خطأ أثناء تحديث الحالة', 'error');
+            })
+            .finally(() => {
+                setGlobalLoading(false);
+            });
         }
 
-        function updatePayment(id) {
+        async function updatePayment(id) {
             const amount = prompt('أدخل مبلغ الدفعة:');
-            if (amount && !isNaN(amount)) {
-                const formData = new FormData();
-                formData.append('action', 'update_payment');
-                formData.append('id', id);
-                formData.append('paid_amount', amount);
-                formData.append('csrf_token', csrfToken);
-
-                fetch('', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('حدث خطأ أثناء تحديث الدفعة');
-                });
+            if (!amount) return;
+            if (isNaN(amount) || Number(amount) < 0) {
+                showToast('يرجى إدخال رقم صحيح لمبلغ الدفعة', 'error');
+                return;
             }
+
+            const confirmed = await showConfirmDialog({
+                title: 'تأكيد تحديث الدفعة',
+                text: 'سيتم اعتماد مبلغ الدفعة الجديد على هذا الحجز.',
+                confirmText: 'اعتماد',
+                cancelText: 'إلغاء'
+            });
+            if (!confirmed) return;
+
+            const formData = new FormData();
+            formData.append('action', 'update_payment');
+            formData.append('id', id);
+            formData.append('paid_amount', amount);
+            formData.append('csrf_token', csrfToken);
+
+            setGlobalLoading(true, 'جاري تحديث الدفعة...');
+            fetch('', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 650);
+                } else {
+                    showToast(data.message || 'تعذر تحديث الدفعة', 'error');
+                }
+            })
+            .catch(() => {
+                showToast('حدث خطأ أثناء تحديث الدفعة', 'error');
+            })
+            .finally(() => {
+                setGlobalLoading(false);
+            });
         }
 
         function closeModal() {
@@ -636,9 +722,18 @@ renderAdminLayoutStart([
         // Handle form submission
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            if (!validateFormInline(this)) {
+                showToast('يرجى مراجعة الحقول المطلوبة قبل الحفظ', 'error');
+                return;
+            }
             
             const formData = new FormData(this);
             formData.set('csrf_token', csrfToken);
+            const submitButton = document.getElementById('bookingSubmitBtn');
+            const actionText = document.getElementById('formAction').value === 'update' ? 'جاري تحديث الحجز...' : 'جاري إنشاء الحجز...';
+            setButtonLoading(submitButton, true);
+            setGlobalLoading(true, actionText);
             
             fetch('', {
                 method: 'POST',
@@ -650,14 +745,18 @@ renderAdminLayoutStart([
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
-                    location.reload();
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 650);
                 } else {
-                    alert(data.message);
+                    showToast(data.message || 'تعذر حفظ بيانات الحجز', 'error');
                 }
             })
-            .catch(error => {
-                alert('حدث خطأ أثناء حفظ البيانات');
+            .catch(() => {
+                showToast('حدث خطأ أثناء حفظ البيانات', 'error');
+            })
+            .finally(() => {
+                setButtonLoading(submitButton, false);
+                setGlobalLoading(false);
             });
         });
 
