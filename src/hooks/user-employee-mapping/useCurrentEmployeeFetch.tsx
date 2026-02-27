@@ -34,7 +34,7 @@ export const useCurrentEmployeeFetch = () => {
         .from('profiles')
         .select(`
           *,
-          employees(*)
+          employees!profiles_linked_employee_id_fkey(*)
         `)
         .eq('id', user.id)
         .single();
