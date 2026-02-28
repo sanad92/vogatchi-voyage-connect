@@ -4763,6 +4763,16 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      create_organization_onboarding: {
+        Args: {
+          _address?: string
+          _email?: string
+          _name: string
+          _phone?: string
+          _slug: string
+        }
+        Returns: string
+      }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
       extend_trial: {
         Args: { _extra_days?: number; _org_id: string }
