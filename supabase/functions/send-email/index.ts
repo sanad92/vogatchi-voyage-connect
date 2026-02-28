@@ -10,6 +10,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Email templates
 function getEmailHtml(type: string, data: Record<string, any>): { subject: string; html: string } {
   const brandColor = "#2563eb";
@@ -135,7 +137,40 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate: require service role key or valid user JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // Allow service role key (for internal calls from process-email-queue)
+    if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+      const authClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: userError } = await authClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const { email_id } = await req.json();
+
+    // Validate email_id
+    if (!email_id || typeof email_id !== 'string' || !UUID_REGEX.test(email_id)) {
+      return new Response(JSON.stringify({ error: "Invalid email_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -189,24 +224,24 @@ serve(async (req) => {
     return new Response(JSON.stringify({ success: true, resend_id: resendData.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Send email error:", error);
 
     // Try to mark as failed
     try {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       const { email_id } = await req.clone().json();
-      if (email_id) {
+      if (email_id && typeof email_id === 'string' && UUID_REGEX.test(email_id)) {
         const { data: email } = await supabase.from("email_queue").select("attempts, max_attempts").eq("id", email_id).single();
         const newStatus = email && email.attempts >= email.max_attempts ? "failed" : "pending";
         await supabase
           .from("email_queue")
-          .update({ status: newStatus, error_message: error.message, updated_at: new Date().toISOString() })
+          .update({ status: newStatus, error_message: (error as Error).message, updated_at: new Date().toISOString() })
           .eq("id", email_id);
       }
     } catch (_) {}
 
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -8,6 +8,10 @@ const corsHeaders = {
 };
 
 const PAYMOB_BASE = "https://accept.paymob.com/api";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[\d\s\-\+\(\)]{6,20}$/;
+const MAX_STRING_LENGTH = 200;
+const MAX_AMOUNT_CENTS = 100_000_000; // 1M EGP
 
 interface PaymentRequest {
   amount_cents: number;
@@ -33,6 +37,11 @@ interface PaymentRequest {
     description?: string;
   }>;
   merchant_order_id?: string;
+}
+
+function sanitizeString(val: unknown, maxLen = MAX_STRING_LENGTH): string {
+  if (typeof val !== 'string') return '';
+  return val.trim().slice(0, maxLen);
 }
 
 async function getAuthToken(apiKey: string): Promise<string> {
@@ -97,20 +106,20 @@ async function getPaymentKey(
       expiration: 3600,
       order_id: orderId,
       billing_data: {
-        first_name: billingData.first_name,
-        last_name: billingData.last_name,
-        email: billingData.email,
-        phone_number: billingData.phone_number,
-        city: billingData.city || "Cairo",
-        country: billingData.country || "EG",
-        street: billingData.street || "N/A",
-        building: billingData.building || "N/A",
-        floor: billingData.floor || "N/A",
-        apartment: billingData.apartment || "N/A",
-        state: billingData.state || "N/A",
-        zip_code: billingData.zip_code || "N/A",
+        first_name: sanitizeString(billingData.first_name),
+        last_name: sanitizeString(billingData.last_name),
+        email: sanitizeString(billingData.email, 255),
+        phone_number: sanitizeString(billingData.phone_number, 20),
+        city: sanitizeString(billingData.city) || "Cairo",
+        country: sanitizeString(billingData.country, 2) || "EG",
+        street: sanitizeString(billingData.street) || "N/A",
+        building: sanitizeString(billingData.building) || "N/A",
+        floor: sanitizeString(billingData.floor) || "N/A",
+        apartment: sanitizeString(billingData.apartment) || "N/A",
+        state: sanitizeString(billingData.state) || "N/A",
+        zip_code: sanitizeString(billingData.zip_code, 10) || "N/A",
         shipping_method: "N/A",
-        postal_code: billingData.zip_code || "N/A",
+        postal_code: sanitizeString(billingData.zip_code, 10) || "N/A",
       },
       currency,
       integration_id: integrationId,
@@ -163,17 +172,61 @@ Deno.serve(async (req) => {
     // Parse request body
     const body: PaymentRequest = await req.json();
 
-    // Validate required fields
-    if (!body.amount_cents || body.amount_cents < 100) {
+    // === Input Validation ===
+    if (!body.amount_cents || typeof body.amount_cents !== 'number' || !Number.isInteger(body.amount_cents) || body.amount_cents < 100 || body.amount_cents > MAX_AMOUNT_CENTS) {
       return new Response(
-        JSON.stringify({ error: "المبلغ غير صالح. الحد الأدنى 100 قرش (1 جنيه)" }),
+        JSON.stringify({ error: `المبلغ غير صالح. الحد الأدنى 100 قرش والحد الأقصى ${MAX_AMOUNT_CENTS} قرش` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!body.billing_data?.first_name || !body.billing_data?.last_name || !body.billing_data?.email || !body.billing_data?.phone_number) {
+    if (!body.billing_data || typeof body.billing_data !== 'object') {
       return new Response(
-        JSON.stringify({ error: "بيانات الفوترة مطلوبة: first_name, last_name, email, phone_number" }),
+        JSON.stringify({ error: "بيانات الفوترة مطلوبة" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { first_name, last_name, email, phone_number } = body.billing_data;
+
+    if (!first_name || typeof first_name !== 'string' || first_name.trim().length === 0 || first_name.length > MAX_STRING_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: "الاسم الأول مطلوب وأقصى طول 200 حرف" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!last_name || typeof last_name !== 'string' || last_name.trim().length === 0 || last_name.length > MAX_STRING_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: "اسم العائلة مطلوب وأقصى طول 200 حرف" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim()) || email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "بريد إلكتروني غير صالح" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!phone_number || typeof phone_number !== 'string' || !PHONE_REGEX.test(phone_number.trim())) {
+      return new Response(
+        JSON.stringify({ error: "رقم هاتف غير صالح" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (body.merchant_order_id && (typeof body.merchant_order_id !== 'string' || body.merchant_order_id.length > 100)) {
+      return new Response(
+        JSON.stringify({ error: "merchant_order_id غير صالح" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (body.currency && (typeof body.currency !== 'string' || !/^[A-Z]{3}$/i.test(body.currency))) {
+      return new Response(
+        JSON.stringify({ error: "عملة غير صالحة" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -191,7 +244,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const currency = body.currency || "EGP";
+    const currency = (body.currency || "EGP").toUpperCase();
+    const sanitizedMerchantOrderId = body.merchant_order_id ? sanitizeString(body.merchant_order_id, 100) : undefined;
 
     // Step 1: Get auth token
     const paymobAuthToken = await getAuthToken(apiKey);
@@ -201,7 +255,7 @@ Deno.serve(async (req) => {
       paymobAuthToken,
       body.amount_cents,
       currency,
-      body.merchant_order_id,
+      sanitizedMerchantOrderId,
       body.items
     );
 
@@ -233,7 +287,7 @@ Deno.serve(async (req) => {
   } catch (error: unknown) {
     console.error("Payment error:", (error as Error).message);
     return new Response(
-      JSON.stringify({ error: "فشل في إنشاء عملية الدفع", details: (error as Error).message }),
+      JSON.stringify({ error: "فشل في إنشاء عملية الدفع" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

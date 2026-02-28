@@ -6,12 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type OnboardingRequest = {
-  name?: string;
-  phone?: string | null;
-  email?: string | null;
-  address?: string | null;
-};
+const MAX_NAME_LENGTH = 200;
+const MAX_FIELD_LENGTH = 500;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[\d\s\-\+\(\)]{6,20}$/;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -52,8 +50,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = (await req.json()) as OnboardingRequest;
-    const name = (body?.name || "").trim();
+    const body = await req.json();
+    const name = (typeof body?.name === 'string' ? body.name : "").trim();
 
     if (!name) {
       return new Response(JSON.stringify({ error: "Organization name is required" }), {
@@ -62,16 +60,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    const email = (body?.email || user.email || null)?.trim() || null;
-    const phone = (body?.phone || null)?.trim?.() || null;
-    const address = (body?.address || null)?.trim?.() || null;
+    if (name.length > MAX_NAME_LENGTH) {
+      return new Response(JSON.stringify({ error: `Organization name must be less than ${MAX_NAME_LENGTH} characters` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate and sanitize optional fields
+    const email = typeof body?.email === 'string' ? body.email.trim() : (user.email || null);
+    const phone = typeof body?.phone === 'string' ? body.phone.trim() : null;
+    const address = typeof body?.address === 'string' ? body.address.trim() : null;
+
+    if (email && !EMAIL_REGEX.test(email)) {
+      return new Response(JSON.stringify({ error: "Invalid email format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (email && email.length > 255) {
+      return new Response(JSON.stringify({ error: "Email must be less than 255 characters" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (phone && !PHONE_REGEX.test(phone)) {
+      return new Response(JSON.stringify({ error: "Invalid phone format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (address && address.length > MAX_FIELD_LENGTH) {
+      return new Response(JSON.stringify({ error: `Address must be less than ${MAX_FIELD_LENGTH} characters` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: organizationId, error } = await supabase.rpc("create_organization_onboarding", {
       _name: name,
       _slug: "",
-      _phone: phone,
-      _email: email,
-      _address: address,
+      _phone: phone || null,
+      _email: email || null,
+      _address: address || null,
     });
 
     if (error || !organizationId) {

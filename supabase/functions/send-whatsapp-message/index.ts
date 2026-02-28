@@ -8,6 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const VALID_MESSAGE_TYPES = ['text', 'image', 'document', 'template'] as const;
+const MAX_CONTENT_LENGTH = 4096;
+const MAX_TEMPLATE_PARAMS = 20;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -48,7 +53,58 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { conversationId, messageType, content, mediaUrl, templateName, templateLanguage, templateParameters, sentBy } = await req.json();
+    const body = await req.json();
+    const { conversationId, messageType, content, mediaUrl, templateName, templateLanguage, templateParameters, sentBy } = body;
+
+    // === Input Validation ===
+    if (!conversationId || typeof conversationId !== 'string' || !UUID_REGEX.test(conversationId)) {
+      return new Response(JSON.stringify({ error: 'Invalid conversationId' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!messageType || !VALID_MESSAGE_TYPES.includes(messageType)) {
+      return new Response(JSON.stringify({ error: `Invalid messageType. Must be one of: ${VALID_MESSAGE_TYPES.join(', ')}` }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (messageType === 'text') {
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return new Response(JSON.stringify({ error: 'Content is required for text messages' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (content.length > MAX_CONTENT_LENGTH) {
+        return new Response(JSON.stringify({ error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    if ((messageType === 'image' || messageType === 'document') && (!mediaUrl || typeof mediaUrl !== 'string')) {
+      return new Response(JSON.stringify({ error: 'mediaUrl is required for image/document messages' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (messageType === 'template') {
+      if (!templateName || typeof templateName !== 'string' || templateName.length > 100) {
+        return new Response(JSON.stringify({ error: 'Valid templateName is required for template messages' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (templateParameters && (!Array.isArray(templateParameters) || templateParameters.length > MAX_TEMPLATE_PARAMS)) {
+        return new Response(JSON.stringify({ error: `templateParameters must be an array with max ${MAX_TEMPLATE_PARAMS} items` }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (templateParameters && !templateParameters.every((p: unknown) => typeof p === 'string' && p.length <= 1024)) {
+        return new Response(JSON.stringify({ error: 'Each template parameter must be a string under 1024 characters' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     // Get WhatsApp settings
     const { data: settings } = await supabase
@@ -92,7 +148,7 @@ serve(async (req) => {
       case 'template':
         messagePayload.template = {
           name: templateName,
-          language: { code: templateLanguage },
+          language: { code: templateLanguage || 'ar' },
           components: templateParameters ? [{
             type: "body",
             parameters: templateParameters.map((param: string) => ({ type: "text", text: param }))
@@ -152,7 +208,7 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('Send message error:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ error: 'Failed to send message' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
