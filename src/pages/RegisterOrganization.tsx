@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Building2, ArrowLeft } from 'lucide-react';
+import { Building2, ArrowLeft, SkipForward } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   
   const [form, setForm] = useState({
     name: '',
