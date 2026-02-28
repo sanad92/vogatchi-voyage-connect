@@ -1,46 +1,41 @@
 
 
-## المشكلة والحل
+# خطة: فصل صفحة تسجيل الدخول عن صفحة إنشاء الحساب
 
-### 1. خطأ TypeScript في `RegisterOrganization.tsx`
-الكود يستدعي `supabase.rpc('create_organization_onboarding')` لكن هذه الدالة غير مُعرّفة في أنواع TypeScript. الحل: الاعتماد فقط على edge function `create-organization-onboarding` وإزالة الـ RPC fallback، أو استخدام `as any` للتخطي.
+## الوضع الحالي
+حالياً يوجد صفحة واحدة `/auth` تحتوي على tabs (تسجيل دخول + إنشاء حساب) داخل مكون `SupabaseAuthForm`.
 
-### 2. أخطاء Build في Edge Functions (11 خطأ)
-- **`getClaims` غير موجودة**: في `confirm-payment` و `create-payment-intent` — استبدالها بـ `auth.getUser()`
-- **`error` من نوع `unknown`**: في 7 ملفات edge functions — إضافة `(error as Error).message` أو `(error as any).message`
+## التغييرات المطلوبة
 
-### 3. إضافة زر "تخطي" في صفحة إنشاء المؤسسة
-- إضافة زر أسفل الـ form يسمح بالدخول مباشرة للوحة التحكم
-- تعديل `SupabaseProtectedRoute.tsx` ليسمح بالدخول بدون مؤسسة عند التخطي (عبر localStorage flag)
+### 1. إنشاء صفحة تسجيل الدخول `/login`
+- ملف جديد: `src/pages/LoginPage.tsx`
+- تحتوي على نموذج تسجيل الدخول فقط (بريد إلكتروني + كلمة مرور)
+- رابط "نسيت كلمة المرور؟"
+- رابط "ليس لديك حساب؟ أنشئ حساب" يوجه لـ `/signup`
+- تصميم نظيف مع شعار Vogatchi
+
+### 2. إنشاء صفحة إنشاء حساب `/signup`
+- ملف جديد: `src/pages/SignupPage.tsx`
+- تحتوي على نموذج التسجيل (الاسم + البريد + كلمة المرور)
+- رابط "لديك حساب؟ سجل دخول" يوجه لـ `/login`
+- نفس التصميم المتسق
+
+### 3. تحديث التوجيه في `App.tsx`
+- إضافة route `/login` و `/signup`
+- توجيه `/auth` إلى `/login` (للتوافقية)
+- تحديث الـ redirect في `AuthPage.tsx` و `SupabaseProtectedRoute.tsx` ليوجه لـ `/login` بدل `/auth`
+
+### 4. تحديث الروابط في المكونات الأخرى
+- `SupabaseProtectedRoute.tsx`: تغيير redirect من `/auth` إلى `/login`
+- `AuthPage.tsx`: تحديث المنطق أو استبداله
+- أي مكونات أخرى تشير لـ `/auth`
 
 ## الملفات المتأثرة
-
-| الملف | التغيير |
-|-------|---------|
-| `src/pages/RegisterOrganization.tsx` | إزالة RPC fallback، إضافة زر تخطي |
-| `src/components/SupabaseProtectedRoute.tsx` | السماح بالتخطي عبر flag |
-| `supabase/functions/confirm-payment/index.ts` | استبدال `getClaims` بـ `getUser`، تصحيح نوع error |
-| `supabase/functions/create-payment-intent/index.ts` | نفس التصحيح |
-| `supabase/functions/create-payment/index.ts` | تصحيح نوع error |
-| `supabase/functions/generate-demo-data/index.ts` | تصحيح نوع error |
-| `supabase/functions/paymob-webhook/index.ts` | تصحيح نوع error |
-| `supabase/functions/send-booking-confirmation/index.ts` | تصحيح نوع error |
-| `supabase/functions/send-whatsapp-message/index.ts` | تصحيح نوع error |
+- **جديد**: `src/pages/LoginPage.tsx`، `src/pages/SignupPage.tsx`
+- **تعديل**: `src/App.tsx`، `src/components/SupabaseProtectedRoute.tsx`
 
 ## تفاصيل تقنية
-
-**زر التخطي**: عند الضغط يحفظ `localStorage.setItem('org_setup_skipped', 'true')` ثم ينقل لـ `/dashboard`. في `SupabaseProtectedRoute` نتحقق من هذا الـ flag قبل التوجيه لصفحة إنشاء المؤسسة.
-
-**استبدال `getClaims`**:
-```typescript
-// قبل
-const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-const userId = claimsData.claims.sub;
-
-// بعد  
-const { data: { user }, error: userError } = await authClient.auth.getUser();
-const userId = user.id;
-```
-
-**تصحيح نوع error**: كل `catch (error)` يصبح `catch (error: unknown)` مع `(error as Error).message`.
+- كلا الصفحتين تستخدمان `useOptimizedAuth` hook الموجود للـ `signIn` و `signUp`
+- نفس منطق التوجيه: إذا المستخدم مسجل دخول يتم توجيهه للداشبورد
+- التصميم يستخدم `AuthLayout` الموجود كـ wrapper
 

@@ -29,16 +29,15 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await authClient.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const rl = rateLimit(`confirm:${userId}`, 10, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
@@ -132,10 +131,10 @@ serve(async (req) => {
       );
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('خطأ في تأكيد الدفع:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
