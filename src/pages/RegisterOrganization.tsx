@@ -30,25 +30,9 @@ const RegisterOrganization = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const createViaRpcFallback = async (params: {
-    name: string;
-    email: string | null;
-    phone: string | null;
-    address: string | null;
-  }) => {
-    const { data: insertedOrg, error: orgError } = await supabase.rpc('create_organization_onboarding', {
-      _name: params.name,
-      _slug: '',
-      _phone: params.phone,
-      _email: params.email,
-      _address: params.address,
-    });
-
-    if (orgError || !insertedOrg) {
-      throw orgError || new Error('Failed to create organization');
-    }
-
-    return insertedOrg as string;
+  const handleSkip = () => {
+    localStorage.setItem('org_setup_skipped', 'true');
+    navigate('/dashboard');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,18 +57,7 @@ const RegisterOrganization = () => {
       if (!onboardingError && onboardingResult?.organizationId) {
         organizationId = onboardingResult.organizationId as string;
       } else {
-        const failedToSend = String(onboardingError?.message || '').toLowerCase().includes('failed to send a request');
-
-        if (failedToSend) {
-          organizationId = await createViaRpcFallback({
-            name: trimmedName,
-            email: organizationEmail,
-            phone: form.phone || null,
-            address: form.address || null,
-          });
-        } else {
-          throw onboardingError;
-        }
+        throw onboardingError || new Error('Failed to create organization');
       }
 
       if (!organizationId) {
