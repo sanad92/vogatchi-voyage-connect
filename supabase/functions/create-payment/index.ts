@@ -230,10 +230,10 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
-    console.error("Payment error:", error.message);
+  } catch (error: unknown) {
+    console.error("Payment error:", (error as Error).message);
     return new Response(
-      JSON.stringify({ error: "فشل في إنشاء عملية الدفع", details: error.message }),
+      JSON.stringify({ error: "فشل في إنشاء عملية الدفع", details: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

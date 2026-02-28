@@ -169,6 +169,19 @@ const RegisterOrganization = () => {
               </div>
             )}
           </Button>
+
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={loading}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mx-auto"
+            >
+              <SkipForward className="w-4 h-4" />
+              تخطي والدخول للوحة التحكم
+            </button>
+            <p className="text-xs text-muted-foreground mt-1">يمكنك استكمال بيانات المؤسسة لاحقاً من الإعدادات</p>
+          </div>
         </form>
       </div>
     </div>

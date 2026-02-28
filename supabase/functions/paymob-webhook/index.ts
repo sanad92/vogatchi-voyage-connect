@@ -238,10 +238,10 @@ Deno.serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Webhook error:", error.message);
+  } catch (error: unknown) {
+    console.error("Webhook error:", (error as Error).message);
     return new Response(
-      JSON.stringify({ error: "Internal error", details: error.message }),
+      JSON.stringify({ error: "Internal error", details: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
