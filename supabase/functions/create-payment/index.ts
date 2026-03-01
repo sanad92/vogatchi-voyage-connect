@@ -237,9 +237,18 @@ Deno.serve(async (req) => {
     const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
 
     if (!apiKey || !integrationId || !iframeId) {
-      console.error("Missing Paymob configuration");
+      console.error("Missing Paymob configuration:", { apiKey: !!apiKey, integrationId, iframeId });
       return new Response(
         JSON.stringify({ error: "خطأ في إعدادات بوابة الدفع" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const parsedIntegrationId = parseInt(integrationId, 10);
+    if (isNaN(parsedIntegrationId)) {
+      console.error("PAYMOB_INTEGRATION_ID is not a valid number:", integrationId);
+      return new Response(
+        JSON.stringify({ error: "خطأ في إعدادات بوابة الدفع - integration_id غير صالح" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -265,7 +274,7 @@ Deno.serve(async (req) => {
       orderId,
       body.amount_cents,
       currency,
-      parseInt(integrationId),
+      parsedIntegrationId,
       body.billing_data
     );
 
