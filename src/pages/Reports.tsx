@@ -123,28 +123,29 @@ const Reports = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
           <p className="text-muted-foreground mt-1">
             لوحة تحكم شاملة للتقارير المالية وتحليل الأداء
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">
             البيانات الحقيقية
           </Badge>
           <Button
             variant="outline"
+            size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             تحديث
           </Button>
-          <Button>
-            <Settings className="h-4 w-4 mr-2" />
-            إعدادات التقارير
+          <Button size="sm">
+            <Settings className="h-4 w-4 ml-2" />
+            <span className="hidden sm:inline">إعدادات التقارير</span>
           </Button>
         </div>
       </div>
@@ -153,38 +154,38 @@ const Reports = () => {
       <AdvancedFilters onFiltersChange={handleFiltersChange} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border p-2">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 gap-1">
-            <TabsTrigger value="overview" className="flex items-center gap-2 text-xs lg:text-sm">
-              <BarChart3 className="h-4 w-4" />
+        <div className="bg-card rounded-lg shadow-sm border p-2 overflow-x-auto">
+          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-8 gap-1">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <BarChart3 className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">نظرة عامة</span>
             </TabsTrigger>
-            <TabsTrigger value="charts" className="flex items-center gap-2 text-xs lg:text-sm">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="charts" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <TrendingUp className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">رسوم بيانية</span>
             </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Download className="h-4 w-4" />
+            <TabsTrigger value="export" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <Download className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">تصدير</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2 text-xs lg:text-sm">
-              <BarChart3 className="h-4 w-4" />
+            <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <BarChart3 className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">تحليلات متقدمة</span>
             </TabsTrigger>
-            <TabsTrigger value="comparison" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Calendar className="h-4 w-4" />
+            <TabsTrigger value="comparison" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <Calendar className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">مقارنة الفترات</span>
             </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-2 text-xs lg:text-sm">
-              <Bell className="h-4 w-4" />
+            <TabsTrigger value="alerts" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <Bell className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">التنبيهات</span>
             </TabsTrigger>
-            <TabsTrigger value="financial" className="flex items-center gap-2 text-xs lg:text-sm">
-              <DollarSign className="h-4 w-4" />
+            <TabsTrigger value="financial" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <DollarSign className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">التقارير المالية</span>
             </TabsTrigger>
-            <TabsTrigger value="performance" className="flex items-center gap-2 text-xs lg:text-sm">
-              <FileText className="h-4 w-4" />
+            <TabsTrigger value="performance" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
+              <FileText className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">الأداء</span>
             </TabsTrigger>
           </TabsList>

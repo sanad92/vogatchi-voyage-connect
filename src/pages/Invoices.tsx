@@ -170,7 +170,7 @@ const Invoices = () => {
         { label: 'الفواتير' }
       ]} />
       {/* رأس الصفحة مع الإحصائيات المحدثة */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -247,19 +247,19 @@ const Invoices = () => {
       {/* أدوات التصفية والبحث */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle>تصفية الفواتير</CardTitle>
               <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
             </div>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 ml-2" />
               فاتورة جديدة
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <div>
               <Label htmlFor="search">بحث</Label>
               <div className="relative">

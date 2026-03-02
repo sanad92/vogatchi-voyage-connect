@@ -45,11 +45,11 @@ const FlightBookings = () => {
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'حجوزات الطيران' }
       ]} />
-      <div className="flex items-center gap-3">
-        <Plane className="h-8 w-8 text-primary" />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Plane className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">حجوزات الطيران</h1>
-          <p className="text-muted-foreground">إدارة حجوزات الطيران والتذاكر</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">حجوزات الطيران</h1>
+          <p className="text-sm text-muted-foreground">إدارة حجوزات الطيران والتذاكر</p>
         </div>
       </div>
 
