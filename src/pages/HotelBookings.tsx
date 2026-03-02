@@ -135,11 +135,11 @@ const HotelBookings = () => {
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'حجوزات الفنادق' }
       ]} />
-      <div className="flex items-center gap-3">
-        <Hotel className="h-8 w-8 text-primary" />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Hotel className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">حجوزات الفنادق</h1>
-          <p className="text-muted-foreground">إدارة حجوزات الفنادق والإقامة</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">حجوزات الفنادق</h1>
+          <p className="text-sm text-muted-foreground">إدارة حجوزات الفنادق والإقامة</p>
         </div>
       </div>
 

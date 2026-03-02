@@ -17,29 +17,31 @@ const BankAccounts = () => {
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'الحسابات البنكية' }
       ]} />
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">إدارة الحسابات البنكية والعملات</h1>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">إدارة الحسابات البنكية والعملات</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="accounts" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">الحسابات البنكية</span>
-          </TabsTrigger>
-          <TabsTrigger value="transactions" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">الحركات البنكية</span>
-          </TabsTrigger>
-          <TabsTrigger value="exchange-rates" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">أسعار الصرف</span>
-          </TabsTrigger>
-          <TabsTrigger value="converter" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">محول العملات</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="flex w-max sm:w-full sm:grid sm:grid-cols-4 gap-1">
+            <TabsTrigger value="accounts" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Building2 className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الحسابات البنكية</span>
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <CreditCard className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الحركات البنكية</span>
+            </TabsTrigger>
+            <TabsTrigger value="exchange-rates" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <RefreshCw className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">أسعار الصرف</span>
+            </TabsTrigger>
+            <TabsTrigger value="converter" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">محول العملات</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="accounts">
           <BankAccountManagement />

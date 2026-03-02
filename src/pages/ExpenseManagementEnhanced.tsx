@@ -33,13 +33,11 @@ const ExpenseManagementEnhanced = () => {
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'إدارة المصروفات' }
       ]} />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة المصروفات والحسابات المحسّنة</h1>
-          <p className="text-muted-foreground mt-2">
-            نظام شامل لإدارة المصروفات مع دعم العملات المتعددة والتقارير المتقدمة
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">إدارة المصروفات والحسابات</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          نظام شامل لإدارة المصروفات مع دعم العملات المتعددة
+        </p>
       </div>
 
       <Alert>
@@ -51,40 +49,42 @@ const ExpenseManagementEnhanced = () => {
       </Alert>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
-            <span className="hidden sm:inline">نظرة عامة</span>
-          </TabsTrigger>
-          <TabsTrigger value="employees" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">الموظفين</span>
-          </TabsTrigger>
-          <TabsTrigger value="salaries" className="flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            <span className="hidden sm:inline">الرواتب</span>
-          </TabsTrigger>
-          <TabsTrigger value="commissions" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            <span className="hidden sm:inline">العمولات</span>
-          </TabsTrigger>
-          <TabsTrigger value="rent" className="flex items-center gap-2">
-            <Home className="h-4 w-4" />
-            <span className="hidden sm:inline">الإيجارات</span>
-          </TabsTrigger>
-          <TabsTrigger value="expenses" className="flex items-center gap-2">
-            <Receipt className="h-4 w-4" />
-            <span className="hidden sm:inline">المصروفات</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">التقارير</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">الإعدادات</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-8 gap-1">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <PieChart className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">نظرة عامة</span>
+            </TabsTrigger>
+            <TabsTrigger value="employees" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الموظفين</span>
+            </TabsTrigger>
+            <TabsTrigger value="salaries" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Calculator className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الرواتب</span>
+            </TabsTrigger>
+            <TabsTrigger value="commissions" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <DollarSign className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">العمولات</span>
+            </TabsTrigger>
+            <TabsTrigger value="rent" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Home className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الإيجارات</span>
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Receipt className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">المصروفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">التقارير</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-1.5 whitespace-nowrap px-3">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الإعدادات</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview">
           <ExpenseOverview />

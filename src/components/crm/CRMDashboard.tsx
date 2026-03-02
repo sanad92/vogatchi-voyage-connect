@@ -34,26 +34,26 @@ export const CRMDashboard = () => {
         { label: 'إدارة علاقات العملاء' }
       ]} />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Brain className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             نظام إدارة علاقات العملاء
           </h1>
           <p className="text-muted-foreground mt-2">إدارة شاملة ومتقدمة لعلاقات العملاء والتحليلات الذكية</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => navigate('/duplicate-customers')}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate('/duplicate-customers')}>
             <AlertTriangle className="h-4 w-4 ml-2" />
-            كشف المكررات
+            <span className="hidden sm:inline">كشف المكررات</span>
           </Button>
-          <Button onClick={() => navigate('/new-customer')}>
+          <Button size="sm" onClick={() => navigate('/new-customer')}>
             <Plus className="h-4 w-4 ml-2" />
             عميل جديد
           </Button>
           <Select value={timeframe} onValueChange={(value: any) => setTimeframe(value)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-32 sm:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -75,32 +75,34 @@ export const CRMDashboard = () => {
       />
 
       <Tabs defaultValue="customers" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="customers" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">العملاء</span>
-          </TabsTrigger>
-          <TabsTrigger value="segments" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">الشرائح</span>
-          </TabsTrigger>
-          <TabsTrigger value="followups" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">المتابعة</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">التحليلات</span>
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            <span className="hidden sm:inline">الحملات</span>
-          </TabsTrigger>
-          <TabsTrigger value="interactions" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">التفاعلات</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-6 gap-1">
+            <TabsTrigger value="customers" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">العملاء</span>
+            </TabsTrigger>
+            <TabsTrigger value="segments" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الشرائح</span>
+            </TabsTrigger>
+            <TabsTrigger value="followups" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">المتابعة</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">التحليلات</span>
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <Send className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">الحملات</span>
+            </TabsTrigger>
+            <TabsTrigger value="interactions" className="flex items-center gap-2 whitespace-nowrap px-3">
+              <MessageSquare className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">التفاعلات</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="customers">
           <CRMCustomerList />
