@@ -7,6 +7,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function hexEncode(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+async function verifySignature(body: Uint8Array, signature: string, appSecret: string): Promise<boolean> {
+  if (!signature || !appSecret) return false;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = hexEncode(await crypto.subtle.sign('HMAC', key, body));
+  const expected = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+  return timingSafeEqual(mac, expected);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -42,7 +67,22 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
-      const body = await req.json();
+      // Verify HMAC signature from Meta
+      const appSecret = Deno.env.get('WHATSAPP_APP_SECRET');
+      const signature = req.headers.get('X-Hub-Signature-256') ?? '';
+      const rawBody = new Uint8Array(await req.arrayBuffer());
+
+      if (appSecret) {
+        const valid = await verifySignature(rawBody, signature, appSecret);
+        if (!valid) {
+          console.error('Invalid webhook signature');
+          return new Response('Forbidden', { status: 403, headers: corsHeaders });
+        }
+      } else {
+        console.warn('WHATSAPP_APP_SECRET not set - skipping signature verification');
+      }
+
+      const body = JSON.parse(new TextDecoder().decode(rawBody));
       console.log('WhatsApp Webhook received:', JSON.stringify(body, null, 2));
 
       // Process webhook data
