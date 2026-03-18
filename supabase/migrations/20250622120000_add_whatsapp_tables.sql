@@ -89,10 +89,12 @@ ALTER TABLE public.whatsapp_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
 
 -- إنشاء سياسات أمنية
-CREATE POLICY IF NOT EXISTS "Users can view quick replies" ON public.whatsapp_quick_replies
+DROP POLICY IF EXISTS "Users can view quick replies" ON public.whatsapp_quick_replies;
+CREATE POLICY "Users can view quick replies" ON public.whatsapp_quick_replies
   FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Users can manage global quick replies" ON public.whatsapp_quick_replies
+DROP POLICY IF EXISTS "Users can manage global quick replies" ON public.whatsapp_quick_replies;
+CREATE POLICY "Users can manage global quick replies" ON public.whatsapp_quick_replies
   FOR ALL USING (
     is_global = true OR 
     created_by = auth.uid() OR
@@ -103,10 +105,12 @@ CREATE POLICY IF NOT EXISTS "Users can manage global quick replies" ON public.wh
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Users can view conversations" ON public.whatsapp_conversations
+DROP POLICY IF EXISTS "Users can view conversations" ON public.whatsapp_conversations;
+CREATE POLICY "Users can view conversations" ON public.whatsapp_conversations
   FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Users can manage assigned conversations" ON public.whatsapp_conversations
+DROP POLICY IF EXISTS "Users can manage assigned conversations" ON public.whatsapp_conversations;
+CREATE POLICY "Users can manage assigned conversations" ON public.whatsapp_conversations
   FOR ALL USING (
     assigned_to = (SELECT employee_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (
@@ -116,13 +120,16 @@ CREATE POLICY IF NOT EXISTS "Users can manage assigned conversations" ON public.
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Users can view messages" ON public.whatsapp_messages
+DROP POLICY IF EXISTS "Users can view messages" ON public.whatsapp_messages;
+CREATE POLICY "Users can view messages" ON public.whatsapp_messages
   FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Users can send messages" ON public.whatsapp_messages
+DROP POLICY IF EXISTS "Users can send messages" ON public.whatsapp_messages;
+CREATE POLICY "Users can send messages" ON public.whatsapp_messages
   FOR INSERT WITH CHECK (sent_by = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "Employees can manage their sessions" ON public.whatsapp_sessions
+DROP POLICY IF EXISTS "Employees can manage their sessions" ON public.whatsapp_sessions;
+CREATE POLICY "Employees can manage their sessions" ON public.whatsapp_sessions
   FOR ALL USING (
     employee_id = (SELECT employee_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (
@@ -173,19 +180,19 @@ BEGIN
   LIMIT 1;
   
   -- إنشاء محادثة جديدة
-  INSERT INTO public.whatsapp_conversations (
-    phone_number, 
-    customer_id, 
-    assigned_to, 
-    auto_assigned,
-    assignment_reason
-  ) VALUES (
-    p_phone_number,
-    customer_record.id,
-    assigned_employee,
-    assigned_employee IS NOT NULL,
-    CASE WHEN assigned_employee IS NOT NULL THEN 'auto_assigned' ELSE 'no_available_agent' END
-  ) RETURNING id INTO conversation_id;
+-- INSERT INTO public.whatsapp_conversations (
+--     phone_number, 
+--     customer_id, 
+--     assigned_to, 
+--     auto_assigned,
+--     assignment_reason
+--   ) VALUES (
+--     p_phone_number,
+--     customer_record.id,
+--     assigned_employee,
+--     assigned_employee IS NOT NULL,
+--     CASE WHEN assigned_employee IS NOT NULL THEN 'auto_assigned' ELSE 'no_available_agent' END
+--   ) RETURNING id INTO conversation_id;
   
   -- تحديث عدد المحادثات النشطة للموظف
   IF assigned_employee IS NOT NULL THEN

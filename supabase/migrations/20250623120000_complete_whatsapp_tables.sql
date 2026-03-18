@@ -121,11 +121,17 @@ ALTER TABLE public.whatsapp_quick_replies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies (allowing authenticated users to access)
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp settings" ON public.whatsapp_settings;
 CREATE POLICY "Authenticated users can manage WhatsApp settings" ON public.whatsapp_settings FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp conversations" ON public.whatsapp_conversations;
 CREATE POLICY "Authenticated users can manage WhatsApp conversations" ON public.whatsapp_conversations FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp messages" ON public.whatsapp_messages;
 CREATE POLICY "Authenticated users can manage WhatsApp messages" ON public.whatsapp_messages FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp templates" ON public.whatsapp_templates;
 CREATE POLICY "Authenticated users can manage WhatsApp templates" ON public.whatsapp_templates FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp quick replies" ON public.whatsapp_quick_replies;
 CREATE POLICY "Authenticated users can manage WhatsApp quick replies" ON public.whatsapp_quick_replies FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage WhatsApp sessions" ON public.whatsapp_sessions;
 CREATE POLICY "Authenticated users can manage WhatsApp sessions" ON public.whatsapp_sessions FOR ALL TO authenticated USING (true);
 
 -- Update triggers
@@ -137,22 +143,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_whatsapp_settings_updated_at ON public.whatsapp_settings;
 CREATE TRIGGER update_whatsapp_settings_updated_at
   BEFORE UPDATE ON public.whatsapp_settings
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_updated_at();
 
+DROP TRIGGER IF EXISTS update_whatsapp_conversations_updated_at ON public.whatsapp_conversations;
 CREATE TRIGGER update_whatsapp_conversations_updated_at
   BEFORE UPDATE ON public.whatsapp_conversations
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_updated_at();
 
+DROP TRIGGER IF EXISTS update_whatsapp_templates_updated_at ON public.whatsapp_templates;
 CREATE TRIGGER update_whatsapp_templates_updated_at
   BEFORE UPDATE ON public.whatsapp_templates
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_updated_at();
 
+DROP TRIGGER IF EXISTS update_whatsapp_quick_replies_updated_at ON public.whatsapp_quick_replies;
 CREATE TRIGGER update_whatsapp_quick_replies_updated_at
   BEFORE UPDATE ON public.whatsapp_quick_replies
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_updated_at();
 
+DROP TRIGGER IF EXISTS update_whatsapp_sessions_updated_at ON public.whatsapp_sessions;
 CREATE TRIGGER update_whatsapp_sessions_updated_at
   BEFORE UPDATE ON public.whatsapp_sessions
   FOR EACH ROW EXECUTE FUNCTION update_whatsapp_updated_at();

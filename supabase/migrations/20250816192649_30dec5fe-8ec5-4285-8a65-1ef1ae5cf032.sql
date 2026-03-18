@@ -1,5 +1,5 @@
 -- إنشاء جدول البروفايلات للمستخدمين
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
   full_name TEXT,
@@ -18,19 +18,28 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- إنشاء enum للأدوار
-CREATE TYPE public.app_role AS ENUM (
-  'super_admin',
-  'admin', 
-  'manager',
-  'sales_agent',
-  'customer_service',
-  'booking_agent',
-  'accountant',
-  'viewer'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    WHERE t.typname = 'app_role'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.app_role AS ENUM (
+      'super_admin',
+      'admin',
+      'manager',
+      'sales_agent',
+      'customer_service',
+      'booking_agent',
+      'accountant',
+      'viewer'
+    );
+  END IF;
+END $$;
 
 -- إنشاء جدول أدوار المستخدمين
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role app_role NOT NULL,
@@ -43,7 +52,9 @@ CREATE TABLE public.user_roles (
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 -- دالة للتحقق من الأدوار (SECURITY DEFINER لتجنب المشاكل الدائرية)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
+DROP FUNCTION IF EXISTS public.has_role(uuid, app_role);
+DROP FUNCTION IF EXISTS public.has_role(uuid, text);
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role text)
 RETURNS BOOLEAN
 LANGUAGE SQL
 STABLE
@@ -53,23 +64,25 @@ AS $$
     SELECT 1
     FROM public.user_roles
     WHERE user_id = _user_id
-      AND role = _role
+      AND role::text = _role
   )
 $$;
 
 -- دالة للحصول على أدوار المستخدم
+DROP FUNCTION IF EXISTS public.get_user_roles(uuid);
 CREATE OR REPLACE FUNCTION public.get_user_roles(_user_id UUID)
-RETURNS TABLE(role app_role)
+RETURNS TABLE(role text)
 LANGUAGE SQL
 STABLE
 SECURITY DEFINER
 AS $$
-  SELECT user_roles.role
+  SELECT user_roles.role::text
   FROM public.user_roles
   WHERE user_id = _user_id
 $$;
 
 -- دالة للتحقق من كون المستخدم سوبر أدمن
+DROP FUNCTION IF EXISTS public.is_super_admin(uuid);
 CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE SQL
@@ -80,30 +93,35 @@ AS $$
 $$;
 
 -- سياسات RLS للبروفايلات
+DROP POLICY IF EXISTS "المستخدمون يمكنهم عرض بروفايلهم" ON public.profiles;
 CREATE POLICY "المستخدمون يمكنهم عرض بروفايلهم"
 ON public.profiles
 FOR SELECT
 TO authenticated
-USING (auth.uid() = user_id);
+USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "المستخدمون يمكنهم تحديث بروفايلهم" ON public.profiles;
 CREATE POLICY "المستخدمون يمكنهم تحديث بروفايلهم"
 ON public.profiles
 FOR UPDATE
 TO authenticated
-USING (auth.uid() = user_id);
+USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه عرض كل البروفايلات" ON public.profiles;
 CREATE POLICY "السوبر أدمن يمكنه عرض كل البروفايلات"
 ON public.profiles
 FOR SELECT
 TO authenticated
 USING (public.is_super_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه تحديث كل البروفايلات" ON public.profiles;
 CREATE POLICY "السوبر أدمن يمكنه تحديث كل البروفايلات"
 ON public.profiles
 FOR UPDATE
 TO authenticated
 USING (public.is_super_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه إنشاء البروفايلات" ON public.profiles;
 CREATE POLICY "السوبر أدمن يمكنه إنشاء البروفايلات"
 ON public.profiles
 FOR INSERT
@@ -111,18 +129,21 @@ TO authenticated
 WITH CHECK (public.is_super_admin(auth.uid()));
 
 -- سياسات RLS للأدوار
+DROP POLICY IF EXISTS "المستخدمون يمكنهم عرض أدوارهم" ON public.user_roles;
 CREATE POLICY "المستخدمون يمكنهم عرض أدوارهم"
 ON public.user_roles
 FOR SELECT
 TO authenticated
-USING (auth.uid() = user_id);
+USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه عرض كل الأدوار" ON public.user_roles;
 CREATE POLICY "السوبر أدمن يمكنه عرض كل الأدوار"
 ON public.user_roles
 FOR SELECT
 TO authenticated
 USING (public.is_super_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه إدارة الأدوار" ON public.user_roles;
 CREATE POLICY "السوبر أدمن يمكنه إدارة الأدوار"
 ON public.user_roles
 FOR ALL
@@ -137,22 +158,23 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (user_id, full_name, phone)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.email),
-    NEW.raw_user_meta_data ->> 'phone'
-  );
+-- INSERT INTO public.profiles (user_id, full_name, phone)
+--   VALUES (
+--     NEW.id,
+--     COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.email),
+--     NEW.raw_user_meta_data ->> 'phone'
+--   );
   
   -- إعطاء دور viewer افتراضي للمستخدمين الجدد
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'viewer');
+-- INSERT INTO public.user_roles (user_id, role)
+--   VALUES (NEW.id, 'viewer');
   
   RETURN NEW;
 END;
 $$;
 
 -- تشغيل الدالة عند إنشاء مستخدم جديد
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
@@ -168,6 +190,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- تطبيق الدالة على جدول البروفايلات
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW

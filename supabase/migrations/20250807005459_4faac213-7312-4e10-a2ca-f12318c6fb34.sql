@@ -1,5 +1,5 @@
 -- Create destinations table
-CREATE TABLE public.destinations (
+CREATE TABLE IF NOT EXISTS public.destinations (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   name_ar TEXT NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE public.destinations (
 );
 
 -- Create hotels table
-CREATE TABLE public.hotels (
+CREATE TABLE IF NOT EXISTS public.hotels (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   name_ar TEXT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE public.hotels (
 );
 
 -- Create media library table
-CREATE TABLE public.media_library (
+CREATE TABLE IF NOT EXISTS public.media_library (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   filename TEXT NOT NULL,
   original_name TEXT NOT NULL,
@@ -70,11 +70,11 @@ CREATE TABLE public.media_library (
 );
 
 -- Create storage buckets
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES 
-  ('destinations', 'destinations', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']),
-  ('hotels', 'hotels', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']),
-  ('media', 'media', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+-- INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+-- VALUES 
+--   ('destinations', 'destinations', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']),
+--   ('hotels', 'hotels', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']),
+--   ('media', 'media', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 -- Enable RLS
 ALTER TABLE public.destinations ENABLE ROW LEVEL SECURITY;
@@ -165,13 +165,13 @@ CREATE TRIGGER update_media_library_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert sample data for destinations
-INSERT INTO public.destinations (name, name_ar, description, description_ar, country, country_ar, image_url, rating, attractions, attractions_ar, is_featured) VALUES
-('Dubai', 'دبي', 'A modern metropolis known for luxury shopping, ultramodern architecture and a lively nightlife scene.', 'مدينة عصرية معروفة بالتسوق الفاخر والهندسة المعمارية فائقة الحداثة والحياة الليلية النابضة بالحياة.', 'UAE', 'الإمارات العربية المتحدة', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Burj Khalifa", "Dubai Mall", "Burj Al Arab"]', '["برج خليفة", "دبي مول", "برج العرب"]', true),
-('Cairo', 'القاهرة', 'The capital of Egypt, home to ancient pyramids and rich Islamic architecture.', 'عاصمة مصر، موطن الأهرامات القديمة والعمارة الإسلامية الغنية.', 'Egypt', 'مصر', 'https://images.unsplash.com/photo-1539650116574-75c0c6d5b770?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Pyramids of Giza", "Egyptian Museum", "Khan El Khalili"]', '["أهرامات الجيزة", "المتحف المصري", "خان الخليلي"]', true),
-('Istanbul', 'اسطنبول', 'A transcontinental city bridging Europe and Asia, rich in Byzantine and Ottoman heritage.', 'مدينة عابرة للقارات تربط بين أوروبا وآسيا، غنية بالتراث البيزنطي والعثماني.', 'Turkey', 'تركيا', 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Hagia Sophia", "Grand Bazaar", "Galata Tower"]', '["آيا صوفيا", "البازار الكبير", "برج غلطة"]', true);
+-- INSERT INTO public.destinations (name, name_ar, description, description_ar, country, country_ar, image_url, rating, attractions, attractions_ar, is_featured) VALUES
+-- ('Dubai', 'دبي', 'A modern metropolis known for luxury shopping, ultramodern architecture and a lively nightlife scene.', 'مدينة عصرية معروفة بالتسوق الفاخر والهندسة المعمارية فائقة الحداثة والحياة الليلية النابضة بالحياة.', 'UAE', 'الإمارات العربية المتحدة', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Burj Khalifa", "Dubai Mall", "Burj Al Arab"]', '["برج خليفة", "دبي مول", "برج العرب"]', true),
+-- ('Cairo', 'القاهرة', 'The capital of Egypt, home to ancient pyramids and rich Islamic architecture.', 'عاصمة مصر، موطن الأهرامات القديمة والعمارة الإسلامية الغنية.', 'Egypt', 'مصر', 'https://images.unsplash.com/photo-1539650116574-75c0c6d5b770?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Pyramids of Giza", "Egyptian Museum", "Khan El Khalili"]', '["أهرامات الجيزة", "المتحف المصري", "خان الخليلي"]', true),
+-- ('Istanbul', 'اسطنبول', 'A transcontinental city bridging Europe and Asia, rich in Byzantine and Ottoman heritage.', 'مدينة عابرة للقارات تربط بين أوروبا وآسيا، غنية بالتراث البيزنطي والعثماني.', 'Turkey', 'تركيا', 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, '["Hagia Sophia", "Grand Bazaar", "Galata Tower"]', '["آيا صوفيا", "البازار الكبير", "برج غلطة"]', true);
 
 -- Insert sample data for hotels
-INSERT INTO public.hotels (name, name_ar, description, description_ar, destination_id, location, location_ar, image_url, rating, star_rating, features, features_ar, is_featured) VALUES
-('Four Seasons Hotel Cairo at Nile Plaza', 'فور سيزونز القاهرة في نايل بلازا', 'Luxury hotel with Nile views and world-class amenities.', 'فندق فاخر بإطلالات على النيل ووسائل راحة عالمية المستوى.', (SELECT id FROM destinations WHERE name = 'Cairo'), 'Nile Corniche, Cairo', 'كورنيش النيل، القاهرة', 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 5, '["Nile View", "Luxury Spa", "Fine Dining", "Fitness Center"]', '["إطلالة على النيل", "سبا فاخر", "مطاعم راقية", "مركز لياقة بدنية"]', true),
-('Burj Al Arab Jumeirah', 'برج العرب جميرا', 'Iconic sail-shaped luxury hotel offering unparalleled service.', 'فندق فاخر مميز على شكل شراع يقدم خدمة لا مثيل لها.', (SELECT id FROM destinations WHERE name = 'Dubai'), 'Jumeirah Beach, Dubai', 'شاطئ جميرا، دبي', 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 7, '["Private Beach", "Helipad", "Butler Service", "Michelin Dining"]', '["شاطئ خاص", "مهبط طائرات", "خدمة الخادم الشخصي", "مطاعم ميشلان"]', true),
-('Four Seasons Hotel Istanbul at Sultanahmet', 'فور سيزونز اسطنبول في السلطان أحمد', 'Historic hotel in the heart of old Istanbul with Ottoman influences.', 'فندق تاريخي في قلب اسطنبول القديمة بتأثيرات عثمانية.', (SELECT id FROM destinations WHERE name = 'Istanbul'), 'Sultanahmet Square, Istanbul', 'ميدان السلطان أحمد، اسطنبول', 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 5, '["Historic Architecture", "Ottoman Design", "City Views", "Cultural Tours"]', '["عمارة تاريخية", "تصميم عثماني", "إطلالات المدينة", "جولات ثقافية"]', true);
+-- INSERT INTO public.hotels (name, name_ar, description, description_ar, destination_id, location, location_ar, image_url, rating, star_rating, features, features_ar, is_featured) VALUES
+-- ('Four Seasons Hotel Cairo at Nile Plaza', 'فور سيزونز القاهرة في نايل بلازا', 'Luxury hotel with Nile views and world-class amenities.', 'فندق فاخر بإطلالات على النيل ووسائل راحة عالمية المستوى.', (SELECT id FROM destinations WHERE name = 'Cairo'), 'Nile Corniche, Cairo', 'كورنيش النيل، القاهرة', 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 5, '["Nile View", "Luxury Spa", "Fine Dining", "Fitness Center"]', '["إطلالة على النيل", "سبا فاخر", "مطاعم راقية", "مركز لياقة بدنية"]', true),
+-- ('Burj Al Arab Jumeirah', 'برج العرب جميرا', 'Iconic sail-shaped luxury hotel offering unparalleled service.', 'فندق فاخر مميز على شكل شراع يقدم خدمة لا مثيل لها.', (SELECT id FROM destinations WHERE name = 'Dubai'), 'Jumeirah Beach, Dubai', 'شاطئ جميرا، دبي', 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 7, '["Private Beach", "Helipad", "Butler Service", "Michelin Dining"]', '["شاطئ خاص", "مهبط طائرات", "خدمة الخادم الشخصي", "مطاعم ميشلان"]', true),
+-- ('Four Seasons Hotel Istanbul at Sultanahmet', 'فور سيزونز اسطنبول في السلطان أحمد', 'Historic hotel in the heart of old Istanbul with Ottoman influences.', 'فندق تاريخي في قلب اسطنبول القديمة بتأثيرات عثمانية.', (SELECT id FROM destinations WHERE name = 'Istanbul'), 'Sultanahmet Square, Istanbul', 'ميدان السلطان أحمد، اسطنبول', 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 5.0, 5, '["Historic Architecture", "Ottoman Design", "City Views", "Cultural Tours"]', '["عمارة تاريخية", "تصميم عثماني", "إطلالات المدينة", "جولات ثقافية"]', true);

@@ -1,46 +1,57 @@
 import { useState } from 'react';
+import { Eye, Edit, FileText, MoreHorizontal, Trash2 } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Edit, Trash2, FileText, MoreHorizontal } from 'lucide-react';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useOrgId } from '@/hooks/useOrgId';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  confirmed: { label: 'مؤكد', variant: 'default' },
-  pending: { label: 'معلق', variant: 'secondary' },
-  cancelled: { label: 'ملغي', variant: 'destructive' },
-  completed: { label: 'مكتمل', variant: 'outline' },
-};
+export interface Booking {
+  id: string;
+  internal_booking_number: string;
+  customer_name: string;
+  hotel_name: string;
+  check_in_date: string;
+  total_cost_customer: number;
+  booking_statuses?: {
+    name: string;
+    name_ar: string;
+    color?: string;
+  };
+}
 
-const BookingsTable = () => {
-  const orgId = useOrgId();
+interface BookingsTableProps {
+  bookings?: Booking[];
+  onViewBooking?: (booking: Booking) => void;
+  onEditBooking?: (booking: Booking) => void;
+  onDeleteBooking?: (booking: Booking) => void;
+}
+
+const BookingsTable = ({
+  bookings = [],
+  onViewBooking,
+  onEditBooking,
+  onDeleteBooking,
+}: BookingsTableProps) => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const { data: bookings, isLoading } = useQuery({
-    queryKey: ['dashboard-bookings', orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hotel_bookings')
-        .select('id, internal_booking_number, customer_name, hotel_name, check_in_date, check_out_date, total_cost_customer, booking_statuses(name, name_ar, color)')
-        .order('created_at', { ascending: false })
-        .limit(8);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!orgId,
-  });
-
   const toggleSelect = (id: string) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -48,51 +59,30 @@ const BookingsTable = () => {
   };
 
   const toggleAll = () => {
-    if (!bookings) return;
     if (selected.size === bookings.length) {
       setSelected(new Set());
-    } else {
-      setSelected(new Set(bookings.map(b => b.id)));
+      return;
     }
+
+    setSelected(new Set(bookings.map((booking) => booking.id)));
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg">آخر الحجوزات</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-4 items-center">
-                <Skeleton className="h-4 w-4 rounded" />
-                <Skeleton className="h-4 flex-1 rounded" />
-                <Skeleton className="h-4 w-24 rounded" />
-                <Skeleton className="h-6 w-16 rounded-full" />
-                <Skeleton className="h-4 w-20 rounded" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!bookings?.length) {
+  if (!bookings.length) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            آخر الحجوزات
+            {'\u0623\u062d\u062f\u062b \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">
             <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-            <p className="text-muted-foreground text-sm">لا توجد حجوزات بعد</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">ستظهر الحجوزات الجديدة هنا</p>
+            <p className="text-muted-foreground text-sm">{'\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u062c\u0648\u0632\u0627\u062a'}</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              {'\u0633\u062a\u0638\u0647\u0631 \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0627\u0644\u062c\u062f\u064a\u062f\u0629 \u0647\u0646\u0627'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -106,83 +96,120 @@ const BookingsTable = () => {
           <div className="p-1.5 rounded-lg bg-primary/10">
             <FileText className="h-4 w-4 text-primary" />
           </div>
-          آخر الحجوزات
+          {'\u0623\u062d\u062f\u062b \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a'}
         </CardTitle>
         {selected.size > 0 && (
           <Badge variant="secondary" className="text-xs">
-            {selected.size} محدد
+            {selected.size} {'\u0645\u062d\u062f\u062f'}
           </Badge>
         )}
       </CardHeader>
+
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent bg-muted/40 border-b-2 border-border/60">
-                <TableHead className="w-10">
+                <TableHead className="w-10 text-center">
                   <Checkbox
                     checked={bookings.length > 0 && selected.size === bookings.length}
                     onCheckedChange={toggleAll}
                   />
                 </TableHead>
-                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">المرجع</TableHead>
-                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">العميل</TableHead>
-                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground hidden sm:table-cell">الفندق</TableHead>
-                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground hidden md:table-cell">تاريخ الدخول</TableHead>
-                <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">الحالة</TableHead>
-                <TableHead className="text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground">المبلغ</TableHead>
-                <TableHead className="w-10" />
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground">
+                  {'\u0627\u0644\u0645\u0631\u062c\u0639'}
+                </TableHead>
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground">
+                  {'\u0627\u0644\u0639\u0645\u064a\u0644'}
+                </TableHead>
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground hidden sm:table-cell">
+                  {'\u0627\u0644\u0641\u0646\u062f\u0642'}
+                </TableHead>
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground hidden md:table-cell">
+                  {'\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062f\u062e\u0648\u0644'}
+                </TableHead>
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground">
+                  {'\u0627\u0644\u062d\u0627\u0644\u0629'}
+                </TableHead>
+                <TableHead className="text-center font-semibold text-xs tracking-wider text-muted-foreground">
+                  {'\u0627\u0644\u0645\u0628\u0644\u063a'}
+                </TableHead>
+                <TableHead className="w-10 text-center" />
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {bookings.map((booking, idx) => {
-                const status = (booking.booking_statuses as any);
+                const status = booking.booking_statuses;
+
                 return (
-                  <TableRow key={booking.id} className={cn("group transition-colors", idx % 2 === 0 ? "bg-transparent" : "bg-muted/20")}>
-                    <TableCell>
+                  <TableRow
+                    key={booking.id}
+                    className={cn('group transition-colors', idx % 2 === 0 ? 'bg-transparent' : 'bg-muted/20')}
+                  >
+                    <TableCell className="text-center align-middle">
                       <Checkbox
                         checked={selected.has(booking.id)}
                         onCheckedChange={() => toggleSelect(booking.id)}
                       />
                     </TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-primary">
+                    <TableCell className="font-mono text-xs font-semibold text-primary text-center align-middle">
                       {booking.internal_booking_number}
                     </TableCell>
-                    <TableCell className="font-medium text-sm">
-                      {booking.customer_name}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                    <TableCell className="font-medium text-sm text-center align-middle">{booking.customer_name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden sm:table-cell text-center align-middle">
                       {booking.hotel_name}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell text-center align-middle">
                       {booking.check_in_date ? new Date(booking.check_in_date).toLocaleDateString('ar-EG') : '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center align-middle">
                       <Badge
                         className="text-xs font-semibold border"
-                        style={status?.color ? {
-                          backgroundColor: `${status.color}18`,
-                          color: status.color,
-                          borderColor: `${status.color}50`,
-                        } : {}}
+                        style={
+                          status?.color
+                            ? {
+                                backgroundColor: `${status.color}18`,
+                                color: status.color,
+                                borderColor: `${status.color}50`,
+                              }
+                            : {}
+                        }
                       >
-                        {status?.name_ar || 'غير محدد'}
+                        {status?.name_ar || '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-left font-bold text-sm tabular-nums">
-                      {booking.total_cost_customer?.toLocaleString() || '0'} ج.م
+                    <TableCell className="text-center font-bold text-sm tabular-nums align-middle">
+                      {(booking.total_cost_customer || 0).toLocaleString('ar-EG')} {'\u062c.\u0645'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center align-middle">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem><Eye className="h-4 w-4 ml-2" /> عرض</DropdownMenuItem>
-                          <DropdownMenuItem><Edit className="h-4 w-4 ml-2" /> تعديل</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive"><Trash2 className="h-4 w-4 ml-2" /> حذف</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onViewBooking?.(booking)} disabled={!onViewBooking}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            {'\u0639\u0631\u0636'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEditBooking?.(booking)} disabled={!onEditBooking}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            {'\u062a\u0639\u062f\u064a\u0644'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDeleteBooking?.(booking)}
+                            disabled={!onDeleteBooking}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {'\u062d\u0630\u0641'}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

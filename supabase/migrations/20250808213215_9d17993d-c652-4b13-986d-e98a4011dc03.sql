@@ -297,10 +297,9 @@ using (has_role(auth.uid(), 'super_admin'::user_role) or has_role(auth.uid(), 'a
 with check (has_role(auth.uid(), 'super_admin'::user_role) or has_role(auth.uid(), 'admin'::user_role) or has_role(auth.uid(), 'manager'::user_role));
 
 -- 5) بيانات أولية: صفحة Home + قائمة أساسية
-insert into public.pages (slug, name, description, is_active)
-values ('home', 'الصفحة الرئيسية', 'الصفحة الرئيسية للموقع', true)
-on conflict (slug) do nothing;
-
-insert into public.menus (key, name, description, is_active)
-values ('main', 'Main Navigation', 'القائمة الرئيسية للموقع', true)
-on conflict (key) do nothing;
+-- INSERT INTO public.pages (slug, name, description, is_active)
+-- values ('home', 'الصفحة الرئيسية', 'الصفحة الرئيسية للموقع', true)
+-- on conflict (slug) do nothing;
+-- INSERT INTO public.menus (key, name, description, is_active)
+-- values ('main', 'Main Navigation', 'القائمة الرئيسية للموقع', true)
+-- on conflict (key) do nothing;

@@ -111,13 +111,12 @@ BEGIN
   IF v_user_id IS NULL THEN
     RETURN NEW;
   END IF;
-
-  INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
-  VALUES (NEW.id, v_user_id, 'owner', true)
-  ON CONFLICT (organization_id, user_id)
-  DO UPDATE SET
-    role = 'owner',
-    is_active = true;
+-- INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
+--   VALUES (NEW.id, v_user_id, 'owner', true)
+--   ON CONFLICT (organization_id, user_id)
+--   DO UPDATE SET
+--     role = 'owner',
+--     is_active = true;
 
   RETURN NEW;
 END;
@@ -218,21 +217,21 @@ BEGIN
     END;
 
     BEGIN
-      INSERT INTO public.organizations (
-        name,
-        slug,
-        phone,
-        email,
-        address
-      )
-      VALUES (
-        BTRIM(_name),
-        v_slug_candidate,
-        NULLIF(BTRIM(_phone), ''),
-        NULLIF(BTRIM(_email), ''),
-        NULLIF(BTRIM(_address), '')
-      )
-      RETURNING id INTO v_org_id;
+-- INSERT INTO public.organizations (
+--         name,
+--         slug,
+--         phone,
+--         email,
+--         address
+--       )
+--       VALUES (
+--         BTRIM(_name),
+--         v_slug_candidate,
+--         NULLIF(BTRIM(_phone), ''),
+--         NULLIF(BTRIM(_email), ''),
+--         NULLIF(BTRIM(_address), '')
+--       )
+--       RETURNING id INTO v_org_id;
 
       EXIT;
     EXCEPTION
@@ -270,24 +269,23 @@ BEGIN
     IF v_plan_id IS NULL THEN
       RAISE EXCEPTION 'No active subscription plan is configured';
     END IF;
-
-    INSERT INTO public.subscriptions (
-      organization_id,
-      plan_id,
-      status,
-      starts_at,
-      expires_at,
-      notes,
-      activated_by
-    ) VALUES (
-      v_org_id,
-      v_plan_id,
-      'trialing',
-      now(),
-      now() + interval '14 days',
-      'First-login onboarding trial',
-      auth.uid()
-    );
+-- INSERT INTO public.subscriptions (
+--       organization_id,
+--       plan_id,
+--       status,
+--       starts_at,
+--       expires_at,
+--       notes,
+--       activated_by
+--     ) VALUES (
+--       v_org_id,
+--       v_plan_id,
+--       'trialing',
+--       now(),
+--       now() + interval '14 days',
+--       'First-login onboarding trial',
+--       auth.uid()
+--     );
   END IF;
 
   RETURN v_org_id;

@@ -67,14 +67,14 @@ ALTER TABLE public.supplier_payments ADD COLUMN IF NOT EXISTS payment_reference 
 ALTER TABLE public.supplier_payments ADD COLUMN IF NOT EXISTS amount_in_egp DECIMAL(12,2);
 
 -- إضافة بيانات إعدادات افتراضية
-INSERT INTO public.system_settings (setting_key, setting_value, setting_type, description, is_public) VALUES
-  ('site_name', 'Vogatchi CRM', 'string', 'اسم الموقع', true),
-  ('site_description', 'نظام إدارة وكالة السفر', 'string', 'وصف الموقع', true),
-  ('company_name', 'Vogatchi Trips', 'string', 'اسم الشركة', true),
-  ('company_phone', '01103442881', 'string', 'هاتف الشركة', true),
-  ('company_email', 'ops@vogatchitrips.com', 'string', 'بريد الشركة', true),
-  ('company_address', 'القاهرة، مصر', 'string', 'عنوان الشركة', true)
-ON CONFLICT (setting_key) DO NOTHING;
+-- INSERT INTO public.system_settings (setting_key, setting_value, setting_type, description, is_public) VALUES
+--   ('site_name', 'Vogatchi CRM', 'string', 'اسم الموقع', true),
+--   ('site_description', 'نظام إدارة وكالة السفر', 'string', 'وصف الموقع', true),
+--   ('company_name', 'Vogatchi Trips', 'string', 'اسم الشركة', true),
+--   ('company_phone', '01103442881', 'string', 'هاتف الشركة', true),
+--   ('company_email', 'ops@vogatchitrips.com', 'string', 'بريد الشركة', true),
+--   ('company_address', 'القاهرة، مصر', 'string', 'عنوان الشركة', true)
+-- ON CONFLICT (setting_key) DO NOTHING;
 
 -- وظيفة تحديث حالة الحجز
 CREATE OR REPLACE FUNCTION public.update_booking_status(
@@ -119,6 +119,7 @@ END;
 $$;
 
 -- وظيفة تحديث إعداد النظام
+DROP FUNCTION IF EXISTS public.update_system_setting(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION public.update_system_setting(
   setting_key_param TEXT,
   setting_value_param TEXT
@@ -129,9 +130,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.system_settings (setting_key, setting_value)
-  VALUES (setting_key_param, setting_value_param)
-  ON CONFLICT (setting_key) DO UPDATE SET setting_value = setting_value_param, updated_at = now();
+-- INSERT INTO public.system_settings (setting_key, setting_value)
+--   VALUES (setting_key_param, setting_value_param)
+--   ON CONFLICT (setting_key) DO UPDATE SET setting_value = setting_value_param, updated_at = now();
   RETURN TRUE;
 END;
 $$;

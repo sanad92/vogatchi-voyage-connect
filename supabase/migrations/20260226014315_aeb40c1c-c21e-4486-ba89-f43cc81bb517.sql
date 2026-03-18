@@ -142,6 +142,10 @@ CREATE POLICY "Read public settings" ON public.system_settings FOR SELECT TO aut
 
 -- 19. user_creation_requests (platform admin + own)
 DROP POLICY IF EXISTS "Authenticated users can manage user_creation_requests" ON public.user_creation_requests;
+ALTER TABLE public.user_creation_requests ADD COLUMN IF NOT EXISTS requested_by UUID;
+UPDATE public.user_creation_requests
+SET requested_by = created_by
+WHERE requested_by IS NULL;
 CREATE POLICY "Admin manage user_creation_requests" ON public.user_creation_requests FOR ALL TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
 CREATE POLICY "Users insert creation requests" ON public.user_creation_requests FOR INSERT TO authenticated WITH CHECK (requested_by = auth.uid());
 CREATE POLICY "Users view own creation requests" ON public.user_creation_requests FOR SELECT TO authenticated USING (requested_by = auth.uid());

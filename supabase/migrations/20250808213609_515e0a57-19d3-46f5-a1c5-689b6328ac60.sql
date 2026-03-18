@@ -41,11 +41,13 @@ ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY;
 
 -- Public read-only access to active content
-CREATE POLICY IF NOT EXISTS "Public can view active pages"
+DROP POLICY IF EXISTS "Public can view active pages" ON public.pages;
+CREATE POLICY "Public can view active pages"
 ON public.pages FOR SELECT
 USING (is_active = true);
 
-CREATE POLICY IF NOT EXISTS "Public can view active blocks of active pages"
+DROP POLICY IF EXISTS "Public can view active blocks of active pages" ON public.blocks;
+CREATE POLICY "Public can view active blocks of active pages"
 ON public.blocks FOR SELECT
 USING (
   is_active = true AND EXISTS (
@@ -55,7 +57,8 @@ USING (
 );
 
 -- Admins/managers full management policies
-CREATE POLICY IF NOT EXISTS "Admins can manage pages"
+DROP POLICY IF EXISTS "Admins can manage pages" ON public.pages;
+CREATE POLICY "Admins can manage pages"
 ON public.pages FOR ALL
 USING (
   has_role(auth.uid(),'super_admin') OR has_role(auth.uid(),'admin') OR has_role(auth.uid(),'manager')
@@ -64,7 +67,8 @@ WITH CHECK (
   has_role(auth.uid(),'super_admin') OR has_role(auth.uid(),'admin') OR has_role(auth.uid(),'manager')
 );
 
-CREATE POLICY IF NOT EXISTS "Admins can manage blocks"
+DROP POLICY IF EXISTS "Admins can manage blocks" ON public.blocks;
+CREATE POLICY "Admins can manage blocks"
 ON public.blocks FOR ALL
 USING (
   has_role(auth.uid(),'super_admin') OR has_role(auth.uid(),'admin') OR has_role(auth.uid(),'manager')
@@ -95,22 +99,22 @@ DO $$ BEGIN
 END $$;
 
 -- 6) Seed a default home page and example block
-INSERT INTO public.pages (slug, name, description, is_active, seo_title, seo_description)
-VALUES ('home', 'الصفحة الرئيسية', 'الصفحة الافتراضية', true, 'الصفحة الرئيسية', 'مرحبا بكم')
-ON CONFLICT (slug) DO NOTHING;
+-- INSERT INTO public.pages (slug, name, description, is_active, seo_title, seo_description)
+-- VALUES ('home', 'الصفحة الرئيسية', 'الصفحة الافتراضية', true, 'الصفحة الرئيسية', 'مرحبا بكم')
+-- ON CONFLICT (slug) DO NOTHING;
 
 -- Example hero block (only if page exists and no blocks yet)
-INSERT INTO public.blocks (page_id, type, title, order_index, is_active, content, layout_settings)
-SELECT p.id, 'hero', 'Hero', 0, true,
-  jsonb_build_object(
-    'main_title','مرحبا بكم في موقعنا',
-    'subtitle','محتوى ديناميكي عبر لوحة التحكم',
-    'description','يمكنك تعديل هذا القسم من لوحة التحكم',
-    'primary_button_text','ابدا الآن'
-  ),
-  jsonb_build_object('container_width','container','padding_y','xl','text_align','center')
-FROM public.pages p
-WHERE p.slug = 'home'
-AND NOT EXISTS (
-  SELECT 1 FROM public.blocks b WHERE b.page_id = p.id
-);
+-- INSERT INTO public.blocks (page_id, type, title, order_index, is_active, content, layout_settings)
+-- SELECT p.id, 'hero', 'Hero', 0, true,
+--   jsonb_build_object(
+--     'main_title','مرحبا بكم في موقعنا',
+--     'subtitle','محتوى ديناميكي عبر لوحة التحكم',
+--     'description','يمكنك تعديل هذا القسم من لوحة التحكم',
+--     'primary_button_text','ابدا الآن'
+--   ),
+--   jsonb_build_object('container_width','container','padding_y','xl','text_align','center')
+-- FROM public.pages p
+-- WHERE p.slug = 'home'
+-- AND NOT EXISTS (
+--   SELECT 1 FROM public.blocks b WHERE b.page_id = p.id
+-- );

@@ -1,14 +1,23 @@
 -- إنشاء enum للأدوار أولاً
-CREATE TYPE public.app_role AS ENUM (
-  'super_admin',
-  'admin', 
-  'manager',
-  'sales_agent',
-  'customer_service',
-  'booking_agent',
-  'accountant',
-  'viewer'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    WHERE t.typname = 'app_role'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.app_role AS ENUM (
+      'super_admin',
+      'admin',
+      'manager',
+      'sales_agent',
+      'customer_service',
+      'booking_agent',
+      'accountant',
+      'viewer'
+    );
+  END IF;
+END $$;
 
 -- الآن إنشاء/تحديث جدول أدوار المستخدمين
 CREATE TABLE IF NOT EXISTS public.user_roles (
@@ -24,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 -- إنشاء الدوال الأساسية للأدوار
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role text)
 RETURNS BOOLEAN
 LANGUAGE SQL
 STABLE
@@ -34,17 +43,17 @@ AS $$
     SELECT 1
     FROM public.user_roles
     WHERE user_id = _user_id
-      AND role = _role
+      AND role::text = _role
   )
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_user_roles(_user_id UUID)
-RETURNS TABLE(role app_role)
+RETURNS TABLE(role text)
 LANGUAGE SQL
 STABLE
 SECURITY DEFINER
 AS $$
-  SELECT user_roles.role
+  SELECT user_roles.role::text
   FROM public.user_roles
   WHERE user_id = _user_id
 $$;
@@ -59,18 +68,21 @@ AS $$
 $$;
 
 -- سياسات RLS للأدوار
+DROP POLICY IF EXISTS "المستخدمون يمكنهم عرض أدوارهم" ON public.user_roles;
 CREATE POLICY "المستخدمون يمكنهم عرض أدوارهم"
 ON public.user_roles
 FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه عرض كل الأدوار" ON public.user_roles;
 CREATE POLICY "السوبر أدمن يمكنه عرض كل الأدوار"
 ON public.user_roles
 FOR SELECT
 TO authenticated
 USING (public.is_super_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "السوبر أدمن يمكنه إدارة الأدوار" ON public.user_roles;
 CREATE POLICY "السوبر أدمن يمكنه إدارة الأدوار"
 ON public.user_roles
 FOR ALL
@@ -92,16 +104,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (user_id, full_name, phone)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
-    NEW.raw_user_meta_data ->> 'phone'
-  );
+-- INSERT INTO public.profiles (user_id, full_name, phone)
+--   VALUES (
+--     NEW.id,
+--     COALESCE(NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+--     NEW.raw_user_meta_data ->> 'phone'
+--   );
   
   -- إعطاء دور viewer افتراضي للمستخدمين الجدد
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'viewer');
+-- INSERT INTO public.user_roles (user_id, role)
+--   VALUES (NEW.id, 'viewer');
   
   RETURN NEW;
 END;
@@ -116,4 +128,4 @@ CREATE TRIGGER on_auth_user_created
 
 -- إنشاء فهارس لتحسين الأداء
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(id);

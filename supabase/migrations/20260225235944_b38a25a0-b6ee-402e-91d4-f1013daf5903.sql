@@ -11,7 +11,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT COALESCE(
-    (SELECT is_platform_admin FROM public.profiles WHERE id = _user_id),
+--     (SELECT is_platform_admin FROM public.profiles WHERE id = _user_id),
     false
   )
 $$;

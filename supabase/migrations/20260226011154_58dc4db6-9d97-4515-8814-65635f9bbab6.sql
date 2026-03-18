@@ -1,6 +1,6 @@
 
 -- Email queue table for transactional emails
-CREATE TABLE public.email_queue (
+CREATE TABLE IF NOT EXISTS public.email_queue (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID REFERENCES public.organizations(id),
   email_type TEXT NOT NULL, -- 'welcome', 'booking_confirmation', 'invoice', 'subscription_activated', 'subscription_expiring', 'subscription_expired'

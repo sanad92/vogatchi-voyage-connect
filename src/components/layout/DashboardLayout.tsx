@@ -23,7 +23,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content Area */}
       <div className={cn(
         "transition-all duration-300 min-h-screen flex flex-col",
-        sidebarCollapsed ? "lg:mr-[68px]" : "lg:mr-64"
+        sidebarCollapsed ? "lg:mr-[76px]" : "lg:mr-72"
       )}>
         <DashboardTopbar onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-auto">

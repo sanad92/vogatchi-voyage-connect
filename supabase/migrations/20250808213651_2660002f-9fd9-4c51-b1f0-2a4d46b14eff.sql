@@ -119,21 +119,20 @@ DO $$ BEGIN
 END $$;
 
 -- Seed data
-INSERT INTO public.pages (slug, name, description, is_active, seo_title, seo_description)
-VALUES ('home', 'الصفحة الرئيسية', 'الصفحة الافتراضية', true, 'الصفحة الرئيسية', 'مرحبا بكم')
-ON CONFLICT (slug) DO NOTHING;
-
-INSERT INTO public.blocks (page_id, type, title, order_index, is_active, content, layout_settings)
-SELECT p.id, 'hero', 'Hero', 0, true,
-  jsonb_build_object(
-    'main_title','مرحبا بكم في موقعنا',
-    'subtitle','محتوى ديناميكي عبر لوحة التحكم',
-    'description','يمكنك تعديل هذا القسم من لوحة التحكم',
-    'primary_button_text','ابدا الآن'
-  ),
-  jsonb_build_object('container_width','container','padding_y','xl','text_align','center')
-FROM public.pages p
-WHERE p.slug = 'home'
-AND NOT EXISTS (
-  SELECT 1 FROM public.blocks b WHERE b.page_id = p.id
-);
+-- INSERT INTO public.pages (slug, name, description, is_active, seo_title, seo_description)
+-- VALUES ('home', 'الصفحة الرئيسية', 'الصفحة الافتراضية', true, 'الصفحة الرئيسية', 'مرحبا بكم')
+-- ON CONFLICT (slug) DO NOTHING;
+-- INSERT INTO public.blocks (page_id, type, title, order_index, is_active, content, layout_settings)
+-- SELECT p.id, 'hero', 'Hero', 0, true,
+--   jsonb_build_object(
+--     'main_title','مرحبا بكم في موقعنا',
+--     'subtitle','محتوى ديناميكي عبر لوحة التحكم',
+--     'description','يمكنك تعديل هذا القسم من لوحة التحكم',
+--     'primary_button_text','ابدا الآن'
+--   ),
+--   jsonb_build_object('container_width','container','padding_y','xl','text_align','center')
+-- FROM public.pages p
+-- WHERE p.slug = 'home'
+-- AND NOT EXISTS (
+--   SELECT 1 FROM public.blocks b WHERE b.page_id = p.id
+-- );

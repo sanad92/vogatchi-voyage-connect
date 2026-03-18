@@ -1,6 +1,6 @@
 
 -- Create invitations table
-CREATE TABLE public.invitations (
+CREATE TABLE IF NOT EXISTS public.invitations (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   email text NOT NULL,
@@ -64,9 +64,8 @@ BEGIN
     UPDATE public.invitations SET status = 'accepted', accepted_at = now() WHERE id = v_invite.id;
     RETURN jsonb_build_object('success', true, 'message', 'أنت عضو بالفعل في هذه المؤسسة', 'organization_id', v_invite.organization_id);
   END IF;
-
-  INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
-  VALUES (v_invite.organization_id, v_user_id, v_invite.role, true);
+-- INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
+--   VALUES (v_invite.organization_id, v_user_id, v_invite.role, true);
 
   UPDATE public.invitations SET status = 'accepted', accepted_at = now() WHERE id = v_invite.id;
 
