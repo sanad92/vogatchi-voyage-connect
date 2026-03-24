@@ -236,6 +236,8 @@ const CarRentalsList = () => {
     </div>
       <PaginationControlsUI pagination={pagination} />
     </div>
+  );
 };
 
+export default CarRentalsList;
 export default CarRentalsList;
