@@ -65,7 +65,7 @@ const TransportBookingsList = () => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {transportBookings.map((booking) => (
+        {paginatedItems.map((booking) => (
           <Card key={booking.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
