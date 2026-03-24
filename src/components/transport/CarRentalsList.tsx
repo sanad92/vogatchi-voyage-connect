@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Clock, DollarSign, FileText, Settings } from 'lucide-react';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import { format } from 'date-fns';
@@ -11,6 +13,7 @@ import { ar } from 'date-fns/locale';
 
 const CarRentalsList = () => {
   const { carRentals, rentalsLoading } = useCarRentals();
+  const { paginatedItems, pagination } = useClientPagination(carRentals || [], 12);
 
   if (rentalsLoading) {
     return (
