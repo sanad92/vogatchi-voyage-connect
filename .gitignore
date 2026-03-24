@@ -24,7 +24,12 @@ dist-ssr
 *.sw?
 
 # E2E test environment (contains real credentials – never commit)
+.env
 .env.e2e
+.env.local
+.env.*.local
+!.env.example
+!.env.e2e.example
 
 # Playwright output
 playwright-report/

@@ -1,73 +1,96 @@
-# Welcome to your Lovable project
+# Vogatchi Voyage Connect
 
-## Project info
+Travel operations SaaS built around a Vite + React frontend and Supabase backend. The active release target is the React/Supabase app under `src/` and `supabase/`. The repo also contains older PHP/MySQL code under `admin/`, `api/`, `classes/`, and `database/` that is not the primary app entry path for the current SaaS flow.
 
-**URL**: https://lovable.dev/projects/49aa510d-479d-4612-891c-0963e841fe97
+## Stack
 
-## How can I edit this code?
+- Frontend: Vite, React 18, TypeScript, React Router, TanStack Query, Tailwind, shadcn/ui
+- Backend: Supabase Auth, PostgREST, SQL migrations, Edge Functions
+- Testing: Playwright
 
-There are several ways of editing your application.
+## Main Entry Points
 
-**Use Lovable**
+- `src/main.tsx`: mounts the SPA
+- `src/App.tsx`: router, providers, protected routes, onboarding and subscription guards
+- `src/integrations/supabase/client.ts`: browser Supabase client
+- `src/hooks/useOptimizedAuth.tsx`: signup/login/session lifecycle
+- `src/contexts/OrganizationContext.tsx`: current org membership and org switching
+- `src/contexts/SubscriptionContext.tsx`: subscription enforcement
+- `supabase/functions/create-organization-onboarding/index.ts`: onboarding edge API
+- `supabase/functions/create-payment/index.ts`: Paymob payment edge API
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/49aa510d-479d-4612-891c-0963e841fe97) and start prompting.
+## Request Flow
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Browser routes through `src/App.tsx`.
+2. Authenticated pages use the Supabase browser client from `src/integrations/supabase/client.ts`.
+3. Frontend reads and writes tenant-scoped data through PostgREST and RPCs.
+4. Sensitive server-side actions go through Supabase Edge Functions in `supabase/functions/`.
+5. Edge Functions call Supabase tables and RPCs with anon or service-role secrets as needed.
 
-**Use your preferred IDE**
+Examples:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Signup/login: `SignupPage` / `LoginPage` -> Supabase Auth -> `OrganizationContext` / `SupabaseProtectedRoute`
+- Create organization: `RegisterOrganization.tsx` -> `create-organization-onboarding` edge function -> `create_organization_onboarding(...)` RPC -> `organizations` / `organization_members` / `subscriptions`
+- Dashboard: `OptimizedIndex.tsx` -> PostgREST table reads + `check_subscription_limits(...)` RPC
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Required Environment Variables
 
-Follow these steps:
+### Local frontend `.env`
+
+Copy `.env.example` to `.env` and fill in:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+### Supabase Edge Function secrets
+
+Configure these in Supabase function secrets, not in browser env files:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `PAYMOB_API_KEY`
+- `PAYMOB_INTEGRATION_ID`
+- `PAYMOB_IFRAME_ID`
+- `PAYMOB_HMAC`
+- `RESEND_API_KEY`
+
+### Playwright `.env.e2e`
+
+Copy `.env.e2e.example` to `.env.e2e`:
+
+- `E2E_BASE_URL`
+- `E2E_SUPER_ADMIN_EMAIL`
+- `E2E_SUPER_ADMIN_PASSWORD`
+
+## Install And Run
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm ci
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Build the app:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run build
+```
 
-**Use GitHub Codespaces**
+Run Playwright:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```sh
+npm run e2e
+```
 
-## What technologies are used for this project?
+## Supabase Layout
 
-This project is built with:
+- `supabase/migrations/`: canonical schema and policy history for the React/Supabase app
+- `supabase/functions/`: Edge Functions used by the frontend
+- `scripts/supabase-schema-check.mjs`: lightweight remote schema/readability smoke check
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Notes
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/49aa510d-479d-4612-891c-0963e841fe97) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- `.env` is intentionally git-ignored and should stay local-only.
+- Release verification details are captured in `RELEASE_READINESS_REPORT_2026-04-04.md`.
