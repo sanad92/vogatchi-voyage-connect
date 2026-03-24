@@ -9,19 +9,21 @@ export const useCustomers = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
 
-  const { data: customers, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['customers', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch with count to detect if we're hitting limits
+      const { data, error, count } = await supabase
         .from('customers')
         .select(`
           *,
           segment:customer_segments(id, name, name_ar, color, description, minimum_bookings, minimum_total_spent, is_active, created_at, updated_at)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(5000);
 
       if (error) throw error;
-      return data as Customer[];
+      return { customers: data as Customer[], totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
@@ -52,7 +54,8 @@ export const useCustomers = () => {
   };
 
   return {
-    customers,
+    customers: data?.customers,
+    totalCount: data?.totalCount || 0,
     isLoading,
     customersLoading: isLoading,
     error,
