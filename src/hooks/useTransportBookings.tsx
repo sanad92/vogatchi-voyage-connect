@@ -142,15 +142,3 @@ export const useTransportBookings = () => {
     refetch,
   };
 };
-    addTransportBooking,
-    updateTransportBooking: updateTransportBookingMutation.mutate,
-    deleteTransportBooking: deleteTransportBookingMutation.mutate,
-    markVoucherSent,
-    markInvoiceSent,
-    markSupplierPaid,
-    isAddingBooking: addTransportBookingMutation.isPending,
-    isUpdating: updateTransportBookingMutation.isPending,
-    isDeleting: deleteTransportBookingMutation.isPending,
-    refetch,
-  };
-};
