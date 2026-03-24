@@ -124,9 +124,8 @@ export const useTransportBookings = () => {
 
   return {
     transportBookings,
+    totalTransportCount,
     bookingsLoading,
-    vehicleTypes,
-    vehicleTypesLoading,
     transportRoutes,
     routesLoading,
     addTransportBooking,
