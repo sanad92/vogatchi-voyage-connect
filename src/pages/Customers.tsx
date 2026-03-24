@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp, Brain, AlertTriangle } from "lucide-react";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import PaginationControlsUI from "@/components/ui/pagination-controls";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
