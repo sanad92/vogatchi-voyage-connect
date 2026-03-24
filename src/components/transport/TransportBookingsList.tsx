@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Users, DollarSign, Phone, FileText, Trash2, Send, CheckCircle } from 'lucide-react';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import EmptyState from '@/components/ui/empty-state';
@@ -34,6 +36,7 @@ const TransportBookingsList = () => {
     isDeleting,
   } = useTransportBookings();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { paginatedItems, pagination } = useClientPagination(transportBookings || [], 12);
 
   if (bookingsLoading) {
     return (
