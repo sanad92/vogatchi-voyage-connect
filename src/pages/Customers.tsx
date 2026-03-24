@@ -367,14 +367,14 @@ const Customers = () => {
           style={{ display: ['all', 'vip', 'new', 'inactive'].includes(activeTab) ? 'block' : 'none' }}>
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              عرض {filteredCustomers.length} من أصل {customers?.length || 0} عميل
+              عرض {pagination.from} - {pagination.to} من أصل {filteredCustomers.length} عميل
             </p>
           </div>
 
           {/* قائمة العملاء */}
           {viewMode === "grid" ? (
             <CustomerGrid 
-              customers={filteredCustomers}
+              customers={paginatedCustomers}
               isLoading={customersLoading}
               error={customersError}
               activeTab={activeTab}
@@ -383,12 +383,14 @@ const Customers = () => {
             />
           ) : (
             <CustomerTableView
-              customers={filteredCustomers}
+              customers={paginatedCustomers}
               onCustomerSelect={setSelectedCustomer}
               selectedCustomers={selectedCustomers}
               onSelectionChange={setSelectedCustomers}
             />
           )}
+
+          <PaginationControlsUI pagination={pagination} />
 
           {/* مركز التواصل المتعدد */}
           {viewMode === "table" && (
