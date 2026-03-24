@@ -36,8 +36,9 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
             id, customer_name, vehicle_make, vehicle_model, pickup_date, 
             return_date, rental_reference
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(5000);
 
       // تطبيق الفلاتر
       if (filters?.searchTerm) {
