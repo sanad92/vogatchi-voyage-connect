@@ -187,6 +187,7 @@ const Customers = () => {
   };
 
   const filteredCustomers = getFilteredCustomers();
+  const { paginatedItems: paginatedCustomers, pagination } = useClientPagination(filteredCustomers, 25);
 
   // Calculate stats from real data
   const stats = {
