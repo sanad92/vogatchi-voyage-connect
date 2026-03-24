@@ -240,4 +240,3 @@ const CarRentalsList = () => {
 };
 
 export default CarRentalsList;
-export default CarRentalsList;
