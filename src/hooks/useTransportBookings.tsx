@@ -8,17 +8,21 @@ export const useTransportBookings = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
 
-  const { data: transportBookings, isLoading: bookingsLoading, refetch } = useQuery({
+  const { data: transportData, isLoading: bookingsLoading, refetch } = useQuery({
     queryKey: ['transport-bookings', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('transport_bookings')
-        .select(`*, customer:customers(id, name, phone, email), route:transport_routes(route_name, route_name_ar), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(id, name, name_ar, color)`)
-        .order('created_at', { ascending: false });
+      const { data, error, count } = await supabase.from('transport_bookings')
+        .select(`*, customer:customers(id, name, phone, email), route:transport_routes(route_name, route_name_ar), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(id, name, name_ar, color)`, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(5000);
       if (error) throw error;
-      return data as TransportBooking[];
+      return { bookings: data as TransportBooking[], totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
+
+  const transportBookings = transportData?.bookings;
+  const totalTransportCount = transportData?.totalCount || 0;
 
   const { data: vehicleTypes, isLoading: vehicleTypesLoading } = useQuery({
     queryKey: ['vehicle-types', orgId],
