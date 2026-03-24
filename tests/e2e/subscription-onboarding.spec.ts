@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSuperAdmin } from "./helpers/auth";
+import { loginAsTestUser } from "./helpers/auth";
 
 /**
  * Subscription & onboarding redirect smoke-check
@@ -18,7 +18,7 @@ test.describe("Subscription & onboarding redirect", () => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
     });
 
-    await loginAsSuperAdmin(page);
+    await loginAsTestUser(page);
     // Give the app time to settle (subscription guard, onboarding guard, etc.)
     await page.waitForLoadState("networkidle", { timeout: 30_000 });
 

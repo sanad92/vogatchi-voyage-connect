@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSuperAdmin } from "./helpers/auth";
+import { loginAsTestUser } from "./helpers/auth";
 
 /**
  * Core-module smoke tests
@@ -41,7 +41,7 @@ function isBenign(msg: string): boolean {
 
 test.describe("Core module smoke checks", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsSuperAdmin(page);
+    await loginAsTestUser(page);
   });
 
   for (const route of CORE_ROUTES) {

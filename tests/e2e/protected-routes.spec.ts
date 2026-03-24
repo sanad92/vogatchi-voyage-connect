@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSuperAdmin } from "./helpers/auth";
+import { loginAsTestUser } from "./helpers/auth";
 
 /**
  * Protected-route tests
@@ -15,8 +15,8 @@ test.describe("Protected routes", () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
   });
 
-  test("super admin can access /dashboard after login", async ({ page }) => {
-    await loginAsSuperAdmin(page);
+  test("authenticated user can access /dashboard after login", async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto("/dashboard");
 
     // Allow possible intermediate redirects (onboarding, subscription, etc.)

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSuperAdmin } from "./helpers/auth";
+import { loginAsTestUser } from "./helpers/auth";
 
 /**
  * Authentication tests
@@ -25,7 +25,7 @@ test.describe("Authentication", () => {
     ).toBeVisible({ timeout: 15_000 });
   });
 
-  test("super admin can log in and land on a valid page (not crash page)", async ({
+  test("configured or generated user can log in and land on a valid page", async ({
     page,
   }) => {
     const consoleErrors: string[] = [];
@@ -33,7 +33,7 @@ test.describe("Authentication", () => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
     });
 
-    await loginAsSuperAdmin(page);
+    await loginAsTestUser(page);
 
     // After login we should NOT be on /login
     await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 });
