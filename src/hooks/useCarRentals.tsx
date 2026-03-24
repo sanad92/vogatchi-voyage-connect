@@ -9,15 +9,16 @@ export const useCarRentals = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
 
-  const { data: carRentals, isLoading: rentalsLoading } = useQuery({
+  const { data, isLoading: rentalsLoading } = useQuery({
     queryKey: ['car-rentals', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('car_rentals')
-        .select(`*, customer:customers(name), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(name, name_ar, color)`)
-        .order('created_at', { ascending: false });
+        .select(`*, customer:customers(name), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(name, name_ar, color)`, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(5000);
       if (error) throw error;
-      return data as CarRental[];
+      return { rentals: data as CarRental[], totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
@@ -39,5 +40,5 @@ export const useCarRentals = () => {
     addCarRentalMutation.mutate(rental);
   };
 
-  return { carRentals, rentalsLoading, addCarRental, isAddingRental: addCarRentalMutation.isPending };
+  return { carRentals: data?.rentals, totalCarRentalCount: data?.totalCount || 0, rentalsLoading, addCarRental, isAddingRental: addCarRentalMutation.isPending };
 };

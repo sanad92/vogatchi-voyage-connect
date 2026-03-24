@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp, Brain, AlertTriangle } from "lucide-react";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import PaginationControlsUI from "@/components/ui/pagination-controls";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -185,6 +187,7 @@ const Customers = () => {
   };
 
   const filteredCustomers = getFilteredCustomers();
+  const { paginatedItems: paginatedCustomers, pagination } = useClientPagination(filteredCustomers, 25);
 
   // Calculate stats from real data
   const stats = {
@@ -364,14 +367,14 @@ const Customers = () => {
           style={{ display: ['all', 'vip', 'new', 'inactive'].includes(activeTab) ? 'block' : 'none' }}>
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              عرض {filteredCustomers.length} من أصل {customers?.length || 0} عميل
+              عرض {pagination.from} - {pagination.to} من أصل {filteredCustomers.length} عميل
             </p>
           </div>
 
           {/* قائمة العملاء */}
           {viewMode === "grid" ? (
             <CustomerGrid 
-              customers={filteredCustomers}
+              customers={paginatedCustomers}
               isLoading={customersLoading}
               error={customersError}
               activeTab={activeTab}
@@ -380,12 +383,14 @@ const Customers = () => {
             />
           ) : (
             <CustomerTableView
-              customers={filteredCustomers}
+              customers={paginatedCustomers}
               onCustomerSelect={setSelectedCustomer}
               selectedCustomers={selectedCustomers}
               onSelectionChange={setSelectedCustomers}
             />
           )}
+
+          <PaginationControlsUI pagination={pagination} />
 
           {/* مركز التواصل المتعدد */}
           {viewMode === "table" && (

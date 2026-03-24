@@ -9,20 +9,22 @@ export const useFlightBookings = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
 
-  const { data: flightBookings = [], isLoading: bookingsLoading } = useQuery({
+  const { data: flightData, isLoading: bookingsLoading } = useQuery({
     queryKey: ['flight-bookings', orgId],
-    queryFn: async (): Promise<FlightBooking[]> => {
-      const { data, error } = await supabase
+    queryFn: async (): Promise<{ bookings: FlightBooking[]; totalCount: number }> => {
+      const { data, error, count } = await supabase
         .from('flight_bookings')
-        .select(`*, departure_airport:airports!departure_airport_id(*), arrival_airport:airports!arrival_airport_id(*), airline:airlines(*), flight_class:flight_classes(*), booking_status:booking_statuses(*)`)
-        .order('created_at', { ascending: false });
+        .select(`*, departure_airport:airports!departure_airport_id(*), arrival_airport:airports!arrival_airport_id(*), airline:airlines(*), flight_class:flight_classes(*), booking_status:booking_statuses(*)`, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(5000);
       if (error) throw error;
-      return (data || []).map(booking => ({
+      const bookings = (data || []).map(booking => ({
         ...booking,
         passenger_details: Array.isArray(booking.passenger_details) ? booking.passenger_details : booking.passenger_details ? JSON.parse(booking.passenger_details as string) : [],
         baggage_info: booking.baggage_info ? (typeof booking.baggage_info === 'string' ? JSON.parse(booking.baggage_info) : booking.baggage_info) : undefined,
         ticket_numbers: Array.isArray(booking.ticket_numbers) ? booking.ticket_numbers : []
       })) as FlightBooking[];
+      return { bookings, totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
@@ -92,5 +94,18 @@ export const useFlightBookings = () => {
     onError: (error) => { console.error('Error deleting flight booking:', error); toast({ title: "خطأ", description: "فشل في حذف حجز الطيران", variant: "destructive" }); }
   });
 
-  return { flightBookings, bookingsLoading, airports, airlines, flightClasses, addFlightBooking, updateFlightBooking, deleteFlightBooking, isAddingBooking, isUpdatingBooking, isDeletingBooking };
+  return {
+    flightBookings: flightData?.bookings || [],
+    totalFlightCount: flightData?.totalCount || 0,
+    bookingsLoading,
+    airports,
+    airlines,
+    flightClasses,
+    addFlightBooking,
+    updateFlightBooking,
+    deleteFlightBooking,
+    isAddingBooking,
+    isUpdatingBooking,
+    isDeletingBooking,
+  };
 };

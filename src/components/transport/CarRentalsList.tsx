@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Clock, DollarSign, FileText, Settings } from 'lucide-react';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 import { format } from 'date-fns';
@@ -11,6 +13,7 @@ import { ar } from 'date-fns/locale';
 
 const CarRentalsList = () => {
   const { carRentals, rentalsLoading } = useCarRentals();
+  const { paginatedItems, pagination } = useClientPagination(carRentals || [], 12);
 
   if (rentalsLoading) {
     return (
@@ -46,8 +49,9 @@ const CarRentalsList = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {carRentals.map((rental) => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {paginatedItems.map((rental) => (
         <Card key={rental.id} className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -229,6 +233,8 @@ const CarRentalsList = () => {
           </CardContent>
         </Card>
       ))}
+    </div>
+      <PaginationControlsUI pagination={pagination} />
     </div>
   );
 };
