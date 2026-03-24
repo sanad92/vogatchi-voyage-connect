@@ -49,8 +49,9 @@ const CarRentalsList = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {carRentals.map((rental) => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {paginatedItems.map((rental) => (
         <Card key={rental.id} className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
