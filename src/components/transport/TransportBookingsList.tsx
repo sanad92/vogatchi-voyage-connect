@@ -215,6 +215,8 @@ const TransportBookingsList = () => {
         ))}
       </div>
 
+      <PaginationControlsUI pagination={pagination} />
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

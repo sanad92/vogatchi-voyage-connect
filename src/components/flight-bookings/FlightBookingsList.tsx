@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { FlightBooking } from "@/types/flightBooking";
 import { useFlightBookings } from "@/hooks/useFlightBookings";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import PaginationControlsUI from "@/components/ui/pagination-controls";
 import FlightBookingSearch from "./FlightBookingSearch";
 import FlightBookingStats from "./FlightBookingStats";
 import FlightBookingCard from "./FlightBookingCard";
@@ -15,6 +17,7 @@ interface FlightBookingsListProps {
 const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { flightBookings, bookingsLoading } = useFlightBookings();
+  const { paginatedItems, pagination } = useClientPagination(flightBookings || [], 12);
 
   if (bookingsLoading) {
     return (
@@ -38,7 +41,7 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
         <FlightBookingEmptyState onCreateNew={onCreateNew || (() => {})} />
       ) : (
         <div className="grid gap-4">
-          {flightBookings.map((booking) => (
+          {paginatedItems.map((booking) => (
             <FlightBookingCard
               key={booking.id}
               booking={booking}
@@ -47,6 +50,8 @@ const FlightBookingsList = ({ onCreateNew, onEditBooking }: FlightBookingsListPr
           ))}
         </div>
       )}
+
+      <PaginationControlsUI pagination={pagination} />
     </div>
   );
 };
