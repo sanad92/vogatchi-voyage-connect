@@ -145,6 +145,7 @@ npx playwright test tests/e2e/admin-routes.spec.ts tests/e2e/platform-admin-rout
 5. Fresh signup -> create-organization can still end up back on `/onboarding` in the live deployment instead of staying on `/dashboard`.
 6. `xlsx` remains a high-severity dependency risk with no automatic npm audit fix available from the current version line.
 7. Production build still warns about a very large JS bundle and mixed static/dynamic imports around the Supabase client.
+8. This branch is still behind `origin/seif-work` by 1 commit and should be synced before final release packaging.
 
 ## Estimated Remaining Time
 
