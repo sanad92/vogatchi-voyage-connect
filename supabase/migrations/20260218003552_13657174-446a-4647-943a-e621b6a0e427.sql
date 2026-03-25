@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.booking_statuses (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.booking_statuses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can read booking_statuses" ON public.booking_statuses;
 CREATE POLICY "Authenticated users can read booking_statuses" ON public.booking_statuses FOR SELECT TO authenticated USING (true);
 
 -- Customer Segments
@@ -31,7 +32,9 @@ CREATE TABLE IF NOT EXISTS public.customer_segments (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customer_segments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can read customer_segments" ON public.customer_segments;
 CREATE POLICY "Authenticated users can read customer_segments" ON public.customer_segments FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated users can manage customer_segments" ON public.customer_segments;
 CREATE POLICY "Authenticated users can manage customer_segments" ON public.customer_segments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -59,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage customers" ON public.customers;
 CREATE POLICY "Authenticated users can manage customers" ON public.customers FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE INDEX idx_customers_phone ON public.customers(phone);
 CREATE INDEX idx_customers_email ON public.customers(email);
@@ -91,6 +95,7 @@ CREATE TABLE IF NOT EXISTS public.employees (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage employees" ON public.employees;
 CREATE POLICY "Authenticated users can manage employees" ON public.employees FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -119,6 +124,7 @@ CREATE TABLE IF NOT EXISTS public.suppliers (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage suppliers" ON public.suppliers;
 CREATE POLICY "Authenticated users can manage suppliers" ON public.suppliers FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Hotel Suppliers
@@ -133,6 +139,7 @@ CREATE TABLE IF NOT EXISTS public.hotel_suppliers (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.hotel_suppliers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage hotel_suppliers" ON public.hotel_suppliers;
 CREATE POLICY "Authenticated users can manage hotel_suppliers" ON public.hotel_suppliers FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Supplier Currencies
@@ -146,6 +153,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_currencies (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.supplier_currencies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage supplier_currencies" ON public.supplier_currencies;
 CREATE POLICY "Authenticated users can manage supplier_currencies" ON public.supplier_currencies FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Supplier Contracts
@@ -165,6 +173,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_contracts (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.supplier_contracts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage supplier_contracts" ON public.supplier_contracts;
 CREATE POLICY "Authenticated users can manage supplier_contracts" ON public.supplier_contracts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Supplier Ratings
@@ -182,6 +191,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_ratings (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.supplier_ratings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage supplier_ratings" ON public.supplier_ratings;
 CREATE POLICY "Authenticated users can manage supplier_ratings" ON public.supplier_ratings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Supplier Payments
@@ -202,6 +212,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_payments (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.supplier_payments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage supplier_payments" ON public.supplier_payments;
 CREATE POLICY "Authenticated users can manage supplier_payments" ON public.supplier_payments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -250,6 +261,7 @@ CREATE TABLE IF NOT EXISTS public.hotel_bookings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.hotel_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage hotel_bookings" ON public.hotel_bookings;
 CREATE POLICY "Authenticated users can manage hotel_bookings" ON public.hotel_bookings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Special Request Types
@@ -263,6 +275,7 @@ CREATE TABLE IF NOT EXISTS public.special_request_types (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.special_request_types ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage special_request_types" ON public.special_request_types;
 CREATE POLICY "Authenticated users can manage special_request_types" ON public.special_request_types FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Booking Special Requests
@@ -275,6 +288,7 @@ CREATE TABLE IF NOT EXISTS public.booking_special_requests (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.booking_special_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage booking_special_requests" ON public.booking_special_requests;
 CREATE POLICY "Authenticated users can manage booking_special_requests" ON public.booking_special_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Booking Status History
@@ -287,6 +301,7 @@ CREATE TABLE IF NOT EXISTS public.booking_status_history (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.booking_status_history ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage booking_status_history" ON public.booking_status_history;
 CREATE POLICY "Authenticated users can manage booking_status_history" ON public.booking_status_history FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -304,6 +319,7 @@ CREATE TABLE IF NOT EXISTS public.airports (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.airports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage airports" ON public.airports;
 CREATE POLICY "Authenticated users can manage airports" ON public.airports FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Airlines
@@ -315,6 +331,7 @@ CREATE TABLE IF NOT EXISTS public.airlines (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.airlines ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage airlines" ON public.airlines;
 CREATE POLICY "Authenticated users can manage airlines" ON public.airlines FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Flight Classes
@@ -327,6 +344,7 @@ CREATE TABLE IF NOT EXISTS public.flight_classes (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.flight_classes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage flight_classes" ON public.flight_classes;
 CREATE POLICY "Authenticated users can manage flight_classes" ON public.flight_classes FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Flight Bookings
@@ -383,6 +401,7 @@ CREATE TABLE IF NOT EXISTS public.flight_bookings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.flight_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage flight_bookings" ON public.flight_bookings;
 CREATE POLICY "Authenticated users can manage flight_bookings" ON public.flight_bookings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -404,6 +423,7 @@ CREATE TABLE IF NOT EXISTS public.vehicle_types (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.vehicle_types ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage vehicle_types" ON public.vehicle_types;
 CREATE POLICY "Authenticated users can manage vehicle_types" ON public.vehicle_types FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Transport Routes
@@ -421,6 +441,7 @@ CREATE TABLE IF NOT EXISTS public.transport_routes (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.transport_routes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage transport_routes" ON public.transport_routes;
 CREATE POLICY "Authenticated users can manage transport_routes" ON public.transport_routes FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Transport Bookings
@@ -470,6 +491,7 @@ CREATE TABLE IF NOT EXISTS public.transport_bookings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.transport_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage transport_bookings" ON public.transport_bookings;
 CREATE POLICY "Authenticated users can manage transport_bookings" ON public.transport_bookings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Car Rentals
@@ -533,6 +555,7 @@ CREATE TABLE IF NOT EXISTS public.car_rentals (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.car_rentals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage car_rentals" ON public.car_rentals;
 CREATE POLICY "Authenticated users can manage car_rentals" ON public.car_rentals FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -562,6 +585,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage invoices" ON public.invoices;
 CREATE POLICY "Authenticated users can manage invoices" ON public.invoices FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Invoice Items
@@ -575,6 +599,7 @@ CREATE TABLE IF NOT EXISTS public.invoice_items (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage invoice_items" ON public.invoice_items;
 CREATE POLICY "Authenticated users can manage invoice_items" ON public.invoice_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -596,6 +621,7 @@ CREATE TABLE IF NOT EXISTS public.bank_accounts (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.bank_accounts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage bank_accounts" ON public.bank_accounts;
 CREATE POLICY "Authenticated users can manage bank_accounts" ON public.bank_accounts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Bank Account Transactions
@@ -613,6 +639,7 @@ CREATE TABLE IF NOT EXISTS public.bank_account_transactions (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.bank_account_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage bank_account_transactions" ON public.bank_account_transactions;
 CREATE POLICY "Authenticated users can manage bank_account_transactions" ON public.bank_account_transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Exchange Rates
@@ -627,6 +654,7 @@ CREATE TABLE IF NOT EXISTS public.exchange_rates (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.exchange_rates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage exchange_rates" ON public.exchange_rates;
 CREATE POLICY "Authenticated users can manage exchange_rates" ON public.exchange_rates FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Expense Categories
@@ -642,6 +670,7 @@ CREATE TABLE IF NOT EXISTS public.expense_categories (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.expense_categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage expense_categories" ON public.expense_categories;
 CREATE POLICY "Authenticated users can manage expense_categories" ON public.expense_categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Expense Transactions
@@ -668,6 +697,7 @@ CREATE TABLE IF NOT EXISTS public.expense_transactions (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.expense_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage expense_transactions" ON public.expense_transactions;
 CREATE POLICY "Authenticated users can manage expense_transactions" ON public.expense_transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Rent Contracts
@@ -696,6 +726,7 @@ CREATE TABLE IF NOT EXISTS public.rent_contracts (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.rent_contracts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage rent_contracts" ON public.rent_contracts;
 CREATE POLICY "Authenticated users can manage rent_contracts" ON public.rent_contracts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Rent Payments
@@ -720,6 +751,7 @@ CREATE TABLE IF NOT EXISTS public.rent_payments (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.rent_payments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage rent_payments" ON public.rent_payments;
 CREATE POLICY "Authenticated users can manage rent_payments" ON public.rent_payments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Monthly Salaries
@@ -754,6 +786,7 @@ CREATE TABLE IF NOT EXISTS public.monthly_salaries (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.monthly_salaries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage monthly_salaries" ON public.monthly_salaries;
 CREATE POLICY "Authenticated users can manage monthly_salaries" ON public.monthly_salaries FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Employee Commissions
@@ -774,6 +807,7 @@ CREATE TABLE IF NOT EXISTS public.employee_commissions (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.employee_commissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage employee_commissions" ON public.employee_commissions;
 CREATE POLICY "Authenticated users can manage employee_commissions" ON public.employee_commissions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Employee Commission Periods
@@ -799,6 +833,7 @@ CREATE TABLE IF NOT EXISTS public.employee_commission_periods (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.employee_commission_periods ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage employee_commission_periods" ON public.employee_commission_periods;
 CREATE POLICY "Authenticated users can manage employee_commission_periods" ON public.employee_commission_periods FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Commission Payments
@@ -819,6 +854,7 @@ CREATE TABLE IF NOT EXISTS public.commission_payments (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.commission_payments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage commission_payments" ON public.commission_payments;
 CREATE POLICY "Authenticated users can manage commission_payments" ON public.commission_payments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -838,6 +874,7 @@ CREATE TABLE IF NOT EXISTS public.loyalty_points (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.loyalty_points ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage loyalty_points" ON public.loyalty_points;
 CREATE POLICY "Authenticated users can manage loyalty_points" ON public.loyalty_points FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Loyalty Rewards
@@ -853,6 +890,7 @@ CREATE TABLE IF NOT EXISTS public.loyalty_rewards (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.loyalty_rewards ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage loyalty_rewards" ON public.loyalty_rewards;
 CREATE POLICY "Authenticated users can manage loyalty_rewards" ON public.loyalty_rewards FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Marketing Campaigns
@@ -871,6 +909,7 @@ CREATE TABLE IF NOT EXISTS public.marketing_campaigns (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.marketing_campaigns ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage marketing_campaigns" ON public.marketing_campaigns;
 CREATE POLICY "Authenticated users can manage marketing_campaigns" ON public.marketing_campaigns FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Campaign Sends
@@ -884,6 +923,7 @@ CREATE TABLE IF NOT EXISTS public.campaign_sends (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.campaign_sends ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage campaign_sends" ON public.campaign_sends;
 CREATE POLICY "Authenticated users can manage campaign_sends" ON public.campaign_sends FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Notifications
@@ -900,6 +940,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage notifications" ON public.notifications;
 CREATE POLICY "Authenticated users can manage notifications" ON public.notifications FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -924,6 +965,7 @@ CREATE TABLE IF NOT EXISTS public.customer_follow_ups (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customer_follow_ups ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage customer_follow_ups" ON public.customer_follow_ups;
 CREATE POLICY "Authenticated users can manage customer_follow_ups" ON public.customer_follow_ups FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Customer Communications
@@ -943,6 +985,7 @@ CREATE TABLE IF NOT EXISTS public.customer_communications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customer_communications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage customer_communications" ON public.customer_communications;
 CREATE POLICY "Authenticated users can manage customer_communications" ON public.customer_communications FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Customer Notes
@@ -959,6 +1002,7 @@ CREATE TABLE IF NOT EXISTS public.customer_notes (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customer_notes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage customer_notes" ON public.customer_notes;
 CREATE POLICY "Authenticated users can manage customer_notes" ON public.customer_notes FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Customer Satisfaction
@@ -975,6 +1019,7 @@ CREATE TABLE IF NOT EXISTS public.customer_satisfaction (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.customer_satisfaction ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage customer_satisfaction" ON public.customer_satisfaction;
 CREATE POLICY "Authenticated users can manage customer_satisfaction" ON public.customer_satisfaction FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -1000,6 +1045,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_settings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.whatsapp_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage whatsapp_settings" ON public.whatsapp_settings;
 CREATE POLICY "Authenticated users can manage whatsapp_settings" ON public.whatsapp_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- WhatsApp Conversations
@@ -1017,6 +1063,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_conversations (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.whatsapp_conversations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage whatsapp_conversations" ON public.whatsapp_conversations;
 CREATE POLICY "Authenticated users can manage whatsapp_conversations" ON public.whatsapp_conversations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- WhatsApp Messages
@@ -1042,6 +1089,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_messages (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.whatsapp_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage whatsapp_messages" ON public.whatsapp_messages;
 CREATE POLICY "Authenticated users can manage whatsapp_messages" ON public.whatsapp_messages FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- WhatsApp Templates
@@ -1064,6 +1112,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_templates (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.whatsapp_templates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage whatsapp_templates" ON public.whatsapp_templates;
 CREATE POLICY "Authenticated users can manage whatsapp_templates" ON public.whatsapp_templates FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- WhatsApp Sessions
@@ -1079,6 +1128,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_sessions (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage whatsapp_sessions" ON public.whatsapp_sessions;
 CREATE POLICY "Authenticated users can manage whatsapp_sessions" ON public.whatsapp_sessions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Quick Replies
@@ -1094,6 +1144,7 @@ CREATE TABLE IF NOT EXISTS public.quick_replies (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.quick_replies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage quick_replies" ON public.quick_replies;
 CREATE POLICY "Authenticated users can manage quick_replies" ON public.quick_replies FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
@@ -1113,6 +1164,7 @@ CREATE TABLE IF NOT EXISTS public.destinations (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.destinations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage destinations" ON public.destinations;
 CREATE POLICY "Authenticated users can manage destinations" ON public.destinations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Hotels
@@ -1132,6 +1184,7 @@ CREATE TABLE IF NOT EXISTS public.hotels (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.hotels ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage hotels" ON public.hotels;
 CREATE POLICY "Authenticated users can manage hotels" ON public.hotels FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Backup Logs
@@ -1148,6 +1201,7 @@ CREATE TABLE IF NOT EXISTS public.backup_logs (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.backup_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage backup_logs" ON public.backup_logs;
 CREATE POLICY "Authenticated users can manage backup_logs" ON public.backup_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Admin Audit Log
@@ -1162,6 +1216,7 @@ CREATE TABLE IF NOT EXISTS public.admin_audit_log (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage admin_audit_log" ON public.admin_audit_log;
 CREATE POLICY "Authenticated users can manage admin_audit_log" ON public.admin_audit_log FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Form Submissions
@@ -1173,6 +1228,7 @@ CREATE TABLE IF NOT EXISTS public.form_submissions (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.form_submissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage form_submissions" ON public.form_submissions;
 CREATE POLICY "Authenticated users can manage form_submissions" ON public.form_submissions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Media Library
@@ -1188,6 +1244,7 @@ CREATE TABLE IF NOT EXISTS public.media_library (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.media_library ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage media_library" ON public.media_library;
 CREATE POLICY "Authenticated users can manage media_library" ON public.media_library FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Service Requests
@@ -1203,6 +1260,7 @@ CREATE TABLE IF NOT EXISTS public.service_requests (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.service_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage service_requests" ON public.service_requests;
 CREATE POLICY "Authenticated users can manage service_requests" ON public.service_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Content Blocks (CMS)
@@ -1220,36 +1278,50 @@ CREATE TABLE IF NOT EXISTS public.content_blocks (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.content_blocks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can manage content_blocks" ON public.content_blocks;
 CREATE POLICY "Authenticated users can manage content_blocks" ON public.content_blocks FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================
 -- TRIGGERS for updated_at
 -- =============================================
+DROP TRIGGER IF EXISTS update_customers_updated_at ON public.customers;
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON public.customers FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_employees_updated_at ON public.employees;
 CREATE TRIGGER update_employees_updated_at BEFORE UPDATE ON public.employees FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_suppliers_updated_at ON public.suppliers;
 CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON public.suppliers FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_hotel_bookings_updated_at ON public.hotel_bookings;
 CREATE TRIGGER update_hotel_bookings_updated_at BEFORE UPDATE ON public.hotel_bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_flight_bookings_updated_at ON public.flight_bookings;
 CREATE TRIGGER update_flight_bookings_updated_at BEFORE UPDATE ON public.flight_bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_transport_bookings_updated_at ON public.transport_bookings;
 CREATE TRIGGER update_transport_bookings_updated_at BEFORE UPDATE ON public.transport_bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_car_rentals_updated_at ON public.car_rentals;
 CREATE TRIGGER update_car_rentals_updated_at BEFORE UPDATE ON public.car_rentals FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON public.invoices;
 CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON public.invoices FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_expense_transactions_updated_at ON public.expense_transactions;
 CREATE TRIGGER update_expense_transactions_updated_at BEFORE UPDATE ON public.expense_transactions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_rent_contracts_updated_at ON public.rent_contracts;
 CREATE TRIGGER update_rent_contracts_updated_at BEFORE UPDATE ON public.rent_contracts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_monthly_salaries_updated_at ON public.monthly_salaries;
 CREATE TRIGGER update_monthly_salaries_updated_at BEFORE UPDATE ON public.monthly_salaries FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_customer_segments_updated_at ON public.customer_segments;
 CREATE TRIGGER update_customer_segments_updated_at BEFORE UPDATE ON public.customer_segments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS update_content_blocks_updated_at ON public.content_blocks;
 CREATE TRIGGER update_content_blocks_updated_at BEFORE UPDATE ON public.content_blocks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Seed booking statuses
-INSERT INTO public.booking_statuses (name, name_ar, color, sort_order) VALUES
-  ('Pending', 'قيد المعالجة', '#f59e0b', 1),
-  ('Confirmed', 'مؤكد', '#10b981', 2),
-  ('Cancelled', 'ملغي', '#ef4444', 3),
-  ('Completed', 'مكتمل', '#3b82f6', 4)
-ON CONFLICT DO NOTHING;
+-- INSERT INTO public.booking_statuses (name, name_ar, color, sort_order) VALUES
+--   ('Pending', 'قيد المعالجة', '#f59e0b', 1),
+--   ('Confirmed', 'مؤكد', '#10b981', 2),
+--   ('Cancelled', 'ملغي', '#ef4444', 3),
+--   ('Completed', 'مكتمل', '#3b82f6', 4)
+-- ON CONFLICT DO NOTHING;
 
 -- Seed flight classes
-INSERT INTO public.flight_classes (name, name_ar, code) VALUES
-  ('Economy', 'اقتصادي', 'Y'),
-  ('Business', 'أعمال', 'C'),
-  ('First Class', 'درجة أولى', 'F')
-ON CONFLICT DO NOTHING;
+-- INSERT INTO public.flight_classes (name, name_ar, code) VALUES
+--   ('Economy', 'اقتصادي', 'Y'),
+--   ('Business', 'أعمال', 'C'),
+--   ('First Class', 'درجة أولى', 'F')
+-- ON CONFLICT DO NOTHING;

@@ -32,6 +32,7 @@ ALTER TABLE public.system_settings ADD COLUMN IF NOT EXISTS category TEXT DEFAUL
 
 -- إضافة foreign keys للعلاقات المفقودة
 ALTER TABLE public.customer_follow_ups DROP CONSTRAINT IF EXISTS fk_follow_up_assigned;
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_id_uidx ON public.profiles(id);
 ALTER TABLE public.customer_follow_ups ADD CONSTRAINT fk_follow_up_assigned 
   FOREIGN KEY (assigned_to) REFERENCES public.profiles(id) ON DELETE SET NULL;
 

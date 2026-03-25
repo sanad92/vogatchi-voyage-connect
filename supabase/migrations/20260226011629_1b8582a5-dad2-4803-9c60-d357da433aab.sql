@@ -1,6 +1,6 @@
 
 -- Error logs table
-CREATE TABLE public.error_logs (
+CREATE TABLE IF NOT EXISTS public.error_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID REFERENCES public.organizations(id),
   error_type TEXT NOT NULL DEFAULT 'client',
@@ -49,7 +49,7 @@ USING (true)
 WITH CHECK (true);
 
 -- Performance logs table
-CREATE TABLE public.performance_logs (
+CREATE TABLE IF NOT EXISTS public.performance_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID REFERENCES public.organizations(id),
   page_url TEXT NOT NULL,
@@ -93,7 +93,7 @@ USING (true)
 WITH CHECK (true);
 
 -- API request logs table
-CREATE TABLE public.api_logs (
+CREATE TABLE IF NOT EXISTS public.api_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID REFERENCES public.organizations(id),
   function_name TEXT NOT NULL,

@@ -1,6 +1,6 @@
 
 -- Create payment_transactions table to log all Paymob webhook events
-CREATE TABLE public.payment_transactions (
+CREATE TABLE IF NOT EXISTS public.payment_transactions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID REFERENCES public.organizations(id),
   paymob_order_id TEXT,

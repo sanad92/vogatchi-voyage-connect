@@ -3,7 +3,7 @@
 CREATE TYPE public.platform_role AS ENUM ('platform_admin', 'platform_owner');
 
 -- Create platform_roles table (isolated from profiles)
-CREATE TABLE public.platform_roles (
+CREATE TABLE IF NOT EXISTS public.platform_roles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role platform_role NOT NULL DEFAULT 'platform_admin',
@@ -74,11 +74,11 @@ USING (
 -- (Roles are immutable; delete + re-insert via owner only)
 
 -- Migrate existing platform admins from profiles to platform_roles
-INSERT INTO public.platform_roles (user_id, role)
-SELECT id, 'platform_owner'::platform_role
-FROM public.profiles
-WHERE is_platform_admin = true
-ON CONFLICT (user_id, role) DO NOTHING;
+-- INSERT INTO public.platform_roles (user_id, role)
+-- SELECT id, 'platform_owner'::platform_role
+-- FROM public.profiles
+-- WHERE is_platform_admin = true
+-- ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Drop the old column and function
 ALTER TABLE public.profiles DROP COLUMN IF EXISTS is_platform_admin;

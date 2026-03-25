@@ -7,7 +7,7 @@
 CREATE TYPE public.org_role AS ENUM ('owner', 'admin', 'manager', 'agent', 'viewer');
 
 -- 2. Create organizations table
-CREATE TABLE public.organizations (
+CREATE TABLE IF NOT EXISTS public.organizations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
@@ -26,7 +26,7 @@ CREATE TABLE public.organizations (
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
 -- 3. Create organization_members table
-CREATE TABLE public.organization_members (
+CREATE TABLE IF NOT EXISTS public.organization_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -39,7 +39,7 @@ CREATE TABLE public.organization_members (
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
 -- 4. Create subscription_plans table
-CREATE TABLE public.subscription_plans (
+CREATE TABLE IF NOT EXISTS public.subscription_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   name_ar TEXT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE public.subscription_plans (
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 
 -- 5. Create subscriptions table
-CREATE TABLE public.subscriptions (
+CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   plan_id UUID NOT NULL REFERENCES public.subscription_plans(id),
@@ -170,11 +170,11 @@ BEFORE UPDATE ON public.subscriptions
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- 14. Insert default subscription plans
-INSERT INTO public.subscription_plans (name, name_ar, price_monthly, price_yearly, max_users, max_bookings_per_month, features) VALUES
-('Free', 'مجاني', 0, 0, 2, 20, '["basic_crm", "hotel_bookings"]'::jsonb),
-('Basic', 'أساسي', 299, 2990, 5, 100, '["basic_crm", "hotel_bookings", "flight_bookings", "invoices", "reports"]'::jsonb),
-('Pro', 'احترافي', 599, 5990, 15, 500, '["basic_crm", "hotel_bookings", "flight_bookings", "car_rentals", "transport", "invoices", "reports", "marketing", "commissions"]'::jsonb),
-('Enterprise', 'مؤسسات', 999, 9990, 50, 9999, '["all_features"]'::jsonb);
+-- INSERT INTO public.subscription_plans (name, name_ar, price_monthly, price_yearly, max_users, max_bookings_per_month, features) VALUES
+-- ('Free', 'مجاني', 0, 0, 2, 20, '["basic_crm", "hotel_bookings"]'::jsonb),
+-- ('Basic', 'أساسي', 299, 2990, 5, 100, '["basic_crm", "hotel_bookings", "flight_bookings", "invoices", "reports"]'::jsonb),
+-- ('Pro', 'احترافي', 599, 5990, 15, 500, '["basic_crm", "hotel_bookings", "flight_bookings", "car_rentals", "transport", "invoices", "reports", "marketing", "commissions"]'::jsonb),
+-- ('Enterprise', 'مؤسسات', 999, 9990, 50, 9999, '["all_features"]'::jsonb);
 
 -- 15. Add organization_id to ALL business tables
 -- Batch 1: Core business tables

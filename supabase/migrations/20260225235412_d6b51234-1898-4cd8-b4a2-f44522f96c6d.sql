@@ -18,8 +18,8 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, email)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''), NEW.email);
+-- INSERT INTO public.profiles (id, full_name, email)
+--   VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''), NEW.email);
   
   RETURN NEW;
 END;

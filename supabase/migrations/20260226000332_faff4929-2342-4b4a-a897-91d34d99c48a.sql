@@ -66,7 +66,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT COALESCE((
-    (SELECT COUNT(*) FROM public.hotel_bookings WHERE organization_id = _org_id AND created_at >= date_trunc('month', now()))
+--     (SELECT COUNT(*) FROM public.hotel_bookings WHERE organization_id = _org_id AND created_at >= date_trunc('month', now()))
     + (SELECT COUNT(*) FROM public.flight_bookings WHERE organization_id = _org_id AND created_at >= date_trunc('month', now()))
     + (SELECT COUNT(*) FROM public.car_rentals WHERE organization_id = _org_id AND created_at >= date_trunc('month', now()))
     + (SELECT COUNT(*) FROM public.transport_bookings WHERE organization_id = _org_id AND created_at >= date_trunc('month', now()))

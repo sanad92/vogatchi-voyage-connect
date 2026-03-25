@@ -126,11 +126,11 @@ BEGIN
   END IF;
 
   IF v_pro_plan_id IS NOT NULL THEN
-    INSERT INTO public.subscriptions (
-      organization_id, plan_id, status, starts_at, expires_at, notes
-    ) VALUES (
-      NEW.id, v_pro_plan_id, 'trialing', now(), now() + interval '14 days', 'فترة تجريبية مجانية - 14 يوم'
-    );
+-- INSERT INTO public.subscriptions (
+--       organization_id, plan_id, status, starts_at, expires_at, notes
+--     ) VALUES (
+--       NEW.id, v_pro_plan_id, 'trialing', now(), now() + interval '14 days', 'فترة تجريبية مجانية - 14 يوم'
+--     );
   END IF;
 
   RETURN NEW;

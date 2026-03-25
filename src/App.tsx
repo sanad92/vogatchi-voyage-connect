@@ -18,6 +18,7 @@ import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
+import Bookings from "@/pages/Bookings";
 import NewHotelBooking from "@/pages/NewHotelBooking";
 import FlightBookings from "@/pages/FlightBookings";
 import NewFlightBooking from "@/pages/NewFlightBooking";
@@ -94,7 +95,7 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <OptimizedAuthProvider>
           <OrganizationProvider>
           <OptimizedErrorBoundary>
@@ -140,6 +141,7 @@ function App() {
                           <SubscriptionRedirectGuard>
                           <Routes>
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
+                              <Route path="/bookings" element={<Bookings />} />
                               <Route path="/subscription" element={<SubscriptionManagement />} />
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<Customers />} />

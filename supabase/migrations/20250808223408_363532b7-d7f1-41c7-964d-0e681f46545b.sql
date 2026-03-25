@@ -1,25 +1,25 @@
 -- Insert the 'home' page for the homepage
-INSERT INTO public.pages (
-  slug,
-  name,
-  description,
-  is_active,
-  seo_title,
-  seo_description,
-  seo_keywords
-) VALUES (
-  'home',
-  'الصفحة الرئيسية',
-  'الصفحة الرئيسية لموقع وكالة السفر',
-  true,
-  'وكالة السفر - أفضل خدمات السفر والسياحة',
-  'اكتشف عالم السفر معنا. نقدم أفضل خدمات الحجز للفنادق والطيران مع أسعار تنافسية وخدمة متميزة',
-  ARRAY['سفر', 'سياحة', 'حجز فنادق', 'حجز طيران', 'عمرة', 'حج']
-)
-ON CONFLICT (slug) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description,
-  is_active = EXCLUDED.is_active,
-  seo_title = EXCLUDED.seo_title,
-  seo_description = EXCLUDED.seo_description,
-  seo_keywords = EXCLUDED.seo_keywords;
+-- INSERT INTO public.pages (
+--   slug,
+--   name,
+--   description,
+--   is_active,
+--   seo_title,
+--   seo_description,
+--   seo_keywords
+-- ) VALUES (
+--   'home',
+--   'الصفحة الرئيسية',
+--   'الصفحة الرئيسية لموقع وكالة السفر',
+--   true,
+--   'وكالة السفر - أفضل خدمات السفر والسياحة',
+--   'اكتشف عالم السفر معنا. نقدم أفضل خدمات الحجز للفنادق والطيران مع أسعار تنافسية وخدمة متميزة',
+--   ARRAY['سفر', 'سياحة', 'حجز فنادق', 'حجز طيران', 'عمرة', 'حج']
+-- )
+-- ON CONFLICT (slug) DO UPDATE SET
+--   name = EXCLUDED.name,
+--   description = EXCLUDED.description,
+--   is_active = EXCLUDED.is_active,
+--   seo_title = EXCLUDED.seo_title,
+--   seo_description = EXCLUDED.seo_description,
+--   seo_keywords = EXCLUDED.seo_keywords;

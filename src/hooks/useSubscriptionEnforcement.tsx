@@ -39,6 +39,7 @@ export const useSubscriptionEnforcement = () => {
     },
     enabled: !!organizationId,
     staleTime: 60 * 1000, // 1 minute
+    retry: false,
   });
 
   const canAddUser = data?.can_add_user ?? false;
