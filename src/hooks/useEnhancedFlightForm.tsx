@@ -182,7 +182,7 @@ export const useEnhancedFlightForm = () => {
       special_requests: formData.special_requests,
       meal_preferences: formData.meal_preferences,
       seat_preferences: formData.seat_preferences,
-      remaining_amount: formData.total_cost - formData.paid_amount,
+      remaining_amount: Math.max(0, formData.total_cost - formData.paid_amount),
       total_profit: formData.total_cost - formData.supplier_cost,
       exchange_rate_to_egp: 1.0,
       contract_sent_date: formData.contract_sent ? new Date().toISOString() : null,

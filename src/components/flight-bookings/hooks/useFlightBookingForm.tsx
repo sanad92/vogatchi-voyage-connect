@@ -105,7 +105,7 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
         booking_agent_id: getBookingAgentId(),
         booking_agent_name: getBookingAgentName(),
         total_profit: totalProfit,
-        remaining_amount: totalCost - (data.paid_amount || 0),
+        remaining_amount: Math.max(0, totalCost - (data.paid_amount || 0)),
         paid_amount: data.paid_amount || 0,
         payment_method: data.payment_method || null,
         special_requests: data.special_requests || null,
