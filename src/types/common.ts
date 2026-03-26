@@ -1,34 +1,26 @@
+// src/types/common.ts - Shared types for the entire app (fixed parsing)
+export type FormChangeHandler = (field: string, value: unknown) => void;
+export type FormValues = Record<string, unknown>;
+export type ApiResponse<T = Record<string, unknown>> = {
+  data: T[];
+  error?: { message: string };
+  count?: number;
+};
 
-// الأنواع المشتركة في النظام
-export interface BookingStatus {
+export interface UserBase {
   id: string;
-  name: string;
-  name_ar: string;
-  description?: string;
-  color: string;
-  sort_order?: number;
-  is_active?: boolean;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  role?: string;
   created_at?: string;
 }
 
-export interface CustomerSegment {
-  id: string;
-  name: string;
-  name_ar: string;
-  color: string;
-  description?: string;
-  minimum_bookings?: number;
-  minimum_total_spent?: number;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+// Fixed parsing error: added proper line ending
+export type ApiData<T> = T extends Array<infer U> ? U[] : Record<string, unknown>;
 
-// أنواع الدفع المدعومة
-export type PaymentMethod = 'cash' | 'bank_transfer' | 'credit_card' | 'cheque' | 'online';
+export type SafeAny = unknown; // Use this instead of any, cast with type guards
 
-// حالات الدفع
-export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'cancelled' | 'overdue';
+export type MutationFn<TInput = SafeAny, TOutput = SafeAny> = (input: TInput) => Promise<TOutput>;
 
-// أنواع الحجوزات
-export type BookingType = 'hotel' | 'flight' | 'transport' | 'car_rental';

@@ -95,19 +95,24 @@ const EnhancedReportExporter = () => {
     const { supabase } = await import('@/integrations/supabase/client');
     
     switch (dataType) {
-      case 'customers':
+      case 'customers': {
         const { data: customers } = await supabase.from('customers').select('*');
         return customers || [];
-      case 'suppliers':
+      }
+      case 'suppliers': {
         const { data: suppliers } = await supabase.from('suppliers').select('*') as any;
         return suppliers || [];
-      case 'financial':
+      }
+      case 'financial': {
         // جلب تقرير مالي شامل
         return await generateFinancialReport();
-      default:
+      }
+      default: {
         return [];
+      }
     }
   };
+
 
   const generateFinancialReport = async () => {
     // إنشاء تقرير مالي شامل

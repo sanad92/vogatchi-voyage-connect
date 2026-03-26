@@ -184,7 +184,7 @@ export const useUnifiedUserEmployee = () => {
       console.error('❌ خطأ في تحديث البيانات الموحدة:', error);
       
       // رسالة خطأ مفصلة للمستخدم
-      let userMessage = error.message || 'حدث خطأ أثناء تحديث البيانات';
+      const userMessage = error.message || 'حدث خطأ أثناء تحديث البيانات';
       
       // إضافة معلومات إضافية للتشخيص
       if (error.code) {

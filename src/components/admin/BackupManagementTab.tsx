@@ -79,20 +79,21 @@ const BackupManagementTab = () => {
       toast({ title: "تم إنشاء النسخة الاحتياطية", description: "تم الإنشاء بنجاح" });
       setIsCreatingBackup(false);
     },
-    onError: (error: any) => {
-      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+  onError: (error: unknown) => {
+      toast({ title: "خطأ", description: (error as Error).message, variant: "destructive" });
       setIsCreatingBackup(false);
     }
   });
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'failed': return <AlertCircle className="h-4 w-4 text-red-600" />;
-      case 'in_progress': return <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />;
-      default: return <Clock className="h-4 w-4 text-gray-600" />;
-    }
+    const icons: Record<string, React.ReactNode> = {
+      completed: <CheckCircle className="h-4 w-4 text-green-600" />,
+      failed: <AlertCircle className="h-4 w-4 text-red-600" />,
+      'in_progress': <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />,
+    };
+    return icons[status] || <Clock className="h-4 w-4 text-gray-600" />;
   };
+
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {

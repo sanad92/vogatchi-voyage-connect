@@ -1,40 +1,41 @@
-
-// دالة تنظيف بسيطة وفعالة لبيانات المصادقة
 export const cleanupAuthState = () => {
   try {
-    // تنظيف localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('supabase.auth.') || 
-          key.includes('sb-') || 
-          key.includes('supabase-')) {
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.startsWith('supabase.auth.') ||
+        key.includes('sb-') ||
+        key.includes('supabase-') ||
+        key.startsWith('current_org_') ||
+        key.startsWith('org_setup_skipped_') ||
+        key === 'org_setup_skipped'
+      ) {
         localStorage.removeItem(key);
       }
     });
-    
-    // تنظيف sessionStorage
+
     if (typeof sessionStorage !== 'undefined') {
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('supabase.auth.') || 
-            key.includes('sb-') || 
-            key.includes('supabase-')) {
+      Object.keys(sessionStorage).forEach((key) => {
+        if (
+          key.startsWith('supabase.auth.') ||
+          key.includes('sb-') ||
+          key.includes('supabase-')
+        ) {
           sessionStorage.removeItem(key);
         }
       });
     }
-  } catch (error) {
-    console.error('خطأ في تنظيف بيانات المصادقة:', error);
+  } catch (cleanupError) {
+    console.error('خطأ في تنظيف بيانات المصادقة:', cleanupError);
   }
 };
 
-// التحقق من وجود بيانات مصادقة مخزنة
 export const hasStoredAuthData = (): boolean => {
   try {
-    return Object.keys(localStorage).some(key => 
-      key.startsWith('supabase.auth.') || 
-      key.includes('sb-') || 
-      key.includes('supabase-')
+    return Object.keys(localStorage).some(
+      (key) =>
+        key.startsWith('supabase.auth.') || key.includes('sb-') || key.includes('supabase-')
     );
-  } catch (error) {
+  } catch {
     return false;
   }
 };

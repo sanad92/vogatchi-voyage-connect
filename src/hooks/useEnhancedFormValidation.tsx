@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { FormValidator, BookingValidators } from '@/utils/formValidation';
 import { toast } from 'sonner';
 
+import { FormValues } from '@/types/common';
+
 interface UseEnhancedFormValidationProps {
   formType: 'hotel' | 'flight' | 'customer' | 'invoice' | 'custom';
-  customValidator?: (data: any) => { isValid: boolean; errors: Record<string, string[]> };
+  customValidator?: (data: FormValues) => { isValid: boolean; errors: Record<string, string[]> };
   onValidationChange?: (isValid: boolean, errors: Record<string, string[]>) => void;
 }
+
 
 export const useEnhancedFormValidation = ({
   formType,
@@ -18,7 +21,7 @@ export const useEnhancedFormValidation = ({
   const [isValidating, setIsValidating] = useState(false);
 
   // تحديد المتحقق بناءً على نوع النموذج
-  const getValidator = useCallback((data: any, additionalData?: any) => {
+  const getValidator = useCallback((data: FormValues, additionalData?: FormValues) => {
     switch (formType) {
       case 'hotel':
         return BookingValidators.hotel(data, additionalData);
@@ -35,8 +38,9 @@ export const useEnhancedFormValidation = ({
     }
   }, [formType, customValidator]);
 
+
   // التحقق من صحة البيانات
-  const validateForm = useCallback((formData: any, additionalData?: any): boolean => {
+  const validateForm = useCallback((formData: FormValues, additionalData?: FormValues): boolean => {
     setIsValidating(true);
     
     try {
@@ -79,9 +83,9 @@ export const useEnhancedFormValidation = ({
   }, [formType, customValidator, onValidationChange]);
 
   // التحقق من حقل واحد
-  const validateField = useCallback((fieldName: string, value: any, formData: any): string[] => {
+  const validateField = useCallback((fieldName: string, value: unknown, formData: FormValues): string[] => {
     // إنشاء بيانات مؤقتة للتحقق
-    const tempData = { ...formData, [fieldName]: value };
+    const tempData = { ...formData, [fieldName]: value } as FormValues;
     
     try {
       const validator = new FormValidator();
@@ -123,7 +127,7 @@ export const useEnhancedFormValidation = ({
   const isFieldTouched = (fieldName: string) => touchedFields.has(fieldName);
 
   // التحقق التلقائي عند تغيير البيانات (اختياري)
-  const validateOnChange = useCallback((fieldName: string, value: any, formData: any) => {
+  const validateOnChange = useCallback((fieldName: string, value: unknown, formData: FormValues) => {
     if (isFieldTouched(fieldName)) {
       const fieldErrors = validateField(fieldName, value, formData);
       

@@ -1,30 +1,29 @@
-
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useUnifiedUsersQuery, useUnlinkedEmployeesQuery } from './queries';
 import { useLinkingMutations } from './mutations';
-import { toast } from 'sonner';
+import { useUnifiedUsersQuery, useUnlinkedEmployeesQuery } from './queries';
 
 export const useUnifiedData = () => {
   const { isSuperAdmin } = useOptimizedAuth();
   const { organizationId } = useOrganization();
   const queryClient = useQueryClient();
-  const isOwner = isSuperAdmin();
+  const canManageUnifiedData = isSuperAdmin();
 
   const {
     data: unifiedUsers,
     isLoading: usersLoading,
     error: usersError,
-    refetch: refetchUsers
-  } = useUnifiedUsersQuery(isOwner, organizationId);
+    refetch: refetchUsers,
+  } = useUnifiedUsersQuery(canManageUnifiedData, organizationId);
 
   const {
     data: unlinkedEmployees,
     isLoading: employeesLoading,
     error: employeesError,
-    refetch: refetchEmployees
-  } = useUnlinkedEmployeesQuery(isOwner);
+    refetch: refetchEmployees,
+  } = useUnlinkedEmployeesQuery(canManageUnifiedData, organizationId);
 
   const {
     linkUserToEmployee,
@@ -32,7 +31,7 @@ export const useUnifiedData = () => {
     updateUnifiedData,
     isLinking,
     isUnlinking,
-    isUpdating
+    isUpdating,
   } = useLinkingMutations();
 
   const hasErrors = usersError || employeesError;
@@ -42,32 +41,35 @@ export const useUnifiedData = () => {
     try {
       await queryClient.invalidateQueries({ queryKey: ['unified-users-employees'] });
       await queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
-      
+
       const [usersResult, employeesResult] = await Promise.allSettled([
         refetchUsers(),
-        refetchEmployees()
+        refetchEmployees(),
       ]);
-      
+
       if (usersResult.status === 'fulfilled' && employeesResult.status === 'fulfilled') {
         toast.success('تم تحديث البيانات بنجاح');
       }
-    } catch (error) {
+    } catch (refreshError) {
       toast.error('حدث خطأ أثناء تحديث البيانات');
-      throw error;
+      throw refreshError;
     }
   };
 
+  const safeUnifiedUsers = unifiedUsers ?? [];
+  const safeUnlinkedEmployees = unlinkedEmployees ?? [];
+
   const stats = {
-    totalUsers: unifiedUsers?.length || 0,
-    usersWithEmployees: unifiedUsers?.filter(u => u.employee).length || 0,
-    usersWithoutEmployees: unifiedUsers?.filter(u => !u.employee).length || 0,
-    unlinkedEmployees: unlinkedEmployees?.length || 0,
-    hasData: (unifiedUsers?.length || 0) > 0 || (unlinkedEmployees?.length || 0) > 0
+    totalUsers: safeUnifiedUsers.length,
+    usersWithEmployees: safeUnifiedUsers.filter((user) => user.employee).length,
+    usersWithoutEmployees: safeUnifiedUsers.filter((user) => !user.employee).length,
+    unlinkedEmployees: safeUnlinkedEmployees.length,
+    hasData: safeUnifiedUsers.length > 0 || safeUnlinkedEmployees.length > 0,
   };
 
   return {
-    unifiedUsers: unifiedUsers || [],
-    unlinkedEmployees: unlinkedEmployees || [],
+    unifiedUsers: safeUnifiedUsers,
+    unlinkedEmployees: safeUnlinkedEmployees,
     isLoading,
     usersLoading,
     employeesLoading,
@@ -81,6 +83,6 @@ export const useUnifiedData = () => {
     isUnlinking,
     isUpdating,
     refreshAllData,
-    stats
+    stats,
   };
 };

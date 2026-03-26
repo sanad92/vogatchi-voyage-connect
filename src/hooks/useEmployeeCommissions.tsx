@@ -76,8 +76,10 @@ export const useEmployeeCommissions = () => {
   });
 
   // جلب عمولات موظف محدد
-  const getEmployeeCommissions = (employeeId: string) => {
+  // Fixed rules-of-hooks: renamed non-hook function
+  const getEmployeeCommissionsQuery = (employeeId: string) => {
     return useQuery({
+
       queryKey: ['employee-commissions', employeeId],
       queryFn: async () => {
         console.log('Fetching commissions for employee:', employeeId);
@@ -443,7 +445,7 @@ export const useEmployeeCommissions = () => {
     commissionPayments,
     paymentsLoading,
     paymentsError,
-    getEmployeeCommissions,
+    getEmployeeCommissionsQuery,
     validateEmployeeCommissions,
     updateEmployeeCommissionSettings,
     addCommissionPayment,

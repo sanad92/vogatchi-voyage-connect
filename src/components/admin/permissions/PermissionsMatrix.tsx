@@ -181,10 +181,10 @@ const PermissionsMatrix = () => {
                         <div className="flex justify-center gap-3">
                           {/* صلاحية القراءة */}
                           <Checkbox
-                            checked={getPermissionValue(user.id, `${module.key}_read`)}
+                            checked={getPermissionValue(user.id, `${module.key}_view`)}
                             onCheckedChange={(checked) => {
                               if (editingUser === user.id) {
-                                updatePermission(`${module.key}_read`, Boolean(checked));
+                                updatePermission(`${module.key}_view`, Boolean(checked));
                               }
                             }}
                             disabled={editingUser !== user.id}
@@ -192,15 +192,16 @@ const PermissionsMatrix = () => {
                           />
                           {/* صلاحية الكتابة */}
                           <Checkbox
-                            checked={getPermissionValue(user.id, `${module.key}_write`)}
+                            checked={getPermissionValue(user.id, `${module.key}_create`)}
                             onCheckedChange={(checked) => {
                               if (editingUser === user.id) {
-                                updatePermission(`${module.key}_write`, Boolean(checked));
+                                updatePermission(`${module.key}_create`, Boolean(checked));
                               }
                             }}
                             disabled={editingUser !== user.id}
                             className="scale-75"
                           />
+
                         </div>
                       </td>
                     ))}

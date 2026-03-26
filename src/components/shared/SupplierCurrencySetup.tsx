@@ -38,7 +38,7 @@ const SupplierCurrencySetup = ({ currencies, onCurrenciesChange }: SupplierCurre
     }
 
     // إذا كانت العملة الجديدة أساسية، إلغاء تعيين العملات الأساسية الأخرى
-    let updatedCurrencies = currencies.map(c => ({
+    const updatedCurrencies = currencies.map(c => ({
       ...c,
       is_primary: newCurrency.is_primary ? false : c.is_primary
     }));

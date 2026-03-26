@@ -58,7 +58,7 @@ const SupplierAdvancedFilters = ({
   });
 
   const handleChange = (key: string, value: string) => {
-    let updatedFilters = { ...filters, [key]: value };
+    const updatedFilters = { ...filters, [key]: value };
 
     setFilters(updatedFilters);
 

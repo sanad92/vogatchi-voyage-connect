@@ -1,5 +1,4 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useOptimizedAuth } from './useOptimizedAuth';
@@ -7,56 +6,47 @@ import { useOptimizedAuth } from './useOptimizedAuth';
 export interface DetailedUserPermissions {
   id: string;
   user_id: string;
-  // صلاحيات العملاء
   customers_view: boolean;
   customers_create: boolean;
   customers_edit: boolean;
   customers_delete: boolean;
   customers_export: boolean;
-  // صلاحيات الحجوزات
   bookings_view: boolean;
   bookings_create: boolean;
   bookings_edit: boolean;
   bookings_delete: boolean;
   bookings_cancel: boolean;
   bookings_confirm: boolean;
-  // صلاحيات الفواتير
   invoices_view: boolean;
   invoices_create: boolean;
   invoices_edit: boolean;
   invoices_delete: boolean;
   invoices_send: boolean;
   invoices_payment: boolean;
-  // صلاحيات الموردين
   suppliers_view: boolean;
   suppliers_create: boolean;
   suppliers_edit: boolean;
   suppliers_delete: boolean;
   suppliers_contracts: boolean;
-  // صلاحيات التقارير
   reports_financial: boolean;
   reports_sales: boolean;
   reports_operational: boolean;
   reports_export: boolean;
   reports_advanced: boolean;
-  // صلاحيات الموظفين
   employees_view: boolean;
   employees_create: boolean;
   employees_edit: boolean;
   employees_delete: boolean;
   employees_salary: boolean;
   employees_commission: boolean;
-  // صلاحيات المصروفات
   expenses_view: boolean;
   expenses_create: boolean;
   expenses_approve: boolean;
   expenses_reports: boolean;
-  // صلاحيات إدارة النظام
   system_users: boolean;
   system_settings: boolean;
   system_backup: boolean;
   system_audit: boolean;
-  // صلاحيات الحسابات البنكية
   banking_view: boolean;
   banking_transactions: boolean;
   banking_transfer: boolean;
@@ -70,76 +60,71 @@ export interface AllUserPermissions extends DetailedUserPermissions {
   is_active: boolean;
 }
 
+export type DetailedPermissionsPayload = Partial<
+  Omit<DetailedUserPermissions, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+>;
+
+const permissionsQueryKey = ['detailed-user-permissions'] as const;
+
 export const useUserPermissionsManagement = () => {
   const { isSuperAdmin } = useOptimizedAuth();
   const queryClient = useQueryClient();
 
-  // جلب صلاحيات جميع المستخدمين
   const { data: allUserPermissions, isLoading, error } = useQuery({
-    queryKey: ['detailed-user-permissions'],
+    queryKey: permissionsQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_all_user_permissions' as any);
-      if (error) throw error;
-      return data as unknown as AllUserPermissions[];
+      const { data, error: rpcError } = await supabase.rpc('get_all_user_permissions' as never);
+      if (rpcError) throw rpcError;
+      return (data ?? []) as unknown as AllUserPermissions[];
     },
     enabled: isSuperAdmin(),
   });
 
-  // جلب صلاحيات مستخدم محدد
-  const getUserPermissions = (userId: string) => {
-    return useQuery({
-      queryKey: ['detailed-user-permissions', userId],
-      queryFn: async () => {
-        const { data, error } = await supabase.rpc('get_user_permissions' as any, { 
-          p_user_id: userId 
-        });
-        if (error) throw error;
-        return data?.[0] as DetailedUserPermissions;
-      },
-      enabled: !!userId,
-    });
-  };
+  const getUserPermissions = (userId: string) =>
+    allUserPermissions?.find((permissions) => permissions.user_id === userId) ?? null;
 
-  // تحديث صلاحيات مستخدم
   const updatePermissionsMutation = useMutation({
-    mutationFn: async ({ 
-      userId, 
-      permissions 
-    }: { 
-      userId: string; 
-      permissions: Partial<DetailedUserPermissions> 
+    mutationFn: async ({
+      userId,
+      permissions,
+    }: {
+      userId: string;
+      permissions: DetailedPermissionsPayload;
     }) => {
-      const { data, error } = await supabase.rpc('update_user_permissions' as any, {
+      const { data, error: rpcError } = await supabase.rpc('update_user_permissions' as never, {
         p_user_id: userId,
-        p_permissions: permissions
-      });
-      
-      if (error) throw error;
+        p_permissions: permissions,
+      } as never);
+
+      if (rpcError) throw rpcError;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['detailed-user-permissions'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: permissionsQueryKey });
       toast.success('تم تحديث الصلاحيات بنجاح');
     },
-    onError: (error: any) => {
-      console.error('خطأ في تحديث الصلاحيات:', error);
+    onError: (mutationError: unknown) => {
+      console.error('خطأ في تحديث الصلاحيات:', mutationError);
       toast.error('حدث خطأ أثناء تحديث الصلاحيات');
     },
   });
 
-  // إنشاء صلاحيات افتراضية لمستخدم جديد
   const createPermissionsMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.rpc('create_default_permissions' as any, {
-        p_user_id: userId
-      });
-      
-      if (error) throw error;
+      const { data, error: rpcError } = await supabase.rpc('create_default_permissions' as never, {
+        p_user_id: userId,
+      } as never);
+
+      if (rpcError) throw rpcError;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['detailed-user-permissions'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: permissionsQueryKey });
       toast.success('تم إنشاء الصلاحيات للمستخدم');
+    },
+    onError: (mutationError: unknown) => {
+      console.error('خطأ في إنشاء الصلاحيات الافتراضية:', mutationError);
+      toast.error('حدث خطأ أثناء إنشاء الصلاحيات الافتراضية');
     },
   });
 
@@ -148,8 +133,8 @@ export const useUserPermissionsManagement = () => {
     isLoading,
     error,
     getUserPermissions,
-    updatePermissions: updatePermissionsMutation.mutate,
-    createPermissions: createPermissionsMutation.mutate,
+    updatePermissions: updatePermissionsMutation.mutateAsync,
+    createPermissions: createPermissionsMutation.mutateAsync,
     isUpdating: updatePermissionsMutation.isPending,
     isCreating: createPermissionsMutation.isPending,
   };

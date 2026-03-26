@@ -1,13 +1,19 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+
+import OrganizationSetupNotice from '@/components/auth/OrganizationSetupNotice';
 import SupabaseAuthForm from '@/components/auth/SupabaseAuthForm';
 
 const AuthPage = () => {
-  const { user, loading, isLoggedIn } = useOptimizedAuth();
+  const { loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+
+  const loggedIn = isLoggedIn();
+  const loggedInWithoutOrganization = loggedIn && !hasOrganization;
 
   if (loading || orgLoading) {
     return (
@@ -20,17 +26,19 @@ const AuthPage = () => {
     );
   }
 
-  if (isLoggedIn()) {
-    if (!hasOrganization) {
-      return <Navigate to="/register-organization" replace />;
-    }
-    // Let OnboardingGuard handle onboarding redirect
+  if (loggedIn && hasOrganization) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-background to-indigo-50 flex items-center justify-center p-4">
-      <SupabaseAuthForm defaultTab={defaultTab} />
+      {loggedInWithoutOrganization ? (
+        <div className="w-full max-w-md">
+          <OrganizationSetupNotice />
+        </div>
+      ) : (
+        <SupabaseAuthForm defaultTab={defaultTab} />
+      )}
     </div>
   );
 };

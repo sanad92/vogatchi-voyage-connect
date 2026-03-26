@@ -1,11 +1,14 @@
-
 import { usePermissionsData } from './usePermissionsData';
-import { useUserPermissionsManagement } from './useUserPermissionsManagement';
 import { usePermissionTemplates } from './usePermissionTemplates';
+import {
+  useUserPermissionsManagement,
+  type DetailedPermissionsPayload,
+} from './useUserPermissionsManagement';
 
 export type {
   DetailedUserPermissions,
   AllUserPermissions,
+  DetailedPermissionsPayload,
 } from './useUserPermissionsManagement';
 
 export type {
@@ -28,13 +31,11 @@ export const useDetailedPermissions = () => {
 
   const { applyPermissionTemplate } = usePermissionTemplates(updatePermissions);
 
-  // إنشاء صلاحيات افتراضية محسنة للمستخدمين الجدد
   const createDefaultPermissions = async (userId: string, role: string = 'viewer') => {
-    let defaultPermissions = {};
-    
+    let defaultPermissions: DetailedPermissionsPayload = {};
+
     switch (role) {
       case 'super_admin':
-        // السوبر أدمن له كل الصلاحيات
         defaultPermissions = {
           customers_view: true, customers_create: true, customers_edit: true, customers_delete: true, customers_export: true,
           bookings_view: true, bookings_create: true, bookings_edit: true, bookings_delete: true, bookings_cancel: true, bookings_confirm: true,
@@ -44,7 +45,7 @@ export const useDetailedPermissions = () => {
           employees_view: true, employees_create: true, employees_edit: true, employees_delete: true, employees_salary: true, employees_commission: true,
           expenses_view: true, expenses_create: true, expenses_approve: true, expenses_reports: true,
           system_users: true, system_settings: true, system_backup: true, system_audit: true,
-          banking_view: true, banking_transactions: true, banking_transfer: true
+          banking_view: true, banking_transactions: true, banking_transfer: true,
         };
         break;
       case 'admin':
@@ -57,7 +58,7 @@ export const useDetailedPermissions = () => {
           employees_view: true, employees_create: true, employees_edit: true, employees_delete: false, employees_salary: true, employees_commission: true,
           expenses_view: true, expenses_create: true, expenses_approve: true, expenses_reports: true,
           system_users: true, system_settings: false, system_backup: false, system_audit: false,
-          banking_view: true, banking_transactions: true, banking_transfer: false
+          banking_view: true, banking_transactions: true, banking_transfer: false,
         };
         break;
       case 'manager':
@@ -70,7 +71,7 @@ export const useDetailedPermissions = () => {
           employees_view: true, employees_create: false, employees_edit: false, employees_delete: false, employees_salary: false, employees_commission: false,
           expenses_view: true, expenses_create: true, expenses_approve: false, expenses_reports: true,
           system_users: false, system_settings: false, system_backup: false, system_audit: false,
-          banking_view: true, banking_transactions: false, banking_transfer: false
+          banking_view: true, banking_transactions: false, banking_transfer: false,
         };
         break;
       case 'sales_agent':
@@ -83,7 +84,7 @@ export const useDetailedPermissions = () => {
           employees_view: false, employees_create: false, employees_edit: false, employees_delete: false, employees_salary: false, employees_commission: false,
           expenses_view: false, expenses_create: false, expenses_approve: false, expenses_reports: false,
           system_users: false, system_settings: false, system_backup: false, system_audit: false,
-          banking_view: false, banking_transactions: false, banking_transfer: false
+          banking_view: false, banking_transactions: false, banking_transfer: false,
         };
         break;
       case 'accountant':
@@ -96,10 +97,10 @@ export const useDetailedPermissions = () => {
           employees_view: true, employees_create: false, employees_edit: false, employees_delete: false, employees_salary: true, employees_commission: true,
           expenses_view: true, expenses_create: true, expenses_approve: false, expenses_reports: true,
           system_users: false, system_settings: false, system_backup: false, system_audit: false,
-          banking_view: true, banking_transactions: true, banking_transfer: false
+          banking_view: true, banking_transactions: true, banking_transfer: false,
         };
         break;
-      default: // viewer
+      default:
         defaultPermissions = {
           customers_view: true, customers_create: false, customers_edit: false, customers_delete: false, customers_export: false,
           bookings_view: true, bookings_create: false, bookings_edit: false, bookings_delete: false, bookings_cancel: false, bookings_confirm: false,
@@ -109,7 +110,7 @@ export const useDetailedPermissions = () => {
           employees_view: false, employees_create: false, employees_edit: false, employees_delete: false, employees_salary: false, employees_commission: false,
           expenses_view: false, expenses_create: false, expenses_approve: false, expenses_reports: false,
           system_users: false, system_settings: false, system_backup: false, system_audit: false,
-          banking_view: false, banking_transactions: false, banking_transfer: false
+          banking_view: false, banking_transactions: false, banking_transfer: false,
         };
     }
 

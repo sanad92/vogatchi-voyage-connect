@@ -183,7 +183,17 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           data: { full_name: fullName || '' },
         },
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        const isRateLimited =
+          (error as { status?: number }).status === 429 ||
+          /too many requests|rate limit/i.test(error.message);
+
+        if (isRateLimited) {
+          throw new Error('تم تجاوز الحد المسموح لمحاولات إنشاء الحساب. انتظر قليلًا ثم جرّب مرة أخرى.');
+        }
+
+        throw new Error(error.message);
+      }
 
       if (data.user && !data.user.email_confirmed_at) {
         toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');

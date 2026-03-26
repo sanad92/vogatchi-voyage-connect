@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useDetailedPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import PermissionsOverview from './PermissionsOverview';
-import PermissionsMatrix from './PermissionsMatrix';
+import DetailedPermissionsMatrix from './DetailedPermissionsMatrix';
 import PermissionTemplates from './PermissionTemplates';
 import { toast } from 'sonner';
 
@@ -158,7 +158,7 @@ const PermissionsManagement = () => {
         </TabsContent>
 
         <TabsContent value="matrix" className="mt-6">
-          <PermissionsMatrix />
+          <DetailedPermissionsMatrix />
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">

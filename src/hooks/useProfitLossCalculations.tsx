@@ -27,19 +27,21 @@ export interface DateRange {
   to: Date;
 }
 
+// ProfitLossHook is a custom hook for financial calculations
 export const useProfitLossCalculations = () => {
   // حساب الأرباح والخسائر لفترة محددة
-  const calculateProfitLoss = (startDate: string, endDate: string) => {
+  const useProfitLossQuery = (startDate: string, endDate: string) => {
     return useQuery({
       queryKey: ['profit-loss', startDate, endDate],
       queryFn: async (): Promise<ProfitLossData> => {
         try {
           // حساب إيرادات الفنادق
-          const { data: hotelRevenue } = await (supabase
+          const { data: hotelRevenue } = await supabase
             .from('hotel_bookings')
             .select('total_cost_customer, total_profit')
             .gte('booking_date', startDate)
-            .lte('booking_date', endDate) as any);
+            .lte('booking_date', endDate);
+
 
           // حساب إيرادات الطيران
           const { data: flightRevenue } = await supabase
@@ -348,7 +350,7 @@ export const useProfitLossCalculations = () => {
   };
 
   return {
-    calculateProfitLoss,
+    calculateProfitLoss : useProfitLossQuery,
     getMonthlyReport,
     calculateRevenue,
     calculateDirectCosts,

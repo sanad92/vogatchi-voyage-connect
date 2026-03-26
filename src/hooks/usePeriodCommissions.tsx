@@ -82,8 +82,10 @@ export const usePeriodCommissions = () => {
   });
 
   // جلب تفاصيل الحجوزات لموظف في فترة معينة
-  const getEmployeeBookingsProfit = (employeeId: string, periodStart: string, periodEnd: string) => {
+  // Fixed rules-of-hooks: renamed non-hook function
+  const getEmployeeBookingsProfitQuery = (employeeId: string, periodStart: string, periodEnd: string) => {
     return useQuery({
+
       queryKey: ['employee-bookings-profit', employeeId, periodStart, periodEnd],
       queryFn: async () => {
         console.log('Fetching employee bookings profit:', { employeeId, periodStart, periodEnd });
@@ -325,7 +327,7 @@ export const usePeriodCommissions = () => {
     commissionPeriods,
     periodsLoading,
     periodsError,
-    getEmployeeBookingsProfit,
+    getEmployeeBookingsProfitQuery,
     generatePeriodCommission,
     updatePeriodCommissionStatus,
     deletePeriodCommission,

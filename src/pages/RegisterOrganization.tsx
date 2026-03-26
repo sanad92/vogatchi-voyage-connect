@@ -1,23 +1,20 @@
-
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Building2, ArrowLeft, SkipForward } from 'lucide-react';
+import { toast } from 'sonner';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Building2, ArrowLeft, SkipForward } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  
+
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -25,63 +22,100 @@ const RegisterOrganization = () => {
     address: '',
   });
 
-  // If user already has an organization, redirect to dashboard
   if (!orgLoading && hasOrganization) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const skipStorageKey = user?.id ? `org_setup_skipped_${user.id}` : null;
+
   const handleSkip = () => {
-    localStorage.setItem('org_setup_skipped', 'true');
+    if (skipStorageKey) {
+      localStorage.setItem(skipStorageKey, 'true');
+    }
     navigate('/dashboard');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const trimmedName = form.name.trim();
     if (!user?.id || !trimmedName) return;
 
     setLoading(true);
+
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !sessionData?.session?.access_token) {
+        toast.error('جلسة الدخول انتهت. من فضلك سجل دخول مرة أخرى.');
+        navigate('/login');
+        return;
+      }
+
+      const accessToken = sessionData.session.access_token;
       const organizationEmail = form.email.trim() || user.email || null;
-      let organizationId: string | null = null;
 
-      const { data: onboardingResult, error: onboardingError } = await supabase.functions.invoke('create-organization-onboarding', {
-        body: {
-          name: trimmedName,
-          phone: form.phone || null,
-          email: organizationEmail,
-          address: form.address || null,
-        },
-      });
+      const { data: onboardingResult, error: onboardingError } = await supabase.functions.invoke(
+        'create-organization-onboarding',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: {
+            name: trimmedName,
+            phone: form.phone.trim() || null,
+            email: organizationEmail,
+            address: form.address.trim() || null,
+          },
+        }
+      );
 
-      if (!onboardingError && onboardingResult?.organizationId) {
-        organizationId = onboardingResult.organizationId as string;
-      } else {
+      if (onboardingError || !onboardingResult?.organizationId) {
         throw onboardingError || new Error('Failed to create organization');
       }
 
-      if (!organizationId) {
-        throw new Error('Failed to create organization');
+      if (skipStorageKey) {
+        localStorage.removeItem(skipStorageKey);
       }
 
-      toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
+      toast.success('تم إنشاء المؤسسة بنجاح');
       await refetchOrganization();
-      
-      // Trigger welcome email (non-blocking)
-      supabase.functions.invoke('send-welcome-email', {
-        body: { organizationName: form.name.trim() },
-      }).catch(() => {/* non-critical */});
-      
-      // Redirect to dashboard after onboarding transaction completes
-      setTimeout(() => {
-        window.location.href = onboardingResult?.redirectTo || '/dashboard';
-      }, 500);
 
-    } catch (error: any) {
-      console.error('Error creating organization:', error);
-      const message = String(error?.message || '').toLowerCase();
+      void supabase.functions
+        .invoke('send-welcome-email', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: { organizationName: trimmedName },
+        })
+        .catch(() => {
+          // Non-blocking follow-up action.
+        });
+
+      const targetPath =
+        typeof onboardingResult.redirectTo === 'string'
+          ? onboardingResult.redirectTo
+          : '/dashboard';
+
+      navigate(targetPath, { replace: true });
+    } catch (submitError: unknown) {
+      console.error('Error creating organization:', submitError);
+
+      const message =
+        submitError instanceof Error ? submitError.message.toLowerCase() : '';
+
+      if (
+        message.includes('401') ||
+        message.includes('unauthorized') ||
+        message.includes('invalid auth')
+      ) {
+        toast.error('غير مصرح. من فضلك سجل دخول مرة أخرى ثم أعد المحاولة.');
+        navigate('/login');
+        return;
+      }
+
       if (message.includes('rls') || message.includes('permission')) {
-        toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. يرجى إعادة تسجيل الدخول.');
+        toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. جرّب تسجيل الدخول من جديد.');
       } else {
         toast.error('حدث خطأ أثناء إنشاء المؤسسة');
       }
@@ -91,7 +125,10 @@ const RegisterOrganization = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-background to-indigo-50 flex items-center justify-center p-4" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-bl from-blue-50 via-background to-indigo-50 flex items-center justify-center p-4"
+      dir="rtl"
+    >
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -101,13 +138,16 @@ const RegisterOrganization = () => {
           <p className="text-muted-foreground">أدخل بيانات شركة السياحة الخاصة بك للبدء</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card p-6 sm:p-8 rounded-2xl shadow-xl border border-border space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-card p-6 sm:p-8 rounded-2xl shadow-xl border border-border space-y-5"
+        >
           <div className="space-y-2">
             <Label htmlFor="org-name">اسم الشركة *</Label>
             <Input
               id="org-name"
               value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              onChange={(e) => setForm((previous) => ({ ...previous, name: e.target.value }))}
               placeholder="مثال: شركة النيل للسياحة"
               required
               disabled={loading}
@@ -120,7 +160,7 @@ const RegisterOrganization = () => {
             <Input
               id="org-phone"
               value={form.phone}
-              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              onChange={(e) => setForm((previous) => ({ ...previous, phone: e.target.value }))}
               placeholder="01xxxxxxxxx"
               disabled={loading}
               className="text-right"
@@ -133,7 +173,7 @@ const RegisterOrganization = () => {
               id="org-email"
               type="email"
               value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              onChange={(e) => setForm((previous) => ({ ...previous, email: e.target.value }))}
               placeholder="info@company.com"
               disabled={loading}
               className="text-right"
@@ -145,7 +185,7 @@ const RegisterOrganization = () => {
             <Input
               id="org-address"
               value={form.address}
-              onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+              onChange={(e) => setForm((previous) => ({ ...previous, address: e.target.value }))}
               placeholder="المدينة - الحي - الشارع"
               disabled={loading}
               className="text-right"
@@ -180,7 +220,9 @@ const RegisterOrganization = () => {
               <SkipForward className="w-4 h-4" />
               تخطي والدخول للوحة التحكم
             </button>
-            <p className="text-xs text-muted-foreground mt-1">يمكنك استكمال بيانات المؤسسة لاحقاً من الإعدادات</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              يمكنك استكمال بيانات المؤسسة لاحقًا من الإعدادات
+            </p>
           </div>
         </form>
       </div>

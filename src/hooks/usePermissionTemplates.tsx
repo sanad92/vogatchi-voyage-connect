@@ -1,10 +1,14 @@
-
 import { toast } from 'sonner';
-import { DetailedUserPermissions } from './useUserPermissionsManagement';
+import { DetailedPermissionsPayload } from './useUserPermissionsManagement';
 
-export const usePermissionTemplates = (updatePermissions: (params: { userId: string; permissions: Partial<DetailedUserPermissions> }) => void) => {
-  const templates = {
-    'sales_agent': {
+export const usePermissionTemplates = (
+  updatePermissions: (params: {
+    userId: string;
+    permissions: DetailedPermissionsPayload;
+  }) => Promise<unknown>
+) => {
+  const templates: Record<string, DetailedPermissionsPayload> = {
+    sales_agent: {
       customers_view: true,
       customers_create: true,
       customers_edit: true,
@@ -14,7 +18,7 @@ export const usePermissionTemplates = (updatePermissions: (params: { userId: str
       invoices_view: true,
       suppliers_view: true,
     },
-    'accountant': {
+    accountant: {
       customers_view: true,
       bookings_view: true,
       invoices_view: true,
@@ -27,7 +31,7 @@ export const usePermissionTemplates = (updatePermissions: (params: { userId: str
       banking_view: true,
       banking_transactions: true,
     },
-    'manager': {
+    manager: {
       customers_view: true,
       customers_create: true,
       customers_edit: true,
@@ -50,7 +54,7 @@ export const usePermissionTemplates = (updatePermissions: (params: { userId: str
       expenses_view: true,
       expenses_approve: true,
     },
-    'viewer': {
+    viewer: {
       customers_view: true,
       bookings_view: true,
       invoices_view: true,
@@ -59,15 +63,15 @@ export const usePermissionTemplates = (updatePermissions: (params: { userId: str
       reports_sales: true,
       employees_view: true,
       expenses_view: true,
-    }
+    },
   };
 
   const applyPermissionTemplate = async (userId: string, templateName: string) => {
-    const templatePermissions = templates[templateName as keyof typeof templates];
-    if (templatePermissions) {
-      updatePermissions({ userId, permissions: templatePermissions });
-      toast.success(`تم تطبيق قالب ${templateName} بنجاح`);
-    }
+    const templatePermissions = templates[templateName];
+    if (!templatePermissions) return;
+
+    await updatePermissions({ userId, permissions: templatePermissions });
+    toast.success(`تم تطبيق قالب ${templateName} بنجاح`);
   };
 
   return {

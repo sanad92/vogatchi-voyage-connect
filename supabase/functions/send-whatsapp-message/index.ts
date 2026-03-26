@@ -129,7 +129,7 @@ serve(async (req) => {
     }
 
     // Prepare message payload
-    let messagePayload: any = {
+    const messagePayload: any = {
       messaging_product: "whatsapp",
       to: conversation.phone_number,
       type: messageType

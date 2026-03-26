@@ -23,7 +23,7 @@ import Papa from 'papaparse';
 
 interface ImportData {
   headers: string[];
-  rows: any[][];
+  rows: unknown[][];
   errors: string[];
   warnings: string[];
 }

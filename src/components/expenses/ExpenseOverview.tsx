@@ -49,7 +49,7 @@ const ExpenseOverview = () => {
 
     let totalExpenses = 0;
     let totalSalaries = 0;
-    let totalRent = 0;
+    const totalRent = 0;
 
     // حساب المصروفات العامة
     if (expenseTransactions) {

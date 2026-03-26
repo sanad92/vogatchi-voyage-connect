@@ -149,7 +149,7 @@ export const validateFormData = <T>(
     const validatedData = schema.parse(data);
     
     // Run custom validations
-    let warnings: string[] = [];
+    const warnings: string[] = [];
     if (customValidations) {
       for (const validate of customValidations) {
         warnings.push(...validate(validatedData));
