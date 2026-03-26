@@ -112,7 +112,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
       ...formData,
       booking_agent_name: currentEmployee?.full_name || '',
       total_cost: formData.selling_price_per_trip * formData.number_of_passengers,
-      remaining_amount: (formData.selling_price_per_trip * formData.number_of_passengers) - formData.paid_amount,
+      remaining_amount: Math.max(0, (formData.selling_price_per_trip * formData.number_of_passengers) - formData.paid_amount),
       total_profit: (formData.selling_price_per_trip * formData.number_of_passengers) - formData.supplier_cost,
       exchange_rate_to_egp: 1.0
     };

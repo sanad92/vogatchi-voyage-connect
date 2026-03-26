@@ -16,7 +16,7 @@ export const useBookingCalculations = ({
 }: UseBookingCalculationsProps) => {
   return useMemo(() => {
     const numberOfNights = checkInDate && checkOutDate ? 
-      Math.max(0, new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24) : 0;
+      Math.max(0, Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24))) : 0;
 
     const totalCostCustomer = sellingPricePerNight ? sellingPricePerNight * numberOfNights : 0;
     const totalProfit = (sellingPricePerNight && costPerNight) ? (sellingPricePerNight - costPerNight) * numberOfNights : 0;

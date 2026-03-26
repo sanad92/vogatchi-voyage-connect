@@ -76,7 +76,7 @@ const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
       // Calculate totals
       const totalRentalCost = formData.daily_rate * rentalDurationDays;
       const supplierTotalCost = formData.supplier_daily_cost * rentalDurationDays;
-      const remainingAmount = totalRentalCost - formData.paid_amount;
+      const remainingAmount = Math.max(0, totalRentalCost - formData.paid_amount);
       
       await addCarRental({
         ...formData,
@@ -84,7 +84,7 @@ const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
         total_rental_cost: totalRentalCost,
         supplier_total_cost: supplierTotalCost,
         remaining_amount: remainingAmount,
-        total_profit: totalRentalCost - supplierTotalCost,
+        total_profit: totalRentalCost - supplierTotalCost - formData.insurance_cost - formData.additional_fees,
         contract_sent: false,
         contract_sent_date: null,
         invoice_sent: false,

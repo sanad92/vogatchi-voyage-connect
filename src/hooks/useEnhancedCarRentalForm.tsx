@@ -225,7 +225,7 @@ export const useEnhancedCarRentalForm = () => {
     const rentalData = {
       ...formData,
       booking_agent_name: currentEmployee,
-      remaining_amount: formData.total_rental_cost - formData.paid_amount,
+      remaining_amount: Math.max(0, formData.total_rental_cost - formData.paid_amount),
       total_profit: formData.total_rental_cost - formData.supplier_total_cost - formData.insurance_cost - formData.additional_fees,
       exchange_rate_to_egp: 1.0,
       deposit_returned: 0,
