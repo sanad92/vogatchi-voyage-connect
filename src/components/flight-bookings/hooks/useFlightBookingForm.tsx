@@ -78,8 +78,9 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
   const numberOfPassengers = form.watch('number_of_passengers');
   const supplierCost = form.watch('supplier_cost');
 
-  const totalCost = ticketPrice * numberOfPassengers;
+  const totalCost = (ticketPrice * numberOfPassengers);
   const totalProfit = totalCost - supplierCost;
+
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: FlightBookingFormData) => {
