@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
