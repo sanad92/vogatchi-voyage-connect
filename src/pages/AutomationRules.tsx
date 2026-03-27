@@ -354,7 +354,7 @@ const AutomationRules = () => {
                       <div>
                         <Label className="text-xs">نص الرسالة</Label>
                         <Textarea
-                          value={action.action_config.message_template || ''}
+                          value={(action.action_config as any).message_template || ''}
                           onChange={e => updateActionConfig(index, 'message_template', e.target.value)}
                           placeholder="مرحباً {{customer_name}}، تم تسجيل حجزك بنجاح."
                           rows={2}
