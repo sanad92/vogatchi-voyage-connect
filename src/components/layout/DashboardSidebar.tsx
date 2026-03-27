@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -73,6 +73,7 @@ const navGroups: NavGroup[] = [
       { title: 'الموردين', href: '/suppliers', icon: Truck },
       { title: 'الموظفين', href: '/employees-enhanced', icon: Users },
       { title: 'الفريق', href: '/team', icon: Users },
+      { title: 'الأتمتة', href: '/automation', icon: Zap },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings },
     ],
   },

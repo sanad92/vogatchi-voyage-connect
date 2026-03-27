@@ -28,7 +28,8 @@ import {
   MessageSquare,
   Shield,
   LandPlot,
-  FileCheck
+  FileCheck,
+  Zap
 } from "lucide-react";
 
 export interface SimpleNavItem {
@@ -147,6 +148,13 @@ export const businessNavItems: SimpleNavItem[] = [
     label: "أوامر الدفع",
     allowedRoles: [],
     requiredPermissions: ['financial_view']
+  },
+  {
+    to: "/automation",
+    icon: Zap,
+    label: "الأتمتة",
+    allowedRoles: [],
+    requiredPermissions: []
   }
 ];
 
