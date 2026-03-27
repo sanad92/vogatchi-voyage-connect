@@ -591,6 +591,7 @@ export type Database = {
       }
       car_rentals: {
         Row: {
+          additional_costs: number | null
           additional_driver_count: number | null
           additional_fees: number | null
           booking_agent_id: string | null
@@ -607,6 +608,7 @@ export type Database = {
           deposit_returned: number | null
           driver_license_expiry: string | null
           driver_license_number: string | null
+          employee_id: string | null
           exchange_rate_to_egp: number | null
           fuel_level_pickup: string | null
           fuel_level_return: string | null
@@ -652,6 +654,7 @@ export type Database = {
           vehicle_year: number | null
         }
         Insert: {
+          additional_costs?: number | null
           additional_driver_count?: number | null
           additional_fees?: number | null
           booking_agent_id?: string | null
@@ -668,6 +671,7 @@ export type Database = {
           deposit_returned?: number | null
           driver_license_expiry?: string | null
           driver_license_number?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           fuel_level_pickup?: string | null
           fuel_level_return?: string | null
@@ -713,6 +717,7 @@ export type Database = {
           vehicle_year?: number | null
         }
         Update: {
+          additional_costs?: number | null
           additional_driver_count?: number | null
           additional_fees?: number | null
           booking_agent_id?: string | null
@@ -729,6 +734,7 @@ export type Database = {
           deposit_returned?: number | null
           driver_license_expiry?: string | null
           driver_license_number?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           fuel_level_pickup?: string | null
           fuel_level_return?: string | null
@@ -779,6 +785,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -1954,6 +1967,7 @@ export type Database = {
       }
       flight_bookings: {
         Row: {
+          additional_costs: number | null
           airline_id: string | null
           arrival_airport_id: string | null
           arrival_date: string
@@ -1971,6 +1985,7 @@ export type Database = {
           departure_airport_id: string | null
           departure_date: string
           departure_time: string | null
+          employee_id: string | null
           exchange_rate_to_egp: number | null
           flight_class_id: string | null
           flight_number: string | null
@@ -2008,6 +2023,7 @@ export type Database = {
           voucher_sent_date: string | null
         }
         Insert: {
+          additional_costs?: number | null
           airline_id?: string | null
           arrival_airport_id?: string | null
           arrival_date: string
@@ -2025,6 +2041,7 @@ export type Database = {
           departure_airport_id?: string | null
           departure_date: string
           departure_time?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           flight_class_id?: string | null
           flight_number?: string | null
@@ -2062,6 +2079,7 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Update: {
+          additional_costs?: number | null
           airline_id?: string | null
           arrival_airport_id?: string | null
           arrival_date?: string
@@ -2079,6 +2097,7 @@ export type Database = {
           departure_airport_id?: string | null
           departure_date?: string
           departure_time?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           flight_class_id?: string | null
           flight_number?: string | null
@@ -2142,6 +2161,13 @@ export type Database = {
             columns: ["departure_airport_id"]
             isOneToOne: false
             referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -2347,6 +2373,7 @@ export type Database = {
       }
       hotel_bookings: {
         Row: {
+          additional_costs: number | null
           booking_agent_id: string | null
           booking_agent_name: string | null
           booking_date: string | null
@@ -2361,6 +2388,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string
           destination_city: string | null
+          employee_id: string | null
           hotel_name: string | null
           hotel_star_rating: number | null
           id: string
@@ -2391,6 +2419,7 @@ export type Database = {
           voucher_sent_date: string | null
         }
         Insert: {
+          additional_costs?: number | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
@@ -2405,6 +2434,7 @@ export type Database = {
           customer_id?: string | null
           customer_name: string
           destination_city?: string | null
+          employee_id?: string | null
           hotel_name?: string | null
           hotel_star_rating?: number | null
           id?: string
@@ -2435,6 +2465,7 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Update: {
+          additional_costs?: number | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
@@ -2449,6 +2480,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string
           destination_city?: string | null
+          employee_id?: string | null
           hotel_name?: string | null
           hotel_star_rating?: number | null
           id?: string
@@ -2484,6 +2516,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -4376,6 +4415,7 @@ export type Database = {
       }
       transport_bookings: {
         Row: {
+          additional_costs: number | null
           arrival_date: string | null
           arrival_time: string | null
           booking_agent_id: string | null
@@ -4391,6 +4431,7 @@ export type Database = {
           driver_name: string | null
           driver_phone: string | null
           dropoff_location: string | null
+          employee_id: string | null
           exchange_rate_to_egp: number | null
           id: string
           invoice_sent: boolean | null
@@ -4423,6 +4464,7 @@ export type Database = {
           voucher_sent_date: string | null
         }
         Insert: {
+          additional_costs?: number | null
           arrival_date?: string | null
           arrival_time?: string | null
           booking_agent_id?: string | null
@@ -4438,6 +4480,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           dropoff_location?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           id?: string
           invoice_sent?: boolean | null
@@ -4470,6 +4513,7 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Update: {
+          additional_costs?: number | null
           arrival_date?: string | null
           arrival_time?: string | null
           booking_agent_id?: string | null
@@ -4485,6 +4529,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           dropoff_location?: string | null
+          employee_id?: string | null
           exchange_rate_to_egp?: number | null
           id?: string
           invoice_sent?: boolean | null
@@ -4522,6 +4567,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
