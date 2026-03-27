@@ -18,6 +18,9 @@ import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
 import HotelBookings from "@/pages/HotelBookings";
+import Quotes from "@/pages/Quotes";
+import NewQuote from "@/pages/NewQuote";
+import QuoteDetails from "@/pages/QuoteDetails";
 import NewHotelBooking from "@/pages/NewHotelBooking";
 import FlightBookings from "@/pages/FlightBookings";
 import NewFlightBooking from "@/pages/NewFlightBooking";
@@ -146,6 +149,9 @@ function App() {
                               <Route path="/duplicate-customers" element={<DuplicateCustomersPage />} />
                               <Route path="/new-customer" element={<NewCustomer />} />
                               <Route path="/hotel-bookings" element={<HotelBookings />} />
+                              <Route path="/quotes" element={<Quotes />} />
+                              <Route path="/quotes/new" element={<NewQuote />} />
+                              <Route path="/quotes/:id" element={<QuoteDetails />} />
                               <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
                               <Route path="/flight-bookings" element={<FlightBookings />} />
                               <Route path="/new-flight-booking" element={<NewFlightBooking />} />

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'الحجوزات',
     items: [
+      { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck },
       { title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel },
       { title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane },
       { title: 'تأجير السيارات', href: '/car-rentals', icon: Car },

@@ -27,7 +27,8 @@ import {
   Calendar as CalendarIcon,
   MessageSquare,
   Shield,
-  LandPlot
+  LandPlot,
+  FileCheck
 } from "lucide-react";
 
 export interface SimpleNavItem {
@@ -49,6 +50,13 @@ export const mainNavItems: SimpleNavItem[] = [
 ];
 
 export const businessNavItems: SimpleNavItem[] = [
+  {
+    to: "/quotes",
+    icon: FileCheck,
+    label: "عروض الأسعار",
+    allowedRoles: [],
+    requiredPermissions: ['bookings_view']
+  },
   {
     to: "/daily-operations",
     icon: Calendar,
