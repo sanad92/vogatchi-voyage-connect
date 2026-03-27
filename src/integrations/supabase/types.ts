@@ -622,6 +622,7 @@ export type Database = {
           payment_method: string | null
           pickup_location: string | null
           pickup_notes: string | null
+          quote_id: string | null
           remaining_amount: number | null
           rental_duration_days: number | null
           rental_end_date: string
@@ -682,6 +683,7 @@ export type Database = {
           payment_method?: string | null
           pickup_location?: string | null
           pickup_notes?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           rental_duration_days?: number | null
           rental_end_date: string
@@ -742,6 +744,7 @@ export type Database = {
           payment_method?: string | null
           pickup_location?: string | null
           pickup_notes?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           rental_duration_days?: number | null
           rental_end_date?: string
@@ -783,6 +786,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -1975,6 +1985,7 @@ export type Database = {
           passenger_details: Json | null
           payment_due_date: string | null
           payment_method: string | null
+          quote_id: string | null
           remaining_amount: number | null
           return_flight_id: string | null
           seat_preferences: string | null
@@ -2028,6 +2039,7 @@ export type Database = {
           passenger_details?: Json | null
           payment_due_date?: string | null
           payment_method?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           return_flight_id?: string | null
           seat_preferences?: string | null
@@ -2081,6 +2093,7 @@ export type Database = {
           passenger_details?: Json | null
           payment_due_date?: string | null
           payment_method?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           return_flight_id?: string | null
           seat_preferences?: string | null
@@ -2143,6 +2156,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2355,6 +2375,7 @@ export type Database = {
           paid_amount: number | null
           payment_due_date: string | null
           payment_method: string | null
+          quote_id: string | null
           remaining_amount: number | null
           room_type: string | null
           selling_price_per_night: number | null
@@ -2398,6 +2419,7 @@ export type Database = {
           paid_amount?: number | null
           payment_due_date?: string | null
           payment_method?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           room_type?: string | null
           selling_price_per_night?: number | null
@@ -2441,6 +2463,7 @@ export type Database = {
           paid_amount?: number | null
           payment_due_date?: string | null
           payment_method?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           room_type?: string | null
           selling_price_per_night?: number | null
@@ -2468,6 +2491,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2702,6 +2732,7 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           payment_status: string | null
+          quote_id: string | null
           remaining_amount: number | null
           status: string | null
           subtotal: number | null
@@ -2727,6 +2758,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           payment_status?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
           subtotal?: number | null
@@ -2752,6 +2784,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           payment_status?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
           subtotal?: number | null
@@ -2773,6 +2806,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -3489,6 +3529,179 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_items: {
+        Row: {
+          cost_price: number | null
+          created_at: string | null
+          description: string
+          details: Json | null
+          id: string
+          item_type: string
+          organization_id: string | null
+          quantity: number | null
+          quote_id: string
+          selling_price: number | null
+          sort_order: number | null
+          supplier_id: string | null
+          total_cost: number | null
+          total_selling: number | null
+        }
+        Insert: {
+          cost_price?: number | null
+          created_at?: string | null
+          description: string
+          details?: Json | null
+          id?: string
+          item_type: string
+          organization_id?: string | null
+          quantity?: number | null
+          quote_id: string
+          selling_price?: number | null
+          sort_order?: number | null
+          supplier_id?: string | null
+          total_cost?: number | null
+          total_selling?: number | null
+        }
+        Update: {
+          cost_price?: number | null
+          created_at?: string | null
+          description?: string
+          details?: Json | null
+          id?: string
+          item_type?: string
+          organization_id?: string | null
+          quantity?: number | null
+          quote_id?: string
+          selling_price?: number | null
+          sort_order?: number | null
+          supplier_id?: string | null
+          total_cost?: number | null
+          total_selling?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          assigned_employee_id: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string | null
+          destination: string | null
+          discount_amount: number | null
+          id: string
+          notes: string | null
+          number_of_travelers: number | null
+          organization_id: string | null
+          quote_number: string
+          return_date: string | null
+          status: string | null
+          subtotal: number | null
+          total_amount: number | null
+          total_cost: number | null
+          total_profit: number | null
+          travel_date: string | null
+          updated_at: string | null
+          valid_until: string | null
+          vat_amount: number | null
+          vat_rate: number | null
+        }
+        Insert: {
+          assigned_employee_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          destination?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          number_of_travelers?: number | null
+          organization_id?: string | null
+          quote_number: string
+          return_date?: string | null
+          status?: string | null
+          subtotal?: number | null
+          total_amount?: number | null
+          total_cost?: number | null
+          total_profit?: number | null
+          travel_date?: string | null
+          updated_at?: string | null
+          valid_until?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Update: {
+          assigned_employee_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          destination?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          number_of_travelers?: number | null
+          organization_id?: string | null
+          quote_number?: string
+          return_date?: string | null
+          status?: string | null
+          subtotal?: number | null
+          total_amount?: number | null
+          total_cost?: number | null
+          total_profit?: number | null
+          travel_date?: string | null
+          updated_at?: string | null
+          valid_until?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rent_contracts: {
         Row: {
           bank_account_id: string | null
@@ -4188,6 +4401,7 @@ export type Database = {
           payment_due_date: string | null
           payment_method: string | null
           pickup_location: string | null
+          quote_id: string | null
           remaining_amount: number | null
           route_id: string | null
           selling_price_per_trip: number | null
@@ -4234,6 +4448,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: string | null
           pickup_location?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           route_id?: string | null
           selling_price_per_trip?: number | null
@@ -4280,6 +4495,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: string | null
           pickup_location?: string | null
+          quote_id?: string | null
           remaining_amount?: number | null
           route_id?: string | null
           selling_price_per_trip?: number | null
@@ -4313,6 +4529,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -4779,6 +5002,7 @@ export type Database = {
         Returns: Json
       }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_quote_number: { Args: never; Returns: string }
       get_duplicate_customers: {
         Args: never
         Returns: {
