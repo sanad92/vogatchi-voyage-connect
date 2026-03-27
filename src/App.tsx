@@ -49,6 +49,7 @@ import CustomerPortalPage from "@/pages/CustomerPortalPage";
 import BookingsCalendar from "@/pages/BookingsCalendar";
 import DatabaseManager from "@/pages/DatabaseManager";
 import AutomationRules from "@/pages/AutomationRules";
+import Documents from "@/pages/Documents";
 import TeamManagement from "@/pages/TeamManagement";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
@@ -189,6 +190,7 @@ function App() {
                               <Route path="/admin/cms/pages/:id/blocks" element={<AdminRouteGuard><PageBlocks /></AdminRouteGuard>} />
                               <Route path="/monitoring" element={<AdminRouteGuard><MonitoringDashboard /></AdminRouteGuard>} />
                               <Route path="/automation" element={<AutomationRules />} />
+                              <Route path="/documents" element={<Documents />} />
                               <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />

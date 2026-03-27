@@ -53,6 +53,7 @@ const navGroups: NavGroup[] = [
     label: 'المالية',
     items: [
       { title: 'الفواتير', href: '/invoices', icon: Receipt },
+      { title: 'المستندات', href: '/documents', icon: FileText },
       { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard },
       { title: 'الحسابات البنكية', href: '/bank-accounts', icon: Building2 },
       { title: 'المصروفات', href: '/expense-management', icon: Calculator },
