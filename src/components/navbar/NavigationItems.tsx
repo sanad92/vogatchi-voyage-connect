@@ -28,7 +28,8 @@ import {
   MessageSquare,
   Shield,
   LandPlot,
-  FileCheck
+  FileCheck,
+  Zap
 } from "lucide-react";
 
 export interface SimpleNavItem {

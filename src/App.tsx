@@ -188,6 +188,7 @@ function App() {
                               <Route path="/admin/cms" element={<AdminRouteGuard><CMSPages /></AdminRouteGuard>} />
                               <Route path="/admin/cms/pages/:id/blocks" element={<AdminRouteGuard><PageBlocks /></AdminRouteGuard>} />
                               <Route path="/monitoring" element={<AdminRouteGuard><MonitoringDashboard /></AdminRouteGuard>} />
+                              <Route path="/automation" element={<AutomationRules />} />
                               <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />

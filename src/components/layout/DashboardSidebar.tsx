@@ -73,6 +73,7 @@ const navGroups: NavGroup[] = [
       { title: 'الموردين', href: '/suppliers', icon: Truck },
       { title: 'الموظفين', href: '/employees-enhanced', icon: Users },
       { title: 'الفريق', href: '/team', icon: Users },
+      { title: 'الأتمتة', href: '/automation', icon: Zap },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings },
     ],
   },
