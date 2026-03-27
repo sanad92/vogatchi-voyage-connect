@@ -155,14 +155,16 @@ const UnifiedBookings = () => {
                   })}
                 </TableBody>
               </Table>
-              <PaginationControlsUI
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalCount}
-                onPageChange={setPage}
-                onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
-              />
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <span className="text-sm text-muted-foreground">
+                  عرض {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, totalCount)} من {totalCount}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>السابق</Button>
+                  <span className="px-3 py-1 text-sm">{page} / {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>التالي</Button>
+                </div>
+              </div>
             </>
           )}
         </CardContent>
