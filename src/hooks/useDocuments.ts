@@ -90,7 +90,7 @@ export function useDocuments() {
           metadata: {
             items: docData.items,
             bookingReference: docData.bookingReference,
-          },
+          } as any,
           created_by: user.user?.id || null,
         })
         .select()

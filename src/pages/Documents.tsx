@@ -27,7 +27,7 @@ const DOC_TYPES: Record<string, { label: string; icon: any; color: string }> = {
 
 const Documents = () => {
   const { documents, isLoading, generateAndSave, downloadDocument, deleteDocument, saveTemplate, getTemplate } = useDocuments();
-  const { organization } = useOrganization();
+  const { currentOrganization } = useOrganization();
   const [showCreate, setShowCreate] = useState(false);
   const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const [filter, setFilter] = useState('all');
