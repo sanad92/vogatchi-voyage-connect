@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 interface NavItem {
   to: string;
@@ -20,6 +21,7 @@ interface PermissionNavLinkProps {
 const PermissionNavLink = ({ item, onClick, className }: PermissionNavLinkProps) => {
   const location = useLocation();
   const { isSuperAdmin, hasRole } = useOptimizedAuth();
+  const { hasPermission } = useSupabasePermissions();
   
   const isActiveLink = (to: string) => {
     if (to === '/') {
@@ -28,20 +30,26 @@ const PermissionNavLink = ({ item, onClick, className }: PermissionNavLinkProps)
     return location.pathname.startsWith(to);
   };
 
-  // تحقق من الصلاحيات
-  const hasPermission = () => {
+  const checkAccess = () => {
     // السوبر أدمن له صلاحية على كل شيء
     if (isSuperAdmin()) return true;
     
-    // إذا لم تكن هناك أدوار مطلوبة، اسمح بالوصول
-    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
+    // تحقق من الصلاحيات الدقيقة أولاً
+    if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+      const hasRequiredPerm = item.requiredPermissions.some(p => hasPermission(p as any));
+      if (!hasRequiredPerm) return false;
+    }
+
+    // تحقق من الأدوار المسموحة
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      return item.allowedRoles.some(role => hasRole(role));
+    }
     
-    // تحقق من وجود أي من الأدوار المطلوبة
-    return item.allowedRoles.some(role => hasRole(role));
+    // إذا لم تكن هناك أدوار أو صلاحيات محددة، اسمح بالوصول
+    return true;
   };
 
-  // إذا لم تكن هناك صلاحية، لا تظهر الرابط
-  if (!hasPermission()) {
+  if (!checkAccess()) {
     return null;
   }
 

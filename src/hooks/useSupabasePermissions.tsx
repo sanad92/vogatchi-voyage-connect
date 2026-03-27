@@ -14,11 +14,39 @@ type PermissionCategory =
   | 'banking'
   | 'crm'
   | 'payments'
-  | 'team';
+  | 'team'
+  | 'financial'
+  | 'customer_service'
+  | 'customer_portal'
+  | 'whatsapp'
+  | 'admin'
+  | 'automation'
+  | 'audit'
+  | 'documents'
+  | 'quotes';
 
 type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'advanced';
 
-type PermissionKey = `${PermissionCategory}_${PermissionAction}` | 'invoices_send' | 'invoices_payment' | 'bookings_cancel' | 'bookings_confirm' | 'suppliers_contracts' | 'employees_salary' | 'employees_commission' | 'expenses_approve' | 'system_users' | 'system_settings' | 'system_backup' | 'system_audit' | 'banking_transactions' | 'banking_transfer' | 'crm_follow_ups' | 'crm_campaigns' | 'crm_segments' | 'payments_refund' | 'payments_process' | 'team_invite' | 'team_manage_roles';
+type PermissionKey = `${PermissionCategory}_${PermissionAction}` 
+  | 'invoices_send' | 'invoices_payment' 
+  | 'bookings_cancel' | 'bookings_confirm' 
+  | 'suppliers_contracts' 
+  | 'employees_salary' | 'employees_commission' 
+  | 'expenses_approve' 
+  | 'system_users' | 'system_settings' | 'system_backup' | 'system_audit' 
+  | 'banking_transactions' | 'banking_transfer' 
+  | 'crm_follow_ups' | 'crm_campaigns' | 'crm_segments' 
+  | 'payments_refund' | 'payments_process' 
+  | 'team_invite' | 'team_manage_roles'
+  | 'financial_view' | 'financial_edit'
+  | 'customer_service_view' | 'customer_service_edit'
+  | 'customer_portal_view'
+  | 'whatsapp_view' | 'whatsapp_admin'
+  | 'admin_settings'
+  | 'automation_view' | 'automation_edit'
+  | 'audit_view'
+  | 'documents_view' | 'documents_create'
+  | 'quotes_view' | 'quotes_create' | 'quotes_edit' | 'quotes_delete';
 
 export const useSupabasePermissions = () => {
   const { userRole, hasRole } = useOptimizedAuth();
@@ -38,6 +66,14 @@ export const useSupabasePermissions = () => {
       'crm_view', 'crm_create', 'crm_edit', 'crm_delete', 'crm_follow_ups', 'crm_campaigns', 'crm_segments',
       'payments_view', 'payments_create', 'payments_edit', 'payments_process', 'payments_refund',
       'team_view', 'team_invite', 'team_manage_roles',
+      'financial_view', 'financial_edit',
+      'customer_service_view', 'customer_service_edit',
+      'customer_portal_view',
+      'whatsapp_view',
+      'automation_view', 'automation_edit',
+      'audit_view',
+      'documents_view', 'documents_create',
+      'quotes_view', 'quotes_create', 'quotes_edit', 'quotes_delete',
     ],
     manager: [
       'customers_view', 'customers_create', 'customers_edit', 'customers_export',
@@ -51,6 +87,12 @@ export const useSupabasePermissions = () => {
       'crm_view', 'crm_create', 'crm_edit', 'crm_follow_ups', 'crm_campaigns',
       'payments_view', 'payments_create', 'payments_process',
       'team_view',
+      'financial_view',
+      'customer_service_view', 'customer_service_edit',
+      'customer_portal_view',
+      'whatsapp_view',
+      'documents_view', 'documents_create',
+      'quotes_view', 'quotes_create', 'quotes_edit',
     ],
     agent: [
       'customers_view', 'customers_create', 'customers_edit',
@@ -60,6 +102,10 @@ export const useSupabasePermissions = () => {
       'reports_view',
       'crm_view', 'crm_create', 'crm_follow_ups',
       'payments_view', 'payments_create',
+      'customer_service_view',
+      'whatsapp_view',
+      'documents_view', 'documents_create',
+      'quotes_view', 'quotes_create',
     ],
     viewer: [
       'customers_view',
@@ -68,6 +114,8 @@ export const useSupabasePermissions = () => {
       'suppliers_view',
       'crm_view',
       'payments_view',
+      'documents_view',
+      'quotes_view',
     ],
   };
 
@@ -90,6 +138,7 @@ export const useSupabasePermissions = () => {
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
+    userRole,
     // Customers
     canViewCustomers: () => hasPermission('customers_view'),
     canCreateCustomers: () => hasPermission('customers_create'),
