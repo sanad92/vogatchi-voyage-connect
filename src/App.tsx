@@ -51,6 +51,9 @@ import DatabaseManager from "@/pages/DatabaseManager";
 import AutomationRules from "@/pages/AutomationRules";
 import Documents from "@/pages/Documents";
 import AuditLog from "@/pages/AuditLog";
+import UnifiedBookings from "@/pages/UnifiedBookings";
+import NewUnifiedBooking from "@/pages/NewUnifiedBooking";
+import UnifiedBookingDetails from "@/pages/UnifiedBookingDetails";
 import TeamManagement from "@/pages/TeamManagement";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
@@ -193,6 +196,9 @@ function App() {
                               <Route path="/automation" element={<AutomationRules />} />
                               <Route path="/documents" element={<Documents />} />
                               <Route path="/audit-log" element={<AuditLog />} />
+                              <Route path="/bookings" element={<UnifiedBookings />} />
+                              <Route path="/bookings/new" element={<NewUnifiedBooking />} />
+                              <Route path="/bookings/:id" element={<UnifiedBookingDetails />} />
                               <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
