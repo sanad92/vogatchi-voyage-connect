@@ -1,74 +1,126 @@
 
 
-# نظام حساب الأرباح الاحترافي — Profit Analytics System
+# إعادة هيكلة نظام الحجوزات — Unified Booking System
 
-## الوضع الحالي
+## تحليل الوضع الحالي
 
-**موجود بالفعل:**
-- كل جداول الحجوزات تحتوي `total_profit` (hotel, flight, car_rental, transport)
-- جدول `employee_commissions` موجود مع `booking_id`, `commission_rate`, `commission_amount`
-- جدول `invoices` مربوط بـ `booking_id` + `booking_type`
-- هوك `useProfitLossCalculations` يحسب P&L لكن بشكل إجمالي فقط
-- `RevenueChart` يستخدم بيانات ثابتة (hardcoded) وليس من قاعدة البيانات
-
-**غير موجود:**
-- لا توجد صفحة Dashboard مخصصة للأرباح
-- لا يوجد عرض أرباح لكل حجز / عميل / موظف
-- لا يوجد ربط بين `hotel_bookings` وموظف مسؤول (لا يوجد عمود `employee_id`)
-- `RevenueChart` لا يعرض بيانات حقيقية
+**33 ملف** يستخدمون الجداول القديمة مباشرة. تغيير كل شيء دفعة واحدة سيكسر النظام. لذلك سنتبع **نهج تدريجي آمن**.
 
 ---
 
-## المطلوب تنفيذه
+## الاستراتيجية: Progressive Migration (3 مراحل)
 
-### 1. تعديل قاعدة البيانات (Migration)
+```text
+المرحلة 1: إنشاء البنية الجديدة (بدون كسر القديم)
+   └─ جدول bookings + جداول التفاصيل + VIEW موحد
 
-```sql
--- إضافة عمود الموظف المسؤول لجداول الحجوزات التي تفتقده
-ALTER TABLE hotel_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
-ALTER TABLE flight_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
-ALTER TABLE car_rentals ADD COLUMN employee_id uuid REFERENCES employees(id);
-ALTER TABLE transport_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
+المرحلة 2: صفحات جديدة موحدة
+   └─ /bookings (قائمة) + /bookings/new (إنشاء) + /bookings/:id (تفاصيل)
 
--- إضافة عمود مصاريف إضافية لو غير موجود
-ALTER TABLE hotel_bookings ADD COLUMN additional_costs numeric DEFAULT 0;
-ALTER TABLE flight_bookings ADD COLUMN additional_costs numeric DEFAULT 0;
+المرحلة 3: ربط الأنظمة الموجودة
+   └─ تحديث Profit Analytics + Automation + Invoices + Dashboard
 ```
 
-### 2. هوك موحد لحساب الأرباح `useProfitAnalytics.ts`
+**الجداول القديمة تبقى تعمل** — لا يتم حذفها. النظام الجديد يعمل بالتوازي.
 
-يجلب بيانات الأرباح من كل أنواع الحجوزات ويوفر:
-- **أرباح لكل حجز**: قائمة بكل الحجوزات مع (سعر بيع، تكلفة، ربح، عمولة مورد، عمولة موظف)
-- **أرباح لكل عميل**: تجميع الأرباح حسب `customer_id`
-- **أرباح لكل موظف**: تجميع حسب `employee_id` مع العمولات
-- **تقارير شهرية**: بيانات حقيقية بدل الـ hardcoded
-- **أفضل موظف / عميل**: ترتيب حسب إجمالي الربح
+---
 
-### 3. صفحة Profit Analytics Dashboard `/profit-analytics`
+## المرحلة 1: Database Schema
 
-صفحة جديدة تحتوي:
+### جدول `bookings` (الرئيسي)
 
-**الكروت الرئيسية (4 كروت):**
-- إجمالي الإيرادات
-- إجمالي التكاليف  
-- صافي الربح
-- هامش الربح %
+```sql
+CREATE TABLE public.bookings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid REFERENCES organizations(id) NOT NULL,
+  booking_number text NOT NULL,
+  booking_type text NOT NULL, -- hotel, flight, car_rental, transport
+  customer_id uuid REFERENCES customers(id),
+  customer_name text,
+  employee_id uuid REFERENCES employees(id),
+  supplier_id uuid REFERENCES suppliers(id),
+  supplier_name text,
+  status text DEFAULT 'pending', -- pending, confirmed, cancelled, completed
+  selling_price numeric DEFAULT 0,
+  cost_price numeric DEFAULT 0,
+  profit numeric DEFAULT 0,
+  currency text DEFAULT 'EGP',
+  start_date date,
+  end_date date,
+  notes text,
+  quote_id uuid REFERENCES quotes(id),
+  legacy_table text,        -- المصدر القديم
+  legacy_id uuid,           -- ID في الجدول القديم
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
 
-**Tabs:**
-1. **نظرة عامة**: رسم بياني شهري حقيقي + أفضل موظف + أفضل عميل
-2. **أرباح الحجوزات**: جدول لكل حجز مع (النوع، العميل، سعر البيع، التكلفة، الربح، الموظف)
-3. **أرباح العملاء**: جدول مجمع لكل عميل (عدد الحجوزات، إجمالي الإيرادات، إجمالي الربح)
-4. **أرباح الموظفين**: جدول مجمع لكل موظف (عدد الحجوزات، الإيرادات، الربح، العمولات)
+### جداول التفاصيل (4 جداول)
 
-**فلاتر**: تاريخ من/إلى، نوع الحجز، بحث
+```sql
+-- booking_hotel_details
+  booking_id, hotel_name, room_type, board_type, 
+  check_in, check_out, nights, rooms
 
-### 4. تحديث `RevenueChart` ببيانات حقيقية
+-- booking_flight_details
+  booking_id, airline, flight_number, departure_airport, 
+  arrival_airport, departure_date, departure_time
 
-استبدال البيانات الثابتة بجلب بيانات شهرية حقيقية من قاعدة البيانات.
+-- booking_car_details
+  booking_id, car_type, pickup_location, dropoff_location, 
+  pickup_date, dropoff_date
 
-### 5. تحديث Dashboard الرئيسي
+-- booking_transport_details
+  booking_id, vehicle_type, route, pickup_point, dropoff_point
+```
 
-إضافة كارت "صافي الربح" و"هامش الربح" في `EnhancedStatsCards`.
+### Data Migration (نقل البيانات)
+
+- SQL script ينقل البيانات من الـ 4 جداول القديمة إلى `bookings` + جداول التفاصيل
+- كل صف يحصل على `legacy_table` و `legacy_id` للتتبع
+- توليد `booking_number` تلقائي (BK-2026-00001)
+- RLS + Indexes على `organization_id`, `booking_type`, `status`, `customer_id`
+
+---
+
+## المرحلة 2: الصفحات والواجهة
+
+### صفحة `/bookings` — القائمة الموحدة
+- جدول يعرض كل الحجوزات من كل الأنواع
+- فلترة: نوع الحجز، الحالة، التاريخ، بحث نصي
+- أيقونة مختلفة لكل نوع (فندق/طيران/سيارة/نقل)
+- Pagination
+
+### صفحة `/bookings/new` — إنشاء حجز جديد
+- Step 1: اختيار نوع الحجز
+- Step 2: بيانات أساسية (عميل، مورد، سعر بيع، تكلفة)
+- Step 3: تفاصيل خاصة بالنوع (form ديناميكي)
+- Step 4: مراجعة وحفظ
+- يتم الحفظ في `bookings` + جدول التفاصيل المناسب
+
+### صفحة `/bookings/:id` — التفاصيل
+- عرض البيانات العامة + التفاصيل الخاصة بالنوع
+- أزرار: تعديل الحالة، إنشاء فاتورة، عرض سجل التدقيق
+
+---
+
+## المرحلة 3: تحديث الأنظمة المرتبطة
+
+### Hook موحد `useUnifiedBookings.ts`
+- CRUD كامل على جدول `bookings`
+- Join مع جداول التفاصيل حسب النوع
+- يحل محل الاستعلامات المكررة في الملفات الـ 33
+
+### تحديث `useProfitAnalytics.ts`
+- استعلام واحد على `bookings` بدل 4 استعلامات منفصلة
+- نفس النتيجة، أداء أفضل
+
+### تحديث `useAutomationEngine.ts`
+- Trigger واحد `booking_created` يعمل على `bookings`
+
+### تحديث `useOptimizedDashboard.tsx`
+- إحصائيات من جدول واحد بدل 4
 
 ---
 
@@ -76,25 +128,30 @@ ALTER TABLE flight_bookings ADD COLUMN additional_costs numeric DEFAULT 0;
 
 ```text
 ملفات جديدة:
-  src/hooks/useProfitAnalytics.ts         — هوك موحد للأرباح
-  src/pages/ProfitAnalytics.tsx           — صفحة Dashboard الأرباح
-  src/components/profits/
-    ProfitSummaryCards.tsx                 — الكروت الأربعة
-    ProfitOverviewTab.tsx                 — رسم بياني + أفضل موظف/عميل
-    BookingProfitsTab.tsx                 — جدول أرباح لكل حجز
-    CustomerProfitsTab.tsx                — جدول أرباح لكل عميل
-    EmployeeProfitsTab.tsx                — جدول أرباح لكل موظف
+  supabase/migrations/...               — Schema + Data migration + RLS
+  src/hooks/useUnifiedBookings.ts       — CRUD موحد
+  src/pages/UnifiedBookings.tsx         — قائمة الحجوزات
+  src/pages/NewUnifiedBooking.tsx       — إنشاء حجز
+  src/pages/UnifiedBookingDetails.tsx   — تفاصيل حجز
+  src/components/bookings/
+    BookingTypeSelector.tsx             — اختيار النوع
+    BookingBaseForm.tsx                 — البيانات الأساسية
+    HotelDetailsForm.tsx               — تفاصيل فندق
+    FlightDetailsForm.tsx              — تفاصيل طيران
+    CarDetailsForm.tsx                 — تفاصيل سيارة
+    TransportDetailsForm.tsx           — تفاصيل نقل
+    BookingStatusBadge.tsx             — شارة الحالة
 
 ملفات مُعدّلة:
-  src/App.tsx                             — إضافة route
-  src/components/layout/DashboardSidebar  — إضافة رابط
-  src/components/navbar/NavigationItems   — إضافة رابط
-  src/components/dashboard/RevenueChart   — بيانات حقيقية
-  src/hooks/useOptimizedDashboard         — إضافة صافي الربح
-  src/components/dashboard/EnhancedStatsCards — إضافة كارت الربح
+  src/App.tsx                          — إضافة routes
+  src/components/layout/DashboardSidebar — إضافة رابط "الحجوزات الموحدة"
+  src/hooks/useProfitAnalytics.ts      — استعلام موحد
+  src/hooks/useOptimizedDashboard.tsx   — إحصائيات موحدة
+  src/hooks/useAutomationEngine.ts     — trigger موحد
 ```
 
-### 6. التحديث التلقائي
-
-الأرباح محسوبة بالفعل عند إنشاء/تعديل الحجوزات (عبر `calculationHelpers`). سنتأكد أن الـ `queryKey` في `useProfitAnalytics` يتم invalidate عند أي mutation على الحجوزات.
+### ما لن يتغير (في هذه المرحلة):
+- صفحات الحجوزات القديمة تبقى تعمل (HotelBookings, FlightBookings, CarRentals, TransportBookings)
+- الجداول القديمة تبقى موجودة
+- يمكن إزالتها لاحقاً بعد التأكد من استقرار النظام الجديد
 
