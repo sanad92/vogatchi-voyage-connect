@@ -30,6 +30,7 @@ import Invoices from "@/pages/Invoices";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
 import ProfitLossReports from "@/pages/ProfitLossReports";
+import ProfitAnalytics from "@/pages/ProfitAnalytics";
 import ExpenseManagementEnhanced from "@/pages/ExpenseManagementEnhanced";
 import EnhancedEmployeesPage from "@/pages/EnhancedEmployeesPage";
 import AdminSettings from "@/pages/AdminSettings";
@@ -163,6 +164,7 @@ function App() {
                               <Route path="/suppliers" element={<Suppliers />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
+                              <Route path="/profit-analytics" element={<ProfitAnalytics />} />
                               <Route path="/expense-management" element={<ExpenseManagementEnhanced />} />
                               <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
                               <Route path="/admin-settings" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />

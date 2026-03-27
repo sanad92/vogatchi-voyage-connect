@@ -166,6 +166,13 @@ export const communicationNavItems: SimpleNavItem[] = [
     requiredPermissions: ['reports_view']
   },
   {
+    to: "/profit-analytics",
+    icon: BarChart3,
+    label: "تحليل الأرباح",
+    allowedRoles: [],
+    requiredPermissions: ['reports_view']
+  },
+  {
     to: "/customer-service",
     icon: Headphones,
     label: "خدمة العملاء",
