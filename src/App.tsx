@@ -164,6 +164,7 @@ function App() {
                               <Route path="/suppliers" element={<Suppliers />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/profit-loss-reports" element={<ProfitLossReports />} />
+                              <Route path="/profit-analytics" element={<ProfitAnalytics />} />
                               <Route path="/expense-management" element={<ExpenseManagementEnhanced />} />
                               <Route path="/employees-enhanced" element={<EnhancedEmployeesPage />} />
                               <Route path="/admin-settings" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />
