@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { HotelBooking } from "@/types/hotelBooking";
+import AuditLogViewer from "@/components/audit/AuditLogViewer";
 import { Button } from "@/components/ui/button";
 import { Ban, RotateCcw, FileText } from "lucide-react";
 import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStatusSelector";
