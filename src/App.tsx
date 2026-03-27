@@ -49,6 +49,7 @@ import CustomerPortalPage from "@/pages/CustomerPortalPage";
 import BookingsCalendar from "@/pages/BookingsCalendar";
 import DatabaseManager from "@/pages/DatabaseManager";
 import AutomationRules from "@/pages/AutomationRules";
+import Documents from "@/pages/Documents";
 import TeamManagement from "@/pages/TeamManagement";
 import NotFound from "@/pages/NotFound";
 import WhatsApp from "@/pages/WhatsApp";
