@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'الحجوزات',
     items: [
+      { title: 'الحجوزات الموحدة', href: '/bookings', icon: ClipboardList },
       { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck },
       { title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel },
       { title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane },
