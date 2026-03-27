@@ -27,7 +27,8 @@ import {
   Calendar as CalendarIcon,
   MessageSquare,
   Shield,
-  LandPlot
+  LandPlot,
+  FileCheck
 } from "lucide-react";
 
 export interface SimpleNavItem {
