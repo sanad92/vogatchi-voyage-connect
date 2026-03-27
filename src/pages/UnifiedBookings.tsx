@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Hotel, Plane, Car, Truck, Eye } from 'lucide-react';
-import { Button as PagButton } from '@/components/ui/button';
+import { Plus, Search, Hotel, Plane, Car, Truck, Eye, TrendingUp, TrendingDown, CalendarCheck, Clock, XCircle } from 'lucide-react';
 
 const typeConfig: Record<BookingType, { label: string; icon: React.ElementType; color: string }> = {
   hotel: { label: 'فندق', icon: Hotel, color: 'bg-blue-100 text-blue-800' },
@@ -31,7 +30,7 @@ const UnifiedBookings = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const pageSize = 20;
 
   const { bookings, totalCount, isLoading } = useUnifiedBookings({
     type: typeFilter !== 'all' ? typeFilter as BookingType : undefined,
@@ -43,6 +42,11 @@ const UnifiedBookings = () => {
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  // Quick stats from loaded data
+  const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const totalProfit = bookings.reduce((sum, b) => sum + (b.profit || 0), 0);
+
   return (
     <div className="space-y-4 p-4" dir="rtl">
       <div className="flex items-center justify-between">
@@ -51,6 +55,50 @@ const UnifiedBookings = () => {
           <Plus className="h-4 w-4 ml-2" />
           حجز جديد
         </Button>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10"><CalendarCheck className="h-5 w-5 text-primary" /></div>
+            <div>
+              <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
+              <p className="text-2xl font-bold">{totalCount}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950/30"><TrendingUp className="h-5 w-5 text-green-600" /></div>
+            <div>
+              <p className="text-sm text-muted-foreground">مؤكد</p>
+              <p className="text-2xl font-bold text-green-600">{confirmedCount}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-950/30"><Clock className="h-5 w-5 text-yellow-600" /></div>
+            <div>
+              <p className="text-sm text-muted-foreground">معلق</p>
+              <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${totalProfit >= 0 ? 'bg-green-100 dark:bg-green-950/30' : 'bg-red-100 dark:bg-red-950/30'}`}>
+              {totalProfit >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">إجمالي الربح</p>
+              <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {totalProfit.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Card>
@@ -119,7 +167,7 @@ const UnifiedBookings = () => {
                     const TypeIcon = tc.icon;
                     const sl = statusLabels[b.status] || statusLabels.pending;
                     return (
-                      <TableRow key={b.id} className="cursor-pointer hover:bg-muted/50"
+                      <TableRow key={b.id} className="cursor-pointer transition-colors hover:bg-muted/60"
                         onClick={() => navigate(`/bookings/${b.id}`)}>
                         <TableCell className="font-mono text-sm">{b.booking_number}</TableCell>
                         <TableCell>
@@ -132,8 +180,11 @@ const UnifiedBookings = () => {
                         <TableCell>{b.supplier_name || '—'}</TableCell>
                         <TableCell>{b.selling_price?.toLocaleString()} {b.currency}</TableCell>
                         <TableCell>{b.cost_price?.toLocaleString()} {b.currency}</TableCell>
-                        <TableCell className={b.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {b.profit?.toLocaleString()} {b.currency}
+                        <TableCell>
+                          <div className={`flex items-center gap-1 font-bold ${b.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {b.profit >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            {b.profit?.toLocaleString()} {b.currency}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {b.booking_statuses ? (
