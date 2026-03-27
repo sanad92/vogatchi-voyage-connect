@@ -1,40 +1,92 @@
 
 
-# تحسين تجربة المستخدم — نظام الحجوزات الموحد
+# تقرير الصلاحيات — المشاكل الحالية وخطة الإصلاح
 
-## الوضع الحالي
+## المشاكل المكتشفة
 
-الصفحات الثلاث موجودة وتعمل لكن تفتقر لـ:
-- **صفحة الإنشاء**: لا يوجد Step Indicator، لا توجد مراجعة قبل الحفظ
-- **صفحة القائمة**: تعمل جيداً (أيقونات + ربح + ألوان موجودة بالفعل) — تحتاج تحسينات بسيطة
-- **صفحة التفاصيل**: لا يوجد Quick Actions (فاتورة، واتساب، تغيير حالة)، لا يوجد Audit Log
+### المشكلة 1: الـ Sidebar لا يتحقق من أي صلاحيات (خطيرة)
+`DashboardSidebar.tsx` يعرض **كل الروابط لكل المستخدمين** بدون أي فحص. موظف بدور `viewer` يرى نفس القائمة التي يراها الـ `owner`. الروابط مثل "الإعدادات" و"الموظفين" و"سجل التدقيق" ظاهرة للجميع.
+
+### المشكلة 2: `PermissionNavLink` يتجاهل `requiredPermissions`
+الكومبوننت يفحص `allowedRoles` فقط ويتجاهل `requiredPermissions` تماماً. وبما أن معظم الـ items في `NavigationItems.tsx` تحدد `allowedRoles: []` (فارغة)، فكلها تظهر لأي مستخدم.
+
+### المشكلة 3: معظم الصفحات بدون حماية على مستوى الـ Route
+من App.tsx، فقط هذه الصفحات محمية بـ `AdminRouteGuard`:
+- `/admin-settings`, `/landing-admin`, `/admin-import-export`, `/site-customization`
+- `/team`, `/whatsapp-admin`, `/admin/cms`, `/monitoring`
+
+**صفحات غير محمية** (أي مستخدم يقدر يدخلها بالرابط مباشرة):
+- `/expense-management`, `/employees-enhanced`, `/bank-accounts`
+- `/payment-orders`, `/profit-analytics`, `/audit-log`
+- `/automation`, `/documents`, `/suppliers`
+- `/bookings` (الموحد), `/quotes`
+
+### المشكلة 4: تناقض بين نظامين
+يوجد نظامان منفصلان يعملان بالتوازي:
+1. **`hasRole(role)`** — يقارن مستوى الدور (hierarchy): owner > admin > manager > agent > viewer
+2. **`useSupabasePermissions`** — نظام permissions دقيق (مثل `bookings_create`, `invoices_delete`)
+
+لكن النظام الثاني **لا يُستخدم تقريباً** — لا في الـ Sidebar ولا في الـ Routes. فقط `SupplierPermissionCheck` يستخدمه.
+
+### المشكلة 5: صلاحيات غير موجودة في القائمة
+بعض `requiredPermissions` في `NavigationItems` غير معرّفة في `useSupabasePermissions`:
+- `financial_view` (للبنوك وأوامر الدفع)
+- `customer_service_view`
+- `customer_portal_view`
+- `whatsapp_view`, `whatsapp_admin`
+- `admin_settings`
 
 ---
 
-## التعديلات المطلوبة
+## خطة الإصلاح
 
-### 1. صفحة الإنشاء (`NewUnifiedBooking.tsx`)
+### المرحلة 1: توحيد نظام الصلاحيات
 
-- إضافة **Step Indicator** مرئي (3 خطوات مع أرقام وألوان)
-- إضافة **Step 4: مراجعة** — ملخص لكل البيانات قبل الحفظ
-- تحسين حساب الربح المتوقع بلون أخضر/أحمر ديناميكي
-- إضافة **هامش الربح %** بجانب الربح
+**تحديث `useSupabasePermissions.tsx`:**
+- إضافة الصلاحيات الناقصة (`financial_view`, `whatsapp_view`, إلخ)
+- تحديد بالضبط كل دور يشوف إيه
 
-### 2. صفحة القائمة (`UnifiedBookings.tsx`)
+### المرحلة 2: إصلاح الـ Sidebar
 
-- إضافة **إحصائيات سريعة** فوق الجدول (4 كروت: إجمالي الحجوزات، مؤكد، معلق، إجمالي الربح)
-- تحسين عرض الربح بـ **font-bold** و أيقونة سهم أخضر/أحمر
-- إضافة **hover effect** أوضح على الصفوف
+**تحديث `DashboardSidebar.tsx`:**
+- إضافة `requiredPermission` لكل `NavItem`
+- فحص الصلاحيات باستخدام `useSupabasePermissions` قبل عرض كل رابط
+- إخفاء مجموعة "الإدارة" بالكامل عن الـ `viewer` و `agent`
 
-### 3. صفحة التفاصيل (`UnifiedBookingDetails.tsx`) — التحسين الأكبر
+### المرحلة 3: إصلاح `PermissionNavLink`
 
-- إضافة **Quick Actions Bar** في أعلى الصفحة:
-  - زر "تغيير الحالة" (dropdown مع الحالات)
-  - زر "إنشاء فاتورة" (ينقل لصفحة المستندات)
-  - زر "إرسال واتساب" (يفتح رابط wa.me)
-- إضافة **قسم الربح** مستقل بكارت ملون (سعر بيع، تكلفة، ربح، هامش %)
-- إضافة **قسم Audit Log** باستخدام `AuditLogViewer` الموجود (compact mode)
-- إعادة تنظيم الأقسام: معلومات عامة → تفاصيل النوع → الربح → Audit Log
+**تحديث `PermissionNavLink.tsx`:**
+- إضافة فحص `requiredPermissions` بجانب `allowedRoles`
+- استخدام `useSupabasePermissions().hasPermission()` للتحقق
+
+### المرحلة 4: حماية الـ Routes
+
+**إنشاء `PermissionRouteGuard.tsx`:**
+- كومبوننت جديد يقبل `requiredPermission` ويمنع الوصول إذا المستخدم ما عنده الصلاحية
+- تطبيقه على كل الصفحات الحساسة في `App.tsx`
+
+### المرحلة 5: مصفوفة الصلاحيات النهائية
+
+```text
+الصفحة                  │ viewer │ agent │ manager │ admin │ owner
+────────────────────────┼────────┼───────┼─────────┼───────┼──────
+لوحة التحكم              │   ✓    │   ✓   │    ✓    │   ✓   │   ✓
+العملاء                  │   ✓    │   ✓   │    ✓    │   ✓   │   ✓
+الحجوزات (عرض)           │   ✓    │   ✓   │    ✓    │   ✓   │   ✓
+الحجوزات (إنشاء/تعديل)   │   ✗    │   ✓   │    ✓    │   ✓   │   ✓
+الفواتير                 │   ✓    │   ✓   │    ✓    │   ✓   │   ✓
+الموردين                 │   ✓    │   ✓   │    ✓    │   ✓   │   ✓
+المصروفات               │   ✗    │   ✗   │    ✓    │   ✓   │   ✓
+الموظفين                │   ✗    │   ✗   │    ✓    │   ✓   │   ✓
+الحسابات البنكية         │   ✗    │   ✗   │    ✓    │   ✓   │   ✓
+التقارير                 │   ✗    │   ✓   │    ✓    │   ✓   │   ✓
+تحليل الأرباح            │   ✗    │   ✗   │    ✓    │   ✓   │   ✓
+الفريق                  │   ✗    │   ✗   │    ✗    │   ✓   │   ✓
+الأتمتة                 │   ✗    │   ✗   │    ✗    │   ✓   │   ✓
+سجل التدقيق             │   ✗    │   ✗   │    ✗    │   ✓   │   ✓
+الإعدادات               │   ✗    │   ✗   │    ✗    │   ✗   │   ✓
+واتساب إدارة             │   ✗    │   ✗   │    ✗    │   ✗   │   ✓
+```
 
 ---
 
@@ -42,10 +94,13 @@
 
 ```text
 ملفات مُعدّلة:
-  src/pages/NewUnifiedBooking.tsx       — Step indicator + Step 4 مراجعة
-  src/pages/UnifiedBookings.tsx         — إحصائيات سريعة + تحسينات بصرية
-  src/pages/UnifiedBookingDetails.tsx   — Quick Actions + قسم الربح + Audit Log
-```
+  src/hooks/useSupabasePermissions.tsx     — إضافة الصلاحيات الناقصة
+  src/components/layout/DashboardSidebar.tsx — فحص الصلاحيات لكل رابط
+  src/components/navbar/PermissionNavLink.tsx — فحص requiredPermissions
+  src/components/navbar/NavigationItems.tsx  — تصحيح allowedRoles
+  src/App.tsx                              — إضافة Guards للصفحات الحساسة
 
-لا حاجة لملفات جديدة أو تعديلات على قاعدة البيانات.
+ملفات جديدة:
+  src/components/guards/PermissionRouteGuard.tsx — حماية الـ Routes بالصلاحيات
+```
 
