@@ -30,6 +30,7 @@ import Invoices from "@/pages/Invoices";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
 import ProfitLossReports from "@/pages/ProfitLossReports";
+import ProfitAnalytics from "@/pages/ProfitAnalytics";
 import ExpenseManagementEnhanced from "@/pages/ExpenseManagementEnhanced";
 import EnhancedEmployeesPage from "@/pages/EnhancedEmployeesPage";
 import AdminSettings from "@/pages/AdminSettings";
