@@ -14,6 +14,7 @@ import PaymentPage from "@/pages/PaymentPage";
 import OptimizedIndex from "@/pages/OptimizedIndex";
 import MonitoringDashboard from "@/pages/MonitoringDashboard";
 import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
+import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
 import Customers from "@/pages/Customers";
 import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
 import NewCustomer from "@/pages/NewCustomer";
