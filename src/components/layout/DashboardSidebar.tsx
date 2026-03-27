@@ -75,6 +75,7 @@ const navGroups: NavGroup[] = [
       { title: 'الموظفين', href: '/employees-enhanced', icon: Users },
       { title: 'الفريق', href: '/team', icon: Users },
       { title: 'الأتمتة', href: '/automation', icon: Zap },
+      { title: 'سجل التدقيق', href: '/audit-log', icon: Shield },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings },
     ],
   },

@@ -148,6 +148,15 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
           onClose={() => setShowInvoiceCreator(false)}
         />
       )}
+
+      {/* سجل التدقيق للحجز */}
+      <AuditLogViewer
+        targetTable="hotel_bookings"
+        targetId={booking.id}
+        title="سجل تغييرات الحجز"
+        compact
+        showFilters={false}
+      />
     </div>
   );
 };
