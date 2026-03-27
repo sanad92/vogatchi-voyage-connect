@@ -371,7 +371,7 @@ const AutomationRules = () => {
                         <Label className="text-xs">أيام قبل السفر</Label>
                         <Input
                           type="number"
-                          value={action.action_config.days_before || 3}
+                          value={(action.action_config as any).days_before || 3}
                           onChange={e => updateActionConfig(index, 'days_before', e.target.value)}
                           min={1}
                           max={30}
