@@ -61,7 +61,7 @@ export const useOptimizedDashboard = () => {
           customers, recentBookings, recentCustomers
         };
       } catch {
-        return { realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0 }, crmStats: { vipCustomers: 0, loyaltyPoints: 0 }, customers: [], recentBookings: [], recentCustomers: [] };
+        return { realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0 }, crmStats: { vipCustomers: 0, loyaltyPoints: 0 }, customers: [], recentBookings: [], recentCustomers: [] };
       }
     },
     staleTime: 5 * 60 * 1000,
