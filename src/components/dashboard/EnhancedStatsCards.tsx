@@ -47,6 +47,7 @@ interface EnhancedStatsCardsProps {
     totalRevenue: number;
     activeCustomers: number;
     monthlyGrowth: number;
+    netProfit?: number;
   };
 }
 
