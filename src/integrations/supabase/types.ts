@@ -561,6 +561,156 @@ export type Database = {
           },
         ]
       }
+      booking_car_details: {
+        Row: {
+          booking_id: string
+          car_type: string | null
+          created_at: string | null
+          daily_rate: number | null
+          dropoff_date: string | null
+          dropoff_location: string | null
+          id: string
+          insurance_included: boolean | null
+          pickup_date: string | null
+          pickup_location: string | null
+        }
+        Insert: {
+          booking_id: string
+          car_type?: string | null
+          created_at?: string | null
+          daily_rate?: number | null
+          dropoff_date?: string | null
+          dropoff_location?: string | null
+          id?: string
+          insurance_included?: boolean | null
+          pickup_date?: string | null
+          pickup_location?: string | null
+        }
+        Update: {
+          booking_id?: string
+          car_type?: string | null
+          created_at?: string | null
+          daily_rate?: number | null
+          dropoff_date?: string | null
+          dropoff_location?: string | null
+          id?: string
+          insurance_included?: boolean | null
+          pickup_date?: string | null
+          pickup_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_car_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_flight_details: {
+        Row: {
+          airline: string | null
+          arrival_airport: string | null
+          arrival_date: string | null
+          arrival_time: string | null
+          booking_id: string
+          created_at: string | null
+          departure_airport: string | null
+          departure_date: string | null
+          departure_time: string | null
+          flight_number: string | null
+          id: string
+          pnr: string | null
+          ticket_number: string | null
+        }
+        Insert: {
+          airline?: string | null
+          arrival_airport?: string | null
+          arrival_date?: string | null
+          arrival_time?: string | null
+          booking_id: string
+          created_at?: string | null
+          departure_airport?: string | null
+          departure_date?: string | null
+          departure_time?: string | null
+          flight_number?: string | null
+          id?: string
+          pnr?: string | null
+          ticket_number?: string | null
+        }
+        Update: {
+          airline?: string | null
+          arrival_airport?: string | null
+          arrival_date?: string | null
+          arrival_time?: string | null
+          booking_id?: string
+          created_at?: string | null
+          departure_airport?: string | null
+          departure_date?: string | null
+          departure_time?: string | null
+          flight_number?: string | null
+          id?: string
+          pnr?: string | null
+          ticket_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_flight_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_hotel_details: {
+        Row: {
+          board_type: string | null
+          booking_id: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          hotel_name: string | null
+          id: string
+          nights: number | null
+          room_type: string | null
+          rooms: number | null
+        }
+        Insert: {
+          board_type?: string | null
+          booking_id: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          hotel_name?: string | null
+          id?: string
+          nights?: number | null
+          room_type?: string | null
+          rooms?: number | null
+        }
+        Update: {
+          board_type?: string | null
+          booking_id?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          hotel_name?: string | null
+          id?: string
+          nights?: number | null
+          room_type?: string | null
+          rooms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_hotel_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_special_requests: {
         Row: {
           booking_id: string | null
@@ -690,6 +840,168 @@ export type Database = {
           sort_order?: number | null
         }
         Relationships: []
+      }
+      booking_transport_details: {
+        Row: {
+          booking_id: string
+          created_at: string | null
+          dropoff_point: string | null
+          id: string
+          passengers: number | null
+          pickup_point: string | null
+          route: string | null
+          vehicle_type: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string | null
+          dropoff_point?: string | null
+          id?: string
+          passengers?: number | null
+          pickup_point?: string | null
+          route?: string | null
+          vehicle_type?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string | null
+          dropoff_point?: string | null
+          id?: string
+          passengers?: number | null
+          pickup_point?: string | null
+          route?: string | null
+          vehicle_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_transport_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          booking_number: string
+          booking_type: string
+          cost_price: number | null
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          employee_id: string | null
+          end_date: string | null
+          id: string
+          legacy_id: string | null
+          legacy_table: string | null
+          notes: string | null
+          organization_id: string
+          profit: number | null
+          quote_id: string | null
+          selling_price: number | null
+          start_date: string | null
+          status: string | null
+          status_id: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_number: string
+          booking_type: string
+          cost_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          legacy_id?: string | null
+          legacy_table?: string | null
+          notes?: string | null
+          organization_id: string
+          profit?: number | null
+          quote_id?: string | null
+          selling_price?: number | null
+          start_date?: string | null
+          status?: string | null
+          status_id?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_number?: string
+          booking_type?: string
+          cost_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          employee_id?: string | null
+          end_date?: string | null
+          id?: string
+          legacy_id?: string | null
+          legacy_table?: string | null
+          notes?: string | null
+          organization_id?: string
+          profit?: number | null
+          quote_id?: string | null
+          selling_price?: number | null
+          start_date?: string | null
+          status?: string | null
+          status_id?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaign_sends: {
         Row: {
@@ -5356,6 +5668,7 @@ export type Database = {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
       }
+      generate_booking_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_quote_number: { Args: never; Returns: string }
       get_duplicate_customers: {
