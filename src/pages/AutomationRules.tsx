@@ -342,7 +342,7 @@ const AutomationRules = () => {
                       <div>
                         <Label className="text-xs">عنوان البريد</Label>
                         <Input
-                          value={action.action_config.subject || ''}
+                          value={(action.action_config as any).subject || ''}
                           onChange={e => updateActionConfig(index, 'subject', e.target.value)}
                           placeholder="تأكيد الحجز"
                           className="text-sm"
