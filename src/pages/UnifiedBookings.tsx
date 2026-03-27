@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Hotel, Plane, Car, Truck, Eye } from 'lucide-react';
-import PaginationControlsUI from '@/components/common/PaginationControlsUI';
+import { Button as PagButton } from '@/components/ui/button';
 
 const typeConfig: Record<BookingType, { label: string; icon: React.ElementType; color: string }> = {
   hotel: { label: 'فندق', icon: Hotel, color: 'bg-blue-100 text-blue-800' },
