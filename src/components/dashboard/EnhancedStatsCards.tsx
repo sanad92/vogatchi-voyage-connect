@@ -99,12 +99,12 @@ const EnhancedStatsCards = ({ realStats }: EnhancedStatsCardsProps) => {
       iconBg: 'bg-white/25 backdrop-blur-sm',
     },
     {
-      title: 'معدل النمو',
-      value: `${realStats.monthlyGrowth.toFixed(1)}%`,
+      title: 'صافي الربح',
+      value: `${((realStats.netProfit || 0) / 1000).toFixed(0)}k ج.م`,
       icon: TrendingUp,
-      trend: 'مقارنة بالشهر السابق',
-      trendUp: realStats.monthlyGrowth >= 0,
-      gradient: realStats.monthlyGrowth >= 0
+      trend: realStats.netProfit && realStats.totalRevenue ? `هامش ${((realStats.netProfit / realStats.totalRevenue) * 100).toFixed(1)}%` : '',
+      trendUp: (realStats.netProfit || 0) >= 0,
+      gradient: (realStats.netProfit || 0) >= 0
         ? 'bg-gradient-to-br from-[hsl(340,70%,52%)] via-[hsl(350,65%,48%)] to-[hsl(0,60%,40%)]'
         : 'bg-gradient-to-br from-[hsl(0,84%,60%)] to-[hsl(0,84%,45%)]',
       iconBg: 'bg-white/25 backdrop-blur-sm',
