@@ -1549,6 +1549,68 @@ export type Database = {
           },
         ]
       }
+      document_templates: {
+        Row: {
+          accent_color: string | null
+          bank_details: string | null
+          created_at: string | null
+          document_type: string
+          footer_text: string | null
+          header_color: string | null
+          id: string
+          is_default: boolean | null
+          notes_text: string | null
+          organization_id: string
+          show_bank_details: boolean | null
+          show_logo: boolean | null
+          template_name: string
+          terms_text: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          bank_details?: string | null
+          created_at?: string | null
+          document_type: string
+          footer_text?: string | null
+          header_color?: string | null
+          id?: string
+          is_default?: boolean | null
+          notes_text?: string | null
+          organization_id: string
+          show_bank_details?: boolean | null
+          show_logo?: boolean | null
+          template_name?: string
+          terms_text?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          bank_details?: string | null
+          created_at?: string | null
+          document_type?: string
+          footer_text?: string | null
+          header_color?: string | null
+          id?: string
+          is_default?: boolean | null
+          notes_text?: string | null
+          organization_id?: string
+          show_bank_details?: boolean | null
+          show_logo?: boolean | null
+          template_name?: string
+          terms_text?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_queue: {
         Row: {
           attempts: number
@@ -2509,6 +2571,90 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "forms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_documents: {
+        Row: {
+          booking_id: string | null
+          booking_type: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          document_number: string
+          document_type: string
+          file_path: string | null
+          file_url: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          organization_id: string
+          sent_via_email: boolean | null
+          sent_via_whatsapp: boolean | null
+          title: string
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          booking_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          document_number: string
+          document_type: string
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          organization_id: string
+          sent_via_email?: boolean | null
+          sent_via_whatsapp?: boolean | null
+          title: string
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          booking_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          document_number?: string
+          document_type?: string
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          organization_id?: string
+          sent_via_email?: boolean | null
+          sent_via_whatsapp?: boolean | null
+          title?: string
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
