@@ -1,149 +1,158 @@
 
 
-# مراجعة المعادلات — النتائج
+# نظام عروض الأسعار (Quotes) — Quote → Booking → Invoice
+
+## الوضع الحالي
+
+النظام يحتوي بالفعل على:
+- **جداول الحجوزات**: `hotel_bookings`, `flight_bookings`, `car_rentals`, `transport_bookings`
+- **جدول الفواتير**: `invoices` مرتبط بالحجوزات عبر `booking_id` + `booking_type`
+- **العملاء والموردين**: `customers`, `suppliers`
+- **Multi-tenant**: كل الجداول تحتوي `organization_id`
+
+**المطلوب**: إضافة كيان "عرض سعر" (Quote) كنقطة بداية قبل الحجز، مع تدفق تلقائي: Quote → Booking → Invoice.
 
 ---
 
-## المعادلات الصحيحة ✅
+## 1. Database Schema
 
-### 1. حساب ليالي الفندق (`calculationHelpers.ts`)
-- `numberOfNights = (checkOut - checkIn) / millisecondsPerDay` — صحيح، يستخدم `Math.ceil`
-- `totalCost = sellingPricePerNight × numberOfNights` — صحيح
-- `totalProfit = totalCost - (costPerNight × numberOfNights)` — صحيح
-- `profitMargin = (totalProfit / totalCost) × 100` — صحيح
+### جدول `quotes` (عروض الأسعار)
 
-### 2. حساب الطيران (`calculationHelpers.ts`)
-- `totalCost = (ticketPricePerPerson × numberOfPassengers) + taxesAndFees` — صحيح
-- `totalProfit = totalCost - supplierCost` — صحيح
-
-### 3. حساب الفاتورة (`useAutoCalculations.tsx`)
-- `discountedAmount = subtotal - discountAmount` — صحيح
-- `vatAmount = discountedAmount × (vatRate / 100)` — صحيح (VAT على المبلغ بعد الخصم)
-- `finalAmount = discountedAmount + vatAmount` — صحيح
-
-### 4. حساب تأجير السيارات (`CarRentalForm.tsx`)
-- `totalRentalCost = dailyRate × rentalDurationDays` — صحيح
-- `supplierTotalCost = supplierDailyCost × rentalDurationDays` — صحيح
-- `totalProfit = totalRentalCost - supplierTotalCost` — صحيح
-
-### 5. حساب الراتب (`SalaryCalculation.tsx`)
-- `netSalary = grossSalary - deductions - taxAmount - insuranceDeduction` — صحيح
-
-### 6. حساب الأرباح والخسائر (`useProfitLossCalculations.tsx`)
-- `grossProfit = totalRevenue - directCosts` — صحيح
-- `netProfit = grossProfit - indirectCosts` — صحيح
-- `profitMargin = (netProfit / totalRevenue) × 100` — صحيح
-
-### 7. حساب العمولة (`calculationHelpers.ts`)
-- نسبة مئوية: `amount × (rate / 100)` — صحيح
-- مبلغ ثابت: يرجع المبلغ مباشرة — صحيح
-
-### 8. الضريبة والخصم — صحيح
-
----
-
-## المشاكل المكتشفة ⚠️
-
-### مشكلة 1: تناقض في حساب الليالي بين ملفين
-**الملف:** `src/hooks/useBookingCalculations.ts` (سطر 18-19)
-
-```typescript
-// يستخدم Math.max بدون Math.ceil — ممكن يطلع رقم عشري
-const numberOfNights = Math.max(0, 
-  new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()
-) / (1000 * 60 * 60 * 24);
+```sql
+CREATE TABLE public.quotes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid REFERENCES organizations(id),
+  quote_number text NOT NULL,
+  customer_id uuid REFERENCES customers(id),
+  customer_name text,
+  status text DEFAULT 'draft', -- draft, sent, accepted, rejected, expired
+  travel_date date,
+  return_date date,
+  destination text,
+  number_of_travelers integer DEFAULT 1,
+  notes text,
+  subtotal numeric DEFAULT 0,
+  discount_amount numeric DEFAULT 0,
+  vat_rate numeric DEFAULT 0,
+  vat_amount numeric DEFAULT 0,
+  total_amount numeric DEFAULT 0,
+  valid_until date,
+  assigned_employee_id uuid REFERENCES employees(id),
+  created_by uuid,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 ```
 
-بينما `calculationHelpers.ts` يستخدم `Math.ceil` — الصحيح. هذا الملف القديم ممكن يطلع `0.9583` بدل `1` بسبب فروق التوقيت (DST).
+### جدول `quote_items` (عناصر العرض)
 
-**الإصلاح:** استخدام `Math.ceil` مثل `calculationHelpers.ts`، أو الأفضل استخدام `calculateNights` مباشرة.
-
----
-
-### مشكلة 2: حساب الطيران لا يشمل الضرائب في نموذج واحد
-**الملف:** `src/components/flight-bookings/hooks/useFlightBookingForm.tsx` (سطر 81-82)
-
-```typescript
-const totalCost = ticketPrice * numberOfPassengers;
-// ❌ لا يضيف taxes_and_fees!
+```sql
+CREATE TABLE public.quote_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_id uuid REFERENCES quotes(id) ON DELETE CASCADE,
+  item_type text NOT NULL, -- hotel, flight, transport, car_rental, service
+  description text NOT NULL,
+  supplier_id uuid REFERENCES suppliers(id),
+  cost_price numeric DEFAULT 0,    -- تكلفة المورد
+  selling_price numeric DEFAULT 0, -- سعر البيع للعميل
+  quantity integer DEFAULT 1,
+  total_cost numeric DEFAULT 0,
+  total_selling numeric DEFAULT 0,
+  details jsonb DEFAULT '{}',      -- تفاصيل إضافية حسب النوع
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 ```
 
-بينما `calculationHelpers.ts` يحسبها صح:
-```typescript
-const totalCost = (ticketPricePerPerson * numberOfPassengers) + taxesAndFees;
+### إضافة أعمدة ربط
+
+```sql
+-- ربط الحجوزات بعرض السعر
+ALTER TABLE hotel_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
+ALTER TABLE flight_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
+ALTER TABLE car_rentals ADD COLUMN quote_id uuid REFERENCES quotes(id);
+ALTER TABLE transport_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
+
+-- ربط الفاتورة بعرض السعر
+ALTER TABLE invoices ADD COLUMN quote_id uuid REFERENCES quotes(id);
 ```
 
-**التأثير:** الحجوزات المُنشأة من هذا النموذج تُحفظ بـ `total_cost` أقل من الحقيقي، وبالتالي `total_profit` أعلى من الحقيقي.
+### RLS + Indexes
+
+- سياسات RLS مبنية على `organization_id` مع `user_belongs_to_org`
+- فهارس على `organization_id`, `customer_id`, `status`, `quote_id`
 
 ---
 
-### مشكلة 3: حساب ربح تأجير السيارات غير متسق
-**الملف:** `src/hooks/useEnhancedCarRentalForm.tsx` (سطر 229) يحسب الربح هكذا:
-```typescript
-total_profit: totalRentalCost - supplierTotalCost - insurance_cost - additional_fees
-```
+## 2. الصفحات المطلوبة (4 صفحات)
 
-بينما `CarRentalForm.tsx` (سطر 87) يحسبه:
-```typescript
-total_profit: totalRentalCost - supplierTotalCost
-// ❌ لا يخصم التأمين والرسوم الإضافية
-```
+### صفحة 1: قائمة عروض الأسعار `/quotes`
+- جدول بالعروض مع فلترة (حالة، تاريخ، عميل)
+- بحث بالرقم أو اسم العميل
+- Pagination
+- أزرار: إنشاء عرض جديد، عرض التفاصيل
 
-**التأثير:** نموذجين مختلفين يحسبون الربح بطريقتين مختلفتين.
+### صفحة 2: إنشاء عرض سعر `/quotes/new`
+- اختيار العميل (أو إنشاء جديد)
+- إضافة عناصر (فندق/طيران/نقل/خدمة) مع سعر التكلفة وسعر البيع
+- حساب تلقائي للإجمالي والربح والضريبة
+- تعيين موظف مسؤول
+- حفظ كمسودة أو إرسال
 
----
+### صفحة 3: تفاصيل عرض السعر `/quotes/:id`
+- عرض كامل للبيانات والعناصر
+- أزرار تغيير الحالة (إرسال / قبول / رفض)
+- **زر "تحويل لحجز"** — ينشئ حجوزات + فاتورة تلقائياً
+- عرض الحجوزات والفواتير المرتبطة
 
-### مشكلة 4: الأرباح والخسائر لا تشمل النقل وتأجير السيارات
-**الملف:** `src/hooks/useProfitLossCalculations.tsx`
-
-التقرير يحسب الإيرادات من الفنادق والطيران فقط، ولا يشمل:
-- حجوزات النقل (`transport_bookings.total_cost`)
-- تأجير السيارات (`car_rentals.total_rental_cost`)
-
-**التأثير:** تقرير الأرباح والخسائر ناقص — لا يعكس الإيرادات الفعلية الكاملة.
-
----
-
-### مشكلة 5: `remaining_amount` ممكن يكون سالب
-**عدة ملفات** — مثلاً `useFlightBookingForm.tsx` سطر 107:
-```typescript
-remaining_amount: totalCost - (data.paid_amount || 0)
-// ❌ لو paid_amount أكبر من totalCost، المبلغ المتبقي يبقى سالب
-```
-
-بينما `calculationHelpers.ts` يستخدم `Math.max(0, ...)` — الصحيح. لكن الاستخدام الفعلي في النماذج لا يستخدم هذه الدالة.
+### صفحة 4: تعديل عرض السعر `/quotes/:id/edit`
+- نفس نموذج الإنشاء مع بيانات العرض الحالي
 
 ---
 
-### مشكلة 6: Expenses غير مفلترة بالعملة بشكل كامل
-**الملف:** `useProfitLossCalculations.tsx` سطر 85
+## 3. تدفق التحويل (Quote → Booking → Invoice)
 
-المصروفات مفلترة بـ `currency = 'EGP'` فقط. المصروفات بعملات أخرى (USD, SAR) يتم تجاهلها تماماً من التقرير.
+عند الضغط على "تحويل لحجز":
+1. تحديث حالة العرض إلى `accepted`
+2. لكل عنصر في `quote_items`:
+   - إنشاء حجز في الجدول المناسب (`hotel_bookings` / `flight_bookings` / إلخ) مع `quote_id`
+3. إنشاء فاتورة واحدة مجمعة مرتبطة بـ `quote_id`
+4. كل هذا في transaction واحد
 
 ---
 
-## ملخص الإصلاحات المطلوبة
+## 4. الملفات المطلوب إنشاؤها
 
 ```text
-┌──────┬──────────────────────────────────────────────────┬──────────┐
-│ رقم  │ المشكلة                                          │ الأثر    │
-├──────┼──────────────────────────────────────────────────┼──────────┤
-│  1   │ useBookingCalculations لا يستخدم Math.ceil       │ منخفض   │
-│  2   │ نموذج الطيران لا يضيف الضرائب للـ totalCost     │ عالي 🔴 │
-│  3   │ ربح السيارات غير متسق بين النموذجين              │ متوسط   │
-│  4   │ تقرير P&L لا يشمل النقل وتأجير السيارات         │ عالي 🔴 │
-│  5   │ remaining_amount ممكن يكون سالب                  │ منخفض   │
-│  6   │ المصروفات بعملات غير EGP غير محسوبة              │ متوسط   │
-└──────┴──────────────────────────────────────────────────┴──────────┘
+src/pages/Quotes.tsx              — قائمة العروض
+src/pages/NewQuote.tsx            — إنشاء عرض
+src/pages/QuoteDetails.tsx        — تفاصيل + تحويل
+src/hooks/useQuotes.ts            — CRUD + فلترة
+src/hooks/useQuoteConversion.ts   — تحويل عرض → حجز + فاتورة
+src/components/quotes/
+  QuoteForm.tsx                   — نموذج الإنشاء/التعديل
+  QuoteItemsEditor.tsx            — محرر العناصر
+  QuoteStatusBadge.tsx            — شارة الحالة
+  QuotesList.tsx                  — جدول العروض
+  ConvertQuoteDialog.tsx          — تأكيد التحويل
 ```
 
-## خطة الإصلاح
+### تعديل ملفات موجودة:
+- **`App.tsx`**: إضافة routes للصفحات الجديدة
+- **Sidebar/Navigation**: إضافة رابط "عروض الأسعار" في القائمة الجانبية
 
-### الملفات المطلوب تعديلها:
+---
 
-1. **`src/hooks/useBookingCalculations.ts`** — استخدام `Math.ceil` بدل القسمة المباشرة
-2. **`src/components/flight-bookings/hooks/useFlightBookingForm.tsx`** — إضافة `taxes_and_fees` لحساب `totalCost`
-3. **`src/components/transport/CarRentalForm.tsx`** — خصم التأمين والرسوم من الربح
-4. **`src/hooks/useProfitLossCalculations.tsx`** — إضافة إيرادات وتكاليف النقل وتأجير السيارات + تحويل المصروفات بالعملات الأخرى
-5. **`src/hooks/useEnhancedFlightForm.tsx`** + **`src/components/transport/CarRentalForm.tsx`** — استخدام `Math.max(0, ...)` للمبلغ المتبقي
+## 5. ملخص العلاقات
+
+```text
+Customer ──┐
+           ├── Quote ──── Quote Items (hotel/flight/transport/service)
+Employee ──┘      │
+                  │ [تحويل]
+                  ▼
+           ┌── Bookings (hotel_bookings, flight_bookings, etc.)
+           │      │
+           └── Invoice
+```
 
