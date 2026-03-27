@@ -1,10 +1,13 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { useBookingDetails } from '@/hooks/useUnifiedBookings';
+import { useBookingDetails, useUnifiedBookings } from '@/hooks/useUnifiedBookings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Hotel, Plane, Car, Truck, User, Building2, Calendar, DollarSign } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowRight, Hotel, Plane, Car, Truck, User, DollarSign, TrendingUp, TrendingDown, FileText, MessageCircle, RefreshCw } from 'lucide-react';
+import AuditLogViewer from '@/components/audit/AuditLogViewer';
+import { toast } from 'sonner';
 
 const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
   hotel: { label: 'حجز فندق', icon: Hotel },
@@ -17,16 +20,34 @@ const UnifiedBookingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: booking, isLoading, error } = useBookingDetails(id || '');
+  const { updateBookingStatus } = useUnifiedBookings();
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
   if (error || !booking) return <div className="p-8 text-center text-destructive">خطأ في تحميل الحجز</div>;
 
   const ti = typeInfo[booking.booking_type] || typeInfo.hotel;
   const TypeIcon = ti.icon;
+  const profit = (booking.selling_price || 0) - (booking.cost_price || 0);
+  const margin = booking.selling_price > 0 ? (profit / booking.selling_price) * 100 : 0;
+
+  const handleStatusChange = async (newStatus: string) => {
+    await updateBookingStatus.mutateAsync({ id: booking.id, status: newStatus as any });
+    toast.success('تم تحديث الحالة');
+  };
+
+  const handleWhatsApp = () => {
+    const phone = booking.customers?.phone;
+    if (phone) {
+      window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحباً، بخصوص الحجز رقم ${booking.booking_number}`)}`, '_blank');
+    } else {
+      toast.error('لا يوجد رقم هاتف للعميل');
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4" dir="rtl">
-      <div className="flex items-center gap-3">
+      {/* Header + Quick Actions */}
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" onClick={() => navigate('/bookings')}>
           <ArrowRight className="h-4 w-4" />
         </Button>
@@ -34,23 +55,70 @@ const UnifiedBookingDetails = () => {
         <Badge variant="outline" className="mr-2">
           <TypeIcon className="h-3 w-3 ml-1" />{ti.label}
         </Badge>
+        <div className="flex-1" />
+        {/* Quick Actions */}
+        <Select value={booking.status} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-[140px]">
+            <RefreshCw className="h-3 w-3 ml-1" />
+            <SelectValue placeholder="تغيير الحالة" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">معلق</SelectItem>
+            <SelectItem value="confirmed">مؤكد</SelectItem>
+            <SelectItem value="completed">مكتمل</SelectItem>
+            <SelectItem value="cancelled">ملغي</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => navigate(`/documents?booking_id=${booking.id}`)}>
+          <FileText className="h-4 w-4 ml-1" />فاتورة
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleWhatsApp}>
+          <MessageCircle className="h-4 w-4 ml-1" />واتساب
+        </Button>
       </div>
+
+      {/* Profit Card */}
+      <Card className={`border-2 ${profit >= 0 ? 'border-green-200 bg-green-50/50 dark:bg-green-950/10' : 'border-red-200 bg-red-50/50 dark:bg-red-950/10'}`}>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-sm text-muted-foreground">سعر البيع</p>
+              <p className="text-xl font-bold">{booking.selling_price?.toLocaleString()} {booking.currency}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">التكلفة</p>
+              <p className="text-xl font-bold">{booking.cost_price?.toLocaleString()} {booking.currency}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">الربح</p>
+              <div className={`flex items-center justify-center gap-1 text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {profit >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                {profit.toLocaleString()} {booking.currency}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">هامش الربح</p>
+              <p className={`text-xl font-bold ${margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {margin.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5" />المعلومات المالية</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5" />المعلومات العامة</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="رقم الحجز" value={booking.booking_number} />
-            <InfoRow label="سعر البيع" value={`${booking.selling_price?.toLocaleString()} ${booking.currency}`} />
-            <InfoRow label="التكلفة" value={`${booking.cost_price?.toLocaleString()} ${booking.currency}`} />
-            <InfoRow label="الربح" value={`${booking.profit?.toLocaleString()} ${booking.currency}`}
-              className={booking.profit >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'} />
             <InfoRow label="الحالة" value={
               booking.booking_statuses
                 ? <Badge style={{ backgroundColor: booking.booking_statuses.color, color: 'white' }}>{booking.booking_statuses.name_ar}</Badge>
                 : <Badge>{booking.status}</Badge>
             } />
+            <InfoRow label="تاريخ البداية" value={booking.start_date || '—'} />
+            <InfoRow label="تاريخ النهاية" value={booking.end_date || '—'} />
           </CardContent>
         </Card>
 
@@ -59,10 +127,9 @@ const UnifiedBookingDetails = () => {
           <CardContent className="space-y-3">
             <InfoRow label="العميل" value={booking.customer_name || booking.customers?.name || '—'} />
             {booking.customers?.phone && <InfoRow label="هاتف العميل" value={booking.customers.phone} />}
+            {booking.customers?.email && <InfoRow label="إيميل العميل" value={booking.customers.email} />}
             <InfoRow label="المورد" value={booking.supplier_name || '—'} />
             <InfoRow label="الموظف" value={booking.employees?.full_name || '—'} />
-            <InfoRow label="تاريخ البداية" value={booking.start_date || '—'} />
-            <InfoRow label="تاريخ النهاية" value={booking.end_date || '—'} />
           </CardContent>
         </Card>
       </div>
@@ -90,6 +157,9 @@ const UnifiedBookingDetails = () => {
           <CardContent><p className="text-muted-foreground">{booking.notes}</p></CardContent>
         </Card>
       )}
+
+      {/* Audit Log */}
+      <AuditLogViewer targetTable="bookings" targetId={booking.id} title="سجل التدقيق" compact={true} showFilters={false} />
     </div>
   );
 };
