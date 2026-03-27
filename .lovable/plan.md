@@ -1,158 +1,100 @@
 
 
-# نظام عروض الأسعار (Quotes) — Quote → Booking → Invoice
+# نظام حساب الأرباح الاحترافي — Profit Analytics System
 
 ## الوضع الحالي
 
-النظام يحتوي بالفعل على:
-- **جداول الحجوزات**: `hotel_bookings`, `flight_bookings`, `car_rentals`, `transport_bookings`
-- **جدول الفواتير**: `invoices` مرتبط بالحجوزات عبر `booking_id` + `booking_type`
-- **العملاء والموردين**: `customers`, `suppliers`
-- **Multi-tenant**: كل الجداول تحتوي `organization_id`
+**موجود بالفعل:**
+- كل جداول الحجوزات تحتوي `total_profit` (hotel, flight, car_rental, transport)
+- جدول `employee_commissions` موجود مع `booking_id`, `commission_rate`, `commission_amount`
+- جدول `invoices` مربوط بـ `booking_id` + `booking_type`
+- هوك `useProfitLossCalculations` يحسب P&L لكن بشكل إجمالي فقط
+- `RevenueChart` يستخدم بيانات ثابتة (hardcoded) وليس من قاعدة البيانات
 
-**المطلوب**: إضافة كيان "عرض سعر" (Quote) كنقطة بداية قبل الحجز، مع تدفق تلقائي: Quote → Booking → Invoice.
+**غير موجود:**
+- لا توجد صفحة Dashboard مخصصة للأرباح
+- لا يوجد عرض أرباح لكل حجز / عميل / موظف
+- لا يوجد ربط بين `hotel_bookings` وموظف مسؤول (لا يوجد عمود `employee_id`)
+- `RevenueChart` لا يعرض بيانات حقيقية
 
 ---
 
-## 1. Database Schema
+## المطلوب تنفيذه
 
-### جدول `quotes` (عروض الأسعار)
+### 1. تعديل قاعدة البيانات (Migration)
 
 ```sql
-CREATE TABLE public.quotes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid REFERENCES organizations(id),
-  quote_number text NOT NULL,
-  customer_id uuid REFERENCES customers(id),
-  customer_name text,
-  status text DEFAULT 'draft', -- draft, sent, accepted, rejected, expired
-  travel_date date,
-  return_date date,
-  destination text,
-  number_of_travelers integer DEFAULT 1,
-  notes text,
-  subtotal numeric DEFAULT 0,
-  discount_amount numeric DEFAULT 0,
-  vat_rate numeric DEFAULT 0,
-  vat_amount numeric DEFAULT 0,
-  total_amount numeric DEFAULT 0,
-  valid_until date,
-  assigned_employee_id uuid REFERENCES employees(id),
-  created_by uuid,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+-- إضافة عمود الموظف المسؤول لجداول الحجوزات التي تفتقده
+ALTER TABLE hotel_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
+ALTER TABLE flight_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
+ALTER TABLE car_rentals ADD COLUMN employee_id uuid REFERENCES employees(id);
+ALTER TABLE transport_bookings ADD COLUMN employee_id uuid REFERENCES employees(id);
+
+-- إضافة عمود مصاريف إضافية لو غير موجود
+ALTER TABLE hotel_bookings ADD COLUMN additional_costs numeric DEFAULT 0;
+ALTER TABLE flight_bookings ADD COLUMN additional_costs numeric DEFAULT 0;
 ```
 
-### جدول `quote_items` (عناصر العرض)
+### 2. هوك موحد لحساب الأرباح `useProfitAnalytics.ts`
 
-```sql
-CREATE TABLE public.quote_items (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  quote_id uuid REFERENCES quotes(id) ON DELETE CASCADE,
-  item_type text NOT NULL, -- hotel, flight, transport, car_rental, service
-  description text NOT NULL,
-  supplier_id uuid REFERENCES suppliers(id),
-  cost_price numeric DEFAULT 0,    -- تكلفة المورد
-  selling_price numeric DEFAULT 0, -- سعر البيع للعميل
-  quantity integer DEFAULT 1,
-  total_cost numeric DEFAULT 0,
-  total_selling numeric DEFAULT 0,
-  details jsonb DEFAULT '{}',      -- تفاصيل إضافية حسب النوع
-  sort_order integer DEFAULT 0,
-  created_at timestamptz DEFAULT now()
-);
-```
+يجلب بيانات الأرباح من كل أنواع الحجوزات ويوفر:
+- **أرباح لكل حجز**: قائمة بكل الحجوزات مع (سعر بيع، تكلفة، ربح، عمولة مورد، عمولة موظف)
+- **أرباح لكل عميل**: تجميع الأرباح حسب `customer_id`
+- **أرباح لكل موظف**: تجميع حسب `employee_id` مع العمولات
+- **تقارير شهرية**: بيانات حقيقية بدل الـ hardcoded
+- **أفضل موظف / عميل**: ترتيب حسب إجمالي الربح
 
-### إضافة أعمدة ربط
+### 3. صفحة Profit Analytics Dashboard `/profit-analytics`
 
-```sql
--- ربط الحجوزات بعرض السعر
-ALTER TABLE hotel_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
-ALTER TABLE flight_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
-ALTER TABLE car_rentals ADD COLUMN quote_id uuid REFERENCES quotes(id);
-ALTER TABLE transport_bookings ADD COLUMN quote_id uuid REFERENCES quotes(id);
+صفحة جديدة تحتوي:
 
--- ربط الفاتورة بعرض السعر
-ALTER TABLE invoices ADD COLUMN quote_id uuid REFERENCES quotes(id);
-```
+**الكروت الرئيسية (4 كروت):**
+- إجمالي الإيرادات
+- إجمالي التكاليف  
+- صافي الربح
+- هامش الربح %
 
-### RLS + Indexes
+**Tabs:**
+1. **نظرة عامة**: رسم بياني شهري حقيقي + أفضل موظف + أفضل عميل
+2. **أرباح الحجوزات**: جدول لكل حجز مع (النوع، العميل، سعر البيع، التكلفة، الربح، الموظف)
+3. **أرباح العملاء**: جدول مجمع لكل عميل (عدد الحجوزات، إجمالي الإيرادات، إجمالي الربح)
+4. **أرباح الموظفين**: جدول مجمع لكل موظف (عدد الحجوزات، الإيرادات، الربح، العمولات)
 
-- سياسات RLS مبنية على `organization_id` مع `user_belongs_to_org`
-- فهارس على `organization_id`, `customer_id`, `status`, `quote_id`
+**فلاتر**: تاريخ من/إلى، نوع الحجز، بحث
+
+### 4. تحديث `RevenueChart` ببيانات حقيقية
+
+استبدال البيانات الثابتة بجلب بيانات شهرية حقيقية من قاعدة البيانات.
+
+### 5. تحديث Dashboard الرئيسي
+
+إضافة كارت "صافي الربح" و"هامش الربح" في `EnhancedStatsCards`.
 
 ---
 
-## 2. الصفحات المطلوبة (4 صفحات)
-
-### صفحة 1: قائمة عروض الأسعار `/quotes`
-- جدول بالعروض مع فلترة (حالة، تاريخ، عميل)
-- بحث بالرقم أو اسم العميل
-- Pagination
-- أزرار: إنشاء عرض جديد، عرض التفاصيل
-
-### صفحة 2: إنشاء عرض سعر `/quotes/new`
-- اختيار العميل (أو إنشاء جديد)
-- إضافة عناصر (فندق/طيران/نقل/خدمة) مع سعر التكلفة وسعر البيع
-- حساب تلقائي للإجمالي والربح والضريبة
-- تعيين موظف مسؤول
-- حفظ كمسودة أو إرسال
-
-### صفحة 3: تفاصيل عرض السعر `/quotes/:id`
-- عرض كامل للبيانات والعناصر
-- أزرار تغيير الحالة (إرسال / قبول / رفض)
-- **زر "تحويل لحجز"** — ينشئ حجوزات + فاتورة تلقائياً
-- عرض الحجوزات والفواتير المرتبطة
-
-### صفحة 4: تعديل عرض السعر `/quotes/:id/edit`
-- نفس نموذج الإنشاء مع بيانات العرض الحالي
-
----
-
-## 3. تدفق التحويل (Quote → Booking → Invoice)
-
-عند الضغط على "تحويل لحجز":
-1. تحديث حالة العرض إلى `accepted`
-2. لكل عنصر في `quote_items`:
-   - إنشاء حجز في الجدول المناسب (`hotel_bookings` / `flight_bookings` / إلخ) مع `quote_id`
-3. إنشاء فاتورة واحدة مجمعة مرتبطة بـ `quote_id`
-4. كل هذا في transaction واحد
-
----
-
-## 4. الملفات المطلوب إنشاؤها
+## الملفات المطلوبة
 
 ```text
-src/pages/Quotes.tsx              — قائمة العروض
-src/pages/NewQuote.tsx            — إنشاء عرض
-src/pages/QuoteDetails.tsx        — تفاصيل + تحويل
-src/hooks/useQuotes.ts            — CRUD + فلترة
-src/hooks/useQuoteConversion.ts   — تحويل عرض → حجز + فاتورة
-src/components/quotes/
-  QuoteForm.tsx                   — نموذج الإنشاء/التعديل
-  QuoteItemsEditor.tsx            — محرر العناصر
-  QuoteStatusBadge.tsx            — شارة الحالة
-  QuotesList.tsx                  — جدول العروض
-  ConvertQuoteDialog.tsx          — تأكيد التحويل
+ملفات جديدة:
+  src/hooks/useProfitAnalytics.ts         — هوك موحد للأرباح
+  src/pages/ProfitAnalytics.tsx           — صفحة Dashboard الأرباح
+  src/components/profits/
+    ProfitSummaryCards.tsx                 — الكروت الأربعة
+    ProfitOverviewTab.tsx                 — رسم بياني + أفضل موظف/عميل
+    BookingProfitsTab.tsx                 — جدول أرباح لكل حجز
+    CustomerProfitsTab.tsx                — جدول أرباح لكل عميل
+    EmployeeProfitsTab.tsx                — جدول أرباح لكل موظف
+
+ملفات مُعدّلة:
+  src/App.tsx                             — إضافة route
+  src/components/layout/DashboardSidebar  — إضافة رابط
+  src/components/navbar/NavigationItems   — إضافة رابط
+  src/components/dashboard/RevenueChart   — بيانات حقيقية
+  src/hooks/useOptimizedDashboard         — إضافة صافي الربح
+  src/components/dashboard/EnhancedStatsCards — إضافة كارت الربح
 ```
 
-### تعديل ملفات موجودة:
-- **`App.tsx`**: إضافة routes للصفحات الجديدة
-- **Sidebar/Navigation**: إضافة رابط "عروض الأسعار" في القائمة الجانبية
+### 6. التحديث التلقائي
 
----
-
-## 5. ملخص العلاقات
-
-```text
-Customer ──┐
-           ├── Quote ──── Quote Items (hotel/flight/transport/service)
-Employee ──┘      │
-                  │ [تحويل]
-                  ▼
-           ┌── Bookings (hotel_bookings, flight_bookings, etc.)
-           │      │
-           └── Invoice
-```
+الأرباح محسوبة بالفعل عند إنشاء/تعديل الحجوزات (عبر `calculationHelpers`). سنتأكد أن الـ `queryKey` في `useProfitAnalytics` يتم invalidate عند أي mutation على الحجوزات.
 
