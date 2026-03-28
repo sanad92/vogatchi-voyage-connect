@@ -42,10 +42,11 @@ const UnifiedBookings = () => {
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Quick stats from loaded data
+  // Note: these stats are from the current page only — totalCount is accurate from server
   const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
   const totalProfit = bookings.reduce((sum, b) => sum + (b.profit || 0), 0);
+  const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
 
   return (
     <div className="space-y-4 p-4" dir="rtl">

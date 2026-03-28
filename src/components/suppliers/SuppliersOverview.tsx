@@ -145,7 +145,7 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
         />
       </SupplierPermissionCheck>
       <SupplierGrid
-        suppliers={filteredSuppliers}
+        suppliers={paginatedItems}
         isLoading={isLoading}
         onSupplierSelect={onSupplierSelect}
         updateSupplier={updateSupplier}
@@ -153,6 +153,7 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
         deleteSupplier={deleteSupplier}
         isDeletingSupplier={isDeletingSupplier}
       />
+      <PaginationControlsUI pagination={pagination} />
     </div>
   );
 };
