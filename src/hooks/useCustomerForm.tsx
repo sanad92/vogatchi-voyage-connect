@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useCustomerSubmission } from "./useCustomerSubmission";
+import { useAutomationEngine } from "./useAutomationEngine";
 import { CustomerData, UseCustomerFormProps } from "@/types/customer";
 import { toast } from "sonner";
 
