@@ -40,7 +40,6 @@ interface EnhancedEmployeeCardProps {
 
 const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCardProps) => {
   const { 
-    isLoading, 
     updateEmployee,
     toggleEmployeeStatus, 
     deleteEmployee, 

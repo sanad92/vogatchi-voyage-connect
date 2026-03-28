@@ -35,12 +35,13 @@ const UnifiedUserCardEnhanced = ({
 }: UnifiedUserCardEnhancedProps) => {
   const { isSuperAdmin } = useOptimizedAuth();
   const { 
-    isLoading, 
+    isLoading: isLoadingFn, 
     toggleEmployeeStatus, 
     deleteEmployee, 
     checkEmployeeDeletion,
     canDelete 
-  } = useEmployeeActions();
+  } = useEmployeeActionsOptimized();
+  const isLoading = typeof isLoadingFn === 'function' ? isLoadingFn() : !!isLoadingFn;
 
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
