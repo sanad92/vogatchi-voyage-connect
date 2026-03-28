@@ -1,90 +1,69 @@
 
 
-# تحسين أداء واجهة SaaS — Performance Optimization
+# تحسين Automation Engine — إضافة Triggers جديدة + واجهة محسّنة
 
 ## الوضع الحالي
 
-**ما هو موجود وجيد:**
-- React Query مُستخدم في كل الـ hooks مع `staleTime` و `gcTime` في `App.tsx` (5 دقائق / 10 دقائق)
-- `useClientPagination` مُستخدم في 4 صفحات (Customers, FlightBookings, CarRentals, TransportBookings)
-- `useUnifiedBookings` يدعم server-side pagination بالفعل
-- Lazy Loading للصفحات مُطبق في `App.tsx`
+النظام يحتوي على بنية أتمتة جيدة:
+- **جداول**: `automation_rules`, `automation_actions`, `automation_logs` موجودة
+- **Hooks**: `useAutomationRules` (CRUD كامل) + `useAutomationEngine` (تنفيذ)
+- **واجهة**: `AutomationRules.tsx` بها إنشاء قواعد + سجل تنفيذ
+- **4 Triggers**: `booking_created`, `payment_confirmed`, `before_travel`, `booking_status_changed`
+- **4 Actions**: `send_email`, `send_whatsapp`, `create_invoice`, `send_reminder`
 
-**المشاكل:**
-1. **Suppliers و Invoices بدون pagination** — يعرضان كل البيانات دفعة واحدة
-2. **AuditLog** يجلب 200 سجل بدون pagination
-3. **لا يوجد Virtualized Lists** — جداول كبيرة (50+ صف) تُنشئ DOM nodes لكل صف
-4. **بعض الـ hooks بدون `staleTime`** — مثل `useSuppliers`, `useInvoicesData`, `useCustomers`
-5. **UnifiedBookings** يحسب الإحصائيات من الصفحة الحالية فقط (غير دقيق)
+## المشاكل
 
----
+1. **`executeTrigger` غير مستخدم في أي مكان** — لا يتم استدعاؤه عند إنشاء حجز أو فاتورة
+2. **لا يوجد triggers لـ**: `invoice_created`, `customer_registered`
+3. **`CRMAutomation.tsx`** — placeholder فارغ بدون وظائف
+4. **واجهة الإنشاء** بسيطة — لا تعرض إحصائيات أو ملخص
 
 ## خطة التنفيذ
 
-### 1. إضافة Pagination للصفحات الناقصة
+### 1. إضافة Triggers جديدة
 
-**Suppliers (`SuppliersOverview.tsx`):**
-- إضافة `useClientPagination` + `PaginationControlsUI`
-- تمرير `paginatedItems` بدل `filteredSuppliers` لـ `SupplierGrid`
-
-**Invoices (`src/pages/Invoices.tsx`):**
-- فحص الصفحة الحالية وإضافة pagination إن لم تكن موجودة
-
-**AuditLog (`AuditLogViewer.tsx`):**
-- إضافة `useClientPagination` مع pageSize = 50
-
-### 2. إضافة Virtualized Table
-
-**ملف جديد: `src/components/ui/virtualized-table.tsx`**
-- استخدام `@tanstack/react-virtual` للـ row virtualization
-- يعرض فقط الصفوف المرئية في الـ viewport (+ buffer)
-- واجهة متوافقة مع الـ Table الحالي (نفس الـ props)
-
-**تطبيق على:**
-- `UnifiedBookings.tsx` — الجدول الرئيسي
-- `UserTable.tsx` — جدول المستخدمين
-- `AuditLogViewer.tsx` — سجل التدقيق
-
-### 3. تحسين React Query Caching
-
-إضافة `staleTime` للـ hooks الناقصة:
+تحديث `useAutomationRules.ts` و `useAutomationEngine.ts`:
 ```text
-useSuppliers         → staleTime: 5 min
-useInvoicesData      → staleTime: 3 min
-useCustomers         → staleTime: 5 min
-useAuditLog          → staleTime: 2 min
+Triggers جديدة:
+  invoice_created      → عند إنشاء فاتورة
+  customer_registered  → عند تسجيل عميل جديد
 ```
 
-### 4. تصحيح إحصائيات UnifiedBookings
+تحديث `TriggerContext` ليدعم حقول العميل والفاتورة (ليس فقط الحجز).
 
-الإحصائيات السريعة تُحسب من `bookings` (الصفحة الحالية فقط) — يجب أن تستخدم `totalCount` وإضافة query منفصل للإحصائيات الكلية أو إزالة الإحصائيات المضللة.
+### 2. ربط `executeTrigger` بالعمليات الفعلية
 
----
+استدعاء `executeTrigger` في:
+- **`NewUnifiedBooking.tsx`** — بعد حفظ الحجز: `executeTrigger('booking_created', {...})`
+- **إنشاء فاتورة** — بعد حفظ الفاتورة: `executeTrigger('invoice_created', {...})`
+- **إنشاء عميل** — بعد حفظ العميل: `executeTrigger('customer_registered', {...})`
 
-## التفاصيل التقنية
+### 3. تحسين واجهة `AutomationRules.tsx`
 
-### Virtualized Table
-- مكتبة: `@tanstack/react-virtual` (خفيفة، ~3KB)
-- تعرض فقط ~20 صف في الـ viewport بدل مئات
-- تقلل DOM nodes بنسبة ~90% للجداول الكبيرة
+- إضافة **إحصائيات سريعة** أعلى الصفحة (عدد القواعد النشطة، عدد التنفيذات الناجحة/الفاشلة)
+- إضافة **فلترة السجلات** حسب الحالة (ناجح/فاشل) وحسب النوع
+- إضافة **تعديل القاعدة** (الحالي يدعم فقط الإنشاء والحذف)
+- تحديث القوائم المنسدلة لتشمل الـ Triggers الجديدة
+- إضافة **حقول إعدادات ديناميكية** لكل Action (مثل: قالب البريد لـ `send_email` عند `customer_registered`)
+
+### 4. استبدال `CRMAutomation.tsx`
+
+تحويله من placeholder فارغ إلى ملخص يعرض القواعد النشطة وآخر التنفيذات.
 
 ---
 
 ## ملخص الملفات
 
 ```text
-ملفات جديدة:
-  src/components/ui/virtualized-table.tsx    — جدول افتراضي قابل لإعادة الاستخدام
-
 ملفات تُعدّل:
-  src/components/suppliers/SuppliersOverview.tsx — إضافة pagination
-  src/components/audit/AuditLogViewer.tsx        — إضافة pagination
-  src/pages/UnifiedBookings.tsx                  — virtualized table + إصلاح الإحصائيات
-  src/components/admin/user-management/UserTable.tsx — virtualized table
-  src/hooks/useSuppliers.tsx                     — إضافة staleTime
-  src/hooks/invoices/useInvoicesData.tsx          — إضافة staleTime
-  src/hooks/useCustomers.tsx                     — إضافة staleTime
-  src/hooks/useAuditLog.ts                       — إضافة staleTime
-  package.json                                   — إضافة @tanstack/react-virtual
+  src/hooks/useAutomationEngine.ts      — triggers جديدة + TriggerContext موسّع
+  src/hooks/useAutomationRules.ts       — labels/icons للـ triggers الجديدة
+  src/pages/AutomationRules.tsx         — إحصائيات + فلترة + تعديل القواعد
+  src/pages/NewUnifiedBooking.tsx       — استدعاء executeTrigger
+  src/components/crm/dashboard/CRMAutomation.tsx — ملخص بدل placeholder
+
+ملفات يُحتمل تعديلها (حسب مكان إنشاء الفاتورة/العميل):
+  src/hooks/useCustomerForm.tsx         — executeTrigger('customer_registered')
+  src/hooks/invoices/useInvoicesData.tsx — executeTrigger('invoice_created')
 ```
 
