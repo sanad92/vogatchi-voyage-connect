@@ -37,7 +37,9 @@ const ExportCenter = () => {
 
   const fetchData = async (type: ReportType) => {
     const { table } = reportConfigs[type];
-    const { data, error } = await supabase.from(table).select('*').eq('organization_id', orgId!).limit(1000);
+    const query = supabase.from(table as any).select('*');
+    // Add org filter
+    const { data, error } = await (query as any).eq('organization_id', orgId!).limit(1000);
     if (error) throw error;
     return data || [];
   };
