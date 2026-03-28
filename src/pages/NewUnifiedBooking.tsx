@@ -79,6 +79,7 @@ const NewUnifiedBooking = () => {
   const navigate = useNavigate();
   const orgId = useOrgId();
   const { createBooking } = useUnifiedBookings();
+  const { executeTrigger } = useAutomationEngine();
 
   const wizard = useWizardForm({
     steps: wizardSteps,
