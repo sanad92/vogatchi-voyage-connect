@@ -3853,6 +3853,77 @@ export type Database = {
           },
         ]
       }
+      organization_settings: {
+        Row: {
+          accent_color: string | null
+          address: string | null
+          commercial_register: string | null
+          company_name: string | null
+          company_name_ar: string | null
+          created_at: string | null
+          currency: string | null
+          email: string | null
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string
+          phone: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          tax_number: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          address?: string | null
+          commercial_register?: string | null
+          company_name?: string | null
+          company_name_ar?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          address?: string | null
+          commercial_register?: string | null
+          company_name?: string | null
+          company_name_ar?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: string | null

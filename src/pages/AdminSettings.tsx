@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { Shield, Users, ClipboardList, BarChart3, Search } from 'lucide-react';
+import { Shield, Users, ClipboardList, BarChart3, Search, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
+import OrganizationSettingsTab from '@/components/admin/OrganizationSettingsTab';
 
 const tabs = [
+  { value: 'org-settings', label: 'إعدادات المؤسسة', icon: Building2, description: 'لوجو، ألوان، بيانات التواصل' },
   { value: 'unified-management', label: 'إدارة المستخدمين', icon: Users, description: 'إدارة موحدة للمستخدمين والموظفين' },
   { value: 'audit', label: 'سجل العمليات', icon: ClipboardList, description: 'سجل مفصل لجميع العمليات' },
   { value: 'performance', label: 'مراقبة الأداء', icon: BarChart3, description: 'مراقبة أداء النظام والتحليلات' },
@@ -16,7 +18,7 @@ const tabs = [
 
 const AdminSettings = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
-  const [activeTab, setActiveTab] = useState('unified-management');
+  const [activeTab, setActiveTab] = useState('org-settings');
   const [searchTerm, setSearchTerm] = useState('');
 
   if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
@@ -74,7 +76,7 @@ const AdminSettings = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {filteredTabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.value;
@@ -97,6 +99,7 @@ const AdminSettings = () => {
         </div>
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <TabsContent value="org-settings" className="mt-0"><OrganizationSettingsTab /></TabsContent>
           <TabsContent value="unified-management" className="mt-0"><UnifiedUserEmployeeManagement /></TabsContent>
           <TabsContent value="audit" className="mt-0"><AuditLogTab /></TabsContent>
           <TabsContent value="performance" className="mt-0"><PerformanceMonitorTab /></TabsContent>
