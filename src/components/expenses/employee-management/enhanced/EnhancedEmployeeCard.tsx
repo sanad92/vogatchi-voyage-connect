@@ -47,8 +47,10 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
     checkEmployeeDeletion,
     canToggleStatus,
     canDelete,
-    canEdit 
-  } = useEmployeeActions();
+    canEdit,
+    isLoading: isLoadingFn,
+  } = useEmployeeActionsOptimized();
+  const isLoading = typeof isLoadingFn === 'function' ? isLoadingFn() : !!isLoadingFn;
 
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
