@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
+import OrganizationSettingsTab from '@/components/admin/OrganizationSettingsTab';
 
 const tabs = [
   { value: 'unified-management', label: 'إدارة المستخدمين', icon: Users, description: 'إدارة موحدة للمستخدمين والموظفين' },
