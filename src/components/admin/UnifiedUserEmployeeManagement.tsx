@@ -14,7 +14,7 @@ import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { EnhancedEmptyState } from '@/components/ui/enhanced-empty-state';
 
 const UnifiedUserEmployeeManagement = () => {
-  const { isSuperAdmin } = useOptimizedAuth();
+  const { orgRole } = useOrganization();
   const {
     unifiedUsers,
     unlinkedEmployees,
