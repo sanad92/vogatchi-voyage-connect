@@ -165,7 +165,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
   const commissionsQuery = useQuery({
     queryKey: ['profit-analytics-commissions', orgId, startDate, endDate],
     queryFn: async () => {
-      let q = supabase.from('employee_commissions').select('employee_id, commission_amount, booking_id, employees(full_name)') as any;
+      let q = supabase.from('employee_commissions').select('employee_id, commission_amount, booking_id, employees(full_name)').eq('organization_id', orgId!) as any;
       if (startDate) q = q.gte('commission_date', startDate);
       if (endDate) q = q.lte('commission_date', endDate);
       const { data } = await q;
