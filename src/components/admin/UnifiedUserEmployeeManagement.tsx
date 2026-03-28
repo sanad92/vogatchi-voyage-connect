@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, UserPlus, Search } from 'lucide-react';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
