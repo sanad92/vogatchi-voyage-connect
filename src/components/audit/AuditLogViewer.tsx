@@ -109,7 +109,7 @@ const AuditLogViewer = ({ targetTable, targetId, title, compact = false, showFil
         ) : (
           <ScrollArea className={compact ? 'max-h-[400px]' : 'max-h-[600px]'}>
             <div className="space-y-2">
-              {filtered.map(log => {
+              {paginatedItems.map(log => {
                 const actionInfo = ACTION_MAP[log.action] || { label: log.action, color: 'bg-muted text-muted-foreground' };
                 const tableLabel = TABLE_MAP[log.target_table || ''] || log.target_table || '';
                 const changed = getChangedFields(log.old_values, log.new_values);
