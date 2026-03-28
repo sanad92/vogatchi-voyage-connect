@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   CreditCard, ArrowRight, Shield, Clock, CheckCircle2, 
-  Loader2, AlertTriangle, Sparkles 
+  Loader2, AlertTriangle, Sparkles, BanknoteIcon
 } from 'lucide-react';
+import BankTransferForm from '@/components/payment/BankTransferForm';
 
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
