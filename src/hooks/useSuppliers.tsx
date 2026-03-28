@@ -45,6 +45,7 @@ export const useSuppliers = (supplierType?: string) => {
       }));
     },
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addSupplierMutation = useMutation({

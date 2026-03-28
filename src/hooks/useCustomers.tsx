@@ -26,6 +26,7 @@ export const useCustomers = () => {
       return { customers: data as Customer[], totalCount: count || 0 };
     },
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addCustomerMutation = useMutation({

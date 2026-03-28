@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuditLog, getChangedFields, type AuditLogEntry } from '@/hooks/useAuditLog';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,6 +66,8 @@ const AuditLogViewer = ({ targetTable, targetId, title, compact = false, showFil
     );
   });
 
+  const { paginatedItems, pagination } = useClientPagination(filtered, compact ? 20 : 50);
+
   const changedFields = selected ? getChangedFields(selected.old_values, selected.new_values) : [];
 
   return (
@@ -103,47 +107,50 @@ const AuditLogViewer = ({ targetTable, targetId, title, compact = false, showFil
         ) : filtered.length === 0 ? (
           <div className="text-center py-6 text-sm text-muted-foreground">لا توجد سجلات</div>
         ) : (
-          <ScrollArea className={compact ? 'max-h-[400px]' : 'max-h-[600px]'}>
-            <div className="space-y-2">
-              {filtered.map(log => {
-                const actionInfo = ACTION_MAP[log.action] || { label: log.action, color: 'bg-muted text-muted-foreground' };
-                const tableLabel = TABLE_MAP[log.target_table || ''] || log.target_table || '';
-                const changed = getChangedFields(log.old_values, log.new_values);
+          <div>
+            <ScrollArea className={compact ? 'max-h-[400px]' : 'max-h-[600px]'}>
+              <div className="space-y-2">
+                {paginatedItems.map(log => {
+                  const actionInfo = ACTION_MAP[log.action] || { label: log.action, color: 'bg-muted text-muted-foreground' };
+                  const tableLabel = TABLE_MAP[log.target_table || ''] || log.target_table || '';
+                  const changed = getChangedFields(log.old_values, log.new_values);
 
-                return (
-                  <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={`text-xs ${actionInfo.color}`}>{actionInfo.label}</Badge>
-                        {!targetTable && <Badge variant="outline" className="text-xs">{tableLabel}</Badge>}
-                        {log.entity_name && (
-                          <span className="text-sm font-medium text-foreground truncate">{log.entity_name}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
-                        </span>
-                        {log.user_email && (
+                  return (
+                    <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={`text-xs ${actionInfo.color}`}>{actionInfo.label}</Badge>
+                          {!targetTable && <Badge variant="outline" className="text-xs">{tableLabel}</Badge>}
+                          {log.entity_name && (
+                            <span className="text-sm font-medium text-foreground truncate">{log.entity_name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {log.user_email}
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
                           </span>
-                        )}
-                        {log.action === 'UPDATE' && changed.length > 0 && (
-                          <span className="text-primary">{changed.length} حقل متغير</span>
-                        )}
+                          {log.user_email && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {log.user_email}
+                            </span>
+                          )}
+                          {log.action === 'UPDATE' && changed.length > 0 && (
+                            <span className="text-primary">{changed.length} حقل متغير</span>
+                          )}
+                        </div>
                       </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(log)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(log)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+            {!compact && <PaginationControlsUI pagination={pagination} />}
+          </div>
         )}
 
         {/* Detail Dialog */}

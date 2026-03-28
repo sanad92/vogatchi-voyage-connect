@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Supplier } from '@/types/supplier';
 import { SupplierFormData } from './SupplierForm';
 import { SupplierCurrencySetupData } from '../shared/SupplierCurrencySetup';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 
 interface SuppliersOverviewProps {
   onSupplierSelect: (id: string) => void;
@@ -67,6 +69,8 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
 
     return searchMatch && typeMatch && statusMatch && minRatingMatch;
   });
+
+  const { paginatedItems, pagination } = useClientPagination(filteredSuppliers, 25);
 
   const { addCurrency } = useSupplierCurrencies();
 
@@ -141,7 +145,7 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
         />
       </SupplierPermissionCheck>
       <SupplierGrid
-        suppliers={filteredSuppliers}
+        suppliers={paginatedItems}
         isLoading={isLoading}
         onSupplierSelect={onSupplierSelect}
         updateSupplier={updateSupplier}
@@ -149,6 +153,7 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
         deleteSupplier={deleteSupplier}
         isDeletingSupplier={isDeletingSupplier}
       />
+      <PaginationControlsUI pagination={pagination} />
     </div>
   );
 };

@@ -77,5 +77,6 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
 
       return data;
     },
+    staleTime: 3 * 60 * 1000,
   });
 };

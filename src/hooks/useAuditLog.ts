@@ -56,6 +56,7 @@ export function useAuditLog(options: UseAuditLogOptions = {}) {
       return (data || []) as AuditLogEntry[];
     },
     enabled: !!orgId && enabled,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
