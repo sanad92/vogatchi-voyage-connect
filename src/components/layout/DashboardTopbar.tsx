@@ -1,12 +1,10 @@
-import { useState } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Search, Menu, LogOut, Settings } from 'lucide-react';
+import { Menu, LogOut, Settings, User } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
 import { Link } from 'react-router-dom';
 
@@ -19,9 +17,9 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
 
   return (
     <header className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border" dir="rtl">
-      <div className="flex items-center justify-between h-16 px-4 lg:px-6 gap-4">
-        {/* Right: Mobile menu + Search */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center justify-between h-14 px-4 lg:px-6 gap-4">
+        {/* Right: Mobile menu */}
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -30,23 +28,12 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
           >
             <Menu className="h-5 w-5" />
           </Button>
-
-          {/* Search placeholder */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="بحث في النظام... (قريباً)"
-              disabled
-              className="pr-10 bg-muted/50 border-transparent h-10 rounded-xl cursor-not-allowed opacity-60"
-            />
-          </div>
         </div>
 
         {/* Left: Org Switcher, Profile */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
           <OrgSwitcher />
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-muted/50 transition-colors">

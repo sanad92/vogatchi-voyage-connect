@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -11,23 +11,27 @@ import {
   CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap, ClipboardList
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ElementType;
   requiredPermission?: string;
+  badge?: string;
 }
 
 interface NavGroup {
   label: string;
+  icon: React.ElementType;
   items: NavItem[];
-  requiredPermission?: string; // If set, entire group requires this
+  requiredPermission?: string;
 }
 
 const navGroups: NavGroup[] = [
   {
     label: 'الرئيسية',
+    icon: LayoutDashboard,
     items: [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
       { title: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
@@ -36,30 +40,33 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'الحجوزات',
+    icon: ClipboardList,
     requiredPermission: 'bookings_view',
     items: [
-      { title: 'الحجوزات الموحدة', href: '/bookings', icon: ClipboardList, requiredPermission: 'bookings_view' },
+      { title: 'الحجوزات الموحدة', href: '/bookings', icon: ClipboardList },
       { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, requiredPermission: 'quotes_view' },
-      { title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel, requiredPermission: 'bookings_view' },
-      { title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane, requiredPermission: 'bookings_view' },
-      { title: 'تأجير السيارات', href: '/car-rentals', icon: Car, requiredPermission: 'bookings_view' },
-      { title: 'النقل', href: '/transport-bookings', icon: Truck, requiredPermission: 'bookings_view' },
+      { title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel },
+      { title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane },
+      { title: 'تأجير السيارات', href: '/car-rentals', icon: Car },
+      { title: 'النقل', href: '/transport-bookings', icon: Truck },
     ],
   },
   {
     label: 'العملاء',
+    icon: Users,
     requiredPermission: 'customers_view',
     items: [
-      { title: 'إدارة العملاء', href: '/customers', icon: Users, requiredPermission: 'customers_view' },
+      { title: 'إدارة العملاء', href: '/customers', icon: Users },
       { title: 'خدمة العملاء', href: '/customer-service', icon: MessageSquare, requiredPermission: 'customer_service_view' },
       { title: 'CRM', href: '/crm', icon: UserCheck, requiredPermission: 'crm_view' },
     ],
   },
   {
     label: 'المالية',
+    icon: Receipt,
     requiredPermission: 'invoices_view',
     items: [
-      { title: 'الفواتير', href: '/invoices', icon: Receipt, requiredPermission: 'invoices_view' },
+      { title: 'الفواتير', href: '/invoices', icon: Receipt },
       { title: 'المستندات', href: '/documents', icon: FileText, requiredPermission: 'documents_view' },
       { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, requiredPermission: 'financial_view' },
       { title: 'الحسابات البنكية', href: '/bank-accounts', icon: Building2, requiredPermission: 'financial_view' },
@@ -68,20 +75,22 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'التقارير',
+    icon: BarChart3,
     requiredPermission: 'reports_view',
     items: [
-      { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
-      { title: 'الأرباح والخسائر', href: '/profit-loss-reports', icon: TrendingUp, requiredPermission: 'reports_view' },
+      { title: 'التقارير', href: '/reports', icon: FileText },
+      { title: 'الأرباح والخسائر', href: '/profit-loss-reports', icon: TrendingUp },
       { title: 'تحليل الأرباح', href: '/profit-analytics', icon: BarChart3, requiredPermission: 'reports_advanced' },
       { title: 'الإحصائيات', href: '/crm-dashboard', icon: BarChart3, requiredPermission: 'crm_view' },
     ],
   },
   {
     label: 'الإدارة',
+    icon: Settings,
     requiredPermission: 'employees_view',
     items: [
       { title: 'الموردين', href: '/suppliers', icon: Truck, requiredPermission: 'suppliers_view' },
-      { title: 'الموظفين', href: '/employees-enhanced', icon: Users, requiredPermission: 'employees_view' },
+      { title: 'الموظفين', href: '/employees-enhanced', icon: Users },
       { title: 'الفريق', href: '/team', icon: Users, requiredPermission: 'team_invite' },
       { title: 'الأتمتة', href: '/automation', icon: Zap, requiredPermission: 'automation_view' },
       { title: 'سجل التدقيق', href: '/audit-log', icon: Shield, requiredPermission: 'audit_view' },
@@ -92,6 +101,7 @@ const navGroups: NavGroup[] = [
 
 const platformAdminGroup: NavGroup = {
   label: 'إدارة المنصة',
+  icon: Shield,
   items: [
     { title: 'نظرة عامة', href: '/platform-admin', icon: Shield },
     { title: 'المؤسسات', href: '/platform-admin/organizations', icon: Building2 },
@@ -112,7 +122,10 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   const { isPlatformAdmin } = usePlatformAdmin();
   const { hasPermission } = useSupabasePermissions();
 
-  const allGroups = isPlatformAdmin ? [...navGroups, platformAdminGroup] : navGroups;
+  const allGroups = useMemo(
+    () => isPlatformAdmin ? [...navGroups, platformAdminGroup] : navGroups,
+    [isPlatformAdmin]
+  );
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -124,7 +137,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
 
   const canAccessItem = (item: NavItem): boolean => {
     if (isSuperAdmin()) return true;
@@ -134,7 +147,6 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
   const canAccessGroup = (group: NavGroup): boolean => {
     if (isSuperAdmin()) return true;
-    // Check if at least one item in the group is accessible
     return group.items.some(item => canAccessItem(item));
   };
 
@@ -145,7 +157,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         "flex items-center gap-3 px-4 py-5 border-b border-sidebar-border",
         collapsed && "justify-center px-2"
       )}>
-        <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-lg flex-shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 flex items-center justify-center shadow-lg flex-shrink-0">
           <span className="text-sidebar-primary-foreground font-bold text-lg">V</span>
         </div>
         {!collapsed && (
@@ -157,9 +169,9 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
       {/* User Profile */}
       {!collapsed && (
-        <div className="px-4 py-4 border-b border-sidebar-border">
+        <div className="px-4 py-3 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sidebar-primary to-sidebar-primary/60 flex items-center justify-center flex-shrink-0 ring-2 ring-sidebar-primary/20">
               <span className="text-sidebar-primary-foreground text-sm font-bold">
                 {profile?.full_name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'U'}
               </span>
@@ -168,7 +180,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
               <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {profile?.full_name || 'المستخدم'}
               </p>
-              <p className="text-xs text-sidebar-muted truncate">
+              <p className="text-[11px] text-sidebar-muted truncate">
                 {user?.email}
               </p>
             </div>
@@ -177,86 +189,101 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin space-y-1">
-        <TooltipProvider delayDuration={0}>
-          {allGroups.map((group) => {
-            // Skip entire group if no items are accessible
-            if (!canAccessGroup(group)) return null;
+      <ScrollArea className="flex-1">
+        <nav className="py-3 px-2 space-y-0.5">
+          <TooltipProvider delayDuration={0}>
+            {allGroups.map((group) => {
+              if (!canAccessGroup(group)) return null;
 
-            const isPlatformSection = group.label === 'إدارة المنصة';
-            const visibleItems = group.items.filter(canAccessItem);
-            if (visibleItems.length === 0) return null;
+              const isPlatformSection = group.label === 'إدارة المنصة';
+              const visibleItems = group.items.filter(canAccessItem);
+              if (visibleItems.length === 0) return null;
+              const GroupIcon = group.icon;
+              const hasActiveItem = visibleItems.some(i => isActive(i.href));
 
-            return (
-              <div key={group.label} className={cn("mb-1", isPlatformSection && "mt-4 pt-3 border-t border-sidebar-border")}>
-                {!collapsed ? (
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
-                      isPlatformSection
-                        ? "text-warning hover:text-warning/80"
-                        : "text-sidebar-muted hover:text-sidebar-foreground"
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {isPlatformSection && <Shield className="h-3 w-3" />}
-                      {group.label}
-                    </span>
-                    <ChevronDown className={cn(
-                      "h-3.5 w-3.5 transition-transform",
-                      !openGroups[group.label] && "-rotate-90 rtl:rotate-90"
+              return (
+                <div key={group.label} className={cn(
+                  "mb-0.5",
+                  isPlatformSection && "mt-3 pt-3 border-t border-sidebar-border"
+                )}>
+                  {!collapsed ? (
+                    <button
+                      onClick={() => toggleGroup(group.label)}
+                      className={cn(
+                        "flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors rounded-lg",
+                        hasActiveItem ? "text-sidebar-primary" : "",
+                        isPlatformSection
+                          ? "text-warning hover:text-warning/80"
+                          : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <GroupIcon className="h-3.5 w-3.5" />
+                        {group.label}
+                      </span>
+                      <ChevronDown className={cn(
+                        "h-3.5 w-3.5 transition-transform duration-200",
+                        !openGroups[group.label] && "-rotate-90 rtl:rotate-90"
+                      )} />
+                    </button>
+                  ) : (
+                    <div className={cn(
+                      "h-px my-2 mx-1",
+                      isPlatformSection ? "bg-warning/30" : "bg-sidebar-border"
                     )} />
-                  </button>
-                ) : (
-                  <div className={cn(
-                    "h-px my-2 mx-1",
-                    isPlatformSection ? "bg-warning/30" : "bg-sidebar-border"
-                  )} />
-                )}
+                  )}
 
-                {(collapsed || openGroups[group.label]) && (
-                  <div className="space-y-0.5">
-                    {visibleItems.map((item) => {
-                      const Icon = item.icon;
-                      const active = isActive(item.href);
+                  {(collapsed || openGroups[group.label]) && (
+                    <div className="space-y-0.5 mt-0.5">
+                      {visibleItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.href);
 
-                      const linkContent = (
-                        <Link
-                          to={item.href}
-                          onClick={onMobileClose}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-                            collapsed && "justify-center px-2",
-                            active
-                              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                          )}
-                        >
-                          <Icon className={cn("h-[18px] w-[18px] flex-shrink-0", active && "text-sidebar-primary-foreground")} />
-                          {!collapsed && <span className="truncate">{item.title}</span>}
-                        </Link>
-                      );
-
-                      if (collapsed) {
-                        return (
-                          <Tooltip key={item.href}>
-                            <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                            <TooltipContent side="left" className="font-medium">
-                              {item.title}
-                            </TooltipContent>
-                          </Tooltip>
+                        const linkContent = (
+                          <Link
+                            to={item.href}
+                            onClick={onMobileClose}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              collapsed && "justify-center px-2",
+                              active
+                                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                            )}
+                          >
+                            <Icon className={cn(
+                              "h-[18px] w-[18px] flex-shrink-0",
+                              active && "text-sidebar-primary-foreground"
+                            )} />
+                            {!collapsed && <span className="truncate">{item.title}</span>}
+                            {!collapsed && item.badge && (
+                              <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
                         );
-                      }
-                      return <div key={item.href}>{linkContent}</div>;
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </TooltipProvider>
-      </nav>
+
+                        if (collapsed) {
+                          return (
+                            <Tooltip key={item.href}>
+                              <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                              <TooltipContent side="left" className="font-medium">
+                                {item.title}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        }
+                        return <div key={item.href}>{linkContent}</div>;
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </TooltipProvider>
+        </nav>
+      </ScrollArea>
 
       {/* Collapse Toggle (desktop) */}
       <div className="hidden lg:flex border-t border-sidebar-border p-3">
@@ -293,7 +320,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       )}>
         <button
           onClick={onMobileClose}
-          className="absolute top-4 left-4 p-1 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
+          className="absolute top-4 left-4 p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
         >
           <X className="h-5 w-5" />
         </button>
