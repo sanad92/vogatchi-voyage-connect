@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { 
   Activity, 
   Database, 
@@ -30,6 +31,7 @@ interface SystemMetrics {
 }
 
 const PerformanceMonitorTab = () => {
+  const { organization } = useOrganization();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     cpu_usage: 45,
     memory_usage: 62,

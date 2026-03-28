@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgId } from "@/hooks/useOrgId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,16 +25,19 @@ interface AuditLog {
 }
 
 const AuditLogTab = () => {
+  const orgId = useOrgId();
   const [searchTerm, setSearchTerm] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const { data: auditLogs, isLoading } = useQuery({
-    queryKey: ['audit-logs', searchTerm, actionFilter],
+    queryKey: ['audit-logs', orgId, searchTerm, actionFilter],
     queryFn: async () => {
+      if (!orgId) return [];
       let query = supabase
         .from('admin_audit_log')
         .select('*')
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -48,7 +52,8 @@ const AuditLogTab = () => {
       const { data, error } = await query;
       if (error) throw error;
       return (data || []) as AuditLog[];
-    }
+    },
+    enabled: !!orgId,
   });
 
   const getActionBadgeColor = (action: string) => {

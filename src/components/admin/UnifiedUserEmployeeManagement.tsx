@@ -37,12 +37,12 @@ const UnifiedUserEmployeeManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
 
-  if (!isSuperAdmin()) {
+  if (!orgRole || !['owner', 'admin'].includes(orgRole)) {
     return (
       <EnhancedEmptyState
         icon={Users}
         title="ليس لديك صلاحية"
-        description="هذه الميزة متاحة للسوبر أدمن فقط. يرجى التواصل مع المدير للحصول على الصلاحيات المطلوبة."
+        description="هذه الميزة متاحة لمالك المؤسسة والمدير فقط."
         variant="error"
       />
     );
