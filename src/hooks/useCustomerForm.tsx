@@ -33,6 +33,8 @@ export const useCustomerForm = ({
     customerId
   });
 
+  const { executeTrigger } = useAutomationEngine();
+
   const onSubmit = async (data: CustomerData) => {
     if (isSubmitting) {
       console.log('⚠️ العملية قيد التنفيذ بالفعل');
