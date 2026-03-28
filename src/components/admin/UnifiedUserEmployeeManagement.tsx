@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, UserPlus, Search } from 'lucide-react';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
@@ -14,7 +14,7 @@ import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { EnhancedEmptyState } from '@/components/ui/enhanced-empty-state';
 
 const UnifiedUserEmployeeManagement = () => {
-  const { isSuperAdmin } = useOptimizedAuth();
+  const { orgRole } = useOrganization();
   const {
     unifiedUsers,
     unlinkedEmployees,
@@ -37,12 +37,12 @@ const UnifiedUserEmployeeManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
 
-  if (!isSuperAdmin()) {
+  if (!orgRole || !['owner', 'admin'].includes(orgRole)) {
     return (
       <EnhancedEmptyState
         icon={Users}
         title="ليس لديك صلاحية"
-        description="هذه الميزة متاحة للسوبر أدمن فقط. يرجى التواصل مع المدير للحصول على الصلاحيات المطلوبة."
+        description="هذه الميزة متاحة لمالك المؤسسة والمدير فقط."
         variant="error"
       />
     );
