@@ -34,6 +34,8 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
   payment_confirmed: 'عند تأكيد الدفع',
   before_travel: 'قبل موعد السفر',
   booking_status_changed: 'عند تغيير حالة الحجز',
+  invoice_created: 'عند إنشاء فاتورة',
+  customer_registered: 'عند تسجيل عميل جديد',
 };
 
 export const ACTION_LABELS: Record<ActionType, string> = {
