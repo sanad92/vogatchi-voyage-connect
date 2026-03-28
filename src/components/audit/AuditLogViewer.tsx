@@ -66,6 +66,8 @@ const AuditLogViewer = ({ targetTable, targetId, title, compact = false, showFil
     );
   });
 
+  const { paginatedItems, pagination } = useClientPagination(filtered, compact ? 20 : 50);
+
   const changedFields = selected ? getChangedFields(selected.old_values, selected.new_values) : [];
 
   return (
