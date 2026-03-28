@@ -33,6 +33,7 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
 
         {/* Left: Org Switcher, Profile */}
         <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
+          <NotificationBell />
           <OrgSwitcher />
 
           <DropdownMenu>
