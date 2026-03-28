@@ -272,41 +272,65 @@ const PaymentPage = () => {
             </Card>
           )}
 
-          {/* Payment Button */}
-          <Button 
-            className="w-full h-14 text-lg gap-3"
-            size="lg"
-            onClick={handlePayment}
-            disabled={isProcessing || price === 0}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                جاري تحويلك لبوابة الدفع...
-              </>
-            ) : (
-              <>
-                <CreditCard className="h-5 w-5" />
-                ادفع {price.toLocaleString('ar-EG')} ج.م
-              </>
-            )}
-          </Button>
+          {/* Payment Methods */}
+          <Tabs defaultValue="bank_transfer" dir="rtl">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="bank_transfer" className="gap-2">
+                <BanknoteIcon className="h-4 w-4" />
+                تحويل بنكي
+              </TabsTrigger>
+              <TabsTrigger value="online" className="gap-2">
+                <CreditCard className="h-4 w-4" />
+                دفع إلكتروني
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Trust signals */}
-          <div className="grid grid-cols-3 gap-4 text-center pt-4">
-            <div className="space-y-1">
-              <Shield className="h-6 w-6 mx-auto text-green-600" />
-              <p className="text-xs text-muted-foreground">دفع مشفر وآمن</p>
-            </div>
-            <div className="space-y-1">
-              <CheckCircle2 className="h-6 w-6 mx-auto text-primary" />
-              <p className="text-xs text-muted-foreground">تفعيل فوري</p>
-            </div>
-            <div className="space-y-1">
-              <CreditCard className="h-6 w-6 mx-auto text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">بطاقات ائتمان وفوري</p>
-            </div>
-          </div>
+            <TabsContent value="bank_transfer" className="mt-4">
+              <BankTransferForm
+                planId={planId!}
+                planName={plan?.name_ar || plan?.name || ''}
+                amount={price}
+                billing={billing as 'monthly' | 'yearly'}
+              />
+            </TabsContent>
+
+            <TabsContent value="online" className="mt-4 space-y-4">
+              <Button 
+                className="w-full h-14 text-lg gap-3"
+                size="lg"
+                onClick={handlePayment}
+                disabled={isProcessing || price === 0}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    جاري تحويلك لبوابة الدفع...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-5 w-5" />
+                    ادفع {price.toLocaleString('ar-EG')} ج.م
+                  </>
+                )}
+              </Button>
+
+              {/* Trust signals */}
+              <div className="grid grid-cols-3 gap-4 text-center pt-4">
+                <div className="space-y-1">
+                  <Shield className="h-6 w-6 mx-auto text-green-600" />
+                  <p className="text-xs text-muted-foreground">دفع مشفر وآمن</p>
+                </div>
+                <div className="space-y-1">
+                  <CheckCircle2 className="h-6 w-6 mx-auto text-primary" />
+                  <p className="text-xs text-muted-foreground">تفعيل فوري</p>
+                </div>
+                <div className="space-y-1">
+                  <CreditCard className="h-6 w-6 mx-auto text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">بطاقات ائتمان وفوري</p>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
