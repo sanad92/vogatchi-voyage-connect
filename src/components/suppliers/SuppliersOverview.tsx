@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Supplier } from '@/types/supplier';
 import { SupplierFormData } from './SupplierForm';
 import { SupplierCurrencySetupData } from '../shared/SupplierCurrencySetup';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 
 interface SuppliersOverviewProps {
   onSupplierSelect: (id: string) => void;
