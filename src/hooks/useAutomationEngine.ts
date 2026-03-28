@@ -3,16 +3,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useCallback } from 'react';
 
-export type AutomationTrigger = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed';
+export type AutomationTrigger = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed' | 'invoice_created' | 'customer_registered';
 
 interface TriggerContext {
-  bookingId: string;
-  bookingType: string;
+  bookingId?: string;
+  bookingType?: string;
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
   travelDate?: string;
   totalAmount?: number;
+  customerId?: string;
+  invoiceId?: string;
+  invoiceNumber?: string;
   [key: string]: any;
 }
 
@@ -49,8 +52,8 @@ export function useAutomationEngine() {
               organization_id: orgId,
               trigger_type: triggerType,
               action_type: action.action_type,
-              booking_id: context.bookingId,
-              booking_type: context.bookingType,
+              booking_id: context.bookingId || null,
+              booking_type: context.bookingType || null,
               status: 'processing',
               metadata: { context, action_config: action.action_config },
             })

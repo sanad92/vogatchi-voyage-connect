@@ -91,8 +91,45 @@ const AutomationRules = () => {
     }
   };
 
+  const activeRulesCount = rules.filter(r => r.is_active).length;
+  const completedCount = (logs as any[]).filter((l: any) => l.status === 'completed').length;
+  const failedCount = (logs as any[]).filter((l: any) => l.status === 'failed').length;
+  const [logFilter, setLogFilter] = useState<string>('all');
+
+  const filteredLogs = logFilter === 'all'
+    ? logs as any[]
+    : (logs as any[]).filter((l: any) => l.status === logFilter);
+
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-primary">{rules.length}</div>
+            <div className="text-sm text-muted-foreground">إجمالي القواعد</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-emerald-600">{activeRulesCount}</div>
+            <div className="text-sm text-muted-foreground">قواعد نشطة</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-emerald-600">{completedCount}</div>
+            <div className="text-sm text-muted-foreground">تنفيذ ناجح</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-destructive">{failedCount}</div>
+            <div className="text-sm text-muted-foreground">فشل</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">نظام الأتمتة</h1>
@@ -182,9 +219,28 @@ const AutomationRules = () => {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
+          {/* Log Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { value: 'all', label: 'الكل' },
+              { value: 'completed', label: 'ناجح' },
+              { value: 'failed', label: 'فشل' },
+              { value: 'processing', label: 'قيد التنفيذ' },
+            ].map(f => (
+              <Button
+                key={f.value}
+                variant={logFilter === f.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLogFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+
           {logsLoading ? (
             <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
-          ) : (logs as any[]).length === 0 ? (
+          ) : filteredLogs.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -207,7 +263,7 @@ const AutomationRules = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {(logs as any[]).map((log: any) => (
+                      {filteredLogs.map((log: any) => (
                         <tr key={log.id} className="border-b hover:bg-muted/30">
                           <td className="p-3">
                             <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedBookings, BookingType } from '@/hooks/useUnifiedBookings';
+import { useAutomationEngine } from '@/hooks/useAutomationEngine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,6 +79,7 @@ const NewUnifiedBooking = () => {
   const navigate = useNavigate();
   const orgId = useOrgId();
   const { createBooking } = useUnifiedBookings();
+  const { executeTrigger } = useAutomationEngine();
 
   const wizard = useWizardForm({
     steps: wizardSteps,
@@ -112,7 +114,7 @@ const NewUnifiedBooking = () => {
       bookingType === 'flight' ? 'flightDetails' :
       bookingType === 'car_rental' ? 'carDetails' : 'transportDetails';
 
-    await createBooking.mutateAsync({
+    const result = await createBooking.mutateAsync({
       booking_type: bookingType,
       customer_id: wizard.formData.customer_id || undefined,
       customer_name: wizard.formData.customer_name || undefined,
@@ -125,6 +127,19 @@ const NewUnifiedBooking = () => {
       notes: wizard.formData.notes || undefined,
       [detailKey]: Object.keys(details).length > 0 ? details : undefined,
     });
+
+    // Fire automation trigger
+    if (result?.id) {
+      executeTrigger('booking_created', {
+        bookingId: result.id,
+        bookingType: bookingType,
+        customerName: wizard.formData.customer_name,
+        totalAmount: Number(wizard.formData.selling_price) || 0,
+        travelDate: wizard.formData.start_date,
+        organizationId: orgId,
+      });
+    }
+
     wizard.clearDraft();
     navigate('/bookings');
   };

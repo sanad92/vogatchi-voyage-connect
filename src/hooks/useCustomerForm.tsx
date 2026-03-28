@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useCustomerSubmission } from "./useCustomerSubmission";
+import { useAutomationEngine } from "./useAutomationEngine";
 import { CustomerData, UseCustomerFormProps } from "@/types/customer";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ export const useCustomerForm = ({
     isEditMode,
     customerId
   });
+
+  const { executeTrigger } = useAutomationEngine();
 
   const onSubmit = async (data: CustomerData) => {
     if (isSubmitting) {
@@ -69,6 +72,16 @@ export const useCustomerForm = ({
       const result = await submitCustomer(cleanedData);
       
       console.log('✅ تم حفظ البيانات بنجاح:', result);
+
+      // Fire automation trigger for new customers
+      if (!isEditMode && result?.id) {
+        executeTrigger('customer_registered', {
+          customerId: result.id,
+          customerName: cleanedData.name,
+          customerEmail: cleanedData.email,
+          customerPhone: cleanedData.phone,
+        });
+      }
 
       // إعادة تعيين النموذج في حالة الإضافة فقط
       if (!isEditMode) {
