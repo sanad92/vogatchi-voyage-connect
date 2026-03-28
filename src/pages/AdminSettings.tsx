@@ -99,6 +99,7 @@ const AdminSettings = () => {
         </div>
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <TabsContent value="org-settings" className="mt-0"><OrganizationSettingsTab /></TabsContent>
           <TabsContent value="unified-management" className="mt-0"><UnifiedUserEmployeeManagement /></TabsContent>
           <TabsContent value="audit" className="mt-0"><AuditLogTab /></TabsContent>
           <TabsContent value="performance" className="mt-0"><PerformanceMonitorTab /></TabsContent>
