@@ -1,12 +1,25 @@
-
-import NotificationCenter from "@/components/crm/NotificationCenter";
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 const DashboardHeader = () => {
+  const { profile } = useOptimizedAuth();
+  const firstName = profile?.full_name?.split(' ')[0] || 'المستخدم';
+  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'صباح الخير';
+    if (hour < 17) return 'مساء الخير';
+    return 'مساء الخير';
+  };
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">مرحباً بعودتك! 👋</h1>
-        <p className="text-sm text-muted-foreground mt-1">نظرة عامة على أداء شركتك اليوم</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          {getGreeting()}، {firstName} 👋
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          نظرة عامة على أداء شركتك اليوم
+        </p>
       </div>
       <div className="flex items-center gap-3">
         <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">

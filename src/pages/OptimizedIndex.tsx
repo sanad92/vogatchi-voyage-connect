@@ -1,11 +1,8 @@
-
 import React from 'react';
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
-import CRMStatsCards from "@/components/dashboard/CRMStatsCards";
-import ProductTour, { useProductTour } from "@/components/onboarding/ProductTour";
 import TodayOverview from "@/components/dashboard/TodayOverview";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RevenueChart from "@/components/dashboard/RevenueChart";
@@ -27,28 +24,18 @@ const DashboardSkeleton = () => (
       </div>
       <Skeleton className="h-10 w-32 rounded-lg" />
     </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Card key={i}>
-          <CardContent className="p-5">
-            <div className="space-y-3">
-              <Skeleton className="h-3 w-20 rounded" />
-              <Skeleton className="h-8 w-24 rounded" />
-              <Skeleton className="h-3 w-32 rounded" />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-[130px] rounded-2xl" />
       ))}
     </div>
     <Skeleton className="h-[350px] w-full rounded-xl" />
-    <Skeleton className="h-[300px] w-full rounded-xl" />
   </div>
 );
 
 const OptimizedIndex = () => {
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
-  const { showTour, completeTour } = useProductTour();
 
   if (error) {
     return (
@@ -58,12 +45,7 @@ const OptimizedIndex = () => {
           <AlertDescription className="text-destructive mb-4">
             حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
           </AlertDescription>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            size="sm"
-            className="mt-2"
-          >
+          <Button onClick={() => window.location.reload()} variant="outline" size="sm" className="mt-2">
             <RefreshCw className="h-4 w-4 ml-2" />
             إعادة تحميل
           </Button>
@@ -74,15 +56,13 @@ const OptimizedIndex = () => {
 
   if (isLoading) return <DashboardSkeleton />;
 
-  const { realStats, crmStats, customers } = dashboardData || {
-    realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0 },
-    crmStats: { vipCustomers: 0, loyaltyPoints: 0 },
+  const { realStats, customers } = dashboardData || {
+    realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0 },
     customers: []
   };
 
   return (
     <OptimizedErrorBoundary>
-      {showTour && <ProductTour onComplete={completeTour} />}
       <div className="p-4 lg:p-6 space-y-6" dir="rtl">
         <DashboardHeader />
 
@@ -111,10 +91,6 @@ const OptimizedIndex = () => {
             <RecentActivity />
           </OptimizedErrorBoundary>
         </div>
-
-        <OptimizedErrorBoundary>
-          <CRMStatsCards customers={customers} realStats={realStats} />
-        </OptimizedErrorBoundary>
       </div>
     </OptimizedErrorBoundary>
   );
