@@ -237,6 +237,7 @@ function App() {
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/settings" element={<PlatformAdminGuard><PlatformAdminSettings /></PlatformAdminGuard>} />
+                              <Route path="/platform-admin/transfers" element={<PlatformAdminGuard><PlatformAdminTransfers /></PlatformAdminGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>
