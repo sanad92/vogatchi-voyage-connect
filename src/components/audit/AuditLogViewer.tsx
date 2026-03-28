@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuditLog, getChangedFields, type AuditLogEntry } from '@/hooks/useAuditLog';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import PaginationControlsUI from '@/components/ui/pagination-controls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
