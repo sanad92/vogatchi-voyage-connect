@@ -18,7 +18,7 @@ const tabs = [
 
 const AdminSettings = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
-  const [activeTab, setActiveTab] = useState('unified-management');
+  const [activeTab, setActiveTab] = useState('org-settings');
   const [searchTerm, setSearchTerm] = useState('');
 
   if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
