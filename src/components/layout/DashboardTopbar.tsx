@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Menu, LogOut, Settings, User } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { Link } from 'react-router-dom';
 
 interface DashboardTopbarProps {
@@ -32,6 +33,7 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
 
         {/* Left: Org Switcher, Profile */}
         <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
+          <NotificationBell />
           <OrgSwitcher />
 
           <DropdownMenu>

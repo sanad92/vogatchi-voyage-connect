@@ -82,6 +82,7 @@ const navGroups: NavGroup[] = [
       { title: 'الأرباح والخسائر', href: '/profit-loss-reports', icon: TrendingUp },
       { title: 'تحليل الأرباح', href: '/profit-analytics', icon: BarChart3, requiredPermission: 'reports_advanced' },
       { title: 'الإحصائيات', href: '/crm-dashboard', icon: BarChart3, requiredPermission: 'crm_view' },
+      { title: 'مركز التصدير', href: '/export-center', icon: FileText },
     ],
   },
   {
