@@ -15,7 +15,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
-import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
+
 import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
