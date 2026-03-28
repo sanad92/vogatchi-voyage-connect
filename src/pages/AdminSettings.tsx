@@ -5,7 +5,6 @@ import { Shield, Users, Palette, ClipboardList, BarChart3, Search } from 'lucide
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
-import SiteSettings from '@/components/admin/SiteSettings';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 
