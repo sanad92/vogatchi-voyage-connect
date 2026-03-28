@@ -3,14 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { MonthlySalary } from '@/types/expenses';
 import { useSalaryOperations } from './useSalaryOperations';
+import { useOrgId } from './useOrgId';
 
 export const useSalariesImproved = () => {
   const salaryOperations = useSalaryOperations();
+  const orgId = useOrgId();
 
   const { data: monthlySalaries, isLoading: salariesLoading, error: salariesError } = useQuery({
-    queryKey: ['monthly-salaries-improved'],
+    queryKey: ['monthly-salaries-improved', orgId],
     queryFn: async () => {
-      console.log('جاري جلب الرواتب الشهرية...');
+      if (!orgId) return [];
       
       const { data, error } = await supabase
         .from('monthly_salaries')
@@ -26,6 +28,7 @@ export const useSalariesImproved = () => {
             allowances
           )
         `)
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
 
       if (error) {
