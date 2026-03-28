@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Menu, LogOut, Settings, User } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { Link } from 'react-router-dom';
 
 interface DashboardTopbarProps {
