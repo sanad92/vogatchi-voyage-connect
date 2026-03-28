@@ -68,7 +68,7 @@ const ExportCenter = () => {
       if (!data.length) { toast.error('لا توجد بيانات للتصدير'); return; }
 
       const doc = new jsPDF({ orientation: 'landscape' });
-      const orgName = orgSettings?.business_name_ar || orgSettings?.business_name || 'التقرير';
+      const orgName = orgSettings?.company_name_ar || orgSettings?.company_name || 'التقرير';
 
       // Header
       doc.setFontSize(18);

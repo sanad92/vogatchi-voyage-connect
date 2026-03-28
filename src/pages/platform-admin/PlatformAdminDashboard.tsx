@@ -84,10 +84,10 @@ const PlatformAdminDashboard = () => {
   ];
 
   const alerts = [
-    stats?.pendingTransfers && stats.pendingTransfers > 0 && { icon: Clock, text: `${stats.pendingTransfers} تحويل بنكي بانتظار المراجعة`, variant: 'warning' as const },
+    stats?.pendingTransfers && stats.pendingTransfers > 0 && { icon: Clock, text: `${stats.pendingTransfers} تحويل بنكي بانتظار المراجعة`, variant: 'outline' as const },
     stats?.expiringSoon && stats.expiringSoon > 0 && { icon: AlertTriangle, text: `${stats.expiringSoon} اشتراك ينتهي خلال 7 أيام`, variant: 'destructive' as const },
     stats?.trialSubs && stats.trialSubs > 0 && { icon: Clock, text: `${stats.trialSubs} مؤسسة في الفترة التجريبية`, variant: 'secondary' as const },
-  ].filter(Boolean) as { icon: any; text: string; variant: 'warning' | 'destructive' | 'secondary' }[];
+  ].filter(Boolean) as { icon: any; text: string; variant: 'outline' | 'destructive' | 'secondary' }[];
 
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
