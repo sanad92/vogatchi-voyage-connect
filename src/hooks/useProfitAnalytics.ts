@@ -69,7 +69,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       const results: BookingProfit[] = [];
 
       // Hotel bookings
-      let hq = supabase.from('hotel_bookings').select('id, customer_name, customer_id, total_cost_customer, total_profit, booking_date, employees(full_name, id)') as any;
+      let hq = supabase.from('hotel_bookings').select('id, customer_name, customer_id, total_cost_customer, total_profit, booking_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) hq = hq.gte('booking_date', startDate);
       if (endDate) hq = hq.lte('booking_date', endDate);
       const { data: hotels } = await hq;
