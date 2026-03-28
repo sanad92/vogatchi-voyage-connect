@@ -69,7 +69,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       const results: BookingProfit[] = [];
 
       // Hotel bookings
-      let hq = supabase.from('hotel_bookings').select('id, customer_name, customer_id, total_cost_customer, total_profit, booking_date, employees(full_name, id)') as any;
+      let hq = supabase.from('hotel_bookings').select('id, customer_name, customer_id, total_cost_customer, total_profit, booking_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) hq = hq.gte('booking_date', startDate);
       if (endDate) hq = hq.lte('booking_date', endDate);
       const { data: hotels } = await hq;
@@ -91,7 +91,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       });
 
       // Flight bookings
-      let fq = supabase.from('flight_bookings').select('id, customer_name, customer_id, total_cost_egp, supplier_cost_egp, total_profit, booking_date, employees(full_name, id)') as any;
+      let fq = supabase.from('flight_bookings').select('id, customer_name, customer_id, total_cost_egp, supplier_cost_egp, total_profit, booking_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) fq = fq.gte('booking_date', startDate);
       if (endDate) fq = fq.lte('booking_date', endDate);
       const { data: flights } = await fq;
@@ -113,7 +113,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       });
 
       // Car rentals
-      let cq = supabase.from('car_rentals').select('id, customer_name, customer_id, total_cost_egp, total_rental_cost, supplier_cost_egp, supplier_total_cost, total_profit, rental_start_date, employees(full_name, id)') as any;
+      let cq = supabase.from('car_rentals').select('id, customer_name, customer_id, total_cost_egp, total_rental_cost, supplier_cost_egp, supplier_total_cost, total_profit, rental_start_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) cq = cq.gte('rental_start_date', startDate);
       if (endDate) cq = cq.lte('rental_start_date', endDate);
       const { data: cars } = await cq;
@@ -135,7 +135,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       });
 
       // Transport bookings
-      let tq = supabase.from('transport_bookings').select('id, customer_name, customer_id, total_cost, supplier_cost, total_profit, booking_date, employees(full_name, id)') as any;
+      let tq = supabase.from('transport_bookings').select('id, customer_name, customer_id, total_cost, supplier_cost, total_profit, booking_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) tq = tq.gte('booking_date', startDate);
       if (endDate) tq = tq.lte('booking_date', endDate);
       const { data: transports } = await tq;
@@ -165,7 +165,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
   const commissionsQuery = useQuery({
     queryKey: ['profit-analytics-commissions', orgId, startDate, endDate],
     queryFn: async () => {
-      let q = supabase.from('employee_commissions').select('employee_id, commission_amount, booking_id, employees(full_name)') as any;
+      let q = supabase.from('employee_commissions').select('employee_id, commission_amount, booking_id, employees(full_name)').eq('organization_id', orgId!) as any;
       if (startDate) q = q.gte('commission_date', startDate);
       if (endDate) q = q.lte('commission_date', endDate);
       const { data } = await q;

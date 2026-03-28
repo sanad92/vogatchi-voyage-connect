@@ -5,17 +5,19 @@ import type { RentPayment } from '@/types/expenses';
 import { useExchangeRates } from './useExchangeRates';
 import { SupportedCurrency } from '@/types/currency';
 import { useRentPaymentOperations } from './useRentPaymentOperations';
+import { useOrgId } from './useOrgId';
 
 export const useRentPaymentsImproved = () => {
   const { convertToPrimaryCurrency } = useExchangeRates();
   const operations = useRentPaymentOperations();
+  const orgId = useOrgId();
 
   const { data: rentPayments, isLoading: paymentsLoading, error: paymentsError } = useQuery({
-    queryKey: ['rent-payments-improved'],
+    queryKey: ['rent-payments-improved', orgId],
     queryFn: async () => {
-      console.log('جاري جلب مدفوعات الإيجار...');
+      if (!orgId) return [];
       
-      const { data, error } = await supabase
+      const query = supabase
         .from('rent_payments')
         .select(`
           *,
@@ -27,13 +29,12 @@ export const useRentPaymentsImproved = () => {
             monthly_rent,
             currency
           )
-        `)
+        `) as any;
+      const { data, error } = await query
+        .eq('organization_id', orgId)
         .order('payment_month', { ascending: false });
 
-      if (error) {
-        console.error('خطأ في جلب مدفوعات الإيجار:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       const processedData = data?.map(payment => ({
         ...payment,
@@ -41,9 +42,9 @@ export const useRentPaymentsImproved = () => {
         exchange_rate: payment.exchange_rate || 1,
       })) as (RentPayment & { contract?: any })[];
       
-      console.log('تم جلب مدفوعات الإيجار بنجاح:', processedData?.length);
       return processedData;
     },
+    enabled: !!orgId,
     retry: 2,
     staleTime: 1000 * 60 * 5,
   });
