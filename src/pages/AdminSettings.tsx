@@ -10,7 +10,6 @@ import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 
 const tabs = [
   { value: 'unified-management', label: 'إدارة المستخدمين', icon: Users, description: 'إدارة موحدة للمستخدمين والموظفين' },
-  { value: 'site', label: 'إعدادات الموقع', icon: Palette, description: 'تخصيص مظهر وإعدادات الموقع' },
   { value: 'audit', label: 'سجل العمليات', icon: ClipboardList, description: 'سجل مفصل لجميع العمليات' },
   { value: 'performance', label: 'مراقبة الأداء', icon: BarChart3, description: 'مراقبة أداء النظام والتحليلات' },
 ];
