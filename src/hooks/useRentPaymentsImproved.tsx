@@ -5,15 +5,17 @@ import type { RentPayment } from '@/types/expenses';
 import { useExchangeRates } from './useExchangeRates';
 import { SupportedCurrency } from '@/types/currency';
 import { useRentPaymentOperations } from './useRentPaymentOperations';
+import { useOrgId } from './useOrgId';
 
 export const useRentPaymentsImproved = () => {
   const { convertToPrimaryCurrency } = useExchangeRates();
   const operations = useRentPaymentOperations();
+  const orgId = useOrgId();
 
   const { data: rentPayments, isLoading: paymentsLoading, error: paymentsError } = useQuery({
-    queryKey: ['rent-payments-improved'],
+    queryKey: ['rent-payments-improved', orgId],
     queryFn: async () => {
-      console.log('جاري جلب مدفوعات الإيجار...');
+      if (!orgId) return [];
       
       const { data, error } = await supabase
         .from('rent_payments')
@@ -28,6 +30,7 @@ export const useRentPaymentsImproved = () => {
             currency
           )
         `)
+        .eq('organization_id', orgId)
         .order('payment_month', { ascending: false });
 
       if (error) {
