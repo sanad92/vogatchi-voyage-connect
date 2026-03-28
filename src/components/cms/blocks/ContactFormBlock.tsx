@@ -113,7 +113,7 @@ const ContactFormBlock: React.FC<Props> = ({ block }) => {
   }
 
   return (
-    <FormErrorBoundary>
+    <OptimizedErrorBoundary>
       <section className="w-full">
         <div className={getContainerClass(block.layout_settings)}>
           <div className={getSectionClasses(block.layout_settings)}>
@@ -208,7 +208,7 @@ const ContactFormBlock: React.FC<Props> = ({ block }) => {
           </div>
         </div>
       </section>
-    </FormErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 

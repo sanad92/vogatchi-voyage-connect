@@ -6,7 +6,7 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 
 const WhatsApp = () => {
   return (
-    <ErrorBoundary>
+    <OptimizedErrorBoundary>
       <PermissionGate 
         requiredRole="viewer"
         fallback={
@@ -26,7 +26,7 @@ const WhatsApp = () => {
           <WhatsAppDashboard />
         </div>
       </PermissionGate>
-    </ErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 

@@ -55,7 +55,7 @@ const WhatsAppDashboard = () => {
   }));
 
   return (
-    <ErrorBoundary>
+    <OptimizedErrorBoundary>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <div className="p-3 sm:p-4 border-b bg-card">
           <div className="flex items-center justify-between gap-2">
@@ -115,7 +115,7 @@ const WhatsAppDashboard = () => {
           </div>
         </div>
       </div>
-    </ErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 
