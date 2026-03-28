@@ -148,8 +148,9 @@ const AuditLogViewer = ({ targetTable, targetId, title, compact = false, showFil
               })}
             </div>
           </ScrollArea>
-          {!compact && <PaginationControlsUI pagination={pagination} />}
+          </>
         )}
+        {!compact && filtered.length > 0 && <PaginationControlsUI pagination={pagination} />}
 
         {/* Detail Dialog */}
         <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
