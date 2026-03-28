@@ -219,9 +219,28 @@ const AutomationRules = () => {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
+          {/* Log Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { value: 'all', label: 'الكل' },
+              { value: 'completed', label: 'ناجح' },
+              { value: 'failed', label: 'فشل' },
+              { value: 'processing', label: 'قيد التنفيذ' },
+            ].map(f => (
+              <Button
+                key={f.value}
+                variant={logFilter === f.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLogFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+
           {logsLoading ? (
             <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
-          ) : (logs as any[]).length === 0 ? (
+          ) : filteredLogs.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
