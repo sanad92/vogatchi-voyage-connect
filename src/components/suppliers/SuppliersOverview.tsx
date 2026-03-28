@@ -70,6 +70,8 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
     return searchMatch && typeMatch && statusMatch && minRatingMatch;
   });
 
+  const { paginatedItems, pagination } = useClientPagination(filteredSuppliers, 25);
+
   const { addCurrency } = useSupplierCurrencies();
 
   const handleFormSubmit = async (formData: SupplierFormData, currencies: SupplierCurrencySetupData[]) => {
