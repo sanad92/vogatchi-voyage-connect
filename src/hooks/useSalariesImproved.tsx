@@ -14,7 +14,7 @@ export const useSalariesImproved = () => {
     queryFn: async () => {
       if (!orgId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('monthly_salaries')
         .select(`
           *,
@@ -29,7 +29,7 @@ export const useSalariesImproved = () => {
           )
         `)
         .eq('organization_id', orgId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) throw error;
       return data as (MonthlySalary & { employee?: any })[];
