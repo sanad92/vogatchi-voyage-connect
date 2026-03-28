@@ -10,6 +10,7 @@ import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 import OrganizationSettingsTab from '@/components/admin/OrganizationSettingsTab';
 
 const tabs = [
+  { value: 'org-settings', label: 'إعدادات المؤسسة', icon: Building2, description: 'لوجو، ألوان، بيانات التواصل' },
   { value: 'unified-management', label: 'إدارة المستخدمين', icon: Users, description: 'إدارة موحدة للمستخدمين والموظفين' },
   { value: 'audit', label: 'سجل العمليات', icon: ClipboardList, description: 'سجل مفصل لجميع العمليات' },
   { value: 'performance', label: 'مراقبة الأداء', icon: BarChart3, description: 'مراقبة أداء النظام والتحليلات' },
