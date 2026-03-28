@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { Shield, Users, ClipboardList, BarChart3, Search } from 'lucide-react';
+import { Shield, Users, ClipboardList, BarChart3, Search, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
