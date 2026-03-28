@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useEmployeeActions } from '@/hooks/useEmployeeActions';
+import { useEmployeeActionsOptimized } from '@/hooks/useEmployeeActionsOptimized';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import ToggleEmployeeStatusDialog from '@/components/expenses/employee-management/dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '@/components/expenses/employee-management/dialogs/DeleteEmployeeDialog';
@@ -35,12 +35,13 @@ const UnifiedUserCardEnhanced = ({
 }: UnifiedUserCardEnhancedProps) => {
   const { isSuperAdmin } = useOptimizedAuth();
   const { 
-    isLoading, 
+    isLoading: isLoadingFn, 
     toggleEmployeeStatus, 
     deleteEmployee, 
     checkEmployeeDeletion,
     canDelete 
-  } = useEmployeeActions();
+  } = useEmployeeActionsOptimized();
+  const isLoading = typeof isLoadingFn === 'function' ? isLoadingFn() : !!isLoadingFn;
 
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

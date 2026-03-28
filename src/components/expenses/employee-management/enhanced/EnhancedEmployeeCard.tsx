@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { useEmployeeActions } from '@/hooks/useEmployeeActions';
+import { useEmployeeActionsOptimized } from '@/hooks/useEmployeeActionsOptimized';
 import ToggleEmployeeStatusDialog from '../dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '../dialogs/DeleteEmployeeDialog';
 import ViewEmployeeDialog from '../dialogs/ViewEmployeeDialog';
@@ -40,15 +40,16 @@ interface EnhancedEmployeeCardProps {
 
 const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCardProps) => {
   const { 
-    isLoading, 
     updateEmployee,
     toggleEmployeeStatus, 
     deleteEmployee, 
     checkEmployeeDeletion,
     canToggleStatus,
     canDelete,
-    canEdit 
-  } = useEmployeeActions();
+    canEdit,
+    isLoading: isLoadingFn,
+  } = useEmployeeActionsOptimized();
+  const isLoading = typeof isLoadingFn === 'function' ? isLoadingFn() : !!isLoadingFn;
 
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

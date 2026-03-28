@@ -11,7 +11,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import BookingsTable from "@/components/dashboard/BookingsTable";
 import RecentActivity from "@/components/dashboard/RecentActivity";
-import ErrorBoundary from "@/components/common/ErrorBoundary";
+import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ const OptimizedIndex = () => {
   };
 
   return (
-    <ErrorBoundary>
+    <OptimizedErrorBoundary>
       {showTour && <ProductTour onComplete={completeTour} />}
       <div className="p-4 lg:p-6 space-y-6" dir="rtl">
         <DashboardHeader />
@@ -89,34 +89,34 @@ const OptimizedIndex = () => {
         <EnhancedStatsCards realStats={realStats} />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <ErrorBoundary>
+          <OptimizedErrorBoundary>
             <RevenueChart />
-          </ErrorBoundary>
+          </OptimizedErrorBoundary>
           <div className="space-y-6">
-            <ErrorBoundary>
+            <OptimizedErrorBoundary>
               <TodayOverview />
-            </ErrorBoundary>
+            </OptimizedErrorBoundary>
           </div>
         </div>
 
-        <ErrorBoundary>
+        <OptimizedErrorBoundary>
           <BookingsTable />
-        </ErrorBoundary>
+        </OptimizedErrorBoundary>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <ErrorBoundary>
+          <OptimizedErrorBoundary>
             <QuickActions />
-          </ErrorBoundary>
-          <ErrorBoundary>
+          </OptimizedErrorBoundary>
+          <OptimizedErrorBoundary>
             <RecentActivity />
-          </ErrorBoundary>
+          </OptimizedErrorBoundary>
         </div>
 
-        <ErrorBoundary>
+        <OptimizedErrorBoundary>
           <CRMStatsCards customers={customers} realStats={realStats} />
-        </ErrorBoundary>
+        </OptimizedErrorBoundary>
       </div>
-    </ErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 

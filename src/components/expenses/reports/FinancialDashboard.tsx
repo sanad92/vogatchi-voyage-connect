@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Target } from 'lucide-react';
-import { useExpenseTransactions } from '@/hooks/useExpenseTransactions';
+import { useExpenseTransactionsOptimized as useExpenseTransactions } from '@/hooks/useExpenseTransactionsOptimized';
 import { useExpenseCategories } from '@/hooks/useExpenseCategories';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useRentContracts } from '@/hooks/useRentContracts';

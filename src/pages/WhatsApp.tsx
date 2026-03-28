@@ -2,11 +2,11 @@
 import React from 'react';
 import WhatsAppDashboard from '@/components/whatsapp/WhatsAppDashboard';
 import { PermissionGate } from '@/components/auth/PermissionGate';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 
 const WhatsApp = () => {
   return (
-    <ErrorBoundary>
+    <OptimizedErrorBoundary>
       <PermissionGate 
         requiredRole="viewer"
         fallback={
@@ -26,7 +26,7 @@ const WhatsApp = () => {
           <WhatsAppDashboard />
         </div>
       </PermissionGate>
-    </ErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 

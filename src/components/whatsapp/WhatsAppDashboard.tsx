@@ -11,7 +11,7 @@ import { SessionManager } from './SessionManager';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { WhatsAppConversation } from '@/types/whatsapp';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 
 const WhatsAppDashboard = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -55,7 +55,7 @@ const WhatsAppDashboard = () => {
   }));
 
   return (
-    <ErrorBoundary>
+    <OptimizedErrorBoundary>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <div className="p-3 sm:p-4 border-b bg-card">
           <div className="flex items-center justify-between gap-2">
@@ -115,7 +115,7 @@ const WhatsAppDashboard = () => {
           </div>
         </div>
       </div>
-    </ErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 

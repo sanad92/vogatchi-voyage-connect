@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getSectionClasses, getContainerClass } from "@/utils/cms/layout";
 import { Send, CheckCircle } from "lucide-react";
-import FormErrorBoundary from "@/components/common/FormErrorBoundary";
+import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 
 interface ContactFormBlockContent {
   form_title?: string;
@@ -113,7 +113,7 @@ const ContactFormBlock: React.FC<Props> = ({ block }) => {
   }
 
   return (
-    <FormErrorBoundary>
+    <OptimizedErrorBoundary>
       <section className="w-full">
         <div className={getContainerClass(block.layout_settings)}>
           <div className={getSectionClasses(block.layout_settings)}>
@@ -208,7 +208,7 @@ const ContactFormBlock: React.FC<Props> = ({ block }) => {
           </div>
         </div>
       </section>
-    </FormErrorBoundary>
+    </OptimizedErrorBoundary>
   );
 };
 
