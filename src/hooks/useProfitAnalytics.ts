@@ -91,7 +91,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       });
 
       // Flight bookings
-      let fq = supabase.from('flight_bookings').select('id, customer_name, customer_id, total_cost_egp, supplier_cost_egp, total_profit, booking_date, employees(full_name, id)') as any;
+      let fq = supabase.from('flight_bookings').select('id, customer_name, customer_id, total_cost_egp, supplier_cost_egp, total_profit, booking_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) fq = fq.gte('booking_date', startDate);
       if (endDate) fq = fq.lte('booking_date', endDate);
       const { data: flights } = await fq;
