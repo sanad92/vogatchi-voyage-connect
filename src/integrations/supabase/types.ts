@@ -507,6 +507,78 @@ export type Database = {
           },
         ]
       }
+      bank_transfer_requests: {
+        Row: {
+          amount: number
+          billing_cycle: string
+          created_at: string | null
+          created_by: string | null
+          currency: string
+          id: string
+          notes: string | null
+          organization_id: string
+          plan_id: string
+          receipt_url: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transfer_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          billing_cycle?: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          plan_id: string
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          billing_cycle?: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          plan_id?: string
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transfer_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfer_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           content: Json | null
