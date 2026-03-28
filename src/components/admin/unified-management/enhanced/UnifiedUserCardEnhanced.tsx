@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useEmployeeActionsOptimized as useEmployeeActions } from '@/hooks/useEmployeeActionsOptimized';
+import { useEmployeeActionsOptimized } from '@/hooks/useEmployeeActionsOptimized';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import ToggleEmployeeStatusDialog from '@/components/expenses/employee-management/dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '@/components/expenses/employee-management/dialogs/DeleteEmployeeDialog';
