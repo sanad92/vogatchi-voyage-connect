@@ -33,10 +33,7 @@ export const useRentPaymentsImproved = () => {
         .eq('organization_id', orgId)
         .order('payment_month', { ascending: false });
 
-      if (error) {
-        console.error('خطأ في جلب مدفوعات الإيجار:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       const processedData = data?.map(payment => ({
         ...payment,
@@ -44,9 +41,9 @@ export const useRentPaymentsImproved = () => {
         exchange_rate: payment.exchange_rate || 1,
       })) as (RentPayment & { contract?: any })[];
       
-      console.log('تم جلب مدفوعات الإيجار بنجاح:', processedData?.length);
       return processedData;
     },
+    enabled: !!orgId,
     retry: 2,
     staleTime: 1000 * 60 * 5,
   });

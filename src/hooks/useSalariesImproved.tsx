@@ -31,14 +31,10 @@ export const useSalariesImproved = () => {
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('خطأ في جلب الرواتب:', error);
-        throw error;
-      }
-      
-      console.log('تم جلب الرواتب بنجاح:', data?.length);
+      if (error) throw error;
       return data as (MonthlySalary & { employee?: any })[];
     },
+    enabled: !!orgId,
     retry: 2,
     staleTime: 1000 * 60 * 5,
   });

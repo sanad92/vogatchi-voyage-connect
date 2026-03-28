@@ -11,13 +11,13 @@ export const useOptimizedDashboard = () => {
     queryFn: async () => {
       try {
         const [hotelBookingsResult, flightBookingsResult, carRentalsResult, transportResult, customersResult, recentBookingsResult, recentCustomersResult] = await Promise.allSettled([
-          supabase.from('hotel_bookings').select('total_cost_customer, total_profit, created_at').order('created_at', { ascending: false }),
-          supabase.from('flight_bookings').select('total_cost_egp, total_profit, created_at').order('created_at', { ascending: false }),
-          supabase.from('car_rentals').select('total_cost_egp, total_rental_cost, total_profit, created_at').order('created_at', { ascending: false }),
-          supabase.from('transport_bookings').select('total_cost, total_profit, created_at').order('created_at', { ascending: false }),
-          supabase.from('customers').select('id, name, total_bookings, loyalty_points, created_at').order('created_at', { ascending: false }),
-          supabase.from('hotel_bookings').select('id, customer_name, hotel_name, total_cost_customer, created_at').order('created_at', { ascending: false }).limit(3),
-          supabase.from('customers').select('id, name, created_at').order('created_at', { ascending: false }).limit(2)
+          supabase.from('hotel_bookings').select('total_cost_customer, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('flight_bookings').select('total_cost_egp, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('car_rentals').select('total_cost_egp, total_rental_cost, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('transport_bookings').select('total_cost, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('customers').select('id, name, total_bookings, loyalty_points, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('hotel_bookings').select('id, customer_name, hotel_name, total_cost_customer, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(3),
+          supabase.from('customers').select('id, name, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(2)
         ]);
 
         const hotelBookings = hotelBookingsResult.status === 'fulfilled' && !hotelBookingsResult.value.error ? hotelBookingsResult.value.data || [] : [];
