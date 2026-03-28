@@ -31,7 +31,7 @@ interface SystemMetrics {
 }
 
 const PerformanceMonitorTab = () => {
-  const { organization } = useOrganization();
+  const { currentOrganization } = useOrganization();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     cpu_usage: 45,
     memory_usage: 62,
