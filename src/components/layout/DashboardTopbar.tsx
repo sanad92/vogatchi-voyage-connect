@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Search, Bell, Menu, LogOut, User, Settings } from 'lucide-react';
+import { Search, Menu, LogOut, Settings } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
 import { Link } from 'react-router-dom';
 
@@ -17,7 +16,6 @@ interface DashboardTopbarProps {
 
 const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
   const { user, profile, signOut } = useOptimizedAuth();
-  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border" dir="rtl">
@@ -33,47 +31,20 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Search */}
+          {/* Search placeholder */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="بحث في النظام..."
-              className="pr-10 bg-muted/50 border-transparent focus:border-primary focus:bg-card h-10 rounded-xl"
+              placeholder="بحث في النظام... (قريباً)"
+              disabled
+              className="pr-10 bg-muted/50 border-transparent h-10 rounded-xl cursor-not-allowed opacity-60"
             />
           </div>
         </div>
 
-        {/* Left: Org Switcher, Notifications, Profile */}
+        {/* Left: Org Switcher, Profile */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <OrgSwitcher />
-
-          {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                <span className="absolute -top-0.5 -left-0.5 rtl:-right-0.5 rtl:left-auto w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>الإشعارات</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-                <span className="text-sm font-medium">حجز جديد</span>
-                <span className="text-xs text-muted-foreground">تم إضافة حجز فندق جديد - فندق النيل</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-                <span className="text-sm font-medium">تنبيه دفع</span>
-                <span className="text-xs text-muted-foreground">موعد دفع مورد خلال 3 أيام</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-                <span className="text-sm font-medium">عميل VIP</span>
-                <span className="text-xs text-muted-foreground">أحمد محمد وصل لمستوى VIP</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           {/* User Menu */}
           <DropdownMenu>

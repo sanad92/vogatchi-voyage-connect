@@ -1,4 +1,5 @@
 
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,83 +9,118 @@ import {
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import SaaSLanding from "@/pages/SaaSLanding";
-import PricingPage from "@/pages/PricingPage";
-import PaymentPage from "@/pages/PaymentPage";
-import OptimizedIndex from "@/pages/OptimizedIndex";
-import MonitoringDashboard from "@/pages/MonitoringDashboard";
-import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
-import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
-import Customers from "@/pages/Customers";
-import DuplicateCustomersPage from "@/pages/DuplicateCustomers";
-import NewCustomer from "@/pages/NewCustomer";
-import HotelBookings from "@/pages/HotelBookings";
-import Quotes from "@/pages/Quotes";
-import NewQuote from "@/pages/NewQuote";
-import QuoteDetails from "@/pages/QuoteDetails";
-import NewHotelBooking from "@/pages/NewHotelBooking";
-import FlightBookings from "@/pages/FlightBookings";
-import NewFlightBooking from "@/pages/NewFlightBooking";
-import CarRentals from "@/pages/CarRentals";
-import TransportBookings from "@/pages/TransportBookings";
-import Invoices from "@/pages/Invoices";
-import Suppliers from "@/pages/Suppliers";
-import Reports from "@/pages/Reports";
-import ProfitLossReports from "@/pages/ProfitLossReports";
-import ProfitAnalytics from "@/pages/ProfitAnalytics";
-import ExpenseManagementEnhanced from "@/pages/ExpenseManagementEnhanced";
-import EnhancedEmployeesPage from "@/pages/EnhancedEmployeesPage";
-import AdminSettings from "@/pages/AdminSettings";
-import AdminImportExport from "@/pages/AdminImportExport";
-import SiteCustomization from "@/pages/SiteCustomization";
-import PaymentOrders from "@/pages/PaymentOrders";
-import PaymentSuccess from "@/pages/PaymentSuccess";
-import NewInvoice from "@/pages/NewInvoice";
-import CustomerDetails from "@/pages/CustomerDetails";
-import BankAccounts from "@/pages/BankAccounts";
-import DailyOperations from "@/pages/DailyOperations";
-import CustomerService from "@/pages/CustomerService";
-import CRM from "@/pages/CRM";
-import CRMDashboard from "@/pages/CRMDashboard";
-import CustomerPortalPage from "@/pages/CustomerPortalPage";
-import BookingsCalendar from "@/pages/BookingsCalendar";
-import DatabaseManager from "@/pages/DatabaseManager";
-import AutomationRules from "@/pages/AutomationRules";
-import Documents from "@/pages/Documents";
-import AuditLog from "@/pages/AuditLog";
-import UnifiedBookings from "@/pages/UnifiedBookings";
-import NewUnifiedBooking from "@/pages/NewUnifiedBooking";
-import UnifiedBookingDetails from "@/pages/UnifiedBookingDetails";
-import TeamManagement from "@/pages/TeamManagement";
-import NotFound from "@/pages/NotFound";
-import WhatsApp from "@/pages/WhatsApp";
-import WhatsAppAdmin from '@/pages/WhatsAppAdmin';
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
-import CMSPages from "@/pages/admin/CMSPages";
-import PageBlocks from "@/pages/admin/PageBlocks";
-import LoginPage from "@/pages/LoginPage";
-import SignupPage from "@/pages/SignupPage";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import RegisterOrganization from "@/pages/RegisterOrganization";
-import OnboardingWizard from "@/pages/OnboardingWizard";
-import AcceptInvite from "@/pages/AcceptInvite";
-import PlatformAdminDashboard from "@/pages/platform-admin/PlatformAdminDashboard";
-import PlatformAdminOrganizations from "@/pages/platform-admin/PlatformAdminOrganizations";
-import PlatformAdminSubscriptions from "@/pages/platform-admin/PlatformAdminSubscriptions";
+import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
+import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
-import SubscriptionExpiredPage from "@/pages/SubscriptionExpired";
-import SubscriptionManagement from "@/pages/SubscriptionManagement";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
 import OnboardingGuard from "@/components/onboarding/OnboardingGuard";
 
-// إعدادات محسنة للQuery Client
+// Loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+      <p className="mt-3 text-sm text-muted-foreground">جارٍ التحميل...</p>
+    </div>
+  </div>
+);
+
+// Public pages
+const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
+const PricingPage = lazy(() => import("@/pages/PricingPage"));
+const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const SignupPage = lazy(() => import("@/pages/SignupPage"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const RegisterOrganization = lazy(() => import("@/pages/RegisterOrganization"));
+const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
+const AcceptInvite = lazy(() => import("@/pages/AcceptInvite"));
+
+// Dashboard & Core
+const OptimizedIndex = lazy(() => import("@/pages/OptimizedIndex"));
+const Customers = lazy(() => import("@/pages/Customers"));
+const DuplicateCustomersPage = lazy(() => import("@/pages/DuplicateCustomers"));
+const NewCustomer = lazy(() => import("@/pages/NewCustomer"));
+const CustomerDetails = lazy(() => import("@/pages/CustomerDetails"));
+
+// Bookings (Legacy)
+const HotelBookings = lazy(() => import("@/pages/HotelBookings"));
+const NewHotelBooking = lazy(() => import("@/pages/NewHotelBooking"));
+const FlightBookings = lazy(() => import("@/pages/FlightBookings"));
+const NewFlightBooking = lazy(() => import("@/pages/NewFlightBooking"));
+const CarRentals = lazy(() => import("@/pages/CarRentals"));
+const TransportBookings = lazy(() => import("@/pages/TransportBookings"));
+
+// Unified Bookings
+const UnifiedBookings = lazy(() => import("@/pages/UnifiedBookings"));
+const NewUnifiedBooking = lazy(() => import("@/pages/NewUnifiedBooking"));
+const UnifiedBookingDetails = lazy(() => import("@/pages/UnifiedBookingDetails"));
+
+// Quotes
+const Quotes = lazy(() => import("@/pages/Quotes"));
+const NewQuote = lazy(() => import("@/pages/NewQuote"));
+const QuoteDetails = lazy(() => import("@/pages/QuoteDetails"));
+
+// Finance
+const Invoices = lazy(() => import("@/pages/Invoices"));
+const NewInvoice = lazy(() => import("@/pages/NewInvoice"));
+const PaymentOrders = lazy(() => import("@/pages/PaymentOrders"));
+const BankAccounts = lazy(() => import("@/pages/BankAccounts"));
+const ExpenseManagementEnhanced = lazy(() => import("@/pages/ExpenseManagementEnhanced"));
+const ProfitAnalytics = lazy(() => import("@/pages/ProfitAnalytics"));
+const ProfitLossReports = lazy(() => import("@/pages/ProfitLossReports"));
+const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
+
+// Operations
+const Suppliers = lazy(() => import("@/pages/Suppliers"));
+const Reports = lazy(() => import("@/pages/Reports"));
+const EnhancedEmployeesPage = lazy(() => import("@/pages/EnhancedEmployeesPage"));
+const DailyOperations = lazy(() => import("@/pages/DailyOperations"));
+const CustomerService = lazy(() => import("@/pages/CustomerService"));
+const BookingsCalendar = lazy(() => import("@/pages/BookingsCalendar"));
+
+// CRM
+const CRM = lazy(() => import("@/pages/CRM"));
+const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
+const CustomerPortalPage = lazy(() => import("@/pages/CustomerPortalPage"));
+
+// Communication
+const WhatsApp = lazy(() => import("@/pages/WhatsApp"));
+const WhatsAppAdmin = lazy(() => import("@/pages/WhatsAppAdmin"));
+
+// Admin
+const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
+const AdminImportExport = lazy(() => import("@/pages/AdminImportExport"));
+const SiteCustomization = lazy(() => import("@/pages/SiteCustomization"));
+const MonitoringDashboard = lazy(() => import("@/pages/MonitoringDashboard"));
+const DatabaseManager = lazy(() => import("@/pages/DatabaseManager"));
+const TeamManagement = lazy(() => import("@/pages/TeamManagement"));
+const AutomationRules = lazy(() => import("@/pages/AutomationRules"));
+const Documents = lazy(() => import("@/pages/Documents"));
+const AuditLog = lazy(() => import("@/pages/AuditLog"));
+const CMSPages = lazy(() => import("@/pages/admin/CMSPages"));
+const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
+
+// Platform Admin
+const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
+const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
+const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
+
+// Subscription
+const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired"));
+const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement"));
+
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+// Query Client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -102,7 +138,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
@@ -111,8 +146,9 @@ function App() {
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
+              <Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* صفحة الهبوط التسويقية */}
+                {/* Public */}
                 <Route path="/" element={<SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
@@ -122,23 +158,17 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/create-organization" element={
-                  <SupabaseProtectedRoute>
-                    <RegisterOrganization />
-                  </SupabaseProtectedRoute>
+                  <SupabaseProtectedRoute><RegisterOrganization /></SupabaseProtectedRoute>
                 } />
                 <Route path="/register-organization" element={
-                  <SupabaseProtectedRoute>
-                    <RegisterOrganization />
-                  </SupabaseProtectedRoute>
+                  <SupabaseProtectedRoute><RegisterOrganization /></SupabaseProtectedRoute>
                 } />
                 <Route path="/onboarding" element={
-                  <SupabaseProtectedRoute>
-                    <OnboardingWizard />
-                  </SupabaseProtectedRoute>
+                  <SupabaseProtectedRoute><OnboardingWizard /></SupabaseProtectedRoute>
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
 
-                {/* صفحات النظام المحمية */}
+                {/* Protected */}
                 <Route
                   path="/*"
                   element={
@@ -149,6 +179,7 @@ function App() {
                         <SubscriptionBanner />
                         <OptimizedErrorBoundary>
                           <SubscriptionRedirectGuard>
+                          <Suspense fallback={<PageLoader />}>
                           <Routes>
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
                               <Route path="/subscription" element={<SubscriptionManagement />} />
@@ -205,6 +236,7 @@ function App() {
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
+                          </Suspense>
                           </SubscriptionRedirectGuard>
                         </OptimizedErrorBoundary>
                     </DashboardLayout>
@@ -214,6 +246,7 @@ function App() {
                   }
                 />
               </Routes>
+              </Suspense>
             </div>
           </OptimizedErrorBoundary>
           </OrganizationProvider>
@@ -222,6 +255,5 @@ function App() {
     </QueryClientProvider>
   );
 }
-
 
 export default App;
