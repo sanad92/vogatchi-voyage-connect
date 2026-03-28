@@ -1,69 +1,63 @@
 
 
-# تحسين Automation Engine — إضافة Triggers جديدة + واجهة محسّنة
+# فصل لوحة التحكم الإدارية — Organization Admin vs Platform Admin
 
-## الوضع الحالي
+## المشكلة الحالية
 
-النظام يحتوي على بنية أتمتة جيدة:
-- **جداول**: `automation_rules`, `automation_actions`, `automation_logs` موجودة
-- **Hooks**: `useAutomationRules` (CRUD كامل) + `useAutomationEngine` (تنفيذ)
-- **واجهة**: `AutomationRules.tsx` بها إنشاء قواعد + سجل تنفيذ
-- **4 Triggers**: `booking_created`, `payment_confirmed`, `before_travel`, `booking_status_changed`
-- **4 Actions**: `send_email`, `send_whatsapp`, `create_invoice`, `send_reminder`
+صفحة `/admin-settings` تخلط بين:
+- **إعدادات المؤسسة** (إدارة المستخدمين، إعدادات الموقع، سجل العمليات) — يجب أن تكون متاحة لـ admin/owner داخل المؤسسة
+- **إعدادات المنصة** (النسخ الاحتياطي، الأمان، إعدادات النظام، الصلاحيات، صفحة الهبوط، Database Manager) — يجب أن تكون حصرية لـ Platform Admin (سوبر أدمن)
 
-## المشاكل
-
-1. **`executeTrigger` غير مستخدم في أي مكان** — لا يتم استدعاؤه عند إنشاء حجز أو فاتورة
-2. **لا يوجد triggers لـ**: `invoice_created`, `customer_registered`
-3. **`CRMAutomation.tsx`** — placeholder فارغ بدون وظائف
-4. **واجهة الإنشاء** بسيطة — لا تعرض إحصائيات أو ملخص
-
-## خطة التنفيذ
-
-### 1. إضافة Triggers جديدة
-
-تحديث `useAutomationRules.ts` و `useAutomationEngine.ts`:
-```text
-Triggers جديدة:
-  invoice_created      → عند إنشاء فاتورة
-  customer_registered  → عند تسجيل عميل جديد
-```
-
-تحديث `TriggerContext` ليدعم حقول العميل والفاتورة (ليس فقط الحجز).
-
-### 2. ربط `executeTrigger` بالعمليات الفعلية
-
-استدعاء `executeTrigger` في:
-- **`NewUnifiedBooking.tsx`** — بعد حفظ الحجز: `executeTrigger('booking_created', {...})`
-- **إنشاء فاتورة** — بعد حفظ الفاتورة: `executeTrigger('invoice_created', {...})`
-- **إنشاء عميل** — بعد حفظ العميل: `executeTrigger('customer_registered', {...})`
-
-### 3. تحسين واجهة `AutomationRules.tsx`
-
-- إضافة **إحصائيات سريعة** أعلى الصفحة (عدد القواعد النشطة، عدد التنفيذات الناجحة/الفاشلة)
-- إضافة **فلترة السجلات** حسب الحالة (ناجح/فاشل) وحسب النوع
-- إضافة **تعديل القاعدة** (الحالي يدعم فقط الإنشاء والحذف)
-- تحديث القوائم المنسدلة لتشمل الـ Triggers الجديدة
-- إضافة **حقول إعدادات ديناميكية** لكل Action (مثل: قالب البريد لـ `send_email` عند `customer_registered`)
-
-### 4. استبدال `CRMAutomation.tsx`
-
-تحويله من placeholder فارغ إلى ملخص يعرض القواعد النشطة وآخر التنفيذات.
+حالياً يتم إخفاء التبويبات عن غير السوبر أدمن بـ `disabled` فقط، لكنها تظل مرئية ومربكة.
 
 ---
 
-## ملخص الملفات
+## خطة التنفيذ
+
+### 1. فصل الصفحات
+
+**`/admin-settings`** — إعدادات المؤسسة (Organization Admin)
+- متاحة لأدوار: owner, admin, manager
+- التبويبات:
+  - إدارة المستخدمين والموظفين (unified-management)
+  - إعدادات الموقع (site)
+  - سجل العمليات (audit)
+  - مراقبة الأداء (performance)
+- عنوان الصفحة: "إعدادات المؤسسة"
+
+**`/platform-admin/settings`** — إعدادات المنصة (Platform Admin)
+- متاحة فقط لـ Platform Admin عبر `PlatformAdminGuard`
+- التبويبات:
+  - النسخ الاحتياطي (backup)
+  - الأمان (security)
+  - إعدادات النظام (system)
+  - الصلاحيات (permissions)
+  - صفحة الهبوط (landing)
+  - Database Manager (db-manager)
+- عنوان الصفحة: "إعدادات المنصة"
+
+### 2. تحديث Sidebar
+
+- رابط "الإعدادات" في مجموعة "الإدارة" يبقى يشير إلى `/admin-settings` (إعدادات المؤسسة)
+- إضافة رابط "إعدادات المنصة" في مجموعة "إدارة المنصة" يشير إلى `/platform-admin/settings`
+
+### 3. تحديث الـ Routes
+
+- إضافة route جديد `/platform-admin/settings` محمي بـ `PlatformAdminGuard`
+- إزالة التبويبات الخاصة بالسوبر أدمن من صفحة `/admin-settings`
+
+---
+
+## الملفات
 
 ```text
 ملفات تُعدّل:
-  src/hooks/useAutomationEngine.ts      — triggers جديدة + TriggerContext موسّع
-  src/hooks/useAutomationRules.ts       — labels/icons للـ triggers الجديدة
-  src/pages/AutomationRules.tsx         — إحصائيات + فلترة + تعديل القواعد
-  src/pages/NewUnifiedBooking.tsx       — استدعاء executeTrigger
-  src/components/crm/dashboard/CRMAutomation.tsx — ملخص بدل placeholder
+  src/pages/AdminSettings.tsx                    — إزالة تبويبات المنصة، تغيير العنوان
+  src/components/admin/EnhancedAdminTabs.tsx      — إزالة مجموعة "إعدادات النظام المتقدمة"
+  src/components/layout/DashboardSidebar.tsx      — إضافة رابط إعدادات المنصة
+  src/App.tsx                                    — إضافة route جديد
 
-ملفات يُحتمل تعديلها (حسب مكان إنشاء الفاتورة/العميل):
-  src/hooks/useCustomerForm.tsx         — executeTrigger('customer_registered')
-  src/hooks/invoices/useInvoicesData.tsx — executeTrigger('invoice_created')
+ملفات جديدة:
+  src/pages/platform-admin/PlatformAdminSettings.tsx — صفحة إعدادات المنصة
 ```
 
