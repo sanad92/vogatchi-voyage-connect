@@ -17,7 +17,7 @@ export const useRentPaymentsImproved = () => {
     queryFn: async () => {
       if (!orgId) return [];
       
-      const { data, error } = await (supabase
+      const query = supabase
         .from('rent_payments')
         .select(`
           *,
@@ -29,9 +29,10 @@ export const useRentPaymentsImproved = () => {
             monthly_rent,
             currency
           )
-        `)
+        `) as any;
+      const { data, error } = await query
         .eq('organization_id', orgId)
-        .order('payment_month', { ascending: false }) as any);
+        .order('payment_month', { ascending: false });
 
       if (error) throw error;
       
