@@ -1,50 +1,37 @@
 
 
-# فصل لوحة التحكم الإدارية — Organization Admin vs Platform Admin
+# ربط إعدادات المؤسسة بالمؤسسة الحالية + إزالة إعدادات الموقع
 
-## المشكلة الحالية
+## المشاكل الحالية
 
-صفحة `/admin-settings` تخلط بين:
-- **إعدادات المؤسسة** (إدارة المستخدمين، إعدادات الموقع، سجل العمليات) — يجب أن تكون متاحة لـ admin/owner داخل المؤسسة
-- **إعدادات المنصة** (النسخ الاحتياطي، الأمان، إعدادات النظام، الصلاحيات، صفحة الهبوط، Database Manager) — يجب أن تكون حصرية لـ Platform Admin (سوبر أدمن)
-
-حالياً يتم إخفاء التبويبات عن غير السوبر أدمن بـ `disabled` فقط، لكنها تظل مرئية ومربكة.
-
----
+1. **AuditLogTab** — لا يفلتر بـ `organization_id` (يعرض كل السجلات لكل المؤسسات)
+2. **UnifiedUserEmployeeManagement** — يتحقق من `isSuperAdmin()` فقط بدل أن يكون متاحاً لـ admin/owner المؤسسة
+3. **PerformanceMonitorTab** — يعرض بيانات وهمية (mock) غير مرتبطة بأي مؤسسة
+4. **SiteSettings** — تبويب خاص بالسوبر أدمن موجود في صفحة إعدادات المؤسسة (يجب إزالته)
 
 ## خطة التنفيذ
 
-### 1. فصل الصفحات
+### 1. إزالة تبويب "إعدادات الموقع" من AdminSettings
 
-**`/admin-settings`** — إعدادات المؤسسة (Organization Admin)
-- متاحة لأدوار: owner, admin, manager
-- التبويبات:
-  - إدارة المستخدمين والموظفين (unified-management)
-  - إعدادات الموقع (site)
-  - سجل العمليات (audit)
-  - مراقبة الأداء (performance)
-- عنوان الصفحة: "إعدادات المؤسسة"
+- حذف تبويب `site` من مصفوفة `tabs`
+- إزالة import لـ `SiteSettings` و `TabsContent` الخاص به
+- تغيير grid من `grid-cols-4` إلى `grid-cols-3`
 
-**`/platform-admin/settings`** — إعدادات المنصة (Platform Admin)
-- متاحة فقط لـ Platform Admin عبر `PlatformAdminGuard`
-- التبويبات:
-  - النسخ الاحتياطي (backup)
-  - الأمان (security)
-  - إعدادات النظام (system)
-  - الصلاحيات (permissions)
-  - صفحة الهبوط (landing)
-  - Database Manager (db-manager)
-- عنوان الصفحة: "إعدادات المنصة"
+### 2. ربط AuditLogTab بالمؤسسة الحالية
 
-### 2. تحديث Sidebar
+- إضافة `useOrgId()` للحصول على `organizationId`
+- إضافة `.eq('organization_id', orgId)` للـ query
+- إضافة `orgId` لـ `queryKey` (تحديث تلقائي عند تبديل المؤسسة)
 
-- رابط "الإعدادات" في مجموعة "الإدارة" يبقى يشير إلى `/admin-settings` (إعدادات المؤسسة)
-- إضافة رابط "إعدادات المنصة" في مجموعة "إدارة المنصة" يشير إلى `/platform-admin/settings`
+### 3. تعديل صلاحيات UnifiedUserEmployeeManagement
 
-### 3. تحديث الـ Routes
+- تغيير فحص `isSuperAdmin()` إلى فحص دور المؤسسة (`owner` أو `admin`) باستخدام `useOrganization().orgRole`
+- هذا يجعل كل admin/owner يدير مستخدمي مؤسسته فقط
 
-- إضافة route جديد `/platform-admin/settings` محمي بـ `PlatformAdminGuard`
-- إزالة التبويبات الخاصة بالسوبر أدمن من صفحة `/admin-settings`
+### 4. ربط PerformanceMonitorTab بالمؤسسة
+
+- إضافة `useOrgId()` وعرض اسم المؤسسة الحالية في الـ header
+- البيانات حالياً mock — إضافة ملاحظة بأن الإحصائيات خاصة بالمؤسسة الحالية
 
 ---
 
@@ -52,12 +39,9 @@
 
 ```text
 ملفات تُعدّل:
-  src/pages/AdminSettings.tsx                    — إزالة تبويبات المنصة، تغيير العنوان
-  src/components/admin/EnhancedAdminTabs.tsx      — إزالة مجموعة "إعدادات النظام المتقدمة"
-  src/components/layout/DashboardSidebar.tsx      — إضافة رابط إعدادات المنصة
-  src/App.tsx                                    — إضافة route جديد
-
-ملفات جديدة:
-  src/pages/platform-admin/PlatformAdminSettings.tsx — صفحة إعدادات المنصة
+  src/pages/AdminSettings.tsx                    — إزالة تبويب site + تعديل grid
+  src/components/admin/AuditLogTab.tsx            — فلترة بـ organization_id
+  src/components/admin/UnifiedUserEmployeeManagement.tsx — فحص orgRole بدل isSuperAdmin
+  src/components/admin/PerformanceMonitorTab.tsx  — إضافة سياق المؤسسة
 ```
 
