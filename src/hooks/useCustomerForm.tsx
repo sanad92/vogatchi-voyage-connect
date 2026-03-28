@@ -97,6 +97,7 @@ export const useCustomerForm = ({
     isSubmitting,
     onSubmit,
     reset,
-    watch
+    watch,
+    trigger
   };
 };
