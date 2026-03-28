@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 
-export type TriggerType = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed';
+export type TriggerType = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed' | 'invoice_created' | 'customer_registered';
 export type ActionType = 'send_email' | 'send_whatsapp' | 'create_invoice' | 'send_reminder';
 
 export interface AutomationAction {
