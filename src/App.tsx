@@ -15,7 +15,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
-import AdminRouteGuard from "@/components/guards/AdminRouteGuard";
+
 import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
@@ -184,47 +184,47 @@ function App() {
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
                               <Route path="/subscription" element={<SubscriptionManagement />} />
                               <Route path="/dashboard" element={<OptimizedIndex />} />
-                              <Route path="/customers" element={<Customers />} />
-                              <Route path="/duplicate-customers" element={<DuplicateCustomersPage />} />
-                              <Route path="/new-customer" element={<NewCustomer />} />
-                              <Route path="/hotel-bookings" element={<HotelBookings />} />
-                              <Route path="/quotes" element={<Quotes />} />
-                              <Route path="/quotes/new" element={<NewQuote />} />
-                              <Route path="/quotes/:id" element={<QuoteDetails />} />
-                              <Route path="/new-hotel-booking" element={<NewHotelBooking />} />
-                              <Route path="/flight-bookings" element={<FlightBookings />} />
-                              <Route path="/new-flight-booking" element={<NewFlightBooking />} />
-                              <Route path="/car-rentals" element={<CarRentals />} />
-                              <Route path="/transport-bookings" element={<TransportBookings />} />
-                              <Route path="/invoices" element={<Invoices />} />
-                              <Route path="/new-invoice" element={<NewInvoice />} />
-                              <Route path="/customers/:customerId" element={<CustomerDetails />} />
+                              <Route path="/customers" element={<PermissionRouteGuard requiredPermission="customers_view"><Customers /></PermissionRouteGuard>} />
+                              <Route path="/duplicate-customers" element={<PermissionRouteGuard requiredPermission="customers_view"><DuplicateCustomersPage /></PermissionRouteGuard>} />
+                              <Route path="/new-customer" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
+                              <Route path="/customers/:customerId" element={<PermissionRouteGuard requiredPermission="customers_view"><CustomerDetails /></PermissionRouteGuard>} />
+                              <Route path="/hotel-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><HotelBookings /></PermissionRouteGuard>} />
+                              <Route path="/new-hotel-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewHotelBooking /></PermissionRouteGuard>} />
+                              <Route path="/flight-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><FlightBookings /></PermissionRouteGuard>} />
+                              <Route path="/new-flight-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewFlightBooking /></PermissionRouteGuard>} />
+                              <Route path="/car-rentals" element={<PermissionRouteGuard requiredPermission="bookings_view"><CarRentals /></PermissionRouteGuard>} />
+                              <Route path="/transport-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><TransportBookings /></PermissionRouteGuard>} />
+                              <Route path="/quotes" element={<PermissionRouteGuard requiredPermission="quotes_view"><Quotes /></PermissionRouteGuard>} />
+                              <Route path="/quotes/new" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
+                              <Route path="/quotes/:id" element={<PermissionRouteGuard requiredPermission="quotes_view"><QuoteDetails /></PermissionRouteGuard>} />
+                              <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
+                              <Route path="/new-invoice" element={<PermissionRouteGuard requiredPermission="invoices_create"><NewInvoice /></PermissionRouteGuard>} />
                               <Route path="/suppliers" element={<PermissionRouteGuard requiredPermission="suppliers_view"><Suppliers /></PermissionRouteGuard>} />
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
                               <Route path="/profit-loss-reports" element={<PermissionRouteGuard requiredPermission="reports_view"><ProfitLossReports /></PermissionRouteGuard>} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
                               <Route path="/employees-enhanced" element={<PermissionRouteGuard requiredPermission="employees_view"><EnhancedEmployeesPage /></PermissionRouteGuard>} />
-                              <Route path="/admin-settings" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />
-                              <Route path="/landing-admin" element={<AdminRouteGuard><AdminSettings /></AdminRouteGuard>} />
-                              <Route path="/admin-import-export" element={<AdminRouteGuard><AdminImportExport /></AdminRouteGuard>} />
-                              <Route path="/site-customization" element={<AdminRouteGuard><SiteCustomization /></AdminRouteGuard>} />
+                              <Route path="/admin-settings" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
+                              <Route path="/landing-admin" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
+                              <Route path="/admin-import-export" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminImportExport /></PermissionRouteGuard>} />
+                              <Route path="/site-customization" element={<PermissionRouteGuard requiredPermission="admin_settings"><SiteCustomization /></PermissionRouteGuard>} />
                               <Route path="/payment-orders" element={<PermissionRouteGuard requiredPermission="financial_view"><PaymentOrders /></PermissionRouteGuard>} />
                               <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
-                              <Route path="/daily-operations" element={<DailyOperations />} />
+                              <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
                               <Route path="/customer-portal" element={<PermissionRouteGuard requiredPermission="customer_portal_view"><CustomerPortalPage /></PermissionRouteGuard>} />
-                              <Route path="/bookings-calendar" element={<BookingsCalendar />} />
+                              <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<PermissionRouteGuard requiredPermission="team_invite"><TeamManagement /></PermissionRouteGuard>} />
                               <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
-                              <Route path="/whatsapp-admin" element={<AdminRouteGuard><WhatsAppAdmin /></AdminRouteGuard>} />
-                              <Route path="/admin/cms" element={<AdminRouteGuard><CMSPages /></AdminRouteGuard>} />
-                              <Route path="/admin/cms/pages/:id/blocks" element={<AdminRouteGuard><PageBlocks /></AdminRouteGuard>} />
-                              <Route path="/monitoring" element={<AdminRouteGuard><MonitoringDashboard /></AdminRouteGuard>} />
+                              <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
+                              <Route path="/admin/cms" element={<PermissionRouteGuard requiredPermission="admin_settings"><CMSPages /></PermissionRouteGuard>} />
+                              <Route path="/admin/cms/pages/:id/blocks" element={<PermissionRouteGuard requiredPermission="admin_settings"><PageBlocks /></PermissionRouteGuard>} />
+                              <Route path="/monitoring" element={<PermissionRouteGuard requiredPermission="admin_settings"><MonitoringDashboard /></PermissionRouteGuard>} />
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
                               <Route path="/audit-log" element={<PermissionRouteGuard requiredPermission="audit_view"><AuditLog /></PermissionRouteGuard>} />
