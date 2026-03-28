@@ -1,108 +1,95 @@
 
 
-# هيكلة نظام صلاحيات موحد — Unified Permission System
+# نظام Wizard Forms موحد — Step-by-Step Forms with Validation & Draft
 
 ## الوضع الحالي
 
-النظام يحتوي بالفعل على بنية صلاحيات جيدة:
-- **`useSupabasePermissions`**: مصفوفة صلاحيات كاملة لـ 5 أدوار (owner > admin > manager > agent > viewer)
-- **`DashboardSidebar`**: يتحقق من الصلاحيات قبل عرض الروابط
-- **`PermissionRouteGuard`**: يحمي معظم الـ Routes
-
-## المشاكل المكتشفة
-
-### 1. Routes غير محمية (12 route بدون Guard)
-```text
-/dashboard             — بدون حماية (مقبول)
-/customers             — بدون حماية ❌
-/duplicate-customers   — بدون حماية ❌
-/new-customer          — بدون حماية ❌
-/hotel-bookings        — بدون حماية ❌
-/new-hotel-booking     — بدون حماية ❌
-/flight-bookings       — بدون حماية ❌
-/new-flight-booking    — بدون حماية ❌
-/car-rentals           — بدون حماية ❌
-/transport-bookings    — بدون حماية ❌
-/invoices              — بدون حماية ❌
-/new-invoice           — بدون حماية ❌
-/daily-operations      — بدون حماية ❌
-/bookings-calendar     — بدون حماية ❌
-/customers/:id         — بدون حماية ❌
-/quotes, /quotes/new   — بدون حماية ❌
-```
-
-### 2. ثلاثة Guards مختلفة بدون اتساق
-- `PermissionRouteGuard` — يتحقق من permission string
-- `AdminRouteGuard` — يتحقق من org role (owner/admin)
-- `PlatformAdminGuard` — يتحقق من platform_roles
-
-يمكن توحيد الأولين في Guard واحد.
-
-### 3. Sidebar لا يعرض كل الأقسام المحمية بشكل صحيح
-- قسم "الحجوزات" يعرض الحجوزات القديمة (hotel/flight/car/transport) بدون صلاحيات فردية
-
----
+- **NewUnifiedBooking**: يحتوي على 4 خطوات لكن بدون validation بين الخطوات وبدون حفظ مؤقت
+- **NewQuote**: فورم واحد طويل بدون خطوات
+- **OnboardingWizard**: wizard بسيط لكن بدون validation حقيقي
+- **EnhancedFormField**: كومبوننت موجود للـ validation لكن غير مستخدم في الـ wizards
+- لا يوجد نظام Draft/حفظ مؤقت في أي فورم
 
 ## خطة التنفيذ
 
-### 1. حماية كل الـ Routes المكشوفة في `App.tsx`
+### 1. إنشاء Wizard Engine قابل لإعادة الاستخدام
 
-إضافة `PermissionRouteGuard` لكل route غير محمي:
+**ملف جديد: `src/components/wizard/StepWizard.tsx`**
+- كومبوننت عام يقبل خطوات كـ children
+- Step Indicator مع أيقونات وألوان
+- أزرار التنقل (التالي / السابق)
+- يستدعي `validateStep()` قبل الانتقال للخطوة التالية
+- يحفظ البيانات في `localStorage` تلقائياً (Draft)
+- يعرض زر "استكمال مسودة" عند فتح الفورم إذا وُجدت مسودة
 
-```text
-/customers             → customers_view
-/duplicate-customers   → customers_view
-/new-customer          → customers_create
-/customers/:id         → customers_view
-/hotel-bookings        → bookings_view
-/new-hotel-booking     → bookings_create
-/flight-bookings       → bookings_view
-/new-flight-booking    → bookings_create
-/car-rentals           → bookings_view
-/transport-bookings    → bookings_view
-/invoices              → invoices_view
-/new-invoice           → invoices_create
-/daily-operations      → bookings_view
-/bookings-calendar     → bookings_view
-/quotes                → quotes_view
-/quotes/new            → quotes_create
-/quotes/:id            → quotes_view
-```
+**ملف جديد: `src/hooks/useWizardForm.ts`**
+- يدير الـ state لكل الخطوات
+- `currentStep`, `goNext()`, `goBack()`, `goToStep()`
+- `validateCurrentStep()` — يتحقق من الحقول المطلوبة
+- `saveDraft()` / `loadDraft()` / `clearDraft()` — حفظ/استرجاع من localStorage
+- `errors` لكل حقل مع رسائل واضحة بالعربي
+- Auto-save كل 30 ثانية
 
-### 2. توحيد `AdminRouteGuard` مع `PermissionRouteGuard`
+**ملف جديد: `src/components/wizard/WizardStepIndicator.tsx`**
+- شريط الخطوات المرئي (رقم + عنوان + أيقونة)
+- خطوة حالية / مكتملة / قادمة
 
-حذف `AdminRouteGuard` واستبدال استخداماته بـ `PermissionRouteGuard` مع `requiredPermission="admin_settings"`:
-```text
-/admin-settings        → admin_settings
-/landing-admin         → admin_settings
-/admin-import-export   → admin_settings
-/site-customization    → admin_settings
-/whatsapp-admin        → whatsapp_admin
-/admin/cms             → admin_settings
-/monitoring            → admin_settings
-```
+### 2. تحويل NewUnifiedBooking إلى Wizard محسّن
 
-### 3. إضافة صلاحيات ناقصة في `useSupabasePermissions`
+**تعديل: `src/pages/NewUnifiedBooking.tsx`**
+- استخدام `useWizardForm` بدل الـ state اليدوي
+- إضافة validation لكل خطوة:
+  - Step 1: نوع الحجز مطلوب
+  - Step 2: العميل + سعر البيع + التكلفة مطلوبين
+  - Step 3: حسب النوع (مثلاً: اسم الفندق مطلوب للفنادق)
+  - Step 4: مراجعة فقط
+- رسائل خطأ واضحة بالعربي تحت كل حقل
+- حفظ مؤقت تلقائي
 
-إضافة `whatsapp_admin` و `admin_settings` لمصفوفة الـ admin فقط (owner يمتلك الكل تلقائياً).
+### 3. تحويل NewQuote إلى Wizard بـ 3 خطوات
 
-### 4. تحسين Sidebar — صلاحيات فردية للحجوزات القديمة
+**تعديل: `src/pages/NewQuote.tsx`**
+- **Step 1**: بيانات العميل (العميل، الوجهة، التواريخ، عدد المسافرين)
+- **Step 2**: عناصر العرض (QuoteItemsEditor الموجود)
+- **Step 3**: مراجعة + إرسال أو حفظ كمسودة
+- Validation: العميل والوجهة مطلوبين في Step 1، عنصر واحد على الأقل في Step 2
 
-إضافة `requiredPermission: 'bookings_view'` لكل رابط حجز قديم (hotel/flight/car/transport) بشكل فردي.
+### 4. تحويل فورم العميل (EnhancedCustomerForm) إلى خطوتين
+
+**تعديل: `src/components/customers/EnhancedCustomerForm.tsx`**
+- **Step 1**: البيانات الأساسية (الاسم، الهاتف، البريد)
+- **Step 2**: بيانات إضافية (العنوان، النوع، الملاحظات) + مراجعة
+- Validation: الاسم والهاتف مطلوبين في Step 1
 
 ---
 
-## ملخص الملفات
+## التفاصيل التقنية
 
+### Validation Schema (بدون Formik/Yup — نستخدم النمط الموجود)
 ```text
-ملفات تُعدّل:
-  src/App.tsx                              — إضافة Guards لـ 16 route
-  src/hooks/useSupabasePermissions.tsx      — إضافة whatsapp_admin, admin_settings
-  src/components/layout/DashboardSidebar.tsx — requiredPermission للحجوزات القديمة
+validateStep(stepNumber, formData) → { valid: boolean, errors: Record<string, string> }
+```
+كل خطوة لها قواعد validation خاصة. الرسائل بالعربي.
 
-ملفات تُحذف:
-  src/components/guards/AdminRouteGuard.tsx  — مُستبدل بـ PermissionRouteGuard
+### Draft System
+```text
+localStorage key: `draft_${formType}_${orgId}`
+Auto-save: كل 30 ثانية + عند تغيير الخطوة
+Load: عند فتح الفورم يسأل "هل تريد استكمال المسودة؟"
+Clear: عند الحفظ الناجح
 ```
 
-**النتيجة:** كل route محمي بصلاحية واضحة، Guard واحد موحد (+ PlatformAdminGuard للمنصة)، Sidebar متطابق مع الـ Routes.
+### ملخص الملفات
+
+```text
+ملفات جديدة:
+  src/components/wizard/StepWizard.tsx          — Wizard container
+  src/components/wizard/WizardStepIndicator.tsx — شريط الخطوات
+  src/hooks/useWizardForm.ts                    — منطق الـ wizard + draft
+
+ملفات تُعدّل:
+  src/pages/NewUnifiedBooking.tsx               — استخدام wizard + validation
+  src/pages/NewQuote.tsx                        — تحويل لـ 3 خطوات
+  src/components/customers/EnhancedCustomerForm.tsx — تحويل لخطوتين
+```
 
