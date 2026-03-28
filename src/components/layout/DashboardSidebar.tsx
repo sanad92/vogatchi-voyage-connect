@@ -106,6 +106,7 @@ const platformAdminGroup: NavGroup = {
     { title: 'نظرة عامة', href: '/platform-admin', icon: Shield },
     { title: 'المؤسسات', href: '/platform-admin/organizations', icon: Building2 },
     { title: 'الاشتراكات', href: '/platform-admin/subscriptions', icon: CreditCard },
+    { title: 'إعدادات المنصة', href: '/platform-admin/settings', icon: Settings },
   ],
 };
 
