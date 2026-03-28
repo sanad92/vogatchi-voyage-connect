@@ -50,6 +50,8 @@ export const TRIGGER_ICONS: Record<TriggerType, string> = {
   payment_confirmed: '💳',
   before_travel: '✈️',
   booking_status_changed: '🔄',
+  invoice_created: '🧾',
+  customer_registered: '👤',
 };
 
 export const ACTION_ICONS: Record<ActionType, string> = {
