@@ -113,7 +113,7 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
       });
 
       // Car rentals
-      let cq = supabase.from('car_rentals').select('id, customer_name, customer_id, total_cost_egp, total_rental_cost, supplier_cost_egp, supplier_total_cost, total_profit, rental_start_date, employees(full_name, id)') as any;
+      let cq = supabase.from('car_rentals').select('id, customer_name, customer_id, total_cost_egp, total_rental_cost, supplier_cost_egp, supplier_total_cost, total_profit, rental_start_date, employees(full_name, id)').eq('organization_id', orgId!) as any;
       if (startDate) cq = cq.gte('rental_start_date', startDate);
       if (endDate) cq = cq.lte('rental_start_date', endDate);
       const { data: cars } = await cq;
