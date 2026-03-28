@@ -73,6 +73,16 @@ export const useCustomerForm = ({
       
       console.log('✅ تم حفظ البيانات بنجاح:', result);
 
+      // Fire automation trigger for new customers
+      if (!isEditMode && result?.id) {
+        executeTrigger('customer_registered', {
+          customerId: result.id,
+          customerName: cleanedData.name,
+          customerEmail: cleanedData.email,
+          customerPhone: cleanedData.phone,
+        });
+      }
+
       // إعادة تعيين النموذج في حالة الإضافة فقط
       if (!isEditMode) {
         reset();

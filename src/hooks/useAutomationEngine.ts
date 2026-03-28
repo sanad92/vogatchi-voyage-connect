@@ -52,8 +52,8 @@ export function useAutomationEngine() {
               organization_id: orgId,
               trigger_type: triggerType,
               action_type: action.action_type,
-              booking_id: context.bookingId,
-              booking_type: context.bookingType,
+              booking_id: context.bookingId || null,
+              booking_type: context.bookingType || null,
               status: 'processing',
               metadata: { context, action_config: action.action_config },
             })
