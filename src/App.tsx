@@ -113,6 +113,7 @@ const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
 const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
+const PlatformAdminSettings = lazy(() => import("@/pages/platform-admin/PlatformAdminSettings"));
 
 // Subscription
 const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired"));
