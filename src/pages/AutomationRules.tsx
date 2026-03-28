@@ -91,8 +91,45 @@ const AutomationRules = () => {
     }
   };
 
+  const activeRulesCount = rules.filter(r => r.is_active).length;
+  const completedCount = (logs as any[]).filter((l: any) => l.status === 'completed').length;
+  const failedCount = (logs as any[]).filter((l: any) => l.status === 'failed').length;
+  const [logFilter, setLogFilter] = useState<string>('all');
+
+  const filteredLogs = logFilter === 'all'
+    ? logs as any[]
+    : (logs as any[]).filter((l: any) => l.status === logFilter);
+
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-primary">{rules.length}</div>
+            <div className="text-sm text-muted-foreground">إجمالي القواعد</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-emerald-600">{activeRulesCount}</div>
+            <div className="text-sm text-muted-foreground">قواعد نشطة</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-emerald-600">{completedCount}</div>
+            <div className="text-sm text-muted-foreground">تنفيذ ناجح</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-destructive">{failedCount}</div>
+            <div className="text-sm text-muted-foreground">فشل</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">نظام الأتمتة</h1>
