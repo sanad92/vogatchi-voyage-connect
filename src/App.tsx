@@ -106,6 +106,7 @@ const TeamManagement = lazy(() => import("@/pages/TeamManagement"));
 const AutomationRules = lazy(() => import("@/pages/AutomationRules"));
 const Documents = lazy(() => import("@/pages/Documents"));
 const AuditLog = lazy(() => import("@/pages/AuditLog"));
+const ExportCenter = lazy(() => import("@/components/export/ExportCenter"));
 const CMSPages = lazy(() => import("@/pages/admin/CMSPages"));
 const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
 
