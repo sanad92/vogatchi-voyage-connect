@@ -1,95 +1,90 @@
 
 
-# نظام Wizard Forms موحد — Step-by-Step Forms with Validation & Draft
+# تحسين أداء واجهة SaaS — Performance Optimization
 
 ## الوضع الحالي
 
-- **NewUnifiedBooking**: يحتوي على 4 خطوات لكن بدون validation بين الخطوات وبدون حفظ مؤقت
-- **NewQuote**: فورم واحد طويل بدون خطوات
-- **OnboardingWizard**: wizard بسيط لكن بدون validation حقيقي
-- **EnhancedFormField**: كومبوننت موجود للـ validation لكن غير مستخدم في الـ wizards
-- لا يوجد نظام Draft/حفظ مؤقت في أي فورم
+**ما هو موجود وجيد:**
+- React Query مُستخدم في كل الـ hooks مع `staleTime` و `gcTime` في `App.tsx` (5 دقائق / 10 دقائق)
+- `useClientPagination` مُستخدم في 4 صفحات (Customers, FlightBookings, CarRentals, TransportBookings)
+- `useUnifiedBookings` يدعم server-side pagination بالفعل
+- Lazy Loading للصفحات مُطبق في `App.tsx`
+
+**المشاكل:**
+1. **Suppliers و Invoices بدون pagination** — يعرضان كل البيانات دفعة واحدة
+2. **AuditLog** يجلب 200 سجل بدون pagination
+3. **لا يوجد Virtualized Lists** — جداول كبيرة (50+ صف) تُنشئ DOM nodes لكل صف
+4. **بعض الـ hooks بدون `staleTime`** — مثل `useSuppliers`, `useInvoicesData`, `useCustomers`
+5. **UnifiedBookings** يحسب الإحصائيات من الصفحة الحالية فقط (غير دقيق)
+
+---
 
 ## خطة التنفيذ
 
-### 1. إنشاء Wizard Engine قابل لإعادة الاستخدام
+### 1. إضافة Pagination للصفحات الناقصة
 
-**ملف جديد: `src/components/wizard/StepWizard.tsx`**
-- كومبوننت عام يقبل خطوات كـ children
-- Step Indicator مع أيقونات وألوان
-- أزرار التنقل (التالي / السابق)
-- يستدعي `validateStep()` قبل الانتقال للخطوة التالية
-- يحفظ البيانات في `localStorage` تلقائياً (Draft)
-- يعرض زر "استكمال مسودة" عند فتح الفورم إذا وُجدت مسودة
+**Suppliers (`SuppliersOverview.tsx`):**
+- إضافة `useClientPagination` + `PaginationControlsUI`
+- تمرير `paginatedItems` بدل `filteredSuppliers` لـ `SupplierGrid`
 
-**ملف جديد: `src/hooks/useWizardForm.ts`**
-- يدير الـ state لكل الخطوات
-- `currentStep`, `goNext()`, `goBack()`, `goToStep()`
-- `validateCurrentStep()` — يتحقق من الحقول المطلوبة
-- `saveDraft()` / `loadDraft()` / `clearDraft()` — حفظ/استرجاع من localStorage
-- `errors` لكل حقل مع رسائل واضحة بالعربي
-- Auto-save كل 30 ثانية
+**Invoices (`src/pages/Invoices.tsx`):**
+- فحص الصفحة الحالية وإضافة pagination إن لم تكن موجودة
 
-**ملف جديد: `src/components/wizard/WizardStepIndicator.tsx`**
-- شريط الخطوات المرئي (رقم + عنوان + أيقونة)
-- خطوة حالية / مكتملة / قادمة
+**AuditLog (`AuditLogViewer.tsx`):**
+- إضافة `useClientPagination` مع pageSize = 50
 
-### 2. تحويل NewUnifiedBooking إلى Wizard محسّن
+### 2. إضافة Virtualized Table
 
-**تعديل: `src/pages/NewUnifiedBooking.tsx`**
-- استخدام `useWizardForm` بدل الـ state اليدوي
-- إضافة validation لكل خطوة:
-  - Step 1: نوع الحجز مطلوب
-  - Step 2: العميل + سعر البيع + التكلفة مطلوبين
-  - Step 3: حسب النوع (مثلاً: اسم الفندق مطلوب للفنادق)
-  - Step 4: مراجعة فقط
-- رسائل خطأ واضحة بالعربي تحت كل حقل
-- حفظ مؤقت تلقائي
+**ملف جديد: `src/components/ui/virtualized-table.tsx`**
+- استخدام `@tanstack/react-virtual` للـ row virtualization
+- يعرض فقط الصفوف المرئية في الـ viewport (+ buffer)
+- واجهة متوافقة مع الـ Table الحالي (نفس الـ props)
 
-### 3. تحويل NewQuote إلى Wizard بـ 3 خطوات
+**تطبيق على:**
+- `UnifiedBookings.tsx` — الجدول الرئيسي
+- `UserTable.tsx` — جدول المستخدمين
+- `AuditLogViewer.tsx` — سجل التدقيق
 
-**تعديل: `src/pages/NewQuote.tsx`**
-- **Step 1**: بيانات العميل (العميل، الوجهة، التواريخ، عدد المسافرين)
-- **Step 2**: عناصر العرض (QuoteItemsEditor الموجود)
-- **Step 3**: مراجعة + إرسال أو حفظ كمسودة
-- Validation: العميل والوجهة مطلوبين في Step 1، عنصر واحد على الأقل في Step 2
+### 3. تحسين React Query Caching
 
-### 4. تحويل فورم العميل (EnhancedCustomerForm) إلى خطوتين
+إضافة `staleTime` للـ hooks الناقصة:
+```text
+useSuppliers         → staleTime: 5 min
+useInvoicesData      → staleTime: 3 min
+useCustomers         → staleTime: 5 min
+useAuditLog          → staleTime: 2 min
+```
 
-**تعديل: `src/components/customers/EnhancedCustomerForm.tsx`**
-- **Step 1**: البيانات الأساسية (الاسم، الهاتف، البريد)
-- **Step 2**: بيانات إضافية (العنوان، النوع، الملاحظات) + مراجعة
-- Validation: الاسم والهاتف مطلوبين في Step 1
+### 4. تصحيح إحصائيات UnifiedBookings
+
+الإحصائيات السريعة تُحسب من `bookings` (الصفحة الحالية فقط) — يجب أن تستخدم `totalCount` وإضافة query منفصل للإحصائيات الكلية أو إزالة الإحصائيات المضللة.
 
 ---
 
 ## التفاصيل التقنية
 
-### Validation Schema (بدون Formik/Yup — نستخدم النمط الموجود)
-```text
-validateStep(stepNumber, formData) → { valid: boolean, errors: Record<string, string> }
-```
-كل خطوة لها قواعد validation خاصة. الرسائل بالعربي.
+### Virtualized Table
+- مكتبة: `@tanstack/react-virtual` (خفيفة، ~3KB)
+- تعرض فقط ~20 صف في الـ viewport بدل مئات
+- تقلل DOM nodes بنسبة ~90% للجداول الكبيرة
 
-### Draft System
-```text
-localStorage key: `draft_${formType}_${orgId}`
-Auto-save: كل 30 ثانية + عند تغيير الخطوة
-Load: عند فتح الفورم يسأل "هل تريد استكمال المسودة؟"
-Clear: عند الحفظ الناجح
-```
+---
 
-### ملخص الملفات
+## ملخص الملفات
 
 ```text
 ملفات جديدة:
-  src/components/wizard/StepWizard.tsx          — Wizard container
-  src/components/wizard/WizardStepIndicator.tsx — شريط الخطوات
-  src/hooks/useWizardForm.ts                    — منطق الـ wizard + draft
+  src/components/ui/virtualized-table.tsx    — جدول افتراضي قابل لإعادة الاستخدام
 
 ملفات تُعدّل:
-  src/pages/NewUnifiedBooking.tsx               — استخدام wizard + validation
-  src/pages/NewQuote.tsx                        — تحويل لـ 3 خطوات
-  src/components/customers/EnhancedCustomerForm.tsx — تحويل لخطوتين
+  src/components/suppliers/SuppliersOverview.tsx — إضافة pagination
+  src/components/audit/AuditLogViewer.tsx        — إضافة pagination
+  src/pages/UnifiedBookings.tsx                  — virtualized table + إصلاح الإحصائيات
+  src/components/admin/user-management/UserTable.tsx — virtualized table
+  src/hooks/useSuppliers.tsx                     — إضافة staleTime
+  src/hooks/invoices/useInvoicesData.tsx          — إضافة staleTime
+  src/hooks/useCustomers.tsx                     — إضافة staleTime
+  src/hooks/useAuditLog.ts                       — إضافة staleTime
+  package.json                                   — إضافة @tanstack/react-virtual
 ```
 
