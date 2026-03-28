@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getSectionClasses, getContainerClass } from "@/utils/cms/layout";
 import { Send, CheckCircle } from "lucide-react";
-import FormErrorBoundary from "@/components/common/FormErrorBoundary";
+import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 
 interface ContactFormBlockContent {
   form_title?: string;

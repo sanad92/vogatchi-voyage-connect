@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { useEmployeeActions } from '@/hooks/useEmployeeActions';
+import { useEmployeeActionsOptimized as useEmployeeActions } from '@/hooks/useEmployeeActionsOptimized';
 import ToggleEmployeeStatusDialog from '../dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '../dialogs/DeleteEmployeeDialog';
 import ViewEmployeeDialog from '../dialogs/ViewEmployeeDialog';

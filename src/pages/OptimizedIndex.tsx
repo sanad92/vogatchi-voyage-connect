@@ -11,7 +11,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import BookingsTable from "@/components/dashboard/BookingsTable";
 import RecentActivity from "@/components/dashboard/RecentActivity";
-import ErrorBoundary from "@/components/common/ErrorBoundary";
+import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";

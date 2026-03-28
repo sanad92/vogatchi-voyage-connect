@@ -1,7 +1,7 @@
 
 import { useEmployees } from './useEmployees';
 import { useRentContracts } from './useRentContracts';
-import { useExpenseTransactions } from './useExpenseTransactions';
+import { useExpenseTransactionsOptimized as useExpenseTransactions } from './useExpenseTransactionsOptimized';
 import { useSalaries } from './useSalaries';
 import { useExpenseCategories } from './useExpenseCategories';
 import { useRentPayments } from './useRentPayments';

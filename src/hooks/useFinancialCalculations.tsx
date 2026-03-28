@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { useExpenseTransactions } from './useExpenseTransactions';
+import { useExpenseTransactionsOptimized as useExpenseTransactions } from './useExpenseTransactionsOptimized';
 import { useSalaries } from './useSalaries';
 import { useRentContracts } from './useRentContracts';
 import { useRentPayments } from './useRentPayments';

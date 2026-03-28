@@ -11,7 +11,7 @@ import { SessionManager } from './SessionManager';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { WhatsAppConversation } from '@/types/whatsapp';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 
 const WhatsAppDashboard = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
