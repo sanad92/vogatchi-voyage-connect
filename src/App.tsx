@@ -114,6 +114,7 @@ const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/Platfor
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
 const PlatformAdminSettings = lazy(() => import("@/pages/platform-admin/PlatformAdminSettings"));
+const PlatformAdminTransfers = lazy(() => import("@/pages/platform-admin/PlatformAdminTransfers"));
 
 // Subscription
 const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired"));
@@ -236,6 +237,7 @@ function App() {
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/settings" element={<PlatformAdminGuard><PlatformAdminSettings /></PlatformAdminGuard>} />
+                              <Route path="/platform-admin/transfers" element={<PlatformAdminGuard><PlatformAdminTransfers /></PlatformAdminGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>

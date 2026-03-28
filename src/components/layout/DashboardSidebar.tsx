@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap, ClipboardList
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap, ClipboardList, BanknoteIcon
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -106,6 +106,7 @@ const platformAdminGroup: NavGroup = {
     { title: 'نظرة عامة', href: '/platform-admin', icon: Shield },
     { title: 'المؤسسات', href: '/platform-admin/organizations', icon: Building2 },
     { title: 'الاشتراكات', href: '/platform-admin/subscriptions', icon: CreditCard },
+    { title: 'التحويلات البنكية', href: '/platform-admin/transfers', icon: BanknoteIcon },
     { title: 'إعدادات المنصة', href: '/platform-admin/settings', icon: Settings },
   ],
 };
