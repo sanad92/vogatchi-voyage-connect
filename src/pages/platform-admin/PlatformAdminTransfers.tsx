@@ -86,12 +86,10 @@ const PlatformAdminTransfers = () => {
       // Record payment transaction
       await supabase.from('payment_transactions').insert({
         organization_id: req.organization_id,
-        amount: req.amount,
+        amount_cents: Math.round(req.amount * 100),
         currency: req.currency,
         status: 'completed',
         payment_method: 'bank_transfer',
-        merchant_order_id: `transfer_${requestId}`,
-        notes: `تحويل بنكي - مرجع: ${req.transfer_reference || 'غير محدد'}`,
       });
     },
     onSuccess: () => {
