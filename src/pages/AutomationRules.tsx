@@ -263,7 +263,7 @@ const AutomationRules = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {(logs as any[]).map((log: any) => (
+                      {filteredLogs.map((log: any) => (
                         <tr key={log.id} className="border-b hover:bg-muted/30">
                           <td className="p-3">
                             <div className="flex items-center gap-2">
