@@ -8,11 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Save, FileText } from 'lucide-react';
 
 const NewInvoice = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const orgId = useOrgId();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -25,21 +28,47 @@ const NewInvoice = () => {
     notes: ''
   });
 
+  // Fetch customers for dropdown
+  const { data: customers } = useQuery({
+    queryKey: ['customers-select', orgId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('id, name, phone')
+        .order('name')
+        .limit(500);
+      return data || [];
+    },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || !orgId) return;
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast({ title: 'خطأ', description: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Generate invoice number via RPC
+      const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+
       const { data, error } = await supabase
         .from('invoices')
         .insert([{
-          customer_id: formData.customer_id || '',
-          booking_type: formData.booking_type || '',
-          booking_id: formData.booking_id || '',
+          organization_id: orgId,
+          customer_id: formData.customer_id || null,
+          booking_type: formData.booking_type || null,
+          booking_id: formData.booking_id || null,
           final_amount: parseFloat(formData.amount),
           total_amount: parseFloat(formData.amount),
           currency: formData.currency,
-          invoice_number: `INV-${Date.now()}`,
+          invoice_number: invoiceNumber || `INV-${Date.now()}`,
           notes: formData.notes || null,
           status: 'pending',
           issued_date: new Date().toISOString().split('T')[0]
@@ -51,16 +80,15 @@ const NewInvoice = () => {
 
       toast({
         title: "تم إنشاء الفاتورة بنجاح",
-        description: `فاتورة رقم #${data.id} تم إنشاؤها بنجاح`,
+        description: `فاتورة رقم ${data.invoice_number}`,
       });
 
-      // إعادة التوجيه إلى صفحة الفواتير
       navigate('/invoices');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating invoice:', error);
       toast({
         title: "خطأ في إنشاء الفاتورة",
-        description: "حدث خطأ أثناء إنشاء الفاتورة، يرجى المحاولة مرة أخرى",
+        description: error?.message || "حدث خطأ أثناء إنشاء الفاتورة، يرجى المحاولة مرة أخرى",
         variant: "destructive",
       });
     } finally {
@@ -69,10 +97,7 @@ const NewInvoice = () => {
   };
 
   const handleChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -102,7 +127,23 @@ const NewInvoice = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="booking_type">نوع الحجز</Label>
+                  <Label>العميل *</Label>
+                  <Select value={formData.customer_id} onValueChange={(value) => handleChange('customer_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر العميل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(customers || []).map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} {c.phone ? `(${c.phone})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>نوع الحجز</Label>
                   <Select value={formData.booking_type} onValueChange={(value) => handleChange('booking_type', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر نوع الحجز" />
@@ -116,7 +157,9 @@ const NewInvoice = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="amount">المبلغ *</Label>
                   <Input
@@ -129,11 +172,9 @@ const NewInvoice = () => {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currency">العملة</Label>
+                  <Label>العملة</Label>
                   <Select value={formData.currency} onValueChange={(value) => handleChange('currency', value)}>
                     <SelectTrigger>
                       <SelectValue />
@@ -146,26 +187,15 @@ const NewInvoice = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="customer_id">معرف العميل</Label>
-                  <Input
-                    id="customer_id"
-                    value={formData.customer_id}
-                    onChange={(e) => handleChange('customer_id', e.target.value)}
-                    placeholder="معرف العميل (اختياري)"
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">وصف الفاتورة *</Label>
+                <Label htmlFor="description">وصف الفاتورة</Label>
                 <Input
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="وصف مختصر للفاتورة"
-                  required
                 />
               </div>
 
