@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Hotel, Plane, Car, Truck, TrendingUp, TrendingDown, Search, Plus, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import StepWizard, { WizardNavButtons, FieldError } from '@/components/wizard/StepWizard';
 import { useWizardForm, WizardStepConfig } from '@/hooks/useWizardForm';

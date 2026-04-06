@@ -61,10 +61,10 @@ export interface NewBookingData {
   notes?: string;
   quote_id?: string;
   // Detail data
-  hotelDetails?: any;
-  flightDetails?: any;
-  carDetails?: any;
-  transportDetails?: any;
+  hotelDetails?: Record<string, any>;
+  flightDetails?: Record<string, any>;
+  carDetails?: Record<string, any>;
+  transportDetails?: Record<string, any>;
 }
 
 export const useUnifiedBookings = (filters: BookingFilters = {}) => {
