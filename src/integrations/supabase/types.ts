@@ -691,10 +691,17 @@ export type Database = {
           departure_airport: string | null
           departure_date: string | null
           departure_time: string | null
+          flight_class: string | null
           flight_number: string | null
           id: string
+          is_round_trip: boolean | null
+          meal_preferences: string | null
+          passengers_count: number | null
           pnr: string | null
+          seat_preferences: string | null
+          taxes_and_fees: number | null
           ticket_number: string | null
+          ticket_price_per_person: number | null
         }
         Insert: {
           airline?: string | null
@@ -706,10 +713,17 @@ export type Database = {
           departure_airport?: string | null
           departure_date?: string | null
           departure_time?: string | null
+          flight_class?: string | null
           flight_number?: string | null
           id?: string
+          is_round_trip?: boolean | null
+          meal_preferences?: string | null
+          passengers_count?: number | null
           pnr?: string | null
+          seat_preferences?: string | null
+          taxes_and_fees?: number | null
           ticket_number?: string | null
+          ticket_price_per_person?: number | null
         }
         Update: {
           airline?: string | null
@@ -721,10 +735,17 @@ export type Database = {
           departure_airport?: string | null
           departure_date?: string | null
           departure_time?: string | null
+          flight_class?: string | null
           flight_number?: string | null
           id?: string
+          is_round_trip?: boolean | null
+          meal_preferences?: string | null
+          passengers_count?: number | null
           pnr?: string | null
+          seat_preferences?: string | null
+          taxes_and_fees?: number | null
           ticket_number?: string | null
+          ticket_price_per_person?: number | null
         }
         Relationships: [
           {
@@ -738,40 +759,64 @@ export type Database = {
       }
       booking_hotel_details: {
         Row: {
+          adults: number | null
           board_type: string | null
           booking_id: string
+          booking_reference: string | null
+          cancellation_policy: string | null
           check_in: string | null
           check_out: string | null
+          children: number | null
+          children_ages: string | null
+          city: string | null
           created_at: string | null
           hotel_name: string | null
           id: string
+          meal_plan: string | null
           nights: number | null
           room_type: string | null
           rooms: number | null
+          star_rating: number | null
         }
         Insert: {
+          adults?: number | null
           board_type?: string | null
           booking_id: string
+          booking_reference?: string | null
+          cancellation_policy?: string | null
           check_in?: string | null
           check_out?: string | null
+          children?: number | null
+          children_ages?: string | null
+          city?: string | null
           created_at?: string | null
           hotel_name?: string | null
           id?: string
+          meal_plan?: string | null
           nights?: number | null
           room_type?: string | null
           rooms?: number | null
+          star_rating?: number | null
         }
         Update: {
+          adults?: number | null
           board_type?: string | null
           booking_id?: string
+          booking_reference?: string | null
+          cancellation_policy?: string | null
           check_in?: string | null
           check_out?: string | null
+          children?: number | null
+          children_ages?: string | null
+          city?: string | null
           created_at?: string | null
           hotel_name?: string | null
           id?: string
+          meal_plan?: string | null
           nights?: number | null
           room_type?: string | null
           rooms?: number | null
+          star_rating?: number | null
         }
         Relationships: [
           {
