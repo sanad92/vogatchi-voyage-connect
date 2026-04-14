@@ -289,27 +289,6 @@ const NewUnifiedBooking = () => {
                 supplierType={bookingType === 'hotel' ? 'hotel' : bookingType === 'flight' ? 'airline' : bookingType === 'transport' ? 'transport' : undefined}
               />
 
-              {/* الأسعار والعملة */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>سعر البيع *</Label>
-                  <Input type="number" value={wizard.formData.selling_price} onChange={e => wizard.updateField('selling_price', e.target.value)} />
-                  <FieldError error={wizard.errors.selling_price} />
-                </div>
-                <div>
-                  <Label>التكلفة *</Label>
-                  <Input type="number" value={wizard.formData.cost_price} onChange={e => wizard.updateField('cost_price', e.target.value)} />
-                  <FieldError error={wizard.errors.cost_price} />
-                </div>
-                <div>
-                  <Label>العملة</Label>
-                  <CurrencySelector
-                    value={(wizard.formData.currency || 'EGP') as SupportedCurrency}
-                    onValueChange={v => wizard.updateField('currency', v)}
-                  />
-                </div>
-              </div>
-
               {/* التواريخ */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -319,24 +298,6 @@ const NewUnifiedBooking = () => {
                 <div>
                   <Label>تاريخ النهاية</Label>
                   <Input type="date" value={wizard.formData.end_date} onChange={e => wizard.updateField('end_date', e.target.value)} />
-                </div>
-              </div>
-
-              {/* الربح */}
-              <div className={`p-4 rounded-lg border-2 ${profit >= 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : 'border-red-200 bg-red-50 dark:bg-red-950/20'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {profit >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
-                    <span className="text-sm font-medium text-muted-foreground">الربح المتوقع</span>
-                  </div>
-                  <div className="text-left">
-                    <span className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {profit.toLocaleString()} {wizard.formData.currency}
-                    </span>
-                    <span className={`mr-2 text-sm ${margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ({margin.toFixed(1)}%)
-                    </span>
-                  </div>
                 </div>
               </div>
 
