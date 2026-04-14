@@ -5858,6 +5858,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      can_manage_customers: { Args: never; Returns: boolean }
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
