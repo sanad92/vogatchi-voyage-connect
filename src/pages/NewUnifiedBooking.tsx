@@ -45,8 +45,6 @@ const wizardSteps: WizardStepConfig[] = [
     validate: (data) => {
       const errors: Record<string, string> = {};
       if (!data.customer_id && !data.customer_name) errors.customer_name = 'يرجى اختيار عميل أو إدخال اسم';
-      if (!data.selling_price || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
-      if (!data.cost_price || Number(data.cost_price) <= 0) errors.cost_price = 'التكلفة مطلوبة';
       return errors;
     },
   },
@@ -54,6 +52,8 @@ const wizardSteps: WizardStepConfig[] = [
     title: 'التفاصيل',
     validate: (data) => {
       const errors: Record<string, string> = {};
+      if (!data.selling_price || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
+      if (!data.cost_price || Number(data.cost_price) <= 0) errors.cost_price = 'التكلفة مطلوبة';
       if (data.booking_type === 'hotel' && !data.hotel_name) errors.hotel_name = 'اسم الفندق مطلوب';
       if (data.booking_type === 'flight' && !data.airline) errors.airline = 'شركة الطيران مطلوبة';
       if (data.booking_type === 'car_rental' && !data.car_type) errors.car_type = 'نوع السيارة مطلوب';
