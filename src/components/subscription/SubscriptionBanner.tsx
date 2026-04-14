@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { useSubscriptionEnforcement } from '@/hooks/useSubscriptionEnforcement';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { AlertTriangle, XCircle, Clock, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
 const SubscriptionBanner = () => {
-  const { subscription, isExpired, isActive, isTrialing, trialDaysRemaining, loading } = useSubscriptionEnforcement();
+  const { subscription, isExpired, isActive, isTrialing, trialDaysRemaining, loading } = useSubscription();
 
   if (loading || !subscription) return null;
 
