@@ -45,8 +45,6 @@ const wizardSteps: WizardStepConfig[] = [
     validate: (data) => {
       const errors: Record<string, string> = {};
       if (!data.customer_id && !data.customer_name) errors.customer_name = 'يرجى اختيار عميل أو إدخال اسم';
-      if (!data.selling_price || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
-      if (!data.cost_price || Number(data.cost_price) <= 0) errors.cost_price = 'التكلفة مطلوبة';
       return errors;
     },
   },
@@ -54,6 +52,8 @@ const wizardSteps: WizardStepConfig[] = [
     title: 'التفاصيل',
     validate: (data) => {
       const errors: Record<string, string> = {};
+      if (!data.selling_price || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
+      if (!data.cost_price || Number(data.cost_price) <= 0) errors.cost_price = 'التكلفة مطلوبة';
       if (data.booking_type === 'hotel' && !data.hotel_name) errors.hotel_name = 'اسم الفندق مطلوب';
       if (data.booking_type === 'flight' && !data.airline) errors.airline = 'شركة الطيران مطلوبة';
       if (data.booking_type === 'car_rental' && !data.car_type) errors.car_type = 'نوع السيارة مطلوب';
@@ -289,27 +289,6 @@ const NewUnifiedBooking = () => {
                 supplierType={bookingType === 'hotel' ? 'hotel' : bookingType === 'flight' ? 'airline' : bookingType === 'transport' ? 'transport' : undefined}
               />
 
-              {/* الأسعار والعملة */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>سعر البيع *</Label>
-                  <Input type="number" value={wizard.formData.selling_price} onChange={e => wizard.updateField('selling_price', e.target.value)} />
-                  <FieldError error={wizard.errors.selling_price} />
-                </div>
-                <div>
-                  <Label>التكلفة *</Label>
-                  <Input type="number" value={wizard.formData.cost_price} onChange={e => wizard.updateField('cost_price', e.target.value)} />
-                  <FieldError error={wizard.errors.cost_price} />
-                </div>
-                <div>
-                  <Label>العملة</Label>
-                  <CurrencySelector
-                    value={(wizard.formData.currency || 'EGP') as SupportedCurrency}
-                    onValueChange={v => wizard.updateField('currency', v)}
-                  />
-                </div>
-              </div>
-
               {/* التواريخ */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -319,24 +298,6 @@ const NewUnifiedBooking = () => {
                 <div>
                   <Label>تاريخ النهاية</Label>
                   <Input type="date" value={wizard.formData.end_date} onChange={e => wizard.updateField('end_date', e.target.value)} />
-                </div>
-              </div>
-
-              {/* الربح */}
-              <div className={`p-4 rounded-lg border-2 ${profit >= 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : 'border-red-200 bg-red-50 dark:bg-red-950/20'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {profit >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
-                    <span className="text-sm font-medium text-muted-foreground">الربح المتوقع</span>
-                  </div>
-                  <div className="text-left">
-                    <span className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {profit.toLocaleString()} {wizard.formData.currency}
-                    </span>
-                    <span className={`mr-2 text-sm ${margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ({margin.toFixed(1)}%)
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -366,6 +327,51 @@ const NewUnifiedBooking = () => {
               <div>
                 <Label>ملاحظات</Label>
                 <Textarea value={wizard.formData.notes} onChange={e => wizard.updateField('notes', e.target.value)} />
+              </div>
+
+              {/* الأسعار والعملة */}
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  الأسعار والتكاليف
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>سعر البيع *</Label>
+                    <Input type="number" value={wizard.formData.selling_price} onChange={e => wizard.updateField('selling_price', e.target.value)} />
+                    <FieldError error={wizard.errors.selling_price} />
+                  </div>
+                  <div>
+                    <Label>التكلفة *</Label>
+                    <Input type="number" value={wizard.formData.cost_price} onChange={e => wizard.updateField('cost_price', e.target.value)} />
+                    <FieldError error={wizard.errors.cost_price} />
+                  </div>
+                  <div>
+                    <Label>العملة</Label>
+                    <CurrencySelector
+                      value={(wizard.formData.currency || 'EGP') as SupportedCurrency}
+                      onValueChange={v => wizard.updateField('currency', v)}
+                    />
+                  </div>
+                </div>
+
+                {/* الربح */}
+                <div className={`mt-4 p-4 rounded-lg border-2 ${profit >= 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : 'border-red-200 bg-red-50 dark:bg-red-950/20'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {profit >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
+                      <span className="text-sm font-medium text-muted-foreground">الربح المتوقع</span>
+                    </div>
+                    <div className="text-left">
+                      <span className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {profit.toLocaleString()} {wizard.formData.currency}
+                      </span>
+                      <span className={`mr-2 text-sm ${margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ({margin.toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextLabel="مراجعة" />
             </CardContent>
