@@ -292,11 +292,11 @@ const NewUnifiedBooking = () => {
               {/* التواريخ */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>تاريخ البداية</Label>
+                  <Label>{bookingType === 'flight' ? 'تاريخ المغادرة (Departure Date)' : 'تسجيل الدخول (Check-in)'}</Label>
                   <Input type="date" value={wizard.formData.start_date} onChange={e => wizard.updateField('start_date', e.target.value)} />
                 </div>
                 <div>
-                  <Label>تاريخ النهاية</Label>
+                  <Label>{bookingType === 'flight' ? 'تاريخ الوصول (Arrival Date)' : 'تسجيل الخروج (Check-out)'}</Label>
                   <Input type="date" value={wizard.formData.end_date} onChange={e => wizard.updateField('end_date', e.target.value)} />
                 </div>
               </div>
