@@ -13,10 +13,10 @@ const VALID_ROLES = ['admin', 'manager', 'sales_agent', 'accountant', 'viewer', 
 const VALID_ORG_ROLES = ['owner', 'admin', 'manager', 'agent', 'viewer'] as const;
 
 async function checkSuperAdmin(supabase: any, userId: string): Promise<boolean> {
-  const { data } = await supabase.rpc('has_platform_role', { _user_id: userId, _role: 'platform_admin' });
-  if (data) return true;
+  const { data: isPlatform } = await supabase.rpc('is_platform_admin', { _user_id: userId });
+  if (isPlatform) return true;
   
-  // Also check org-level super_admin
+  // Also check org-level admin roles
   const { data: members } = await supabase
     .from('organization_members')
     .select('role')
