@@ -62,7 +62,7 @@ export const useCustomerService = () => {
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['customer-follow-ups'] }); toast({ title: "تم الحفظ", description: "تم إضافة التواصل بنجاح" }); },
-    onError: () => { toast({ title: "خطأ", variant: "destructive" }); },
+    onError: (err: any) => { toast({ title: "خطأ في إضافة سجل التواصل", description: err?.message || "تحقق من اختيار العميل وحالة الاشتراك", variant: "destructive" }); },
   });
 
   const addNoteMutation = useMutation({
