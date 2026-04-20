@@ -207,7 +207,8 @@ function App() {
                               <Route path="/profit-loss-reports" element={<PermissionRouteGuard requiredPermission="reports_view"><ProfitLossReports /></PermissionRouteGuard>} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
-                              <Route path="/employees-enhanced" element={<PermissionRouteGuard requiredPermission="employees_view"><EnhancedEmployeesPage /></PermissionRouteGuard>} />
+                              <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
+                              <Route path="/employees" element={<Navigate to="/team" replace />} />
                               <Route path="/admin-settings" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
                               <Route path="/landing-admin" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
                               <Route path="/admin-import-export" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminImportExport /></PermissionRouteGuard>} />
