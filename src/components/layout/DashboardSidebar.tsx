@@ -88,11 +88,9 @@ const navGroups: NavGroup[] = [
   {
     label: 'الإدارة',
     icon: Settings,
-    requiredPermission: 'employees_view',
     items: [
       { title: 'الموردين', href: '/suppliers', icon: Truck, requiredPermission: 'suppliers_view' },
-      { title: 'الموظفين', href: '/employees-enhanced', icon: Users },
-      { title: 'الفريق', href: '/team', icon: Users, requiredPermission: 'team_invite' },
+      { title: 'فريق العمل', href: '/team', icon: Users },
       { title: 'الأتمتة', href: '/automation', icon: Zap, requiredPermission: 'automation_view' },
       { title: 'سجل التدقيق', href: '/audit-log', icon: Shield, requiredPermission: 'audit_view' },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },

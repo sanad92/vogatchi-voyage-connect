@@ -207,7 +207,8 @@ function App() {
                               <Route path="/profit-loss-reports" element={<PermissionRouteGuard requiredPermission="reports_view"><ProfitLossReports /></PermissionRouteGuard>} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
-                              <Route path="/employees-enhanced" element={<PermissionRouteGuard requiredPermission="employees_view"><EnhancedEmployeesPage /></PermissionRouteGuard>} />
+                              <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
+                              <Route path="/employees" element={<Navigate to="/team" replace />} />
                               <Route path="/admin-settings" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
                               <Route path="/landing-admin" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
                               <Route path="/admin-import-export" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminImportExport /></PermissionRouteGuard>} />
@@ -222,7 +223,7 @@ function App() {
                               <Route path="/customer-portal" element={<PermissionRouteGuard requiredPermission="customer_portal_view"><CustomerPortalPage /></PermissionRouteGuard>} />
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
-                              <Route path="/team" element={<PermissionRouteGuard requiredPermission="team_invite"><TeamManagement /></PermissionRouteGuard>} />
+                              <Route path="/team" element={<TeamManagement />} />
                               <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
                               <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
                               <Route path="/admin/cms" element={<PermissionRouteGuard requiredPermission="admin_settings"><CMSPages /></PermissionRouteGuard>} />
