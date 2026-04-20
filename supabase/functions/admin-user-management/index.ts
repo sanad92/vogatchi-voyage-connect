@@ -22,7 +22,7 @@ async function checkSuperAdmin(supabase: any, userId: string): Promise<boolean> 
     .select('role')
     .eq('user_id', userId)
     .eq('is_active', true)
-    .in('role', ['owner', 'super_admin']);
+    .in('role', ['owner', 'admin', 'super_admin']);
   
   return members && members.length > 0;
 }
