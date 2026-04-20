@@ -15,8 +15,7 @@ interface InteractionFormProps {
 }
 
 const InteractionForm = ({ onSubmit, onCancel }: InteractionFormProps) => {
-  const { data } = useCustomers();
-  const customers = data?.customers || [];
+  const { customers = [] } = useCustomers();
   const [formData, setFormData] = useState({
     customer_id: '',
     communication_type: 'phone',
