@@ -194,6 +194,110 @@ Deno.serve(async (req) => {
         });
       }
 
+      case "create_team_member": {
+        const { email, password, full_name, phone, organization_id, org_role, employee_data } = body;
+
+        if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim()) || email.length > 255) {
+          return new Response(JSON.stringify([{ success: false, message: "بريد إلكتروني غير صالح" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!password || typeof password !== 'string' || password.length < 8 || password.length > 128) {
+          return new Response(JSON.stringify([{ success: false, message: "كلمة المرور يجب أن تكون بين 8 و 128 حرف" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!full_name || typeof full_name !== 'string' || !full_name.trim() || full_name.length > 200) {
+          return new Response(JSON.stringify([{ success: false, message: "الاسم الكامل مطلوب" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!organization_id || typeof organization_id !== 'string') {
+          return new Response(JSON.stringify([{ success: false, message: "معرف المؤسسة مطلوب" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!org_role || !VALID_ORG_ROLES.includes(org_role)) {
+          return new Response(JSON.stringify([{ success: false, message: "الدور غير صالح" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Create auth user
+        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+          email: email.trim(),
+          password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: full_name.trim(),
+            phone: phone?.trim() || null,
+          },
+        });
+
+        if (createError || !newUser?.user) {
+          return new Response(JSON.stringify([{ success: false, message: createError?.message || "فشل إنشاء المستخدم" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const newUserId = newUser.user.id;
+
+        // Update profile
+        await supabase.from('profiles').update({
+          full_name: full_name.trim(),
+          phone: phone?.trim() || null,
+          email: email.trim(),
+        }).eq('id', newUserId);
+
+        // Add to organization_members
+        const { error: memberError } = await supabase.from('organization_members').insert({
+          organization_id,
+          user_id: newUserId,
+          role: org_role,
+          is_active: true,
+        });
+
+        if (memberError) {
+          // Rollback: delete the auth user
+          await supabase.auth.admin.deleteUser(newUserId);
+          return new Response(JSON.stringify([{ success: false, message: `فشل إضافة العضو للمؤسسة: ${memberError.message}` }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Optionally create employee record
+        let employeeId: string | null = null;
+        if (employee_data && typeof employee_data === 'object') {
+          const empCode = employee_data.employee_code?.trim() || `EMP-${Date.now().toString().slice(-6)}`;
+          const { data: emp, error: empError } = await supabase.from('employees').insert({
+            organization_id,
+            employee_code: empCode,
+            full_name: full_name.trim(),
+            email: email.trim(),
+            phone: phone?.trim() || null,
+            position: employee_data.position?.trim() || null,
+            department: employee_data.department?.trim() || null,
+            hire_date: employee_data.hire_date || null,
+            base_salary: Number(employee_data.base_salary) || 0,
+            is_active: true,
+          }).select('id').single();
+
+          if (!empError && emp) {
+            employeeId = emp.id;
+            await supabase.from('profiles').update({ linked_employee_id: emp.id }).eq('id', newUserId);
+          }
+        }
+
+        return new Response(JSON.stringify([{
+          success: true,
+          user_id: newUserId,
+          employee_id: employeeId,
+          message: "تم إضافة العضو بنجاح",
+        }]), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
