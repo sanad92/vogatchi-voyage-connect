@@ -10,6 +10,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_ROLES = ['admin', 'manager', 'sales_agent', 'accountant', 'viewer', 'super_admin'] as const;
+const VALID_ORG_ROLES = ['owner', 'admin', 'manager', 'agent', 'viewer'] as const;
 
 async function checkSuperAdmin(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase.rpc('has_platform_role', { _user_id: userId, _role: 'platform_admin' });
