@@ -1,102 +1,80 @@
 
+المستخدم يقول إن إدارة الموظفين وإدارة المستخدمين معقدة جداً ويريد تبسيطها. سأقدم خطة لتوحيد وتبسيط النظام.
 
-# تحسين نماذج الحجوزات الموحدة لتطابق النماذج القديمة
+## المشكلة الحالية
 
-## المشكلة
+يوجد **3 أنظمة منفصلة** للموظفين/المستخدمين تسبب الإرباك:
 
-نموذج الحجز الموحد (`NewUnifiedBooking.tsx`) مبسط جداً مقارنة بالنماذج القديمة. الفروقات الرئيسية:
+1. **الموظفون (`employees`)** — بيانات HR (راتب، منصب، قسم) في `EnhancedEmployeesPage`
+2. **المستخدمون (`profiles` + `auth.users`)** — حسابات الدخول في `useUserManagement`
+3. **أعضاء المؤسسة (`organization_members`)** — الأدوار والصلاحيات في `useOrgMembers`
 
-### الفندق — ينقصه:
-- تصنيف الفندق (نجوم)، المدينة، عدد البالغين/الأطفال/أعمارهم
-- نظام الوجبات (7 خيارات: RO, BB, HB, FB, ALL, UAI, SAL)
-- الطلبات الخاصة (من جدول `special_request_types`)
-- سياسة الإلغاء، مرجع حجز المورد
-- اختيار المورد من قاعدة البيانات (بدل حقل نصي)
-- حساب عدد الليالي تلقائي + سعر الليلة × الليالي
+كل واحد له صفحة منفصلة، وربطهم يدوي عبر `linked_employee_id` وهذا مربك جداً للمستخدم.
 
-### الطيران — ينقصه:
-- اختيار المطارات/شركات الطيران/درجة السفر من الجداول الموجودة
-- تاريخ ووقت الوصول، وقت المغادرة
-- عدد المسافرين، سعر التذكرة للفرد، الضرائب
-- رحلة ذهاب وعودة، رقم PNR
-- تفضيلات المقعد والوجبات
+## الحل المقترح: صفحة موحدة "فريق العمل"
 
-### تأجير السيارات — ينقصه:
-- التأمين (حقل موجود بالجدول لكن مش بالنموذج)
+صفحة واحدة `/team` فيها:
 
-### عام — ينقصه:
-- اختيار العميل بالبحث (CustomerSelection component)
-- اختيار المورد من قاعدة البيانات (SupplierSelection component)
-- معلومات موظف الحجز التلقائية
-- Validation بـ react-hook-form أو Zod
+### عرض موحد لكل شخص في المؤسسة
+جدول واحد يعرض كل أعضاء المؤسسة مع:
+- الاسم + الإيميل + الهاتف
+- الدور (owner/admin/manager/agent/viewer) — قابل للتعديل inline
+- بيانات الموظف المرتبطة (المنصب، القسم، الراتب) — إن وجدت
+- حالة الحساب (نشط/موقوف)
+- زر إجراءات سريعة
 
----
+### إضافة شخص جديد بـ Wizard من 3 خطوات
+بدل النماذج المنفصلة المعقدة:
 
-## الخطة
+```text
+خطوة 1: المعلومات الأساسية
+  → الاسم، الإيميل، الهاتف، كلمة مرور أولية
 
-### 1. Migration — إضافة أعمدة ناقصة لجداول التفاصيل
+خطوة 2: الدور والصلاحيات  
+  → اختيار الدور (مع شرح كل دور)
 
-```sql
--- Hotel: star_rating, city, adults, children, children_ages, meal_plan, 
---        cancellation_policy, booking_reference, supplier_id
-ALTER TABLE booking_hotel_details ADD COLUMN star_rating integer;
-ALTER TABLE booking_hotel_details ADD COLUMN city text;
-ALTER TABLE booking_hotel_details ADD COLUMN adults integer DEFAULT 2;
-ALTER TABLE booking_hotel_details ADD COLUMN children integer DEFAULT 0;
-ALTER TABLE booking_hotel_details ADD COLUMN children_ages text;
-ALTER TABLE booking_hotel_details ADD COLUMN meal_plan text;
-ALTER TABLE booking_hotel_details ADD COLUMN cancellation_policy text;
-ALTER TABLE booking_hotel_details ADD COLUMN booking_reference text;
-
--- Flight: arrival_date, departure_time, arrival_time, flight_class, 
---         passengers_count, ticket_price, taxes, is_round_trip, pnr, 
---         seat_preferences, meal_preferences
-ALTER TABLE booking_flight_details ADD COLUMN passengers_count integer DEFAULT 1;
-ALTER TABLE booking_flight_details ADD COLUMN flight_class text;
-ALTER TABLE booking_flight_details ADD COLUMN ticket_price_per_person numeric DEFAULT 0;
-ALTER TABLE booking_flight_details ADD COLUMN taxes_and_fees numeric DEFAULT 0;
-ALTER TABLE booking_flight_details ADD COLUMN is_round_trip boolean DEFAULT false;
-ALTER TABLE booking_flight_details ADD COLUMN seat_preferences text;
-ALTER TABLE booking_flight_details ADD COLUMN meal_preferences text;
+خطوة 3: بيانات الموظف (اختياري)
+  → "هل تريد إضافة بيانات HR؟" (نعم/لا)
+  → لو نعم: المنصب، القسم، الراتب، تاريخ التوظيف
 ```
 
-### 2. إعادة بناء Step 2 (البيانات الأساسية)
-- استبدال Select العميل البسيط بـ `CustomerSelection` component الموجود (بحث ذكي)
-- إضافة `SupplierSelection` component بدل حقل نصي
-- إضافة معلومات موظف الحجز التلقائية
-- استخدام `CurrencySelector` component الموجود
+عند الإرسال، يحدث **كل شيء دفعة واحدة**:
+1. إنشاء حساب auth (عبر edge function `admin-user-management`)
+2. إنشاء profile
+3. إضافة لـ `organization_members` بالدور المختار
+4. لو فيه بيانات HR → إنشاء `employee` وربطه تلقائياً عبر `linked_employee_id`
 
-### 3. إعادة بناء Step 3 (التفاصيل) — نموذج مخصص لكل نوع
+### إجراءات سريعة على كل شخص
+- تعديل الدور (dropdown مباشر)
+- إيقاف/تفعيل
+- إعادة تعيين كلمة المرور
+- تعديل بيانات الموظف
+- إزالة من المؤسسة
 
-بدل الـ generic loop الحالي، إنشاء 4 components متخصصة:
-
-- **`UnifiedHotelFields.tsx`**: اسم الفندق، تصنيف النجوم، المدينة، تواريخ + ليالي تلقائية، نوع الغرفة، بالغين/أطفال، نظام الوجبات (Select بالخيارات السبعة)، سياسة الإلغاء، مرجع المورد، سعر الليلة (تكلفة + بيع)
-- **`UnifiedFlightFields.tsx`**: اختيار المطارات من DB، شركة الطيران من DB، درجة السفر من DB، رقم الرحلة، تاريخ ووقت المغادرة/الوصول، عدد المسافرين، سعر التذكرة + ضرائب، ذهاب وعودة، PNR، تذكرة
-- **`UnifiedCarFields.tsx`**: نوع السيارة، مواقع استلام/تسليم، تواريخ + سعر يومي، تأمين
-- **`UnifiedTransportFields.tsx`**: نوع المركبة، المسار، نقطة التقاط/توصيل، عدد الركاب
-
-### 4. تحسين Step 4 (المراجعة)
-- عرض كل الحقول الجديدة بشكل منظم
-- حسابات الربح التفصيلية (سعر الليلة × الليالي مثلاً)
-
-### 5. تحسين الـ Validation
-- إضافة validation أقوى لكل نوع حجز (الحقول المطلوبة حسب النوع)
-
----
+### الصفحات القديمة
+- `/employees` و`/enhanced-employees` → تحويل تلقائي للصفحة الجديدة
+- `/admin-settings` → الإبقاء على تبويب "المستخدمون" بس بشكل مبسط أو إزالته نهائياً
 
 ## الملفات
 
 ```text
-Migration SQL — إضافة أعمدة للجداول التفصيلية
-
 ملفات جديدة:
-  src/components/bookings/unified-fields/UnifiedHotelFields.tsx
-  src/components/bookings/unified-fields/UnifiedFlightFields.tsx
-  src/components/bookings/unified-fields/UnifiedCarFields.tsx
-  src/components/bookings/unified-fields/UnifiedTransportFields.tsx
+  src/pages/TeamManagementPage.tsx       — الصفحة الموحدة الرئيسية
+  src/components/team/TeamMembersTable.tsx — جدول الأعضاء الموحد
+  src/components/team/AddTeamMemberWizard.tsx — Wizard من 3 خطوات
+  src/components/team/EditMemberDialog.tsx    — تعديل دور/بيانات HR
+  src/hooks/useTeamManagement.ts         — هوك موحد يجمع الـ 3 جداول
 
 ملفات تُعدّل:
-  src/pages/NewUnifiedBooking.tsx — إعادة بناء الخطوات 2+3+4
-  src/hooks/useUnifiedBookings.ts — تحديث NewBookingData type
+  src/App.tsx — إضافة route /team + redirect من القديم
+  src/components/layout/DashboardSidebar.tsx — رابط واحد "فريق العمل"
+  
+لا حاجة لـ Migration — الجداول موجودة وكافية.
 ```
 
+## الفائدة للمستخدم
+
+- **رابط واحد** في القائمة الجانبية بدل 3
+- **نموذج واحد** لإضافة شخص (بدلاً من إنشاء user ثم employee ثم ربطهم يدوياً)
+- **عرض شامل** لكل شخص في مكان واحد
+- إخفاء التعقيد التقني (3 جداول) خلف واجهة بسيطة
