@@ -223,7 +223,7 @@ function App() {
                               <Route path="/customer-portal" element={<PermissionRouteGuard requiredPermission="customer_portal_view"><CustomerPortalPage /></PermissionRouteGuard>} />
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
-                              <Route path="/team" element={<PermissionRouteGuard requiredPermission="team_invite"><TeamManagement /></PermissionRouteGuard>} />
+                              <Route path="/team" element={<TeamManagement />} />
                               <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
                               <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
                               <Route path="/admin/cms" element={<PermissionRouteGuard requiredPermission="admin_settings"><CMSPages /></PermissionRouteGuard>} />
