@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useCustomers } from '@/hooks/useCustomers';
 
 interface InteractionFormProps {
   onSubmit: (data: any) => void;
@@ -14,6 +15,8 @@ interface InteractionFormProps {
 }
 
 const InteractionForm = ({ onSubmit, onCancel }: InteractionFormProps) => {
+  const { data } = useCustomers();
+  const customers = data?.customers || [];
   const [formData, setFormData] = useState({
     customer_id: '',
     communication_type: 'phone',
@@ -27,7 +30,7 @@ const InteractionForm = ({ onSubmit, onCancel }: InteractionFormProps) => {
     e.preventDefault();
     
     if (!formData.customer_id || !formData.content) {
-      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      toast.error('يرجى اختيار العميل وكتابة المحتوى');
       return;
     }
 
@@ -46,13 +49,21 @@ const InteractionForm = ({ onSubmit, onCancel }: InteractionFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="customer_id">العميل</Label>
-            <Input
-              id="customer_id"
-              placeholder="ID العميل أو اسمه"
+            <Select
               value={formData.customer_id}
-              onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-              required
-            />
+              onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="اختر العميل" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} {c.phone ? `— ${c.phone}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
