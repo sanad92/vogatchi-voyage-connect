@@ -43,12 +43,14 @@ const navGroups: NavGroup[] = [
     icon: ClipboardList,
     requiredPermission: 'bookings_view',
     items: [
-      { title: 'الحجوزات الموحدة', href: '/bookings', icon: ClipboardList },
+      { title: 'كل الحجوزات', href: '/bookings', icon: ClipboardList },
       { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, requiredPermission: 'quotes_view' },
-      { title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel },
-      { title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane },
-      { title: 'تأجير السيارات', href: '/car-rentals', icon: Car },
-      { title: 'النقل', href: '/transport-bookings', icon: Truck },
+      { title: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar },
+      // العروض المتخصصة (قديم - تبقى متاحة عبر روابط مباشرة لكن الواجهة الموحدة هي الأساس)
+      { title: 'فنادق (عرض مفصّل)', href: '/hotel-bookings', icon: Hotel },
+      { title: 'طيران (عرض مفصّل)', href: '/flight-bookings', icon: Plane },
+      { title: 'سيارات (عرض مفصّل)', href: '/car-rentals', icon: Car },
+      { title: 'نقل (عرض مفصّل)', href: '/transport-bookings', icon: Truck },
     ],
   },
   {
