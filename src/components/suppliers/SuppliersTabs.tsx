@@ -1,18 +1,27 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { Building, Star, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import SuppliersOverview from './SuppliersOverview';
-import SuppliersCurrencies from './SuppliersCurrencies';
-import SuppliersContracts from './SuppliersContracts';
-import SuppliersPayments from './SuppliersPayments';
-import SuppliersRatings from './SuppliersRatings';
+import SupplierCurrencyManager from './SupplierCurrencyManager';
+import SupplierContracts from './SupplierContracts';
+import SupplierPayments from './SupplierPayments';
+import SupplierRatings from './SupplierRatings';
 import SupplierAnalytics from './SupplierAnalytics';
 import SupplierPermissionCheck from './SupplierPermissionCheck';
 
 const SuppliersTabs = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+
+  const NoSupplierSelected = () => (
+    <Card>
+      <CardContent className="p-8 text-center">
+        <p className="text-muted-foreground">يرجى اختيار مورد من قائمة "نظرة عامة" أولاً</p>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -46,18 +55,33 @@ const SuppliersTabs = () => {
       <TabsContent value="overview">
         <SuppliersOverview onSupplierSelect={setSelectedSupplier} />
       </TabsContent>
+
       <TabsContent value="currencies">
-        <SuppliersCurrencies supplierId={selectedSupplier} />
+        {selectedSupplier ? (
+          <SupplierPermissionCheck action="edit">
+            <SupplierCurrencyManager supplierId={selectedSupplier} />
+          </SupplierPermissionCheck>
+        ) : <NoSupplierSelected />}
       </TabsContent>
+
       <TabsContent value="contracts">
-        <SuppliersContracts supplierId={selectedSupplier} />
+        <SupplierPermissionCheck action="view">
+          <SupplierContracts supplierId={selectedSupplier} />
+        </SupplierPermissionCheck>
       </TabsContent>
+
       <TabsContent value="payments">
-        <SuppliersPayments supplierId={selectedSupplier} />
+        <SupplierPermissionCheck action="view">
+          <SupplierPayments supplierId={selectedSupplier} />
+        </SupplierPermissionCheck>
       </TabsContent>
+
       <TabsContent value="ratings">
-        <SuppliersRatings supplierId={selectedSupplier} />
+        <SupplierPermissionCheck action="view">
+          <SupplierRatings supplierId={selectedSupplier} />
+        </SupplierPermissionCheck>
       </TabsContent>
+
       <TabsContent value="analytics">
         <SupplierPermissionCheck action="view">
           <SupplierAnalytics />
