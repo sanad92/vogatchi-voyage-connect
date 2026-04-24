@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Check, Crown, Shield, Briefcase, UserCheck, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Crown, Shield, Briefcase, UserCheck, Eye, Info } from 'lucide-react';
 import { useTeamManagement, NewTeamMemberInput } from '@/hooks/useTeamManagement';
 
 interface Props {
