@@ -36,6 +36,7 @@ import CustomerInvoiceHistory from "@/components/customers/CustomerInvoiceHistor
 import CustomerCommunicationLog from "@/components/customers/CustomerCommunicationLog";
 import CustomerQuickActions from "@/components/customers/CustomerQuickActions";
 import LoyaltyPointsDisplay from "@/components/customers/LoyaltyPointsDisplay";
+import CustomerWhatsAppChat from "@/components/customers/CustomerWhatsAppChat";
 
 const CustomerDetails = () => {
   const { customerId } = useParams();
@@ -393,7 +394,12 @@ const CustomerDetails = () => {
           <CustomerInvoiceHistory customerId={customerId} />
         </TabsContent>
 
-        <TabsContent value="communication">
+        <TabsContent value="communication" className="space-y-6">
+          <CustomerWhatsAppChat
+            customerId={customerId}
+            customerPhone={customerData.phone}
+            customerName={customerData.name}
+          />
           <CustomerCommunicationLog customerId={customerId} />
         </TabsContent>
 
