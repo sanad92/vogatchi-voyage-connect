@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Plane, Hotel, Car, BarChart3 } from 'lucide-react';
 import authSideImage from '@/assets/auth-side-image.jpg';
+import VogantraLogo from '@/components/brand/VogantraLogo';
 
 interface AuthLayoutProps {
   children: ReactNode;
