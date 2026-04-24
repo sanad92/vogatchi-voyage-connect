@@ -1417,6 +1417,66 @@ export type Database = {
           },
         ]
       }
+      chart_of_accounts: {
+        Row: {
+          account_code: string
+          account_name: string
+          account_name_ar: string | null
+          account_type: Database["public"]["Enums"]["account_type"]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          organization_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          account_name_ar?: string | null
+          account_type: Database["public"]["Enums"]["account_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          organization_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          account_name_ar?: string | null
+          account_type?: Database["public"]["Enums"]["account_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          organization_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_of_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_payments: {
         Row: {
           bank_account_id: string | null
@@ -3598,6 +3658,110 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_date: string
+          entry_number: string
+          id: string
+          organization_id: string
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          total_credit: number
+          total_debit: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          entry_number: string
+          id?: string
+          organization_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          entry_number?: string
+          id?: string
+          organization_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit: number
+          debit: number
+          description: string | null
+          id: string
+          journal_entry_id: string
+          line_order: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+          line_order?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+          line_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -5884,7 +6048,19 @@ export type Database = {
       }
       generate_booking_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_journal_entry_number: {
+        Args: { _org_id: string }
+        Returns: string
+      }
       generate_quote_number: { Args: never; Returns: string }
+      get_account_balance: {
+        Args: { _account_id: string; _end_date?: string; _start_date?: string }
+        Returns: number
+      }
+      get_account_id_by_code: {
+        Args: { _code: string; _org_id: string }
+        Returns: string
+      }
       get_duplicate_customers: {
         Args: never
         Returns: {
@@ -5893,12 +6069,35 @@ export type Database = {
           phone: string
         }[]
       }
+      get_income_statement: {
+        Args: { _end_date: string; _org_id: string; _start_date: string }
+        Returns: {
+          account_code: string
+          account_name: string
+          account_name_ar: string
+          account_type: Database["public"]["Enums"]["account_type"]
+          amount: number
+        }[]
+      }
       get_org_plan_limits: {
         Args: { _org_id: string }
         Returns: {
           max_bookings_per_month: number
           max_storage_mb: number
           max_users: number
+        }[]
+      }
+      get_trial_balance: {
+        Args: { _end_date?: string; _org_id: string }
+        Returns: {
+          account_code: string
+          account_id: string
+          account_name: string
+          account_name_ar: string
+          account_type: Database["public"]["Enums"]["account_type"]
+          balance: number
+          total_credit: number
+          total_debit: number
         }[]
       }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
@@ -5920,6 +6119,21 @@ export type Database = {
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
+      }
+      post_journal_entry: {
+        Args: {
+          _description: string
+          _entry_date: string
+          _lines: Json
+          _org_id: string
+          _reference_id: string
+          _reference_type: string
+        }
+        Returns: string
+      }
+      seed_default_chart_of_accounts: {
+        Args: { _org_id: string }
+        Returns: undefined
       }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
@@ -5944,6 +6158,7 @@ export type Database = {
       user_has_any_org: { Args: never; Returns: boolean }
     }
     Enums: {
+      account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
       platform_role: "platform_admin" | "platform_owner"
     }
@@ -6073,6 +6288,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["asset", "liability", "equity", "revenue", "expense"],
       org_role: ["owner", "admin", "manager", "agent", "viewer"],
       platform_role: ["platform_admin", "platform_owner"],
     },
