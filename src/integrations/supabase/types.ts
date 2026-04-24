@@ -146,6 +146,53 @@ export type Database = {
           },
         ]
       }
+      allotment_usage: {
+        Row: {
+          allotment_id: string
+          booking_id: string
+          booking_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          quantity_used: number
+          usage_date: string
+        }
+        Insert: {
+          allotment_id: string
+          booking_id: string
+          booking_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          quantity_used?: number
+          usage_date?: string
+        }
+        Update: {
+          allotment_id?: string
+          booking_id?: string
+          booking_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          quantity_used?: number
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allotment_usage_allotment_id_fkey"
+            columns: ["allotment_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_allotments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_logs: {
         Row: {
           created_at: string
@@ -5074,6 +5121,87 @@ export type Database = {
           },
         ]
       }
+      supplier_allotments: {
+        Row: {
+          allotment_name: string
+          contract_id: string | null
+          cost_per_unit: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string
+          id: string
+          notes: string | null
+          organization_id: string
+          release_days: number | null
+          service_reference: string | null
+          service_type: string
+          start_date: string
+          status: string
+          supplier_id: string
+          total_quantity: number
+          updated_at: string
+          used_quantity: number
+        }
+        Insert: {
+          allotment_name: string
+          contract_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          release_days?: number | null
+          service_reference?: string | null
+          service_type: string
+          start_date: string
+          status?: string
+          supplier_id: string
+          total_quantity?: number
+          updated_at?: string
+          used_quantity?: number
+        }
+        Update: {
+          allotment_name?: string
+          contract_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          release_days?: number | null
+          service_reference?: string | null
+          service_type?: string
+          start_date?: string
+          status?: string
+          supplier_id?: string
+          total_quantity?: number
+          updated_at?: string
+          used_quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_allotments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_allotments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_contracts: {
         Row: {
           contract_number: string
@@ -5084,6 +5212,7 @@ export type Database = {
           end_date: string
           id: string
           is_active: boolean | null
+          organization_id: string | null
           payment_terms: string | null
           start_date: string
           supplier_id: string | null
@@ -5099,6 +5228,7 @@ export type Database = {
           end_date: string
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           payment_terms?: string | null
           start_date: string
           supplier_id?: string | null
@@ -5114,6 +5244,7 @@ export type Database = {
           end_date?: string
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           payment_terms?: string | null
           start_date?: string
           supplier_id?: string | null
@@ -5232,6 +5363,96 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "supplier_payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_rates: {
+        Row: {
+          cancellation_policy: string | null
+          contract_id: string | null
+          cost_price: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          is_refundable: boolean | null
+          markup_percentage: number | null
+          max_nights: number | null
+          min_nights: number | null
+          notes: string | null
+          organization_id: string
+          season_name: string | null
+          selling_price: number
+          service_reference: string | null
+          service_type: string
+          start_date: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancellation_policy?: string | null
+          contract_id?: string | null
+          cost_price?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          is_refundable?: boolean | null
+          markup_percentage?: number | null
+          max_nights?: number | null
+          min_nights?: number | null
+          notes?: string | null
+          organization_id: string
+          season_name?: string | null
+          selling_price?: number
+          service_reference?: string | null
+          service_type: string
+          start_date: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancellation_policy?: string | null
+          contract_id?: string | null
+          cost_price?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          is_refundable?: boolean | null
+          markup_percentage?: number | null
+          max_nights?: number | null
+          min_nights?: number | null
+          notes?: string | null
+          organization_id?: string
+          season_name?: string | null
+          selling_price?: number
+          service_reference?: string | null
+          service_type?: string
+          start_date?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_rates_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_rates_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
@@ -6077,6 +6298,23 @@ export type Database = {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
       }
+      find_supplier_rate: {
+        Args: {
+          _org_id: string
+          _service_date: string
+          _service_reference?: string
+          _service_type: string
+          _supplier_id: string
+        }
+        Returns: {
+          cost_price: number
+          currency: string
+          markup_percentage: number
+          rate_id: string
+          season_name: string
+          selling_price: number
+        }[]
+      }
       generate_booking_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_journal_entry_number: {
@@ -6149,6 +6387,10 @@ export type Database = {
           max_storage_mb: number
           max_users: number
         }[]
+      }
+      get_supplier_performance: {
+        Args: { _org_id: string; _supplier_id: string }
+        Returns: Json
       }
       get_trial_balance: {
         Args: { _end_date?: string; _org_id: string }
