@@ -74,6 +74,17 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: 'المحاسبة',
+    icon: BarChart3,
+    requiredPermission: 'financial_view',
+    items: [
+      { title: 'لوحة ERP', href: '/erp-dashboard', icon: BarChart3 },
+      { title: 'شجرة الحسابات', href: '/chart-of-accounts', icon: FileText },
+      { title: 'القيود المحاسبية', href: '/journal-entries', icon: Receipt },
+      { title: 'التقارير المحاسبية', href: '/accounting-reports', icon: TrendingUp },
+    ],
+  },
+  {
     label: 'التقارير',
     icon: BarChart3,
     requiredPermission: 'reports_view',
