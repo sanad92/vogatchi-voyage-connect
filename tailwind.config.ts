@@ -20,6 +20,16 @@ export default {
 		}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Cairo', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+				cairo: ['Cairo', 'system-ui', 'sans-serif'],
+				inter: ['Inter', 'system-ui', 'sans-serif'],
+			},
+			backgroundImage: {
+				'gradient-brand': 'var(--gradient-brand)',
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-accent': 'var(--gradient-accent)',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
