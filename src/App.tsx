@@ -90,7 +90,6 @@ const BookingsCalendar = lazy(() => import("@/pages/BookingsCalendar"));
 // CRM
 const CRM = lazy(() => import("@/pages/CRM"));
 const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
-const CustomerPortalPage = lazy(() => import("@/pages/CustomerPortalPage"));
 
 // Communication
 const WhatsApp = lazy(() => import("@/pages/WhatsApp"));
@@ -209,13 +208,6 @@ function App() {
                     </PlatformAdminGuard>
                   </SupabaseProtectedRoute>
                 } />
-
-                {/* Backward-compat redirects from old /platform-admin/* */}
-                <Route path="/platform-admin" element={<Navigate to="/platform" replace />} />
-                <Route path="/platform-admin/organizations" element={<Navigate to="/platform/organizations" replace />} />
-                <Route path="/platform-admin/subscriptions" element={<Navigate to="/platform/subscriptions" replace />} />
-                <Route path="/platform-admin/transfers" element={<Navigate to="/platform/transfers" replace />} />
-                <Route path="/platform-admin/settings" element={<Navigate to="/platform/settings" replace />} />
 
                 {/* Protected */}
                 <Route
