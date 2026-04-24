@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, CalendarPlus, Building2 } from 'lucide-react';
+import { Ban, CheckCircle, CalendarPlus, Building2, LogIn } from 'lucide-react';
+import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 
 interface OrgRow {
   id: string;
@@ -28,6 +29,7 @@ interface OrgRow {
 
 const PlatformAdminOrganizations = () => {
   const qc = useQueryClient();
+  const { start: startImpersonation } = useOrgImpersonation();
 
   const { data: plans } = useQuery({
     queryKey: ['platform-admin-plans'],
@@ -204,6 +206,15 @@ const PlatformAdminOrganizations = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-amber-500/50 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                            onClick={() => startImpersonation(org.id, org.name)}
+                            title="دخول إلى داشبورد المؤسسة"
+                          >
+                            <LogIn className="h-3 w-3 ml-1" /> دخول
+                          </Button>
                           <Button
                             size="sm"
                             variant={org.is_active ? 'destructive' : 'default'}

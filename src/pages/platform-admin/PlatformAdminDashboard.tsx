@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, CreditCard, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { Building2, Users, CreditCard, AlertTriangle, Clock, TrendingUp, TrendingDown, BanknoteIcon, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -76,6 +78,60 @@ const PlatformAdminDashboard = () => {
     staleTime: 120_000,
   });
 
+  const { data: revenue } = useQuery({
+    queryKey: ['platform-revenue'],
+    queryFn: async () => {
+      const now = new Date();
+      const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+      const { data: txs } = await supabase
+        .from('payment_transactions')
+        .select('amount_cents, currency, status, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', startLastMonth.toISOString());
+
+      let thisMonth = 0;
+      let lastMonth = 0;
+      (txs ?? []).forEach((t: any) => {
+        const d = new Date(t.created_at);
+        const amount = (t.amount_cents ?? 0) / 100;
+        if (d >= startThisMonth) thisMonth += amount;
+        else if (d >= startLastMonth && d <= endLastMonth) lastMonth += amount;
+      });
+      const change = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : (thisMonth > 0 ? 100 : 0);
+      return { thisMonth, lastMonth, change };
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: recentSubs } = useQuery({
+    queryKey: ['platform-recent-subs'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id, status, created_at, expires_at, organization_id, plan_id, organizations(name), subscription_plans(name_ar)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: recentTransfers } = useQuery({
+    queryKey: ['platform-recent-transfers'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bank_transfer_requests')
+        .select('id, amount, currency, status, created_at, organizations(name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
   const cards = [
     { label: 'إجمالي المؤسسات', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'bg-primary/10 text-primary' },
     { label: 'مؤسسات نشطة', value: stats?.activeOrgs ?? 0, icon: Building2, color: 'bg-emerald-500/10 text-emerald-600' },
@@ -159,30 +215,131 @@ const PlatformAdminDashboard = () => {
         </Card>
       </div>
 
-      {/* Subscription Status Summary */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">ملخص حالات الاشتراك</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-emerald-500/10">
-              <p className="text-2xl font-bold text-emerald-600">{stats?.activeSubs ?? 0}</p>
-              <p className="text-sm text-muted-foreground">نشط</p>
+      {/* Revenue & Subscription Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BanknoteIcon className="h-4 w-4 text-emerald-600" />
+              إيرادات الاشتراكات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground">هذا الشهر</p>
+              <p className="text-2xl font-bold text-emerald-600">
+                {(revenue?.thisMonth ?? 0).toLocaleString('ar-EG')} <span className="text-sm font-normal">ج.م</span>
+              </p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-blue-500/10">
-              <p className="text-2xl font-bold text-blue-600">{stats?.trialSubs ?? 0}</p>
-              <p className="text-sm text-muted-foreground">تجريبي</p>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                الشهر السابق: {(revenue?.lastMonth ?? 0).toLocaleString('ar-EG')} ج.م
+              </span>
+              {revenue && (
+                <span className={`flex items-center gap-1 font-medium ${revenue.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {revenue.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {Math.abs(revenue.change).toFixed(0)}%
+                </span>
+              )}
             </div>
-            <div className="text-center p-4 rounded-lg bg-amber-500/10">
-              <p className="text-2xl font-bold text-amber-600">{stats?.expiringSoon ?? 0}</p>
-              <p className="text-sm text-muted-foreground">ينتهي قريباً</p>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">ملخص حالات الاشتراك</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center p-3 rounded-lg bg-emerald-500/10">
+                <p className="text-2xl font-bold text-emerald-600">{stats?.activeSubs ?? 0}</p>
+                <p className="text-xs text-muted-foreground">نشط</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                <p className="text-2xl font-bold text-blue-600">{stats?.trialSubs ?? 0}</p>
+                <p className="text-xs text-muted-foreground">تجريبي</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-amber-500/10">
+                <p className="text-2xl font-bold text-amber-600">{stats?.expiringSoon ?? 0}</p>
+                <p className="text-xs text-muted-foreground">ينتهي قريباً</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-red-500/10">
+                <p className="text-2xl font-bold text-red-600">{stats?.expiredSubs ?? 0}</p>
+                <p className="text-xs text-muted-foreground">منتهي</p>
+              </div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-red-500/10">
-              <p className="text-2xl font-bold text-red-600">{stats?.expiredSubs ?? 0}</p>
-              <p className="text-sm text-muted-foreground">منتهي</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">آخر الاشتراكات</CardTitle>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/platform/subscriptions">
+                عرض الكل <ArrowLeft className="h-3 w-3 mr-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(recentSubs ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">لا توجد اشتراكات</p>
+            ) : (
+              recentSubs!.map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{s.organizations?.name ?? 'غير معروف'}</p>
+                    <p className="text-xs text-muted-foreground">{s.subscription_plans?.name_ar ?? '—'}</p>
+                  </div>
+                  <div className="text-end">
+                    <Badge variant={s.status === 'active' ? 'default' : s.status === 'trialing' ? 'secondary' : 'destructive'} className="text-xs">
+                      {s.status === 'active' ? 'نشط' : s.status === 'trialing' ? 'تجريبي' : s.status === 'expired' ? 'منتهٍ' : s.status}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(s.created_at).toLocaleDateString('ar-EG')}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BanknoteIcon className="h-4 w-4" />
+              تحويلات بانتظار المراجعة
+            </CardTitle>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/platform/transfers">
+                عرض الكل <ArrowLeft className="h-3 w-3 mr-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(recentTransfers ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">لا توجد تحويلات معلقة</p>
+            ) : (
+              recentTransfers!.map((t: any) => (
+                <div key={t.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{t.organizations?.name ?? 'غير معروف'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(t.created_at).toLocaleDateString('ar-EG')}
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold">
+                    {Number(t.amount ?? 0).toLocaleString('ar-EG')} {t.currency ?? 'EGP'}
+                  </p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

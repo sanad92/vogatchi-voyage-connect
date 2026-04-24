@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { getImpersonatingOrgId } from '@/hooks/useOrgImpersonation';
 
 interface Organization {
   id: string;
@@ -60,6 +61,35 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     try {
+      // Platform impersonation override: super admins can view a specific org
+      const impersonateOrgId = getImpersonatingOrgId();
+      if (impersonateOrgId) {
+        const { data: roles } = await supabase
+          .from('platform_roles')
+          .select('role')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+        if (roles) {
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', impersonateOrgId)
+            .maybeSingle();
+
+          if (requestId !== requestIdRef.current) return;
+
+          if (org) {
+            setOrganizations([org as Organization]);
+            setCurrentOrganization(org as Organization);
+            setLocalOrgRole('owner');
+            setOrgRole('owner');
+            setLoadedForUserId(targetUserId);
+            return;
+          }
+        }
+      }
+
       const { data: memberships, error: memError } = await supabase
         .from('organization_members')
         .select('organization_id, role, is_active')
@@ -133,6 +163,15 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
     }
     fetchOrganizations();
+  }, [user?.id]);
+
+  // Re-fetch when platform impersonation toggles
+  useEffect(() => {
+    const handler = () => {
+      fetchOrganizations();
+    };
+    window.addEventListener('platform-impersonation-changed', handler);
+    return () => window.removeEventListener('platform-impersonation-changed', handler);
   }, [user?.id]);
 
   const effectiveLoading = loading || (!!user?.id && loadedForUserId !== user.id);
