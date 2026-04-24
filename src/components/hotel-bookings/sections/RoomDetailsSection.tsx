@@ -1,109 +1,113 @@
-
-import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NewHotelBooking, MealPlan } from "@/types/hotelBooking";
+import { NewHotelBooking, MealPlan, ROOM_TYPE_OPTIONS } from "@/types/hotelBooking";
 
 interface RoomDetailsSectionProps {
   register: UseFormRegister<NewHotelBooking>;
   setValue: UseFormSetValue<NewHotelBooking>;
+  watch: UseFormWatch<NewHotelBooking>;
   errors: FieldErrors<NewHotelBooking>;
 }
 
-const RoomDetailsSection = ({ register, setValue, errors }: RoomDetailsSectionProps) => {
-  const mealPlans: { value: MealPlan; label: string }[] = [
-    { value: 'RO', label: 'Room Only (RO)' },
-    { value: 'BB', label: 'Bed & Breakfast (BB)' },
-    { value: 'HB', label: 'Half Board (HB)' },
-    { value: 'FB', label: 'Full Board (FB)' },
-    { value: 'ALL', label: 'All Inclusive (ALL)' },
-    { value: 'UAI', label: 'Ultra All Inclusive (UAI)' },
-    { value: 'SAL', label: 'Soft All Inclusive (SAL)' },
-  ];
+const mealPlans: { value: MealPlan; label: string }[] = [
+  { value: 'RO', label: 'بدون وجبات (RO)' },
+  { value: 'BB', label: 'إفطار (BB)' },
+  { value: 'HB', label: 'نصف إقامة (HB)' },
+  { value: 'FB', label: 'إقامة كاملة (FB)' },
+  { value: 'ALL', label: 'شامل كل شيء (ALL)' },
+  { value: 'UAI', label: 'فاخر شامل (UAI)' },
+  { value: 'SAL', label: 'شامل خفيف (SAL)' },
+];
+
+const RoomDetailsSection = ({ register, setValue, watch, errors }: RoomDetailsSectionProps) => {
+  const roomType = watch('room_type');
+  const isStandardRoomType = ROOM_TYPE_OPTIONS.includes(roomType);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>تفاصيل الغرفة والإقامة</CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="room_type">نوع الغرفة *</Label>
-          <Input 
-            id="room_type"
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="room_type">نوع الغرفة *</Label>
+        <Select
+          value={isStandardRoomType ? roomType : ''}
+          onValueChange={(v) => setValue('room_type', v, { shouldValidate: true })}
+        >
+          <SelectTrigger><SelectValue placeholder="اختر نوع الغرفة" /></SelectTrigger>
+          <SelectContent>
+            {ROOM_TYPE_OPTIONS.map(rt => (
+              <SelectItem key={rt} value={rt}>{rt}</SelectItem>
+            ))}
+            <SelectItem value="__custom__">+ نوع آخر (نص حر)</SelectItem>
+          </SelectContent>
+        </Select>
+        {(roomType === '__custom__' || (!isStandardRoomType && roomType)) && (
+          <Input
+            placeholder="اكتب نوع الغرفة..."
             {...register('room_type', { required: 'نوع الغرفة مطلوب' })}
-            placeholder="Single/Double/Triple/Family..."
           />
-          {errors.room_type && <p className="text-red-500 text-sm">{errors.room_type.message}</p>}
-        </div>
+        )}
+        {errors.room_type && <p className="text-destructive text-xs">{errors.room_type.message}</p>}
+      </div>
 
-        <div>
-          <Label htmlFor="adults">عدد البالغين *</Label>
-          <Input 
-            id="adults"
-            type="number"
-            min="1"
-            {...register('adults', { required: 'عدد البالغين مطلوب', min: 1 })}
-          />
-          {errors.adults && <p className="text-red-500 text-sm">{errors.adults.message}</p>}
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="meal_plan">نظام الوجبات *</Label>
+        <Select
+          value={watch('meal_plan') || ''}
+          onValueChange={(v) => setValue('meal_plan', v as MealPlan, { shouldValidate: true })}
+        >
+          <SelectTrigger><SelectValue placeholder="اختر نظام الوجبات" /></SelectTrigger>
+          <SelectContent>
+            {mealPlans.map(p => (
+              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div>
-          <Label htmlFor="children">عدد الأطفال</Label>
-          <Input 
-            id="children"
-            type="number"
-            min="0"
-            {...register('children')}
-          />
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="number_of_rooms">عدد الغرف *</Label>
+        <Input
+          id="number_of_rooms"
+          type="number"
+          min="1"
+          defaultValue={1}
+          {...register('number_of_rooms', { required: true, min: 1, valueAsNumber: true })}
+        />
+      </div>
 
-        <div>
-          <Label htmlFor="children_ages">أعمار الأطفال</Label>
-          <Input 
-            id="children_ages"
-            {...register('children_ages')}
-            placeholder="مثال: 5, 8, 12"
-          />
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="adults">عدد البالغين *</Label>
+        <Input
+          id="adults"
+          type="number"
+          min="1"
+          defaultValue={2}
+          {...register('adults', { required: 'عدد البالغين مطلوب', min: 1, valueAsNumber: true })}
+        />
+        {errors.adults && <p className="text-destructive text-xs">{errors.adults.message}</p>}
+      </div>
 
-        <div>
-          <Label htmlFor="meal_plan">نظام الوجبات *</Label>
-          <Select onValueChange={(value) => setValue('meal_plan', value as MealPlan)}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر نظام الوجبات" />
-            </SelectTrigger>
-            <SelectContent>
-              {mealPlans.map(plan => (
-                <SelectItem key={plan.value} value={plan.value}>
-                  {plan.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="children">عدد الأطفال</Label>
+        <Input
+          id="children"
+          type="number"
+          min="0"
+          defaultValue={0}
+          {...register('children', { valueAsNumber: true })}
+        />
+      </div>
 
-        <div>
-          <Label htmlFor="booking_reference_supplier">مرجع الحجز لدى المورد</Label>
-          <Input 
-            id="booking_reference_supplier"
-            {...register('booking_reference_supplier')}
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <Label htmlFor="cancellation_policy">سياسة الإلغاء</Label>
-          <Textarea 
-            id="cancellation_policy"
-            {...register('cancellation_policy')}
-            rows={3}
-          />
-        </div>
-      </CardContent>
-    </Card>
+      <div className="space-y-1.5">
+        <Label htmlFor="children_ages">أعمار الأطفال</Label>
+        <Input
+          id="children_ages"
+          {...register('children_ages')}
+          placeholder="مثال: 5, 8, 12"
+        />
+      </div>
+    </div>
   );
 };
 
