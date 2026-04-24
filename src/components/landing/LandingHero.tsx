@@ -1,111 +1,114 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Clock, Users, Building2, MessageSquare, Zap } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { useLandingContent } from '@/hooks/useLandingContent';
+import {
+  Sparkles, ArrowLeft, ShieldCheck, Zap, Globe2,
+  Hotel, Plane, Users, Receipt, BarChart3, Building2,
+} from 'lucide-react';
 
 interface LandingHeroProps {
   onWhatsAppClick: () => void;
 }
 
-const getIconComponent = (iconName: string) => {
-  const icons: Record<string, LucideIcon> = {
-    Shield,
-    Users,
-    Building2,
-    Clock,
-    MessageSquare,
-    Zap
-  };
-  return icons[iconName] || MessageSquare;
-};
+const featureChips = [
+  { icon: Hotel, label: 'إدارة الحجوزات' },
+  { icon: Receipt, label: 'حسابات وعمولات' },
+  { icon: Users, label: 'CRM وواتساب' },
+  { icon: BarChart3, label: 'تقارير الأرباح' },
+  { icon: Building2, label: 'فروع متعددة' },
+  { icon: Plane, label: 'موردين وفنادق وطيران' },
+];
 
-const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
-  const { getContentBySection, isLoading } = useLandingContent();
-  
-  const heroContent = getContentBySection('hero').find(item => item.section_type === 'hero');
-  const badges = getContentBySection('hero').filter(item => item.section_type === 'badges');
-
-  if (isLoading) {
-    return (
-      <section className="relative py-20 overflow-hidden">
-        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12 relative">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="animate-pulse space-y-8">
-              <div className="h-16 bg-gray-200 rounded mx-auto max-w-lg"></div>
-              <div className="h-8 bg-gray-200 rounded mx-auto max-w-2xl"></div>
-              <div className="flex justify-center gap-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="h-10 w-24 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
+const LandingHero = ({ onWhatsAppClick: _ }: LandingHeroProps) => {
   return (
-    <section className="relative py-16 lg:py-24 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/10"></div>
-      
-      <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12 relative">
-        <div className="max-w-6xl mx-auto text-center">
-          {/* Main Heading */}
-          <div className="space-y-6 mb-12">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              {heroContent?.title || 'رحلتك المميزة تبدأ من هنا'}
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent block mt-2">
-                {heroContent?.subtitle ? heroContent.subtitle.split(' - ')[0] : 'من هنا'}
-              </span>
-            </h1>
-            
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              {heroContent?.content || 'نحن شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية والسفر مع ضمان الجودة والأسعار التنافسية'}
-            </p>
+    <section className="relative overflow-hidden bg-gradient-hero text-white">
+      {/* Decorative grid + glow */}
+      <div className="absolute inset-0 opacity-[0.07]" style={{
+        backgroundImage:
+          'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+      }} />
+      <div className="absolute -top-40 -right-40 w-[480px] h-[480px] rounded-full bg-primary/30 blur-3xl" />
+      <div className="absolute -bottom-40 -left-40 w-[480px] h-[480px] rounded-full bg-accent/20 blur-3xl" />
+
+      <div className="relative mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-10 py-20 lg:py-28">
+        <div className="text-center max-w-4xl mx-auto">
+          <Badge
+            variant="secondary"
+            className="mb-6 bg-white/10 text-white border-white/20 backdrop-blur-sm px-4 py-1.5 text-xs font-inter tracking-widest uppercase"
+          >
+            <Sparkles className="h-3 w-3 ml-1.5" />
+            Powering Travel Business
+          </Badge>
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.15] tracking-tight">
+            شغّل شركة السياحة
+            <span className="block mt-2 bg-gradient-to-l from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+              بذكاء واحترافية
+            </span>
+          </h1>
+
+          <p className="mt-6 text-base sm:text-lg lg:text-xl text-white/75 max-w-2xl mx-auto leading-relaxed">
+            <span className="font-semibold text-white">Vogantra</span> — منصة ERP واحدة لإدارة الحجوزات،
+            الحسابات، الموردين، الـ CRM، والتقارير. كل شركة سياحتك في مكان واحد.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link to="/signup">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-95 shadow-[0_10px_40px_-10px_hsl(199_89%_48%/0.6)] px-8 h-12 text-base"
+              >
+                ابدأ تجربة مجانية 14 يوم
+                <ArrowLeft className="h-4 w-4 mr-2" />
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/30 bg-white/5 text-white hover:bg-white/10 px-8 h-12 text-base backdrop-blur-sm"
+              >
+                شاهد الأسعار
+              </Button>
+            </Link>
           </div>
-          
-          {/* Badges */}
-          {badges.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-3 lg:gap-4 mb-12">
-              {badges.map((badge, index) => {
-                const IconComponent = getIconComponent(badge.icon_name || 'Shield');
-                return (
-                  <Badge key={index} variant="secondary" className="px-4 py-2 text-sm lg:text-base bg-secondary/60 hover:bg-secondary/80 transition-colors">
-                    <IconComponent className="h-4 w-4 mr-2" />
-                    {badge.badge_text || badge.title}
-                  </Badge>
-                );
-              })}
+
+          <p className="mt-4 text-xs text-white/50 font-inter">
+            بدون بطاقة ائتمان · إعداد في دقائق · دعم عربي
+          </p>
+
+          {/* Feature chips */}
+          <div className="mt-12 flex flex-wrap justify-center gap-2.5">
+            {featureChips.map((chip, i) => {
+              const Icon = chip.icon;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 bg-white/8 border border-white/15 backdrop-blur-sm rounded-full px-4 py-2 text-sm text-white/85 hover:bg-white/12 transition"
+                >
+                  <Icon className="h-3.5 w-3.5 text-primary-glow" />
+                  {chip.label}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Trust pills */}
+          <div className="mt-10 flex flex-wrap justify-center items-center gap-x-8 gap-y-3 text-xs text-white/60">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-accent" />
+              عزل بيانات كامل (RLS)
             </div>
-          )}
-          
-          {/* WhatsApp CTA Card */}
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 lg:p-8 max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <MessageSquare className="h-6 w-6 lg:h-7 lg:w-7 text-green-600" />
-              <Zap className="h-5 w-5 lg:h-6 lg:w-6 text-yellow-500 animate-pulse" />
+            <div className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-accent" />
+              أداء فوري
             </div>
-            
-            <h3 className="text-lg lg:text-xl font-bold text-green-800 dark:text-green-400 mb-3">
-              تواصل معنا عبر الواتساب الآن واحصل على خصم فوري!
-            </h3>
-            
-            <p className="text-green-700 dark:text-green-300 mb-6 text-sm lg:text-base">
-              استشارة مجانية وعروض حصرية لعملاء الواتساب
-            </p>
-            
-            <Button
-              onClick={onWhatsAppClick}
-              size="lg"
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-            >
-              <MessageSquare className="h-5 w-5 mr-2" />
-              {heroContent?.button_text || 'ابدأ المحادثة الآن'}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Globe2 className="h-4 w-4 text-accent" />
+              متعدد العملات والفروع
+            </div>
           </div>
         </div>
       </div>
