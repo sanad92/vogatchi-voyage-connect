@@ -5,7 +5,7 @@ import BlockRenderer from "@/components/cms/BlockRenderer";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import CTASection from "@/components/layout/CTASection";
-import BookingRequestForm from "@/components/forms/BookingRequestForm";
+import BookingRequestForm from "@/components/booking-request/BookingRequestForm";
 import StaffLoginSection from "@/components/layout/StaffLoginSection";
 import LandingPage from "@/pages/LandingPage";
 
