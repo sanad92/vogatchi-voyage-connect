@@ -78,7 +78,62 @@ const PlatformAdminDashboard = () => {
     staleTime: 120_000,
   });
 
-  const cards = [
+  const { data: revenue } = useQuery({
+    queryKey: ['platform-revenue'],
+    queryFn: async () => {
+      const now = new Date();
+      const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+      const { data: txs } = await supabase
+        .from('payment_transactions')
+        .select('amount_cents, currency, status, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', startLastMonth.toISOString());
+
+      let thisMonth = 0;
+      let lastMonth = 0;
+      (txs ?? []).forEach((t: any) => {
+        const d = new Date(t.created_at);
+        const amount = (t.amount_cents ?? 0) / 100;
+        if (d >= startThisMonth) thisMonth += amount;
+        else if (d >= startLastMonth && d <= endLastMonth) lastMonth += amount;
+      });
+      const change = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : (thisMonth > 0 ? 100 : 0);
+      return { thisMonth, lastMonth, change };
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: recentSubs } = useQuery({
+    queryKey: ['platform-recent-subs'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id, status, created_at, expires_at, organization_id, plan_id, organizations(name), subscription_plans(name_ar)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: recentTransfers } = useQuery({
+    queryKey: ['platform-recent-transfers'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bank_transfer_requests')
+        .select('id, amount, currency, status, created_at, organizations(name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+
     { label: 'إجمالي المؤسسات', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'bg-primary/10 text-primary' },
     { label: 'مؤسسات نشطة', value: stats?.activeOrgs ?? 0, icon: Building2, color: 'bg-emerald-500/10 text-emerald-600' },
     { label: 'إجمالي المستخدمين', value: stats?.totalUsers ?? 0, icon: Users, color: 'bg-blue-500/10 text-blue-600' },
