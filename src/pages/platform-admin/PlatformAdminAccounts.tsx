@@ -127,9 +127,14 @@ const PlatformAdminAccounts = () => {
           </p>
         </div>
         {isPlatformOwner && (
-          <Button onClick={() => setOpenAdd(true)} className="bg-gradient-to-r from-amber-500 to-orange-600">
-            <Plus className="h-4 w-4 mr-2" /> إضافة مدير منصة
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} /> تحديث
+            </Button>
+            <Button onClick={() => setOpenAdd(true)} className="bg-gradient-to-r from-amber-500 to-orange-600">
+              <Plus className="h-4 w-4 mr-2" /> إضافة مدير منصة
+            </Button>
+          </div>
         )}
       </div>
 
