@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
   { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText },
   { title: 'إعدادات المنصة', href: '/platform/settings', icon: Settings },
   { title: 'قاعدة البيانات', href: '/platform/database', icon: Database },
+  { title: 'البيانات العالمية', href: '/platform/global-data', icon: Globe },
   { title: 'المراقبة', href: '/platform/monitoring', icon: Activity },
 ];
 
