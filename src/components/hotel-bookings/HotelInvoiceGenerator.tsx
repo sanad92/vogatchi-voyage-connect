@@ -76,10 +76,10 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
         <div ref={printRef} className="p-6 bg-white" dir="rtl">
           {/* Header */}
           <div className="text-center border-b-2 border-gray-800 pb-6 mb-8">
-            <div className="text-3xl font-bold text-blue-600 mb-2">Hostretor.online — Travel ERP System</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">Vogantra</div>
             <div className="text-lg text-gray-600">شركة فوجاتشي للسياحة والسفر</div>
             <div className="text-sm text-gray-500 mt-2">
-              العنوان: شارع الهرم - الجيزة | تليفون: 01103442881 | ops@hostretor.online
+              العنوان: شارع الهرم - الجيزة | تليفون: 01103442881 | hello@vogantra.com
             </div>
           </div>
 

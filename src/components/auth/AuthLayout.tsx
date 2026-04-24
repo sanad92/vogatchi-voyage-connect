@@ -22,23 +22,18 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         {/* Background image */}
         <img
           src={authSideImage}
-          alt="Hostretor.online — Travel ERP System"
+          alt="Vogantra — Powering Travel Business"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(231,48%,20%)] via-[hsl(231,48%,25%)/0.85] to-[hsl(263,45%,14%)/0.7]" />
+        {/* Brand overlay - Midnight Blue + Sky Blue */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,11%)/0.92] via-[hsl(222,47%,15%)/0.85] to-[hsl(199,89%,28%)/0.75]" />
 
         {/* Content overlay */}
         <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 w-full text-white">
           {/* Top - Logo */}
-          <div>
-            <Link to="/" className="inline-flex items-center gap-3">
-              <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
-                <span className="font-bold text-xl">V</span>
-              </div>
-              <span className="text-xl font-bold">Hostretor.online — Travel ERP System</span>
-            </Link>
-          </div>
+          <Link to="/" className="inline-flex">
+            <VogantraLogo variant="white" size="lg" showTagline />
+          </Link>
 
           {/* Middle - Value Props */}
           <div className="space-y-8">

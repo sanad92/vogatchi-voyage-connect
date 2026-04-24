@@ -21,7 +21,7 @@ interface BankTransferFormProps {
 
 const BANK_DETAILS = {
   bankName: 'البنك الأهلي المصري',
-  accountName: 'Hostretor Online',
+  accountName: 'Vogantra',
   accountNumber: '1234567890123',
   iban: 'EG12 0003 0004 0600 1234 5678 901',
   branch: 'فرع المعادي',

@@ -1,18 +1,12 @@
-
-import { Building2 } from 'lucide-react';
+import VogantraLogo from '@/components/brand/VogantraLogo';
 
 const AuthHeader = () => {
   return (
     <div className="text-center mb-8">
       <div className="flex items-center justify-center mb-4">
-        <img
-          src="/lovable-uploads/4e5be0db-7fdc-425e-9eed-4de0386c3eea.png"
-          alt="Hostretor.online logo"
-          className="h-12 w-12 rounded-md object-contain shadow"
-        />
+        <VogantraLogo size="xl" />
       </div>
-      <h1 className="text-3xl font-bold text-blue-700">Hostretor.online — Travel ERP System</h1>
-      <p className="text-gray-600 mt-2">نظام إدارة شركة السياحة</p>
+      <p className="text-muted-foreground mt-2">ERP السياحة الذكي</p>
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
+import VogantraLogo from '@/components/brand/VogantraLogo';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -60,13 +61,10 @@ const SignupPage = () => {
     <AuthLayout>
       {/* Mobile logo */}
       <div className="lg:hidden text-center mb-8">
-        <Link to="/" className="inline-flex items-center gap-2">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">V</span>
-          </div>
+        <Link to="/" className="inline-flex">
+          <VogantraLogo size="lg" />
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-3">Hostretor.online — Travel ERP System</h1>
-        <p className="text-muted-foreground text-sm mt-1">نظام إدارة شركة السياحة</p>
+        <p className="text-muted-foreground text-sm mt-2">ERP السياحة الذكي</p>
       </div>
 
       <div className="space-y-6">

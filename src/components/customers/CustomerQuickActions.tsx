@@ -79,7 +79,7 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
       const exportData = {
         customer: customer,
         exportDate: new Date().toISOString(),
-        exportedBy: 'نظام Hostretor.online'
+        exportedBy: 'نظام Vogantra'
       };
 
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -167,7 +167,7 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
           </div>
 
           <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
-            تم الطباعة في ${new Date().toLocaleDateString('ar-EG')} - نظام Hostretor.online — Travel ERP System
+            تم الطباعة في ${new Date().toLocaleDateString('ar-EG')} - نظام Vogantra
           </div>
         </body>
         </html>

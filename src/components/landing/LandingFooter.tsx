@@ -1,80 +1,70 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import VogantraLogo from '@/components/brand/VogantraLogo';
 
 interface LandingFooterProps {
   onWhatsAppClick: () => void;
 }
 
-const LandingFooter = ({ onWhatsAppClick }: LandingFooterProps) => {
+const LandingFooter = ({ onWhatsAppClick: _onWhatsAppClick }: LandingFooterProps) => {
   return (
-    <footer className="bg-gray-900 text-white py-12 lg:py-14">
+    <footer className="bg-secondary text-secondary-foreground py-12 lg:py-14">
       <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 xl:px-10 2xl:px-12">
-        <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center space-x-3 rtl:space-x-reverse mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold">H</span>
-              </div>
-              <span className="text-xl font-bold">Hostretor.online — Travel ERP System</span>
-            </div>
-            <p className="text-gray-400 leading-relaxed">
-              شركة السياحة الرائدة في مصر، نقدم أفضل الخدمات السياحية بجودة عالية وأسعار تنافسية.
+            <VogantraLogo variant="white" size="lg" />
+            <p className="text-white/70 leading-relaxed mt-4 text-sm">
+              منصة ERP ذكية متكاملة لشركات السياحة والسفر — حجوزات، حسابات، CRM، وتقارير في مكان واحد.
             </p>
-            <Button
-              onClick={onWhatsAppClick}
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white transition-all duration-200 hover:-translate-y-px"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              تواصل عبر الواتساب
-            </Button>
+            <p className="text-white/50 text-xs mt-3 font-inter italic">
+              Powering Travel Business
+            </p>
           </div>
-          
+
           <div>
-            <h3 className="text-lg font-semibold mb-4">خدماتنا</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>حجز الفنادق</li>
-              <li>حجز الطيران</li>
-              <li>الباقات السياحية</li>
-              <li>تأجير السيارات</li>
+            <h3 className="text-lg font-semibold mb-4">المنتج</h3>
+            <ul className="space-y-2 text-white/70 text-sm">
+              <li><Link to="/" className="hover:text-white transition">المميزات</Link></li>
+              <li><Link to="/pricing" className="hover:text-white transition">الأسعار</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">تسجيل الدخول</Link></li>
+              <li><Link to="/signup" className="hover:text-white transition">ابدأ تجربة مجانية</Link></li>
             </ul>
           </div>
-          
+
           <div>
-            <h3 className="text-lg font-semibold mb-4">الوجهات</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>القاهرة</li>
-              <li>الإسكندرية</li>
-              <li>شرم الشيخ</li>
-              <li>الغردقة</li>
-              <li>مرسى علم</li>
-              <li>الأقصر</li>
-              <li>أسوان</li>
+            <h3 className="text-lg font-semibold mb-4">المنتجات</h3>
+            <ul className="space-y-2 text-white/70 text-sm">
+              <li>Vogantra Booking Engine</li>
+              <li>Vogantra Finance</li>
+              <li>Vogantra CRM</li>
+              <li>Vogantra HR</li>
+              <li>Vogantra Analytics</li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-semibold mb-4">تواصل معنا</h3>
-            <div className="space-y-3 text-gray-400">
-              <div className="flex items-center">
-                <Phone className="h-4 w-4 mr-2" />
-                01103442881
+            <div className="space-y-3 text-white/70 text-sm">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                <span dir="ltr">+20 110 344 2881</span>
               </div>
-              <div className="flex items-center">
-                <Mail className="h-4 w-4 mr-2" />
-                ops@hostretor.online
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                hello@vogantra.com
               </div>
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2" />
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
                 القاهرة، مصر
               </div>
             </div>
           </div>
         </div>
-        
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Hostretor.online — Travel ERP System. جميع الحقوق محفوظة.</p>
+
+        <div className="border-t border-white/10 mt-10 pt-6 text-center text-white/60 text-sm">
+          <p>© {new Date().getFullYear()} Vogantra. جميع الحقوق محفوظة. — The Operating System for Travel</p>
         </div>
       </div>
     </footer>
