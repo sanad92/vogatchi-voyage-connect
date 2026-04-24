@@ -95,14 +95,20 @@ async function importAirports(supabase: any) {
     return true;
   });
 
-  console.log(`Inserting ${unique.length} airports in batches...`);
+  // Get existing global IATA codes to avoid conflicts (partial unique index)
+  const { data: existing } = await supabase
+    .from('airports')
+    .select('iata_code')
+    .eq('is_global', true);
+  const existingSet = new Set((existing || []).map((r: any) => r.iata_code));
+  const toInsert = unique.filter((r) => !existingSet.has(r.iata_code));
+
+  console.log(`Inserting ${toInsert.length} new airports (${existingSet.size} already exist)...`);
   let inserted = 0;
   const BATCH = 500;
-  for (let i = 0; i < unique.length; i += BATCH) {
-    const batch = unique.slice(i, i + BATCH);
-    const { error } = await supabase
-      .from('airports')
-      .upsert(batch, { onConflict: 'iata_code', ignoreDuplicates: true });
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const batch = toInsert.slice(i, i + BATCH);
+    const { error } = await supabase.from('airports').insert(batch);
     if (error) {
       console.error(`Batch ${i} error:`, error.message);
       continue;
@@ -153,14 +159,19 @@ async function importAirlines(supabase: any) {
     return true;
   });
 
-  console.log(`Inserting ${unique.length} airlines...`);
+  const { data: existing } = await supabase
+    .from('airlines')
+    .select('iata_code')
+    .eq('is_global', true);
+  const existingSet = new Set((existing || []).map((r: any) => r.iata_code));
+  const toInsert = unique.filter((r) => !existingSet.has(r.iata_code));
+
+  console.log(`Inserting ${toInsert.length} new airlines (${existingSet.size} already exist)...`);
   let inserted = 0;
   const BATCH = 500;
-  for (let i = 0; i < unique.length; i += BATCH) {
-    const batch = unique.slice(i, i + BATCH);
-    const { error } = await supabase
-      .from('airlines')
-      .upsert(batch, { onConflict: 'iata_code', ignoreDuplicates: true });
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const batch = toInsert.slice(i, i + BATCH);
+    const { error } = await supabase.from('airlines').insert(batch);
     if (error) {
       console.error(`Airlines batch ${i} error:`, error.message);
       continue;
