@@ -111,11 +111,15 @@ const CMSPages = lazy(() => import("@/pages/admin/CMSPages"));
 const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
 
 // Platform Admin
+const PlatformLayout = lazy(() => import("@/components/platform-admin/PlatformLayout"));
 const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
 const PlatformAdminSettings = lazy(() => import("@/pages/platform-admin/PlatformAdminSettings"));
 const PlatformAdminTransfers = lazy(() => import("@/pages/platform-admin/PlatformAdminTransfers"));
+const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/PlatformAdminAccounts"));
+const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
+const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
 
 // Subscription
 const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired"));
@@ -180,6 +184,38 @@ function App() {
                   <SupabaseProtectedRoute><OnboardingWizard /></SupabaseProtectedRoute>
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+
+                {/* Platform Admin — separate layout, no DashboardLayout */}
+                <Route path="/platform/*" element={
+                  <SupabaseProtectedRoute>
+                    <PlatformAdminGuard>
+                      <PlatformLayout>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route index element={<PlatformAdminDashboard />} />
+                            <Route path="organizations" element={<PlatformAdminOrganizations />} />
+                            <Route path="subscriptions" element={<PlatformAdminSubscriptions />} />
+                            <Route path="plans" element={<PlatformAdminPlans />} />
+                            <Route path="transfers" element={<PlatformAdminTransfers />} />
+                            <Route path="accounts" element={<PlatformAdminAccounts />} />
+                            <Route path="audit" element={<PlatformAdminAudit />} />
+                            <Route path="settings" element={<PlatformAdminSettings />} />
+                            <Route path="database" element={<DatabaseManager />} />
+                            <Route path="monitoring" element={<MonitoringDashboard />} />
+                            <Route path="*" element={<Navigate to="/platform" replace />} />
+                          </Routes>
+                        </Suspense>
+                      </PlatformLayout>
+                    </PlatformAdminGuard>
+                  </SupabaseProtectedRoute>
+                } />
+
+                {/* Backward-compat redirects from old /platform-admin/* */}
+                <Route path="/platform-admin" element={<Navigate to="/platform" replace />} />
+                <Route path="/platform-admin/organizations" element={<Navigate to="/platform/organizations" replace />} />
+                <Route path="/platform-admin/subscriptions" element={<Navigate to="/platform/subscriptions" replace />} />
+                <Route path="/platform-admin/transfers" element={<Navigate to="/platform/transfers" replace />} />
+                <Route path="/platform-admin/settings" element={<Navigate to="/platform/settings" replace />} />
 
                 {/* Protected */}
                 <Route
@@ -255,11 +291,7 @@ function App() {
                               <Route path="/cfo-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><CFODashboard /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
-                              <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/settings" element={<PlatformAdminGuard><PlatformAdminSettings /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/transfers" element={<PlatformAdminGuard><PlatformAdminTransfers /></PlatformAdminGuard>} />
+                              {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>

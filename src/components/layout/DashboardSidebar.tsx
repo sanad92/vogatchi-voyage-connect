@@ -114,18 +114,6 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-const platformAdminGroup: NavGroup = {
-  label: 'إدارة المنصة',
-  icon: Shield,
-  items: [
-    { title: 'نظرة عامة', href: '/platform-admin', icon: Shield },
-    { title: 'المؤسسات', href: '/platform-admin/organizations', icon: Building2 },
-    { title: 'الاشتراكات', href: '/platform-admin/subscriptions', icon: CreditCard },
-    { title: 'التحويلات البنكية', href: '/platform-admin/transfers', icon: BanknoteIcon },
-    { title: 'إعدادات المنصة', href: '/platform-admin/settings', icon: Settings },
-  ],
-};
-
 interface DashboardSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
@@ -139,10 +127,8 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   const { isPlatformAdmin } = usePlatformAdmin();
   const { hasPermission } = useSupabasePermissions();
 
-  const allGroups = useMemo(
-    () => isPlatformAdmin ? [...navGroups, platformAdminGroup] : navGroups,
-    [isPlatformAdmin]
-  );
+  // Platform admin section removed from org sidebar — they have a dedicated /platform layout
+  const allGroups = useMemo(() => navGroups, []);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -202,6 +188,24 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Go to Platform Admin (only for platform admins) */}
+      {isPlatformAdmin && (
+        <div className={cn("px-2 py-2 border-b border-sidebar-border", collapsed && "px-1")}>
+          <Link
+            to="/platform"
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+              "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:scale-[1.02]",
+              collapsed && "justify-center px-2"
+            )}
+            title={collapsed ? 'الذهاب إلى لوحة المنصة' : undefined}
+          >
+            <Shield className="h-4 w-4 flex-shrink-0" />
+            {!collapsed && <span>لوحة المنصة</span>}
+          </Link>
         </div>
       )}
 

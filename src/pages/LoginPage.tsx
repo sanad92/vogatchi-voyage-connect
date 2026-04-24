@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 
@@ -16,8 +17,9 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const { signIn, signOut, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
+  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
 
-  if (loading || orgLoading) {
+  if (loading || orgLoading || platformLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -29,6 +31,8 @@ const LoginPage = () => {
   }
 
   if (isLoggedIn()) {
+    // Pure platform admin (no org) → go straight to platform
+    if (isPlatformAdmin && !hasOrganization) return <Navigate to="/platform" replace />;
     if (!hasOrganization) return <Navigate to="/create-organization" replace />;
     return <Navigate to="/dashboard" replace />;
   }
