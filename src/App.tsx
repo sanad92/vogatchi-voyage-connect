@@ -128,6 +128,8 @@ const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
 const AccountingReportsPage = lazy(() => import("@/pages/AccountingReportsPage"));
 const SupplierRatesPage = lazy(() => import("@/pages/SupplierRatesPage"));
 const SupplierAllotmentsPage = lazy(() => import("@/pages/SupplierAllotmentsPage"));
+const CostCentersPage = lazy(() => import("@/pages/CostCentersPage"));
+const AccountingPeriodsPage = lazy(() => import("@/pages/AccountingPeriodsPage"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -250,6 +252,8 @@ function App() {
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-reports" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingReportsPage /></PermissionRouteGuard>} />
+                              <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
+                              <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
                               <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
                               <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />

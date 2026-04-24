@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          notes: string | null
+          organization_id: string
+          period_name: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          period_name: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          period_name?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_periods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -1649,6 +1699,70 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_centers: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          manager_employee_id: string | null
+          name: string
+          name_ar: string | null
+          organization_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manager_employee_id?: string | null
+          name: string
+          name_ar?: string | null
+          organization_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manager_employee_id?: string | null
+          name?: string
+          name_ar?: string | null
+          organization_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_centers_manager_employee_id_fkey"
+            columns: ["manager_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_centers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_centers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -3768,6 +3882,7 @@ export type Database = {
       journal_entry_lines: {
         Row: {
           account_id: string
+          cost_center_id: string | null
           created_at: string
           credit: number
           debit: number
@@ -3778,6 +3893,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          cost_center_id?: string | null
           created_at?: string
           credit?: number
           debit?: number
@@ -3788,6 +3904,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          cost_center_id?: string | null
           created_at?: string
           credit?: number
           debit?: number
@@ -3802,6 +3919,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
             referencedColumns: ["id"]
           },
           {
@@ -4280,6 +4404,7 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          commercial_registration: string | null
           created_at: string
           email: string | null
           has_demo_data: boolean
@@ -4293,10 +4418,13 @@ export type Database = {
           plan: string
           plan_expires_at: string | null
           slug: string
+          tax_number: string | null
           updated_at: string
+          zatca_enabled: boolean
         }
         Insert: {
           address?: string | null
+          commercial_registration?: string | null
           created_at?: string
           email?: string | null
           has_demo_data?: boolean
@@ -4310,10 +4438,13 @@ export type Database = {
           plan?: string
           plan_expires_at?: string | null
           slug: string
+          tax_number?: string | null
           updated_at?: string
+          zatca_enabled?: boolean
         }
         Update: {
           address?: string | null
+          commercial_registration?: string | null
           created_at?: string
           email?: string | null
           has_demo_data?: boolean
@@ -4327,7 +4458,9 @@ export type Database = {
           plan?: string
           plan_expires_at?: string | null
           slug?: string
+          tax_number?: string | null
           updated_at?: string
+          zatca_enabled?: boolean
         }
         Relationships: []
       }
@@ -6259,6 +6392,66 @@ export type Database = {
           },
         ]
       }
+      zatca_invoice_data: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_hash: string | null
+          invoice_id: string
+          organization_id: string
+          qr_code: string | null
+          status: string
+          submission_response: Json | null
+          submitted_at: string | null
+          updated_at: string
+          xml_content: string | null
+          zatca_uuid: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_hash?: string | null
+          invoice_id: string
+          organization_id: string
+          qr_code?: string | null
+          status?: string
+          submission_response?: Json | null
+          submitted_at?: string | null
+          updated_at?: string
+          xml_content?: string | null
+          zatca_uuid?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_hash?: string | null
+          invoice_id?: string
+          organization_id?: string
+          qr_code?: string | null
+          status?: string
+          submission_response?: Json | null
+          submitted_at?: string | null
+          updated_at?: string
+          xml_content?: string | null
+          zatca_uuid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zatca_invoice_data_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: true
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zatca_invoice_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -6269,6 +6462,7 @@ export type Database = {
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
+      close_accounting_period: { Args: { _period_id: string }; Returns: Json }
       count_org_bookings_this_month: {
         Args: { _org_id: string }
         Returns: number
@@ -6322,6 +6516,7 @@ export type Database = {
         Returns: string
       }
       generate_quote_number: { Args: never; Returns: string }
+      generate_zatca_qr: { Args: { _invoice_id: string }; Returns: Json }
       get_account_balance: {
         Args: { _account_id: string; _end_date?: string; _start_date?: string }
         Returns: number
@@ -6347,6 +6542,17 @@ export type Database = {
           net_flow: number
           outflows: number
           period_date: string
+        }[]
+      }
+      get_cost_center_pnl: {
+        Args: { _end_date: string; _org_id: string; _start_date: string }
+        Returns: {
+          cost_center_code: string
+          cost_center_id: string
+          cost_center_name: string
+          expenses: number
+          profit: number
+          revenue: number
         }[]
       }
       get_customer_aging: {
@@ -6436,6 +6642,7 @@ export type Database = {
         }
         Returns: string
       }
+      reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
         Returns: undefined
