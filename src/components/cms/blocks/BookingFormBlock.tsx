@@ -1,6 +1,6 @@
 import React from "react";
 import type { BlockData } from "@/types/blocks";
-import BookingRequest from "@/pages/BookingRequest";
+import BookingRequestForm from "@/components/booking-request/BookingRequestForm";
 
 interface BookingFormBlockContent {
   form_title: string;
@@ -52,7 +52,7 @@ const BookingFormBlock: React.FC<Props> = ({ block }) => {
               </p>
             )}
           </div>
-          <BookingRequest />
+          <BookingRequestForm />
         </div>
       </div>
     </section>
