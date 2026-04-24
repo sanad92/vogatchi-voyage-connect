@@ -65,9 +65,15 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = async () => {
+    const hasHR =
+      !!form.employee_data?.position?.trim() ||
+      !!form.employee_data?.department?.trim() ||
+      Number(form.employee_data?.base_salary) > 0 ||
+      !!form.employee_data?.hire_date;
+
     const payload: NewTeamMemberInput = {
       ...form,
-      employee_data: includeHR
+      employee_data: hasHR
         ? {
             position: form.employee_data?.position?.trim() || undefined,
             department: form.employee_data?.department?.trim() || undefined,
