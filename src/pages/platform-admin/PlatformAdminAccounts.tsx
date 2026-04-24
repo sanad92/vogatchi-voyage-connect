@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Shield, Trash2, UserCog, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Shield, Trash2, UserCog, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
@@ -30,7 +30,7 @@ const PlatformAdminAccounts = () => {
   const [pendingDelete, setPendingDelete] = useState<PlatformAdminRow | null>(null);
   const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'platform_admin' as 'platform_admin' | 'platform_owner' });
 
-  const { data: admins = [], isLoading } = useQuery({
+  const { data: admins = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['platform-admins'],
     queryFn: async (): Promise<PlatformAdminRow[]> => {
       const { data: roles, error } = await supabase
@@ -53,6 +53,27 @@ const PlatformAdminAccounts = () => {
         full_name: profMap.get(r.user_id)?.full_name ?? null,
       })) as PlatformAdminRow[];
     },
+  });
+
+  const updateRole = useMutation({
+    mutationFn: async ({ row, newRole }: { row: PlatformAdminRow; newRole: 'platform_owner' | 'platform_admin' }) => {
+      if (row.role === newRole) return;
+      // Prevent demoting the last owner
+      if (row.role === 'platform_owner' && newRole !== 'platform_owner') {
+        const ownerCount = admins.filter(a => a.role === 'platform_owner').length;
+        if (ownerCount <= 1) throw new Error('لا يمكن تخفيض آخر مالك للمنصة');
+      }
+      const { error } = await supabase
+        .from('platform_roles')
+        .update({ role: newRole })
+        .eq('id', row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث الدور');
+      qc.invalidateQueries({ queryKey: ['platform-admins'] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'فشل تحديث الدور'),
   });
 
   const createAdmin = useMutation({
@@ -106,9 +127,14 @@ const PlatformAdminAccounts = () => {
           </p>
         </div>
         {isPlatformOwner && (
-          <Button onClick={() => setOpenAdd(true)} className="bg-gradient-to-r from-amber-500 to-orange-600">
-            <Plus className="h-4 w-4 mr-2" /> إضافة مدير منصة
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} /> تحديث
+            </Button>
+            <Button onClick={() => setOpenAdd(true)} className="bg-gradient-to-r from-amber-500 to-orange-600">
+              <Plus className="h-4 w-4 mr-2" /> إضافة مدير منصة
+            </Button>
+          </div>
         )}
       </div>
 
@@ -140,10 +166,26 @@ const PlatformAdminAccounts = () => {
                     <TableCell className="font-medium">{a.full_name ?? '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{a.email ?? '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={a.role === 'platform_owner' ? 'default' : 'secondary'} className={a.role === 'platform_owner' ? 'bg-amber-600' : ''}>
-                        <Shield className="h-3 w-3 mr-1" />
-                        {a.role === 'platform_owner' ? 'مالك المنصة' : 'مدير منصة'}
-                      </Badge>
+                      {isPlatformOwner ? (
+                        <Select
+                          value={a.role}
+                          onValueChange={(v: any) => updateRole.mutate({ row: a, newRole: v })}
+                          disabled={updateRole.isPending}
+                        >
+                          <SelectTrigger className="w-[160px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="platform_admin">مدير منصة</SelectItem>
+                            <SelectItem value="platform_owner">مالك منصة</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant={a.role === 'platform_owner' ? 'default' : 'secondary'} className={a.role === 'platform_owner' ? 'bg-amber-600' : ''}>
+                          <Shield className="h-3 w-3 mr-1" />
+                          {a.role === 'platform_owner' ? 'مالك المنصة' : 'مدير منصة'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {new Date(a.created_at).toLocaleDateString('ar-EG')}
