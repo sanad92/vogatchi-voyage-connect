@@ -29,6 +29,7 @@ interface OrgRow {
 
 const PlatformAdminOrganizations = () => {
   const qc = useQueryClient();
+  const { start: startImpersonation } = useOrgImpersonation();
 
   const { data: plans } = useQuery({
     queryKey: ['platform-admin-plans'],
