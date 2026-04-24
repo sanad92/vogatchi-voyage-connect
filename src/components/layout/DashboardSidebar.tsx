@@ -78,6 +78,7 @@ const navGroups: NavGroup[] = [
     icon: BarChart3,
     requiredPermission: 'financial_view',
     items: [
+      { title: 'لوحة CFO', href: '/cfo-dashboard', icon: TrendingUp },
       { title: 'لوحة ERP', href: '/erp-dashboard', icon: BarChart3 },
       { title: 'شجرة الحسابات', href: '/chart-of-accounts', icon: FileText },
       { title: 'القيود المحاسبية', href: '/journal-entries', icon: Receipt },
