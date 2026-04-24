@@ -6053,6 +6053,15 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      create_manual_journal_entry: {
+        Args: {
+          _description: string
+          _entry_date: string
+          _lines: Json
+          _org_id: string
+        }
+        Returns: string
+      }
       create_organization_onboarding: {
         Args: {
           _address?: string
@@ -6082,6 +6091,38 @@ export type Database = {
       get_account_id_by_code: {
         Args: { _code: string; _org_id: string }
         Returns: string
+      }
+      get_balance_sheet: {
+        Args: { _as_of_date?: string; _org_id: string }
+        Returns: {
+          account_code: string
+          account_name: string
+          account_name_ar: string
+          account_type: Database["public"]["Enums"]["account_type"]
+          balance: number
+        }[]
+      }
+      get_cash_flow: {
+        Args: { _end_date: string; _org_id: string; _start_date: string }
+        Returns: {
+          inflows: number
+          net_flow: number
+          outflows: number
+          period_date: string
+        }[]
+      }
+      get_customer_aging: {
+        Args: { _org_id: string }
+        Returns: {
+          current_due: number
+          customer_id: string
+          customer_name: string
+          days_30: number
+          days_60: number
+          days_90: number
+          days_over_90: number
+          total_due: number
+        }[]
       }
       get_duplicate_customers: {
         Args: never
