@@ -326,8 +326,7 @@ const PlatformAdminTransfers = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
