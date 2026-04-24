@@ -191,6 +191,24 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         </div>
       )}
 
+      {/* Go to Platform Admin (only for platform admins) */}
+      {isPlatformAdmin && (
+        <div className={cn("px-2 py-2 border-b border-sidebar-border", collapsed && "px-1")}>
+          <Link
+            to="/platform"
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+              "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:scale-[1.02]",
+              collapsed && "justify-center px-2"
+            )}
+            title={collapsed ? 'الذهاب إلى لوحة المنصة' : undefined}
+          >
+            <Shield className="h-4 w-4 flex-shrink-0" />
+            {!collapsed && <span>لوحة المنصة</span>}
+          </Link>
+        </div>
+      )}
+
       {/* Navigation */}
       <ScrollArea className="flex-1">
         <nav className="py-3 px-2 space-y-0.5">
