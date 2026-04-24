@@ -27,6 +27,7 @@ const HotelCombobox = ({ value, hotelId, onSelect, placeholder = "ابحث أو 
   const orgId = useOrgId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: hotels = [] } = useQuery({
     queryKey: ['hotels-combobox', orgId],
