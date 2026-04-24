@@ -63,7 +63,7 @@ const FlightDataSelectionSection = ({
         value={arrivalAirportId}
         onChange={onArrivalAirportChange}
         airports={airports}
-        showAddButton={false}
+        showAddButton={true}
       />
 
       <AirlineSelectionField
