@@ -1,13 +1,13 @@
-import { ClipboardList, Users, Receipt, Plane, Hotel, FileCheck } from 'lucide-react';
+import { Hotel, Plane, Users, Receipt, FileCheck, Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const actions = [
-  { title: 'حجز جديد', icon: ClipboardList, href: '/bookings/new' },
+  { title: 'حجز فندق', icon: Hotel, href: '/new-hotel-booking' },
+  { title: 'حجز طيران', icon: Plane, href: '/new-flight-booking' },
+  { title: 'تأجير سيارة', icon: Car, href: '/car-rentals' },
   { title: 'عميل جديد', icon: Users, href: '/new-customer' },
   { title: 'فاتورة', icon: Receipt, href: '/new-invoice' },
   { title: 'عرض سعر', icon: FileCheck, href: '/quotes/new' },
-  { title: 'حجز فندق', icon: Hotel, href: '/new-hotel-booking' },
-  { title: 'حجز طيران', icon: Plane, href: '/new-flight-booking' },
 ];
 
 const QuickActions = () => {
