@@ -22,9 +22,26 @@ export default function AccountingReportsPage() {
   const [endDate, setEndDate] = useState(today);
   const [startDate, setStartDate] = useState(monthStart);
   const [isEnd, setIsEnd] = useState(today);
+  const [bsDate, setBsDate] = useState(today);
 
   const { data: trial = [] } = useTrialBalance(isEnd);
   const { data: income = [] } = useIncomeStatement(startDate, endDate);
+  const { data: balanceSheet = [] } = useBalanceSheet(bsDate);
+  const { data: cashFlow = [] } = useCashFlow(startDate, endDate);
+  const { data: aging = [] } = useCustomerAging();
+
+  const bsTotals = useMemo(() => {
+    const assets = balanceSheet.filter(r => r.account_type === 'asset').reduce((s, r) => s + Number(r.balance), 0);
+    const liab = balanceSheet.filter(r => r.account_type === 'liability').reduce((s, r) => s + Number(r.balance), 0);
+    const eq = balanceSheet.filter(r => r.account_type === 'equity').reduce((s, r) => s + Number(r.balance), 0);
+    return { assets, liab, eq, liabEq: liab + eq };
+  }, [balanceSheet]);
+
+  const cashTotals = useMemo(() => cashFlow.reduce((acc, r) => ({
+    inflows: acc.inflows + Number(r.inflows),
+    outflows: acc.outflows + Number(r.outflows),
+    net: acc.net + Number(r.net_flow),
+  }), { inflows: 0, outflows: 0, net: 0 }), [cashFlow]);
 
   const incomeSummary = useMemo(() => {
     const revenue = income.filter(r => r.account_type === 'revenue').reduce((s, r) => s + Number(r.amount), 0);
@@ -50,9 +67,12 @@ export default function AccountingReportsPage() {
       </div>
 
       <Tabs defaultValue="income" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="income">قائمة الدخل</TabsTrigger>
           <TabsTrigger value="trial">ميزان المراجعة</TabsTrigger>
+          <TabsTrigger value="balance">الميزانية العمومية</TabsTrigger>
+          <TabsTrigger value="cash">التدفقات النقدية</TabsTrigger>
+          <TabsTrigger value="aging">أعمار الذمم</TabsTrigger>
         </TabsList>
 
         <TabsContent value="income" className="space-y-4">
