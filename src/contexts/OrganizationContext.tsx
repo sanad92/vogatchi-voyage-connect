@@ -165,6 +165,15 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     fetchOrganizations();
   }, [user?.id]);
 
+  // Re-fetch when platform impersonation toggles
+  useEffect(() => {
+    const handler = () => {
+      fetchOrganizations();
+    };
+    window.addEventListener('platform-impersonation-changed', handler);
+    return () => window.removeEventListener('platform-impersonation-changed', handler);
+  }, [user?.id]);
+
   const effectiveLoading = loading || (!!user?.id && loadedForUserId !== user.id);
   const hasOrganization = !!currentOrganization && !!user?.id && loadedForUserId === user.id;
 
