@@ -205,6 +205,89 @@ export default function AccountingReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="balance" className="space-y-4">
+          <Card><CardContent className="pt-6">
+            <Label>كما في تاريخ</Label>
+            <Input type="date" value={bsDate} onChange={(e) => setBsDate(e.target.value)} className="max-w-xs" />
+          </CardContent></Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card><CardContent className="pt-6"><div className="text-sm text-muted-foreground">إجمالي الأصول</div><div className="text-2xl font-bold mt-2 text-blue-600">{fmt(bsTotals.assets)}</div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="text-sm text-muted-foreground">الخصوم + حقوق الملكية</div><div className="text-2xl font-bold mt-2 text-purple-600">{fmt(bsTotals.liabEq)}</div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="text-sm text-muted-foreground">حالة التوازن</div><div className="mt-2">{Math.abs(bsTotals.assets - bsTotals.liabEq) < 0.01 ? <Badge className="bg-green-500/10 text-green-700">متوازنة ✓</Badge> : <Badge variant="destructive">غير متوازنة</Badge>}</div></CardContent></Card>
+          </div>
+          <Card><CardHeader><CardTitle>تفاصيل الميزانية العمومية</CardTitle></CardHeader><CardContent>
+            <Table><TableHeader><TableRow><TableHead>النوع</TableHead><TableHead>الكود</TableHead><TableHead>الحساب</TableHead><TableHead className="text-left">الرصيد</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {balanceSheet.map((r) => (
+                  <TableRow key={r.account_code}>
+                    <TableCell><Badge variant="outline">{TYPE_AR[r.account_type]}</Badge></TableCell>
+                    <TableCell className="font-mono text-xs">{r.account_code}</TableCell>
+                    <TableCell>{r.account_name_ar || r.account_name}</TableCell>
+                    <TableCell className="text-left font-medium">{fmt(Number(r.balance))}</TableCell>
+                  </TableRow>
+                ))}
+                {balanceSheet.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">لا توجد بيانات</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="cash" className="space-y-4">
+          <Card><CardContent className="pt-6 flex gap-4">
+            <div><Label>من</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div><Label>إلى</Label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+          </CardContent></Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card><CardContent className="pt-6"><div className="text-sm text-green-600">تدفقات داخلة</div><div className="text-2xl font-bold mt-2">{fmt(cashTotals.inflows)}</div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="text-sm text-red-600">تدفقات خارجة</div><div className="text-2xl font-bold mt-2">{fmt(cashTotals.outflows)}</div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="text-sm text-muted-foreground">الصافي</div><div className={`text-2xl font-bold mt-2 ${cashTotals.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fmt(cashTotals.net)}</div></CardContent></Card>
+          </div>
+          <Card><CardHeader><CardTitle>الحركات اليومية</CardTitle></CardHeader><CardContent>
+            <Table><TableHeader><TableRow><TableHead>التاريخ</TableHead><TableHead className="text-left">داخل</TableHead><TableHead className="text-left">خارج</TableHead><TableHead className="text-left">الصافي</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {cashFlow.map((r) => (
+                  <TableRow key={r.period_date}>
+                    <TableCell>{r.period_date}</TableCell>
+                    <TableCell className="text-left text-green-600">{fmt(Number(r.inflows))}</TableCell>
+                    <TableCell className="text-left text-red-600">{fmt(Number(r.outflows))}</TableCell>
+                    <TableCell className={`text-left font-bold ${Number(r.net_flow) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fmt(Number(r.net_flow))}</TableCell>
+                  </TableRow>
+                ))}
+                {cashFlow.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">لا توجد حركات</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="aging" className="space-y-4">
+          <Card><CardHeader><CardTitle>أعمار الذمم المدينة (العملاء)</CardTitle></CardHeader><CardContent>
+            <Table><TableHeader><TableRow>
+              <TableHead>العميل</TableHead>
+              <TableHead className="text-left">إجمالي المستحق</TableHead>
+              <TableHead className="text-left">حالي</TableHead>
+              <TableHead className="text-left">1-30 يوم</TableHead>
+              <TableHead className="text-left">31-60</TableHead>
+              <TableHead className="text-left">61-90</TableHead>
+              <TableHead className="text-left">أكثر من 90</TableHead>
+            </TableRow></TableHeader>
+              <TableBody>
+                {aging.map((r) => (
+                  <TableRow key={r.customer_id}>
+                    <TableCell className="font-medium">{r.customer_name}</TableCell>
+                    <TableCell className="text-left font-bold">{fmt(Number(r.total_due))}</TableCell>
+                    <TableCell className="text-left">{fmt(Number(r.current_due))}</TableCell>
+                    <TableCell className="text-left text-yellow-600">{fmt(Number(r.days_30))}</TableCell>
+                    <TableCell className="text-left text-orange-600">{fmt(Number(r.days_60))}</TableCell>
+                    <TableCell className="text-left text-red-500">{fmt(Number(r.days_90))}</TableCell>
+                    <TableCell className="text-left text-red-700 font-bold">{fmt(Number(r.days_over_90))}</TableCell>
+                  </TableRow>
+                ))}
+                {aging.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">لا توجد ذمم متأخرة</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </CardContent></Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
