@@ -2,6 +2,9 @@ import { useState } from 'react';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardTopbar from './DashboardTopbar';
 import { cn } from '@/lib/utils';
+import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
+import { Button } from '@/components/ui/button';
+import { LogOut, ShieldAlert } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -10,9 +13,31 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isImpersonating, impersonatingOrgName, stop } = useOrgImpersonation();
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      {isImpersonating && (
+        <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg">
+          <div className="px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+              <span>أنت تتصفح الآن كمؤسسة:</span>
+              <span className="font-bold">{impersonatingOrgName}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => stop()}
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white h-7"
+            >
+              <LogOut className="h-3.5 w-3.5 ml-1" />
+              العودة للوحة المنصة
+            </Button>
+          </div>
+        </div>
+      )}
+
       <DashboardSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(prev => !prev)}
