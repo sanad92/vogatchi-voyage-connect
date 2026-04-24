@@ -29,10 +29,12 @@ const FlightDataSelectionSection = ({
         .from('airports')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('name')
+        .range(0, 19999); // override default 1000 row limit
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: airlines = [] } = useQuery({
@@ -42,10 +44,12 @@ const FlightDataSelectionSection = ({
         .from('airlines')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('name')
+        .range(0, 9999);
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   return (
