@@ -3341,14 +3341,18 @@ export type Database = {
       hotel_bookings: {
         Row: {
           additional_costs: number | null
+          additional_costs_breakdown: Json | null
+          attachment_urls: string[] | null
           booking_agent_id: string | null
           booking_agent_name: string | null
           booking_date: string | null
           booking_reference_supplier: string | null
+          booking_source: string | null
           cancellation_policy: string | null
           check_in_date: string
           check_out_date: string
           children_ages: string | null
+          commission_amount: number
           cost_per_night: number | null
           created_at: string | null
           currency: string | null
@@ -3356,16 +3360,19 @@ export type Database = {
           customer_name: string
           destination_city: string | null
           employee_id: string | null
+          hotel_id: string | null
           hotel_name: string | null
           hotel_star_rating: number | null
           id: string
           internal_booking_number: string
+          internal_notes: string | null
           invoice_sent: boolean | null
           invoice_sent_date: string | null
           meal_plan: string | null
           number_of_adults: number | null
           number_of_children: number | null
           number_of_nights: number | null
+          number_of_rooms: number
           organization_id: string | null
           paid_amount: number | null
           payment_due_date: string | null
@@ -3373,6 +3380,7 @@ export type Database = {
           quote_id: string | null
           remaining_amount: number | null
           room_type: string | null
+          room_view: string | null
           selling_price_per_night: number | null
           status_id: string | null
           supplier_id: string | null
@@ -3382,19 +3390,25 @@ export type Database = {
           total_cost_customer: number | null
           total_profit: number | null
           updated_at: string | null
+          vat_amount: number
+          vat_included: boolean
           voucher_sent: boolean | null
           voucher_sent_date: string | null
         }
         Insert: {
           additional_costs?: number | null
+          additional_costs_breakdown?: Json | null
+          attachment_urls?: string[] | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
           booking_reference_supplier?: string | null
+          booking_source?: string | null
           cancellation_policy?: string | null
           check_in_date: string
           check_out_date: string
           children_ages?: string | null
+          commission_amount?: number
           cost_per_night?: number | null
           created_at?: string | null
           currency?: string | null
@@ -3402,16 +3416,19 @@ export type Database = {
           customer_name: string
           destination_city?: string | null
           employee_id?: string | null
+          hotel_id?: string | null
           hotel_name?: string | null
           hotel_star_rating?: number | null
           id?: string
           internal_booking_number?: string
+          internal_notes?: string | null
           invoice_sent?: boolean | null
           invoice_sent_date?: string | null
           meal_plan?: string | null
           number_of_adults?: number | null
           number_of_children?: number | null
           number_of_nights?: number | null
+          number_of_rooms?: number
           organization_id?: string | null
           paid_amount?: number | null
           payment_due_date?: string | null
@@ -3419,6 +3436,7 @@ export type Database = {
           quote_id?: string | null
           remaining_amount?: number | null
           room_type?: string | null
+          room_view?: string | null
           selling_price_per_night?: number | null
           status_id?: string | null
           supplier_id?: string | null
@@ -3428,19 +3446,25 @@ export type Database = {
           total_cost_customer?: number | null
           total_profit?: number | null
           updated_at?: string | null
+          vat_amount?: number
+          vat_included?: boolean
           voucher_sent?: boolean | null
           voucher_sent_date?: string | null
         }
         Update: {
           additional_costs?: number | null
+          additional_costs_breakdown?: Json | null
+          attachment_urls?: string[] | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
           booking_reference_supplier?: string | null
+          booking_source?: string | null
           cancellation_policy?: string | null
           check_in_date?: string
           check_out_date?: string
           children_ages?: string | null
+          commission_amount?: number
           cost_per_night?: number | null
           created_at?: string | null
           currency?: string | null
@@ -3448,16 +3472,19 @@ export type Database = {
           customer_name?: string
           destination_city?: string | null
           employee_id?: string | null
+          hotel_id?: string | null
           hotel_name?: string | null
           hotel_star_rating?: number | null
           id?: string
           internal_booking_number?: string
+          internal_notes?: string | null
           invoice_sent?: boolean | null
           invoice_sent_date?: string | null
           meal_plan?: string | null
           number_of_adults?: number | null
           number_of_children?: number | null
           number_of_nights?: number | null
+          number_of_rooms?: number
           organization_id?: string | null
           paid_amount?: number | null
           payment_due_date?: string | null
@@ -3465,6 +3492,7 @@ export type Database = {
           quote_id?: string | null
           remaining_amount?: number | null
           room_type?: string | null
+          room_view?: string | null
           selling_price_per_night?: number | null
           status_id?: string | null
           supplier_id?: string | null
@@ -3474,6 +3502,8 @@ export type Database = {
           total_cost_customer?: number | null
           total_profit?: number | null
           updated_at?: string | null
+          vat_amount?: number
+          vat_included?: boolean
           voucher_sent?: boolean | null
           voucher_sent_date?: string | null
         }
@@ -3490,6 +3520,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
             referencedColumns: ["id"]
           },
           {
