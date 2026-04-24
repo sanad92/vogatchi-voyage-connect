@@ -119,17 +119,37 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     );
 
     // 2. Then get current session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
       if (!mountedRef.current) return;
       initialised = true;
+
+      // إذا كان السيشن تالف (bad_jwt / missing sub claim) ننظفه فوراً
+      const errMsg = error?.message?.toLowerCase() || '';
+      const isBadJwt = errMsg.includes('jwt') || errMsg.includes('sub claim') || errMsg.includes('invalid claim');
+      if (error && isBadJwt) {
+        console.warn('🧹 تنظيف جلسة تالفة:', error.message);
+        cleanupAuthState();
+        supabase.auth.signOut().catch(() => {});
+        clearState();
+        setLoading(false);
+        return;
+      }
 
       if (isValidSession(currentSession) && currentSession) {
         setSession(currentSession);
         setUser(currentSession.user);
         fetchUserData(currentSession.user.id);
+      } else if (currentSession && !isValidSession(currentSession)) {
+        // session موجود لكن منتهي -> نظف
+        cleanupAuthState();
+        supabase.auth.signOut().catch(() => {});
+        clearState();
       }
       setLoading(false);
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('getSession error:', err);
+      cleanupAuthState();
+      clearState();
       if (mountedRef.current) setLoading(false);
     });
 
