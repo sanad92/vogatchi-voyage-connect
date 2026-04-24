@@ -101,6 +101,8 @@ const navGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { title: 'الموردين', href: '/suppliers', icon: Truck, requiredPermission: 'suppliers_view' },
+      { title: 'الأسعار الموسمية', href: '/supplier-rates', icon: Truck, requiredPermission: 'suppliers_view' },
+      { title: 'بلوكات المخزون', href: '/supplier-allotments', icon: Truck, requiredPermission: 'suppliers_view' },
       { title: 'فريق العمل', href: '/team', icon: Users },
       { title: 'الأتمتة', href: '/automation', icon: Zap, requiredPermission: 'automation_view' },
       { title: 'سجل التدقيق', href: '/audit-log', icon: Shield, requiredPermission: 'audit_view' },
