@@ -1,3 +1,7 @@
+/**
+ * @deprecated استخدم useFinancialReports.ts (المحرك المحاسبي الجديد) كمصدر رسمي.
+ * هذا الـ hook يحسب الأرقام من جداول العمليات وقد لا يطابق القيود المحاسبية.
+ */
 
 import { useMemo } from 'react';
 import { useExpenseTransactionsOptimized as useExpenseTransactions } from './useExpenseTransactionsOptimized';
