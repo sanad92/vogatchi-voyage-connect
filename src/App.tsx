@@ -90,7 +90,6 @@ const BookingsCalendar = lazy(() => import("@/pages/BookingsCalendar"));
 // CRM
 const CRM = lazy(() => import("@/pages/CRM"));
 const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
-const CustomerPortalPage = lazy(() => import("@/pages/CustomerPortalPage"));
 
 // Communication
 const WhatsApp = lazy(() => import("@/pages/WhatsApp"));
@@ -210,13 +209,6 @@ function App() {
                   </SupabaseProtectedRoute>
                 } />
 
-                {/* Backward-compat redirects from old /platform-admin/* */}
-                <Route path="/platform-admin" element={<Navigate to="/platform" replace />} />
-                <Route path="/platform-admin/organizations" element={<Navigate to="/platform/organizations" replace />} />
-                <Route path="/platform-admin/subscriptions" element={<Navigate to="/platform/subscriptions" replace />} />
-                <Route path="/platform-admin/transfers" element={<Navigate to="/platform/transfers" replace />} />
-                <Route path="/platform-admin/settings" element={<Navigate to="/platform/settings" replace />} />
-
                 {/* Protected */}
                 <Route
                   path="/*"
@@ -268,7 +260,7 @@ function App() {
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
-                              <Route path="/customer-portal" element={<PermissionRouteGuard requiredPermission="customer_portal_view"><CustomerPortalPage /></PermissionRouteGuard>} />
+                              
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<TeamManagement />} />
