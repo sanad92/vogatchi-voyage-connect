@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProfitAnalytics } from '@/hooks/useProfitAnalytics';
 
@@ -32,12 +32,9 @@ const RevenueChart = () => {
   }));
 
   return (
-    <Card className="col-span-full xl:col-span-2 shadow-md border-border/60">
+    <Card className="col-span-full xl:col-span-2 border-border/60 shadow-none rounded-2xl">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-primary/10">
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </div>
+        <CardTitle className="text-base font-semibold text-foreground">
           الإيرادات الشهرية
         </CardTitle>
         <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">{currentYear}</span>
@@ -48,25 +45,20 @@ const RevenueChart = () => {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="h-[300px] sm:h-[350px]">
+          <div className="h-[300px] sm:h-[340px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(231, 48%, 48%)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(231, 48%, 48%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="profitGradientMain" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(152, 60%, 42%)" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="hsl(152, 60%, 42%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(215, 16%, 47%)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'hsl(215, 16%, 47%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="hsl(231, 48%, 48%)" strokeWidth={2.5} fill="url(#revenueGradient)" dot={{ r: 4, fill: 'hsl(231, 48%, 48%)', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                <Area type="monotone" dataKey="profit" stroke="hsl(152, 60%, 42%)" strokeWidth={2} fill="url(#profitGradientMain)" dot={{ r: 3, fill: 'hsl(152, 60%, 42%)', stroke: '#fff', strokeWidth: 2 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+                <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#revenueGradient)" dot={false} activeDot={{ r: 5, fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
