@@ -7,6 +7,7 @@ import {
   Star, MessageSquare, TrendingUp, FileText, CreditCard,
   Headphones, ChevronDown, Award, Target, Layers, Menu
 } from 'lucide-react';
+import VogantraLogo from '@/components/brand/VogantraLogo';
 import {
   Accordion,
   AccordionContent,
@@ -99,13 +100,8 @@ const SaaSLanding = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className={`${pageContainer} h-16 flex items-center justify-between`}>
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-base sm:text-lg">H</span>
-            </div>
-            <span className="text-lg sm:text-xl font-bold text-primary">
-              Vogantra
-            </span>
+          <Link to="/" className="flex items-center" aria-label="Vogantra">
+            <VogantraLogo size="md" />
           </Link>
 
           {/* Desktop nav */}
@@ -134,11 +130,8 @@ const SaaSLanding = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px]">
                 <div className="flex flex-col gap-4 mt-6">
-                  <Link to="/" className="flex items-center gap-2 mb-4" onClick={() => setMobileMenuOpen(false)}>
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">H</span>
-                    </div>
-                    <span className="font-bold text-foreground">Vogantra</span>
+                  <Link to="/" className="flex items-center mb-4" onClick={() => setMobileMenuOpen(false)} aria-label="Vogantra">
+                    <VogantraLogo size="sm" />
                   </Link>
                   <nav className="flex flex-col gap-1">
                     {navLinks.map(link => (
@@ -450,11 +443,8 @@ const SaaSLanding = () => {
       <footer className="py-8 sm:py-12 border-t border-border bg-muted/30">
         <div className={pageContainer}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">H</span>
-              </div>
-              <span className="font-semibold text-foreground">Vogantra</span>
+            <div className="flex items-center">
+              <VogantraLogo size="sm" />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
               <a href="#features" className="hover:text-foreground transition-colors">المميزات</a>
