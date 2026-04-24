@@ -6264,17 +6264,23 @@ export type Database = {
           access_token: string | null
           api_version: string | null
           auto_assignment_enabled: boolean | null
+          business_account_id: string | null
           business_description: string | null
           business_email: string | null
           business_name: string | null
           business_website: string | null
+          connected_at: string | null
+          connection_method: string | null
           created_at: string | null
+          display_phone_number: string | null
           id: string
           is_active: boolean | null
+          meta_user_id: string | null
           organization_id: string | null
           phone_number_id: string | null
           rate_limit_per_minute: number | null
           updated_at: string | null
+          waba_id: string | null
           webhook_url: string | null
           webhook_verify_token: string | null
         }
@@ -6282,17 +6288,23 @@ export type Database = {
           access_token?: string | null
           api_version?: string | null
           auto_assignment_enabled?: boolean | null
+          business_account_id?: string | null
           business_description?: string | null
           business_email?: string | null
           business_name?: string | null
           business_website?: string | null
+          connected_at?: string | null
+          connection_method?: string | null
           created_at?: string | null
+          display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
+          meta_user_id?: string | null
           organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
           updated_at?: string | null
+          waba_id?: string | null
           webhook_url?: string | null
           webhook_verify_token?: string | null
         }
@@ -6300,17 +6312,23 @@ export type Database = {
           access_token?: string | null
           api_version?: string | null
           auto_assignment_enabled?: boolean | null
+          business_account_id?: string | null
           business_description?: string | null
           business_email?: string | null
           business_name?: string | null
           business_website?: string | null
+          connected_at?: string | null
+          connection_method?: string | null
           created_at?: string | null
+          display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
+          meta_user_id?: string | null
           organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
           updated_at?: string | null
+          waba_id?: string | null
           webhook_url?: string | null
           webhook_verify_token?: string | null
         }
