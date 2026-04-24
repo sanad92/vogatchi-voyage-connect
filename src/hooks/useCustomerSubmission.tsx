@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
-import { useCustomerValidation } from "./useCustomerValidation";
+import { useEnhancedCustomerValidation as useCustomerValidation } from "./useEnhancedCustomerValidation";
 import { useOrgId } from './useOrgId';
 
 interface CustomerData {
@@ -34,7 +34,8 @@ export const useCustomerSubmission = ({ onCustomerAdded, onCustomerUpdated, isEd
       if (!data.name?.trim()) { toast.error('اسم العميل مطلوب'); throw new Error('اسم العميل مطلوب'); }
       if (!data.phone?.trim()) { toast.error('رقم الهاتف مطلوب'); throw new Error('رقم الهاتف مطلوب'); }
 
-      const existingCustomer = await checkDuplicatePhone(data.phone, customerId);
+      const dupResult: any = await checkDuplicatePhone(data.phone, customerId);
+      const existingCustomer = dupResult?.isDuplicate ? dupResult.existingCustomer : (dupResult && !('isDuplicate' in dupResult) ? dupResult : null);
       if (existingCustomer) { const msg = `رقم الهاتف ${data.phone} مُسجل بالفعل للعميل: ${existingCustomer.name}`; toast.error(msg); throw new Error(msg); }
 
       const customerData = {

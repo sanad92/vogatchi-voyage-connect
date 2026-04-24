@@ -7,7 +7,8 @@ import SuppliersCurrencies from './SuppliersCurrencies';
 import SuppliersContracts from './SuppliersContracts';
 import SuppliersPayments from './SuppliersPayments';
 import SuppliersRatings from './SuppliersRatings';
-import SuppliersAnalytics from './SuppliersAnalytics';
+import SupplierAnalytics from './SupplierAnalytics';
+import SupplierPermissionCheck from './SupplierPermissionCheck';
 
 const SuppliersTabs = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -58,7 +59,9 @@ const SuppliersTabs = () => {
         <SuppliersRatings supplierId={selectedSupplier} />
       </TabsContent>
       <TabsContent value="analytics">
-        <SuppliersAnalytics />
+        <SupplierPermissionCheck action="view">
+          <SupplierAnalytics />
+        </SupplierPermissionCheck>
       </TabsContent>
     </Tabs>
   );
