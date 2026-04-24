@@ -122,26 +122,35 @@ export type Database = {
       }
       airlines: {
         Row: {
+          country: string | null
           created_at: string | null
           iata_code: string | null
+          icao_code: string | null
           id: string
           is_active: boolean | null
+          is_global: boolean
           name: string
           organization_id: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string | null
           iata_code?: string | null
+          icao_code?: string | null
           id?: string
           is_active?: boolean | null
+          is_global?: boolean
           name: string
           organization_id?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string | null
           iata_code?: string | null
+          icao_code?: string | null
           id?: string
           is_active?: boolean | null
+          is_global?: boolean
           name?: string
           organization_id?: string | null
         }
@@ -161,8 +170,12 @@ export type Database = {
           country: string | null
           created_at: string | null
           iata_code: string
+          icao_code: string | null
           id: string
           is_active: boolean | null
+          is_global: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           organization_id: string | null
         }
@@ -171,8 +184,12 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           iata_code: string
+          icao_code?: string | null
           id?: string
           is_active?: boolean | null
+          is_global?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           organization_id?: string | null
         }
@@ -181,8 +198,12 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           iata_code?: string
+          icao_code?: string | null
           id?: string
           is_active?: boolean | null
+          is_global?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           organization_id?: string | null
         }

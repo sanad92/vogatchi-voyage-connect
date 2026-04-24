@@ -120,6 +120,7 @@ const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/Platform
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
+const PlatformAdminGlobalData = lazy(() => import("@/pages/platform-admin/PlatformAdminGlobalData"));
 
 // Subscription
 const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired"));
@@ -202,6 +203,7 @@ function App() {
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="settings" element={<PlatformAdminSettings />} />
                             <Route path="database" element={<DatabaseManager />} />
+                            <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
                           </Routes>
