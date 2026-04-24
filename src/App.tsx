@@ -291,11 +291,7 @@ function App() {
                               <Route path="/cfo-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><CFODashboard /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
-                              <Route path="/platform-admin" element={<PlatformAdminGuard><PlatformAdminDashboard /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/organizations" element={<PlatformAdminGuard><PlatformAdminOrganizations /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/subscriptions" element={<PlatformAdminGuard><PlatformAdminSubscriptions /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/settings" element={<PlatformAdminGuard><PlatformAdminSettings /></PlatformAdminGuard>} />
-                              <Route path="/platform-admin/transfers" element={<PlatformAdminGuard><PlatformAdminTransfers /></PlatformAdminGuard>} />
+                              {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>
