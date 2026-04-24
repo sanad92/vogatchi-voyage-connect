@@ -126,6 +126,8 @@ const ERPDashboard = lazy(() => import("@/pages/ERPDashboard"));
 const ChartOfAccountsPage = lazy(() => import("@/pages/ChartOfAccountsPage"));
 const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
 const AccountingReportsPage = lazy(() => import("@/pages/AccountingReportsPage"));
+const SupplierRatesPage = lazy(() => import("@/pages/SupplierRatesPage"));
+const SupplierAllotmentsPage = lazy(() => import("@/pages/SupplierAllotmentsPage"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -209,6 +211,8 @@ function App() {
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
                               <Route path="/new-invoice" element={<PermissionRouteGuard requiredPermission="invoices_create"><NewInvoice /></PermissionRouteGuard>} />
                               <Route path="/suppliers" element={<PermissionRouteGuard requiredPermission="suppliers_view"><Suppliers /></PermissionRouteGuard>} />
+                              <Route path="/supplier-rates" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierRatesPage /></PermissionRouteGuard>} />
+                              <Route path="/supplier-allotments" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierAllotmentsPage /></PermissionRouteGuard>} />
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
                               <Route path="/profit-loss-reports" element={<PermissionRouteGuard requiredPermission="reports_view"><ProfitLossReports /></PermissionRouteGuard>} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
