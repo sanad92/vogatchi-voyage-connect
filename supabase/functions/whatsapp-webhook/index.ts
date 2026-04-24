@@ -27,7 +27,8 @@ async function verifySignature(body: Uint8Array, signature: string, appSecret: s
     'raw', encoder.encode(appSecret),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
-  const mac = hexEncode(await crypto.subtle.sign('HMAC', key, body));
+  const bodyBuffer = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer;
+  const mac = hexEncode(await crypto.subtle.sign('HMAC', key, bodyBuffer));
   const expected = signature.startsWith('sha256=') ? signature.slice(7) : signature;
   return timingSafeEqual(mac, expected);
 }

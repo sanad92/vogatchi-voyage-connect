@@ -5917,6 +5917,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          organization_id: string | null
           phone_number_id: string | null
           rate_limit_per_minute: number | null
           updated_at: string | null
@@ -5934,6 +5935,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
           updated_at?: string | null
@@ -5951,13 +5953,22 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
           updated_at?: string | null
           webhook_url?: string | null
           webhook_verify_token?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_templates: {
         Row: {
@@ -5972,6 +5983,7 @@ export type Database = {
           id: string
           language: string | null
           name: string
+          organization_id: string | null
           rejection_reason: string | null
           status: string | null
           template_id: string | null
@@ -5990,6 +6002,7 @@ export type Database = {
           id?: string
           language?: string | null
           name: string
+          organization_id?: string | null
           rejection_reason?: string | null
           status?: string | null
           template_id?: string | null
@@ -6008,13 +6021,22 @@ export type Database = {
           id?: string
           language?: string | null
           name?: string
+          organization_id?: string | null
           rejection_reason?: string | null
           status?: string | null
           template_id?: string | null
           updated_at?: string | null
           variables?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
