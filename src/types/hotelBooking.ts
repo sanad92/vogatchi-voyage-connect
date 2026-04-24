@@ -8,29 +8,40 @@ export interface HotelBooking {
   internal_booking_number: string;
   booking_date: string;
   booking_agent_name: string;
+  hotel_id?: string;
   hotel_name: string;
   hotel_star_rating: number;
   destination_city: string;
   check_in_date: string;
   check_out_date: string;
   number_of_nights: number;
+  number_of_rooms: number;
   room_type: string;
+  room_view?: string;
   number_of_adults: number;
   number_of_children: number;
   children_ages?: string;
   meal_plan: MealPlan;
   booking_reference_supplier?: string;
   cancellation_policy?: string;
+  supplier_id?: string;
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;
+  additional_costs?: number;
+  vat_amount?: number;
+  vat_included?: boolean;
   total_cost_customer: number;
   total_profit: number;
+  commission_amount?: number;
   payment_method?: string;
   paid_amount: number;
   remaining_amount: number;
   payment_due_date?: string;
   currency: SupportedCurrency;
+  booking_source?: string;
+  internal_notes?: string;
+  attachment_urls?: string[];
   invoice_sent: boolean;
   supplier_payment_sent: boolean;
   voucher_sent: boolean;
@@ -90,12 +101,15 @@ export interface NewHotelBooking {
   customer_name: string;
   booking_agent_name: string;
   booking_agent_id?: string;
+  hotel_id?: string;
   hotel_name: string;
   hotel_star_rating?: number;
   destination_city: string;
   check_in_date: string;
   check_out_date: string;
   room_type: string;
+  room_view?: string;
+  number_of_rooms?: number;
   adults: number;
   children: number;
   children_ages?: string;
@@ -106,14 +120,21 @@ export interface NewHotelBooking {
   supplier_name: string;
   cost_per_night: number;
   selling_price_per_night: number;
+  additional_costs?: number;
+  vat_amount?: number;
+  vat_included?: boolean;
+  commission_amount?: number;
   currency?: SupportedCurrency;
   payment_method?: string;
   paid_amount?: number;
   payment_due_date?: string;
+  status_id?: string;
+  booking_source?: string;
+  internal_notes?: string;
+  attachment_urls?: string[];
   custom_request?: string;
 }
 
-// استخدام العملات الموحدة من currency.ts
 export const CURRENCY_OPTIONS = [
   { value: 'EGP' as const, label: 'جنيه مصري (EGP)', symbol: 'ج.م' },
   { value: 'USD' as const, label: 'دولار أمريكي (USD)', symbol: '$' },
@@ -121,6 +142,38 @@ export const CURRENCY_OPTIONS = [
 ];
 
 export const getCurrencySymbol = (currency: SupportedCurrency): string => {
-  const currencyOption = CURRENCY_OPTIONS.find(option => option.value === currency);
-  return currencyOption?.symbol || currency;
+  const opt = CURRENCY_OPTIONS.find(o => o.value === currency);
+  return opt?.symbol || currency;
 };
+
+export const ROOM_TYPE_OPTIONS = [
+  'Single', 'Double', 'Twin', 'Triple', 'Quad', 'Family', 'Suite', 'Junior Suite', 'Presidential Suite'
+];
+
+export const ROOM_VIEW_OPTIONS = [
+  { value: 'sea', label: 'إطلالة بحرية' },
+  { value: 'pool', label: 'إطلالة على المسبح' },
+  { value: 'garden', label: 'إطلالة على الحديقة' },
+  { value: 'mountain', label: 'إطلالة جبلية' },
+  { value: 'city', label: 'إطلالة على المدينة' },
+  { value: 'inland', label: 'بدون إطلالة (داخلية)' },
+];
+
+export const BOOKING_SOURCE_OPTIONS = [
+  { value: 'walk_in', label: 'حضور للمكتب' },
+  { value: 'phone', label: 'هاتف' },
+  { value: 'whatsapp', label: 'واتساب' },
+  { value: 'website', label: 'الموقع الإلكتروني' },
+  { value: 'social_media', label: 'سوشيال ميديا' },
+  { value: 'agent', label: 'وكيل / وسيط' },
+  { value: 'returning_customer', label: 'عميل سابق' },
+];
+
+export const PAYMENT_METHOD_OPTIONS = [
+  { value: 'cash', label: 'نقدي' },
+  { value: 'bank_transfer', label: 'تحويل بنكي' },
+  { value: 'card', label: 'بطاقة ائتمان/خصم' },
+  { value: 'instapay', label: 'InstaPay' },
+  { value: 'wallet', label: 'محفظة إلكترونية' },
+  { value: 'cheque', label: 'شيك' },
+];
