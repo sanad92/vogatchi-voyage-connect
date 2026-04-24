@@ -76,7 +76,7 @@ const PaymentOrders = lazy(() => import("@/pages/PaymentOrders"));
 const BankAccounts = lazy(() => import("@/pages/BankAccounts"));
 const ExpenseManagementEnhanced = lazy(() => import("@/pages/ExpenseManagementEnhanced"));
 const ProfitAnalytics = lazy(() => import("@/pages/ProfitAnalytics"));
-const ProfitLossReports = lazy(() => import("@/pages/ProfitLossReports"));
+
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 
 // Operations
@@ -216,7 +216,7 @@ function App() {
                               <Route path="/supplier-rates" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierRatesPage /></PermissionRouteGuard>} />
                               <Route path="/supplier-allotments" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierAllotmentsPage /></PermissionRouteGuard>} />
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
-                              <Route path="/profit-loss-reports" element={<PermissionRouteGuard requiredPermission="reports_view"><ProfitLossReports /></PermissionRouteGuard>} />
+                              <Route path="/profit-loss-reports" element={<Navigate to="/accounting-reports" replace />} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
                               <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
