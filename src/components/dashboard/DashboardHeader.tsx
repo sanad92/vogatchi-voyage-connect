@@ -3,7 +3,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 const DashboardHeader = () => {
   const { profile } = useOptimizedAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'المستخدم';
-  
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'صباح الخير';
@@ -11,26 +11,18 @@ const DashboardHeader = () => {
     return 'مساء الخير';
   };
 
+  const dateLabel = new Date().toLocaleDateString('ar-EG', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-          {getGreeting()}، {firstName} 👋
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          نظرة عامة على أداء شركتك اليوم
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
-          {new Date().toLocaleDateString('ar-EG', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </div>
-      </div>
+    <div className="flex flex-col gap-1">
+      <h1 className="text-2xl sm:text-[28px] font-bold text-foreground tracking-tight">
+        {getGreeting()}، {firstName}
+      </h1>
+      <p className="text-sm text-muted-foreground">
+        نظرة عامة • {dateLabel}
+      </p>
     </div>
   );
 };
