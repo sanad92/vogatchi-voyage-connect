@@ -26,7 +26,6 @@ const STEPS = ['المعلومات الأساسية', 'الدور والصلاح
 const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
   const { addMember } = useTeamManagement();
   const [step, setStep] = useState(0);
-  const [includeHR, setIncludeHR] = useState(false);
 
   const [form, setForm] = useState<NewTeamMemberInput>({
     email: '',
@@ -39,7 +38,6 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
 
   const reset = () => {
     setStep(0);
-    setIncludeHR(false);
     setForm({
       email: '', password: '', full_name: '', phone: '',
       org_role: 'agent',
