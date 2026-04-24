@@ -61,7 +61,7 @@ const PlatformAdminAnalytics = () => {
 
       // التحويلات البنكية المعتمدة (الإيرادات الفعلية)
       const { data: transfers } = await supabase
-        .from('bank_transfers')
+        .from('bank_transfer_requests')
         .select('amount, status, created_at')
         .eq('status', 'approved');
 
