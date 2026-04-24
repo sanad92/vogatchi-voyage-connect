@@ -3621,6 +3621,9 @@ export type Database = {
         Row: {
           address: string | null
           amenities: Json | null
+          city: string | null
+          country: string | null
+          country_code: string | null
           created_at: string | null
           description: string | null
           destination_id: string | null
@@ -3628,15 +3631,22 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_global: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           organization_id: string | null
           phone: string | null
           star_rating: number | null
+          tbo_hotel_code: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
           amenities?: Json | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string | null
           description?: string | null
           destination_id?: string | null
@@ -3644,15 +3654,22 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_global?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           organization_id?: string | null
           phone?: string | null
           star_rating?: number | null
+          tbo_hotel_code?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
           amenities?: Json | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string | null
           description?: string | null
           destination_id?: string | null
@@ -3660,10 +3677,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_global?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           organization_id?: string | null
           phone?: string | null
           star_rating?: number | null
+          tbo_hotel_code?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -6723,6 +6744,8 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
       update_booking_status: {
