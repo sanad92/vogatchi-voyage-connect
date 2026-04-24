@@ -100,12 +100,12 @@ export const useUnlinkedEmployeesQuery = (isOwner: boolean) => {
         
         const { data: linkedProfiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('employee_id')
-          .not('employee_id', 'is', null);
+          .select('linked_employee_id')
+          .not('linked_employee_id', 'is', null);
         
         if (profilesError) throw profilesError;
         
-        const linkedEmployeeIds = linkedProfiles?.map(p => p.employee_id).filter(Boolean) || [];
+        const linkedEmployeeIds = linkedProfiles?.map((p: any) => p.linked_employee_id).filter(Boolean) || [];
         
         const unlinkedEmployees = allEmployees?.filter(emp => 
           !linkedEmployeeIds.includes(emp.id)

@@ -1,10 +1,19 @@
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Users, UserPlus, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserPlus, Search, Trash2, Link2, UserX, Briefcase } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
 import UnifiedStatsHeaderEnhanced from './unified-management/enhanced/UnifiedStatsHeaderEnhanced';
@@ -36,6 +45,29 @@ const UnifiedUserEmployeeManagement = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
+  const [isDeletingEmp, setIsDeletingEmp] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleDeleteUnlinkedEmployee = async () => {
+    if (!employeeToDelete) return;
+    setIsDeletingEmp(true);
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ is_active: false })
+        .eq('id', employeeToDelete.id);
+      if (error) throw error;
+      toast.success(`تم حذف الموظف "${employeeToDelete.full_name}" بنجاح`);
+      await queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-users-employees'] });
+      setEmployeeToDelete(null);
+    } catch (e: any) {
+      toast.error(e?.message || 'فشل حذف الموظف');
+    } finally {
+      setIsDeletingEmp(false);
+    }
+  };
 
   if (!orgRole || !['owner', 'admin'].includes(orgRole)) {
     return (
@@ -172,6 +204,75 @@ const UnifiedUserEmployeeManagement = () => {
           }}
         />
       )}
+
+      {/* Unlinked Employees Section */}
+      {unlinkedEmployees && unlinkedEmployees.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-900/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-amber-600" />
+              موظفون غير مرتبطين بحسابات مستخدمين
+              <Badge variant="outline" className="ml-2">{unlinkedEmployees.length}</Badge>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              سجلات موظفين بدون حساب مستخدم نشط — يمكنك حذفها لتنظيف القائمة.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {unlinkedEmployees.map((emp: any) => (
+              <div
+                key={emp.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card hover:bg-accent/30 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                    <UserX className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{emp.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {emp.employee_code} · {emp.position || 'موظف'}
+                      {emp.email ? ` · ${emp.email}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setEmployeeToDelete(emp)}
+                  className="shrink-0"
+                >
+                  <Trash2 className="w-4 h-4 ml-1" />
+                  حذف
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!employeeToDelete} onOpenChange={(o) => !o && setEmployeeToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم تعطيل سجل الموظف <strong>{employeeToDelete?.full_name}</strong> ({employeeToDelete?.employee_code}).
+              هذا الإجراء يخفي الموظف من القوائم النشطة لكنه يحافظ على البيانات التاريخية للحجوزات والرواتب السابقة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingEmp}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteUnlinkedEmployee(); }}
+              disabled={isDeletingEmp}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingEmp ? 'جاري الحذف...' : 'تأكيد الحذف'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       {selectedUser && (
