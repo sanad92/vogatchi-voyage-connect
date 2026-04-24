@@ -9,14 +9,14 @@ import { ChatWindow } from './ChatWindow';
 import { WhatsAppStats } from './WhatsAppStats';
 import { SessionManager } from './SessionManager';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
-import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
+import { useCurrentEmployeeEnhanced } from '@/hooks/useCurrentEmployeeEnhanced';
 import { WhatsAppConversation } from '@/types/whatsapp';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 
 const WhatsAppDashboard = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const { conversations, conversationsLoading, conversationsError } = useWhatsApp();
-  const { currentEmployee, isLoading: employeeLoading } = useCurrentEmployee();
+  const { currentEmployee, isLoading: employeeLoading } = useCurrentEmployeeEnhanced();
 
   // معالجة حالة الخطأ
   if (conversationsError) {

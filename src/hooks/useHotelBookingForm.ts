@@ -8,7 +8,7 @@ import { useHotelBookingData } from "@/hooks/useHotelBookingData";
 import { useHotelBookingValidation } from "@/hooks/useHotelBookingValidation";
 import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
 import { useAutoCalculations } from "@/hooks/useAutoCalculations";
-import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
+import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
 import { toast } from "sonner";
 
 interface UseHotelBookingFormProps {
@@ -17,7 +17,7 @@ interface UseHotelBookingFormProps {
 }
 
 export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormProps) => {
-  const { currentEmployee } = useCurrentEmployee();
+  const { currentEmployee } = useCurrentEmployeeEnhanced();
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {

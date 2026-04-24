@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Hotel, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import HotelBookingForm from '@/components/hotel-bookings/HotelBookingForm';
-import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
+import { useCurrentEmployeeEnhanced } from '@/hooks/useCurrentEmployeeEnhanced';
 import { useToast } from '@/hooks/use-toast';
 
 const NewHotelBooking = () => {
   const navigate = useNavigate();
-  const { currentEmployee, isLoading } = useCurrentEmployee();
+  const { currentEmployee, isLoading } = useCurrentEmployeeEnhanced();
   const { toast } = useToast();
 
   const handleSuccess = (bookingData?: any) => {

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { User } from "lucide-react";
 import CustomerSelection from "@/components/shared/CustomerSelection";
-import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
+import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
 
 interface CustomerSectionProps {
   register: UseFormRegister<NewHotelBooking>;
@@ -24,7 +24,7 @@ const CustomerSection = ({
   selectedCustomer, 
   onCustomerSelect 
 }: CustomerSectionProps) => {
-  const { currentEmployee } = useCurrentEmployee();
+  const { currentEmployee } = useCurrentEmployeeEnhanced();
 
   return (
     <div className="space-y-6">
