@@ -122,7 +122,6 @@ const SubscriptionExpiredPage = lazy(() => import("@/pages/SubscriptionExpired")
 const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement"));
 
 // ERP Accounting
-const ERPDashboard = lazy(() => import("@/pages/ERPDashboard"));
 const ChartOfAccountsPage = lazy(() => import("@/pages/ChartOfAccountsPage"));
 const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
 const AccountingReportsPage = lazy(() => import("@/pages/AccountingReportsPage"));
@@ -249,7 +248,7 @@ function App() {
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />
                               <Route path="/bookings/new" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewUnifiedBooking /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
-                              <Route path="/erp-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><ERPDashboard /></PermissionRouteGuard>} />
+                              <Route path="/erp-dashboard" element={<Navigate to="/cfo-dashboard" replace />} />
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-reports" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingReportsPage /></PermissionRouteGuard>} />
