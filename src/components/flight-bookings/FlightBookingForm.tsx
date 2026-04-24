@@ -96,10 +96,12 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
         .from('airlines')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('name')
+        .range(0, 9999);
       if (error) throw error;
       return data as Airline[];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: airports = [] } = useQuery({
@@ -109,10 +111,12 @@ const FlightBookingForm = ({ onSuccess, initialData }: FlightBookingFormProps) =
         .from('airports')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('name')
+        .range(0, 19999);
       if (error) throw error;
       return data as Airport[];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: flightClasses = [] } = useQuery({

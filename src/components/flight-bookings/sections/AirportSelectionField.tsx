@@ -18,6 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CITY_ALIASES, REGIONAL_COUNTRIES, expandSearchTerm } from '@/lib/travel-search-aliases';
 
 interface AirportSelectionFieldProps {
   label: string;
@@ -50,17 +51,27 @@ const AirportSelectionField = ({
     [airports, value]
   );
 
-  // Smart filter: search by name, city, IATA, country
+  // Sort: regional airports first, then alphabetical
+  const sortedAirports = useMemo(() => {
+    return [...airports].sort((a, b) => {
+      const aRegional = REGIONAL_COUNTRIES.has(a.country) ? 0 : 1;
+      const bRegional = REGIONAL_COUNTRIES.has(b.country) ? 0 : 1;
+      if (aRegional !== bRegional) return aRegional - bRegional;
+      return (a.name ?? '').localeCompare(b.name ?? '');
+    });
+  }, [airports]);
+
+  // Smart filter: search by name, city, IATA, country + Arabic aliases
   const filtered = useMemo(() => {
-    if (!search.trim()) return airports.slice(0, 100); // limit initial render
-    const q = search.trim().toLowerCase();
-    return airports
+    if (!search.trim()) return sortedAirports.slice(0, 200);
+    const terms = expandSearchTerm(search, CITY_ALIASES);
+    return sortedAirports
       .filter((a) => {
         const haystack = `${a.name ?? ''} ${a.city ?? ''} ${a.iata_code ?? ''} ${a.country ?? ''}`.toLowerCase();
-        return haystack.includes(q);
+        return terms.some((t) => haystack.includes(t));
       })
-      .slice(0, 200); // cap results for performance
-  }, [airports, search]);
+      .slice(0, 200);
+  }, [sortedAirports, search]);
 
   const addAirportMutation = useMutation({
     mutationFn: async (airportData: any) => {

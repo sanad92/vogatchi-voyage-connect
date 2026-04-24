@@ -32,21 +32,23 @@ export const useFlightBookings = () => {
   const { data: airports = [] } = useQuery({
     queryKey: ['airports', orgId],
     queryFn: async (): Promise<Airport[]> => {
-      const { data, error } = await supabase.from('airports').select('*').eq('is_active', true).order('name');
+      const { data, error } = await supabase.from('airports').select('*').eq('is_active', true).order('name').range(0, 19999);
       if (error) throw error;
       return data || [];
     },
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: airlines = [] } = useQuery({
     queryKey: ['airlines', orgId],
     queryFn: async (): Promise<Airline[]> => {
-      const { data, error } = await supabase.from('airlines').select('*').eq('is_active', true).order('name');
+      const { data, error } = await supabase.from('airlines').select('*').eq('is_active', true).order('name').range(0, 9999);
       if (error) throw error;
       return data || [];
     },
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: flightClasses = [] } = useQuery({

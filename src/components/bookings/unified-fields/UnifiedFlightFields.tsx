@@ -18,17 +18,19 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
   const { data: airports } = useQuery({
     queryKey: ['airports-active'],
     queryFn: async () => {
-      const { data } = await supabase.from('airports').select('*').eq('is_active', true).order('name');
+      const { data } = await supabase.from('airports').select('*').eq('is_active', true).order('name').range(0, 19999);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: airlines } = useQuery({
     queryKey: ['airlines-active'],
     queryFn: async () => {
-      const { data } = await supabase.from('airlines').select('*').eq('is_active', true).order('name');
+      const { data } = await supabase.from('airlines').select('*').eq('is_active', true).order('name').range(0, 9999);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: flightClasses } = useQuery({
