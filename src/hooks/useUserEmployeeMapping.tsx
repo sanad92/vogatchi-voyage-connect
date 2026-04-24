@@ -3,6 +3,10 @@ import { useCurrentEmployeeFetch } from './user-employee-mapping/useCurrentEmplo
 import { useLinkingOperations } from './user-employee-mapping/useLinkingOperations';
 import { useOptimizedAuth } from './useOptimizedAuth';
 
+/**
+ * @deprecated للاستهلاك في الواجهات استخدم useCurrentEmployeeEnhanced.
+ * لعمليات الربط/التحديث الإداري استخدم useUnifiedUserEmployee.
+ */
 export const useUserEmployeeMapping = () => {
   const { user } = useOptimizedAuth();
   const {

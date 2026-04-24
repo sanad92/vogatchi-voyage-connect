@@ -3,6 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
+/**
+ * @deprecated استخدم useCurrentEmployeeEnhanced بدلاً منه — يوفر fallback للمستخدم العادي
+ * ومنطق shouldSaveBookingAgentId/getBookingAgentId الموحَّد عبر النظام.
+ */
 export const useCurrentEmployee = () => {
   const { user } = useOptimizedAuth();
 
