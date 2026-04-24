@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useTrialBalance, useIncomeStatement, type IncomeStatementRow } from '@/hooks/useFinancialReports';
+import { useTrialBalance, useIncomeStatement, useBalanceSheet, useCashFlow, useCustomerAging } from '@/hooks/useFinancialReports';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
