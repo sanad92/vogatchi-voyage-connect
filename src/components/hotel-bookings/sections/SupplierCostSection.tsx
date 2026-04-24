@@ -116,10 +116,15 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
         </div>
       </div>
 
+      {/* Pricing context badge */}
+      <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-muted-foreground">
+        💡 الأسعار تُحسب <strong className="text-foreground">لكل ليلة في كل غرفة</strong> — الإجمالي = السعر × {nights || '؟'} ليلة × {rooms} غرفة
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="cost_per_night">تكلفة الليلة من المورد ({symbol})</Label>
+            <Label htmlFor="cost_per_night">تكلفة الليلة/الغرفة من المورد ({symbol}) *</Label>
             <Button type="button" variant="ghost" size="sm" onClick={fetchRate} disabled={fetchingRate} className="h-7 text-xs gap-1">
               <Sparkles className="h-3 w-3" />
               {fetchingRate ? 'جاري...' : 'جلب السعر'}
@@ -129,14 +134,24 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
             id="cost_per_night" type="number" step="0.01" min="0"
             {...register("cost_per_night", { required: "مطلوب", min: 0, valueAsNumber: true })}
           />
+          {costPerNight > 0 && nights > 0 && (
+            <p className="text-xs text-muted-foreground">
+              = {costPerNight.toLocaleString()} × {nights} × {rooms} = <strong className="text-foreground">{totalCost.toLocaleString()} {symbol}</strong>
+            </p>
+          )}
           {errors.cost_per_night && <p className="text-destructive text-xs">{errors.cost_per_night.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="selling_price_per_night">سعر البيع للعميل / الليلة ({symbol})</Label>
+          <Label htmlFor="selling_price_per_night">سعر البيع للعميل / الليلة / الغرفة ({symbol}) *</Label>
           <Input
             id="selling_price_per_night" type="number" step="0.01" min="0"
             {...register("selling_price_per_night", { required: "مطلوب", min: 0, valueAsNumber: true })}
           />
+          {sellingPerNight > 0 && nights > 0 && (
+            <p className="text-xs text-muted-foreground">
+              = {sellingPerNight.toLocaleString()} × {nights} × {rooms} = <strong className="text-foreground">{(sellingPerNight * nights * rooms).toLocaleString()} {symbol}</strong>
+            </p>
+          )}
           {errors.selling_price_per_night && <p className="text-destructive text-xs">{errors.selling_price_per_night.message}</p>}
         </div>
       </div>
