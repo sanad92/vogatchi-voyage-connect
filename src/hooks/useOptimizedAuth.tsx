@@ -94,6 +94,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
         if (event === 'SIGNED_OUT') {
           clearState();
+          cleanupAuthState();
+          setLoading(false);
+          return;
+        }
+
+        // إذا فشل تجديد التوكن (jwt تالف) ننظف فوراً
+        if (event === 'TOKEN_REFRESHED' && !currentSession) {
+          console.warn('🧹 فشل تجديد التوكن - تنظيف الجلسة');
+          cleanupAuthState();
+          clearState();
           setLoading(false);
           return;
         }
