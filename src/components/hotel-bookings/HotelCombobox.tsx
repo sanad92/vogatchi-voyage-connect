@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Hotel as HotelIcon, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from "@/hooks/useOrgId";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import QuickAddHotelDialog from "./QuickAddHotelDialog";
 
 interface HotelOption {
   id: string;
@@ -26,6 +27,7 @@ const HotelCombobox = ({ value, hotelId, onSelect, placeholder = "ابحث أو 
   const orgId = useOrgId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: hotels = [] } = useQuery({
     queryKey: ['hotels-combobox', orgId],
@@ -67,94 +69,124 @@ const HotelCombobox = ({ value, hotelId, onSelect, placeholder = "ابحث أو 
     : hotels;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between font-normal"
-        >
-          <span className="flex items-center gap-2 truncate">
-            <HotelIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="truncate">{display}</span>
-          </span>
-          <ChevronsUpDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 pointer-events-auto" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="اكتب اسم الفندق..."
-            value={query}
-            onValueChange={setQuery}
-          />
-          <CommandList>
-            <CommandEmpty>
-              {query ? (
-                <button
-                  type="button"
-                  className="w-full px-3 py-2 text-sm text-right hover:bg-muted flex items-center gap-2"
-                  onClick={() => {
-                    onSelect({ name: query });
-                    setOpen(false);
-                    setQuery("");
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  استخدام "<strong>{query}</strong>" كاسم جديد
-                </button>
-              ) : (
-                <span className="text-sm text-muted-foreground">لا توجد فنادق مسجّلة</span>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            <span className="flex items-center gap-2 truncate">
+              <HotelIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate">{display}</span>
+            </span>
+            <ChevronsUpDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 pointer-events-auto" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="اكتب اسم الفندق أو ابحث..."
+              value={query}
+              onValueChange={setQuery}
+            />
+            <CommandList>
+              {filtered.length === 0 && recentOnly.length === 0 && (
+                <CommandEmpty>
+                  <div className="py-6 text-center space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      {query ? `لا يوجد فندق باسم "${query}"` : "لا توجد فنادق مسجّلة بعد"}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setOpen(false);
+                        setAddOpen(true);
+                      }}
+                      className="gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      أضف فندقك الأول
+                    </Button>
+                  </div>
+                </CommandEmpty>
               )}
-            </CommandEmpty>
 
-            {filtered.length > 0 && (
-              <CommandGroup heading="فنادق مسجّلة">
-                {filtered.map(h => (
-                  <CommandItem
-                    key={h.id}
-                    value={h.id}
-                    onSelect={() => {
-                      onSelect({ id: h.id, name: h.name, star_rating: h.star_rating });
-                      setOpen(false);
-                      setQuery("");
-                    }}
-                  >
-                    <Check className={cn("ml-2 h-4 w-4", hotelId === h.id ? "opacity-100" : "opacity-0")} />
-                    <div className="flex-1">
-                      <div className="font-medium">{h.name}</div>
-                      {h.star_rating && (
-                        <div className="text-xs text-muted-foreground">{'⭐'.repeat(h.star_rating)}</div>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
+              {filtered.length > 0 && (
+                <CommandGroup heading="فنادق مسجّلة">
+                  {filtered.map(h => (
+                    <CommandItem
+                      key={h.id}
+                      value={h.id}
+                      onSelect={() => {
+                        onSelect({ id: h.id, name: h.name, star_rating: h.star_rating });
+                        setOpen(false);
+                        setQuery("");
+                      }}
+                    >
+                      <Check className={cn("ml-2 h-4 w-4", hotelId === h.id ? "opacity-100" : "opacity-0")} />
+                      <div className="flex-1">
+                        <div className="font-medium">{h.name}</div>
+                        {h.star_rating && (
+                          <div className="text-xs text-muted-foreground">{'⭐'.repeat(h.star_rating)}</div>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
 
-            {!query && recentOnly.length > 0 && (
-              <CommandGroup heading="من حجوزات سابقة">
-                {recentOnly.slice(0, 8).map(name => (
-                  <CommandItem
-                    key={name}
-                    value={`recent-${name}`}
-                    onSelect={() => {
-                      onSelect({ name });
-                      setOpen(false);
-                      setQuery("");
-                    }}
-                  >
-                    <Check className="ml-2 h-4 w-4 opacity-0" />
-                    <span className="text-sm">{name}</span>
-                  </CommandItem>
-                ))}
+              {!query && recentOnly.length > 0 && (
+                <CommandGroup heading="من حجوزات سابقة (نص حر)">
+                  {recentOnly.slice(0, 6).map(name => (
+                    <CommandItem
+                      key={name}
+                      value={`recent-${name}`}
+                      onSelect={() => {
+                        onSelect({ name });
+                        setOpen(false);
+                        setQuery("");
+                      }}
+                    >
+                      <Check className="ml-2 h-4 w-4 opacity-0" />
+                      <span className="text-sm">{name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
+                  value="__add_new_hotel__"
+                  onSelect={() => {
+                    setOpen(false);
+                    setAddOpen(true);
+                  }}
+                  className="text-primary font-medium"
+                >
+                  <Plus className="ml-2 h-4 w-4" />
+                  إضافة فندق جديد {query && <>باسم "<strong className="mx-1">{query}</strong>"</>}
+                </CommandItem>
               </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      <QuickAddHotelDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        initialName={query || value || ""}
+        onCreated={(h) => {
+          onSelect({ id: h.id, name: h.name, star_rating: h.star_rating });
+          setQuery("");
+        }}
+      />
+    </>
   );
 };
 

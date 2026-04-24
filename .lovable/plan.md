@@ -1,109 +1,59 @@
-## إعادة تصميم نموذج حجز الفنادق — شامل وذكي
+# إضافة سريعة للفنادق والموردين داخل نموذج الحجز
 
-### الشكل الجديد: صفحة واحدة منظمة بـ Accordion
+## المشكلة الحالية
 
-`Apple-style`، RTL، dark-mode-aware، 5 أقسام قابلة للطي/الفتح، اللي مفتوح افتراضياً = الأساسيات.
+1. **الفنادق**: لا توجد فنادق مسجّلة بعد — الكومبوبوكس يعرض رسالة "لا توجد فنادق" فقط، والإضافة الحالية تستخدم اسم الفندق كنص حر بدون ربطه بجدول `hotels`.
+2. **المورد**: حقل "مورد الفندق" يستخدم `SupplierSelection` القديم الذي يعرض Select بسيط + حقل "اسم مورد مخصص" نص حر — مش حلو ولا يربط بجدول `suppliers`.
 
-```text
-┌─ شريط علوي: عنوان + موظف الحجز (chip) + زرار "نسخ من حجز سابق" + Cmd+S
-├─ [مفتوح] العميل (ChooseExisting / +New) ────────── ✓ مكتمل
-├─ [مفتوح] الفندق + التواريخ ─────────────────────── ✓ مكتمل
-│   └─ Hotel combobox (من جدول hotels) | المدينة (autocomplete من السابق)
-│   └─ Date Range Picker (تاريخ دخول + خروج + عدد ليالي مباشر)
-│   └─ نوع الغرفة (Select: Single/Double/Triple/Suite/Family + custom)
-│   └─ عدد الغرف | بالغين | أطفال | أعمار الأطفال
-│   └─ نظام الوجبات | إطلالة (Optional)
-├─ [مفتوح] التكلفة والربح ────────────────────────── ✓ مكتمل
-│   └─ مورد (مع زر "جلب السعر" → find_supplier_rate RPC)
-│   └─ عملة | تكلفة/ليلة | سعر بيع/ليلة | تكاليف إضافية
-│   └─ كرت ملخّص live: إجمالي للعميل / تكلفة المورد / الربح / الهامش %
-├─ [مفتوح] الدفع وحالة الحجز ─────────────────────── ✓ جديد
-│   └─ حالة الحجز (Select: مؤكد/معلّق/ملغي)
-│   └─ طريقة الدفع | المبلغ المدفوع | المتبقي (auto) | تاريخ استحقاق
-├─ [مغلق] طلبات خاصة (50+ checkbox + نص حر)
-├─ [مغلق] متقدم
-│   └─ مرجع المورد | سياسة الإلغاء | ملاحظات داخلية | مصدر الحجز
-│   └─ رفع مرفقات (voucher PDF + بطاقة العميل) → Supabase Storage
-└─ شريط سفلي ثابت (sticky):
-    [إلغاء]  [حفظ كمسوّدة]  [حفظ]  [حفظ + إنشاء فاتورة]  [حفظ + فاوتشر]
-```
+## الحل
 
----
+### 1) HotelCombobox — زر "+ إضافة فندق جديد" دائم
 
-## ✨ الميزات الذكية
+- إضافة زر **"➕ إضافة فندق جديد"** في أسفل قائمة الكومبوبوكس (يظهر دائماً، حتى مع وجود فنادق) بدلاً من ظهوره فقط لما القائمة فاضية.
+- لما القائمة فاضية تماماً، يكون الزر بارز في منتصف الـ Empty state.
+- الزر يفتح `QuickAddHotelDialog` جديد.
 
-### 1. اقتراحات وذكاء
-- **Hotel Combobox**: قائمة من جدول `hotels` (HotelsManager موجود) + اقتراحات من الحجوزات السابقة. لو الفندق مش موجود → "+ إضافة فندق جديد" يفتح quick-add dialog.
-- **City Autocomplete**: من المدن المستخدمة سابقاً.
-- **زر "جلب السعر"**: يستدعي RPC `find_supplier_rate(org_id, supplier_id, 'hotel', check_in_date)` ويملا التكلفة والسعر تلقائياً.
-- **زر "نسخ من حجز سابق"** في الأعلى: dialog يعرض آخر 20 حجز للعميل المختار → ضغطة واحدة تنسخ كل البيانات (الفندق، الغرفة، التكلفة) ما عدا التواريخ.
-- **Auto-save draft** في `localStorage` كل 5 ثواني، يستعاد تلقائياً عند فتح الصفحة.
+### 2) `QuickAddHotelDialog` (مكوّن جديد)
 
-### 2. كفاءة الإدخال
-- **Keyboard shortcuts**: `Cmd+S` حفظ، `Esc` إلغاء، `Tab` انتقال طبيعي.
-- **عدد الليالي يُحسب تلقائياً** ويظهر بجوار date picker مباشرة (مش حقل منفصل).
-- **المتبقي = الإجمالي - المدفوع** يحدّث live.
-- **ملخّص الربح بكرت ثابت** بألوان (أخضر/أحمر) + هامش الربح %.
-- **Validation فورية بـ Zod** على كل التغييرات (مش بس عند submit).
+Dialog مختصر بالحقول الأساسية فقط:
+- **اسم الفندق** (مطلوب) — يأتي مُعبّأ مسبقاً بنص البحث الحالي
+- **التصنيف** (1-5 نجوم) — اختياري
+- **المدينة/العنوان** — اختياري
+- **رقم الهاتف** — اختياري
 
-### 3. تصميم نظيف
-- استبدال `bg-blue-50` بـ semantic tokens (`bg-card`, `bg-muted`).
-- Date picker موحّد (Shadcn Calendar).
-- Combobox للفنادق/الموردين بدل Select بسيط.
-- شريط سفلي ثابت (`sticky bottom-0`) بأزرار الحفظ.
+عند الحفظ:
+- `INSERT` في جدول `hotels` مع `organization_id` الحالي و `is_active=true`
+- يُحدّث الكاش (`react-query invalidate`) ويختار الفندق الجديد تلقائياً في النموذج
+- يقفل الـ Dialog ويرجّع للنموذج الرئيسي
 
----
+### 3) استبدال SupplierSelection بـ SupplierCombobox جديد
 
-## 🗄️ تغييرات قاعدة البيانات (Migration)
+مكوّن `HotelSupplierCombobox` على نفس نمط `HotelCombobox`:
+- Popover + Command بحث ذكي بين الموردين (filtered بـ `supplier_type='hotel'`)
+- Badge يعرض نوع المورد والعملة الأساسية
+- زر **"➕ إضافة مورد جديد"** أسفل القائمة دائماً
+- يفتح `QuickAddSupplierDialog` بحقول مختصرة:
+  - الاسم * | النوع (افتراضي: hotel) | الهاتف | البريد | شروط الدفع (اختياري)
+- يستخدم `useSuppliers().addSupplier` الموجود
 
-أعمدة جديدة على `hotel_bookings`:
+### 4) إزالة الحقل النص الحر للمورد
 
-| العمود | النوع | الغرض |
-|---|---|---|
-| `hotel_id` | uuid (FK → hotels) | ربط بالفندق المسجّل |
-| `number_of_rooms` | int default 1 | عدد الغرف |
-| `room_view` | text nullable | الإطلالة (بحرية/جبلية/...) |
-| `additional_costs_breakdown` | jsonb nullable | تفصيل التكاليف الإضافية |
-| `vat_amount` | numeric default 0 | قيمة الضريبة |
-| `vat_included` | boolean default false | هل السعر شامل الضريبة |
-| `booking_source` | text nullable | مصدر الحجز (Walk-in/WhatsApp/...) |
-| `internal_notes` | text nullable | ملاحظات داخلية مش للعميل |
-| `attachment_urls` | text[] nullable | روابط المرفقات |
-| `commission_amount` | numeric default 0 | عمولة الموظف |
+حذف خانة "أو أدخل اسم مورد مخصص" — المورد لازم يكون من القائمة (مع إمكانية الإضافة السريعة بزر +).
 
-**ملاحظة**: `additional_costs`, `payment_method`, `paid_amount`, `payment_due_date`, `status_id` موجودين بالفعل في DB لكن مش في الفورم — هنضيفهم في UI فقط.
+## الملفات
 
----
+| الملف | العملية |
+|---|---|
+| `src/components/hotel-bookings/QuickAddHotelDialog.tsx` | جديد |
+| `src/components/hotel-bookings/QuickAddSupplierDialog.tsx` | جديد |
+| `src/components/hotel-bookings/HotelSupplierCombobox.tsx` | جديد |
+| `src/components/hotel-bookings/HotelCombobox.tsx` | تعديل: زر "+" دائم + ربط بـ Dialog |
+| `src/components/hotel-bookings/sections/SupplierCostSection.tsx` | استبدال `SupplierSelection` بـ `HotelSupplierCombobox` |
 
-## 📁 الملفات اللي هتتعدّل
+## النتيجة
 
-### جديدة
-- `src/components/hotel-bookings/sections/PaymentStatusSection.tsx` — قسم الدفع وحالة الحجز
-- `src/components/hotel-bookings/sections/AdvancedSection.tsx` — متقدم (مرفقات، ملاحظات داخلية، مصدر)
-- `src/components/hotel-bookings/CopyFromPreviousDialog.tsx` — نسخ من حجز سابق
-- `src/components/hotel-bookings/HotelCombobox.tsx` — اختيار فندق ذكي
-- `src/components/hotel-bookings/QuickAddHotelDialog.tsx` — إضافة فندق سريع
-- `src/components/hotel-bookings/StickyFormActions.tsx` — شريط حفظ سفلي
-- `src/hooks/useHotelBookingDraft.ts` — auto-save في localStorage
-- `src/hooks/useSupplierRateLookup.ts` — جلب السعر من RPC
-- `src/lib/schemas/hotelBookingSchema.ts` — Zod schema موحّد
-- migration SQL لإضافة الأعمدة الجديدة
+- المستخدم يقدر يضيف فندق أو مورد جديد في **3 ثواني** دون مغادرة نموذج الحجز.
+- البيانات تنحفظ مباشرة في جدول `hotels` و `suppliers` ومتاحة لكل الحجوزات القادمة.
+- اختفاء النصوص الحرة الفوضوية = بيانات أنظف وتقارير أدق.
 
-### معدّلة (إعادة كتابة)
-- `src/components/hotel-bookings/HotelBookingForm.tsx` — accordion + sticky bar
-- `src/components/hotel-bookings/sections/CustomerSection.tsx` — تنظيف، إزالة blue bg
-- `src/components/hotel-bookings/sections/HotelInfoSection.tsx` — combobox + DateRangePicker + عدد غرف + إطلالة
-- `src/components/hotel-bookings/sections/RoomDetailsSection.tsx` — Select لنوع الغرفة، تنظيف
-- `src/components/hotel-bookings/sections/SupplierCostSection.tsx` — زر "جلب السعر" + كرت ربح live + VAT
-- `src/components/hotel-bookings/sections/SpecialRequestsSection.tsx` — accordion مغلق افتراضياً
-- `src/components/hotel-bookings/sections/FormActionsSection.tsx` — يحوّل لـ sticky bar مع 4 أزرار حفظ
-- `src/types/hotelBooking.ts` — إضافة الحقول الجديدة في NewHotelBooking
-- `src/hooks/useHotelBookingForm.ts` — Zod resolver، draft، حفظ مع redirect حسب الزر
-- `src/hooks/useHotelBookingSubmission.ts` — دعم save+invoice / save+voucher
-- `src/pages/NewHotelBooking.tsx` — تحديث layout
-
----
-
-## 📝 ملاحظة على "حفظ + إنشاء فاتورة"
-
-بعد الحفظ الناجح، نتنقّل تلقائياً لـ `/hotel-bookings/{id}` ونفتح `HotelInvoiceDialog` (موجود بالفعل) جاهز بالبيانات. نفس الفكرة لـ "حفظ + فاوتشر" مع `HotelVoucherDialog`.
+هل أنفذ؟
