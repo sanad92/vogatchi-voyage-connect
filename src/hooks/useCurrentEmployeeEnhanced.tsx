@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useUserEmployeeMapping } from './useUserEmployeeMapping';
+import { useCurrentEmployeeFetch } from './user-employee-mapping/useCurrentEmployeeFetch';
 import { useOptimizedAuth } from './useOptimizedAuth';
 
 interface EnhancedCurrentEmployee {
@@ -10,50 +9,41 @@ interface EnhancedCurrentEmployee {
   email?: string;
   position?: string;
   is_active: boolean;
-  isRealEmployee: boolean; // للتمييز بين الموظف الحقيقي والمستخدم العادي
+  isRealEmployee: boolean;
 }
 
+/**
+ * Source of truth للموظف الحالي في الواجهات (booking forms, etc).
+ * يوفر fallback للمستخدم العادي ومنطق shouldSaveBookingAgentId/getBookingAgentId.
+ */
 export const useCurrentEmployeeEnhanced = () => {
   const { user } = useOptimizedAuth();
-  const { currentEmployee, isLoading, error } = useUserEmployeeMapping();
+  const { currentEmployee, isLoading, error } = useCurrentEmployeeFetch();
   const [enhancedEmployee, setEnhancedEmployee] = useState<EnhancedCurrentEmployee | null>(null);
 
   useEffect(() => {
     if (currentEmployee) {
-      // إذا كان هناك موظف مرتبط
       setEnhancedEmployee({
         ...currentEmployee,
-        isRealEmployee: currentEmployee.employee_code !== "USER"
+        isRealEmployee: currentEmployee.employee_code !== 'USER',
       });
     } else if (user) {
-      // fallback للمستخدم العادي
       setEnhancedEmployee({
         id: user.id,
         full_name: user.email?.split('@')[0] || 'مستخدم غير محدد',
         employee_code: 'USER',
         email: user.email,
         is_active: true,
-        isRealEmployee: false
+        isRealEmployee: false,
       });
     } else {
       setEnhancedEmployee(null);
     }
   }, [currentEmployee, user]);
 
-  // دالة لتحديد ما إذا كان يجب حفظ booking_agent_id
-  const shouldSaveBookingAgentId = () => {
-    return enhancedEmployee?.isRealEmployee === true;
-  };
-
-  // دالة للحصول على booking_agent_id للحفظ
-  const getBookingAgentId = () => {
-    return shouldSaveBookingAgentId() ? enhancedEmployee?.id : undefined;
-  };
-
-  // دالة للحصول على اسم الموظف للعرض
-  const getBookingAgentName = () => {
-    return enhancedEmployee?.full_name || 'مستخدم غير محدد';
-  };
+  const shouldSaveBookingAgentId = () => enhancedEmployee?.isRealEmployee === true;
+  const getBookingAgentId = () => (shouldSaveBookingAgentId() ? enhancedEmployee?.id : undefined);
+  const getBookingAgentName = () => enhancedEmployee?.full_name || 'مستخدم غير محدد';
 
   return {
     currentEmployee: enhancedEmployee,
@@ -62,6 +52,6 @@ export const useCurrentEmployeeEnhanced = () => {
     shouldSaveBookingAgentId,
     getBookingAgentId,
     getBookingAgentName,
-    isRealEmployee: enhancedEmployee?.isRealEmployee || false
+    isRealEmployee: enhancedEmployee?.isRealEmployee || false,
   };
 };
