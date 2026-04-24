@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Shield, Building2, CreditCard, BanknoteIcon, Settings, 
   UserCog, ScrollText, Database, Activity, Package, ChevronLeft,
-  LayoutDashboard
+  LayoutDashboard, TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: 'نظرة عامة', href: '/platform', icon: LayoutDashboard },
+  { title: 'التحليلات', href: '/platform/analytics', icon: TrendingUp },
   { title: 'المؤسسات', href: '/platform/organizations', icon: Building2 },
   { title: 'الاشتراكات', href: '/platform/subscriptions', icon: CreditCard },
   { title: 'خطط الاشتراك', href: '/platform/plans', icon: Package },
