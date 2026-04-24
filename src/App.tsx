@@ -260,7 +260,7 @@ function App() {
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
-                              <Route path="/customer-portal" element={<PermissionRouteGuard requiredPermission="customer_portal_view"><CustomerPortalPage /></PermissionRouteGuard>} />
+                              
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<TeamManagement />} />
