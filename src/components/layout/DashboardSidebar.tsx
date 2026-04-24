@@ -165,7 +165,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         </div>
         {!collapsed && (
           <span className="text-sidebar-foreground font-bold text-lg truncate">
-            Hostretor.online
+            Vogantra
           </span>
         )}
       </div>

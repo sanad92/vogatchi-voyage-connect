@@ -320,7 +320,7 @@ const SubscriptionManagement = () => {
                           onClick={() => {
                             // Generate simple receipt
                             const receiptData = `
-فاتورة دفع - Hostretor.online — Travel ERP System
+فاتورة دفع - Vogantra
 ================================
 رقم المعاملة: ${tx.paymob_transaction_id || tx.id}
 المبلغ: ${(tx.amount_cents / 100).toLocaleString('ar-EG')} ج.م

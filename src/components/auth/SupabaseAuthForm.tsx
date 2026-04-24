@@ -63,7 +63,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
             <span className="text-white font-bold text-xl">V</span>
           </div>
         </Link>
-        <h1 className="text-3xl font-bold text-foreground mb-2">مرحباً بك في Hostretor.online</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">مرحباً بك في Vogantra</h1>
         <p className="text-muted-foreground">منصة إدارة شركات السياحة والسفر</p>
       </div>
 

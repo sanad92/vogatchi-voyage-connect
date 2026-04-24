@@ -1,96 +1,78 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plane, Hotel, Car } from 'lucide-react';
-import { useLandingContent } from '@/hooks/useLandingContent';
-import { useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import {
+  Hotel, Receipt, Users, Briefcase, Building2, BarChart3,
+} from 'lucide-react';
 
-const getIconComponent = (iconName: string) => {
-  const icons: Record<string, any> = {
-    Hotel,
-    Plane, 
-    Car
-  };
-  return icons[iconName] || Hotel;
-};
-
-const getColorClass = (colorName: string) => {
-  const colors: Record<string, string> = {
-    'blue-500': 'bg-blue-500',
-    'green-500': 'bg-green-500', 
-    'purple-500': 'bg-purple-500'
-  };
-  return colors[colorName] || 'bg-blue-500';
-};
+const products = [
+  {
+    icon: Hotel,
+    name: 'Vogantra Booking Engine',
+    desc: 'حجوزات فنادق، طيران، نقل، رحلات وعمرة في واجهة موحدة مع تتبع الحالات تلقائياً.',
+    color: 'from-primary to-primary-glow',
+  },
+  {
+    icon: Receipt,
+    name: 'Vogantra Finance',
+    desc: 'فواتير احترافية، عمولات، مدفوعات موردين، حسابات بنكية، وتقارير أرباح لحظية.',
+    color: 'from-accent to-primary',
+  },
+  {
+    icon: Users,
+    name: 'Vogantra CRM',
+    desc: 'قاعدة بيانات عملاء، تكامل واتساب، Segments ذكية، ومتابعة دقيقة لكل تواصل.',
+    color: 'from-primary-glow to-accent',
+  },
+  {
+    icon: Briefcase,
+    name: 'Vogantra HR',
+    desc: 'موظفين، حضور، رواتب، عمولات شهرية، وصلاحيات دقيقة لكل دور.',
+    color: 'from-secondary to-primary',
+  },
+  {
+    icon: Building2,
+    name: 'Vogantra Suppliers',
+    desc: 'إدارة الموردين، عقود الأسعار، الـ Allotments، وعملات متعددة لكل مورد.',
+    color: 'from-primary to-accent',
+  },
+  {
+    icon: BarChart3,
+    name: 'Vogantra Analytics',
+    desc: 'لوحات قياس KPIs لحظية، تقارير مالية مفصلة، وتحليل ربحية كل قسم وفرع.',
+    color: 'from-accent to-primary-glow',
+  },
+];
 
 const ServicesSection = () => {
-  const { getContentBySection, isLoading } = useLandingContent();
-  const navigate = useNavigate();
-  
-  const services = getContentBySection('services').filter(item => item.section_type === 'service');
-
-  const handleServiceClick = (buttonLink: string) => {
-    if (buttonLink.startsWith('/')) {
-      navigate(buttonLink);
-    } else {
-      window.open(buttonLink, '_blank');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="animate-pulse space-y-4">
-              <div className="h-10 bg-gray-200 rounded mx-auto max-w-xs"></div>
-              <div className="h-6 bg-gray-200 rounded mx-auto max-w-lg"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[1,2,3].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-lg"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">خدماتنا المميزة</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            نقدم لك مجموعة شاملة من الخدمات السياحية لجعل رحلتك مثالية
+    <section className="py-20 lg:py-28 bg-background">
+      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-10">
+        <div className="text-center mb-14 max-w-2xl mx-auto">
+          <p className="text-xs font-inter font-semibold uppercase tracking-[0.2em] text-primary mb-3">
+            The Vogantra Suite
+          </p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight">
+            منظومة واحدة. كل أعمالك السياحية.
+          </h2>
+          <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
+            ست منتجات متكاملة تعمل معاً بسلاسة — تشغّل شركتك من الحجز للفاتورة للتقرير.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {services.map((service, index) => {
-            const IconComponent = getIconComponent(service.icon_name || 'Hotel');
-            const colorClass = getColorClass(service.style_config?.iconColor || 'blue-500');
-            
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {products.map((p, i) => {
+            const Icon = p.icon;
             return (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8 text-center">
-                  <div className={`w-16 h-16 ${colorClass} rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                    <IconComponent className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{service.title}</h3>
-                  <p className="text-gray-600 leading-relaxed mb-6">{service.content}</p>
-                  {service.button_text && service.button_link && (
-                    <Button 
-                      onClick={() => handleServiceClick(service.button_link)}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      {service.button_text}
-                    </Button>
-                  )}
-                </CardContent>
+              <Card
+                key={i}
+                className="group relative overflow-hidden p-6 border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 bg-card"
+              >
+                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${p.color}`} />
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-foreground font-inter">{p.name}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
               </Card>
             );
           })}

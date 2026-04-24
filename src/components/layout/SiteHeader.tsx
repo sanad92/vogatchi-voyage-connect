@@ -35,7 +35,7 @@ const SiteHeader = () => {
               </div>
               <div className="flex items-center gap-1">
                 <Mail className="h-3 w-3" />
-                <span>ops@hostretor.online</span>
+                <span>hello@vogantra.com</span>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-1">

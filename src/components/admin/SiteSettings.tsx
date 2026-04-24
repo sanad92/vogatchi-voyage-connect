@@ -21,12 +21,12 @@ interface SiteConfig {
 const SiteSettings = () => {
   const { isSuperAdmin } = useOptimizedAuth();
   const [config, setConfig] = useState<SiteConfig>({
-    siteName: 'Hostretor.online — Travel ERP System',
+    siteName: 'Vogantra',
     siteDescription: 'نظام إدارة علاقات العملاء',
-    companyName: 'شركة Hostretor.online للسياحة',
+    companyName: 'شركة Vogantra للسياحة',
     companyAddress: 'القاهرة، مصر',
     companyPhone: '01103442881',
-    companyEmail: 'ops@hostretor.online'
+    companyEmail: 'hello@vogantra.com'
   });
   const [isLoading, setIsLoading] = useState(false);
 

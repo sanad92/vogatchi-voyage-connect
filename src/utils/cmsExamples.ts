@@ -148,7 +148,7 @@ export const getExampleBlocks = (): { [key: string]: BlockData[] } => {
                   </div>
                   <div class="flex items-center gap-3">
                     <span class="text-primary">📧</span>
-                    <span>ops@hostretor.online</span>
+                    <span>hello@vogantra.com</span>
                   </div>
                   <div class="flex items-center gap-3">
                     <span class="text-primary">📍</span>

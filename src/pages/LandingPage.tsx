@@ -1,39 +1,23 @@
-
 import React from 'react';
-// موجود مسبقاً:
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingHero from '@/components/landing/LandingHero';
-import DirectContracts from '@/components/landing/DirectContracts';
-import CitiesSection from '@/components/landing/CitiesSection';
 import ServicesSection from '@/components/landing/ServicesSection';
-import HotelsSection from '@/components/landing/HotelsSection';
-import ContactForm from '@/components/landing/ContactForm';
 import LandingFooter from '@/components/landing/LandingFooter';
-import WhatsAppFixedButton from '@/components/landing/WhatsAppFixedButton';
 import { useLandingWhatsApp } from '@/hooks/useLandingWhatsApp';
 
-// هذه الصفحة للاحتفاظ بالتصميم القديم كنسخة احتياطية
-// يُفضل استعمال النظام الديناميكي في "/" بدلاً من هذا
-
+// Vogantra ERP Landing Page
 const LandingPage = () => {
   const { createWhatsAppHandler } = useLandingWhatsApp();
   const handleWhatsAppClick = createWhatsAppHandler();
 
-  // تصميم احتياطي في حال احتجنا للرجوع للنظام القديم
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <LandingHeader onWhatsAppClick={handleWhatsAppClick} />
-      <WhatsAppFixedButton onWhatsAppClick={handleWhatsAppClick} />
       <LandingHero onWhatsAppClick={handleWhatsAppClick} />
-      <DirectContracts onWhatsAppClick={handleWhatsAppClick} />
-      <CitiesSection />
       <ServicesSection />
-      <HotelsSection />
-      <ContactForm onWhatsAppClick={handleWhatsAppClick} />
       <LandingFooter onWhatsAppClick={handleWhatsAppClick} />
     </div>
   );
 };
 
 export default LandingPage;
-

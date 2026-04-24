@@ -97,7 +97,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 <body>
     <div class="voucher">
         <div class="header">
-            <div class="company-name">Hostretor.online — Travel ERP System</div>
+            <div class="company-name">Vogantra</div>
             <div class="voucher-title">فاوتشر حجز فندق</div>
             <div class="booking-number">رقم الحجز: ${booking.internal_booking_number}</div>
         </div>
@@ -220,7 +220,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 
         <div class="footer">
             <p>شكراً لثقتكم في خدماتنا</p>
-            <p>Hostretor.online — Travel ERP System - وكالة سياحة وسفر</p>
+            <p>Vogantra - وكالة سياحة وسفر</p>
             <p>تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
         </div>
     </div>
