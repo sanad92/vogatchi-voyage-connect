@@ -18,6 +18,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AIRLINE_ALIASES, expandSearchTerm } from '@/lib/travel-search-aliases';
+
+// Common Middle East / regional airline IATA codes — bubble these to the top of initial list
+const REGIONAL_AIRLINES = new Set(['SV','EK','EY','QR','MS','KU','WY','GF','RJ','AT','TK','J9','G9','FZ','NE','NP','XY','3O','IY','AC']);
 
 interface AirlineSelectionFieldProps {
   value: string;
@@ -37,16 +41,25 @@ const AirlineSelectionField = ({ value, onChange, airlines }: AirlineSelectionFi
     [airlines, value]
   );
 
+  const sortedAirlines = useMemo(() => {
+    return [...airlines].sort((a, b) => {
+      const aR = REGIONAL_AIRLINES.has(a.iata_code) ? 0 : 1;
+      const bR = REGIONAL_AIRLINES.has(b.iata_code) ? 0 : 1;
+      if (aR !== bR) return aR - bR;
+      return (a.name ?? '').localeCompare(b.name ?? '');
+    });
+  }, [airlines]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return airlines.slice(0, 100);
-    const q = search.trim().toLowerCase();
-    return airlines
+    if (!search.trim()) return sortedAirlines.slice(0, 200);
+    const terms = expandSearchTerm(search, AIRLINE_ALIASES);
+    return sortedAirlines
       .filter((a) => {
         const haystack = `${a.name ?? ''} ${a.iata_code ?? ''} ${a.country ?? ''}`.toLowerCase();
-        return haystack.includes(q);
+        return terms.some((t) => haystack.includes(t));
       })
       .slice(0, 200);
-  }, [airlines, search]);
+  }, [sortedAirlines, search]);
 
   const addAirlineMutation = useMutation({
     mutationFn: async (airlineData: any) => {
