@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, CalendarPlus, Building2 } from 'lucide-react';
+import { Ban, CheckCircle, CalendarPlus, Building2, LogIn } from 'lucide-react';
+import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 
 interface OrgRow {
   id: string;
