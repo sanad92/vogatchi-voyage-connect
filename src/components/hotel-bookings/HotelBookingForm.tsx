@@ -144,6 +144,7 @@ const HotelBookingForm = ({ booking, onSuccess, onCancel }: HotelBookingFormProp
                 setValue={setValue}
                 watch={watch}
                 errors={errors}
+                suppliers={suppliers}
               />
               <PriceCalculationDisplay
                 calculations={calculations}
