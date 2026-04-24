@@ -203,6 +203,7 @@ function App() {
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="settings" element={<PlatformAdminSettings />} />
                             <Route path="database" element={<DatabaseManager />} />
+                            <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
                           </Routes>
