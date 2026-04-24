@@ -1,10 +1,19 @@
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Users, UserPlus, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserPlus, Search, Trash2, Link2, UserX, Briefcase } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useUnifiedUserFilters } from '@/hooks/useUnifiedUserFilters';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import UnifiedEditDialog from './unified-management/UnifiedEditDialog';
 import LinkEmployeeDialog from './unified-management/LinkEmployeeDialog';
 import UnifiedStatsHeaderEnhanced from './unified-management/enhanced/UnifiedStatsHeaderEnhanced';
