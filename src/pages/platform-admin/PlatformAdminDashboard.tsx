@@ -132,8 +132,7 @@ const PlatformAdminDashboard = () => {
     },
     staleTime: 60_000,
   });
-
-
+  const cards = [
     { label: 'إجمالي المؤسسات', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'bg-primary/10 text-primary' },
     { label: 'مؤسسات نشطة', value: stats?.activeOrgs ?? 0, icon: Building2, color: 'bg-emerald-500/10 text-emerald-600' },
     { label: 'إجمالي المستخدمين', value: stats?.totalUsers ?? 0, icon: Users, color: 'bg-blue-500/10 text-blue-600' },
