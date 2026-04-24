@@ -166,10 +166,26 @@ const PlatformAdminAccounts = () => {
                     <TableCell className="font-medium">{a.full_name ?? '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{a.email ?? '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={a.role === 'platform_owner' ? 'default' : 'secondary'} className={a.role === 'platform_owner' ? 'bg-amber-600' : ''}>
-                        <Shield className="h-3 w-3 mr-1" />
-                        {a.role === 'platform_owner' ? 'مالك المنصة' : 'مدير منصة'}
-                      </Badge>
+                      {isPlatformOwner ? (
+                        <Select
+                          value={a.role}
+                          onValueChange={(v: any) => updateRole.mutate({ row: a, newRole: v })}
+                          disabled={updateRole.isPending}
+                        >
+                          <SelectTrigger className="w-[160px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="platform_admin">مدير منصة</SelectItem>
+                            <SelectItem value="platform_owner">مالك منصة</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant={a.role === 'platform_owner' ? 'default' : 'secondary'} className={a.role === 'platform_owner' ? 'bg-amber-600' : ''}>
+                          <Shield className="h-3 w-3 mr-1" />
+                          {a.role === 'platform_owner' ? 'مالك المنصة' : 'مدير منصة'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {new Date(a.created_at).toLocaleDateString('ar-EG')}
