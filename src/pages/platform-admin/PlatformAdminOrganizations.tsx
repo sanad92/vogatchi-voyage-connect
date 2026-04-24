@@ -208,6 +208,15 @@ const PlatformAdminOrganizations = () => {
                         <div className="flex flex-wrap gap-1">
                           <Button
                             size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-amber-500/50 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                            onClick={() => startImpersonation(org.id, org.name)}
+                            title="دخول إلى داشبورد المؤسسة"
+                          >
+                            <LogIn className="h-3 w-3 ml-1" /> دخول
+                          </Button>
+                          <Button
+                            size="sm"
                             variant={org.is_active ? 'destructive' : 'default'}
                             className="h-7 text-xs"
                             onClick={() => toggleStatus.mutate({ id: org.id, is_active: !org.is_active })}
