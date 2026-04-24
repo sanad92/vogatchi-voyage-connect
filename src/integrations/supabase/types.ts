@@ -6585,6 +6585,10 @@ export type Database = {
         Returns: string
       }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
+      ensure_employee_for_user: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: string
+      }
       extend_trial: {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
