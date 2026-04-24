@@ -165,60 +165,51 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
 
           {step === 2 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                <div>
-                  <p className="font-semibold text-sm">إضافة بيانات الموارد البشرية؟</p>
-                  <p className="text-xs text-muted-foreground">يتم ربطها تلقائياً بحساب المستخدم</p>
+              <div className="flex items-start gap-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
+                <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-muted-foreground">
+                  سيتم إنشاء سجل موظف تلقائياً مرتبط بحساب المستخدم. أكمل البيانات الآن أو اتركها فارغة وعدّلها لاحقاً من قسم الموارد البشرية.
                 </div>
-                <Switch checked={includeHR} onCheckedChange={setIncludeHR} />
               </div>
 
-              {includeHR && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>المنصب</Label>
-                      <Input
-                        value={form.employee_data?.position || ''}
-                        onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, position: e.target.value } })}
-                        placeholder="مثال: محاسب"
-                      />
-                    </div>
-                    <div>
-                      <Label>القسم</Label>
-                      <Input
-                        value={form.employee_data?.department || ''}
-                        onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, department: e.target.value } })}
-                        placeholder="مثال: المالية"
-                      />
-                    </div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>المنصب</Label>
+                    <Input
+                      value={form.employee_data?.position || ''}
+                      onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, position: e.target.value } })}
+                      placeholder="مثال: محاسب"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>الراتب الأساسي</Label>
-                      <Input
-                        type="number"
-                        value={form.employee_data?.base_salary || ''}
-                        onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, base_salary: Number(e.target.value) } })}
-                      />
-                    </div>
-                    <div>
-                      <Label>تاريخ التوظيف</Label>
-                      <Input
-                        type="date"
-                        value={form.employee_data?.hire_date || ''}
-                        onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, hire_date: e.target.value } })}
-                      />
-                    </div>
+                  <div>
+                    <Label>القسم</Label>
+                    <Input
+                      value={form.employee_data?.department || ''}
+                      onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, department: e.target.value } })}
+                      placeholder="مثال: المالية"
+                    />
                   </div>
                 </div>
-              )}
-
-              {!includeHR && (
-                <p className="text-sm text-center text-muted-foreground py-6">
-                  يمكنك تخطي هذه الخطوة وإضافة بيانات الموارد البشرية لاحقاً.
-                </p>
-              )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>الراتب الأساسي</Label>
+                    <Input
+                      type="number"
+                      value={form.employee_data?.base_salary || ''}
+                      onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, base_salary: Number(e.target.value) } })}
+                    />
+                  </div>
+                  <div>
+                    <Label>تاريخ التوظيف</Label>
+                    <Input
+                      type="date"
+                      value={form.employee_data?.hire_date || ''}
+                      onChange={(e) => setForm({ ...form, employee_data: { ...form.employee_data, hire_date: e.target.value } })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
