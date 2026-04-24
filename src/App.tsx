@@ -185,6 +185,38 @@ function App() {
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
 
+                {/* Platform Admin — separate layout, no DashboardLayout */}
+                <Route path="/platform/*" element={
+                  <SupabaseProtectedRoute>
+                    <PlatformAdminGuard>
+                      <PlatformLayout>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route index element={<PlatformAdminDashboard />} />
+                            <Route path="organizations" element={<PlatformAdminOrganizations />} />
+                            <Route path="subscriptions" element={<PlatformAdminSubscriptions />} />
+                            <Route path="plans" element={<PlatformAdminPlans />} />
+                            <Route path="transfers" element={<PlatformAdminTransfers />} />
+                            <Route path="accounts" element={<PlatformAdminAccounts />} />
+                            <Route path="audit" element={<PlatformAdminAudit />} />
+                            <Route path="settings" element={<PlatformAdminSettings />} />
+                            <Route path="database" element={<DatabaseManager />} />
+                            <Route path="monitoring" element={<MonitoringDashboard />} />
+                            <Route path="*" element={<Navigate to="/platform" replace />} />
+                          </Routes>
+                        </Suspense>
+                      </PlatformLayout>
+                    </PlatformAdminGuard>
+                  </SupabaseProtectedRoute>
+                } />
+
+                {/* Backward-compat redirects from old /platform-admin/* */}
+                <Route path="/platform-admin" element={<Navigate to="/platform" replace />} />
+                <Route path="/platform-admin/organizations" element={<Navigate to="/platform/organizations" replace />} />
+                <Route path="/platform-admin/subscriptions" element={<Navigate to="/platform/subscriptions" replace />} />
+                <Route path="/platform-admin/transfers" element={<Navigate to="/platform/transfers" replace />} />
+                <Route path="/platform-admin/settings" element={<Navigate to="/platform/settings" replace />} />
+
                 {/* Protected */}
                 <Route
                   path="/*"
