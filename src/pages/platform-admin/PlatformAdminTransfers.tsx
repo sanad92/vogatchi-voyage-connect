@@ -130,9 +130,8 @@ const PlatformAdminTransfers = () => {
   const pendingCount = requests?.filter(r => r.status === 'pending').length || 0;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6" dir="rtl">
-        <div className="flex items-center justify-between">
+    <div className="p-4 lg:p-6 space-y-6" dir="rtl">
+      <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <BanknoteIcon className="h-6 w-6 text-primary" />
