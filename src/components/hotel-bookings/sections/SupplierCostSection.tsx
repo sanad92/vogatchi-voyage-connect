@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, TrendingUp, TrendingDown } from "lucide-react";
 import { NewHotelBooking, HotelSupplier, getCurrencySymbol, PAYMENT_METHOD_OPTIONS } from "@/types/hotelBooking";
-import SupplierSelection from "@/components/shared/SupplierSelection";
+import HotelSupplierCombobox from "../HotelSupplierCombobox";
 import CurrencySelector from "@/components/currency/CurrencySelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from "@/hooks/useOrgId";
@@ -106,13 +106,11 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
         </div>
         <div className="space-y-1.5">
           <Label>مورد الفندق *</Label>
-          <SupplierSelection
-            selectedSupplierId={supplierId}
-            selectedSupplierName={supplierName}
-            onSupplierSelect={handleSupplierSelect}
-            label=""
+          <HotelSupplierCombobox
+            supplierId={supplierId}
+            supplierName={supplierName}
+            onSelect={handleSupplierSelect}
             supplierType="hotel"
-            required
           />
           {errors.supplier_name && <p className="text-destructive text-xs">{errors.supplier_name.message}</p>}
         </div>
