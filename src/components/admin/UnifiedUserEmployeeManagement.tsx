@@ -45,6 +45,29 @@ const UnifiedUserEmployeeManagement = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
+  const [isDeletingEmp, setIsDeletingEmp] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleDeleteUnlinkedEmployee = async () => {
+    if (!employeeToDelete) return;
+    setIsDeletingEmp(true);
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ is_active: false })
+        .eq('id', employeeToDelete.id);
+      if (error) throw error;
+      toast.success(`تم حذف الموظف "${employeeToDelete.full_name}" بنجاح`);
+      await queryClient.invalidateQueries({ queryKey: ['unlinked-employees-all'] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-users-employees'] });
+      setEmployeeToDelete(null);
+    } catch (e: any) {
+      toast.error(e?.message || 'فشل حذف الموظف');
+    } finally {
+      setIsDeletingEmp(false);
+    }
+  };
 
   if (!orgRole || !['owner', 'admin'].includes(orgRole)) {
     return (
