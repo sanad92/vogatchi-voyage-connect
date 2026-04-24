@@ -30,7 +30,7 @@ const PlatformAdminAccounts = () => {
   const [pendingDelete, setPendingDelete] = useState<PlatformAdminRow | null>(null);
   const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'platform_admin' as 'platform_admin' | 'platform_owner' });
 
-  const { data: admins = [], isLoading } = useQuery({
+  const { data: admins = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['platform-admins'],
     queryFn: async (): Promise<PlatformAdminRow[]> => {
       const { data: roles, error } = await supabase
@@ -53,6 +53,27 @@ const PlatformAdminAccounts = () => {
         full_name: profMap.get(r.user_id)?.full_name ?? null,
       })) as PlatformAdminRow[];
     },
+  });
+
+  const updateRole = useMutation({
+    mutationFn: async ({ row, newRole }: { row: PlatformAdminRow; newRole: 'platform_owner' | 'platform_admin' }) => {
+      if (row.role === newRole) return;
+      // Prevent demoting the last owner
+      if (row.role === 'platform_owner' && newRole !== 'platform_owner') {
+        const ownerCount = admins.filter(a => a.role === 'platform_owner').length;
+        if (ownerCount <= 1) throw new Error('لا يمكن تخفيض آخر مالك للمنصة');
+      }
+      const { error } = await supabase
+        .from('platform_roles')
+        .update({ role: newRole })
+        .eq('id', row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث الدور');
+      qc.invalidateQueries({ queryKey: ['platform-admins'] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'فشل تحديث الدور'),
   });
 
   const createAdmin = useMutation({
