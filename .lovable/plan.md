@@ -1,53 +1,139 @@
+# خطة Rebranding كاملة → Vogantra
 
-# الخطة الجاية (بدون WhatsApp)
+## نظرة عامة
 
-تم تأجيل ميزة WhatsApp Embedded Signup لحد ما تطلبها.
-
-نكمل بترتيب الأولويات التالية:
-
----
-
-## المرحلة 1 — تطوير لوحة المنصة (الأولوية الحالية)
-
-### 1.1 تطوير Dashboard الرئيسي للمنصة
-`PlatformAdminDashboard` حالياً بسيط. هنضيف:
-- بطاقات إحصائيات: عدد المؤسسات (نشط/معلق/منتهي)، إجمالي المستخدمين، عدد الحجوزات الشهر ده
-- إيرادات الاشتراكات (الشهر الحالي vs الشهر اللي فات)
-- رسم بياني لنمو المؤسسات آخر 6 شهور
-- قائمة آخر 5 اشتراكات جديدة + آخر 5 تحويلات بنكية تنتظر المراجعة
-
-### 1.2 ميزة Impersonation (الدخول كمؤسسة)
-- زر "دخول كهذه المؤسسة" في `PlatformAdminOrganizations`
-- حفظ `impersonating_org_id` في localStorage
-- Banner علوي أحمر/برتقالي ثابت في كل صفحات الداشبورد العادية أثناء الـ impersonation
-- زر "خروج والعودة للمنصة" في الـ Banner
-- تسجيل كل عملية في `audit_log` (دخول + خروج)
-
-### 1.3 تحسين إدارة التحويلات البنكية
-- مراجعة `PlatformAdminTransfers`: عرض إيصال الدفع، اعتماد/رفض بسبب، تمديد الاشتراك تلقائياً عند الاعتماد
+تحويل المنصة بالكامل من **Hostretor.online** إلى **Vogantra — منصة ERP لشركات السياحة**، مع تطبيق الهوية البصرية الجديدة (ألوان + خطوط + نبرة) وتحديث Landing Page بالكامل بمحتوى عربي أساسي + إنجليزي ثانوي.
 
 ---
 
-## المرحلة 2 — تنظيف الكود وتوحيد المعمارية
+## 1. الهوية البصرية (Design System)
 
-### 2.1 إزالة بقايا الكود القديم
-- تنظيف أي مراجع متبقية لـ `CustomerPortal` القديم
-- توحيد `useCurrentEmployee` و `useCurrentEmployeeEnhanced` في hook واحد
-- إزالة المسارات القديمة `/platform-admin/*` بعد فترة (حالياً Redirects شغالة)
+### تحديث `src/index.css`
+استبدال متغيرات الألوان لتعكس Vogantra Palette:
 
-### 2.2 مراجعة الأمان
-- تشغيل Security Linter على الجداول الجديدة (`whatsapp_settings` بعد التعديل، `platform_roles`)
-- التأكد من سياسات RLS على كل الجداول
+| المتغير | القيمة (HSL) | اللون |
+|---|---|---|
+| `--primary` | `199 89% 48%` | Sky Blue `#0EA5E9` |
+| `--secondary` | `222 47% 11%` | Midnight Blue `#0F172A` |
+| `--accent` | `160 84% 39%` | Emerald `#10B981` |
+| `--sidebar-background` | `222 47% 11%` | Midnight Blue (بدل البنفسجي) |
+| `--sidebar-primary` | `199 89% 48%` | Sky Blue |
+| `--ring` | `199 89% 48%` | Sky Blue |
+| `--chart-1..5` | درجات من Sky/Emerald/Midnight | تناسق مع البراند |
+
+نفس الشيء للوضع `.dark` بدرجات مظلمة محسوبة.
+
+### تحديث `index.html`
+- إضافة Google Fonts: **Cairo** (عربي) + **Inter** (إنجليزي).
+- تحديث `<title>` إلى `Vogantra — Powering Travel Business`.
+- تحديث `<meta description>` و OG/Twitter tags بمحتوى Vogantra.
+- تحديد `lang="ar" dir="rtl"`.
+
+### تحديث `tailwind.config.ts`
+- إضافة `fontFamily`: `cairo`, `inter`.
+- إعداد `font-sans` ليستخدم Cairo + Inter كـ fallback.
 
 ---
 
-## المرحلة 3 — مؤجل لحد ما تطلبه
+## 2. اللوجو والـ Favicon
 
-- WhatsApp Embedded Signup (متعدد المؤسسات عبر Meta Login)
+- إنشاء مكوّن `src/components/brand/VogantraLogo.tsx` يدعم variants: `full | mark | white`.
+- مؤقتاً يعرض **SVG placeholder**: حرف V هندسي بأطراف جناح + نص "Vogantra" بخط Inter.
+- استبدال `<img>` القديم في:
+  - `src/components/auth/AuthHeader.tsx`
+  - `src/components/landing/LandingHeader.tsx`
+  - `src/components/landing/LandingFooter.tsx`
+  - `src/components/layout/DashboardSidebar.tsx`
+  - `src/components/platform-admin/PlatformSidebar.tsx`
+- ترك ملاحظة في الكود: عند رفع المستخدم للوجو الرسمي، يستبدل `public/vogantra-logo.png` ويحدث المكون.
+- حذف `public/favicon.ico` القديم وإضافة favicon SVG مؤقت من نفس الـ mark.
 
 ---
 
-## السؤال
-بأي مرحلة أبدأ؟ اقتراحي نبدأ بـ **1.1 (Dashboard المنصة)** لأنها بتدي قيمة فورية للسوبر أدمن، وبعدها **1.2 (Impersonation)** لأنها بتسهّل الدعم الفني للمؤسسات.
+## 3. تحديث الاسم في كل المنصة
 
-لو تفضل ترتيب مختلف أو حاجة محددة، قولي.
+استبدال **Hostretor.online → Vogantra** و **Travel ERP System → ERP السياحة الذكي** في الملفات التالية:
+
+- `src/components/auth/AuthHeader.tsx`, `AuthLayout.tsx`, `SupabaseAuthForm.tsx`
+- `src/components/landing/LandingHeader.tsx`, `LandingFooter.tsx`, `ContactForm.tsx`
+- `src/components/layout/DashboardSidebar.tsx`
+- `src/pages/LoginPage.tsx`, `SignupPage.tsx`, `PricingPage.tsx`, `SaaSLanding.tsx`, `SubscriptionManagement.tsx`
+- `src/pages/admin/CMSPages.tsx`, `src/components/admin/SiteSettings.tsx`
+- `src/components/payment/BankTransferForm.tsx`
+- `src/components/customers/CustomerQuickActions.tsx`
+- ملفات الفواتير/الفاوتشر: `HotelVoucherGenerator.tsx`, `HotelInvoiceGenerator.tsx`, `HotelSupplierPaymentGenerator.tsx`
+
+---
+
+## 4. إعادة تصميم Landing Page
+
+### `src/components/landing/LandingHero.tsx`
+- العنوان الرئيسي (عربي): **"شغّل شركة السياحة بذكاء"**
+- Sub-title إنجليزي صغير تحته: *Powering Travel Business*
+- وصف: *منصة واحدة لإدارة الحجوزات، الحسابات، الموردين، الـ CRM، والتقارير.*
+- زرّان: **ابدأ تجربة مجانية** (primary) + **احجز Demo** (outline).
+- شارات (Badges): إدارة الحجوزات / حسابات وعمولات / CRM واتساب / تقارير أرباح / Multi-Branches / صلاحيات.
+- خلفية: gradient من Midnight Blue إلى Sky Blue مع تأثير mesh خفيف.
+
+### `src/components/landing/ServicesSection.tsx` (Features Grid)
+6 بطاقات تعرض منتجات Vogantra:
+1. **Vogantra Booking Engine** — حجوزات فنادق، طيران، نقل، رحلات.
+2. **Vogantra Finance** — حسابات، فواتير، عمولات، تقارير أرباح.
+3. **Vogantra CRM** — إدارة عملاء، واتساب، متابعات، segments.
+4. **Vogantra HR** — موظفين، حضور، رواتب، صلاحيات.
+5. **Vogantra Suppliers** — موردين، عقود، أسعار، allotments.
+6. **Vogantra Analytics** — تقارير لحظية ولوحات قياس KPIs.
+
+كل بطاقة: أيقونة Lucide + عنوان عربي + وصف سطر + accent بلون البراند.
+
+### قسم جديد: **Why Vogantra?**
+3 أعمدة: ⚡ سرعة • 🔒 أمان (RLS + Audit) • 📈 نمو (Multi-Tenant + Multi-Branch).
+
+### قسم Pricing Teaser
+بطاقات Free Trial / Pro / Enterprise مع زر "اعرف المزيد" يوجّه لـ `/pricing`.
+
+### Footer
+تحديث `LandingFooter.tsx`: شعار Vogantra، روابط (المنتج، الأسعار، تواصل، تسجيل الدخول)، حقوق `© 2026 Vogantra. All rights reserved.`
+
+### حذف/تعديل الأقسام غير المناسبة لـ ERP
+- `CitiesSection`, `HotelsSection`, `DirectContracts` خاصة بشركة سياحة B2C وليست منصة ERP. سنخفيها من الصفحة الرئيسية الجديدة (تبقى في الكود للاستخدام في CMS dynamic pages).
+
+---
+
+## 5. نبرة المراسلات والـ Auth
+
+- تحديث `AuthHeader.tsx`: شعار Vogantra + "نظام إدارة شركة السياحة الذكي".
+- تحديث Welcome Email في `supabase/functions/send-welcome-email/index.ts` ليبدأ بـ "أهلاً بك في Vogantra".
+
+---
+
+## التفاصيل التقنية (Technical Details)
+
+- **عدم تغيير الـ schema أو الـ Supabase project ref** — فقط تغيير برندينغ على مستوى UI/Copy.
+- لا توجد migrations مطلوبة.
+- الـ DB column `system_settings.platform_name` سيتم تحديثه لـ "Vogantra" عبر `AdminSettings` لاحقاً (يدوي من قبل المستخدم) أو نضيف seed تلقائي خفيف.
+- اللوجو الحالي في `public/lovable-uploads/4e5be0db-...png` يبقى كـ fallback لحد ما المستخدم يرفع لوجو Vogantra.
+
+---
+
+## الملفات اللي هتتعدل/تتنشأ
+
+**جديد:**
+- `src/components/brand/VogantraLogo.tsx`
+- `public/vogantra-favicon.svg`
+
+**تعديل:**
+- `src/index.css` (Design tokens)
+- `index.html` (Fonts + Meta)
+- `tailwind.config.ts` (Font families)
+- `src/components/landing/LandingHero.tsx` + `ServicesSection.tsx` + `LandingHeader.tsx` + `LandingFooter.tsx`
+- `src/pages/LandingPage.tsx` (إعادة ترتيب الأقسام)
+- ~15 ملف لاستبدال نصوص "Hostretor" → "Vogantra"
+
+---
+
+## بعد الموافقة
+
+1. ابدأ التنفيذ فوراً.
+2. بعد الانتهاء، ارفع لوجو Vogantra الرسمي وأنا أركّبه مكان الـ SVG placeholder.
+3. خطوات لاحقة (مش في الخطة دي): تصميم Dashboard UI جديد كلياً بهوية Vogantra، صفحات قانونية (Terms/Privacy)، Email Templates احترافية.
