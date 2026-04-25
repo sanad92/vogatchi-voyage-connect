@@ -57,7 +57,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
-          currency: 'EGP', // تثبيت العملة على الجنيه المصري
+          currency: booking.currency || 'EGP', // استخدام عملة الحجز نفسها
           status: 'sent'
         }])
         .select()
