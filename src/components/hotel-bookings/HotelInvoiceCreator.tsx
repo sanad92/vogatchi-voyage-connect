@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { HotelBooking } from "@/types/hotelBooking";
 import { FileText } from "lucide-react";
+import { useOrgId } from "@/hooks/useOrgId";
 
 interface HotelInvoiceCreatorProps {
   booking: HotelBooking;
@@ -29,9 +30,15 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
   });
 
   const queryClient = useQueryClient();
+  const currentOrgId = useOrgId();
 
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
+      const orgId = (booking as any).organization_id || currentOrgId;
+      if (!orgId) {
+        throw new Error('NO_ORG');
+      }
+
       // إنشاء رقم فاتورة تلقائي
       const { data: invoiceNumber, error: numberError } = await supabase
         .rpc('generate_invoice_number');
@@ -44,20 +51,20 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
       const { data, error } = await supabase
         .from('invoices')
         .insert([{
+          organization_id: orgId,
           invoice_number: invoiceNumber,
           customer_id: booking.customer_id,
           booking_id: booking.id,
-          booking_type: 'hotel', // تأكد من تمرير booking_type بشكل صريح
+          booking_type: 'hotel',
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
           discount_amount: formData.discount_amount,
-          
           final_amount: finalAmount,
           payment_terms: formData.payment_terms,
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
-          currency: booking.currency || 'EGP', // استخدام عملة الحجز نفسها
+          currency: booking.currency || 'EGP',
           status: 'sent'
         }])
         .select()
@@ -83,9 +90,15 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
       toast.success('تم إصدار الفاتورة بنجاح');
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating invoice:', error);
-      toast.error('خطأ في إصدار الفاتورة');
+      if (error?.message === 'NO_ORG') {
+        toast.error('تعذر تحديد المؤسسة الحالية لإصدار الفاتورة');
+      } else if (error?.code === '42501') {
+        toast.error('ليس لديك صلاحية إصدار فاتورة لهذه المؤسسة');
+      } else {
+        toast.error(error?.message || 'خطأ في إصدار الفاتورة');
+      }
     }
   });
 

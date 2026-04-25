@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useOrgId } from "@/hooks/useOrgId";
 import CustomerSelectionStep from "./create/CustomerSelectionStep";
 import InvoiceDetailsStep from "./create/InvoiceDetailsStep";
 
@@ -31,6 +32,7 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
   });
 
   const queryClient = useQueryClient();
+  const currentOrgId = useOrgId();
 
   // جلب العملاء
   const { data: customers } = useQuery({
@@ -114,6 +116,11 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
   // إنشاء الفاتورة
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
+      const orgId = (selectedBooking as any)?.organization_id || currentOrgId;
+      if (!orgId) {
+        throw new Error('NO_ORG');
+      }
+
       const { data: invoiceNumber, error: numberError } = await supabase
         .rpc('generate_invoice_number');
       if (numberError) throw numberError;
@@ -123,6 +130,7 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
       const finalAmount = totalAmount - formData.discount_amount;
 
       const invoiceData = {
+        organization_id: orgId,
         invoice_number: invoiceNumber,
         customer_id: selectedCustomer.id,
         booking_id: selectedBooking?.id || null,
@@ -131,7 +139,6 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
         vat_rate: formData.vat_rate,
         vat_amount: vatAmount,
         discount_amount: formData.discount_amount,
-        total_amount: totalAmount,
         final_amount: finalAmount,
         payment_terms: formData.payment_terms,
         notes: formData.notes,
@@ -189,7 +196,13 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
     },
     onError: (error: any) => {
       console.error('Error creating invoice:', error);
-      toast.error('حدث خطأ أثناء إنشاء الفاتورة');
+      if (error?.message === 'NO_ORG') {
+        toast.error('تعذر تحديد المؤسسة الحالية لإنشاء الفاتورة');
+      } else if (error?.code === '42501') {
+        toast.error('ليس لديك صلاحية إنشاء فاتورة لهذه المؤسسة');
+      } else {
+        toast.error(error?.message || 'حدث خطأ أثناء إنشاء الفاتورة');
+      }
     },
   });
 

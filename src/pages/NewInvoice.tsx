@@ -66,7 +66,6 @@ const NewInvoice = () => {
           booking_type: formData.booking_type || null,
           booking_id: formData.booking_id || null,
           final_amount: parseFloat(formData.amount),
-          total_amount: parseFloat(formData.amount),
           currency: formData.currency,
           invoice_number: invoiceNumber || `INV-${Date.now()}`,
           notes: formData.notes || null,
