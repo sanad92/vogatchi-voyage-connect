@@ -125,7 +125,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="subtotal">المبلغ الفرعي (ج.م)</Label>
+              <Label htmlFor="subtotal">المبلغ الفرعي ({booking.currency || 'EGP'})</Label>
               <Input
                 id="subtotal"
                 type="number"
@@ -150,7 +150,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="discount_amount">قيمة الخصم (ج.م)</Label>
+              <Label htmlFor="discount_amount">قيمة الخصم ({booking.currency || 'EGP'})</Label>
               <Input
                 id="discount_amount"
                 type="number"
