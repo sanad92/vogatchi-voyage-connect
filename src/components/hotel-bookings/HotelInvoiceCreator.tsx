@@ -80,7 +80,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hotel-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('تم إصدار الفاتورة بنجاح بالجنيه المصري');
+      toast.success('تم إصدار الفاتورة بنجاح');
       onClose();
     },
     onError: (error) => {
