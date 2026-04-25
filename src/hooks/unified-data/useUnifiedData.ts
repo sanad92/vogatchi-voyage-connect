@@ -24,7 +24,7 @@ export const useUnifiedData = () => {
     isLoading: employeesLoading,
     error: employeesError,
     refetch: refetchEmployees
-  } = useUnlinkedEmployeesQuery(isOwner);
+  } = useUnlinkedEmployeesQuery(isOwner, organizationId);
 
   const {
     linkUserToEmployee,
