@@ -51,7 +51,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
           discount_amount: formData.discount_amount,
-          total_amount: formData.subtotal + vatAmount, // (الفواتير يمكن أن تعتمد على هذا الحقل)
+          
           final_amount: finalAmount,
           payment_terms: formData.payment_terms,
           notes: formData.notes,
