@@ -57,7 +57,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
-          currency: 'EGP', // تثبيت العملة على الجنيه المصري
+          currency: booking.currency || 'EGP', // استخدام عملة الحجز نفسها
           status: 'sent'
         }])
         .select()
@@ -80,7 +80,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hotel-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('تم إصدار الفاتورة بنجاح بالجنيه المصري');
+      toast.success('تم إصدار الفاتورة بنجاح');
       onClose();
     },
     onError: (error) => {
@@ -125,7 +125,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="subtotal">المبلغ الفرعي (ج.م)</Label>
+              <Label htmlFor="subtotal">المبلغ الفرعي ({booking.currency || 'EGP'})</Label>
               <Input
                 id="subtotal"
                 type="number"
@@ -150,7 +150,7 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="discount_amount">قيمة الخصم (ج.م)</Label>
+              <Label htmlFor="discount_amount">قيمة الخصم ({booking.currency || 'EGP'})</Label>
               <Input
                 id="discount_amount"
                 type="number"
@@ -215,19 +215,19 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>المبلغ الفرعي:</span>
-                <span>{formData.subtotal.toLocaleString()} ج.م</span>
+                <span>{formData.subtotal.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between">
                 <span>الضريبة ({formData.vat_rate}%):</span>
-                <span>{vatAmount.toLocaleString()} ج.م</span>
+                <span>{vatAmount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between">
                 <span>الخصم:</span>
-                <span>-{formData.discount_amount.toLocaleString()} ج.م</span>
+                <span>-{formData.discount_amount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between font-bold border-t pt-1">
                 <span>الإجمالي النهائي:</span>
-                <span>{finalAmount.toLocaleString()} ج.م</span>
+                <span>{finalAmount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
             </div>
           </div>
