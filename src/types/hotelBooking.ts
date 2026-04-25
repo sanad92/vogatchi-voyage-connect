@@ -50,6 +50,7 @@ export interface HotelBooking {
   voucher_sent_date?: string;
   status_id?: string;
   booking_status?: BookingStatus;
+  organization_id?: string;
   created_at: string;
   updated_at: string;
 }
