@@ -215,19 +215,19 @@ const HotelInvoiceCreator = ({ booking, open, onClose }: HotelInvoiceCreatorProp
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>المبلغ الفرعي:</span>
-                <span>{formData.subtotal.toLocaleString()} ج.م</span>
+                <span>{formData.subtotal.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between">
                 <span>الضريبة ({formData.vat_rate}%):</span>
-                <span>{vatAmount.toLocaleString()} ج.م</span>
+                <span>{vatAmount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between">
                 <span>الخصم:</span>
-                <span>-{formData.discount_amount.toLocaleString()} ج.م</span>
+                <span>-{formData.discount_amount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
               <div className="flex justify-between font-bold border-t pt-1">
                 <span>الإجمالي النهائي:</span>
-                <span>{finalAmount.toLocaleString()} ج.م</span>
+                <span>{finalAmount.toLocaleString()} {booking.currency || 'EGP'}</span>
               </div>
             </div>
           </div>
