@@ -3817,6 +3817,7 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           payment_status: string | null
+          payment_terms: string | null
           quote_id: string | null
           remaining_amount: number | null
           status: string | null
@@ -3843,6 +3844,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           payment_status?: string | null
+          payment_terms?: string | null
           quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
@@ -3869,6 +3871,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           payment_status?: string | null
+          payment_terms?: string | null
           quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
