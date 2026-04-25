@@ -15,6 +15,7 @@ import { FileText } from "lucide-react";
 import { FlightBooking } from "@/types/flightBooking";
 import FlightInvoiceForm from "./forms/FlightInvoiceForm";
 import FlightInvoiceSummary from "./summary/FlightInvoiceSummary";
+import { useOrgId } from "@/hooks/useOrgId";
 
 interface FlightInvoiceCreatorProps {
   booking: FlightBooking;
@@ -40,9 +41,15 @@ const FlightInvoiceCreator = ({
   });
 
   const queryClient = useQueryClient();
+  const currentOrgId = useOrgId();
 
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
+      const orgId = (booking as any).organization_id || currentOrgId;
+      if (!orgId) {
+        throw new Error('NO_ORG');
+      }
+
       const { data: invoiceNumber, error: numberError } = await supabase
         .rpc('generate_invoice_number');
       if (numberError) throw numberError;
@@ -53,14 +60,14 @@ const FlightInvoiceCreator = ({
       const { data, error } = await supabase
         .from('invoices')
         .insert([{
+          organization_id: orgId,
           invoice_number: invoiceNumber,
           customer_id: booking.customer_id,
           booking_id: booking.id,
-          booking_type: 'flight', // مهم جداً
+          booking_type: 'flight',
           subtotal: formData.subtotal,
           vat_rate: formData.vat_rate,
           discount_amount: formData.discount_amount,
-          total_amount: formData.subtotal + vatAmount,
           final_amount: finalAmount,
           payment_terms: formData.payment_terms,
           notes: formData.notes,
@@ -92,9 +99,15 @@ const FlightInvoiceCreator = ({
       toast.success('تم إصدار الفاتورة');
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating flight invoice:', error);
-      toast.error('خطأ في إصدار فاتورة الطيران');
+      if (error?.message === 'NO_ORG') {
+        toast.error('تعذر تحديد المؤسسة الحالية لإصدار الفاتورة');
+      } else if (error?.code === '42501') {
+        toast.error('ليس لديك صلاحية إصدار فاتورة لهذه المؤسسة');
+      } else {
+        toast.error(error?.message || 'خطأ في إصدار فاتورة الطيران');
+      }
     }
   });
 
