@@ -79,6 +79,18 @@ function hexToRgb(hex: string): [number, number, number] {
     : [26, 54, 93];
 }
 
+async function imageUrlToDataUrl(url: string): Promise<string> {
+  if (url.startsWith('data:')) return url;
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export async function generateDocumentPDF(data: DocumentData): Promise<Blob> {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = 210;
@@ -101,7 +113,8 @@ export async function generateDocumentPDF(data: DocumentData): Promise<Blob> {
 
   if (data.companyLogo && data.showLogo !== false) {
     try {
-      pdf.addImage(data.companyLogo, 'PNG', pageWidth / 2 - 12, 6, 24, 24);
+      const logoDataUrl = await imageUrlToDataUrl(data.companyLogo);
+      pdf.addImage(logoDataUrl, pageWidth / 2 - 12, 6, 24, 24);
     } catch (error) {
       console.warn('Unable to render company logo in PDF', error);
     }
