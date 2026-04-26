@@ -12,7 +12,7 @@ const FlightVoucherDialog: React.FC<Props> = ({ open, booking, onClose }) => {
   const { data: org } = useCurrentOrganization();
   if (!open) return null;
   const orgName = org?.name || 'مؤسستي';
-  const orgContact = [org?.address, org?.phone, org?.email].filter(Boolean).join(' | ');
+  const orgContact = [org?.address, org?.phone && `تليفون: ${org.phone}`, org?.email, org?.website].filter(Boolean).join(' | ');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -39,6 +39,9 @@ const FlightVoucherDialog: React.FC<Props> = ({ open, booking, onClose }) => {
           <p><strong>من:</strong> {booking.departure_airport?.name}</p>
           <p><strong>إلى:</strong> {booking.arrival_airport?.name}</p>
         </div>
+        {org?.footer_text && (
+          <div className="text-center text-xs text-gray-500 border-t mt-4 pt-3">{org.footer_text}</div>
+        )}
       </div>
     </div>
   );
