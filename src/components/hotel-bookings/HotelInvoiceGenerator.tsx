@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer, Download } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
+import { useCurrentOrganization } from "@/hooks/useCurrentOrganization";
 
 interface HotelInvoiceGeneratorProps {
   booking: HotelBooking;
