@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
+import { useCurrentOrganization } from "@/hooks/useCurrentOrganization";
 
 interface HotelSupplierPaymentGeneratorProps {
   booking: HotelBooking;
@@ -22,6 +23,10 @@ const escapeHtml = (unsafe: string | null | undefined): string => {
 
 const HotelSupplierPaymentGenerator = ({ booking, onClose }: HotelSupplierPaymentGeneratorProps) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: org } = useCurrentOrganization();
+  const orgName = org?.name || 'مؤسستي';
+  const orgLogo = org?.logo_url || '';
+  const orgContact = [org?.address, org?.phone && `تليفون: ${org.phone}`, org?.email, org?.website].filter(Boolean).join(' | ');
 
   const handlePrint = () => {
     if (printRef.current) {
@@ -74,11 +79,9 @@ const HotelSupplierPaymentGenerator = ({ booking, onClose }: HotelSupplierPaymen
         <div ref={printRef} className="p-6 bg-white" dir="rtl">
           {/* Header */}
           <div className="text-center border-b-2 border-gray-800 pb-6 mb-8">
-            <div className="text-3xl font-bold text-blue-600 mb-2">Vogantra</div>
-            <div className="text-lg text-gray-600">شركة فوجاتشي للسياحة والسفر</div>
-            <div className="text-sm text-gray-500 mt-2">
-              العنوان: شارع الهرم - الجيزة | تليفون: 01103442881 | hello@vogantra.com
-            </div>
+            {orgLogo && <img src={orgLogo} alt={orgName} className="h-16 mx-auto mb-3 object-contain" />}
+            <div className="text-3xl font-bold text-blue-600 mb-2">{orgName}</div>
+            {orgContact && <div className="text-sm text-gray-500 mt-2">{orgContact}</div>}
           </div>
 
           {/* Payment Order Title */}
@@ -244,7 +247,7 @@ const HotelSupplierPaymentGenerator = ({ booking, onClose }: HotelSupplierPaymen
 
           {/* Footer */}
           <div className="text-center mt-12 pt-6 border-t border-gray-300 text-gray-600">
-            <div className="mb-2">شركة فوجاتشي للسياحة والسفر</div>
+            <div className="mb-2">{org?.footer_text || orgName}</div>
             <div className="text-sm">إدارة الحسابات والمدفوعات</div>
           </div>
         </div>

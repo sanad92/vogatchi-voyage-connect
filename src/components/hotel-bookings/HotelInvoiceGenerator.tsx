@@ -29,6 +29,7 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
   const orgEmail = org?.email || '';
   const orgAddress = org?.address || '';
   const orgLogo = org?.logo_url || '';
+  const orgFooter = org?.footer_text || `شكراً لاختياركم ${orgName}`;
 
   const handlePrint = () => {
     if (printRef.current) {
@@ -231,7 +232,7 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
 
           {/* Footer */}
           <div className="text-center mt-12 pt-6 border-t border-gray-300 text-gray-600">
-            <div className="mb-2">شكراً لاختياركم {orgName}</div>
+            <div className="mb-2">{orgFooter}</div>
             <div className="text-sm">نتمنى لكم رحلة ممتعة وإقامة مريحة</div>
           </div>
         </div>
