@@ -227,7 +227,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 
         <div class="footer">
             <p>شكراً لثقتكم في خدماتنا</p>
-            <p>Vogantra - وكالة سياحة وسفر</p>
+            <p>${orgName}</p>
             <p>تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
         </div>
     </div>
