@@ -67,6 +67,15 @@ const UnifiedBookingStatusSelector = ({
           throw new Error('Invalid booking type');
       }
       
+      // جلب organization_id للحجز قبل التحديث (لازم لسجل التاريخ)
+      const { data: bookingRow, error: fetchErr } = await supabase
+        .from(tableName)
+        .select('organization_id')
+        .eq('id', bookingId)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      const orgId = (bookingRow as any)?.organization_id;
+
       // تحديث حالة الحجز
       const { error: updateError } = await supabase
         .from(tableName)
@@ -78,17 +87,22 @@ const UnifiedBookingStatusSelector = ({
       
       if (updateError) throw updateError;
 
-      // إضافة سجل في تاريخ تغيير الحالات
+      // إضافة سجل في تاريخ تغيير الحالات (مع organization_id لاجتياز RLS)
+      const { data: userData } = await supabase.auth.getUser();
       const { error: historyError } = await supabase
         .from('booking_status_history')
         .insert({
           booking_id: bookingId,
           status_id: statusId,
-          changed_by: (await supabase.auth.getUser()).data.user?.id,
-          notes: notes.trim() || null
-        });
+          changed_by: userData.user?.id,
+          notes: notes.trim() || null,
+          organization_id: orgId,
+        } as any);
       
-      if (historyError) throw historyError;
+      if (historyError) {
+        // لا نُفشل العملية إن فشل السجل التاريخي فقط
+        console.warn('Failed to write status history:', historyError);
+      }
     },
     onSuccess: () => {
       toast.success('تم تحديث حالة الحجز بنجاح');
@@ -109,9 +123,14 @@ const UnifiedBookingStatusSelector = ({
       setNotes("");
       onStatusUpdate?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating booking status:', error);
-      toast.error('خطأ في تحديث حالة الحجز');
+      const msg = error?.message || error?.details || '';
+      if (error?.code === '42501' || /row-level security/i.test(msg)) {
+        toast.error('ليس لديك صلاحية تغيير حالة هذا الحجز');
+      } else {
+        toast.error(msg || 'خطأ في تحديث حالة الحجز');
+      }
     }
   });
 

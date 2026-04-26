@@ -6,6 +6,7 @@ import { FileText, Download } from "lucide-react";
 import { HotelBooking, BookingSpecialRequest } from "@/types/hotelBooking";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useCurrentOrganization } from "@/hooks/useCurrentOrganization";
 
 interface HotelVoucherGeneratorProps {
   booking: HotelBooking;
@@ -15,6 +16,10 @@ interface HotelVoucherGeneratorProps {
 const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps) => {
   const [specialRequests, setSpecialRequests] = useState<BookingSpecialRequest[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const { data: org } = useCurrentOrganization();
+  const orgName = org?.name || 'مؤسستي';
+  const orgLogo = org?.logo_url || '';
+  const orgContact = [org?.address, org?.phone, org?.email].filter(Boolean).join(' | ');
 
   useEffect(() => {
     const fetchSpecialRequests = async () => {
@@ -97,9 +102,11 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 <body>
     <div class="voucher">
         <div class="header">
-            <div class="company-name">Vogantra</div>
+            ${orgLogo ? `<img src="${orgLogo}" alt="${orgName}" style="height:60px;margin-bottom:10px;object-fit:contain;" />` : ''}
+            <div class="company-name">${orgName}</div>
             <div class="voucher-title">فاوتشر حجز فندق</div>
             <div class="booking-number">رقم الحجز: ${booking.internal_booking_number}</div>
+            ${orgContact ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;">${orgContact}</div>` : ''}
         </div>
 
         <div class="section">
@@ -220,7 +227,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 
         <div class="footer">
             <p>شكراً لثقتكم في خدماتنا</p>
-            <p>Vogantra - وكالة سياحة وسفر</p>
+            <p>${orgName}</p>
             <p>تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
         </div>
     </div>

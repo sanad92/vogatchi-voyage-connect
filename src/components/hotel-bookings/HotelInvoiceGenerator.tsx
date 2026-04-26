@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer, Download } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
+import { useCurrentOrganization } from "@/hooks/useCurrentOrganization";
 
 interface HotelInvoiceGeneratorProps {
   booking: HotelBooking;
@@ -22,6 +23,12 @@ const escapeHtml = (unsafe: string | null | undefined): string => {
 
 const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: org } = useCurrentOrganization();
+  const orgName = org?.name || 'مؤسستي';
+  const orgPhone = org?.phone || '';
+  const orgEmail = org?.email || '';
+  const orgAddress = org?.address || '';
+  const orgLogo = org?.logo_url || '';
 
   const handlePrint = () => {
     if (printRef.current) {
@@ -76,11 +83,15 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
         <div ref={printRef} className="p-6 bg-white" dir="rtl">
           {/* Header */}
           <div className="text-center border-b-2 border-gray-800 pb-6 mb-8">
-            <div className="text-3xl font-bold text-blue-600 mb-2">Vogantra</div>
-            <div className="text-lg text-gray-600">شركة فوجاتشي للسياحة والسفر</div>
-            <div className="text-sm text-gray-500 mt-2">
-              العنوان: شارع الهرم - الجيزة | تليفون: 01103442881 | hello@vogantra.com
-            </div>
+            {orgLogo && (
+              <img src={orgLogo} alt={orgName} className="h-16 mx-auto mb-3 object-contain" />
+            )}
+            <div className="text-3xl font-bold text-blue-600 mb-2">{orgName}</div>
+            {(orgAddress || orgPhone || orgEmail) && (
+              <div className="text-sm text-gray-500 mt-2">
+                {[orgAddress, orgPhone && `تليفون: ${orgPhone}`, orgEmail].filter(Boolean).join(' | ')}
+              </div>
+            )}
           </div>
 
           {/* Invoice Title */}
@@ -220,7 +231,7 @@ const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps)
 
           {/* Footer */}
           <div className="text-center mt-12 pt-6 border-t border-gray-300 text-gray-600">
-            <div className="mb-2">شكراً لاختياركم شركة فوجاتشي للسياحة والسفر</div>
+            <div className="mb-2">شكراً لاختياركم {orgName}</div>
             <div className="text-sm">نتمنى لكم رحلة ممتعة وإقامة مريحة</div>
           </div>
         </div>

@@ -44,6 +44,7 @@ const BookingStatusSelector = ({ bookingId, currentStatus, onStatusUpdate }: Boo
       const { error } = await supabase
         .rpc('update_booking_status', {
           p_booking_id: bookingId,
+          p_booking_type: 'hotel',
           p_status_id: statusId,
           p_notes: notes.trim() || null
         });
@@ -59,9 +60,14 @@ const BookingStatusSelector = ({ bookingId, currentStatus, onStatusUpdate }: Boo
       setNotes("");
       onStatusUpdate?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating booking status:', error);
-      toast.error('خطأ في تحديث حالة الحجز');
+      const msg = error?.message || '';
+      if (error?.code === '42501' || /row-level security/i.test(msg)) {
+        toast.error('ليس لديك صلاحية تغيير حالة هذا الحجز');
+      } else {
+        toast.error(msg || 'خطأ في تحديث حالة الحجز');
+      }
     }
   });
 
