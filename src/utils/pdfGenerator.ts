@@ -99,6 +99,14 @@ export async function generateDocumentPDF(data: DocumentData): Promise<Blob> {
   pdf.setFont('helvetica', 'bold');
   pdf.text(data.companyName, margin, 18);
 
+  if (data.companyLogo && data.showLogo !== false) {
+    try {
+      pdf.addImage(data.companyLogo, 'PNG', pageWidth / 2 - 12, 6, 24, 24);
+    } catch (error) {
+      console.warn('Unable to render company logo in PDF', error);
+    }
+  }
+
   // Company contact info
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'normal');
