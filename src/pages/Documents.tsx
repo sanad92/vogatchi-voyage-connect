@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import type { DocumentData, DocumentItem } from '@/utils/pdfGenerator';
 import { generateDocumentPDF } from '@/utils/pdfGenerator';
-import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
 
 const DOC_TYPES: Record<string, { label: string; icon: any; color: string }> = {
   invoice: { label: 'فاتورة', icon: Receipt, color: 'bg-blue-100 text-blue-700' },
@@ -27,7 +27,7 @@ const DOC_TYPES: Record<string, { label: string; icon: any; color: string }> = {
 
 const Documents = () => {
   const { documents, isLoading, generateAndSave, downloadDocument, deleteDocument, saveTemplate, getTemplate } = useDocuments();
-  const { currentOrganization } = useOrganization();
+  const { data: currentOrganization } = useCurrentOrganization();
   const [showCreate, setShowCreate] = useState(false);
   const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -93,10 +93,12 @@ const Documents = () => {
       customerName: form.customerName || 'عميل',
       customerPhone: form.customerPhone,
       customerEmail: form.customerEmail,
-      companyName: currentOrganization?.name || 'Vogatchi Trips',
+      companyName: currentOrganization?.name || 'مؤسستي',
+      companyLogo: currentOrganization?.logo_url || undefined,
       companyPhone: currentOrganization?.phone || '',
       companyEmail: currentOrganization?.email || '',
       companyAddress: currentOrganization?.address || '',
+      footerText: currentOrganization?.footer_text || undefined,
       items: items,
       subtotal: form.subtotal || 0,
       totalAmount: form.totalAmount || 0,
@@ -131,10 +133,12 @@ const Documents = () => {
       customerName: form.customerName || 'عميل',
       customerPhone: form.customerPhone,
       customerEmail: form.customerEmail,
-      companyName: currentOrganization?.name || 'Vogatchi Trips',
+      companyName: currentOrganization?.name || 'مؤسستي',
+      companyLogo: currentOrganization?.logo_url || undefined,
       companyPhone: currentOrganization?.phone || '',
       companyEmail: currentOrganization?.email || '',
       companyAddress: currentOrganization?.address || '',
+      footerText: currentOrganization?.footer_text || undefined,
       items: items,
       subtotal: form.subtotal || 0,
       totalAmount: form.totalAmount || 0,
