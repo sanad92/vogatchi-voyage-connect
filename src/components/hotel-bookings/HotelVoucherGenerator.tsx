@@ -19,7 +19,8 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
   const { data: org } = useCurrentOrganization();
   const orgName = org?.name || 'مؤسستي';
   const orgLogo = org?.logo_url || '';
-  const orgContact = [org?.address, org?.phone, org?.email].filter(Boolean).join(' | ');
+  const orgContact = [org?.address, org?.phone && `تليفون: ${org.phone}`, org?.email, org?.website].filter(Boolean).join(' | ');
+  const orgFooter = org?.footer_text || 'شكراً لثقتكم في خدماتنا';
 
   useEffect(() => {
     const fetchSpecialRequests = async () => {
@@ -226,7 +227,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
         ` : ''}
 
         <div class="footer">
-            <p>شكراً لثقتكم في خدماتنا</p>
+            <p>${orgFooter}</p>
             <p>${orgName}</p>
             <p>تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
         </div>
