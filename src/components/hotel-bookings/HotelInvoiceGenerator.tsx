@@ -23,6 +23,12 @@ const escapeHtml = (unsafe: string | null | undefined): string => {
 
 const HotelInvoiceGenerator = ({ booking, onClose }: HotelInvoiceGeneratorProps) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: org } = useCurrentOrganization();
+  const orgName = org?.name || 'مؤسستي';
+  const orgPhone = org?.phone || '';
+  const orgEmail = org?.email || '';
+  const orgAddress = org?.address || '';
+  const orgLogo = org?.logo_url || '';
 
   const handlePrint = () => {
     if (printRef.current) {
