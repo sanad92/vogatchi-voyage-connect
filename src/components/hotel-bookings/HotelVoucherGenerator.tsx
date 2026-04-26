@@ -6,6 +6,7 @@ import { FileText, Download } from "lucide-react";
 import { HotelBooking, BookingSpecialRequest } from "@/types/hotelBooking";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useCurrentOrganization } from "@/hooks/useCurrentOrganization";
 
 interface HotelVoucherGeneratorProps {
   booking: HotelBooking;
@@ -15,6 +16,10 @@ interface HotelVoucherGeneratorProps {
 const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps) => {
   const [specialRequests, setSpecialRequests] = useState<BookingSpecialRequest[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const { data: org } = useCurrentOrganization();
+  const orgName = org?.name || 'مؤسستي';
+  const orgLogo = org?.logo_url || '';
+  const orgContact = [org?.address, org?.phone, org?.email].filter(Boolean).join(' | ');
 
   useEffect(() => {
     const fetchSpecialRequests = async () => {
