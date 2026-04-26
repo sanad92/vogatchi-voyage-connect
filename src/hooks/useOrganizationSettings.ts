@@ -72,6 +72,7 @@ export function useOrganizationSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-settings', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['current-organization', orgId] });
       toast.success('تم حفظ إعدادات المؤسسة بنجاح');
     },
     onError: (error: any) => {
