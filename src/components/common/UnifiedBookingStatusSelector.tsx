@@ -123,9 +123,14 @@ const UnifiedBookingStatusSelector = ({
       setNotes("");
       onStatusUpdate?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating booking status:', error);
-      toast.error('خطأ في تحديث حالة الحجز');
+      const msg = error?.message || error?.details || '';
+      if (error?.code === '42501' || /row-level security/i.test(msg)) {
+        toast.error('ليس لديك صلاحية تغيير حالة هذا الحجز');
+      } else {
+        toast.error(msg || 'خطأ في تحديث حالة الحجز');
+      }
     }
   });
 
