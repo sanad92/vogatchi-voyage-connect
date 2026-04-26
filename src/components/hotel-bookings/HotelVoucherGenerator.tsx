@@ -102,9 +102,11 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 <body>
     <div class="voucher">
         <div class="header">
-            <div class="company-name">Vogantra</div>
+            ${orgLogo ? `<img src="${orgLogo}" alt="${orgName}" style="height:60px;margin-bottom:10px;object-fit:contain;" />` : ''}
+            <div class="company-name">${orgName}</div>
             <div class="voucher-title">فاوتشر حجز فندق</div>
             <div class="booking-number">رقم الحجز: ${booking.internal_booking_number}</div>
+            ${orgContact ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;">${orgContact}</div>` : ''}
         </div>
 
         <div class="section">
