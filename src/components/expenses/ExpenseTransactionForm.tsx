@@ -48,10 +48,12 @@ const ExpenseTransactionForm = ({
   const selectedCategoryId = watch('category_id');
 
   const handleFormSubmit = (data: any) => {
-    // إضافة معرف الموظف المنشئ
+    if (!data.category_id || data.category_id === 'none' || data.category_id.trim() === '') {
+      return;
+    }
     const formDataWithEmployee = {
       ...data,
-      created_by: getCurrentEmployeeId(),
+      created_by_employee_id: getCurrentEmployeeId(),
       created_by_name: getCurrentEmployeeName()
     };
     onSubmit(formDataWithEmployee);

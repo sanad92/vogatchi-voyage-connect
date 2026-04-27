@@ -15,6 +15,7 @@ const ExpenseOverview = () => {
     expenseTransactions, 
     monthlySalaries, 
     expenseCategories,
+    rentPayments,
     transactionsLoading 
   } = useExpenses();
   
@@ -25,6 +26,7 @@ const ExpenseOverview = () => {
     totalExpenses: 0,
     totalSalaries: 0,
     totalRent: 0,
+    rentCount: 0,
     monthlyChange: 0
   });
 
@@ -32,6 +34,7 @@ const ExpenseOverview = () => {
   const calculateSummary = async () => {
     const currentDate = new Date();
     let startDate: Date;
+    let endDate: Date | null = null;
     
     switch (selectedPeriod) {
       case 'thisMonth':
@@ -39,6 +42,7 @@ const ExpenseOverview = () => {
         break;
       case 'lastMonth':
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0, 23, 59, 59);
         break;
       case 'thisYear':
         startDate = new Date(currentDate.getFullYear(), 0, 1);
@@ -50,54 +54,74 @@ const ExpenseOverview = () => {
     let totalExpenses = 0;
     let totalSalaries = 0;
     let totalRent = 0;
+    let rentCount = 0;
 
-    // حساب المصروفات العامة
+    const inRange = (d: Date) => d >= startDate && (!endDate || d <= endDate);
+
+    // المصروفات العامة (المعتمدة فقط)
     if (expenseTransactions) {
       for (const transaction of expenseTransactions) {
+        if (transaction.status !== 'approved') continue;
         const transactionDate = new Date(transaction.transaction_date);
-        if (transactionDate >= startDate) {
-          if (transaction.currency && transaction.currency !== 'EGP') {
-            const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency as SupportedCurrency);
-            totalExpenses += amountInEGP;
-          } else {
-            totalExpenses += transaction.amount;
-          }
+        if (!inRange(transactionDate)) continue;
+        if (transaction.currency && transaction.currency !== 'EGP') {
+          const amountInEGP = await convertToPrimaryCurrency(transaction.amount, transaction.currency as SupportedCurrency);
+          totalExpenses += amountInEGP;
+        } else {
+          totalExpenses += transaction.amount;
         }
       }
     }
 
-    // حساب الرواتب
+    // الرواتب (المدفوعة فقط)
     if (monthlySalaries) {
       for (const salary of monthlySalaries) {
+        if (salary.status !== 'paid') continue;
         const salaryDate = new Date(salary.salary_month);
-        if (salaryDate >= startDate) {
-          if (salary.net_salary_egp) {
-            totalSalaries += salary.net_salary_egp;
-          } else if (salary.currency && salary.currency !== 'EGP') {
-            const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency as SupportedCurrency);
-            totalSalaries += amountInEGP;
-          } else {
-            totalSalaries += salary.net_salary;
-          }
+        if (!inRange(salaryDate)) continue;
+        if (salary.net_salary_egp) {
+          totalSalaries += salary.net_salary_egp;
+        } else if (salary.currency && salary.currency !== 'EGP') {
+          const amountInEGP = await convertToPrimaryCurrency(salary.net_salary, salary.currency as SupportedCurrency);
+          totalSalaries += amountInEGP;
+        } else {
+          totalSalaries += salary.net_salary;
         }
       }
     }
 
-    // ملاحظة: سيتم حساب الإيجارات لاحقاً عندما يتم دمج useRentPayments في useExpenses
+    // الإيجارات (المدفوعة فقط)
+    if (rentPayments) {
+      for (const payment of rentPayments) {
+        if (payment.status !== 'paid') continue;
+        const dateStr = payment.payment_date || payment.payment_month;
+        if (!dateStr) continue;
+        const payDate = new Date(dateStr);
+        if (!inRange(payDate)) continue;
+        rentCount += 1;
+        if (payment.amount_egp) {
+          totalRent += payment.amount_egp;
+        } else if (payment.currency && payment.currency !== 'EGP') {
+          const amountInEGP = await convertToPrimaryCurrency(payment.amount, payment.currency as SupportedCurrency);
+          totalRent += amountInEGP;
+        } else {
+          totalRent += payment.amount;
+        }
+      }
+    }
 
     setSummary({
       totalExpenses,
       totalSalaries,
       totalRent,
-      monthlyChange: 0 // يمكن حساب التغيير الشهري لاحقاً
+      rentCount,
+      monthlyChange: 0
     });
   };
 
   useEffect(() => {
-    if (expenseTransactions && monthlySalaries) {
-      calculateSummary();
-    }
-  }, [selectedPeriod, expenseTransactions, monthlySalaries]);
+    calculateSummary();
+  }, [selectedPeriod, expenseTransactions, monthlySalaries, rentPayments]);
 
   if (transactionsLoading) {
     return <div className="flex justify-center items-center h-64">جاري التحميل...</div>;
@@ -210,24 +234,26 @@ const ExpenseOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">الرواتب</span>
-                <span className="text-sm text-gray-600">
-                  {((summary.totalSalaries / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">المصروفات العامة</span>
-                <span className="text-sm text-gray-600">
-                  {((summary.totalExpenses / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">الإيجارات</span>
-                <span className="text-sm text-gray-600">
-                  {((summary.totalRent / (summary.totalExpenses + summary.totalSalaries + summary.totalRent)) * 100).toFixed(1)}%
-                </span>
-              </div>
+              {(() => {
+                const total = summary.totalExpenses + summary.totalSalaries + summary.totalRent;
+                const pct = (n: number) => total > 0 ? ((n / total) * 100).toFixed(1) : '0.0';
+                return (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">الرواتب</span>
+                      <span className="text-sm text-gray-600">{pct(summary.totalSalaries)}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">المصروفات العامة</span>
+                      <span className="text-sm text-gray-600">{pct(summary.totalExpenses)}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">الإيجارات</span>
+                      <span className="text-sm text-gray-600">{pct(summary.totalRent)}%</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -255,7 +281,7 @@ const ExpenseOverview = () => {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">0</p>
+            <p className="text-2xl font-bold text-gray-900">{summary.rentCount}</p>
             <p className="text-sm text-gray-600">دفعة إيجار</p>
           </CardContent>
         </Card>
