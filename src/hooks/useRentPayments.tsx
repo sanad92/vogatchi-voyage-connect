@@ -5,40 +5,39 @@ import { toast } from 'sonner';
 import type { RentPayment } from '@/types/expenses';
 import { useExchangeRates } from './useExchangeRates';
 import { SupportedCurrency } from '@/types/currency';
+import { useOrgId } from './useOrgId';
 
 export const useRentPayments = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
   const { convertToPrimaryCurrency, getCurrentRate } = useExchangeRates();
 
-  // جلب مدفوعات الإيجار
   const { data: rentPayments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['rent-payments'],
+    queryKey: ['rent-payments', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rent_payments')
-        .select(`
-          *,
-          contract:rent_contracts(contract_number, property_address, landlord_name)
-        `)
+        .select(`*, contract:rent_contracts(contract_number, property_address, landlord_name)`)
         .order('payment_month', { ascending: false });
 
+      if (orgId) query = query.eq('organization_id', orgId);
+
+      const { data, error } = await query;
       if (error) throw error;
-      
-      // تحويل البيانات إلى النوع المطلوب مع إضافة الحقول الناقصة
-      return data?.map(payment => ({
+
+      return (data || []).map((payment: any) => ({
         ...payment,
-        amount_egp: payment.amount_egp || payment.amount, // fallback للقيم القديمة
+        amount_egp: payment.amount_egp || payment.amount,
         exchange_rate: payment.exchange_rate || 1,
       })) as (RentPayment & { contract?: any })[];
     },
+    enabled: !!orgId,
   });
 
-  // إضافة دفعة إيجار جديدة مع دعم العملات المتعددة
   const { mutateAsync: addRentPayment, isPending: isAddingPayment } = useMutation({
-    mutationFn: async (paymentData: Omit<RentPayment, 'id' | 'created_at' | 'updated_at'> & { 
-      currency?: SupportedCurrency 
+    mutationFn: async (paymentData: Omit<RentPayment, 'id' | 'created_at' | 'updated_at'> & {
+      currency?: SupportedCurrency;
     }) => {
-      // إذا كانت العملة مختلفة عن الجنيه المصري، احسب المبلغ بالجنيه
       let amountEGP = paymentData.amount;
       let exchangeRate = 1;
 
@@ -47,15 +46,19 @@ export const useRentPayments = () => {
         amountEGP = await convertToPrimaryCurrency(paymentData.amount, paymentData.currency);
       }
 
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      const insertPayload: any = {
+        ...paymentData,
+        currency: paymentData.currency || 'EGP',
+        exchange_rate: exchangeRate,
+        amount_egp: amountEGP,
+        created_by: userId,
+        organization_id: orgId,
+      };
+
       const { data, error } = await supabase
         .from('rent_payments')
-        .insert({
-          ...paymentData,
-          currency: paymentData.currency || 'EGP',
-          exchange_rate: exchangeRate,
-          amount_egp: amountEGP,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
@@ -66,16 +69,15 @@ export const useRentPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['rent-payments'] });
       toast.success('تم إضافة دفعة الإيجار بنجاح');
     },
-    onError: (error) => {
-      toast.error('حدث خطأ في إضافة دفعة الإيجار');
+    onError: (error: any) => {
+      toast.error('حدث خطأ في إضافة دفعة الإيجار: ' + (error?.message || ''));
       console.error('Error adding rent payment:', error);
     },
   });
 
-  // تحديث حالة دفعة الإيجار
   const { mutateAsync: updatePaymentStatus, isPending: isUpdatingPayment } = useMutation({
-    mutationFn: async ({ id, status, payment_date }: { 
-      id: string; 
+    mutationFn: async ({ id, status, payment_date }: {
+      id: string;
       status: 'pending' | 'paid' | 'overdue' | 'cancelled';
       payment_date?: string;
     }) => {
@@ -93,9 +95,11 @@ export const useRentPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['rent-payments'] });
       toast.success('تم تحديث حالة الدفعة بنجاح');
     },
+    onError: (error: any) => {
+      toast.error('حدث خطأ: ' + (error?.message || ''));
+    },
   });
 
-  // حساب إجمالي المدفوعات بالجنيه المصري
   const calculateTotalPaymentsInEGP = async (payments: RentPayment[]) => {
     let total = 0;
     for (const payment of payments) {

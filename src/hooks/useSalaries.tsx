@@ -12,7 +12,12 @@ export const useSalaries = () => {
   const { data: monthlySalaries, isLoading: salariesLoading } = useQuery({
     queryKey: ['monthly-salaries', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('monthly_salaries').select(`*, employee:employees(full_name, employee_code, position)`).order('created_at', { ascending: false });
+      let query = supabase
+        .from('monthly_salaries')
+        .select(`*, employee:employees(full_name, employee_code, position)`)
+        .order('created_at', { ascending: false });
+      if (orgId) query = query.eq('organization_id', orgId);
+      const { data, error } = await query;
       if (error) throw error;
       return data as (MonthlySalary & { employee?: any })[];
     },

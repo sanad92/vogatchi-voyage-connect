@@ -4240,6 +4240,7 @@ export type Database = {
           net_salary: number | null
           net_salary_egp: number | null
           notes: string | null
+          organization_id: string
           overtime_amount: number | null
           overtime_hours: number | null
           overtime_rate: number | null
@@ -4270,6 +4271,7 @@ export type Database = {
           net_salary?: number | null
           net_salary_egp?: number | null
           notes?: string | null
+          organization_id: string
           overtime_amount?: number | null
           overtime_hours?: number | null
           overtime_rate?: number | null
@@ -4300,6 +4302,7 @@ export type Database = {
           net_salary?: number | null
           net_salary_egp?: number | null
           notes?: string | null
+          organization_id?: string
           overtime_amount?: number | null
           overtime_hours?: number | null
           overtime_rate?: number | null
@@ -4323,6 +4326,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_salaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5013,6 +5023,7 @@ export type Database = {
           landlord_name: string
           landlord_phone: string | null
           monthly_rent: number
+          organization_id: string
           payment_day_of_month: number | null
           payment_method: string | null
           property_address: string | null
@@ -5037,6 +5048,7 @@ export type Database = {
           landlord_name: string
           landlord_phone?: string | null
           monthly_rent: number
+          organization_id: string
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
@@ -5061,6 +5073,7 @@ export type Database = {
           landlord_name?: string
           landlord_phone?: string | null
           monthly_rent?: number
+          organization_id?: string
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
@@ -5074,6 +5087,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_contracts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5092,6 +5112,7 @@ export type Database = {
           id: string
           late_fee: number | null
           notes: string | null
+          organization_id: string
           payment_date: string | null
           payment_method: string | null
           payment_month: string | null
@@ -5112,6 +5133,7 @@ export type Database = {
           id?: string
           late_fee?: number | null
           notes?: string | null
+          organization_id: string
           payment_date?: string | null
           payment_method?: string | null
           payment_month?: string | null
@@ -5132,6 +5154,7 @@ export type Database = {
           id?: string
           late_fee?: number | null
           notes?: string | null
+          organization_id?: string
           payment_date?: string | null
           payment_method?: string | null
           payment_month?: string | null
@@ -5152,6 +5175,13 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "rent_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

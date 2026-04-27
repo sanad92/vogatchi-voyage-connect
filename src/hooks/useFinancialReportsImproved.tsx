@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useExchangeRates } from './useExchangeRates';
+import { useOrgId } from './useOrgId';
 import { SupportedCurrency } from '@/types/currency';
 
 interface ExpenseBreakdown {
@@ -37,10 +38,11 @@ interface FinancialSummary {
 
 export const useFinancialReportsImproved = (startDate?: string, endDate?: string) => {
   const { convertToPrimaryCurrency } = useExchangeRates();
+  const orgId = useOrgId();
 
   // جلب ملخص الإيرادات
   const { data: revenueBreakdown, isLoading: revenueLoading } = useQuery({
-    queryKey: ['financial-revenue-breakdown', startDate, endDate],
+    queryKey: ['financial-revenue-breakdown', startDate, endDate, orgId],
     queryFn: async () => {
       console.log('جاري جلب تفاصيل الإيرادات...');
       
@@ -98,7 +100,7 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
 
   // جلب ملخص المصروفات
   const { data: expenseBreakdown, isLoading: expensesLoading } = useQuery({
-    queryKey: ['financial-expense-breakdown', startDate, endDate],
+    queryKey: ['financial-expense-breakdown', startDate, endDate, orgId],
     queryFn: async () => {
       console.log('جاري جلب تفاصيل المصروفات...');
       
@@ -175,7 +177,7 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
 
   // جلب ملخص الرواتب
   const { data: salariesSummary, isLoading: salariesLoading } = useQuery({
-    queryKey: ['financial-salaries-summary', startDate, endDate],
+    queryKey: ['financial-salaries-summary', startDate, endDate, orgId],
     queryFn: async () => {
       console.log('جاري جلب ملخص الرواتب...');
       
@@ -209,7 +211,7 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
 
   // جلب ملخص مدفوعات الإيجار
   const { data: rentPaymentsSummary, isLoading: rentLoading } = useQuery({
-    queryKey: ['financial-rent-summary', startDate, endDate],
+    queryKey: ['financial-rent-summary', startDate, endDate, orgId],
     queryFn: async () => {
       console.log('جاري جلب ملخص مدفوعات الإيجار...');
       
