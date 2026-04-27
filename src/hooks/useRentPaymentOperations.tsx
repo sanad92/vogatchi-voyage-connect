@@ -5,9 +5,11 @@ import { toast } from 'sonner';
 import type { RentPayment } from '@/types/expenses';
 import { useExchangeRates } from './useExchangeRates';
 import { SupportedCurrency } from '@/types/currency';
+import { useOrgId } from './useOrgId';
 
 export const useRentPaymentOperations = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
   const { convertToPrimaryCurrency, getCurrentRate } = useExchangeRates();
 
   const addRentPayment = useMutation({
@@ -33,16 +35,19 @@ export const useRentPaymentOperations = () => {
         }
       }
 
+      const insertPayload: any = {
+        ...paymentData,
+        currency: paymentData.currency || 'EGP',
+        exchange_rate: exchangeRate,
+        amount_egp: amountEGP,
+        status: paymentData.status || 'pending',
+        created_by: (await supabase.auth.getUser()).data.user?.id,
+        organization_id: orgId,
+      };
+
       const { data, error } = await supabase
         .from('rent_payments')
-        .insert({
-          ...paymentData,
-          currency: paymentData.currency || 'EGP',
-          exchange_rate: exchangeRate,
-          amount_egp: amountEGP,
-          status: paymentData.status || 'pending',
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        })
+        .insert(insertPayload)
         .select(`
           *,
           contract:rent_contracts(

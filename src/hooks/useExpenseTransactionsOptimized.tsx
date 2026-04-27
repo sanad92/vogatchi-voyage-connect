@@ -62,7 +62,7 @@ export const useExpenseTransactionsOptimized = (
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] }); queryClient.invalidateQueries({ queryKey: ['expense-categories'] }); toast.success('تم إضافة المعاملة المالية بنجاح'); },
-    onError: () => { toast.error('حدث خطأ أثناء إضافة المعاملة المالية'); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء إضافة المعاملة المالية: ' + (error?.message || '')); console.error('Insert expense error:', error); },
   });
 
   const updateTransactionMutation = useMutation({
@@ -73,7 +73,7 @@ export const useExpenseTransactionsOptimized = (
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] }); toast.success('تم تحديث المعاملة المالية بنجاح'); },
-    onError: () => { toast.error('حدث خطأ أثناء تحديث المعاملة المالية'); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء التحديث: ' + (error?.message || '')); console.error('Update expense error:', error); },
   });
 
   const deleteTransactionMutation = useMutation({
