@@ -40,9 +40,9 @@ const OptimizedExpenseTransactions = () => {
   // حالة الفلاتر والصفحات
   const [filters, setFilters] = useState({
     search: '',
-    categoryId: '',
-    status: '',
-    paymentMethod: '',
+    categoryId: 'all',
+    status: 'all',
+    paymentMethod: 'all',
     dateFrom: '',
     dateTo: '',
   });
@@ -104,9 +104,9 @@ const OptimizedExpenseTransactions = () => {
   const resetFilters = useCallback(() => {
     setFilters({
       search: '',
-      categoryId: '',
-      status: '',
-      paymentMethod: '',
+      categoryId: 'all',
+      status: 'all',
+      paymentMethod: 'all',
       dateFrom: '',
       dateTo: '',
     });
