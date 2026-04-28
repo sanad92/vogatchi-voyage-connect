@@ -71,7 +71,7 @@ const CampaignForm = ({
             <SelectValue placeholder="اختر القطاع المستهدف" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">جميع العملاء</SelectItem>
+            <SelectItem value="all">جميع العملاء</SelectItem>
             {customerSegments?.map((segment) => (
               <SelectItem key={segment.id} value={segment.id}>
                 {segment.name_ar}

@@ -40,9 +40,9 @@ const OptimizedExpenseTransactions = () => {
   // حالة الفلاتر والصفحات
   const [filters, setFilters] = useState({
     search: '',
-    categoryId: '',
-    status: '',
-    paymentMethod: '',
+    categoryId: 'all',
+    status: 'all',
+    paymentMethod: 'all',
     dateFrom: '',
     dateTo: '',
   });
@@ -104,9 +104,9 @@ const OptimizedExpenseTransactions = () => {
   const resetFilters = useCallback(() => {
     setFilters({
       search: '',
-      categoryId: '',
-      status: '',
-      paymentMethod: '',
+      categoryId: 'all',
+      status: 'all',
+      paymentMethod: 'all',
       dateFrom: '',
       dateTo: '',
     });
@@ -364,7 +364,7 @@ const OptimizedExpenseTransactions = () => {
                   <SelectValue placeholder="الفئة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الفئات</SelectItem>
+                  <SelectItem value="all">جميع الفئات</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
@@ -384,7 +384,7 @@ const OptimizedExpenseTransactions = () => {
                   <SelectValue placeholder="الحالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الحالات</SelectItem>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="pending">في الانتظار</SelectItem>
                   <SelectItem value="approved">معتمدة</SelectItem>
                   <SelectItem value="rejected">مرفوضة</SelectItem>
@@ -396,7 +396,7 @@ const OptimizedExpenseTransactions = () => {
                   <SelectValue placeholder="طريقة الدفع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الطرق</SelectItem>
+                  <SelectItem value="all">جميع الطرق</SelectItem>
                   <SelectItem value="cash">نقدي</SelectItem>
                   <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
                   <SelectItem value="credit_card">بطاقة ائتمان</SelectItem>

@@ -27,8 +27,8 @@ import { ar } from 'date-fns/locale';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
 
 const PeriodCommissionManagement = () => {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [employeeFilter, setEmployeeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [employeeFilter, setEmployeeFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('');
 
   const { employees } = useExpenses();
@@ -44,8 +44,8 @@ const PeriodCommissionManagement = () => {
 
   // تصفية البيانات
   const filteredCommissions = commissionPeriods?.filter(commission => {
-    const matchesStatus = !statusFilter || commission.status === statusFilter;
-    const matchesEmployee = !employeeFilter || commission.employee_id === employeeFilter;
+    const matchesStatus = statusFilter === 'all' || commission.status === statusFilter;
+    const matchesEmployee = employeeFilter === 'all' || commission.employee_id === employeeFilter;
     const matchesPeriod = !selectedPeriod || commission.created_at.includes(selectedPeriod);
     
     return matchesStatus && matchesEmployee && matchesPeriod;
@@ -128,7 +128,7 @@ const PeriodCommissionManagement = () => {
                   <SelectValue placeholder="جميع الحالات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الحالات</SelectItem>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="pending">معلقة</SelectItem>
                   <SelectItem value="paid">مدفوعة</SelectItem>
                   <SelectItem value="cancelled">ملغاة</SelectItem>
@@ -143,7 +143,7 @@ const PeriodCommissionManagement = () => {
                   <SelectValue placeholder="جميع الموظفين" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الموظفين</SelectItem>
+                  <SelectItem value="all">جميع الموظفين</SelectItem>
                   {employees?.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name} - {employee.employee_code}

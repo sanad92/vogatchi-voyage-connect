@@ -29,9 +29,9 @@ export const useExpenseTransactionsOptimized = (
     queryFn: async () => {
       let query = supabase.from('expense_transactions').select(`*, expense_categories!inner(id, name, name_ar, color)`, { count: 'exact' });
       if (filters.search) query = query.or(`description.ilike.%${filters.search}%,transaction_number.ilike.%${filters.search}%,vendor_name.ilike.%${filters.search}%`);
-      if (filters.categoryId) query = query.eq('category_id', filters.categoryId);
-      if (filters.status) query = query.eq('status', filters.status);
-      if (filters.paymentMethod) query = query.eq('payment_method', filters.paymentMethod);
+      if (filters.categoryId && filters.categoryId !== 'all') query = query.eq('category_id', filters.categoryId);
+      if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status);
+      if (filters.paymentMethod && filters.paymentMethod !== 'all') query = query.eq('payment_method', filters.paymentMethod);
       if (filters.dateFrom) query = query.gte('transaction_date', filters.dateFrom);
       if (filters.dateTo) query = query.lte('transaction_date', filters.dateTo);
       const startIndex = (page - 1) * pageSize;
