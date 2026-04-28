@@ -16,10 +16,10 @@ const CommissionReports = () => {
   const { commissionPeriods } = usePeriodCommissions();
   const [reportType, setReportType] = useState('monthly');
   const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7));
-  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState('all');
 
   const filteredCommissions = commissionPeriods?.filter(commission => {
-    const matchesEmployee = !selectedEmployee || commission.employee_id === selectedEmployee;
+    const matchesEmployee = selectedEmployee === 'all' || commission.employee_id === selectedEmployee;
     const commissionDate = new Date(commission.created_at);
     
     let matchesPeriod = true;
