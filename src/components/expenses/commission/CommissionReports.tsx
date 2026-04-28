@@ -95,7 +95,7 @@ const CommissionReports = () => {
                   <SelectValue placeholder="جميع الموظفين" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الموظفين</SelectItem>
+                  <SelectItem value="all">جميع الموظفين</SelectItem>
                   {employees?.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name} - {employee.employee_code}

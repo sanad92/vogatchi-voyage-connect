@@ -128,7 +128,7 @@ const PeriodCommissionManagement = () => {
                   <SelectValue placeholder="جميع الحالات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الحالات</SelectItem>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="pending">معلقة</SelectItem>
                   <SelectItem value="paid">مدفوعة</SelectItem>
                   <SelectItem value="cancelled">ملغاة</SelectItem>
@@ -143,7 +143,7 @@ const PeriodCommissionManagement = () => {
                   <SelectValue placeholder="جميع الموظفين" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الموظفين</SelectItem>
+                  <SelectItem value="all">جميع الموظفين</SelectItem>
                   {employees?.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name} - {employee.employee_code}

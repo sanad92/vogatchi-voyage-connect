@@ -97,7 +97,7 @@ const CustomerSelectionStep = ({
                   <SelectValue placeholder="جميع أنواع الحجوزات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الأنواع</SelectItem>
+                  <SelectItem value="all">جميع الأنواع</SelectItem>
                   <SelectItem value="hotel">حجز فندق</SelectItem>
                   <SelectItem value="flight">حجز طيران</SelectItem>
                   <SelectItem value="transport">حجز نقل</SelectItem>
