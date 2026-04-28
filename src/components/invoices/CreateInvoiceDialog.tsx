@@ -19,7 +19,7 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [bookingType, setBookingType] = useState("");
+  const [bookingType, setBookingType] = useState("all");
   
   const [formData, setFormData] = useState({
     subtotal: 0,
