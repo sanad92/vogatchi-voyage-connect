@@ -66,16 +66,17 @@ export const useTrialBalance = (endDate?: string) => {
   });
 };
 
-export const useIncomeStatement = (startDate: string, endDate: string) => {
+export const useIncomeStatement = (startDate: string, endDate: string, currency?: string) => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['income-statement', orgId, startDate, endDate],
+    queryKey: ['income-statement', orgId, startDate, endDate, currency || 'all'],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await supabase.rpc('get_income_statement', {
+      const { data, error } = await (supabase.rpc as any)('get_income_statement', {
         _org_id: orgId,
         _start_date: startDate,
         _end_date: endDate,
+        _currency: currency || null,
       });
       if (error) throw error;
       return (data || []) as IncomeStatementRow[];
