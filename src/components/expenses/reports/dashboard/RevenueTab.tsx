@@ -35,13 +35,8 @@ const RevenueTab = ({ startDate, endDate }: RevenueTabProps) => {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-green-600">
-                    <EgyptianPoundDisplay amount={item.total_revenue_egp} />
+                    {item.total_revenue.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} {item.currency}
                   </p>
-                  {item.currency !== 'EGP' && (
-                    <p className="text-xs text-gray-500">
-                      {item.total_revenue.toLocaleString()} {item.currency}
-                    </p>
-                  )}
                 </div>
               </div>
             ))}
