@@ -1,76 +1,41 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface FinancialSummary {
-  total_revenue_egp: number;
-  total_expenses_egp: number;
-  total_salaries_egp: number;
-  total_rent_payments_egp: number;
-  net_profit_egp: number;
-  period_start: string;
-  period_end: string;
-}
+import type { CurrencySummary } from '@/hooks/useFinancialReportsImproved';
+import { CURRENCY_NAMES } from '@/types/currency';
 
 interface AnalysisTabProps {
-  summary: FinancialSummary;
+  summaryByCurrency: CurrencySummary[];
 }
 
-const AnalysisTab = ({ summary }: AnalysisTabProps) => {
+const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(1) : '0');
+
+const AnalysisTab = ({ summaryByCurrency }: AnalysisTabProps) => {
+  if (!summaryByCurrency?.length) {
+    return <Card><CardContent className="py-8 text-center text-muted-foreground">لا توجد بيانات</CardContent></Card>;
+  }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>التحليل المالي</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-medium text-lg">نسب الإنفاق</h3>
+    <div className="space-y-4">
+      {summaryByCurrency.map((s) => (
+        <Card key={s.currency}>
+          <CardHeader><CardTitle>التحليل المالي - {CURRENCY_NAMES[s.currency]}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>المصروفات التشغيلية</span>
-                  <span>
-                    {summary.total_revenue_egp > 0 
-                      ? ((summary.total_expenses_egp / summary.total_revenue_egp) * 100).toFixed(1)
-                      : 0}%
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>الرواتب</span>
-                  <span>
-                    {summary.total_revenue_egp > 0 
-                      ? ((summary.total_salaries_egp / summary.total_revenue_egp) * 100).toFixed(1)
-                      : 0}%
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>مدفوعات الإيجار</span>
-                  <span>
-                    {summary.total_revenue_egp > 0 
-                      ? ((summary.total_rent_payments_egp / summary.total_revenue_egp) * 100).toFixed(1)
-                      : 0}%
-                  </span>
-                </div>
+                <h3 className="font-medium text-lg">نسب الإنفاق</h3>
+                <div className="flex justify-between"><span>المصروفات التشغيلية</span><span>{pct(s.expenses, s.revenue)}%</span></div>
+                <div className="flex justify-between"><span>الرواتب</span><span>{pct(s.salaries, s.revenue)}%</span></div>
+                <div className="flex justify-between"><span>الإيجار</span><span>{pct(s.rent, s.revenue)}%</span></div>
               </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="font-medium text-lg">هامش الربح</h3>
               <div className="text-center">
-                <p className={`text-4xl font-bold ${
-                  summary.net_profit_egp >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {summary.total_revenue_egp > 0 
-                    ? ((summary.net_profit_egp / summary.total_revenue_egp) * 100).toFixed(1)
-                    : 0}%
+                <h3 className="font-medium text-lg mb-2">هامش الربح الصافي</h3>
+                <p className={`text-4xl font-bold ${s.net_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {pct(s.net_profit, s.revenue)}%
                 </p>
-                <p className="text-gray-500">هامش الربح الصافي</p>
               </div>
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 
