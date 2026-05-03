@@ -20,6 +20,7 @@ export interface IncomeStatementRow {
   account_name: string;
   account_name_ar: string | null;
   amount: number;
+  currency: string;
 }
 
 export interface BalanceSheetRow {
