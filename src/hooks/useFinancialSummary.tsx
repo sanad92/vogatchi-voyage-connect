@@ -1,16 +1,9 @@
-
-import { useMemo } from 'react';
-import { useFinancialReportsImproved } from './useFinancialReportsImproved';
+import { useFinancialReportsImproved, CurrencySummary } from './useFinancialReportsImproved';
 
 export const useFinancialSummary = (startDate?: string, endDate?: string) => {
-  const { getFinancialSummary, isLoading } = useFinancialReportsImproved(startDate, endDate);
-
-  const summary = useMemo(() => {
-    return getFinancialSummary();
-  }, [getFinancialSummary]);
-
+  const { summaryByCurrency, isLoading } = useFinancialReportsImproved(startDate, endDate);
   return {
-    summary,
+    summaryByCurrency: summaryByCurrency as CurrencySummary[],
     isLoading,
   };
 };
