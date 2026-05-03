@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -23,14 +22,11 @@ const ImprovedFinancialDashboard = () => {
     end: new Date().toISOString().split('T')[0]
   });
 
-  const { summary, isLoading } = useFinancialSummary(dateRange.start, dateRange.end);
-  const { salariesSummary } = useFinancialReportsImproved(dateRange.start, dateRange.end);
+  const { summaryByCurrency, isLoading } = useFinancialSummary(dateRange.start, dateRange.end);
+  const { salariesByCurrency } = useFinancialReportsImproved(dateRange.start, dateRange.end);
 
   const handleDateRangeChange = (field: keyof DateRange, value: string) => {
-    setDateRange(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setDateRange(prev => ({ ...prev, [field]: value }));
   };
 
   if (isLoading) {
@@ -47,52 +43,33 @@ const ImprovedFinancialDashboard = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          لوحة التحكم المالية المحسّنة مع دعم العملات المتعددة وحسابات دقيقة.
-          جميع المبالغ محولة تلقائياً إلى الجنيه المصري للمقارنة الدقيقة.
+          لوحة التحكم المالية - كل عملة لها تقاريرها الخاصة بدون أي تحويل.
         </AlertDescription>
       </Alert>
 
-      <DateRangeFilter
-        dateRange={dateRange}
-        onDateRangeChange={handleDateRangeChange}
-      />
+      <DateRangeFilter dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />
 
-      {summary && <FinancialSummaryCards summary={summary} />}
+      <FinancialSummaryCards summaryByCurrency={summaryByCurrency} />
 
       <Tabs defaultValue="revenue" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="revenue" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            الإيرادات
-          </TabsTrigger>
-          <TabsTrigger value="expenses" className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4" />
-            المصروفات
-          </TabsTrigger>
-          <TabsTrigger value="salaries" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            الرواتب
-          </TabsTrigger>
-          <TabsTrigger value="analysis" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            التحليل
-          </TabsTrigger>
+          <TabsTrigger value="revenue" className="flex items-center gap-2"><TrendingUp className="h-4 w-4" />الإيرادات</TabsTrigger>
+          <TabsTrigger value="expenses" className="flex items-center gap-2"><TrendingDown className="h-4 w-4" />المصروفات</TabsTrigger>
+          <TabsTrigger value="salaries" className="flex items-center gap-2"><DollarSign className="h-4 w-4" />الرواتب</TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2"><BarChart3 className="h-4 w-4" />التحليل</TabsTrigger>
         </TabsList>
 
         <TabsContent value="revenue" className="space-y-4">
           <RevenueTab startDate={dateRange.start} endDate={dateRange.end} />
         </TabsContent>
-
         <TabsContent value="expenses" className="space-y-4">
           <ExpensesTab startDate={dateRange.start} endDate={dateRange.end} />
         </TabsContent>
-
         <TabsContent value="salaries" className="space-y-4">
-          <SalariesTab salariesSummary={salariesSummary || 0} />
+          <SalariesTab salariesByCurrency={salariesByCurrency || {}} />
         </TabsContent>
-
         <TabsContent value="analysis" className="space-y-4">
-          {summary && <AnalysisTab summary={summary} />}
+          <AnalysisTab summaryByCurrency={summaryByCurrency} />
         </TabsContent>
       </Tabs>
     </div>

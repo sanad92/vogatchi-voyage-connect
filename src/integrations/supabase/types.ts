@@ -3909,6 +3909,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: string
           description: string | null
           entry_date: string
           entry_number: string
@@ -3924,6 +3925,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           description?: string | null
           entry_date?: string
           entry_number: string
@@ -3939,6 +3941,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           description?: string | null
           entry_date?: string
           entry_number?: string
@@ -6659,25 +6662,60 @@ export type Database = {
         Args: { _code: string; _org_id: string }
         Returns: string
       }
-      get_balance_sheet: {
-        Args: { _as_of_date?: string; _org_id: string }
+      get_active_currencies: {
+        Args: { _org_id: string }
         Returns: {
-          account_code: string
-          account_name: string
-          account_name_ar: string
-          account_type: Database["public"]["Enums"]["account_type"]
-          balance: number
+          currency: string
+          entries_count: number
         }[]
       }
-      get_cash_flow: {
-        Args: { _end_date: string; _org_id: string; _start_date: string }
-        Returns: {
-          inflows: number
-          net_flow: number
-          outflows: number
-          period_date: string
-        }[]
-      }
+      get_balance_sheet:
+        | {
+            Args: { _as_of_date?: string; _org_id: string }
+            Returns: {
+              account_code: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              balance: number
+            }[]
+          }
+        | {
+            Args: { _as_of_date?: string; _currency?: string; _org_id: string }
+            Returns: {
+              account_code: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              balance: number
+              currency: string
+            }[]
+          }
+      get_cash_flow:
+        | {
+            Args: { _end_date: string; _org_id: string; _start_date: string }
+            Returns: {
+              inflows: number
+              net_flow: number
+              outflows: number
+              period_date: string
+            }[]
+          }
+        | {
+            Args: {
+              _currency?: string
+              _end_date: string
+              _org_id: string
+              _start_date: string
+            }
+            Returns: {
+              currency: string
+              inflows: number
+              net_flow: number
+              outflows: number
+              period_date: string
+            }[]
+          }
       get_cost_center_pnl: {
         Args: { _end_date: string; _org_id: string; _start_date: string }
         Returns: {
@@ -6710,16 +6748,33 @@ export type Database = {
           phone: string
         }[]
       }
-      get_income_statement: {
-        Args: { _end_date: string; _org_id: string; _start_date: string }
-        Returns: {
-          account_code: string
-          account_name: string
-          account_name_ar: string
-          account_type: Database["public"]["Enums"]["account_type"]
-          amount: number
-        }[]
-      }
+      get_income_statement:
+        | {
+            Args: { _end_date: string; _org_id: string; _start_date: string }
+            Returns: {
+              account_code: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              amount: number
+            }[]
+          }
+        | {
+            Args: {
+              _currency?: string
+              _end_date: string
+              _org_id: string
+              _start_date: string
+            }
+            Returns: {
+              account_code: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              amount: number
+              currency: string
+            }[]
+          }
       get_org_plan_limits: {
         Args: { _org_id: string }
         Returns: {
@@ -6732,19 +6787,34 @@ export type Database = {
         Args: { _org_id: string; _supplier_id: string }
         Returns: Json
       }
-      get_trial_balance: {
-        Args: { _end_date?: string; _org_id: string }
-        Returns: {
-          account_code: string
-          account_id: string
-          account_name: string
-          account_name_ar: string
-          account_type: Database["public"]["Enums"]["account_type"]
-          balance: number
-          total_credit: number
-          total_debit: number
-        }[]
-      }
+      get_trial_balance:
+        | {
+            Args: { _end_date?: string; _org_id: string }
+            Returns: {
+              account_code: string
+              account_id: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              balance: number
+              total_credit: number
+              total_debit: number
+            }[]
+          }
+        | {
+            Args: { _currency?: string; _end_date?: string; _org_id: string }
+            Returns: {
+              account_code: string
+              account_id: string
+              account_name: string
+              account_name_ar: string
+              account_type: Database["public"]["Enums"]["account_type"]
+              balance: number
+              currency: string
+              total_credit: number
+              total_debit: number
+            }[]
+          }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
@@ -6765,17 +6835,30 @@ export type Database = {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
       }
-      post_journal_entry: {
-        Args: {
-          _description: string
-          _entry_date: string
-          _lines: Json
-          _org_id: string
-          _reference_id: string
-          _reference_type: string
-        }
-        Returns: string
-      }
+      post_journal_entry:
+        | {
+            Args: {
+              _description: string
+              _entry_date: string
+              _lines: Json
+              _org_id: string
+              _reference_id: string
+              _reference_type: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _currency?: string
+              _description: string
+              _entry_date: string
+              _lines: Json
+              _org_id: string
+              _reference_id: string
+              _reference_type: string
+            }
+            Returns: string
+          }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
