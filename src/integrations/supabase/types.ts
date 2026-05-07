@@ -6591,6 +6591,17 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      calculate_monthly_salary: {
+        Args: {
+          p_bonus?: number
+          p_deductions?: number
+          p_employee_id: string
+          p_notes?: string
+          p_overtime_hours?: number
+          p_salary_month: string
+        }
+        Returns: Json
+      }
       can_manage_customers: { Args: never; Returns: boolean }
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
@@ -6877,6 +6888,17 @@ export type Database = {
           p_status_id?: string
         }
         Returns: boolean
+      }
+      update_salary_status: {
+        Args: {
+          p_bank_account_id?: string
+          p_notes?: string
+          p_payment_date?: string
+          p_payment_method?: string
+          p_salary_id: string
+          p_status: string
+        }
+        Returns: Json
       }
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }
