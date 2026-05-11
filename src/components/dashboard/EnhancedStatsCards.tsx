@@ -73,22 +73,22 @@ const EnhancedStatsCards = ({ realStats, alerts, today }: EnhancedStatsCardsProp
 
   const cards: KPI[] = [
     {
-      title: 'الإيرادات',
-      value: `${formatCurrency(realStats.totalRevenue)} ج.م`,
+      title: 'الإيرادات (إجمالي)',
+      value: formatCurrency(realStats.totalRevenue),
       icon: TrendingUp,
       trend: realStats.monthlyGrowth,
-      hint: 'مقارنة بالشهر الماضي',
+      hint: 'مقارنة بالشهر الماضي — للتفصيل بالعملة راجع التقارير',
     },
     {
       title: 'صافي الربح',
-      value: `${formatCurrency(realStats.netProfit || 0)} ج.م`,
+      value: formatCurrency(realStats.netProfit || 0),
       icon: Wallet,
       hint: `هامش ${profitMargin}%`,
       tone: (realStats.netProfit || 0) >= 0 ? 'success' : 'warning',
     },
     {
       title: 'مستحقات على العملاء',
-      value: `${formatCurrency(alerts?.outstandingAmount || 0)} ج.م`,
+      value: formatCurrency(alerts?.outstandingAmount || 0),
       icon: AlertCircle,
       hint: `${alerts?.outstandingCount || 0} حجز غير مكتمل الدفع`,
       tone: (alerts?.outstandingAmount || 0) > 0 ? 'warning' : 'default',
