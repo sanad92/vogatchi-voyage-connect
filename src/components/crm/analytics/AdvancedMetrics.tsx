@@ -94,6 +94,7 @@ const AdvancedMetrics = ({ analytics }: AdvancedMetricsProps) => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
