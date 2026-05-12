@@ -109,6 +109,15 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "create_user": {
+        // Platform-level user creation is restricted to platform admins to prevent
+        // org admins from creating un-scoped users with elevated profile roles.
+        if (!(await isPlatformAdmin(supabase, user.id))) {
+          return new Response(JSON.stringify({ error: "Forbidden: platform admin required" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         const { email, password, full_name, department, phone, role } = body;
 
         // Validate inputs
@@ -179,6 +188,14 @@ Deno.serve(async (req) => {
         }
         if (!new_password || typeof new_password !== 'string' || new_password.length < 8 || new_password.length > 128) {
           return new Response(JSON.stringify([{ success: false, message: "كلمة المرور يجب أن تكون بين 8 و 128 حرف" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Cross-org guard: caller must be platform admin or share an org (as admin) with the target user.
+        if (!(await callerCanManageUser(supabase, user.id, user_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذا المستخدم" }]), {
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
