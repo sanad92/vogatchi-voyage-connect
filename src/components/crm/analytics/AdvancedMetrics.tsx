@@ -20,7 +20,11 @@ const AdvancedMetrics = ({ analytics }: AdvancedMetricsProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-2">
+      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
+        ℹ القيم بالجنيه المصري (تقريبي — تشمل عملات مختلفة)
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* قيمة العميل مدى الحياة */}
       <Card>
         <CardHeader>
@@ -90,6 +94,7 @@ const AdvancedMetrics = ({ analytics }: AdvancedMetricsProps) => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

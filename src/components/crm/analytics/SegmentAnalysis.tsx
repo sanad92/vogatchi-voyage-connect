@@ -31,6 +31,9 @@ const SegmentAnalysis = ({ customerSegments, customers }: SegmentAnalysisProps) 
     <Card>
       <CardHeader>
         <CardTitle>تحليل القطاعات</CardTitle>
+        <p className="text-xs text-amber-700 mt-1">
+          ℹ القيم بالجنيه المصري (تقريبي — تجمع عملات مختلفة)
+        </p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

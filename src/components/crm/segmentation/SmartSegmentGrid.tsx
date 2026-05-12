@@ -184,7 +184,11 @@ const SmartSegmentGrid = ({ customers }: SmartSegmentGridProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="space-y-3">
+      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
+        ℹ الإيرادات المحتملة معروضة بالجنيه المصري (تقريبي)
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
       {smartSegments.map((segment) => {
         const predictions = calculateSegmentPredictions(segment);
         
@@ -248,6 +252,7 @@ const SmartSegmentGrid = ({ customers }: SmartSegmentGridProps) => {
           </Card>
         );
       })}
+      </div>
     </div>
   );
 };
