@@ -288,6 +288,14 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Cross-org guard: caller must be platform admin or admin/owner of the target organization.
+        if (!(await callerCanManageOrg(supabase, user.id, organization_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذه المؤسسة" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         // Create auth user
         const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
           email: email.trim(),
