@@ -54,6 +54,11 @@ const ProfitLossReport = () => {
         </Button>
       </div>
 
+      <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
+        ⚠ هذا التقرير يجمع كل العملات بعد تحويلها للجنيه المصري بأسعار الصرف الحالية.
+        للحصول على تقرير دقيق منفصل لكل عملة، استخدم لوحة <strong>التقارير المالية المحسّنة</strong> (تبويبات لكل عملة).
+      </div>
+
       <Tabs defaultValue="period" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="period" className="flex items-center gap-2">
