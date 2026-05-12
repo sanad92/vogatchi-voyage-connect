@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Target } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart as RechartsPieChart, Cell, BarChart, Bar, Pie } from "recharts";
+import { CURRENCY_SYMBOLS, SupportedCurrency } from "@/types/currency";
 
 interface FinancialData {
   revenue: number;
@@ -24,16 +25,16 @@ interface FinancialData {
 interface FinancialReportsProps {
   data: FinancialData;
   period: string;
+  /** عملة العرض. إذا لم تُمرّر تعرض الأرقام مع رمز "؟" تنبيهاً */
+  currency?: SupportedCurrency;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-const FinancialReports = ({ data, period }: FinancialReportsProps) => {
+const FinancialReports = ({ data, period, currency = 'EGP' }: FinancialReportsProps) => {
+  const symbol = CURRENCY_SYMBOLS[currency] || currency;
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP'
-    }).format(value);
+    return `${Math.round(value).toLocaleString('en-US')} ${symbol}`;
   };
 
   const getTrendIcon = (current: number, previous: number) => {
