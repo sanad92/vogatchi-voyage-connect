@@ -12,19 +12,59 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_ROLES = ['admin', 'manager', 'sales_agent', 'accountant', 'viewer', 'super_admin'] as const;
 const VALID_ORG_ROLES = ['owner', 'admin', 'manager', 'agent', 'viewer'] as const;
 
-async function checkSuperAdmin(supabase: any, userId: string): Promise<boolean> {
-  const { data: isPlatform } = await supabase.rpc('is_platform_admin', { _user_id: userId });
-  if (isPlatform) return true;
-  
-  // Also check org-level admin roles
-  const { data: members } = await supabase
+async function isPlatformAdmin(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase.rpc('is_platform_admin', { _user_id: userId });
+  return Boolean(data);
+}
+
+async function getCallerOrgIds(supabase: any, userId: string, requireAdmin = false): Promise<string[]> {
+  const query = supabase
     .from('organization_members')
-    .select('role')
+    .select('organization_id, role')
     .eq('user_id', userId)
-    .eq('is_active', true)
-    .in('role', ['owner', 'admin', 'super_admin']);
-  
-  return members && members.length > 0;
+    .eq('is_active', true);
+  const { data } = await query;
+  if (!data) return [];
+  const adminRoles = new Set(['owner', 'admin', 'super_admin']);
+  return data
+    .filter((m: any) => !requireAdmin || adminRoles.has(m.role))
+    .map((m: any) => m.organization_id as string);
+}
+
+async function checkSuperAdmin(supabase: any, userId: string): Promise<boolean> {
+  if (await isPlatformAdmin(supabase, userId)) return true;
+  const adminOrgs = await getCallerOrgIds(supabase, userId, true);
+  return adminOrgs.length > 0;
+}
+
+/**
+ * Verifies the caller has admin rights over the target user.
+ * Platform admins always pass. Org admins must share at least one org with the target user.
+ */
+async function callerCanManageUser(supabase: any, callerId: string, targetUserId: string): Promise<boolean> {
+  if (await isPlatformAdmin(supabase, callerId)) return true;
+  const callerAdminOrgs = await getCallerOrgIds(supabase, callerId, true);
+  if (callerAdminOrgs.length === 0) return false;
+  const { data: targetMemberships } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', targetUserId)
+    .eq('is_active', true);
+  if (!targetMemberships || targetMemberships.length === 0) {
+    // Target has no org → only platform admins may touch it
+    return false;
+  }
+  const targetOrgs = new Set(targetMemberships.map((m: any) => m.organization_id));
+  return callerAdminOrgs.some((o) => targetOrgs.has(o));
+}
+
+/**
+ * Verifies the caller is an admin in the specified target organization.
+ */
+async function callerCanManageOrg(supabase: any, callerId: string, targetOrgId: string): Promise<boolean> {
+  if (await isPlatformAdmin(supabase, callerId)) return true;
+  const callerAdminOrgs = await getCallerOrgIds(supabase, callerId, true);
+  return callerAdminOrgs.includes(targetOrgId);
 }
 
 Deno.serve(async (req) => {
@@ -69,6 +109,15 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "create_user": {
+        // Platform-level user creation is restricted to platform admins to prevent
+        // org admins from creating un-scoped users with elevated profile roles.
+        if (!(await isPlatformAdmin(supabase, user.id))) {
+          return new Response(JSON.stringify({ error: "Forbidden: platform admin required" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         const { email, password, full_name, department, phone, role } = body;
 
         // Validate inputs
@@ -143,6 +192,14 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Cross-org guard: caller must be platform admin or share an org (as admin) with the target user.
+        if (!(await callerCanManageUser(supabase, user.id, user_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذا المستخدم" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         const { error: resetError } = await supabase.auth.admin.updateUserById(user_id, {
           password: new_password,
         });
@@ -163,6 +220,14 @@ Deno.serve(async (req) => {
 
         if (!user_id || typeof user_id !== 'string') {
           return new Response(JSON.stringify([{ success: false, message: "معرف المستخدم مطلوب" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Cross-org guard
+        if (!(await callerCanManageUser(supabase, user.id, user_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذا المستخدم" }]), {
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -219,6 +284,14 @@ Deno.serve(async (req) => {
         }
         if (!org_role || !VALID_ORG_ROLES.includes(org_role)) {
           return new Response(JSON.stringify([{ success: false, message: "الدور غير صالح" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Cross-org guard: caller must be platform admin or admin/owner of the target organization.
+        if (!(await callerCanManageOrg(supabase, user.id, organization_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذه المؤسسة" }]), {
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
