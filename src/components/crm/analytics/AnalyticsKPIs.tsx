@@ -23,7 +23,11 @@ const AnalyticsKPIs = ({ analytics }: AnalyticsKPIsProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-2">
+      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
+        ℹ القيم المالية أدناه مجمّعة بالجنيه المصري (تقريبي — تشمل عملاء بعملات مختلفة)
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -84,6 +88,7 @@ const AnalyticsKPIs = ({ analytics }: AnalyticsKPIsProps) => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
