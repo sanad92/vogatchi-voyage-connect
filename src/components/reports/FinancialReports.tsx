@@ -48,7 +48,9 @@ const FinancialReports = ({ data, period, currency = 'EGP' }: FinancialReportsPr
 
   return (
     <div className="space-y-6">
-      {/* المؤشرات المالية الرئيسية */}
+      <div className="text-xs text-muted-foreground">
+        💱 العملة: <span className="font-semibold">{currency}</span>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
