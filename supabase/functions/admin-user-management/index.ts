@@ -224,6 +224,14 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Cross-org guard
+        if (!(await callerCanManageUser(supabase, user.id, user_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذا المستخدم" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         // Update auth user if email changed
         if (newEmail && typeof newEmail === 'string' && EMAIL_REGEX.test(newEmail.trim())) {
           const { error: authUpdateError } = await supabase.auth.admin.updateUserById(user_id, {
