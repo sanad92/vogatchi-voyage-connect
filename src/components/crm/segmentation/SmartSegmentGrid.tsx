@@ -252,6 +252,7 @@ const SmartSegmentGrid = ({ customers }: SmartSegmentGridProps) => {
           </Card>
         );
       })}
+      </div>
     </div>
   );
 };
