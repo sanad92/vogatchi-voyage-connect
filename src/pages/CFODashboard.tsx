@@ -80,6 +80,13 @@ const CFODashboard = () => {
         </Badge>
       </div>
 
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          جميع الأرقام في هذه اللوحة بالجنيه المصري (EGP). القيود المسجلة بعملات أخرى تُحوَّل بسعر الصرف الفعلي للقيد.
+        </AlertDescription>
+      </Alert>
+
       <Card>
         <CardContent className="pt-6 flex gap-4 items-end flex-wrap">
           <div className="space-y-1">
