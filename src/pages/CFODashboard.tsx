@@ -13,6 +13,7 @@ import {
 import {
   TrendingUp, TrendingDown, Wallet, Users, Scale, Activity, AlertCircle,
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
