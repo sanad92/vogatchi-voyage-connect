@@ -64,6 +64,14 @@ const OptimizedIndex = () => {
       <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto" dir="rtl">
         <DashboardHeader />
 
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            القيم الإجمالية في هذه الصفحة معروضة بالجنيه المصري كمعادل تقريبي.
+            للحصول على أرقام مفصّلة لكل عملة، استخدم صفحة <strong>التقارير المالية المحسّنة</strong>.
+          </AlertDescription>
+        </Alert>
+
         <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} />
 
         <AlertsStrip

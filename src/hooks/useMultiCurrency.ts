@@ -10,6 +10,11 @@ interface MultiCurrencyAmount {
   exchangeRate?: number;
 }
 
+/**
+ * @deprecated Per project policy each amount stays in its own currency.
+ * Do NOT use in new code. New dashboards must group amounts by currency
+ * (see useActiveCurrencies + per-currency tabs). Kept only for legacy rent flows.
+ */
 export const useMultiCurrency = () => {
   const { getCurrentRate, convertToPrimaryCurrency } = useExchangeRates();
 

@@ -13,6 +13,7 @@ import {
 import {
   TrendingUp, TrendingDown, Wallet, Users, Scale, Activity, AlertCircle,
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
@@ -78,6 +79,13 @@ const CFODashboard = () => {
           <Activity className="h-3 w-3" /> Real-time من المحرك المحاسبي
         </Badge>
       </div>
+
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          جميع الأرقام في هذه اللوحة بالجنيه المصري (EGP). القيود المسجلة بعملات أخرى تُحوَّل بسعر الصرف الفعلي للقيد.
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardContent className="pt-6 flex gap-4 items-end flex-wrap">

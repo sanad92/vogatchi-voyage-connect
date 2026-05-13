@@ -173,8 +173,8 @@ const NewInvoice = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>العملة</Label>
-                  <Select value={formData.currency} onValueChange={(value) => handleChange('currency', value)}>
+                  <Label>العملة *</Label>
+                  <Select value={formData.currency} onValueChange={(value) => handleChange('currency', value)} required>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -185,6 +185,9 @@ const NewInvoice = () => {
                       <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    يجب أن تطابق عملة الفاتورة عملة الحجز المرتبط بها.
+                  </p>
                 </div>
               </div>
 
