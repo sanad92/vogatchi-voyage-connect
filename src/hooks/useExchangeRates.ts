@@ -32,7 +32,13 @@ export const useExchangeRates = () => {
     return amount * await getCurrentRate(fromCurrency, toCurrency);
   };
 
+  /**
+   * @deprecated Multi-currency policy: each amount must be displayed in its own currency.
+   * Do NOT use this for new dashboards or reports. Use per-currency grouping instead.
+   * Kept only for the explicit "Convert Invoice Currency" user-initiated flow.
+   */
   const convertToPrimaryCurrency = async (amount: number, fromCurrency: SupportedCurrency): Promise<number> => convertCurrency(amount, fromCurrency, PRIMARY_CURRENCY);
+  /** @deprecated See convertToPrimaryCurrency. */
   const convertFromPrimaryCurrency = async (amount: number, toCurrency: SupportedCurrency): Promise<number> => convertCurrency(amount, PRIMARY_CURRENCY, toCurrency);
 
   const addExchangeRateMutation = useMutation({
