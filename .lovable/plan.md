@@ -1,98 +1,101 @@
-# تقرير مراجعة العملات (Currency Audit)
+# خطة شاملة لإصلاح وتوحيد الـ ERP
 
-تم فحص الكود (الـ Frontend) وقاعدة البيانات (الـ Backend) — في ما يلي الأخطاء الحالية المؤكدة، والأخطاء المتوقعة (Time bombs)، وخطة الإصلاح.
-
----
-
-## 1) الأخطاء الحالية المؤكدة (Bugs موجودة الآن)
-
-### 🔴 A. استدعاءات `formatCurrency` بدون تمرير العملة (43 استدعاء)
-`useCurrencyHelper.formatCurrency(amount, currency)` تتطلب وسيطين، لكن في 43 موضع يُستدعى بوسيط واحد فقط، فيظهر للمستخدم نص مثل `"5,000 undefined"` أو يحدث Crash.
-
-أهم الملفات المتأثرة:
-- `components/dashboard/EnhancedStatsCards.tsx` (3 مواضع)
-- `components/reports/FinancialReports.tsx` (6 مواضع)
-- `components/reports/ProfitLossReport.tsx` (5 مواضع)
-- `components/expenses/salary/SalaryCalculation.tsx` (10 مواضع)
-- `components/expenses/salary/ImprovedSalaryCalculation.tsx`
-- `components/customers/*` (CustomerCard, CustomerSmartAnalytics, CustomerTableView)
-- `components/crm/analytics/*` (AnalyticsKPIs, AdvancedMetrics, SegmentAnalysis)
-- `components/crm/segmentation/*` (SmartSegmentGrid, ExistingSegments)
-- `components/flight-bookings/FlightBookingStats.tsx`
-
-### 🔴 B. لافتات "ج.م" مكتوبة Hardcoded
-في `EnhancedStatsCards.tsx` يتم لصق `ج.م` بعد القيمة يدوياً، فحتى لو كانت العملة USD ستظهر "5,000 ج.م" — مضلِّل للمستخدم.
-
-### 🔴 C. عدم تطابق العملات بين الجداول المرتبطة
-نتيجة استعلام مباشر على قاعدة البيانات الحالية:
-- `bookings.currency`: EGP, EUR, USD
-- `invoices.currency`: USD فقط
-- `hotel_bookings.currency`: USD فقط
-- `journal_entries.currency`: EGP, USD
-
-→ يعني أن فاتورة قد تُصدَر بـ USD لحجز قيمته EUR (أو العكس) دون أي تحقق، وقد تنشأ قيود محاسبية بعملة لا تطابق المصدر.
-
-### 🟡 D. عدم وجود عمود `currency` في عدة جداول مالية
-الجداول التالية في DB ليس لها قيمة عملة محفوظة فعلياً (NULL أو فارغ):
-- `flight_bookings`
-- `expense_transactions`
-- `rent_payments`
-
-→ تظهر في التقارير كأنها EGP افتراضياً، وقد تختلط بـ USD.
-
-### 🟡 E. كود تحويل قديم لا يزال موجود
-`useMultiCurrency.ts` و `useExchangeRates.convertToPrimaryCurrency` لا تزال تستخدم في:
-- `useRentPayments.tsx`, `useRentPaymentsImproved.tsx`, `useRentPaymentOperations.tsx`
-- `useAutoCalculations.tsx`
-- `components/expenses/ExpenseOverview.tsx`
-
-→ يتعارض مع قرار "كل عملة تظهر بنفسها" ويُحدث تحويل غير مرغوب فيه إلى EGP.
+بناءً على إجاباتك:
+- **الموديولات الأساسية**: CRM، Itinerary Builder، Suppliers، Invoicing & Payments، Reports & Analytics، Staff Management
+- **المستخدمين**: موظفي وكالات السفر
+- **التصميم**: Dark & Professional (نمط Linear / Vercel)
 
 ---
 
-## 2) الأخطاء المتوقعة (Time Bombs لتجنبها)
+## الخلاصة السريعة
 
-1. **اختلاط مبالغ بعملات مختلفة في تقرير واحد** — أي `SUM(amount)` بدون `GROUP BY currency` سيعطي رقماً بلا معنى (مثل جمع 100 USD + 100 EGP = 200).
-2. **حسابات الأرباح بين سعر بيع وسعر تكلفة بعملتين مختلفتين** — مثلاً سعر بيع USD وتكلفة مورد EGP → الربح خاطئ تماماً.
-3. **رصيد الحسابات البنكية** — تحويل من حساب USD لعميل EGP بدون تطبيق سعر الصرف يُفسِد الرصيد.
-4. **العمولات والرواتب** — إذا كان الحجز USD والعمولة محسوبة كنسبة، يجب أن تُسجَّل بنفس عملة الحجز لا بـ EGP.
-5. **PDF الفواتير** — حالياً قد تطبع `ج.م` بشكل ثابت بدلاً من عملة الفاتورة.
-6. **الفلاتر في صفحات Bookings/Invoices** — لا يوجد فلتر بالعملة، فالمستخدم لا يستطيع عزل تقاريره.
-7. **CHECK constraint على عملة journal مقابل عملة المصدر** — غير موجود، مما يسمح بأخطاء صامتة في القيود.
-8. **تحويل تلقائي للعملة في الـ triggers** — لو أحد الـ triggers لا يمرر `currency`، يقع Default على EGP بصمت.
+النظام دلوقتي فيه كل الموديولات المطلوبة، بس فيه 3 مشاكل كبيرة:
+1. **التصميم مش متناسق** — كل صفحة شكلها مختلف، ألوان hardcoded، مفيش design system موحّد بنمط Linear.
+2. **منطق متضارب ومتكرر** — جداول حجوزات متوازية، تقارير قديمة وجديدة جنب بعض، hooks بتحسب نفس الحاجة بطرق مختلفة.
+3. **الموديولات مش مترابطة** — العميل ما بيشوفش حجوزاته في مكان واحد، المورد مفيش له صفحة شاملة، البنوك مش متربوطة بالـ Payments تلقائياً.
+
+الخطة على 6 مراحل، كل مرحلة نتيجتها واضحة وملموسة.
 
 ---
 
-## 3) خطة الإصلاح المقترحة (Fix Plan)
+## Phase 1 — Design System موحّد بنمط Linear/Vercel (Foundation)
 
-### Phase 1 — إصلاحات حرجة (UI لا يعرض undefined)
-1. تعديل `useCurrencyHelper.formatCurrency` لتقبل عملة افتراضية اختيارية وتعرض رمز افتراضي بدل undefined، مع تحذير في الكونسول.
-2. تمرير `currency` فعلياً في كل الـ 43 استدعاء (من المصدر: `invoice.currency`, `booking.currency`, `payment.currency`, إلخ).
-3. حذف لاحقة `ج.م` المكتوبة يدوياً في `EnhancedStatsCards`.
+**الهدف**: شكل احترافي موحّد عبر كل الـ ERP قبل ما نلمس أي منطق.
 
-### Phase 2 — استكمال البيانات
-4. Migration: إضافة عمود `currency text NOT NULL DEFAULT 'EGP'` للجداول الناقصة (`flight_bookings`, `expense_transactions`, `rent_payments`) + Backfill من الجداول الأم.
-5. Migration: Trigger يمنع إنشاء `invoice` بعملة مختلفة عن `booking` المرتبط (أو على الأقل WARNING في log).
+- **Theme**: dark أساسي بـ accents بنفسجية/زرقاء، ألوان semantic (`success`, `warning`, `danger`, `info`, `muted`) في `index.css` بالـ HSL.
+- **Typography**: Inter للنصوص + JetBrains Mono للأرقام والـ IDs (نمط Linear).
+- **مكونات موحّدة جديدة في `components/layout/` و `components/common/`**:
+  - `PageHeader` (عنوان + breadcrumb + actions)
+  - `PageContainer` (spacing/padding ثابت)
+  - `DataTable` (sorting, filters, pagination, empty state، column visibility)
+  - `EmptyState`, `LoadingSkeleton`, `ErrorState`
+  - `StatCard` موحّد (بدل 5 أشكال مختلفة دلوقتي)
+  - `EntityDetailLayout` (header + tabs + side panel) — لصفحات تفاصيل العميل/المورد/الحجز
+- **منع** أي `text-green-600` / `bg-blue-500` hardcoded — كله tokens.
+- **Sidebar** موحّد (collapsible بنمط Linear) + Command Menu (Cmd+K).
 
-### Phase 3 — عزل العملة في التقارير
-6. في كل صفحة ملخصات (Dashboard, CFO, CRM Analytics, FlightBookingStats, ProfitLossReport, FinancialReports): إضافة Tabs/Selector للعملة مثل ما سبق عمله في `FinancialOverview`.
-7. كل `SUM` في الـ Hooks يجب أن يُجمَّع `GROUP BY currency` ويرجع `Record<Currency, number>`.
-
-### Phase 4 — تنظيف الكود القديم
-8. حذف/Deprecate `useMultiCurrency` و `convertToPrimaryCurrency` من المسارات التي لا تحتاج تحويل (الإيجارات والعمليات اليومية).
-9. الإبقاء على `convertCurrency` فقط للحالات الصريحة (Invoice multi-currency conversion عند طلب العميل).
-
-### Phase 5 — PDF والـ Exports
-10. مراجعة `pdfGenerator.ts` ليستخدم `formatCurrency(amount, doc.currency)` بدل النص الثابت.
-
-### Phase 6 — Validations
-11. منع حفظ Booking/Invoice بدون `currency` صريحة في الـ Form (بدل الاعتماد على Default).
-12. Linter rule (ESLint custom) أو على الأقل تعليق في `useCurrencyHelper` يمنع المراجعين من تمرير وسيط واحد.
+النتيجة: المستخدم يحس فوراً إن الـ ERP "بقى احترافي".
 
 ---
 
-## أسئلة للمستخدم قبل التنفيذ
+## Phase 2 — تنظيف الأخطاء المنطقية الحالية
 
-- هل تبدأ بـ **Phase 1 فقط** (إصلاح عرض undefined — أسرع وأوضح للمستخدم)؟
-- أم تنفذ **Phases 1–3** دفعة واحدة (إصلاح + تكملة + Tabs)؟
-- أم **الكل (1–6)** بما في ذلك الـ Validations والـ PDF؟
+- إكمال شغل العملات: كل `formatCurrency` تمرّر العملة، حذف الـ "ج.م" hardcoded، حذف نهائي لـ `useMultiCurrency`.
+- توحيد طبقة الحسابات المالية في `useFinancialCalculations` واحد (بدل 3 hooks بيحسبوا نفس الحاجة).
+- إصلاح Quote → Booking conversion عشان ينقل كل البيانات.
+- Trigger في الـ DB: لما الحجز يتعدّل، الفاتورة المربوطة بيه تتحدّث تلقائياً.
+- مراجعة كل TanStack queries: استخدام `useOrgId` في الـ queryKey (multi-tenant safety).
+
+---
+
+## Phase 3 — توحيد الموديولات المتوازية
+
+- اعتماد جدول `bookings` الموحّد كمصدر وحيد. صفحات Flight/Hotel/Car/Transport تبقى Filtered Views على نفس الجدول.
+- اعتماد `ImprovedFinancialDashboard` كتقرير مالي وحيد، حذف `Reports.tsx` و `ProfitLossReport.tsx` القديمة.
+- توحيد العمولات في hook واحد `useCommissions`.
+- حذف الـ legacy hooks المعلّمة `@deprecated`.
+
+---
+
+## Phase 4 — Itinerary Builder (موديول مهم ناقص فعلياً)
+
+- صفحة جديدة `/itinerary-builder` — drag & drop لبناء برنامج رحلة (طيران + فندق + مواصلات + أنشطة) خطوة بخطوة.
+- ربطه بالـ Suppliers لاستيراد الأسعار تلقائياً.
+- تصدير الـ Itinerary كـ PDF احترافي + إرسال WhatsApp/Email للعميل.
+- تحويل الـ Itinerary لـ Quote → Booking بضغطة واحدة.
+
+---
+
+## Phase 5 — ربط الموديولات ببعضها (Customer 360 / Supplier 360)
+
+- **Customer Details** كصفحة موحّدة بتبويبات:
+  - Overview (KPIs + segment + loyalty)
+  - Bookings (كل أنواع الحجوزات في timeline واحد)
+  - Invoices & Payments (مع الرصيد المتبقّي)
+  - Communication (WhatsApp + Email history)
+  - Documents (جوازات سفر، تأشيرات)
+  - Activity Log
+- **Supplier Details** بتبويبات: Overview، Bookings، Payments الواجبة عليه، Allotments، Rates، Statement of Account.
+- **ربط Bank Accounts بالـ Payments**: Trigger يحدّث الرصيد تلقائياً مع كل دفعة (مع مراعاة العملة).
+- **توليد Journal Entries تلقائياً** من Invoice/Payment/Expense/Salary عبر Trigger موحّد.
+- **Automation Engine**: ربط أحداث Booking confirmed، Payment received، Invoice overdue بـ WhatsApp/Email تلقائياً.
+
+---
+
+## Phase 6 — Staff Management & Permissions & Polish
+
+- **Staff Management**: صفحة موحّدة فيها (الموظف + صلاحياته + رواتبه + عمولاته + حضوره).
+- **Permissions UI**: الأزرار/الـ Menu items تختفي حسب صلاحية المستخدم فعلياً (مش بس الـ RLS في الـ DB).
+- **Global Search (Cmd+K)**: customers + bookings + invoices + suppliers + pages.
+- **Audit Trail UI** موحّد في كل صفحة Details.
+- **Onboarding تجريبي**: Empty States ذكية للمؤسسة الجديدة فيها CTAs لإضافة أول عميل/مورد/حجز.
+- مراجعة كل Edge Functions (JWT + input validation).
+- Lazy loading للصفحات الكبيرة + Error Boundaries في الـ Routes.
+
+---
+
+## القرارات اللي محتاج أكّد عليها قبل ما أبدأ
+
+1. **أبدأ بـ Phase 1 (Design System الجديد بنمط Linear) دلوقتي؟** هي أكتر مرحلة المستخدم هيحس بفرقها فوراً، ومش هتلمس أي بيانات.
+2. **في Phase 3 — موافق نوحّد الحجوزات في جدول `bookings` ونحذف التقارير القديمة؟** ده قرار معماري كبير لكنه هيحلّ مشاكل كتير دفعة واحدة.
+3. **Phase 4 (Itinerary Builder)** — ده موديول جديد فعلياً، تحب ابنيه بنفس أسلوب TripCreator (drag & drop visual) ولا أبسط (form-based)؟
