@@ -21,14 +21,16 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Cairo', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+				sans: ['Inter', 'Cairo', 'system-ui', '-apple-system', 'sans-serif'],
 				cairo: ['Cairo', 'system-ui', 'sans-serif'],
 				inter: ['Inter', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'SF Mono', 'ui-monospace', 'monospace'],
 			},
 			backgroundImage: {
 				'gradient-brand': 'var(--gradient-brand)',
 				'gradient-hero': 'var(--gradient-hero)',
 				'gradient-accent': 'var(--gradient-accent)',
+				'gradient-subtle': 'var(--gradient-subtle)',
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -254,9 +256,13 @@ export default {
 				'xs': '2px'
 			},
 			boxShadow: {
-				'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-				'glow': '0 0 20px rgba(59, 130, 246, 0.5)',
-				'glow-lg': '0 0 40px rgba(59, 130, 246, 0.6)'
+				'xs': 'var(--shadow-xs)',
+				'soft-sm': 'var(--shadow-sm)',
+				'soft-md': 'var(--shadow-md)',
+				'soft-lg': 'var(--shadow-lg)',
+				'glow': 'var(--shadow-glow)',
+				'brand': 'var(--shadow-brand)',
+				'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)'
 			}
 		}
 	},
