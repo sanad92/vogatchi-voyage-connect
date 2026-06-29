@@ -59,6 +59,8 @@ const DataQualityPage: React.FC = () => {
       if (filter === 'prices' && b.selling_price && b.cost_price) return false;
       if (filter === 'supplier' && b.supplier_id) return false;
       if (filter === 'customer' && b.customer_id) return false;
+      if (filter === 'negative_profit' && (b.profit ?? 0) >= 0) return false;
+
       if (q) {
         const s = q.toLowerCase();
         return (
