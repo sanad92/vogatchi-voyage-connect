@@ -77,8 +77,11 @@ const DataQualityPage: React.FC = () => {
     ? counts.bookings_missing_dates +
       counts.bookings_missing_prices +
       counts.bookings_missing_supplier +
-      counts.bookings_no_customer
+      counts.bookings_no_customer +
+      counts.bookings_negative_profit +
+      counts.bookings_no_journal
     : 0;
+
 
   return (
     <div className="p-4 lg:p-8 max-w-[1600px] mx-auto space-y-6" dir="rtl">
