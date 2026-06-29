@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-type IssueFilter = 'all' | 'dates' | 'prices' | 'supplier' | 'customer';
+type IssueFilter = 'all' | 'dates' | 'prices' | 'supplier' | 'customer' | 'negative_profit';
 
 const issueLabel = (b: IncompleteBooking) => {
   const issues: string[] = [];
@@ -22,8 +22,10 @@ const issueLabel = (b: IncompleteBooking) => {
   if (!b.selling_price || !b.cost_price) issues.push('أسعار');
   if (!b.supplier_id) issues.push('مورد');
   if (!b.customer_id) issues.push('عميل');
+  if ((b.profit ?? 0) < 0) issues.push('ربح سالب');
   return issues;
 };
+
 
 const DataQualityPage: React.FC = () => {
   const { data: counts } = useDataQuality();
