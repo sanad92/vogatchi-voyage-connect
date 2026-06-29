@@ -106,18 +106,20 @@ const DataQualityPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
           { l: 'تواريخ ناقصة', v: counts?.bookings_missing_dates ?? 0 },
           { l: 'أسعار ناقصة', v: counts?.bookings_missing_prices ?? 0 },
           { l: 'موردين ناقصين', v: counts?.bookings_missing_supplier ?? 0 },
           { l: 'بدون عميل', v: counts?.bookings_no_customer ?? 0 },
+          { l: 'ربح سالب', v: counts?.bookings_negative_profit ?? 0 },
+          { l: 'بدون قيد محاسبي', v: counts?.bookings_no_journal ?? 0 },
           { l: 'عملاء بدون إيميل', v: counts?.customers_no_email ?? 0 },
           { l: 'عملاء بدون هاتف', v: counts?.customers_no_phone ?? 0 },
         ].map((c) => (
           <Card key={c.l} className="p-3">
             <div className="text-xs text-muted-foreground">{c.l}</div>
-            <div className="text-2xl font-bold mt-1">{c.v}</div>
+            <div className={`text-2xl font-bold mt-1 ${c.v > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{c.v}</div>
           </Card>
         ))}
       </div>
@@ -131,8 +133,10 @@ const DataQualityPage: React.FC = () => {
               <TabsTrigger value="prices">أسعار</TabsTrigger>
               <TabsTrigger value="supplier">موردين</TabsTrigger>
               <TabsTrigger value="customer">عملاء</TabsTrigger>
+              <TabsTrigger value="negative_profit">ربح سالب</TabsTrigger>
             </TabsList>
           </Tabs>
+
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
