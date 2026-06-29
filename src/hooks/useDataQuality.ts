@@ -7,6 +7,8 @@ export interface DataQualityCounts {
   bookings_missing_prices: number;
   bookings_missing_supplier: number;
   bookings_no_customer: number;
+  bookings_negative_profit: number;
+  bookings_no_journal: number;
   customers_no_email: number;
   customers_no_phone: number;
 }
@@ -26,6 +28,8 @@ export const useDataQuality = () => {
         bookings_missing_prices: 0,
         bookings_missing_supplier: 0,
         bookings_no_customer: 0,
+        bookings_negative_profit: 0,
+        bookings_no_journal: 0,
         customers_no_email: 0,
         customers_no_phone: 0,
       };
@@ -33,6 +37,7 @@ export const useDataQuality = () => {
     staleTime: 60_000,
   });
 };
+
 
 export interface IncompleteBooking {
   id: string;
