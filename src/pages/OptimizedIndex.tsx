@@ -74,7 +74,7 @@ const OptimizedIndex = () => {
           </AlertDescription>
         </Alert>
 
-        <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} />
+        <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} byCurrency={byCurrency} />
 
         <DataQualityAlertCard />
 
