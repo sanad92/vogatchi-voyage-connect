@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { MonthlySalary } from '@/types/expenses';
 import { toast } from 'sonner';
 import { useOrgId } from './useOrgId';
+import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
+
+const EMPTY_SALARIES: (MonthlySalary & { employee?: any })[] = [];
 
 export const useSalaries = () => {
   const queryClient = useQueryClient();
@@ -35,7 +38,7 @@ export const useSalaries = () => {
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] }); toast.success('تم حفظ الراتب بنجاح'); },
-    onError: (error: any) => { toast.error('حدث خطأ أثناء حفظ الراتب: ' + (error.message || 'خطأ غير محدد')); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء حفظ الراتب: ' + getFriendlyDatabaseError(error)); },
   });
 
   const { mutateAsync: updateSalaryStatus, isPending: isUpdatingSalary } = useMutation({
@@ -45,7 +48,7 @@ export const useSalaries = () => {
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['monthly-salaries'] }); toast.success('تم تحديث حالة الراتب بنجاح'); },
-    onError: () => { toast.error('حدث خطأ أثناء تحديث حالة الراتب'); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء تحديث حالة الراتب: ' + getFriendlyDatabaseError(error)); },
   });
 
   const calculateTotalSalariesInEGP = (salaries: MonthlySalary[]) => salaries.reduce((total, salary) => total + (salary.net_salary || 0), 0);
@@ -64,5 +67,5 @@ export const useSalaries = () => {
     };
   };
 
-  return { monthlySalaries, salariesLoading, calculateMonthlySalary, isCalculatingSalary, updateSalaryStatus, isUpdatingSalary, calculateTotalSalariesInEGP, getSalaryStatistics };
+  return { monthlySalaries: monthlySalaries || EMPTY_SALARIES, salariesLoading, calculateMonthlySalary, isCalculatingSalary, updateSalaryStatus, isUpdatingSalary, calculateTotalSalariesInEGP, getSalaryStatistics };
 };

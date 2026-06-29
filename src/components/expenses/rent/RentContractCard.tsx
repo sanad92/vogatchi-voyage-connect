@@ -9,15 +9,17 @@ interface RentContractCardProps {
 }
 
 const RentContractCard = ({ contract }: RentContractCardProps) => {
+  const contractEndDate = contract.contract_end_date || contract.end_date;
+
   const isContractActive = (contract: any) => {
     const today = new Date();
-    const endDate = new Date(contract.end_date);
+    const endDate = new Date(contract.contract_end_date || contract.end_date);
     return endDate >= today && contract.is_active;
   };
 
   const getDaysUntilExpiry = (contract: any) => {
     const today = new Date();
-    const endDate = new Date(contract.end_date);
+    const endDate = new Date(contract.contract_end_date || contract.end_date);
     const diffTime = endDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -34,6 +36,7 @@ const RentContractCard = ({ contract }: RentContractCardProps) => {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
@@ -66,13 +69,13 @@ const RentContractCard = ({ contract }: RentContractCardProps) => {
           </div>
           <div>
             <p className="text-sm text-gray-600">مدة العقد</p>
-            <p className="font-medium">{contract.renewal_period_months} شهر</p>
+            <p className="font-medium">{contract.renewal_period_months || contract.contract_duration_months || 12} شهر</p>
           </div>
         </div>
         <div>
           <p className="text-sm text-gray-600">تاريخ الانتهاء</p>
           <p className="font-medium">
-            {formatDate(contract.end_date)}
+            {formatDate(contractEndDate)}
           </p>
           {isContractActive(contract) && (
             <p className="text-sm text-orange-600">

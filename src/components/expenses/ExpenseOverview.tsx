@@ -110,13 +110,23 @@ const ExpenseOverview = () => {
       }
     }
 
-    setSummary({
+    const nextSummary = {
       totalExpenses,
       totalSalaries,
       totalRent,
       rentCount,
       monthlyChange: 0
-    });
+    };
+
+    setSummary(prev => (
+      prev.totalExpenses === nextSummary.totalExpenses &&
+      prev.totalSalaries === nextSummary.totalSalaries &&
+      prev.totalRent === nextSummary.totalRent &&
+      prev.rentCount === nextSummary.rentCount &&
+      prev.monthlyChange === nextSummary.monthlyChange
+        ? prev
+        : nextSummary
+    ));
   };
 
   useEffect(() => {
