@@ -5016,6 +5016,7 @@ export type Database = {
       }
       rent_contracts: {
         Row: {
+          annual_increase_percentage: number | null
           bank_account_id: string | null
           commission_rate: number | null
           contract_duration_months: number | null
@@ -5023,6 +5024,7 @@ export type Database = {
           contract_notes: string | null
           contract_number: string | null
           contract_start_date: string
+          contract_terms: string | null
           created_at: string | null
           created_by: string | null
           currency: string | null
@@ -5031,16 +5033,20 @@ export type Database = {
           is_active: boolean | null
           landlord_name: string
           landlord_phone: string | null
+          maintenance_responsibility: string | null
           monthly_rent: number
           organization_id: string
           payment_day_of_month: number | null
           payment_method: string | null
           property_address: string | null
           property_name: string
+          renewal_period_months: number | null
           security_deposit: number | null
           updated_at: string | null
+          utilities_included: boolean | null
         }
         Insert: {
+          annual_increase_percentage?: number | null
           bank_account_id?: string | null
           commission_rate?: number | null
           contract_duration_months?: number | null
@@ -5048,6 +5054,7 @@ export type Database = {
           contract_notes?: string | null
           contract_number?: string | null
           contract_start_date: string
+          contract_terms?: string | null
           created_at?: string | null
           created_by?: string | null
           currency?: string | null
@@ -5056,16 +5063,20 @@ export type Database = {
           is_active?: boolean | null
           landlord_name: string
           landlord_phone?: string | null
+          maintenance_responsibility?: string | null
           monthly_rent: number
           organization_id: string
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
           property_name: string
+          renewal_period_months?: number | null
           security_deposit?: number | null
           updated_at?: string | null
+          utilities_included?: boolean | null
         }
         Update: {
+          annual_increase_percentage?: number | null
           bank_account_id?: string | null
           commission_rate?: number | null
           contract_duration_months?: number | null
@@ -5073,6 +5084,7 @@ export type Database = {
           contract_notes?: string | null
           contract_number?: string | null
           contract_start_date?: string
+          contract_terms?: string | null
           created_at?: string | null
           created_by?: string | null
           currency?: string | null
@@ -5081,14 +5093,17 @@ export type Database = {
           is_active?: boolean | null
           landlord_name?: string
           landlord_phone?: string | null
+          maintenance_responsibility?: string | null
           monthly_rent?: number
           organization_id?: string
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
           property_name?: string
+          renewal_period_months?: number | null
           security_deposit?: number | null
           updated_at?: string | null
+          utilities_included?: boolean | null
         }
         Relationships: [
           {
