@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreditCard, Banknote, ArrowLeftRight } from 'lucide-react';
+import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 
 interface PaymentSectionProps {
   totalAmount: number;
@@ -32,7 +33,11 @@ const PaymentSection = ({
   currency = 'EGP',
   showDeposit = false
 }: PaymentSectionProps) => {
-  const remainingAmount = totalAmount - paidAmount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal: totalAmount,
+    paidAmount,
+  });
+  const remainingAmount = financialBreakdown.remainingAmount;
 
   return (
     <div className="space-y-4">

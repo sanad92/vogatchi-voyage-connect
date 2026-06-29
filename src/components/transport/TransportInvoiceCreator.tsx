@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { TransportBooking } from "@/types/transport";
+import { useCurrencyHelper } from "@/hooks/useCurrencyHelper";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 
 interface TransportInvoiceCreatorProps {
   booking: TransportBooking;
@@ -29,6 +31,8 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
   });
 
   const queryClient = useQueryClient();
+  const { ensureSupportedCurrency } = useCurrencyHelper();
+  const currency = ensureSupportedCurrency((booking as any).currency || 'EGP');
 
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
@@ -36,8 +40,11 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
         .rpc('generate_invoice_number');
       if (numberError) throw numberError;
 
-      const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-      const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: formData.subtotal,
+        discountAmount: formData.discount_amount,
+        vatRate: formData.vat_rate,
+      });
 
       const { data, error } = await supabase
         .from('invoices')
@@ -46,16 +53,17 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
           customer_id: booking.customer_id,
           booking_id: booking.id,
           booking_type: 'transport',
-          subtotal: formData.subtotal,
-          vat_rate: formData.vat_rate,
-          discount_amount: formData.discount_amount,
-          total_amount: formData.subtotal + vatAmount,
-          final_amount: finalAmount,
+          subtotal: financialBreakdown.subtotal,
+          vat_rate: financialBreakdown.vatRate,
+          vat_amount: financialBreakdown.vatAmount,
+          discount_amount: financialBreakdown.discountAmount,
+          total_amount: financialBreakdown.totalAmount,
+          final_amount: financialBreakdown.totalAmount,
           payment_terms: formData.payment_terms,
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
-          currency: booking.currency || 'EGP',
+          currency,
           status: 'sent'
         }])
         .select()
@@ -95,8 +103,13 @@ const TransportInvoiceCreator = ({ booking, open, onClose }: TransportInvoiceCre
     createInvoiceMutation.mutate();
   };
 
-  const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-  const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal: formData.subtotal,
+    discountAmount: formData.discount_amount,
+    vatRate: formData.vat_rate,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const finalAmount = financialBreakdown.totalAmount;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

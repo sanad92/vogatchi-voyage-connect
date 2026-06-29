@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
+import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 
 export interface QuoteItem {
   id?: string;
@@ -38,6 +39,7 @@ export interface Quote {
   total_amount: number;
   total_cost: number;
   total_profit: number;
+  currency?: string | null;
   valid_until: string | null;
   assigned_employee_id: string | null;
   created_by: string | null;
@@ -124,9 +126,14 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
 
       const subtotal = data.items.reduce((sum, i) => sum + i.total_selling, 0);
       const totalCost = data.items.reduce((sum, i) => sum + i.total_cost, 0);
-      const vatAmount = (subtotal - data.discount_amount) * (data.vat_rate / 100);
-      const totalAmount = subtotal - data.discount_amount + vatAmount;
-      const totalProfit = totalAmount - totalCost;
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal,
+        discountAmount: data.discount_amount ?? 0,
+        vatRate: data.vat_rate ?? 0,
+        totalCost,
+      });
+      const totalAmount = financialBreakdown.totalAmount;
+      const totalProfit = financialBreakdown.totalProfit;
 
       const { data: quote, error } = await supabase
         .from('quotes')
@@ -141,11 +148,11 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
           destination: data.destination || null,
           number_of_travelers: data.number_of_travelers,
           notes: data.notes || null,
-          subtotal,
-          discount_amount: data.discount_amount,
-          vat_rate: data.vat_rate,
-          vat_amount: vatAmount,
-          total_amount: totalAmount,
+          subtotal: financialBreakdown.subtotal,
+          discount_amount: financialBreakdown.discountAmount,
+          vat_rate: financialBreakdown.vatRate,
+          vat_amount: financialBreakdown.vatAmount,
+          total_amount: financialBreakdown.totalAmount,
           total_cost: totalCost,
           total_profit: totalProfit,
           valid_until: data.valid_until || null,

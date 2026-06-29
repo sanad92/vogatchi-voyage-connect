@@ -79,6 +79,7 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
         .from('bookings')
         .select('*, customers(name), employees(full_name), booking_statuses(name, name_ar, color)', { count: 'exact' }) as any;
 
+      if (orgId) q = q.eq('organization_id', orgId);
       if (type) q = q.eq('booking_type', type);
       if (status) q = q.eq('status', status);
       if (startDate) q = q.gte('start_date', startDate);

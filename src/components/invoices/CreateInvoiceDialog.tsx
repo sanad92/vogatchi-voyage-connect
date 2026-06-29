@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useOrgId } from "@/hooks/useOrgId";
+import { useCurrencyHelper } from "@/hooks/useCurrencyHelper";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 import CustomerSelectionStep from "./create/CustomerSelectionStep";
 import InvoiceDetailsStep from "./create/InvoiceDetailsStep";
 
@@ -33,6 +35,7 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
 
   const queryClient = useQueryClient();
   const currentOrgId = useOrgId();
+  const { ensureSupportedCurrency } = useCurrencyHelper();
 
   // جلب العملاء
   const { data: customers } = useQuery({
@@ -125,9 +128,12 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
         .rpc('generate_invoice_number');
       if (numberError) throw numberError;
 
-      const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-      const totalAmount = formData.subtotal + vatAmount;
-      const finalAmount = totalAmount - formData.discount_amount;
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: formData.subtotal,
+        discountAmount: formData.discount_amount,
+        vatRate: formData.vat_rate,
+      });
+      const currency = ensureSupportedCurrency(formData.currency);
 
       const invoiceData = {
         organization_id: orgId,
@@ -135,16 +141,17 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
         customer_id: selectedCustomer.id,
         booking_id: selectedBooking?.id || null,
         booking_type: selectedBooking?.booking_type || 'manual',
-        subtotal: formData.subtotal,
-        vat_rate: formData.vat_rate,
-        vat_amount: vatAmount,
-        discount_amount: formData.discount_amount,
-        final_amount: finalAmount,
+        subtotal: financialBreakdown.subtotal,
+        vat_rate: financialBreakdown.vatRate,
+        vat_amount: financialBreakdown.vatAmount,
+        discount_amount: financialBreakdown.discountAmount,
+        total_amount: financialBreakdown.totalAmount,
+        final_amount: financialBreakdown.totalAmount,
         payment_terms: formData.payment_terms,
         notes: formData.notes,
         due_date: formData.due_date || null,
         issued_date: new Date().toISOString().split('T')[0],
-        currency: formData.currency,
+        currency,
         status: 'draft',
         created_by: (await supabase.auth.getUser()).data.user?.id,
       };
@@ -257,8 +264,13 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-  const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal: formData.subtotal,
+    discountAmount: formData.discount_amount,
+    vatRate: formData.vat_rate,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const finalAmount = financialBreakdown.totalAmount;
 
   const getBookingReference = (booking) => {
     switch (booking.booking_type) {

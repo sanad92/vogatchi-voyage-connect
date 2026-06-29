@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
 import { Customer } from "@/types/customer";
 import { useOrgId } from "./useOrgId";
+import { useCurrencyHelper } from "./useCurrencyHelper";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;
@@ -13,6 +15,7 @@ interface UseHotelBookingSubmissionProps {
 export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookingSubmissionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const orgId = useOrgId();
+  const { ensureSupportedCurrency } = useCurrencyHelper();
 
   const submitBooking = async (
     data: NewHotelBooking,
@@ -36,7 +39,8 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
       const totalCost = costPerNight * nights * rooms;
       const profit = totalCustomer - totalCost - (Number(rest.commission_amount) || 0);
       const paid = Number(rest.paid_amount) || 0;
-      const remaining = Math.max(0, totalCustomer - paid);
+      const financialBreakdown = calculateFinancialBreakdown({ subtotal: totalCustomer, paidAmount: paid, totalCost });
+      const remaining = financialBreakdown.remainingAmount;
 
       const submitData: any = {
         organization_id: orgId,
@@ -70,7 +74,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         commission_amount: Number(rest.commission_amount) || 0,
         total_cost_customer: totalCustomer,
         total_profit: profit,
-        currency: rest.currency || 'EGP',
+        currency: ensureSupportedCurrency(rest.currency),
         payment_method: rest.payment_method || null,
         paid_amount: paid,
         remaining_amount: remaining,
@@ -87,7 +91,8 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         const { error } = await supabase
           .from('hotel_bookings')
           .update(submitData)
-          .eq('id', booking.id);
+          .eq('id', booking.id)
+          .eq('organization_id', orgId);
         if (error) throw error;
         toast.success('تم تحديث الحجز بنجاح');
       } else {

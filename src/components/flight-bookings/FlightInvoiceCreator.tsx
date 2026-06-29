@@ -16,6 +16,8 @@ import { FlightBooking } from "@/types/flightBooking";
 import FlightInvoiceForm from "./forms/FlightInvoiceForm";
 import FlightInvoiceSummary from "./summary/FlightInvoiceSummary";
 import { useOrgId } from "@/hooks/useOrgId";
+import { useCurrencyHelper } from "@/hooks/useCurrencyHelper";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 
 interface FlightInvoiceCreatorProps {
   booking: FlightBooking;
@@ -42,6 +44,8 @@ const FlightInvoiceCreator = ({
 
   const queryClient = useQueryClient();
   const currentOrgId = useOrgId();
+  const { ensureSupportedCurrency } = useCurrencyHelper();
+  const currency = ensureSupportedCurrency((booking as any).currency || 'EGP');
 
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
@@ -54,8 +58,11 @@ const FlightInvoiceCreator = ({
         .rpc('generate_invoice_number');
       if (numberError) throw numberError;
 
-      const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-      const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: formData.subtotal,
+        discountAmount: formData.discount_amount,
+        vatRate: formData.vat_rate,
+      });
 
       const { data, error } = await supabase
         .from('invoices')
@@ -65,15 +72,17 @@ const FlightInvoiceCreator = ({
           customer_id: booking.customer_id,
           booking_id: booking.id,
           booking_type: 'flight',
-          subtotal: formData.subtotal,
-          vat_rate: formData.vat_rate,
-          discount_amount: formData.discount_amount,
-          final_amount: finalAmount,
+          subtotal: financialBreakdown.subtotal,
+          vat_rate: financialBreakdown.vatRate,
+          vat_amount: financialBreakdown.vatAmount,
+          discount_amount: financialBreakdown.discountAmount,
+          total_amount: financialBreakdown.totalAmount,
+          final_amount: financialBreakdown.totalAmount,
           payment_terms: formData.payment_terms,
           notes: formData.notes,
           due_date: formData.due_date || null,
           issued_date: new Date().toISOString().split('T')[0],
-          currency: booking.currency || 'EGP',
+          currency,
           status: 'sent'
         }])
         .select()
@@ -121,8 +130,13 @@ const FlightInvoiceCreator = ({
   };
 
   // Compute values for summary
-  const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-  const finalAmount = formData.subtotal + vatAmount - formData.discount_amount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal: formData.subtotal,
+    discountAmount: formData.discount_amount,
+    vatRate: formData.vat_rate,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const finalAmount = financialBreakdown.totalAmount;
 
   // Helper for controlled form
   const handleFormChange = (fields: Partial<typeof formData>) => {

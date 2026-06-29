@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCarRentals } from '@/hooks/useCarRentals';
 import { toast } from 'sonner';
 import { SupportedCurrency } from '@/types/currency';
+import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 
 interface CarRentalFormProps {
   onSuccess?: () => void;
@@ -76,7 +77,12 @@ const CarRentalForm = ({ onSuccess }: CarRentalFormProps) => {
       // Calculate totals
       const totalRentalCost = formData.daily_rate * rentalDurationDays;
       const supplierTotalCost = formData.supplier_daily_cost * rentalDurationDays;
-      const remainingAmount = Math.max(0, totalRentalCost - formData.paid_amount);
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: totalRentalCost,
+        paidAmount: formData.paid_amount,
+        totalCost: supplierTotalCost,
+      });
+      const remainingAmount = financialBreakdown.remainingAmount;
       
       await addCarRental({
         ...formData,

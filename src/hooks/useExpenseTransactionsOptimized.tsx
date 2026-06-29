@@ -30,7 +30,9 @@ export const useExpenseTransactionsOptimized = (
   const { data: queryData, isLoading: transactionsLoading, error: transactionsError } = useQuery({
     queryKey: ['expense-transactions-optimized', filters, page, pageSize, orgId],
     queryFn: async () => {
-      let query = supabase.from('expense_transactions').select(`*, expense_categories!inner(id, name, name_ar, color)`, { count: 'exact' });
+      if (!orgId) return { data: [], count: 0 };
+
+      let query = supabase.from('expense_transactions').select(`*, expense_categories!inner(id, name, name_ar, color)`, { count: 'exact' }).eq('organization_id', orgId);
       if (filters.search) query = query.or(`description.ilike.%${filters.search}%,transaction_number.ilike.%${filters.search}%,vendor_name.ilike.%${filters.search}%`);
       if (filters.categoryId && filters.categoryId !== 'all') query = query.eq('category_id', filters.categoryId);
       if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status);
@@ -52,6 +54,7 @@ export const useExpenseTransactionsOptimized = (
 
   const addTransactionMutation = useMutation({
     mutationFn: async (transactionData: Partial<ExpenseTransaction>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const requiredData = {
         category_id: transactionData.category_id!,
         description: transactionData.description!,
@@ -70,8 +73,9 @@ export const useExpenseTransactionsOptimized = (
 
   const updateTransactionMutation = useMutation({
     mutationFn: async (updateData: Partial<ExpenseTransaction> & { id: string }) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const { id, ...dataToUpdate } = updateData;
-      const { data, error } = await supabase.from('expense_transactions').update({ ...dataToUpdate, updated_at: new Date().toISOString() }).eq('id', id).select(`*, expense_categories!inner(id, name, name_ar, color)`).single();
+      const { data, error } = await supabase.from('expense_transactions').update({ ...dataToUpdate, updated_at: new Date().toISOString() }).eq('id', id).eq('organization_id', orgId).select(`*, expense_categories!inner(id, name, name_ar, color)`).single();
       if (error) throw error;
       return data;
     },
@@ -80,7 +84,7 @@ export const useExpenseTransactionsOptimized = (
   });
 
   const deleteTransactionMutation = useMutation({
-    mutationFn: async (transactionId: string) => { const { error } = await supabase.from('expense_transactions').delete().eq('id', transactionId); if (error) throw error; },
+    mutationFn: async (transactionId: string) => { if (!orgId) throw new Error('لا توجد منظمة نشطة'); const { error } = await supabase.from('expense_transactions').delete().eq('id', transactionId).eq('organization_id', orgId); if (error) throw error; },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] }); toast.success('تم حذف المعاملة المالية بنجاح'); },
     onError: () => { toast.error('حدث خطأ أثناء حذف المعاملة المالية'); },
   });

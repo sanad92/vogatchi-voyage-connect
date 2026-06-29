@@ -11,11 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Save, FileText } from 'lucide-react';
+import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
+import { useCurrencyHelper } from '@/hooks/useCurrencyHelper';
 
 const NewInvoice = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const orgId = useOrgId();
+  const { ensureSupportedCurrency } = useCurrencyHelper();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -57,6 +60,12 @@ const NewInvoice = () => {
     try {
       // Generate invoice number via RPC
       const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: parseFloat(formData.amount),
+        discountAmount: 0,
+        vatRate: 0,
+      });
+      const currency = ensureSupportedCurrency(formData.currency);
 
       const { data, error } = await supabase
         .from('invoices')
@@ -65,8 +74,10 @@ const NewInvoice = () => {
           customer_id: formData.customer_id || null,
           booking_type: formData.booking_type || null,
           booking_id: formData.booking_id || null,
-          final_amount: parseFloat(formData.amount),
-          currency: formData.currency,
+          subtotal: financialBreakdown.subtotal,
+          total_amount: financialBreakdown.totalAmount,
+          final_amount: financialBreakdown.totalAmount,
+          currency,
           invoice_number: invoiceNumber || `INV-${Date.now()}`,
           notes: formData.notes || null,
           status: 'pending',

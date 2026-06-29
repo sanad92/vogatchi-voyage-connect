@@ -13,7 +13,8 @@ export const useBankAccounts = () => {
   const { data: bankAccounts = [], isLoading } = useQuery({
     queryKey: ['bank-accounts', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('bank_accounts').select('*').eq('is_active', true).order('currency', { ascending: true });
+      if (!orgId) return [];
+      const { data, error } = await supabase.from('bank_accounts').select('*').eq('organization_id', orgId).eq('is_active', true).order('currency', { ascending: true });
       if (error) throw error;
       return data as BankAccount[];
     },
@@ -23,7 +24,8 @@ export const useBankAccounts = () => {
   const { data: transactions = [] } = useQuery({
     queryKey: ['bank-transactions', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('bank_account_transactions').select(`*, bank_accounts(account_name, currency)`).order('created_at', { ascending: false });
+      if (!orgId) return [];
+      const { data, error } = await supabase.from('bank_account_transactions').select(`*, bank_accounts(account_name, currency)`).eq('organization_id', orgId).order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -32,6 +34,7 @@ export const useBankAccounts = () => {
 
   const addBankAccountMutation = useMutation({
     mutationFn: async (newAccount: Omit<BankAccount, 'id' | 'created_at' | 'updated_at'>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const { data, error } = await supabase.from('bank_accounts').insert([{ ...newAccount, organization_id: orgId }]).select().single();
       if (error) throw error;
       return data;
@@ -55,6 +58,7 @@ export const useBankAccounts = () => {
 
   const addTransactionMutation = useMutation({
     mutationFn: async (transaction: Omit<BankAccountTransaction, 'id' | 'created_at'>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const { data, error } = await supabase.from('bank_account_transactions').insert({ ...transaction, organization_id: orgId }).select().single();
       if (error) throw error;
       return data;

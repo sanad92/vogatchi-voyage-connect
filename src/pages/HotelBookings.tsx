@@ -16,6 +16,7 @@ import HotelInvoiceCreator from "@/components/hotel-bookings/HotelInvoiceCreator
 import { Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useHotelBookingsPage } from "@/components/hotel-bookings/hooks/useHotelBookingsPage";
+import { useOrgId } from "@/hooks/useOrgId";
 import HotelBookingDetails from "@/components/hotel-bookings/details/HotelBookingDetails";
 import HotelBookingActions from "@/components/hotel-bookings/details/HotelBookingActions";
 import HotelInvoiceDialog from "@/components/hotel-bookings/dialogs/HotelInvoiceDialog";
@@ -30,16 +31,18 @@ const HotelBookings = () => {
     showCreateInvoice, setShowCreateInvoice,
     showVoucher, setShowVoucher
   } = useHotelBookingsPage();
+  const orgId = useOrgId();
 
   // تبسيط الاستعلام لتجنب مشاكل join المعقدة
   const { data: bookings = [], isLoading, refetch, error } = useQuery({
-    queryKey: ['hotel-bookings'],
+    queryKey: ['hotel-bookings', orgId],
     queryFn: async () => {
       try {
         console.log('🏨 Fetching hotel bookings...');
         
-        // جلب الحجوزات أولاً
-        const { data: bookingsData, error: bookingsError } = await supabase
+        if (!orgId) return [];
+
+        const { data: allBookingsData, error: bookingsError } = await supabase
           .from('hotel_bookings')
           .select('*')
           .order('created_at', { ascending: false });
@@ -49,7 +52,36 @@ const HotelBookings = () => {
           throw bookingsError;
         }
 
-        console.log('✅ Bookings fetched:', bookingsData?.length || 0);
+        const customerIdsResult = await supabase
+          .from('customers')
+          .select('id')
+          .eq('organization_id', orgId);
+
+        const employeeIdsResult = await supabase
+          .from('employees')
+          .select('id')
+          .eq('organization_id', orgId);
+
+        const customerIds = (customerIdsResult.data || [])
+          .map((row: any) => row.id)
+          .filter(Boolean);
+        const employeeIds = (employeeIdsResult.data || [])
+          .map((row: any) => row.id)
+          .filter(Boolean);
+
+        const relevantBookingsData = (allBookingsData || []).filter((booking: any) => {
+          if (!booking) return false;
+          if (booking.organization_id === orgId) return true;
+          if (booking.customer_id && customerIds.includes(booking.customer_id)) return true;
+          if (booking.employee_id && employeeIds.includes(booking.employee_id)) return true;
+          return false;
+        });
+
+        const uniqueBookingsData = Array.from(
+          new Map(relevantBookingsData.map((booking: any) => [booking.id, booking])).values()
+        );
+
+        console.log('✅ Bookings fetched:', uniqueBookingsData.length);
 
         // جلب حالات الحجز بشكل منفصل
         const { data: statusesData, error: statusesError } = await supabase
@@ -61,7 +93,7 @@ const HotelBookings = () => {
         }
 
         // دمج البيانات يدوياً
-        const bookingsWithStatus = bookingsData?.map(booking => {
+        const bookingsWithStatus = uniqueBookingsData.map(booking => {
           const status = statusesData?.find(s => s.id === booking.status_id);
           return {
             ...booking,
@@ -81,7 +113,8 @@ const HotelBookings = () => {
       }
     },
     retry: 1,
-    retryDelay: 1000
+    retryDelay: 1000,
+    enabled: !!orgId,
   });
 
   const handleNewBooking = () => {

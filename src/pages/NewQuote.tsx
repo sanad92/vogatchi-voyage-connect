@@ -14,6 +14,7 @@ import { useOrgId } from '@/hooks/useOrgId';
 import { useQuery } from '@tanstack/react-query';
 import StepWizard, { WizardNavButtons, FieldError } from '@/components/wizard/StepWizard';
 import { useWizardForm, WizardStepConfig } from '@/hooks/useWizardForm';
+import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 
 const quoteSteps: WizardStepConfig[] = [
   {
@@ -82,10 +83,15 @@ export default function NewQuote() {
   const totalCost = items.reduce((s: number, i: any) => s + (i.total_cost || 0), 0);
   const discountAmount = Number(wizard.formData.discount_amount) || 0;
   const vatRate = Number(wizard.formData.vat_rate) || 0;
-  const afterDiscount = subtotal - discountAmount;
-  const vatAmount = afterDiscount * (vatRate / 100);
-  const totalAmount = afterDiscount + vatAmount;
-  const totalProfit = totalAmount - totalCost;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal,
+    discountAmount,
+    vatRate,
+    totalCost,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const totalAmount = financialBreakdown.totalAmount;
+  const totalProfit = financialBreakdown.totalProfit;
 
   const handleSubmit = async (status: string) => {
     const formData: QuoteFormData = {

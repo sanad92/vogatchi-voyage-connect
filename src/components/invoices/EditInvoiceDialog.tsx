@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit } from "lucide-react";
 import InvoiceFormFields from "./forms/InvoiceFormFields";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 
 interface EditInvoiceDialogProps {
   invoice: any;
@@ -45,9 +46,14 @@ const EditInvoiceDialog = ({
     }
   }, [invoice]);
 
-  const vatAmount = (formData.subtotal * formData.vat_rate) / 100;
-  const totalAmount = formData.subtotal + vatAmount;
-  const finalAmount = totalAmount - formData.discount_amount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal: formData.subtotal,
+    discountAmount: formData.discount_amount,
+    vatRate: formData.vat_rate,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const totalAmount = financialBreakdown.totalAmount;
+  const finalAmount = financialBreakdown.totalAmount;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +63,7 @@ const EditInvoiceDialog = ({
       vat_amount: vatAmount,
       total_amount: totalAmount,
       final_amount: finalAmount,
+      remaining_amount: finalAmount,
       updated_at: new Date().toISOString(),
     };
 

@@ -1,5 +1,6 @@
 
 import React from "react";
+import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 
 interface Props {
   subtotal: number;
@@ -14,8 +15,13 @@ const FlightInvoiceSummary: React.FC<Props> = ({
   discount_amount,
   currencySymbol = "ج.م",
 }) => {
-  const vatAmount = (subtotal * vat_rate) / 100;
-  const finalAmount = subtotal + vatAmount - discount_amount;
+  const financialBreakdown = calculateFinancialBreakdown({
+    subtotal,
+    discountAmount: discount_amount,
+    vatRate: vat_rate,
+  });
+  const vatAmount = financialBreakdown.vatAmount;
+  const finalAmount = financialBreakdown.totalAmount;
 
   return (
     <div className="p-4 bg-gray-50 rounded-lg">

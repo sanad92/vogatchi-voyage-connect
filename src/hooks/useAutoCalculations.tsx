@@ -8,6 +8,7 @@ import {
   calculateRemainingAmount,
   calculatePaymentPercentage,
   calculateTax,
+  calculateFinancialBreakdown,
   PriceCalculation,
   FlightCalculation
 } from '@/utils/calculationHelpers';
@@ -52,24 +53,24 @@ export const useAutoCalculations = ({
         check_out_date
       );
 
-      const remainingAmount = calculateRemainingAmount(priceCalc.totalCost, Number(paid_amount));
-      const paymentPercentage = calculatePaymentPercentage(Number(paid_amount), priceCalc.totalCost);
-      
-      let taxCalculation = { taxAmount: 0, totalWithTax: priceCalc.totalCost };
-      if (taxRate > 0) {
-        taxCalculation = calculateTax(priceCalc.totalCost, taxRate);
-      }
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: priceCalc.totalCost,
+        vatRate,
+        paidAmount: Number(paid_amount),
+        totalCost: priceCalc.totalSupplierCost ?? priceCalc.totalCost,
+      });
 
       const result = {
         ...priceCalc,
-        remainingAmount,
-        paymentPercentage,
-        taxAmount: taxCalculation.taxAmount,
-        totalWithTax: taxCalculation.totalWithTax,
+        ...financialBreakdown,
+        remainingAmount: financialBreakdown.remainingAmount,
+        paymentPercentage: financialBreakdown.paymentPercentage,
+        taxAmount: financialBreakdown.vatAmount,
+        totalWithTax: financialBreakdown.totalAmount,
         // تنسيق العملة
-        formattedTotalCost: formatCurrency(priceCalc.totalCost, currency),
-        formattedTotalProfit: formatCurrency(priceCalc.totalProfit, currency),
-        formattedRemainingAmount: formatCurrency(remainingAmount, currency)
+        formattedTotalCost: formatCurrency(financialBreakdown.totalAmount, currency),
+        formattedTotalProfit: formatCurrency(financialBreakdown.totalProfit, currency),
+        formattedRemainingAmount: formatCurrency(financialBreakdown.remainingAmount, currency)
       };
 
       setCalculations(result);
@@ -107,24 +108,24 @@ export const useAutoCalculations = ({
         Number(taxes_and_fees)
       );
 
-      const remainingAmount = calculateRemainingAmount(flightCalc.totalCost, Number(paid_amount));
-      const paymentPercentage = calculatePaymentPercentage(Number(paid_amount), flightCalc.totalCost);
-      
-      let taxCalculation = { taxAmount: 0, totalWithTax: flightCalc.totalCost };
-      if (taxRate > 0) {
-        taxCalculation = calculateTax(flightCalc.totalCost, taxRate);
-      }
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal: flightCalc.totalCost,
+        vatRate,
+        paidAmount: Number(paid_amount),
+        totalCost: flightCalc.totalSupplierCost ?? flightCalc.totalCost,
+      });
 
       const result = {
         ...flightCalc,
-        remainingAmount,
-        paymentPercentage,
-        taxAmount: taxCalculation.taxAmount,
-        totalWithTax: taxCalculation.totalWithTax,
+        ...financialBreakdown,
+        remainingAmount: financialBreakdown.remainingAmount,
+        paymentPercentage: financialBreakdown.paymentPercentage,
+        taxAmount: financialBreakdown.vatAmount,
+        totalWithTax: financialBreakdown.totalAmount,
         // تنسيق العملة
-        formattedTotalCost: formatCurrency(flightCalc.totalCost, currency),
-        formattedTotalProfit: formatCurrency(flightCalc.totalProfit, currency),
-        formattedRemainingAmount: formatCurrency(remainingAmount, currency)
+        formattedTotalCost: formatCurrency(financialBreakdown.totalAmount, currency),
+        formattedTotalProfit: formatCurrency(financialBreakdown.totalProfit, currency),
+        formattedRemainingAmount: formatCurrency(financialBreakdown.remainingAmount, currency)
       };
 
       setCalculations(result);
@@ -154,25 +155,25 @@ export const useAutoCalculations = ({
     setIsCalculating(true);
     
     try {
-      const discountedAmount = Number(subtotal) - Number(discount_amount);
-      const vatAmount = discountedAmount * (Number(vat_rate) / 100);
-      const finalAmount = discountedAmount + vatAmount;
-      
-      const remainingAmount = calculateRemainingAmount(finalAmount, Number(paid_amount));
-      const paymentPercentage = calculatePaymentPercentage(Number(paid_amount), finalAmount);
+      const financialBreakdown = calculateFinancialBreakdown({
+        subtotal,
+        discountAmount,
+        vatRate,
+        paidAmount,
+      });
 
       const result = {
-        subtotal: Number(subtotal),
-        discountAmount: Number(discount_amount),
-        discountedAmount,
-        vatAmount,
-        finalAmount,
-        remainingAmount,
-        paymentPercentage,
+        subtotal: financialBreakdown.subtotal,
+        discountAmount: financialBreakdown.discountAmount,
+        discountedAmount: financialBreakdown.discountedAmount,
+        vatAmount: financialBreakdown.vatAmount,
+        finalAmount: financialBreakdown.totalAmount,
+        remainingAmount: financialBreakdown.remainingAmount,
+        paymentPercentage: financialBreakdown.paymentPercentage,
         // تنسيق العملة
-        formattedSubtotal: formatCurrency(Number(subtotal), currency),
-        formattedFinalAmount: formatCurrency(finalAmount, currency),
-        formattedRemainingAmount: formatCurrency(remainingAmount, currency)
+        formattedSubtotal: formatCurrency(financialBreakdown.subtotal, currency),
+        formattedFinalAmount: formatCurrency(financialBreakdown.totalAmount, currency),
+        formattedRemainingAmount: formatCurrency(financialBreakdown.remainingAmount, currency)
       };
 
       setCalculations(result);

@@ -11,8 +11,11 @@ export const useTransportBookings = () => {
   const { data: transportData, isLoading: bookingsLoading, refetch } = useQuery({
     queryKey: ['transport-bookings', orgId],
     queryFn: async () => {
+      if (!orgId) return { bookings: [], totalCount: 0 };
+
       const { data, error, count } = await supabase.from('transport_bookings')
         .select(`*, customer:customers(id, name, phone, email), route:transport_routes(route_name, route_name_ar), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(id, name, name_ar, color)`, { count: 'exact' })
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false })
         .limit(5000);
       if (error) throw error;
@@ -77,6 +80,7 @@ export const useTransportBookings = () => {
       const { data, error } = await supabase.from('transport_bookings')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
+        .eq('organization_id', orgId)
         .select().single();
       if (error) throw error;
       return data;
@@ -93,7 +97,8 @@ export const useTransportBookings = () => {
 
   const deleteTransportBookingMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('transport_bookings').delete().eq('id', id);
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const { error } = await supabase.from('transport_bookings').delete().eq('id', id).eq('organization_id', orgId);
       if (error) throw error;
     },
     onSuccess: () => {

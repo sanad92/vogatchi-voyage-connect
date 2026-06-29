@@ -24,6 +24,21 @@ export interface FlightCalculation {
   profitMargin: number;
 }
 
+export interface FinancialBreakdown {
+  subtotal: number;
+  discountAmount: number;
+  discountedAmount: number;
+  vatRate: number;
+  vatAmount: number;
+  totalAmount: number;
+  totalCost: number;
+  totalProfit: number;
+  remainingAmount: number;
+  paymentPercentage: number;
+}
+
+const roundAmount = (value: number): number => Math.round(value * 100) / 100;
+
 // حساب عدد الليالي بين تاريخين
 export const calculateNights = (checkIn: string | Date, checkOut: string | Date): number => {
   if (!checkIn || !checkOut) return 0;
@@ -56,20 +71,22 @@ export const calculateHotelPrices = (
   sellingPricePerNight: number,
   checkInDate: string | Date,
   checkOutDate: string | Date
-): PriceCalculation => {
+): PriceCalculation & { totalSellingAmount: number; totalSupplierCost: number } => {
   const numberOfNights = calculateNights(checkInDate, checkOutDate);
-  const totalCost = sellingPricePerNight * numberOfNights;
-  const totalSupplierCost = costPerNight * numberOfNights;
-  const totalProfit = totalCost - totalSupplierCost;
-  const profitMargin = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+  const totalSellingAmount = roundAmount(sellingPricePerNight * numberOfNights);
+  const totalSupplierCost = roundAmount(costPerNight * numberOfNights);
+  const totalProfit = roundAmount(totalSellingAmount - totalSupplierCost);
+  const profitMargin = totalSellingAmount > 0 ? (totalProfit / totalSellingAmount) * 100 : 0;
 
   return {
     costPerNight,
     sellingPricePerNight,
     numberOfNights,
-    totalCost,
+    totalCost: totalSellingAmount,
     totalProfit,
-    profitMargin: Math.round(profitMargin * 100) / 100
+    profitMargin: roundAmount(profitMargin),
+    totalSellingAmount,
+    totalSupplierCost,
   };
 };
 
@@ -79,20 +96,23 @@ export const calculateFlightPrices = (
   numberOfPassengers: number,
   supplierCost: number,
   taxesAndFees: number = 0
-): FlightCalculation => {
-  const totalTicketCost = ticketPricePerPerson * numberOfPassengers;
-  const totalCost = totalTicketCost + taxesAndFees;
-  const totalProfit = totalCost - supplierCost;
-  const profitMargin = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+): FlightCalculation & { totalSellingAmount: number; totalSupplierCost: number } => {
+  const totalTicketCost = roundAmount(ticketPricePerPerson * numberOfPassengers);
+  const totalSellingAmount = roundAmount(totalTicketCost + taxesAndFees);
+  const totalSupplierCost = roundAmount(supplierCost);
+  const totalProfit = roundAmount(totalSellingAmount - totalSupplierCost);
+  const profitMargin = totalSellingAmount > 0 ? (totalProfit / totalSellingAmount) * 100 : 0;
 
   return {
     ticketPricePerPerson,
     numberOfPassengers,
     supplierCost,
     taxesAndFees,
-    totalCost,
+    totalCost: totalSellingAmount,
     totalProfit,
-    profitMargin: Math.round(profitMargin * 100) / 100
+    profitMargin: roundAmount(profitMargin),
+    totalSellingAmount,
+    totalSupplierCost,
   };
 };
 
@@ -127,6 +147,47 @@ export const convertCurrency = (
   return Math.round(amount * exchangeRate * 100) / 100;
 };
 
+export const calculateFinancialBreakdown = ({
+  subtotal = 0,
+  discountAmount = 0,
+  vatRate = 0,
+  paidAmount = 0,
+  totalCost = 0,
+}: {
+  subtotal?: number;
+  discountAmount?: number;
+  vatRate?: number;
+  paidAmount?: number;
+  totalCost?: number;
+}): FinancialBreakdown => {
+  const safeSubtotal = Number(subtotal) || 0;
+  const safeDiscountAmount = Number(discountAmount) || 0;
+  const safeVatRate = Number(vatRate) || 0;
+  const safePaidAmount = Number(paidAmount) || 0;
+  const safeTotalCost = Number(totalCost) || 0;
+
+  const discountedAmount = Math.max(0, safeSubtotal - safeDiscountAmount);
+  const vatAmount = roundAmount(discountedAmount * (safeVatRate / 100));
+  const totalAmount = roundAmount(discountedAmount + vatAmount);
+  const remainingAmount = Math.max(0, totalAmount - safePaidAmount);
+  const paymentPercentage = totalAmount > 0
+    ? Math.min(100, roundAmount((safePaidAmount / totalAmount) * 100))
+    : 0;
+
+  return {
+    subtotal: roundAmount(safeSubtotal),
+    discountAmount: roundAmount(safeDiscountAmount),
+    discountedAmount: roundAmount(discountedAmount),
+    vatRate: roundAmount(safeVatRate),
+    vatAmount,
+    totalAmount,
+    totalCost: roundAmount(safeTotalCost),
+    totalProfit: roundAmount(totalAmount - safeTotalCost),
+    remainingAmount: roundAmount(remainingAmount),
+    paymentPercentage,
+  };
+};
+
 // حساب المبلغ المتبقي
 export const calculateRemainingAmount = (totalAmount: number, paidAmount: number): number => {
   return Math.max(0, totalAmount - paidAmount);
@@ -157,12 +218,12 @@ export const calculateTax = (amount: number, taxRate: number): {
   taxAmount: number;
   totalWithTax: number;
 } => {
-  const taxAmount = amount * (taxRate / 100);
-  const totalWithTax = amount + taxAmount;
+  const taxAmount = roundAmount(amount * (taxRate / 100));
+  const totalWithTax = roundAmount(amount + taxAmount);
   
   return {
-    taxAmount: Math.round(taxAmount * 100) / 100,
-    totalWithTax: Math.round(totalWithTax * 100) / 100
+    taxAmount,
+    totalWithTax,
   };
 };
 

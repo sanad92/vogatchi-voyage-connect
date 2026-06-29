@@ -12,9 +12,12 @@ export const useFlightBookings = () => {
   const { data: flightData, isLoading: bookingsLoading } = useQuery({
     queryKey: ['flight-bookings', orgId],
     queryFn: async (): Promise<{ bookings: FlightBooking[]; totalCount: number }> => {
+      if (!orgId) return { bookings: [], totalCount: 0 };
+
       const { data, error, count } = await supabase
         .from('flight_bookings')
         .select(`*, departure_airport:airports!departure_airport_id(*), arrival_airport:airports!arrival_airport_id(*), airline:airlines(*), flight_class:flight_classes(*), booking_status:booking_statuses(*)`, { count: 'exact' })
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false })
         .limit(5000);
       if (error) throw error;
@@ -82,7 +85,7 @@ export const useFlightBookings = () => {
     mutationFn: async ({ id, ...updates }: Partial<FlightBooking> & { id: string }) => {
       const dbUpdates = { ...updates, passenger_details: updates.passenger_details ? JSON.stringify(updates.passenger_details) : undefined, baggage_info: updates.baggage_info ? JSON.stringify(updates.baggage_info) : undefined };
       delete (dbUpdates as any).departure_airport; delete (dbUpdates as any).arrival_airport; delete (dbUpdates as any).airline; delete (dbUpdates as any).flight_class; delete (dbUpdates as any).booking_status;
-      const { data, error } = await supabase.from('flight_bookings').update(dbUpdates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('flight_bookings').update(dbUpdates).eq('id', id).eq('organization_id', orgId).select().single();
       if (error) throw error;
       return data;
     },
@@ -91,7 +94,7 @@ export const useFlightBookings = () => {
   });
 
   const { mutateAsync: deleteFlightBooking, isPending: isDeletingBooking } = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('flight_bookings').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { if (!orgId) throw new Error('لا توجد منظمة نشطة'); const { error } = await supabase.from('flight_bookings').delete().eq('id', id).eq('organization_id', orgId); if (error) throw error; },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['flight-bookings'] }); toast({ title: "تم حذف حجز الطيران" }); },
     onError: (error) => { console.error('Error deleting flight booking:', error); toast({ title: "خطأ", description: "فشل في حذف حجز الطيران", variant: "destructive" }); }
   });
