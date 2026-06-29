@@ -51,10 +51,6 @@ const RentContractsGrid = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {rentContracts.map((contract) => (
         <Card key={contract.id} className="border">
-          {(() => {
-            const endDate = contract.contract_end_date || contract.end_date || '';
-            return null;
-          })()}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <Badge 
