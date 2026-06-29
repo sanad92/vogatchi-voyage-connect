@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, Wand2, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { useDataQuality, useIncompleteBookings, IncompleteBooking } from '@/hooks/useDataQuality';
+import { useOrgId } from '@/hooks/useOrgId';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 type IssueFilter = 'all' | 'dates' | 'prices' | 'supplier' | 'customer';
 
