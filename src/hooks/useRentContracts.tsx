@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { useOrgId } from './useOrgId';
 import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
 
+const EMPTY_RENT_CONTRACTS: RentContract[] = [];
+
 export interface RentContract {
   id: string;
   contract_number?: string;
@@ -133,7 +135,7 @@ export const useRentContracts = () => {
   };
 
   return {
-    rentContracts,
+    rentContracts: rentContracts || EMPTY_RENT_CONTRACTS,
     contractsLoading,
     addRentContract,
     isAddingContract: addRentContractMutation.isPending,

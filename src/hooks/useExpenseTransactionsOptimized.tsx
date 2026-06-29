@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useOrgId } from './useOrgId';
+import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
 
 interface ExpenseTransaction {
   id: string; transaction_number: string; category_id: string; description: string;
@@ -64,7 +65,7 @@ export const useExpenseTransactionsOptimized = (
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] }); queryClient.invalidateQueries({ queryKey: ['expense-categories'] }); toast.success('تم إضافة المعاملة المالية بنجاح'); },
-    onError: (error: any) => { toast.error('حدث خطأ أثناء إضافة المعاملة المالية: ' + (error?.message || '')); console.error('Insert expense error:', error); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء إضافة المعاملة المالية: ' + getFriendlyDatabaseError(error)); console.error('Insert expense error:', error); },
   });
 
   const updateTransactionMutation = useMutation({
@@ -75,7 +76,7 @@ export const useExpenseTransactionsOptimized = (
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expense-transactions-optimized'] }); toast.success('تم تحديث المعاملة المالية بنجاح'); },
-    onError: (error: any) => { toast.error('حدث خطأ أثناء التحديث: ' + (error?.message || '')); console.error('Update expense error:', error); },
+    onError: (error: any) => { toast.error('حدث خطأ أثناء التحديث: ' + getFriendlyDatabaseError(error)); console.error('Update expense error:', error); },
   });
 
   const deleteTransactionMutation = useMutation({

@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
 
 export const useInvoiceActions = () => {
   const queryClient = useQueryClient();
@@ -42,7 +43,7 @@ export const useInvoiceActions = () => {
     },
     onError: (error: any) => {
       console.error('Error updating invoice status:', error);
-      toast.error('حدث خطأ أثناء تحديث حالة الفاتورة');
+      toast.error('حدث خطأ أثناء تحديث حالة الفاتورة: ' + getFriendlyDatabaseError(error));
     },
   });
 
@@ -62,7 +63,7 @@ export const useInvoiceActions = () => {
     },
     onError: (error: any) => {
       console.error('Error deleting invoice:', error);
-      toast.error('حدث خطأ أثناء حذف الفاتورة');
+      toast.error('حدث خطأ أثناء حذف الفاتورة: ' + getFriendlyDatabaseError(error));
     },
   });
 
@@ -91,7 +92,7 @@ export const useInvoiceActions = () => {
     },
     onError: (error: any) => {
       console.error('Error updating invoice:', error);
-      toast.error('حدث خطأ أثناء تحديث الفاتورة');
+      toast.error('حدث خطأ أثناء تحديث الفاتورة: ' + getFriendlyDatabaseError(error));
     },
   });
 
