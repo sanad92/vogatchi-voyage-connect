@@ -36,7 +36,7 @@ export default function QuoteLinkPanel({ quoteId }: Props) {
         <div className="space-y-1">
           <div className="font-semibold">{quote.quote_number}</div>
           <div className="text-muted-foreground">
-            {quote.total_amount?.toLocaleString()} {quote.currency} · حالة: {quote.status}
+            {Number(quote.total_amount || 0).toLocaleString()} · حالة: {quote.status}
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={() => navigate(`/quotes/${quote.id}`)}>
