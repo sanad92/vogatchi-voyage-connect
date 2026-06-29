@@ -97,27 +97,35 @@ export interface ExpenseTransaction {
 
 export interface RentContract {
   id: string;
-  property_name: string;
+  contract_number?: string;
+  property_name?: string | null;
+  property_type?: string | null;
+  property_address?: string | null;
   landlord_name: string;
-  landlord_phone?: string;
+  landlord_phone?: string | null;
   monthly_rent: number;
   currency: string;
   contract_start_date: string;
   contract_end_date: string;
+  start_date?: string | null;
+  end_date?: string | null;
   contract_duration_months: number;
+  renewal_period_months?: number | null;
   security_deposit: number;
   commission_rate?: number;
   payment_day_of_month: number;
   payment_method: string;
   bank_account_id?: string;
   contract_notes?: string;
+  contract_terms?: string | null;
+  utilities_included?: boolean | null;
+  maintenance_responsibility?: string | null;
+  annual_increase_percentage?: number | null;
   is_active: boolean;
   created_by: string;
+  organization_id?: string;
   created_at: string;
   updated_at: string;
-  contract_number?: string;
-  property_address?: string;
-  end_date?: string;
 }
 
 export interface RentPayment {

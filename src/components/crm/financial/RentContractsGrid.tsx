@@ -19,6 +19,7 @@ const RentContractsGrid = () => {
   };
 
   const isContractExpiringSoon = (endDate: string) => {
+    if (!endDate) return false;
     const today = new Date();
     const contractEndDate = new Date(endDate);
     const daysUntilExpiry = Math.ceil((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -26,6 +27,7 @@ const RentContractsGrid = () => {
   };
 
   const isContractExpired = (endDate: string) => {
+    if (!endDate) return false;
     const today = new Date();
     const contractEndDate = new Date(endDate);
     return contractEndDate < today;
@@ -49,19 +51,23 @@ const RentContractsGrid = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {rentContracts.map((contract) => (
         <Card key={contract.id} className="border">
+          {(() => {
+            const endDate = contract.contract_end_date || contract.end_date || '';
+            return null;
+          })()}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <Badge 
                 variant={
-                  isContractExpired(contract.end_date) ? "destructive" : 
-                  isContractExpiringSoon(contract.end_date) ? "outline" : "default"
+                  isContractExpired(contract.contract_end_date || contract.end_date || '') ? "destructive" : 
+                  isContractExpiringSoon(contract.contract_end_date || contract.end_date || '') ? "outline" : "default"
                 }
               >
-                {isContractExpired(contract.end_date) ? 'منتهي' : 
-                 isContractExpiringSoon(contract.end_date) ? 'ينتهي قريباً' : 'نشط'}
+                {isContractExpired(contract.contract_end_date || contract.end_date || '') ? 'منتهي' : 
+                 isContractExpiringSoon(contract.contract_end_date || contract.end_date || '') ? 'ينتهي قريباً' : 'نشط'}
               </Badge>
               <div className="text-sm text-gray-500">
-                {getPropertyTypeLabel(contract.property_type)}
+                {getPropertyTypeLabel(contract.property_type || 'office')}
               </div>
             </div>
             <CardTitle className="text-lg">{contract.contract_number}</CardTitle>
@@ -96,7 +102,7 @@ const RentContractsGrid = () => {
               <p className="text-sm text-gray-600">تاريخ الانتهاء</p>
               <p className="font-medium flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
-                {new Date(contract.end_date).toLocaleDateString('ar-EG')}
+                {contract.contract_end_date || contract.end_date ? new Date(contract.contract_end_date || contract.end_date || '').toLocaleDateString('ar-EG') : '—'}
               </p>
             </div>
 

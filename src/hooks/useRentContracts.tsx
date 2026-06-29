@@ -40,10 +40,11 @@ const normalizeRentContractPayload = (contract: Partial<RentContract> & Record<s
   const contractEndDate = contract.contract_end_date || contract.end_date;
   const monthlyRent = Number(contract.monthly_rent || 0);
   const propertyAddress = String(contract.property_address || '').trim();
+  const landlordName = String(contract.landlord_name || '').trim();
 
   if (!contractStartDate) throw new Error('تاريخ بداية العقد مطلوب');
   if (!contractEndDate) throw new Error('تاريخ انتهاء العقد مطلوب');
-  if (!contract.landlord_name?.trim()) throw new Error('اسم المالك مطلوب');
+  if (!landlordName) throw new Error('اسم المالك مطلوب');
   if (monthlyRent <= 0) throw new Error('الإيجار الشهري يجب أن يكون أكبر من صفر');
 
   const start = new Date(contractStartDate);
@@ -56,7 +57,7 @@ const normalizeRentContractPayload = (contract: Partial<RentContract> & Record<s
     property_name: contract.property_name || propertyAddress || contract.contract_number || 'عقار بدون اسم',
     property_type: contract.property_type || 'office',
     property_address: propertyAddress || null,
-    landlord_name: contract.landlord_name.trim(),
+    landlord_name: landlordName,
     landlord_phone: contract.landlord_phone || null,
     monthly_rent: monthlyRent,
     currency: contract.currency || 'EGP',
