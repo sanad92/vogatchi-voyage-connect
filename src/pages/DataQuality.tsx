@@ -30,6 +30,26 @@ const DataQualityPage: React.FC = () => {
   const { data: bookings = [], isLoading } = useIncompleteBookings();
   const [filter, setFilter] = useState<IssueFilter>('all');
   const [q, setQ] = useState('');
+  const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const [reconciling, setReconciling] = useState(false);
+
+  const runReconcile = async () => {
+    if (!orgId) return;
+    setReconciling(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('reconcile_bookings_for_org', { _org_id: orgId });
+      if (error) throw error;
+      const inv = data?.invoices_created ?? 0;
+      const pay = data?.payments_created ?? 0;
+      toast.success(`تمت التسوية — ${inv} فاتورة و ${pay} سداد مورد`);
+      queryClient.invalidateQueries();
+    } catch (e: any) {
+      toast.error(e.message || 'فشل التسوية');
+    } finally {
+      setReconciling(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
