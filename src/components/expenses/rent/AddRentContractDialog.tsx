@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Building } from 'lucide-react';
 import { useRentContractForm } from './useRentContractForm';
 import RentContractFormFields from './RentContractFormFields';
+import { toast } from 'sonner';
 
 interface AddRentContractDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddContract: (contractData: any) => void;
+  onAddContract: (contractData: any) => void | Promise<unknown>;
   isAddingContract: boolean;
 }
 
@@ -18,12 +19,22 @@ const AddRentContractDialog = ({
   onAddContract, 
   isAddingContract 
 }: AddRentContractDialogProps) => {
-  const { contractData, resetForm, updateField, isFormValid } = useRentContractForm();
+  const { contractData, resetForm, updateField, isFormValid, getValidationErrors } = useRentContractForm();
 
-  const handleAddContract = () => {
-    onAddContract(contractData);
-    onOpenChange(false);
-    resetForm();
+  const handleAddContract = async () => {
+    const errors = getValidationErrors();
+    if (errors.length > 0) {
+      toast.error(errors[0]);
+      return;
+    }
+
+    try {
+      await onAddContract(contractData);
+      onOpenChange(false);
+      resetForm();
+    } catch {
+      // mutation hook already shows the detailed error message
+    }
   };
 
   return (

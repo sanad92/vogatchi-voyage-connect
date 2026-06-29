@@ -10,9 +10,11 @@ const RentContractAlerts = () => {
   const { rentContracts } = useRentContracts();
   const { rentPayments } = useRentPayments();
 
+  const getContractEndDate = (contract: any) => contract.contract_end_date || contract.end_date;
+
   // العقود التي تنتهي خلال 90 يوم
   const expiringContracts = rentContracts?.filter(contract => {
-    const endDate = new Date(contract.end_date);
+    const endDate = new Date(getContractEndDate(contract));
     const now = new Date();
     const diffTime = endDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -21,7 +23,7 @@ const RentContractAlerts = () => {
 
   // العقود المنتهية
   const expiredContracts = rentContracts?.filter(contract => {
-    const endDate = new Date(contract.end_date);
+    const endDate = new Date(getContractEndDate(contract));
     const now = new Date();
     return endDate < now && contract.is_active;
   }) || [];
@@ -77,7 +79,7 @@ const RentContractAlerts = () => {
                     <p className="font-medium">{contract.contract_number}</p>
                     <p className="text-sm text-gray-600">{contract.property_address}</p>
                     <p className="text-sm text-red-600">
-                      انتهى في {new Date(contract.end_date).toLocaleDateString('ar-SA')}
+                      انتهى في {new Date(getContractEndDate(contract)).toLocaleDateString('ar-SA')}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -107,7 +109,7 @@ const RentContractAlerts = () => {
           <CardContent>
             <div className="space-y-3">
               {expiringContracts.map((contract) => {
-                const endDate = new Date(contract.end_date);
+                const endDate = new Date(getContractEndDate(contract));
                 const now = new Date();
                 const diffTime = endDate.getTime() - now.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

@@ -6,6 +6,7 @@ import type { RentPayment } from '@/types/expenses';
 import { useExchangeRates } from './useExchangeRates';
 import { SupportedCurrency } from '@/types/currency';
 import { useOrgId } from './useOrgId';
+import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
 
 export const useRentPaymentOperations = () => {
   const queryClient = useQueryClient();
@@ -16,11 +17,11 @@ export const useRentPaymentOperations = () => {
     mutationFn: async (paymentData: Omit<RentPayment, 'id' | 'created_at' | 'updated_at'> & { 
       currency?: SupportedCurrency 
     }) => {
-      console.log('جاري إضافة دفعة إيجار:', paymentData);
-
-      if (!paymentData.contract_id || !paymentData.payment_month || !paymentData.amount || !paymentData.due_date) {
-        throw new Error('جميع البيانات الأساسية مطلوبة');
-      }
+      if (!orgId) throw new Error('لم يتم تحديد المؤسسة الحالية');
+      if (!paymentData.contract_id) throw new Error('عقد الإيجار مطلوب');
+      if (!paymentData.payment_month) throw new Error('شهر الدفعة مطلوب');
+      if (!paymentData.amount || paymentData.amount <= 0) throw new Error('مبلغ الدفعة يجب أن يكون أكبر من صفر');
+      if (!paymentData.due_date) throw new Error('تاريخ الاستحقاق مطلوب');
 
       let amountEGP = paymentData.amount;
       let exchangeRate = 1;
@@ -68,7 +69,7 @@ export const useRentPaymentOperations = () => {
     },
     onError: (error: any) => {
       console.error('خطأ في إضافة دفعة الإيجار:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إضافة دفعة الإيجار');
+      toast.error(getFriendlyDatabaseError(error, 'حدث خطأ أثناء إضافة دفعة الإيجار'));
     },
   });
 
