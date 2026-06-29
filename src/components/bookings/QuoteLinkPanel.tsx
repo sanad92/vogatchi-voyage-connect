@@ -15,10 +15,10 @@ export default function QuoteLinkPanel({ quoteId }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from('quotes')
-        .select('id, quote_number, status, total_amount, currency, travel_date')
+        .select('id, quote_number, status, total_amount, travel_date')
         .eq('id', quoteId!)
         .maybeSingle();
-      return data;
+      return data as any;
     },
   });
 
