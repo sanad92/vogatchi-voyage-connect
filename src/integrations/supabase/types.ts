@@ -6875,6 +6875,7 @@ export type Database = {
             }
             Returns: string
           }
+      reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }

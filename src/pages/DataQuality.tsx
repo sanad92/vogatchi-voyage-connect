@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, Wand2, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { useDataQuality, useIncompleteBookings, IncompleteBooking } from '@/hooks/useDataQuality';
+import { useOrgId } from '@/hooks/useOrgId';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 type IssueFilter = 'all' | 'dates' | 'prices' | 'supplier' | 'customer';
 
@@ -26,6 +30,26 @@ const DataQualityPage: React.FC = () => {
   const { data: bookings = [], isLoading } = useIncompleteBookings();
   const [filter, setFilter] = useState<IssueFilter>('all');
   const [q, setQ] = useState('');
+  const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const [reconciling, setReconciling] = useState(false);
+
+  const runReconcile = async () => {
+    if (!orgId) return;
+    setReconciling(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('reconcile_bookings_for_org', { _org_id: orgId });
+      if (error) throw error;
+      const inv = data?.invoices_created ?? 0;
+      const pay = data?.payments_created ?? 0;
+      toast.success(`تمت التسوية — ${inv} فاتورة و ${pay} سداد مورد`);
+      queryClient.invalidateQueries();
+    } catch (e: any) {
+      toast.error(e.message || 'فشل التسوية');
+    } finally {
+      setReconciling(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
@@ -65,11 +89,17 @@ const DataQualityPage: React.FC = () => {
             راجع وأكمل السجلات الناقصة لضمان دقة التقارير المحاسبية والمالية.
           </p>
         </div>
-        {total === 0 && (
-          <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5" /> كل البيانات مكتملة
-          </Badge>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {total === 0 && (
+            <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> كل البيانات مكتملة
+            </Badge>
+          )}
+          <Button onClick={runReconcile} disabled={reconciling || !orgId} className="gap-2">
+            {reconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            تسوية تلقائية للحجوزات (فواتير + سداد موردين)
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

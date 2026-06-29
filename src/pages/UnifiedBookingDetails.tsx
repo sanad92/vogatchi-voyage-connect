@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Hotel, Plane, Car, Truck, User, DollarSign, TrendingUp, TrendingDown, FileText, MessageCircle, RefreshCw } from 'lucide-react';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
+import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
 import { toast } from 'sonner';
 
 const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
@@ -157,6 +158,9 @@ const UnifiedBookingDetails = () => {
           <CardContent><p className="text-muted-foreground">{booking.notes}</p></CardContent>
         </Card>
       )}
+
+      {/* Accounting Linkage */}
+      <BookingAccountingPanel bookingId={booking.id} currency={booking.currency} />
 
       {/* Audit Log */}
       <AuditLogViewer targetTable="bookings" targetId={booking.id} title="سجل التدقيق" compact={true} showFilters={false} />
