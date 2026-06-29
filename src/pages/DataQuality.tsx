@@ -171,7 +171,7 @@ const DataQualityPage: React.FC = () => {
                 {filtered.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell className="font-mono text-xs">{b.booking_number || '—'}</TableCell>
-                    <TableCell>{b.service_type || '—'}</TableCell>
+                    <TableCell>{b.booking_type || '—'}</TableCell>
                     <TableCell>{b.customer_name || <span className="text-destructive">—</span>}</TableCell>
                     <TableCell>{b.supplier_name || <span className="text-destructive">—</span>}</TableCell>
                     <TableCell className="text-xs">
