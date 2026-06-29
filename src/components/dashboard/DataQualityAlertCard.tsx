@@ -16,7 +16,10 @@ const DataQualityAlertCard: React.FC = () => {
     { key: 'bookings_missing_prices', label: 'حجوزات بدون أسعار', count: data.bookings_missing_prices },
     { key: 'bookings_missing_supplier', label: 'حجوزات بدون مورد', count: data.bookings_missing_supplier },
     { key: 'bookings_no_customer', label: 'حجوزات بدون عميل', count: data.bookings_no_customer },
+    { key: 'bookings_negative_profit', label: 'حجوزات بربح سالب', count: data.bookings_negative_profit },
+    { key: 'bookings_no_journal', label: 'حجوزات بدون قيد محاسبي', count: data.bookings_no_journal },
   ];
+
   const total = items.reduce((s, i) => s + (i.count || 0), 0);
 
   if (total === 0) return null;

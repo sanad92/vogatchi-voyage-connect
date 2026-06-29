@@ -1126,6 +1126,7 @@ export type Database = {
           currency: string | null
           customer_id: string | null
           customer_name: string | null
+          data_quality_status: string | null
           employee_id: string | null
           end_date: string | null
           id: string
@@ -1151,6 +1152,7 @@ export type Database = {
           currency?: string | null
           customer_id?: string | null
           customer_name?: string | null
+          data_quality_status?: string | null
           employee_id?: string | null
           end_date?: string | null
           id?: string
@@ -1176,6 +1178,7 @@ export type Database = {
           currency?: string | null
           customer_id?: string | null
           customer_name?: string | null
+          data_quality_status?: string | null
           employee_id?: string | null
           end_date?: string | null
           id?: string

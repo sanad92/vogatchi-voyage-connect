@@ -7,6 +7,8 @@ export interface DataQualityCounts {
   bookings_missing_prices: number;
   bookings_missing_supplier: number;
   bookings_no_customer: number;
+  bookings_negative_profit: number;
+  bookings_no_journal: number;
   customers_no_email: number;
   customers_no_phone: number;
 }
@@ -26,6 +28,8 @@ export const useDataQuality = () => {
         bookings_missing_prices: 0,
         bookings_missing_supplier: 0,
         bookings_no_customer: 0,
+        bookings_negative_profit: 0,
+        bookings_no_journal: 0,
         customers_no_email: 0,
         customers_no_phone: 0,
       };
@@ -34,20 +38,23 @@ export const useDataQuality = () => {
   });
 };
 
+
 export interface IncompleteBooking {
   id: string;
   booking_number: string | null;
   customer_id: string | null;
   customer_name?: string | null;
-  service_type: string | null;
+  booking_type: string | null;
   status: string | null;
   start_date: string | null;
   end_date: string | null;
   selling_price: number | null;
   cost_price: number | null;
+  profit: number | null;
   supplier_id: string | null;
   supplier_name: string | null;
   currency: string | null;
+  data_quality_status: string | null;
   created_at: string;
 }
 
@@ -57,11 +64,11 @@ export const useIncompleteBookings = () => {
     queryKey: ['incomplete-bookings', orgId],
     enabled: !!orgId,
     queryFn: async (): Promise<IncompleteBooking[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bookings')
-        .select('id, booking_number, customer_id, service_type, status, start_date, end_date, selling_price, cost_price, supplier_id, supplier_name, currency, created_at, customers(name)')
+        .select('id, booking_number, customer_id, booking_type, status, start_date, end_date, selling_price, cost_price, profit, supplier_id, supplier_name, currency, data_quality_status, created_at, customers(name)')
         .eq('organization_id', orgId!)
-        .or('start_date.is.null,end_date.is.null,selling_price.is.null,selling_price.eq.0,cost_price.is.null,cost_price.eq.0,supplier_id.is.null')
+        .or('start_date.is.null,end_date.is.null,selling_price.is.null,selling_price.eq.0,cost_price.is.null,cost_price.eq.0,supplier_id.is.null,customer_id.is.null,profit.lt.0')
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -72,3 +79,4 @@ export const useIncompleteBookings = () => {
     },
   });
 };
+
