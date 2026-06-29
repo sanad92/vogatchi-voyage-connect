@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowRight, Hotel, Plane, Car, Truck, User, DollarSign, TrendingUp, TrendingDown, FileText, MessageCircle, RefreshCw } from 'lucide-react';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
+import QuoteLinkPanel from '@/components/bookings/QuoteLinkPanel';
+import CustomerHistoryPanel from '@/components/bookings/CustomerHistoryPanel';
 import { toast } from 'sonner';
 
 const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
@@ -159,8 +161,14 @@ const UnifiedBookingDetails = () => {
         </Card>
       )}
 
+      {/* Quote Linkage */}
+      <QuoteLinkPanel quoteId={(booking as any).quote_id} />
+
       {/* Accounting Linkage */}
       <BookingAccountingPanel bookingId={booking.id} currency={booking.currency} />
+
+      {/* Customer Booking History */}
+      <CustomerHistoryPanel customerId={booking.customer_id} currentBookingId={booking.id} />
 
       {/* Audit Log */}
       <AuditLogViewer targetTable="bookings" targetId={booking.id} title="سجل التدقيق" compact={true} showFilters={false} />

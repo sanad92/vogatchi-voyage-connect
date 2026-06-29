@@ -7,6 +7,7 @@ import { useQuotes, type Quote, type QuoteItem } from '@/hooks/useQuotes';
 import { useQuoteConversion } from '@/hooks/useQuoteConversion';
 import QuoteStatusBadge from '@/components/quotes/QuoteStatusBadge';
 import ConvertQuoteDialog from '@/components/quotes/ConvertQuoteDialog';
+import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -194,6 +195,8 @@ export default function QuoteDetails() {
           <CardContent><p className="text-sm">{quote.notes}</p></CardContent>
         </Card>
       )}
+
+      <QuoteBookingsPanel quoteId={quote.id} />
 
       <ConvertQuoteDialog
         open={convertOpen}
