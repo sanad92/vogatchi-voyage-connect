@@ -89,11 +89,17 @@ const DataQualityPage: React.FC = () => {
             راجع وأكمل السجلات الناقصة لضمان دقة التقارير المحاسبية والمالية.
           </p>
         </div>
-        {total === 0 && (
-          <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5" /> كل البيانات مكتملة
-          </Badge>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {total === 0 && (
+            <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> كل البيانات مكتملة
+            </Badge>
+          )}
+          <Button onClick={runReconcile} disabled={reconciling || !orgId} className="gap-2">
+            {reconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            تسوية تلقائية للحجوزات (فواتير + سداد موردين)
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
