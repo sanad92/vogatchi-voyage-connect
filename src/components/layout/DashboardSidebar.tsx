@@ -36,6 +36,7 @@ const navGroups: NavGroup[] = [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
       { title: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'جودة البيانات', href: '/data-quality', icon: AlertTriangle },
     ],
   },
   {
