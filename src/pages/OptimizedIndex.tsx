@@ -54,10 +54,11 @@ const OptimizedIndex = () => {
 
   if (isLoading) return <DashboardSkeleton />;
 
-  const { realStats, alerts, today } = dashboardData || {
-    realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0 },
-    alerts: { outstandingAmount: 0, outstandingCount: 0, checkoutsToday: 0 },
+  const { realStats, alerts, today, byCurrency } = dashboardData || {
+    realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0, currency: 'EGP' },
+    alerts: { outstandingAmount: 0, outstandingCount: 0, checkoutsToday: 0, currency: 'EGP' },
     today: { todayBookingsCount: 0, weekBookingsCount: 0, newCustomersToday: 0 },
+    byCurrency: [],
   };
 
   return (
