@@ -1,0 +1,1 @@
+ALTER TABLE public.rent_contracts ALTER COLUMN property_name DROP NOT NULL;
