@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
@@ -107,7 +107,7 @@ const DataQualityPage: React.FC = () => {
           />
         </div>
 
-        <TabsContent value={filter} className="m-0">
+        <div>
           <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
