@@ -4568,6 +4568,7 @@ export type Database = {
           description: string | null
           id: string
           is_published: boolean | null
+          organization_id: string | null
           slug: string
           title: string
           updated_at: string | null
@@ -4577,6 +4578,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean | null
+          organization_id?: string | null
           slug: string
           title: string
           updated_at?: string | null
@@ -4586,6 +4588,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean | null
+          organization_id?: string | null
           slug?: string
           title?: string
           updated_at?: string | null
@@ -5199,6 +5202,7 @@ export type Database = {
           id: string
           message: string | null
           name: string
+          organization_id: string | null
           phone: string
           preferred_contact: string | null
           service_type: string | null
@@ -5210,6 +5214,7 @@ export type Database = {
           id?: string
           message?: string | null
           name: string
+          organization_id?: string | null
           phone: string
           preferred_contact?: string | null
           service_type?: string | null
@@ -5221,6 +5226,7 @@ export type Database = {
           id?: string
           message?: string | null
           name?: string
+          organization_id?: string | null
           phone?: string
           preferred_contact?: string | null
           service_type?: string | null
@@ -6219,6 +6225,7 @@ export type Database = {
           customer_id: string | null
           id: string
           last_message_at: string | null
+          organization_id: string | null
           phone_number: string
           priority: string | null
           status: string | null
@@ -6232,6 +6239,7 @@ export type Database = {
           customer_id?: string | null
           id?: string
           last_message_at?: string | null
+          organization_id?: string | null
           phone_number: string
           priority?: string | null
           status?: string | null
@@ -6245,6 +6253,7 @@ export type Database = {
           customer_id?: string | null
           id?: string
           last_message_at?: string | null
+          organization_id?: string | null
           phone_number?: string
           priority?: string | null
           status?: string | null
@@ -6281,6 +6290,7 @@ export type Database = {
           media_url: string | null
           message_id: string | null
           message_type: string | null
+          organization_id: string | null
           read_at: string | null
           sent_at: string | null
           sent_by: string | null
@@ -6302,6 +6312,7 @@ export type Database = {
           media_url?: string | null
           message_id?: string | null
           message_type?: string | null
+          organization_id?: string | null
           read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
@@ -6323,6 +6334,7 @@ export type Database = {
           media_url?: string | null
           message_id?: string | null
           message_type?: string | null
+          organization_id?: string | null
           read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
