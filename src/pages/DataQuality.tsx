@@ -160,7 +160,7 @@ const DataQualityPage: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
+        </div>
       </Card>
     </div>
   );
