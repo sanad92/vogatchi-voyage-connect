@@ -3,6 +3,7 @@ import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
+import DataQualityAlertCard from "@/components/dashboard/DataQualityAlertCard";
 import AlertsStrip from "@/components/dashboard/AlertsStrip";
 import TodayOverview from "@/components/dashboard/TodayOverview";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -73,6 +74,8 @@ const OptimizedIndex = () => {
         </Alert>
 
         <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} />
+
+        <DataQualityAlertCard />
 
         <AlertsStrip
           outstandingCount={alerts?.outstandingCount || 0}

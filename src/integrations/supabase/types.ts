@@ -6591,6 +6591,10 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      booking_make_journal: {
+        Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
+        Returns: undefined
+      }
       calculate_monthly_salary: {
         Args: {
           p_bonus?: number
@@ -6786,6 +6790,7 @@ export type Database = {
               currency: string
             }[]
           }
+      get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
         Returns: {

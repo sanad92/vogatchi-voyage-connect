@@ -48,6 +48,7 @@ const AcceptInvite = lazy(() => import("@/pages/AcceptInvite"));
 const OptimizedIndex = lazy(() => import("@/pages/OptimizedIndex"));
 const Customers = lazy(() => import("@/pages/Customers"));
 const DuplicateCustomersPage = lazy(() => import("@/pages/DuplicateCustomers"));
+const DataQualityPage = lazy(() => import("@/pages/DataQuality"));
 const NewCustomer = lazy(() => import("@/pages/NewCustomer"));
 const CustomerDetails = lazy(() => import("@/pages/CustomerDetails"));
 
@@ -231,6 +232,7 @@ function App() {
                               <Route path="/dashboard" element={<OptimizedIndex />} />
                               <Route path="/customers" element={<PermissionRouteGuard requiredPermission="customers_view"><Customers /></PermissionRouteGuard>} />
                               <Route path="/duplicate-customers" element={<PermissionRouteGuard requiredPermission="customers_view"><DuplicateCustomersPage /></PermissionRouteGuard>} />
+                              <Route path="/data-quality" element={<DataQualityPage />} />
                               <Route path="/new-customer" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
                               <Route path="/customers/:customerId" element={<PermissionRouteGuard requiredPermission="customers_view"><CustomerDetails /></PermissionRouteGuard>} />
                               <Route path="/hotel-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><HotelBookings /></PermissionRouteGuard>} />

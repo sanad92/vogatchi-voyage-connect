@@ -1,101 +1,65 @@
-# خطة شاملة لإصلاح وتوحيد الـ ERP
 
-بناءً على إجاباتك:
-- **الموديولات الأساسية**: CRM، Itinerary Builder، Suppliers، Invoicing & Payments، Reports & Analytics، Staff Management
-- **المستخدمين**: موظفي وكالات السفر
-- **التصميم**: Dark & Professional (نمط Linear / Vercel)
+## الهدف
+1. تظهر كل حجوزات Vogatchi المستوردة في التقارير المالية (إيراد + تكلفة + ربح) بعملتها الأصلية.
+2. كل حجز مرتبط بمورد فعلي في جدول الموردين (وليس مجرد نص).
+3. واجهة واضحة تعرض الحقول الناقصة في الحجوزات والعملاء، مع زر "إكمال" لكل سجل، وبطاقة تنبيه في لوحة التحكم.
 
----
+## المرحلة 1 — قاعدة البيانات (هجرة)
 
-## الخلاصة السريعة
+### أ) إنشاء موردين ناقصين وربط الحجوزات
+- إيجاد كل قيم `supplier_name` المختلفة في `bookings` لمؤسسة Vogatchi.
+- توحيدها (lower + trim + إزالة التكرار غير المهم مثل `Ndc/ndc/NDC`).
+- إنشاء سجل في `suppliers` لكل اسم غير موجود (افتراضي: `supplier_type='other'`, currency حسب أول حجز).
+- تحديث `bookings.supplier_id` بربطها بالـ id الجديد.
 
-النظام دلوقتي فيه كل الموديولات المطلوبة، بس فيه 3 مشاكل كبيرة:
-1. **التصميم مش متناسق** — كل صفحة شكلها مختلف، ألوان hardcoded، مفيش design system موحّد بنمط Linear.
-2. **منطق متضارب ومتكرر** — جداول حجوزات متوازية، تقارير قديمة وجديدة جنب بعض، hooks بتحسب نفس الحاجة بطرق مختلفة.
-3. **الموديولات مش مترابطة** — العميل ما بيشوفش حجوزاته في مكان واحد، المورد مفيش له صفحة شاملة، البنوك مش متربوطة بالـ Payments تلقائياً.
+### ب) Trigger محاسبي على جدول `bookings`
+حالياً القيود تتولد فقط عند إصدار فاتورة. سنضيف:
+```
+trg_booking_to_journal  (AFTER INSERT/UPDATE on bookings)
+```
+عند وضع الحجز كـ `confirmed/completed` ووجود `selling_price` و `cost_price`:
+- مدين: العملاء (1100) بمبلغ البيع
+- دائن: الإيراد المناسب (4000/4010/4020/4030) بمبلغ البيع
+- مدين: تكلفة المبيعات (5000/5010/...) بمبلغ التكلفة
+- دائن: ذمم الموردين (2000) بمبلغ التكلفة
+- العملة = `bookings.currency` (احترام القاعدة لكل عملة قيد منفصل).
 
-الخطة على 6 مراحل، كل مرحلة نتيجتها واضحة وملموسة.
+### ج) ترحيل تاريخي
+- استدعاء post_journal_entry لكل الحجوزات المستوردة الحالية (178) لتصبح ظاهرة في التقارير فوراً.
 
----
+### د) RPC جديد: `get_incomplete_records(_org_id)`
+يرجع JSON يحتوي:
+- `bookings_missing_dates`, `bookings_missing_prices`, `bookings_missing_supplier_link`, `bookings_no_customer`
+- `customers_no_phone`, `customers_no_email`
+- مع counts فقط (للبطاقة)، والصفحة المخصصة تستعمل queries مباشرة للقوائم.
 
-## Phase 1 — Design System موحّد بنمط Linear/Vercel (Foundation)
+## المرحلة 2 — الواجهة
 
-**الهدف**: شكل احترافي موحّد عبر كل الـ ERP قبل ما نلمس أي منطق.
+### أ) صفحة `/data-quality` (مراجعة البيانات)
+- `src/pages/DataQuality.tsx` محمية للمستخدمين المسجلين بالمؤسسة.
+- 4 تابات: الحجوزات بدون تاريخ، بدون سعر، عملاء بدون هاتف، عملاء بدون إيميل.
+- جدول لكل تاب مع أعمدة مفتاحية + زر "إكمال" يفتح Dialog تعديل سريع (Inline edit بحقول مفتاحية فقط).
+- استخدام `useOrgId` + TanStack Query، شغّال RTL، نمط الـ Dashboard الحالي.
 
-- **Theme**: dark أساسي بـ accents بنفسجية/زرقاء، ألوان semantic (`success`, `warning`, `danger`, `info`, `muted`) في `index.css` بالـ HSL.
-- **Typography**: Inter للنصوص + JetBrains Mono للأرقام والـ IDs (نمط Linear).
-- **مكونات موحّدة جديدة في `components/layout/` و `components/common/`**:
-  - `PageHeader` (عنوان + breadcrumb + actions)
-  - `PageContainer` (spacing/padding ثابت)
-  - `DataTable` (sorting, filters, pagination, empty state، column visibility)
-  - `EmptyState`, `LoadingSkeleton`, `ErrorState`
-  - `StatCard` موحّد (بدل 5 أشكال مختلفة دلوقتي)
-  - `EntityDetailLayout` (header + tabs + side panel) — لصفحات تفاصيل العميل/المورد/الحجز
-- **منع** أي `text-green-600` / `bg-blue-500` hardcoded — كله tokens.
-- **Sidebar** موحّد (collapsible بنمط Linear) + Command Menu (Cmd+K).
+### ب) Widget في الـ Dashboard
+- مكوّن `DataQualityAlertCard.tsx` يعرض إجمالي السجلات الناقصة + breakdown مختصر + زر "مراجعة الآن" يفتح `/data-quality`.
+- يظهر فقط لو فيه نواقص فعلاً.
 
-النتيجة: المستخدم يحس فوراً إن الـ ERP "بقى احترافي".
+### ج) Sidebar
+- إضافة عنصر "مراجعة البيانات" تحت قسم الإدارة في القائمة الجانبية مع بادج بعدد النواقص.
 
----
+## المرحلة 3 — التقارير
 
-## Phase 2 — تنظيف الأخطاء المنطقية الحالية
+- مراجعة `FinancialOverview.tsx`: التأكد إن tabs العملات تعرض الآن EGP و USD صح بعد ترحيل القيود.
+- في `BookingStats`/`FlightBookingStats`: لا تغيير على المنطق (يقرأ من bookings مباشرة).
 
-- إكمال شغل العملات: كل `formatCurrency` تمرّر العملة، حذف الـ "ج.م" hardcoded، حذف نهائي لـ `useMultiCurrency`.
-- توحيد طبقة الحسابات المالية في `useFinancialCalculations` واحد (بدل 3 hooks بيحسبوا نفس الحاجة).
-- إصلاح Quote → Booking conversion عشان ينقل كل البيانات.
-- Trigger في الـ DB: لما الحجز يتعدّل، الفاتورة المربوطة بيه تتحدّث تلقائياً.
-- مراجعة كل TanStack queries: استخدام `useOrgId` في الـ queryKey (multi-tenant safety).
+## ملاحظات تقنية
+- الـ trigger يستخدم `ON CONFLICT DO NOTHING` على journal_entries بمفتاح `(reference_type='booking', reference_id)` لتجنب التكرار.
+- العملات: USD وEGP تبقى منفصلة (لا تحويل).
+- لا حذف ولا تعديل على بيانات موجودة خارج إضافة `supplier_id` والقيود.
+- الحجوزات بدون سعر أو تاريخ لن يولّد لها قيد محاسبي (تظهر في صفحة المراجعة لإكمالها أولاً).
 
----
-
-## Phase 3 — توحيد الموديولات المتوازية
-
-- اعتماد جدول `bookings` الموحّد كمصدر وحيد. صفحات Flight/Hotel/Car/Transport تبقى Filtered Views على نفس الجدول.
-- اعتماد `ImprovedFinancialDashboard` كتقرير مالي وحيد، حذف `Reports.tsx` و `ProfitLossReport.tsx` القديمة.
-- توحيد العمولات في hook واحد `useCommissions`.
-- حذف الـ legacy hooks المعلّمة `@deprecated`.
-
----
-
-## Phase 4 — Itinerary Builder (موديول مهم ناقص فعلياً)
-
-- صفحة جديدة `/itinerary-builder` — drag & drop لبناء برنامج رحلة (طيران + فندق + مواصلات + أنشطة) خطوة بخطوة.
-- ربطه بالـ Suppliers لاستيراد الأسعار تلقائياً.
-- تصدير الـ Itinerary كـ PDF احترافي + إرسال WhatsApp/Email للعميل.
-- تحويل الـ Itinerary لـ Quote → Booking بضغطة واحدة.
-
----
-
-## Phase 5 — ربط الموديولات ببعضها (Customer 360 / Supplier 360)
-
-- **Customer Details** كصفحة موحّدة بتبويبات:
-  - Overview (KPIs + segment + loyalty)
-  - Bookings (كل أنواع الحجوزات في timeline واحد)
-  - Invoices & Payments (مع الرصيد المتبقّي)
-  - Communication (WhatsApp + Email history)
-  - Documents (جوازات سفر، تأشيرات)
-  - Activity Log
-- **Supplier Details** بتبويبات: Overview، Bookings، Payments الواجبة عليه، Allotments، Rates، Statement of Account.
-- **ربط Bank Accounts بالـ Payments**: Trigger يحدّث الرصيد تلقائياً مع كل دفعة (مع مراعاة العملة).
-- **توليد Journal Entries تلقائياً** من Invoice/Payment/Expense/Salary عبر Trigger موحّد.
-- **Automation Engine**: ربط أحداث Booking confirmed، Payment received، Invoice overdue بـ WhatsApp/Email تلقائياً.
-
----
-
-## Phase 6 — Staff Management & Permissions & Polish
-
-- **Staff Management**: صفحة موحّدة فيها (الموظف + صلاحياته + رواتبه + عمولاته + حضوره).
-- **Permissions UI**: الأزرار/الـ Menu items تختفي حسب صلاحية المستخدم فعلياً (مش بس الـ RLS في الـ DB).
-- **Global Search (Cmd+K)**: customers + bookings + invoices + suppliers + pages.
-- **Audit Trail UI** موحّد في كل صفحة Details.
-- **Onboarding تجريبي**: Empty States ذكية للمؤسسة الجديدة فيها CTAs لإضافة أول عميل/مورد/حجز.
-- مراجعة كل Edge Functions (JWT + input validation).
-- Lazy loading للصفحات الكبيرة + Error Boundaries في الـ Routes.
-
----
-
-## القرارات اللي محتاج أكّد عليها قبل ما أبدأ
-
-1. **أبدأ بـ Phase 1 (Design System الجديد بنمط Linear) دلوقتي؟** هي أكتر مرحلة المستخدم هيحس بفرقها فوراً، ومش هتلمس أي بيانات.
-2. **في Phase 3 — موافق نوحّد الحجوزات في جدول `bookings` ونحذف التقارير القديمة؟** ده قرار معماري كبير لكنه هيحلّ مشاكل كتير دفعة واحدة.
-3. **Phase 4 (Itinerary Builder)** — ده موديول جديد فعلياً، تحب ابنيه بنفس أسلوب TripCreator (drag & drop visual) ولا أبسط (form-based)؟
+## النتيجة المتوقعة
+- كل القيم تظهر في صفحة التقارير المالية بعملتها.
+- صفحة `/data-quality` تعرض الآن: 16 حجز بدون تاريخ، 9 بدون سعر، 114 عميل بدون هاتف، 721 بدون إيميل.
+- بطاقة تنبيه واضحة في الـ Dashboard.
