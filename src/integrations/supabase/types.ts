@@ -5039,7 +5039,7 @@ export type Database = {
           payment_day_of_month: number | null
           payment_method: string | null
           property_address: string | null
-          property_name: string
+          property_name: string | null
           property_type: string | null
           renewal_period_months: number | null
           security_deposit: number | null
@@ -5071,7 +5071,7 @@ export type Database = {
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
-          property_name: string
+          property_name?: string | null
           property_type?: string | null
           renewal_period_months?: number | null
           security_deposit?: number | null
@@ -5103,7 +5103,7 @@ export type Database = {
           payment_day_of_month?: number | null
           payment_method?: string | null
           property_address?: string | null
-          property_name?: string
+          property_name?: string | null
           property_type?: string | null
           renewal_period_months?: number | null
           security_deposit?: number | null
