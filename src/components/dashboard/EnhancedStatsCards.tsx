@@ -1,12 +1,14 @@
 import { LucideIcon, Calendar, Wallet, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CURRENCY_SYMBOLS } from '@/types/currency';
+import type { CurrencyTotals } from '@/hooks/useOptimizedDashboard';
 
 interface KPI {
   title: string;
   value: string;
   icon: LucideIcon;
   hint?: string;
-  trend?: number; // percentage
+  trend?: number;
   tone?: 'default' | 'warning' | 'success';
 }
 
@@ -17,15 +19,21 @@ interface EnhancedStatsCardsProps {
     activeCustomers: number;
     monthlyGrowth: number;
     netProfit?: number;
+    currency?: string;
   };
-  alerts?: { outstandingAmount: number; outstandingCount: number; checkoutsToday: number };
+  alerts?: { outstandingAmount: number; outstandingCount: number; checkoutsToday: number; currency?: string };
   today?: { todayBookingsCount: number; weekBookingsCount: number; newCustomersToday: number };
+  byCurrency?: CurrencyTotals[];
 }
 
-const formatCurrency = (amount: number): string => {
-  if (Math.abs(amount) >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(amount) >= 1_000) return `${(amount / 1_000).toFixed(0)}K`;
-  return amount.toLocaleString();
+const formatNumber = (amount: number, currency: string): string => {
+  const sym = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || currency;
+  const abs = Math.abs(amount);
+  let val: string;
+  if (abs >= 1_000_000) val = `${(amount / 1_000_000).toFixed(2)}M`;
+  else if (abs >= 1_000) val = `${(amount / 1_000).toFixed(1)}K`;
+  else val = amount.toLocaleString('ar-EG', { maximumFractionDigits: 2 });
+  return `${val} ${sym}`;
 };
 
 const KPICard = ({ title, value, icon: Icon, hint, trend, tone = 'default' }: KPI) => {
@@ -66,32 +74,29 @@ const KPICard = ({ title, value, icon: Icon, hint, trend, tone = 'default' }: KP
   );
 };
 
-const EnhancedStatsCards = ({ realStats, alerts, today }: EnhancedStatsCardsProps) => {
-  const profitMargin = realStats.totalRevenue > 0
-    ? ((realStats.netProfit || 0) / realStats.totalRevenue * 100).toFixed(1)
-    : '0';
-
+const CurrencyRow = ({ totals, today, checkoutsToday }: { totals: CurrencyTotals; today?: EnhancedStatsCardsProps['today']; checkoutsToday: number }) => {
+  const profitMargin = totals.totalRevenue > 0 ? ((totals.netProfit / totals.totalRevenue) * 100).toFixed(1) : '0';
   const cards: KPI[] = [
     {
-      title: 'الإيرادات (إجمالي)',
-      value: formatCurrency(realStats.totalRevenue),
+      title: `الإيرادات (${totals.currency})`,
+      value: formatNumber(totals.totalRevenue, totals.currency),
       icon: TrendingUp,
-      trend: realStats.monthlyGrowth,
-      hint: 'مقارنة بالشهر الماضي — للتفصيل بالعملة راجع التقارير',
+      trend: totals.monthlyGrowth,
+      hint: 'مقارنة بالشهر الماضي',
     },
     {
-      title: 'صافي الربح',
-      value: formatCurrency(realStats.netProfit || 0),
+      title: `صافي الربح (${totals.currency})`,
+      value: formatNumber(totals.netProfit, totals.currency),
       icon: Wallet,
       hint: `هامش ${profitMargin}%`,
-      tone: (realStats.netProfit || 0) >= 0 ? 'success' : 'warning',
+      tone: totals.netProfit >= 0 ? 'success' : 'warning',
     },
     {
-      title: 'مستحقات على العملاء',
-      value: formatCurrency(alerts?.outstandingAmount || 0),
+      title: `مستحقات على العملاء (${totals.currency})`,
+      value: formatNumber(totals.outstandingAmount, totals.currency),
       icon: AlertCircle,
-      hint: `${alerts?.outstandingCount || 0} حجز غير مكتمل الدفع`,
-      tone: (alerts?.outstandingAmount || 0) > 0 ? 'warning' : 'default',
+      hint: `${totals.outstandingCount} حجز غير مكتمل الدفع`,
+      tone: totals.outstandingAmount > 0 ? 'warning' : 'default',
     },
     {
       title: 'حجوزات اليوم',
@@ -100,11 +105,30 @@ const EnhancedStatsCards = ({ realStats, alerts, today }: EnhancedStatsCardsProp
       hint: `${today?.weekBookingsCount || 0} هذا الأسبوع`,
     },
   ];
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <KPICard key={card.title} {...card} />
+      {cards.map((c) => <KPICard key={c.title} {...c} />)}
+    </div>
+  );
+};
+
+const EnhancedStatsCards = ({ realStats, alerts, today, byCurrency }: EnhancedStatsCardsProps) => {
+  const list: CurrencyTotals[] = byCurrency && byCurrency.length
+    ? byCurrency
+    : [{
+        currency: realStats.currency || 'EGP',
+        totalRevenue: realStats.totalRevenue,
+        netProfit: realStats.netProfit || 0,
+        outstandingAmount: alerts?.outstandingAmount || 0,
+        outstandingCount: alerts?.outstandingCount || 0,
+        bookingsCount: realStats.totalBookings,
+        monthlyGrowth: realStats.monthlyGrowth,
+      }];
+
+  return (
+    <div className="space-y-4">
+      {list.map((t) => (
+        <CurrencyRow key={t.currency} totals={t} today={today} checkoutsToday={alerts?.checkoutsToday || 0} />
       ))}
     </div>
   );
