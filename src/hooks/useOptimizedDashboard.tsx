@@ -3,6 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from './useOrgId';
 
+export interface CurrencyTotals {
+  currency: string;
+  totalRevenue: number;
+  netProfit: number;
+  outstandingAmount: number;
+  outstandingCount: number;
+  bookingsCount: number;
+  monthlyGrowth: number;
+}
+
 export const useOptimizedDashboard = () => {
   const orgId = useOrgId();
 
@@ -11,12 +21,12 @@ export const useOptimizedDashboard = () => {
     queryFn: async () => {
       try {
         const [hotelBookingsResult, flightBookingsResult, carRentalsResult, transportResult, customersResult, recentBookingsResult, recentCustomersResult] = await Promise.allSettled([
-          supabase.from('hotel_bookings').select('total_cost_customer, total_profit, paid_amount, check_in_date, check_out_date, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
-          supabase.from('flight_bookings').select('total_cost_egp, total_profit, paid_amount, departure_date, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
-          supabase.from('car_rentals').select('total_cost_egp, total_rental_cost, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
-          supabase.from('transport_bookings').select('total_cost, total_profit, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('hotel_bookings').select('total_cost_customer, total_profit, paid_amount, currency, check_in_date, check_out_date, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('flight_bookings').select('total_cost_egp, total_profit, paid_amount, currency, departure_date, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('car_rentals').select('total_cost_egp, total_rental_cost, total_profit, currency, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
+          supabase.from('transport_bookings').select('total_cost, total_profit, currency, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
           supabase.from('customers').select('id, name, total_bookings, loyalty_points, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }),
-          supabase.from('hotel_bookings').select('id, customer_name, hotel_name, total_cost_customer, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(3),
+          supabase.from('hotel_bookings').select('id, customer_name, hotel_name, total_cost_customer, currency, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(3),
           supabase.from('customers').select('id, name, created_at').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(2)
         ]);
 
@@ -29,31 +39,53 @@ export const useOptimizedDashboard = () => {
         const recentCustomers = recentCustomersResult.status === 'fulfilled' && !recentCustomersResult.value.error ? recentCustomersResult.value.data || [] : [];
 
         const totalBookings = hotelBookings.length + flightBookings.length + carRentals.length + transports.length;
-        const totalRevenue =
-          hotelBookings.reduce((sum: number, b: any) => sum + (b.total_cost_customer || 0), 0) +
-          flightBookings.reduce((sum: number, b: any) => sum + (b.total_cost_egp || 0), 0) +
-          carRentals.reduce((sum: number, b: any) => sum + (b.total_cost_egp || b.total_rental_cost || 0), 0) +
-          transports.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
-        const netProfit =
-          hotelBookings.reduce((sum: number, b: any) => sum + (b.total_profit || 0), 0) +
-          flightBookings.reduce((sum: number, b: any) => sum + (b.total_profit || 0), 0) +
-          carRentals.reduce((sum: number, b: any) => sum + (b.total_profit || 0), 0) +
-          transports.reduce((sum: number, b: any) => sum + (b.total_profit || 0), 0);
-        const activeCustomers = customers.length;
 
-        // Outstanding receivables (customer paid less than total)
-        const outstandingAmount =
-          hotelBookings.reduce((s: number, b: any) => s + Math.max(0, (b.total_cost_customer || 0) - (b.paid_amount || 0)), 0) +
-          flightBookings.reduce((s: number, b: any) => s + Math.max(0, (b.total_cost_egp || 0) - (b.paid_amount || 0)), 0);
-        const outstandingCount =
-          hotelBookings.filter((b: any) => (b.total_cost_customer || 0) > (b.paid_amount || 0)).length +
-          flightBookings.filter((b: any) => (b.total_cost_egp || 0) > (b.paid_amount || 0)).length;
+        // Normalize and aggregate per currency
+        type Row = { currency: string; revenue: number; profit: number; paid: number; created_at: string };
+        const rows: Row[] = [
+          ...hotelBookings.map((b: any) => ({ currency: b.currency || 'EGP', revenue: +b.total_cost_customer || 0, profit: +b.total_profit || 0, paid: +b.paid_amount || 0, created_at: b.created_at })),
+          ...flightBookings.map((b: any) => ({ currency: b.currency || 'EGP', revenue: +b.total_cost_egp || 0, profit: +b.total_profit || 0, paid: +b.paid_amount || 0, created_at: b.created_at })),
+          ...carRentals.map((b: any) => ({ currency: b.currency || 'EGP', revenue: +(b.total_cost_egp || b.total_rental_cost) || 0, profit: +b.total_profit || 0, paid: 0, created_at: b.created_at })),
+          ...transports.map((b: any) => ({ currency: b.currency || 'EGP', revenue: +b.total_cost || 0, profit: +b.total_profit || 0, paid: 0, created_at: b.created_at })),
+        ];
 
-        // Today / week activity
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
         const startOfWeek = startOfDay - 6 * 24 * 60 * 60 * 1000;
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+
+        const byCurrencyMap: Record<string, CurrencyTotals & { _curRev: number; _prevRev: number }> = {};
+        for (const r of rows) {
+          const c = r.currency;
+          if (!byCurrencyMap[c]) {
+            byCurrencyMap[c] = { currency: c, totalRevenue: 0, netProfit: 0, outstandingAmount: 0, outstandingCount: 0, bookingsCount: 0, monthlyGrowth: 0, _curRev: 0, _prevRev: 0 };
+          }
+          const agg = byCurrencyMap[c];
+          agg.totalRevenue += r.revenue;
+          agg.netProfit += r.profit;
+          const out = Math.max(0, r.revenue - r.paid);
+          agg.outstandingAmount += out;
+          if (out > 0) agg.outstandingCount += 1;
+          agg.bookingsCount += 1;
+          const t = new Date(r.created_at).getTime();
+          if (t >= currentMonthStart) agg._curRev += r.revenue;
+          else if (t >= previousMonthStart && t < currentMonthStart) agg._prevRev += r.revenue;
+        }
+        const byCurrency: CurrencyTotals[] = Object.values(byCurrencyMap)
+          .map((a) => ({
+            currency: a.currency,
+            totalRevenue: a.totalRevenue,
+            netProfit: a.netProfit,
+            outstandingAmount: a.outstandingAmount,
+            outstandingCount: a.outstandingCount,
+            bookingsCount: a.bookingsCount,
+            monthlyGrowth: a._prevRev > 0 ? Number(((a._curRev - a._prevRev) / a._prevRev * 100).toFixed(1)) : 0,
+          }))
+          .sort((x, y) => y.totalRevenue - x.totalRevenue);
+
+        const primary = byCurrency[0] || { currency: 'EGP', totalRevenue: 0, netProfit: 0, outstandingAmount: 0, outstandingCount: 0, bookingsCount: 0, monthlyGrowth: 0 };
 
         const todayBookingsCount =
           hotelBookings.filter((b: any) => { const t = new Date(b.created_at).getTime(); return t >= startOfDay && t < endOfDay; }).length +
@@ -63,37 +95,35 @@ export const useOptimizedDashboard = () => {
           flightBookings.filter((b: any) => new Date(b.created_at).getTime() >= startOfWeek).length;
         const newCustomersToday = customers.filter((c: any) => new Date(c.created_at).getTime() >= startOfDay).length;
 
-        // Bookings ending today (hotel checkouts)
         const checkoutsToday = hotelBookings.filter((b: any) => {
           if (!b.check_out_date) return false;
           const d = new Date(b.check_out_date);
           return d >= new Date(startOfDay) && d < new Date(endOfDay);
         }).length;
 
-        let monthlyGrowth = 0;
-        try {
-          const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const allBookings = [...hotelBookings.map((b: any) => ({ ...b, rev: b.total_cost_customer || 0 })), ...flightBookings.map((b: any) => ({ ...b, rev: b.total_cost_egp || 0 }))];
-          const currentMonthRevenue = allBookings.filter((b: any) => { try { return new Date(b.created_at) >= currentMonthStart; } catch { return false; } }).reduce((s: number, b: any) => s + b.rev, 0);
-          const previousMonthRevenue = allBookings.filter((b: any) => { try { const d = new Date(b.created_at); return d >= previousMonthStart && d < currentMonthStart; } catch { return false; } }).reduce((s: number, b: any) => s + b.rev, 0);
-          monthlyGrowth = previousMonthRevenue > 0 ? ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
-        } catch {}
-
         const vipCustomers = customers.filter((c: any) => (c.total_bookings || 0) >= 10).length;
         const loyaltyPoints = customers.reduce((s: number, c: any) => s + (c.loyalty_points || 0), 0);
 
         return {
-          realStats: { totalBookings, totalRevenue, activeCustomers, monthlyGrowth: Number(monthlyGrowth.toFixed(1)), netProfit },
-          alerts: { outstandingAmount, outstandingCount, checkoutsToday },
+          realStats: {
+            totalBookings,
+            totalRevenue: primary.totalRevenue,
+            activeCustomers: customers.length,
+            monthlyGrowth: primary.monthlyGrowth,
+            netProfit: primary.netProfit,
+            currency: primary.currency,
+          },
+          byCurrency,
+          alerts: { outstandingAmount: primary.outstandingAmount, outstandingCount: primary.outstandingCount, checkoutsToday, currency: primary.currency },
           today: { todayBookingsCount, weekBookingsCount, newCustomersToday },
           crmStats: { vipCustomers, loyaltyPoints },
           customers, recentBookings, recentCustomers
         };
       } catch {
         return {
-          realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0 },
-          alerts: { outstandingAmount: 0, outstandingCount: 0, checkoutsToday: 0 },
+          realStats: { totalBookings: 0, totalRevenue: 0, activeCustomers: 0, monthlyGrowth: 0, netProfit: 0, currency: 'EGP' },
+          byCurrency: [] as CurrencyTotals[],
+          alerts: { outstandingAmount: 0, outstandingCount: 0, checkoutsToday: 0, currency: 'EGP' },
           today: { todayBookingsCount: 0, weekBookingsCount: 0, newCustomersToday: 0 },
           crmStats: { vipCustomers: 0, loyaltyPoints: 0 },
           customers: [], recentBookings: [], recentCustomers: []
