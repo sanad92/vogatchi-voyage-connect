@@ -5040,8 +5040,10 @@ export type Database = {
           payment_method: string | null
           property_address: string | null
           property_name: string
+          property_type: string | null
           renewal_period_months: number | null
           security_deposit: number | null
+          start_date: string | null
           updated_at: string | null
           utilities_included: boolean | null
         }
@@ -5070,8 +5072,10 @@ export type Database = {
           payment_method?: string | null
           property_address?: string | null
           property_name: string
+          property_type?: string | null
           renewal_period_months?: number | null
           security_deposit?: number | null
+          start_date?: string | null
           updated_at?: string | null
           utilities_included?: boolean | null
         }
@@ -5100,8 +5104,10 @@ export type Database = {
           payment_method?: string | null
           property_address?: string | null
           property_name?: string
+          property_type?: string | null
           renewal_period_months?: number | null
           security_deposit?: number | null
+          start_date?: string | null
           updated_at?: string | null
           utilities_included?: boolean | null
         }
