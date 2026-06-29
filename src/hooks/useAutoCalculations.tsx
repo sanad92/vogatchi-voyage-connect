@@ -55,7 +55,7 @@ export const useAutoCalculations = ({
 
       const financialBreakdown = calculateFinancialBreakdown({
         subtotal: priceCalc.totalCost,
-        vatRate,
+        vatRate: taxRate,
         paidAmount: Number(paid_amount),
         totalCost: priceCalc.totalSupplierCost ?? priceCalc.totalCost,
       });
@@ -110,7 +110,7 @@ export const useAutoCalculations = ({
 
       const financialBreakdown = calculateFinancialBreakdown({
         subtotal: flightCalc.totalCost,
-        vatRate,
+        vatRate: taxRate,
         paidAmount: Number(paid_amount),
         totalCost: flightCalc.totalSupplierCost ?? flightCalc.totalCost,
       });
@@ -157,9 +157,9 @@ export const useAutoCalculations = ({
     try {
       const financialBreakdown = calculateFinancialBreakdown({
         subtotal,
-        discountAmount,
-        vatRate,
-        paidAmount,
+        discountAmount: discount_amount,
+        vatRate: vat_rate,
+        paidAmount: paid_amount,
       });
 
       const result = {
