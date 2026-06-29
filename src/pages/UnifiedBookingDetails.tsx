@@ -159,6 +159,9 @@ const UnifiedBookingDetails = () => {
         </Card>
       )}
 
+      {/* Accounting Linkage */}
+      <BookingAccountingPanel bookingId={booking.id} currency={booking.currency} />
+
       {/* Audit Log */}
       <AuditLogViewer targetTable="bookings" targetId={booking.id} title="سجل التدقيق" compact={true} showFilters={false} />
     </div>
