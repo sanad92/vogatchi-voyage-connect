@@ -8,6 +8,8 @@ import { SupportedCurrency } from '@/types/currency';
 import { useOrgId } from './useOrgId';
 import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
 
+const EMPTY_RENT_PAYMENTS: (RentPayment & { contract?: any })[] = [];
+
 export const useRentPayments = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
@@ -122,7 +124,7 @@ export const useRentPayments = () => {
   };
 
   return {
-    rentPayments,
+    rentPayments: rentPayments || EMPTY_RENT_PAYMENTS,
     paymentsLoading,
     addRentPayment,
     isAddingPayment,

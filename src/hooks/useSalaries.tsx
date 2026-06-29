@@ -5,6 +5,8 @@ import type { MonthlySalary } from '@/types/expenses';
 import { toast } from 'sonner';
 import { useOrgId } from './useOrgId';
 
+const EMPTY_SALARIES: (MonthlySalary & { employee?: any })[] = [];
+
 export const useSalaries = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
@@ -64,5 +66,5 @@ export const useSalaries = () => {
     };
   };
 
-  return { monthlySalaries, salariesLoading, calculateMonthlySalary, isCalculatingSalary, updateSalaryStatus, isUpdatingSalary, calculateTotalSalariesInEGP, getSalaryStatistics };
+  return { monthlySalaries: monthlySalaries || EMPTY_SALARIES, salariesLoading, calculateMonthlySalary, isCalculatingSalary, updateSalaryStatus, isUpdatingSalary, calculateTotalSalariesInEGP, getSalaryStatistics };
 };

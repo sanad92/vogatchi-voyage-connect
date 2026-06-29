@@ -16,6 +16,8 @@ interface ExpenseTransaction {
 interface UseExpenseTransactionsOptions { search?: string; categoryId?: string; status?: string; paymentMethod?: string; dateFrom?: string; dateTo?: string; }
 interface UsePaginationOptions { page?: number; pageSize?: number; }
 
+const EMPTY_TRANSACTIONS: ExpenseTransaction[] = [];
+
 export const useExpenseTransactionsOptimized = (
   filters: UseExpenseTransactionsOptions = {},
   pagination: UsePaginationOptions = {}
@@ -43,7 +45,7 @@ export const useExpenseTransactionsOptimized = (
     enabled: !!orgId,
   });
 
-  const transactions = queryData?.data || [];
+  const transactions = queryData?.data || EMPTY_TRANSACTIONS;
   const totalCount = queryData?.count || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
