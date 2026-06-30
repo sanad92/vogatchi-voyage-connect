@@ -9,20 +9,36 @@ export const useTransportBookings = () => {
   const orgId = useOrgId();
 
   const { data: transportData, isLoading: bookingsLoading, refetch } = useQuery({
-    queryKey: ['transport-bookings', orgId],
+    queryKey: ['transport-bookings-unified', orgId],
     queryFn: async () => {
       if (!orgId) return { bookings: [], totalCount: 0 };
 
-      const { data, error, count } = await supabase.from('transport_bookings')
-        .select(`*, customer:customers(id, name, phone, email), route:transport_routes(route_name, route_name_ar), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(id, name, name_ar, color)`, { count: 'exact' })
-        .eq('organization_id', orgId)
-        .order('created_at', { ascending: false })
-        .limit(5000);
+      const [{ data, error, count }, customersRes, statusesRes] = await Promise.all([
+        (supabase as any).from('transport_bookings_unified')
+          .select('*', { count: 'exact' })
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(5000),
+        supabase.from('customers').select('id, name, phone, email').eq('organization_id', orgId),
+        supabase.from('booking_statuses').select('*'),
+      ]);
       if (error) throw error;
-      return { bookings: data as TransportBooking[], totalCount: count || 0 };
+
+      const customersList = (customersRes.data || []) as any[];
+      const statusesList = (statusesRes.data || []) as any[];
+
+      const bookings = (data || []).map((b: any) => ({
+        ...b,
+        customer: b.customer_id ? customersList.find(c => c.id === b.customer_id) || null : null,
+        route: b.route_name ? { route_name: b.route_name, route_name_ar: b.route_name } : null,
+        vehicle_type: b.vehicle_type_name ? { name: b.vehicle_type_name, name_ar: b.vehicle_type_name } : null,
+        status: statusesList.find(s => s.id === b.status_id) || null,
+      })) as unknown as TransportBooking[];
+      return { bookings, totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
+
 
   const transportBookings = transportData?.bookings;
   const totalTransportCount = transportData?.totalCount || 0;

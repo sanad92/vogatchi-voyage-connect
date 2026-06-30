@@ -10,27 +10,52 @@ export const useFlightBookings = () => {
   const orgId = useOrgId();
 
   const { data: flightData, isLoading: bookingsLoading } = useQuery({
-    queryKey: ['flight-bookings', orgId],
+    queryKey: ['flight-bookings-unified', orgId],
     queryFn: async (): Promise<{ bookings: FlightBooking[]; totalCount: number }> => {
       if (!orgId) return { bookings: [], totalCount: 0 };
 
-      const { data, error, count } = await supabase
-        .from('flight_bookings')
-        .select(`*, departure_airport:airports!departure_airport_id(*), arrival_airport:airports!arrival_airport_id(*), airline:airlines(*), flight_class:flight_classes(*), booking_status:booking_statuses(*)`, { count: 'exact' })
-        .eq('organization_id', orgId)
-        .order('created_at', { ascending: false })
-        .limit(5000);
+      const [{ data, error, count }, airportsRes, airlinesRes, classesRes, statusesRes] = await Promise.all([
+        (supabase as any)
+          .from('flight_bookings_unified')
+          .select('*', { count: 'exact' })
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(5000),
+        supabase.from('airports').select('*'),
+        supabase.from('airlines').select('*'),
+        supabase.from('flight_classes').select('*'),
+        supabase.from('booking_statuses').select('*'),
+      ]);
       if (error) throw error;
-      const bookings = (data || []).map(booking => ({
+
+      const airportsList = (airportsRes.data || []) as any[];
+      const airlinesList = (airlinesRes.data || []) as any[];
+      const classesList = (classesRes.data || []) as any[];
+      const statusesList = (statusesRes.data || []) as any[];
+
+      const findAirport = (code?: string | null) =>
+        code ? airportsList.find(a => a.iata_code === code || a.icao_code === code || a.name === code) : null;
+      const findAirline = (name?: string | null) =>
+        name ? airlinesList.find(a => a.name === name || a.name_ar === name || a.iata_code === name) : null;
+      const findClass = (name?: string | null) =>
+        name ? classesList.find(c => c.name === name || c.name_ar === name) : null;
+
+      const bookings = (data || []).map((booking: any) => ({
         ...booking,
-        passenger_details: Array.isArray(booking.passenger_details) ? booking.passenger_details : booking.passenger_details ? JSON.parse(booking.passenger_details as string) : [],
-        baggage_info: booking.baggage_info ? (typeof booking.baggage_info === 'string' ? JSON.parse(booking.baggage_info) : booking.baggage_info) : undefined,
-        ticket_numbers: Array.isArray(booking.ticket_numbers) ? booking.ticket_numbers : []
-      })) as FlightBooking[];
+        departure_airport: findAirport(booking.departure_airport_code),
+        arrival_airport: findAirport(booking.arrival_airport_code),
+        airline: findAirline(booking.airline_name),
+        flight_class: findClass(booking.flight_class_name),
+        booking_status: statusesList.find(s => s.id === booking.status_id) || null,
+        passenger_details: [],
+        baggage_info: undefined,
+        ticket_numbers: booking.ticket_number ? [booking.ticket_number] : [],
+      })) as unknown as FlightBooking[];
       return { bookings, totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
+
 
   const { data: airports = [] } = useQuery({
     queryKey: ['airports', orgId],
