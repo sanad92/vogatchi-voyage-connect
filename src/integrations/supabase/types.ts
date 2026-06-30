@@ -796,6 +796,34 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_car_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_car_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_car_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_car_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
         ]
       }
       booking_flight_details: {
@@ -873,6 +901,34 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_flight_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_flight_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_flight_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_flight_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
         ]
       }
       booking_hotel_details: {
@@ -942,6 +998,34 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hotel_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hotel_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hotel_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hotel_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
             referencedColumns: ["id"]
           },
         ]
@@ -1113,6 +1197,34 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_transport_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_transport_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_transport_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_transport_details_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
             referencedColumns: ["id"]
           },
         ]
@@ -6623,7 +6735,313 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      car_rentals_unified: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          daily_rate: number | null
+          employee_id: string | null
+          id: string | null
+          insurance_included: boolean | null
+          invoice_sent: boolean | null
+          organization_id: string | null
+          paid_amount: number | null
+          pickup_location: string | null
+          remaining_amount: number | null
+          rental_duration_days: number | null
+          rental_end_date: string | null
+          rental_reference: string | null
+          rental_start_date: string | null
+          return_location: string | null
+          special_requirements: string | null
+          status_id: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          supplier_payment_sent: boolean | null
+          supplier_total_cost: number | null
+          total_profit: number | null
+          total_rental_cost: number | null
+          updated_at: string | null
+          vehicle_type_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_bookings_unified: {
+        Row: {
+          airline_name: string | null
+          arrival_airport_code: string | null
+          arrival_date: string | null
+          arrival_time: string | null
+          booking_agent_name: string | null
+          booking_reference: string | null
+          confirmation_number: string | null
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          departure_airport_code: string | null
+          departure_date: string | null
+          departure_time: string | null
+          employee_id: string | null
+          flight_class_name: string | null
+          flight_number: string | null
+          id: string | null
+          invoice_sent: boolean | null
+          is_round_trip: boolean | null
+          meal_preferences: string | null
+          number_of_passengers: number | null
+          organization_id: string | null
+          paid_amount: number | null
+          remaining_amount: number | null
+          seat_preferences: string | null
+          special_requests: string | null
+          status_id: string | null
+          supplier_cost: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          supplier_payment_sent: boolean | null
+          taxes_and_fees: number | null
+          ticket_number: string | null
+          ticket_price_per_person: number | null
+          total_cost: number | null
+          total_profit: number | null
+          updated_at: string | null
+          voucher_sent: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hotel_bookings_unified: {
+        Row: {
+          booking_agent_name: string | null
+          booking_date: string | null
+          booking_reference_supplier: string | null
+          cancellation_policy: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          children_ages: string | null
+          cost_per_night: number | null
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          destination_city: string | null
+          employee_id: string | null
+          hotel_name: string | null
+          hotel_star_rating: number | null
+          id: string | null
+          internal_booking_number: string | null
+          internal_notes: string | null
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          meal_plan: string | null
+          number_of_adults: number | null
+          number_of_children: number | null
+          number_of_nights: number | null
+          number_of_rooms: number | null
+          organization_id: string | null
+          paid_amount: number | null
+          remaining_amount: number | null
+          room_type: string | null
+          selling_price_per_night: number | null
+          status_id: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          total_cost_customer: number | null
+          total_cost_supplier: number | null
+          total_profit: number | null
+          updated_at: string | null
+          voucher_sent: boolean | null
+          voucher_sent_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_bookings_unified: {
+        Row: {
+          booking_reference: string | null
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          departure_date: string | null
+          departure_time: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          dropoff_location: string | null
+          employee_id: string | null
+          id: string | null
+          invoice_sent: boolean | null
+          invoice_sent_date: string | null
+          number_of_passengers: number | null
+          organization_id: string | null
+          paid_amount: number | null
+          pickup_location: string | null
+          remaining_amount: number | null
+          route_name: string | null
+          special_requests: string | null
+          status_id: string | null
+          supplier_cost: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          supplier_payment_sent: boolean | null
+          supplier_payment_sent_date: string | null
+          total_cost: number | null
+          total_profit: number | null
+          updated_at: string | null
+          vehicle_plate_number: string | null
+          vehicle_type_name: string | null
+          voucher_sent: boolean | null
+          voucher_sent_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }

@@ -10,18 +10,37 @@ export const useCarRentals = () => {
   const orgId = useOrgId();
 
   const { data, isLoading: rentalsLoading } = useQuery({
-    queryKey: ['car-rentals', orgId],
+    queryKey: ['car-rentals-unified', orgId],
     queryFn: async () => {
-      const { data, error, count } = await supabase
-        .from('car_rentals')
-        .select(`*, customer:customers(name), vehicle_type:vehicle_types(name, name_ar), status:booking_statuses(name, name_ar, color)`, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .limit(5000);
+      if (!orgId) return { rentals: [] as CarRental[], totalCount: 0 };
+
+      const [{ data, error, count }, customersRes, statusesRes] = await Promise.all([
+        (supabase as any)
+          .from('car_rentals_unified')
+          .select('*', { count: 'exact' })
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(5000),
+        supabase.from('customers').select('id, name').eq('organization_id', orgId),
+        supabase.from('booking_statuses').select('*'),
+      ]);
       if (error) throw error;
-      return { rentals: data as CarRental[], totalCount: count || 0 };
+
+      const customersList = (customersRes.data || []) as any[];
+      const statusesList = (statusesRes.data || []) as any[];
+
+      const rentals = (data || []).map((r: any) => ({
+        ...r,
+        customer: r.customer_id ? customersList.find(c => c.id === r.customer_id) || null : null,
+        vehicle_type: r.vehicle_type_name ? { name: r.vehicle_type_name, name_ar: r.vehicle_type_name } : null,
+        status: statusesList.find(s => s.id === r.status_id) || null,
+      })) as unknown as CarRental[];
+
+      return { rentals, totalCount: count || 0 };
     },
     enabled: !!orgId,
   });
+
 
   const addCarRentalMutation = useMutation({
     mutationFn: async (rental: Omit<CarRental, 'id' | 'created_at' | 'updated_at' | 'rental_reference'>) => {

@@ -33,89 +33,45 @@ const HotelBookings = () => {
   } = useHotelBookingsPage();
   const orgId = useOrgId();
 
-  // تبسيط الاستعلام لتجنب مشاكل join المعقدة
+  // قراءة الحجوزات من الـ view الموحد بحيث تشمل الحجوزات الجديدة والقديمة
   const { data: bookings = [], isLoading, refetch, error } = useQuery({
-    queryKey: ['hotel-bookings', orgId],
+    queryKey: ['hotel-bookings-unified', orgId],
     queryFn: async () => {
-      try {
-        console.log('🏨 Fetching hotel bookings...');
-        
-        if (!orgId) return [];
+      if (!orgId) return [] as HotelBooking[];
 
-        const { data: allBookingsData, error: bookingsError } = await supabase
-          .from('hotel_bookings')
-          .select('*')
-          .order('created_at', { ascending: false });
+      const { data: bookingsData, error: bookingsError } = await (supabase as any)
+        .from('hotel_bookings_unified')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('created_at', { ascending: false });
 
-        if (bookingsError) {
-          console.error('❌ Error fetching bookings:', bookingsError);
-          throw bookingsError;
-        }
-
-        const customerIdsResult = await supabase
-          .from('customers')
-          .select('id')
-          .eq('organization_id', orgId);
-
-        const employeeIdsResult = await supabase
-          .from('employees')
-          .select('id')
-          .eq('organization_id', orgId);
-
-        const customerIds = (customerIdsResult.data || [])
-          .map((row: any) => row.id)
-          .filter(Boolean);
-        const employeeIds = (employeeIdsResult.data || [])
-          .map((row: any) => row.id)
-          .filter(Boolean);
-
-        const relevantBookingsData = (allBookingsData || []).filter((booking: any) => {
-          if (!booking) return false;
-          if (booking.organization_id === orgId) return true;
-          if (booking.customer_id && customerIds.includes(booking.customer_id)) return true;
-          if (booking.employee_id && employeeIds.includes(booking.employee_id)) return true;
-          return false;
-        });
-
-        const uniqueBookingsData = Array.from(
-          new Map(relevantBookingsData.map((booking: any) => [booking.id, booking])).values()
-        );
-
-        console.log('✅ Bookings fetched:', uniqueBookingsData.length);
-
-        // جلب حالات الحجز بشكل منفصل
-        const { data: statusesData, error: statusesError } = await supabase
-          .from('booking_statuses')
-          .select('*');
-
-        if (statusesError) {
-          console.warn('⚠️ Could not fetch booking statuses:', statusesError);
-        }
-
-        // دمج البيانات يدوياً
-        const bookingsWithStatus = uniqueBookingsData.map(booking => {
-          const status = statusesData?.find(s => s.id === booking.status_id);
-          return {
-            ...booking,
-            booking_status: status ? {
-              id: status.id,
-              name: status.name,
-              name_ar: status.name_ar,
-              color: status.color
-            } : null
-          };
-        }) || [];
-
-        return bookingsWithStatus as HotelBooking[];
-      } catch (error) {
-        console.error('❌ Hotel bookings query failed:', error);
-        throw error;
+      if (bookingsError) {
+        console.error('❌ Error fetching hotel bookings (unified):', bookingsError);
+        throw bookingsError;
       }
+
+      const { data: statusesData } = await supabase.from('booking_statuses').select('*');
+
+      const bookingsWithStatus = (bookingsData || []).map((booking: any) => {
+        const status = statusesData?.find((s: any) => s.id === booking.status_id);
+        return {
+          ...booking,
+          booking_status: status ? {
+            id: status.id,
+            name: status.name,
+            name_ar: status.name_ar,
+            color: status.color,
+          } : null,
+        };
+      });
+
+      return bookingsWithStatus as HotelBooking[];
     },
     retry: 1,
     retryDelay: 1000,
     enabled: !!orgId,
   });
+
 
   const handleNewBooking = () => {
     setEditingBooking(null);
