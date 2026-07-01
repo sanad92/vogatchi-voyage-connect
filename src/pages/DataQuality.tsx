@@ -204,6 +204,8 @@ const DataQualityPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      <DuplicateCustomersPanel />
     </div>
   );
 };
