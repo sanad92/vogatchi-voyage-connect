@@ -193,7 +193,7 @@ export const WhatsAppSettings: React.FC = () => {
                 type="password"
                 value={formData.access_token}
                 onChange={(e) => setFormData({...formData, access_token: e.target.value})}
-                placeholder="رمز الوصول الخاص بك"
+                placeholder={settings?.id ? '•••••••• (اتركه فارغاً للإبقاء على القيمة الحالية)' : 'رمز الوصول الخاص بك'}
                 required
               />
             </div>
