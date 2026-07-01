@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { useDataQuality, useIncompleteBookings, IncompleteBooking } from '@/hooks/useDataQuality';
+import DuplicateCustomersPanel from '@/components/data-quality/DuplicateCustomersPanel';
 import { useOrgId } from '@/hooks/useOrgId';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
