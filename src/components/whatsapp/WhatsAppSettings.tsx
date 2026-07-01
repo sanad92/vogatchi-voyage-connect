@@ -204,7 +204,7 @@ export const WhatsAppSettings: React.FC = () => {
                 id="webhook_verify_token"
                 value={formData.webhook_verify_token}
                 onChange={(e) => setFormData({...formData, webhook_verify_token: e.target.value})}
-                placeholder="رمز التحقق من الـ webhook"
+                placeholder={settings?.id ? '•••••••• (اتركه فارغاً للإبقاء على القيمة الحالية)' : 'رمز التحقق من الـ webhook'}
                 required
               />
             </div>
