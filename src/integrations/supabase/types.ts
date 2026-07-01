@@ -7101,6 +7101,16 @@ export type Database = {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
       }
+      find_duplicate_customers: {
+        Args: { _org_id: string }
+        Returns: {
+          customer_count: number
+          customer_ids: string[]
+          emails: string[]
+          names: string[]
+          normalized_phone: string
+        }[]
+      }
       find_supplier_rate: {
         Args: {
           _org_id: string
@@ -7212,6 +7222,7 @@ export type Database = {
           total_due: number
         }[]
       }
+      get_data_quality_details: { Args: { _org_id: string }; Returns: Json }
       get_duplicate_customers: {
         Args: never
         Returns: {
@@ -7306,6 +7317,10 @@ export type Database = {
       is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
+        Returns: Json
+      }
+      merge_customers: {
+        Args: { _keep_id: string; _merge_ids: string[]; _org_id: string }
         Returns: Json
       }
       post_journal_entry:
