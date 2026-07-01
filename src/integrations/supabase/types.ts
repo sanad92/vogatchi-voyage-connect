@@ -5701,6 +5701,7 @@ export type Database = {
           exchange_rate: number | null
           id: string
           notes: string | null
+          organization_id: string | null
           paid_date: string | null
           payment_date: string | null
           payment_method: string | null
@@ -5721,6 +5722,7 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           paid_date?: string | null
           payment_date?: string | null
           payment_method?: string | null
@@ -5741,6 +5743,7 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           paid_date?: string | null
           payment_date?: string | null
           payment_method?: string | null

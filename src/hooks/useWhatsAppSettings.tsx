@@ -41,9 +41,11 @@ export const useWhatsAppSettings = () => {
   } = useQuery({
     queryKey: ['whatsapp-settings'],
     queryFn: async () => {
+      // Note: access_token and webhook_verify_token are intentionally NOT selected.
+      // Sensitive credentials are only readable by the backend service role.
       const { data, error } = await supabase
         .from('whatsapp_settings')
-        .select('*')
+        .select('id, business_name, phone_number_id, webhook_url, is_active, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, created_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -64,19 +66,24 @@ export const useWhatsAppSettings = () => {
       // إنشاء webhook URL
       const webhookUrl = `${window.location.origin}/api/whatsapp/webhook`;
       
-      const dataToSave = {
+      const dataToSave: any = {
         ...settingsData,
         webhook_url: webhookUrl,
         updated_at: new Date().toISOString()
       };
 
+      // Only send credential fields when the user actually typed a new value,
+      // so blank fields don't wipe stored secrets on the server.
+      if (!settingsData.access_token) delete dataToSave.access_token;
+      if (!settingsData.webhook_verify_token) delete dataToSave.webhook_verify_token;
+
       if (settings?.id) {
-        // تحديث الإعدادات الموجودة
+        // تحديث الإعدادات الموجودة (بدون إرجاع الحقول الحساسة)
         const { data, error } = await supabase
           .from('whatsapp_settings')
           .update(dataToSave)
           .eq('id', settings.id)
-          .select()
+          .select('id, business_name, phone_number_id, webhook_url, is_active, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, created_at, updated_at')
           .single();
 
         if (error) {
@@ -90,7 +97,7 @@ export const useWhatsAppSettings = () => {
         const { data, error } = await supabase
           .from('whatsapp_settings')
           .insert([dataToSave])
-          .select()
+          .select('id, business_name, phone_number_id, webhook_url, is_active, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, created_at, updated_at')
           .single();
 
         if (error) {

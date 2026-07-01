@@ -23,8 +23,8 @@ export const WhatsAppSettings: React.FC = () => {
   const [formData, setFormData] = useState({
     business_name: settings?.business_name || '',
     phone_number_id: settings?.phone_number_id || '',
-    access_token: settings?.access_token || '',
-    webhook_verify_token: settings?.webhook_verify_token || '',
+    access_token: '',
+    webhook_verify_token: '',
     webhook_url: settings?.webhook_url || '',
     business_description: settings?.business_description || '',
     business_website: settings?.business_website || '',
@@ -37,11 +37,12 @@ export const WhatsAppSettings: React.FC = () => {
 
   React.useEffect(() => {
     if (settings) {
-      setFormData({
+      setFormData((prev) => ({
+        ...prev,
         business_name: settings.business_name || '',
         phone_number_id: settings.phone_number_id || '',
-        access_token: settings.access_token || '',
-        webhook_verify_token: settings.webhook_verify_token || '',
+        // access_token & webhook_verify_token are write-only from the client;
+        // keep whatever the user typed and never overwrite with values from the DB.
         webhook_url: settings.webhook_url || '',
         business_description: settings.business_description || '',
         business_website: settings.business_website || '',
@@ -50,7 +51,7 @@ export const WhatsAppSettings: React.FC = () => {
         rate_limit_per_minute: settings.rate_limit_per_minute || 80,
         auto_assignment_enabled: settings.auto_assignment_enabled ?? true,
         is_active: settings.is_active ?? true
-      });
+      }));
     }
   }, [settings]);
 
@@ -192,8 +193,8 @@ export const WhatsAppSettings: React.FC = () => {
                 type="password"
                 value={formData.access_token}
                 onChange={(e) => setFormData({...formData, access_token: e.target.value})}
-                placeholder="رمز الوصول الخاص بك"
-                required
+                placeholder={settings?.id ? '•••••••• (اتركه فارغاً للإبقاء على القيمة الحالية)' : 'رمز الوصول الخاص بك'}
+                required={!settings?.id}
               />
             </div>
 
@@ -203,8 +204,8 @@ export const WhatsAppSettings: React.FC = () => {
                 id="webhook_verify_token"
                 value={formData.webhook_verify_token}
                 onChange={(e) => setFormData({...formData, webhook_verify_token: e.target.value})}
-                placeholder="رمز التحقق من الـ webhook"
-                required
+                placeholder={settings?.id ? '•••••••• (اتركه فارغاً للإبقاء على القيمة الحالية)' : 'رمز التحقق من الـ webhook'}
+                required={!settings?.id}
               />
             </div>
 
