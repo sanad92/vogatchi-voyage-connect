@@ -49,73 +49,25 @@ export const useCustomerData = (customerId: string) => {
         throw new Error('لم يتم العثور على العميل');
       }
 
-      // Load all booking types separately
+      // Load unified bookings + supporting data in parallel
       const [
-        { data: hotelBookings },
-        { data: flightBookings },
-        { data: transportBookings },
-        { data: carRentals },
+        { data: unifiedBookings },
         { data: loyaltyData },
         { data: communicationsData },
         { data: notesData },
         { data: followUpsData }
       ] = await Promise.all([
-        // Hotel bookings
         supabase
-          .from('hotel_bookings')
-          .select(`
-            *,
-            status:booking_statuses(name, name_ar, color)
-          `)
+          .from('bookings')
+          .select('id, booking_number, booking_type, status, selling_price, cost_price, currency, start_date, end_date, supplier_name, notes, created_at')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false }),
 
-        // Flight bookings
-        supabase
-          .from('flight_bookings')
-          .select(`
-            *,
-            status:booking_statuses(name, name_ar, color),
-            departure_airport:airports!flight_bookings_departure_airport_id_fkey(name, city, iata_code),
-            arrival_airport:airports!flight_bookings_arrival_airport_id_fkey(name, city, iata_code),
-            airline:airlines(name)
-          `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false }),
-
-        // Transport bookings
-        supabase
-          .from('transport_bookings')
-          .select(`
-            *,
-            status:booking_statuses(name, name_ar, color),
-            route:transport_routes(route_name, route_name_ar),
-            vehicle_type:vehicle_types(name, name_ar)
-          `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false }),
-
-        // Car rentals
-        supabase
-          .from('car_rentals')
-          .select(`
-            *,
-            status:booking_statuses(name, name_ar, color),
-            vehicle_type:vehicle_types(name, name_ar)
-          `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false }),
-
-        // Loyalty transactions
         supabase
           .from('loyalty_points')
-          .select(`
-            *,
-            booking:hotel_bookings(internal_booking_number)
-          `)
+          .select('*')
           .eq('customer_id', customerId),
 
-        // Communications
         supabase
           .from('customer_communications')
           .select(`
@@ -124,7 +76,6 @@ export const useCustomerData = (customerId: string) => {
           `)
           .eq('customer_id', customerId),
 
-        // Notes
         supabase
           .from('customer_notes')
           .select(`
@@ -133,7 +84,6 @@ export const useCustomerData = (customerId: string) => {
           `)
           .eq('customer_id', customerId),
 
-        // Follow-ups
         supabase
           .from('customer_follow_ups')
           .select(`
@@ -143,13 +93,46 @@ export const useCustomerData = (customerId: string) => {
           .eq('customer_id', customerId)
       ]);
 
-      // Combine all data
+      // Group unified bookings by booking_type and normalise fields
+      // used by CustomerDetails (hotel_name, check_in_date, status.name_ar…).
+      const byType = { hotel: [] as any[], flight: [] as any[], transport: [] as any[], car_rental: [] as any[] };
+      for (const b of (unifiedBookings ?? []) as any[]) {
+        const normalised = {
+          ...b,
+          internal_booking_number: b.booking_number,
+          booking_reference: b.booking_number,
+          hotel_name: b.supplier_name,
+          check_in_date: b.start_date,
+          check_out_date: b.end_date,
+          departure_date: b.start_date,
+          rental_start_date: b.start_date,
+          rental_end_date: b.end_date,
+          total_cost_customer: b.selling_price,
+          total_cost: b.selling_price,
+          total_rental_cost: b.selling_price,
+          status: { name_ar: b.status, name: b.status, color: '#64748b' },
+        };
+        const key = (b.booking_type as keyof typeof byType) || 'hotel';
+        (byType[key] ?? byType.hotel).push(normalised);
+      }
+
+      // Derived stats from unified bookings (fallback to stored columns)
+      const totalBookings = (unifiedBookings?.length ?? 0) || (basicData as any).total_bookings || 0;
+      const totalSpent =
+        (unifiedBookings ?? []).reduce((s: number, b: any) => s + (Number(b.selling_price) || 0), 0) ||
+        (basicData as any).total_spent || 0;
+      const lastBookingDate =
+        (unifiedBookings ?? [])[0]?.created_at ?? (basicData as any).last_booking_date ?? null;
+
       const combinedData = {
         ...(basicData as any),
-        hotel_bookings: hotelBookings || [],
-        flight_bookings: flightBookings || [],
-        transport_bookings: transportBookings || [],
-        car_rentals: carRentals || [],
+        total_bookings: totalBookings,
+        total_spent: totalSpent,
+        last_booking_date: lastBookingDate,
+        hotel_bookings: byType.hotel,
+        flight_bookings: byType.flight,
+        transport_bookings: byType.transport,
+        car_rentals: byType.car_rental,
         loyalty_transactions: loyaltyData || [],
         communications: communicationsData || [],
         notes: notesData || [],
