@@ -41,9 +41,11 @@ export const useWhatsAppSettings = () => {
   } = useQuery({
     queryKey: ['whatsapp-settings'],
     queryFn: async () => {
+      // Note: access_token and webhook_verify_token are intentionally NOT selected.
+      // Sensitive credentials are only readable by the backend service role.
       const { data, error } = await supabase
         .from('whatsapp_settings')
-        .select('*')
+        .select('id, business_name, phone_number_id, webhook_url, is_active, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, created_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
