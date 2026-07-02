@@ -7068,6 +7068,12 @@ export type Database = {
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      convert_quote_to_bookings: {
+        Args: { p_quote_id: string }
+        Returns: {
+          booking_id: string
+        }[]
+      }
       count_org_bookings_this_month: {
         Args: { _org_id: string }
         Returns: number
@@ -7173,6 +7179,7 @@ export type Database = {
               currency: string
             }[]
           }
+      get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_cash_flow:
         | {
             Args: { _end_date: string; _org_id: string; _start_date: string }
