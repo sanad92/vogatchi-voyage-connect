@@ -45,26 +45,45 @@ serve(async (req) => {
     );
 
     if (req.method === 'GET') {
-      // Webhook verification
+      // Webhook verification (Meta hub challenge)
       const url = new URL(req.url);
       const mode = url.searchParams.get('hub.mode');
       const token = url.searchParams.get('hub.verify_token');
       const challenge = url.searchParams.get('hub.challenge');
 
-      const { data: settings } = await supabase
-        .from('whatsapp_settings')
-        .select('webhook_verify_token')
-        .eq('is_active', true)
-        .single();
-
-      if (mode === 'subscribe' && token === settings?.webhook_verify_token) {
-        return new Response(challenge, { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
-        });
+      // Prefer env secret (single-tenant / initial setup); fall back to DB for multi-tenant later.
+      let expected = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? '';
+      if (!expected) {
+        const { data } = await supabase
+          .from('whatsapp_settings')
+          .select('webhook_verify_token')
+          .eq('is_active', true)
+          .not('webhook_verify_token', 'is', null)
+          .limit(1)
+          .maybeSingle();
+        expected = data?.webhook_verify_token ?? '';
       }
 
-      return new Response('Forbidden', { status: 403, headers: corsHeaders });
+      if (!expected) {
+        console.error('[whatsapp-webhook] verification failed: no verify token configured (env WHATSAPP_VERIFY_TOKEN missing and no active whatsapp_settings row)');
+        return new Response('Server misconfigured: no verify token', { status: 500, headers: corsHeaders });
+      }
+
+      if (mode !== 'subscribe') {
+        console.error('[whatsapp-webhook] verification failed: hub.mode is', mode);
+        return new Response('Forbidden', { status: 403, headers: corsHeaders });
+      }
+
+      if (!token || token !== expected) {
+        console.error('[whatsapp-webhook] verification failed: token mismatch');
+        return new Response('Forbidden', { status: 403, headers: corsHeaders });
+      }
+
+      console.log('[whatsapp-webhook] verification succeeded');
+      return new Response(challenge ?? '', {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
+      });
     }
 
     if (req.method === 'POST') {
