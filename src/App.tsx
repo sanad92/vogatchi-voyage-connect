@@ -186,6 +186,8 @@ function App() {
                   <SupabaseProtectedRoute><OnboardingWizard /></SupabaseProtectedRoute>
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/data-deletion" element={<DataDeletion />} />
 
                 {/* Platform Admin — separate layout, no DashboardLayout */}
                 <Route path="/platform/*" element={
