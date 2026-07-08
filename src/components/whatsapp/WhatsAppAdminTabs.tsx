@@ -14,6 +14,7 @@ import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
 import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
+import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 
 export const WhatsAppAdminTabs: React.FC = () => {
   return (
