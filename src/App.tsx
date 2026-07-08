@@ -43,6 +43,8 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const RegisterOrganization = lazy(() => import("@/pages/RegisterOrganization"));
 const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
 const AcceptInvite = lazy(() => import("@/pages/AcceptInvite"));
+const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
 
 // Dashboard & Core
 const OptimizedIndex = lazy(() => import("@/pages/OptimizedIndex"));
@@ -186,6 +188,8 @@ function App() {
                   <SupabaseProtectedRoute><OnboardingWizard /></SupabaseProtectedRoute>
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/data-deletion" element={<DataDeletion />} />
 
                 {/* Platform Admin — separate layout, no DashboardLayout */}
                 <Route path="/platform/*" element={

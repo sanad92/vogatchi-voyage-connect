@@ -6352,6 +6352,38 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_connection_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          organization_id: string | null
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          organization_id?: string | null
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          organization_id?: string | null
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_connection_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_conversations: {
         Row: {
           assigned_to: string | null
@@ -6538,13 +6570,16 @@ export type Database = {
           connected_at: string | null
           connection_method: string | null
           created_at: string | null
+          disconnected_at: string | null
           display_phone_number: string | null
           id: string
           is_active: boolean | null
           meta_user_id: string | null
+          onboarding_status: string | null
           organization_id: string | null
           phone_number_id: string | null
           rate_limit_per_minute: number | null
+          token_expires_at: string | null
           updated_at: string | null
           waba_id: string | null
           webhook_url: string | null
@@ -6562,13 +6597,16 @@ export type Database = {
           connected_at?: string | null
           connection_method?: string | null
           created_at?: string | null
+          disconnected_at?: string | null
           display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
           meta_user_id?: string | null
+          onboarding_status?: string | null
           organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
+          token_expires_at?: string | null
           updated_at?: string | null
           waba_id?: string | null
           webhook_url?: string | null
@@ -6586,13 +6624,16 @@ export type Database = {
           connected_at?: string | null
           connection_method?: string | null
           created_at?: string | null
+          disconnected_at?: string | null
           display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
           meta_user_id?: string | null
+          onboarding_status?: string | null
           organization_id?: string | null
           phone_number_id?: string | null
           rate_limit_per_minute?: number | null
+          token_expires_at?: string | null
           updated_at?: string | null
           waba_id?: string | null
           webhook_url?: string | null

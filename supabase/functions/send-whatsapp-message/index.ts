@@ -106,26 +106,26 @@ serve(async (req) => {
       }
     }
 
-    // Get WhatsApp settings
-    const { data: settings } = await supabase
-      .from('whatsapp_settings')
-      .select('*')
-      .eq('is_active', true)
-      .single();
-
-    if (!settings) {
-      throw new Error('WhatsApp settings not found');
-    }
-
-    // Get conversation details
+    // Get conversation (with its organization_id) to scope credentials
     const { data: conversation } = await supabase
       .from('whatsapp_conversations')
-      .select('phone_number')
+      .select('phone_number, organization_id')
       .eq('id', conversationId)
       .single();
 
     if (!conversation) {
       throw new Error('Conversation not found');
+    }
+
+    // Get WhatsApp settings for this organization
+    const { data: settings } = await supabase
+      .from('whatsapp_settings')
+      .select('phone_number_id, access_token, api_version, onboarding_status')
+      .eq('organization_id', conversation.organization_id)
+      .maybeSingle();
+
+    if (!settings || !settings.access_token || !settings.phone_number_id) {
+      throw new Error('WhatsApp not connected for this organization');
     }
 
     // Prepare message payload
@@ -157,8 +157,9 @@ serve(async (req) => {
         break;
     }
 
-    // Send message to WhatsApp API
-    const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${settings.phone_number_id}/messages`, {
+    // Send message to WhatsApp API (per-org token + api version)
+    const gv = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
+    const whatsappResponse = await fetch(`https://graph.facebook.com/${gv}/${settings.phone_number_id}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${settings.access_token}`,
@@ -177,6 +178,7 @@ serve(async (req) => {
     const { data: savedMessage, error } = await supabase
       .from('whatsapp_messages')
       .insert({
+        organization_id: conversation.organization_id,
         conversation_id: conversationId,
         message_id: result.messages[0].id,
         direction: 'outbound',
