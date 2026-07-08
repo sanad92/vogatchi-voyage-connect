@@ -178,6 +178,7 @@ serve(async (req) => {
     const { data: savedMessage, error } = await supabase
       .from('whatsapp_messages')
       .insert({
+        organization_id: conversation.organization_id,
         conversation_id: conversationId,
         message_id: result.messages[0].id,
         direction: 'outbound',
