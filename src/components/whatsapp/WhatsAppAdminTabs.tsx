@@ -54,7 +54,8 @@ export const WhatsAppAdminTabs: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="settings" className="mt-6">
+        <TabsContent value="settings" className="mt-6 space-y-6">
+          <WhatsAppConnectCard />
           <WhatsAppSettings />
         </TabsContent>
 
