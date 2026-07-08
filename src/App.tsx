@@ -43,6 +43,8 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const RegisterOrganization = lazy(() => import("@/pages/RegisterOrganization"));
 const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
 const AcceptInvite = lazy(() => import("@/pages/AcceptInvite"));
+const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
 
 // Dashboard & Core
 const OptimizedIndex = lazy(() => import("@/pages/OptimizedIndex"));
