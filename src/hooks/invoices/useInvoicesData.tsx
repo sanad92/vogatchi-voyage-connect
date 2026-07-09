@@ -66,14 +66,15 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
           ? supabase.from('hotel_bookings').select('id, customer_name, hotel_name, destination_city, check_in_date, check_out_date, internal_booking_number, voucher_sent').in('id', hotelIds)
           : Promise.resolve({ data: [] as any[] }),
         flightIds.length
-          ? supabase.from('flight_bookings').select('id, customer_name, airline_name, departure_date, booking_reference, confirmation_number').in('id', flightIds)
+          ? supabase.from('flight_bookings').select('id, customer_name, airline:airlines(name), departure_date, booking_reference, confirmation_number').in('id', flightIds)
           : Promise.resolve({ data: [] as any[] }),
         transportIds.length
-          ? supabase.from('transport_bookings').select('id, customer_name, service_type, pickup_location, dropoff_location, service_date, booking_reference').in('id', transportIds)
+          ? supabase.from('transport_bookings').select('id, customer_name, pickup_location, dropoff_location, departure_date, booking_reference').in('id', transportIds)
           : Promise.resolve({ data: [] as any[] }),
         carIds.length
-          ? supabase.from('car_rentals').select('id, customer_name, vehicle_make, vehicle_model, pickup_date, return_date, rental_reference').in('id', carIds)
+          ? supabase.from('car_rentals').select('id, customer_name, vehicle_make, vehicle_model, rental_start_date, rental_end_date, rental_reference').in('id', carIds)
           : Promise.resolve({ data: [] as any[] }),
+
       ]);
 
       const idx = (arr: any[]) => Object.fromEntries((arr || []).map((r: any) => [r.id, r]));
@@ -82,13 +83,17 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
       const tMap = idx(transports.data || []);
       const cMap = idx(cars.data || []);
 
-      return invoices.map((inv: any) => ({
-        ...inv,
-        hotel_booking: inv.booking_type === 'hotel' ? hMap[inv.booking_id] : null,
-        flight_booking: inv.booking_type === 'flight' ? fMap[inv.booking_id] : null,
-        transport_booking: inv.booking_type === 'transport' ? tMap[inv.booking_id] : null,
-        car_rental: inv.booking_type === 'car_rental' ? cMap[inv.booking_id] : null,
-      }));
+      return invoices.map((inv: any) => {
+        const fb = inv.booking_type === 'flight' ? fMap[inv.booking_id] : null;
+        return {
+          ...inv,
+          hotel_booking: inv.booking_type === 'hotel' ? hMap[inv.booking_id] : null,
+          flight_booking: fb ? { ...fb, airline_name: fb.airline?.name || null } : null,
+          transport_booking: inv.booking_type === 'transport' ? tMap[inv.booking_id] : null,
+          car_rental: inv.booking_type === 'car_rental' ? cMap[inv.booking_id] : null,
+        };
+      });
+
     },
     staleTime: 3 * 60 * 1000,
   });

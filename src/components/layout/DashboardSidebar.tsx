@@ -71,7 +71,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'الفواتير', href: '/invoices', icon: Receipt },
       { title: 'المستندات', href: '/documents', icon: FileText, requiredPermission: 'documents_view' },
-      { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, requiredPermission: 'financial_view' },
+      // { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, requiredPermission: 'financial_view' }, // Deferred: payment_orders table not implemented yet
       { title: 'الحسابات البنكية', href: '/bank-accounts', icon: Building2, requiredPermission: 'financial_view' },
       { title: 'المصروفات', href: '/expense-management', icon: Calculator, requiredPermission: 'expenses_view' },
     ],
