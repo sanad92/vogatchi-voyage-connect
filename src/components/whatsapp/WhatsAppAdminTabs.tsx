@@ -91,6 +91,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
           <WhatsAppSLASettings />
         </TabsContent>
 
+        <TabsContent value="chatbot" className="mt-6">
+          <WhatsAppChatbotSettings />
+        </TabsContent>
+
         <TabsContent value="automation" className="mt-6">
           <WhatsAppAutomationBuilder />
         </TabsContent>
