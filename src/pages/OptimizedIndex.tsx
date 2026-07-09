@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import DataQualityAlertCard from "@/components/dashboard/DataQualityAlertCard";
@@ -14,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+
 
 const DashboardSkeleton = () => (
   <div className="space-y-6 p-4 lg:p-8 max-w-[1600px] mx-auto">
@@ -32,8 +34,10 @@ const DashboardSkeleton = () => (
 );
 
 const OptimizedIndex = () => {
+  usePageTitle('لوحة التحكم');
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
+
 
   if (error) {
     return (

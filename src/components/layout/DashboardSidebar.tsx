@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -8,10 +8,14 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap, ClipboardList, BanknoteIcon, AlertTriangle
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
+  ClipboardList, BanknoteIcon, AlertTriangle, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
+
 
 interface NavItem {
   title: string;
@@ -137,6 +141,28 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     return initial;
   });
 
+  // Client-side favorites (per-browser). No schema change.
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch { /* ignore */ }
+  }, [favorites]);
+
+  const toggleFavorite = (href: string) => {
+    setFavorites((prev) =>
+      prev.includes(href) ? prev.filter((h) => h !== href) : [...prev, href].slice(0, 8)
+    );
+  };
+
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
@@ -154,7 +180,16 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     return group.items.some(item => canAccessItem(item));
   };
 
+  // Resolve favorite items by looking them up across all groups
+  const favoriteItems = useMemo(() => {
+    const flat: NavItem[] = allGroups.flatMap((g) => g.items);
+    return favorites
+      .map((href) => flat.find((it) => it.href === href))
+      .filter((it): it is NavItem => !!it && canAccessItem(it));
+  }, [favorites, allGroups, isSuperAdmin, hasPermission]);
+
   const sidebarContent = (
+
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={cn(
@@ -214,7 +249,46 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       <ScrollArea className="flex-1">
         <nav className="py-3 px-2 space-y-0.5">
           <TooltipProvider delayDuration={0}>
+            {/* Favorites (client-side pins) */}
+            {!collapsed && favoriteItems.length > 0 && (
+              <div className="mb-3 pb-3 border-b border-sidebar-border">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+                  <Star className="h-3.5 w-3.5 text-warning" />
+                  المفضلة
+                </div>
+                <div className="space-y-0.5 mt-0.5">
+                  {favoriteItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={`fav-${item.href}`}
+                        to={item.href}
+                        onClick={onMobileClose}
+                        className={cn(
+                          "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                          active
+                            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                        )}
+                        <Icon className={cn(
+                          "h-[18px] w-[18px] flex-shrink-0",
+                          active ? "text-sidebar-primary" : "text-sidebar-foreground/60"
+                        )} />
+                        <span className="truncate">{item.title}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {allGroups.map((group) => {
+
               if (!canAccessGroup(group)) return null;
 
               const isPlatformSection = group.label === 'إدارة المنصة';
@@ -260,28 +334,45 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       {visibleItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href);
+                        const isFav = favorites.includes(item.href);
 
                         const linkContent = (
                           <Link
                             to={item.href}
                             onClick={onMobileClose}
                             className={cn(
-                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              "group/nav relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                               collapsed && "justify-center px-2",
                               active
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                             )}
                           >
+                            {active && !collapsed && (
+                              <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                            )}
                             <Icon className={cn(
                               "h-[18px] w-[18px] flex-shrink-0",
-                              active && "text-sidebar-primary-foreground"
+                              active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-foreground"
                             )} />
                             {!collapsed && <span className="truncate">{item.title}</span>}
                             {!collapsed && item.badge && (
                               <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
                                 {item.badge}
                               </span>
+                            )}
+                            {!collapsed && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.href); }}
+                                aria-label={isFav ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                                className={cn(
+                                  "ms-auto p-0.5 rounded transition-opacity",
+                                  isFav ? "opacity-100 text-warning" : "opacity-0 group-hover/nav:opacity-60 hover:opacity-100 text-sidebar-muted"
+                                )}
+                              >
+                                <Star className={cn("h-3.5 w-3.5", isFav && "fill-current")} />
+                              </button>
                             )}
                           </Link>
                         );
@@ -300,6 +391,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       })}
                     </div>
                   )}
+
                 </div>
               );
             })}
