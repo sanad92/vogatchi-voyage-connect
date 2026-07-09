@@ -144,6 +144,7 @@ const CustomerLedger = lazy(() => import("@/pages/CustomerLedger"));
 const SupplierLedger = lazy(() => import("@/pages/SupplierLedger"));
 const ExecutiveFinance = lazy(() => import("@/pages/ExecutiveFinance"));
 const FinancialValidation = lazy(() => import("@/pages/FinancialValidation"));
+const GeneralLedger = lazy(() => import("@/pages/GeneralLedger"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -305,6 +306,7 @@ function App() {
                               <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
+                              <Route path="/general-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><GeneralLedger /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
                               <Route path="*" element={<NotFound />} />
                             </Routes>
