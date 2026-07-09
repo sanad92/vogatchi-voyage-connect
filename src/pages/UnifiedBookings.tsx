@@ -58,18 +58,22 @@ const UnifiedBookings = () => {
   const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
 
   return (
-    <div className="space-y-4 p-4" dir="rtl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">الحجوزات الموحدة</h1>
-        <Button onClick={() => navigate('/bookings/new')}>
-          <Plus className="h-4 w-4 ml-2" />
-          حجز جديد
-        </Button>
-      </div>
+    <div className="space-y-6 p-4 md:p-6" dir="rtl">
+      <PageHeader
+        title="الحجوزات الموحدة"
+        description="جميع الحجوزات (فنادق، طيران، سيارات، نقل) في مكان واحد"
+        icon={CalendarDays}
+        actions={
+          <Button onClick={() => navigate('/bookings/new')}>
+            <Plus className="h-4 w-4 ml-2" />
+            حجز جديد
+          </Button>
+        }
+      />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="p-4">
+        <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><CalendarCheck className="h-5 w-5 text-primary" /></div>
             <div>
@@ -78,38 +82,41 @@ const UnifiedBookings = () => {
             </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950/30"><TrendingUp className="h-5 w-5 text-green-600" /></div>
+            <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="h-5 w-5 text-primary" /></div>
             <div>
               <p className="text-sm text-muted-foreground">مؤكد</p>
-              <p className="text-2xl font-bold text-green-600">{confirmedCount}</p>
+              <p className="text-2xl font-bold">{confirmedCount}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-950/30"><Clock className="h-5 w-5 text-yellow-600" /></div>
+            <div className="p-2 rounded-lg bg-muted"><Clock className="h-5 w-5 text-muted-foreground" /></div>
             <div>
               <p className="text-sm text-muted-foreground">معلق</p>
-              <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+              <p className="text-2xl font-bold">{pendingCount}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${totalProfit >= 0 ? 'bg-green-100 dark:bg-green-950/30' : 'bg-red-100 dark:bg-red-950/30'}`}>
-              {totalProfit >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
+            <div className={`p-2 rounded-lg ${totalProfit >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+              {totalProfit >= 0
+                ? <TrendingUp className="h-5 w-5 text-primary" />
+                : <TrendingDown className="h-5 w-5 text-destructive" />}
             </div>
             <div>
               <p className="text-sm text-muted-foreground">إجمالي الربح</p>
-              <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                 {totalProfit.toLocaleString()}
               </p>
             </div>
           </div>
         </Card>
       </div>
+
 
       <Card>
         <CardHeader className="pb-3">
