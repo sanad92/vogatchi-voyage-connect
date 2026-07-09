@@ -23,9 +23,10 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User,
+  Info, StickyNote, Send, User, Sparkles,
 } from 'lucide-react';
 import { Customer360Panel } from './Customer360Panel';
+import { AIAssistantPanel } from './AIAssistantPanel';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -46,9 +47,10 @@ const PRIORITY_COLOR: Record<string, string> = {
 interface Props {
   conversationId: string;
   conversation: any;
+  onInsertText?: (text: string) => void;
 }
 
-export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conversation }) => {
+export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conversation, onInsertText }) => {
   const organizationId = useOrgId();
   const { assign, setStatus, setPriority, toggleStar } = useConversationActions(conversationId);
   const { tags, createTag } = useConversationTags();
@@ -154,14 +156,23 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="customer" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-5 mx-3 mt-3">
+      <Tabs defaultValue="ai" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid grid-cols-6 mx-3 mt-3">
+          <TabsTrigger value="ai"><Sparkles className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="details"><Info className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="tags"><TagIcon className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="notes"><StickyNote className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="ai" className="flex-1 overflow-y-auto mt-0">
+          <AIAssistantPanel
+            conversationId={conversationId}
+            conversation={conversation}
+            onInsertText={onInsertText}
+          />
+        </TabsContent>
 
         <TabsContent value="customer" className="flex-1 overflow-y-auto mt-0">
           <Customer360Panel

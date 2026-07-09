@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,16 +10,25 @@ import { toast } from 'sonner';
 interface Props {
   conversationId: string;
   onMessageSent?: () => void;
+  prefillText?: string;
+  prefillNonce?: number;
 }
 
 const MAX_MB = 16;
 
-export const WhatsAppMessageComposer: React.FC<Props> = ({ conversationId, onMessageSent }) => {
+export const WhatsAppMessageComposer: React.FC<Props> = ({ conversationId, onMessageSent, prefillText, prefillNonce }) => {
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<{ file: File; preview?: string } | null>(null);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (prefillText !== undefined && prefillNonce !== undefined) {
+      setMessage(prefillText);
+    }
+  }, [prefillText, prefillNonce]);
+
 
   const { sendTextMessage, sendMedia, isSending } = useWhatsAppMessaging();
   const { quickReplies } = useWhatsAppQuickReplies() as {

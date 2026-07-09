@@ -45,6 +45,10 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
+  const [prefillText, setPrefillText] = useState('');
+  const [prefillNonce, setPrefillNonce] = useState(0);
+  const insertText = (text: string) => { setPrefillText(text); setPrefillNonce((n) => n + 1); };
+
 
   const { data: conversation, isLoading: convLoading } = useQuery({
     queryKey: ['whatsapp-conversation-detail', conversationId],
@@ -292,12 +296,21 @@ const WhatsAppConversationDetailContent: React.FC = () => {
 
       {/* Composer */}
       <div className="border-t bg-card p-3">
-        <WhatsAppMessageComposer conversationId={conversationId} onMessageSent={() => {}} />
+        <WhatsAppMessageComposer
+          conversationId={conversationId}
+          onMessageSent={() => {}}
+          prefillText={prefillText}
+          prefillNonce={prefillNonce}
+        />
       </div>
       </div>
       {/* Right panel */}
       <aside className="hidden lg:flex w-[340px] shrink-0">
-        <ConversationRightPanel conversationId={conversationId} conversation={conversation} />
+        <ConversationRightPanel
+          conversationId={conversationId}
+          conversation={conversation}
+          onInsertText={insertText}
+        />
       </aside>
     </div>
   );
