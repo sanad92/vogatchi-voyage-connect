@@ -276,7 +276,7 @@ function App() {
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<TeamManagement />} />
-                             <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
+                             <Route path="/whatsapp" element={<Navigate to="/whatsapp-inbox" replace />} />
                              <Route path="/whatsapp-inbox" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppInbox /></PermissionRouteGuard>} />
                              <Route path="/whatsapp-inbox/:conversationId" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppConversationDetail /></PermissionRouteGuard>} />
                              <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
