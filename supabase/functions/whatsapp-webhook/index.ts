@@ -157,6 +157,9 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
         let mediaMime: string | null = null;
         let mediaFileName: string | null = null;
         let mediaCaption: string | null = null;
+        let mediaProviderId: string | null = null;
+        let mediaDownloadStatus: string | null = null;
+        let mediaDownloadError: string | null = null;
         let contentText: string | null = message.text?.body ?? null;
 
         if (mediaTypes.includes(message.type)) {
@@ -164,6 +167,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           mediaMime = normalizeMime(media?.mime_type);
           mediaFileName = media?.filename ?? null;
           mediaCaption = media?.caption ?? null;
+          mediaProviderId = media?.id ?? null;
           if (media?.id) {
             try {
               const downloaded = await downloadAndStoreMedia(
@@ -171,9 +175,17 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               );
               mediaPath = downloaded.path;
               mediaMime = downloaded.mimeType || mediaMime;
+              mediaDownloadStatus = 'success';
             } catch (e) {
-              console.error('media download failed', { messageId: message.id, mediaId: media.id, mime: mediaMime, error: String(e) });
+              mediaDownloadStatus = 'failed';
+              mediaDownloadError = String(e?.message ?? e).slice(0, 500);
+              console.error('[wa-webhook] media download failed', {
+                messageId: message.id, mediaId: media.id, mime: mediaMime, error: mediaDownloadError,
+              });
             }
+          } else {
+            mediaDownloadStatus = 'failed';
+            mediaDownloadError = 'no media id in webhook payload';
           }
           if (mediaCaption && !contentText) contentText = mediaCaption;
         } else if (message.type === 'location' && message.location) {
@@ -203,16 +215,20 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               message_type: message.type,
               content: contentText,
               media_storage_path: mediaPath,
-              media_provider_id: media?.id ?? null,
+              media_provider_id: mediaProviderId,
               media_mime_type: mediaMime,
               media_file_name: mediaFileName,
               media_caption: mediaCaption,
+              media_download_status: mediaDownloadStatus,
+              media_download_error: mediaDownloadError,
+              media_download_attempts: mediaDownloadStatus ? 1 : 0,
+              media_last_attempt_at: mediaDownloadStatus ? new Date().toISOString() : null,
               sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
               status: 'delivered',
             },
             { onConflict: 'organization_id,message_id', ignoreDuplicates: true },
           );
-        if (msgErr) console.error('message upsert error:', msgErr);
+        if (msgErr) console.error('[wa-webhook] message upsert error:', msgErr);
 
         await supabase
           .from('whatsapp_conversations')
