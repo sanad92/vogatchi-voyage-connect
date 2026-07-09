@@ -7835,6 +7835,7 @@ export type Database = {
       }
     }
     Functions: {
+      _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
       accept_invitation: { Args: { _token: string }; Returns: Json }
       booking_make_journal: {
         Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
@@ -7952,7 +7953,7 @@ export type Database = {
               account_code: string
               account_name: string
               account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
+              account_type: string
               balance: number
             }[]
           }
@@ -8005,7 +8006,7 @@ export type Database = {
         }[]
       }
       get_customer_aging: {
-        Args: { _org_id: string }
+        Args: { _as_of_date?: string; _org_id: string }
         Returns: {
           current_due: number
           customer_id: string
@@ -8026,33 +8027,22 @@ export type Database = {
           phone: string
         }[]
       }
-      get_income_statement:
-        | {
-            Args: { _end_date: string; _org_id: string; _start_date: string }
-            Returns: {
-              account_code: string
-              account_name: string
-              account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
-              amount: number
-            }[]
-          }
-        | {
-            Args: {
-              _currency?: string
-              _end_date: string
-              _org_id: string
-              _start_date: string
-            }
-            Returns: {
-              account_code: string
-              account_name: string
-              account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
-              amount: number
-              currency: string
-            }[]
-          }
+      get_income_statement: {
+        Args: {
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
+        Returns: {
+          account_code: string
+          account_name: string
+          account_name_ar: string
+          account_type: string
+          amount: number
+          currency: string
+        }[]
+      }
       get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
@@ -8074,7 +8064,7 @@ export type Database = {
               account_id: string
               account_name: string
               account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
+              account_type: string
               balance: number
               total_credit: number
               total_debit: number
