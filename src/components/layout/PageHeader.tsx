@@ -25,9 +25,10 @@ const PageHeader = ({ title, description, icon: Icon, actions, badge, className 
         className,
       )}
     >
-      <div className="flex items-start gap-3 min-w-0">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
         {Icon && (
           <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+
             <Icon className="h-5 w-5" />
           </div>
         )}
