@@ -21,9 +21,9 @@ const WhatsAppDashboard = () => {
   // معالجة حالة الخطأ
   if (conversationsError) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <Alert className="max-w-md">
-          <AlertDescription>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+        <Alert className="max-w-md border-destructive/30 bg-destructive/5">
+          <AlertDescription className="text-destructive">
             حدث خطأ في تحميل البيانات. يرجى إعادة تحميل الصفحة.
           </AlertDescription>
         </Alert>
@@ -34,14 +34,15 @@ const WhatsAppDashboard = () => {
   // معالجة حالة التحميل
   if (conversationsLoading || employeeLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">جاري تحميل WhatsApp Business...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">جاري تحميل WhatsApp Business...</p>
         </div>
       </div>
     );
   }
+
 
   // Type-safe conversations conversion
   const typedConversations: WhatsAppConversation[] = (conversations || []).map(conv => ({

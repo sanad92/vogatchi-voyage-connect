@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Brain, Users, TrendingUp, Calendar, Send, MessageSquare, AlertTriangle, Plus } from 'lucide-react';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import CRMStats from './dashboard/CRMStats';
 import CRMOverview from './dashboard/CRMOverview';
 import CustomerSegments from './segments/CustomerSegments';
@@ -15,7 +17,9 @@ import CustomerInteractions from './CustomerInteractions';
 import CRMCustomerList from './dashboard/CRMCustomerList';
 import { useCRM } from '@/hooks/useCRM';
 
+
 export const CRMDashboard = () => {
+  usePageTitle('CRM');
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const { customerSegments, loyaltyRewards, marketingCampaigns } = useCRM();
   const navigate = useNavigate();
@@ -28,44 +32,42 @@ export const CRMDashboard = () => {
   ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6" dir="rtl">
       <BreadcrumbNav items={[
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'إدارة علاقات العملاء' }
       ]} />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            نظام إدارة علاقات العملاء
-          </h1>
-          <p className="text-muted-foreground mt-2">إدارة شاملة ومتقدمة لعلاقات العملاء والتحليلات الذكية</p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate('/duplicate-customers')}>
-            <AlertTriangle className="h-4 w-4 ml-2" />
-            <span className="hidden sm:inline">كشف المكررات</span>
-          </Button>
-          <Button size="sm" onClick={() => navigate('/new-customer')}>
-            <Plus className="h-4 w-4 ml-2" />
-            عميل جديد
-          </Button>
-          <Select value={timeframe} onValueChange={(value: any) => setTimeframe(value)}>
-            <SelectTrigger className="w-32 sm:w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {timeframeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <PageHeader
+        title="نظام إدارة علاقات العملاء"
+        description="إدارة شاملة وذكية لعلاقات العملاء، التحليلات، الشرائح، والحملات."
+        icon={Brain}
+        actions={
+          <>
+            <Select value={timeframe} onValueChange={(value: any) => setTimeframe(value)}>
+              <SelectTrigger className="w-32 sm:w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {timeframeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={() => navigate('/duplicate-customers')}>
+              <AlertTriangle className="h-4 w-4 ml-2" />
+              <span className="hidden sm:inline">كشف المكررات</span>
+            </Button>
+            <Button size="sm" onClick={() => navigate('/new-customer')}>
+              <Plus className="h-4 w-4 ml-2" />
+              عميل جديد
+            </Button>
+          </>
+        }
+      />
+
 
       <CRMStats />
       <CRMOverview
