@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useIncomeStatement,
   useBalanceSheet,
@@ -11,7 +16,7 @@ import {
   useTrialBalance,
 } from '@/hooks/useFinancialReports';
 import {
-  TrendingUp, TrendingDown, Wallet, Users, Scale, Activity, AlertCircle,
+  TrendingUp, TrendingDown, Wallet, Users, Scale, Activity, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -28,12 +33,31 @@ const todayStr = today.toISOString().slice(0, 10);
 const CFODashboard = () => {
   const [start, setStart] = useState(firstOfMonth);
   const [end, setEnd] = useState(todayStr);
+  const [backfilling, setBackfilling] = useState(false);
+  const orgId = useOrgId();
+  const qc = useQueryClient();
 
   const income = useIncomeStatement(start, end);
   const balance = useBalanceSheet(end);
   const cash = useCashFlow(start, end);
   const aging = useCustomerAging();
   const trial = useTrialBalance(end);
+
+  const runBackfill = async () => {
+    if (!orgId) return;
+    setBackfilling(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('backfill_journals', { _org_id: orgId });
+      if (error) throw error;
+      const r = Array.isArray(data) ? data[0] : data;
+      toast.success(`تم ترحيل القيود: ${r?.invoices_posted || 0} فاتورة، ${r?.supplier_payments_posted || 0} سداد مورد، ${r?.expenses_posted || 0} مصروف`);
+      qc.invalidateQueries();
+    } catch (e: any) {
+      toast.error('فشل الترحيل: ' + (e?.message || 'خطأ غير معروف'));
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const kpis = useMemo(() => {
     const rows = income.data || [];
@@ -78,6 +102,10 @@ const CFODashboard = () => {
         <Badge variant="outline" className="gap-1">
           <Activity className="h-3 w-3" /> Real-time من المحرك المحاسبي
         </Badge>
+        <Button size="sm" variant="secondary" onClick={runBackfill} disabled={backfilling} className="gap-1">
+          <RefreshCw className={`h-3.5 w-3.5 ${backfilling ? 'animate-spin' : ''}`} />
+          {backfilling ? 'جارٍ الترحيل…' : 'إعادة ترحيل القيود'}
+        </Button>
       </div>
 
       <Alert>

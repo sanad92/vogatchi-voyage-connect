@@ -181,3 +181,13 @@ Principles:
 ## 8. Deliverable of Next Step
 
 On approval, Wave 1 will be implemented first (RPCs + Booking Financial Panel + Ledgers + audit triggers). No schema changes, no data mutations. Waves 2–5 will each be re-planned before execution.
+
+## ✅ Phase 2ب — Automatic Journal Posting Engine (تم)
+- إضافة `source_type`/`source_id`/`booking_id`/`fx_rate`/`posted_at`/`is_locked`/`auto_generated` لجدول القيود.
+- فهرس فريد `(org, source_type, source_id)` + CHECK `debit=credit` (NOT VALID).
+- دوال ترحيل: `post_invoice`, `post_supplier_payment`, `post_expense_transaction`, `unpost_journal`, `backfill_journals`.
+- Triggers تلقائية على `invoices` / `supplier_payments` / `expense_transactions`.
+- زر "إعادة ترحيل القيود" في CFO Dashboard يستدعي `backfill_journals` لدفع البيانات التاريخية إلى دفتر الأستاذ.
+- Idempotent + لا يمس القيود المقفلة (`is_locked`).
+
+**التالي المقترح (Phase 3):** بوابة إقفال الفترات، شاشة GL مع Drill-down، Statement of Account PDF، Bank Reconciliation.
