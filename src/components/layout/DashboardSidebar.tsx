@@ -249,7 +249,46 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       <ScrollArea className="flex-1">
         <nav className="py-3 px-2 space-y-0.5">
           <TooltipProvider delayDuration={0}>
+            {/* Favorites (client-side pins) */}
+            {!collapsed && favoriteItems.length > 0 && (
+              <div className="mb-3 pb-3 border-b border-sidebar-border">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+                  <Star className="h-3.5 w-3.5 text-warning" />
+                  المفضلة
+                </div>
+                <div className="space-y-0.5 mt-0.5">
+                  {favoriteItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={`fav-${item.href}`}
+                        to={item.href}
+                        onClick={onMobileClose}
+                        className={cn(
+                          "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                          active
+                            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                        )}
+                        <Icon className={cn(
+                          "h-[18px] w-[18px] flex-shrink-0",
+                          active ? "text-sidebar-primary" : "text-sidebar-foreground/60"
+                        )} />
+                        <span className="truncate">{item.title}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {allGroups.map((group) => {
+
               if (!canAccessGroup(group)) return null;
 
               const isPlatformSection = group.label === 'إدارة المنصة';
