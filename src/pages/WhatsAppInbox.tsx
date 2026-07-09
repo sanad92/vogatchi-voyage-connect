@@ -121,7 +121,7 @@ const WhatsAppInboxContent: React.FC = () => {
                             : 'لا يوجد استلام بعد'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-[10px] py-0 h-4">
                           {c.status === 'active'
                             ? 'نشط'
@@ -131,6 +131,16 @@ const WhatsAppInboxContent: React.FC = () => {
                             ? 'مغلق'
                             : c.status}
                         </Badge>
+                        {c.sla_breached_first_response && (
+                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
+                            خرق SLA
+                          </Badge>
+                        )}
+                        {c.priority === 'urgent' && (
+                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
+                            عاجل
+                          </Badge>
+                        )}
                       </div>
                     </button>
                   );

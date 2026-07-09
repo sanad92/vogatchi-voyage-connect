@@ -6572,6 +6572,9 @@ export type Database = {
           phone_number: string
           priority: string | null
           resolved_at: string | null
+          sla_breached_first_response: boolean
+          sla_breached_resolution: boolean
+          sla_first_response_deadline: string | null
           status: string | null
           updated_at: string | null
         }
@@ -6596,6 +6599,9 @@ export type Database = {
           phone_number: string
           priority?: string | null
           resolved_at?: string | null
+          sla_breached_first_response?: boolean
+          sla_breached_resolution?: boolean
+          sla_first_response_deadline?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -6620,6 +6626,9 @@ export type Database = {
           phone_number?: string
           priority?: string | null
           resolved_at?: string | null
+          sla_breached_first_response?: boolean
+          sla_breached_resolution?: boolean
+          sla_first_response_deadline?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -6924,6 +6933,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_sla_settings: {
+        Row: {
+          auto_reply_enabled: boolean
+          business_hours: Json
+          created_at: string
+          id: string
+          organization_id: string
+          out_of_hours_message: string | null
+          sla_first_response_minutes: number
+          sla_resolution_minutes: number
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          auto_reply_enabled?: boolean
+          business_hours?: Json
+          created_at?: string
+          id?: string
+          organization_id: string
+          out_of_hours_message?: string | null
+          sla_first_response_minutes?: number
+          sla_resolution_minutes?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_reply_enabled?: boolean
+          business_hours?: Json
+          created_at?: string
+          id?: string
+          organization_id?: string
+          out_of_hours_message?: string | null
+          sla_first_response_minutes?: number
+          sla_resolution_minutes?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       whatsapp_templates: {
         Row: {
