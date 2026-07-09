@@ -1,6 +1,7 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import {
   Settings,
   MessageSquare,
@@ -12,7 +13,10 @@ import {
   Megaphone,
   Workflow,
   Bot,
+  ExternalLink,
 } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
@@ -25,108 +29,92 @@ import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { WhatsAppChatbotSettings } from './WhatsAppChatbotSettings';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
+const TABS = [
+  { value: 'settings', label: 'الإعدادات', icon: Settings },
+  { value: 'sla', label: 'SLA', icon: Clock },
+  { value: 'chatbot', label: 'البوت', icon: Bot },
+  { value: 'automation', label: 'الأتمتة', icon: Workflow },
+  { value: 'templates', label: 'القوالب', icon: FileText },
+  { value: 'quick-replies', label: 'الردود السريعة', icon: Zap },
+  { value: 'broadcasts', label: 'الحملات', icon: Megaphone },
+  { value: 'employees', label: 'الموظفون', icon: Users },
+  { value: 'analytics', label: 'التحليلات', icon: BarChart3 },
+];
+
 export const WhatsAppAdminTabs: React.FC = () => {
+  usePageTitle('واتساب');
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">إدارة WhatsApp Business</h1>
-        <p className="text-gray-600 mt-2">
-          إعداد وإدارة خدمة WhatsApp Business للتواصل مع العملاء
-        </p>
-      </div>
+    <div className="space-y-6" dir="rtl">
+      <PageHeader
+        title="إدارة WhatsApp Business"
+        description="إعداد قنوات المراسلة، الأتمتة، القوالب، والحملات — كل ما يخص التواصل مع العملاء عبر واتساب."
+        icon={MessageSquare}
+        actions={
+          <>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/customer-service" className="gap-1.5">
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden sm:inline">لوحة المحادثات</span>
+              </Link>
+            </Button>
+            <ManualConnectDialog />
+          </>
+        }
+      />
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-10">
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            الإعدادات
-          </TabsTrigger>
-          <TabsTrigger value="sla" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            SLA
-          </TabsTrigger>
-          <TabsTrigger value="chatbot" className="flex items-center gap-2">
-            <Bot className="w-4 h-4" />
-            البوت
-          </TabsTrigger>
-          <TabsTrigger value="automation" className="flex items-center gap-2">
-            <Workflow className="w-4 h-4" />
-            الأتمتة
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            القوالب
-          </TabsTrigger>
-          <TabsTrigger value="quick-replies" className="flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            الردود السريعة
-          </TabsTrigger>
-          <TabsTrigger value="broadcasts" className="flex items-center gap-2">
-            <Megaphone className="w-4 h-4" />
-            الحملات
-          </TabsTrigger>
-          <TabsTrigger value="employees" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            الموظفين
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            التحليلات
-          </TabsTrigger>
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            لوحة المحادثات
-          </TabsTrigger>
-        </TabsList>
+        {/* Horizontally scrollable tabs on small screens, wrap-free on desktop */}
+        <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
+          <TabsList className="inline-flex h-auto w-max lg:w-full lg:grid lg:grid-cols-9 gap-1 p-1 bg-muted/50">
+            {TABS.map(({ value, label, icon: Icon }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-        <TabsContent value="settings" className="mt-6 space-y-6">
-          <div className="flex justify-end">
-            <ManualConnectDialog />
-          </div>
+        <TabsContent value="settings" className="mt-6 space-y-6 animate-in fade-in">
           <WhatsAppConnectCard />
           <WhatsAppSettings />
         </TabsContent>
 
-        <TabsContent value="sla" className="mt-6">
+        <TabsContent value="sla" className="mt-6 animate-in fade-in">
           <WhatsAppSLASettings />
         </TabsContent>
 
-        <TabsContent value="chatbot" className="mt-6">
+        <TabsContent value="chatbot" className="mt-6 animate-in fade-in">
           <WhatsAppChatbotSettings />
         </TabsContent>
 
-        <TabsContent value="automation" className="mt-6">
+        <TabsContent value="automation" className="mt-6 animate-in fade-in">
           <WhatsAppAutomationBuilder />
         </TabsContent>
 
-        <TabsContent value="templates" className="mt-6">
+        <TabsContent value="templates" className="mt-6 animate-in fade-in">
           <WhatsAppTemplateManager />
         </TabsContent>
 
-        <TabsContent value="quick-replies" className="mt-6">
+        <TabsContent value="quick-replies" className="mt-6 animate-in fade-in">
           <WhatsAppQuickReplies />
         </TabsContent>
 
-        <TabsContent value="broadcasts" className="mt-6">
+        <TabsContent value="broadcasts" className="mt-6 animate-in fade-in">
           <WhatsAppBroadcastManager />
         </TabsContent>
 
-        <TabsContent value="employees" className="mt-6">
+        <TabsContent value="employees" className="mt-6 animate-in fade-in">
           <WhatsAppEmployeeManagement />
         </TabsContent>
 
-        <TabsContent value="analytics" className="mt-6">
+        <TabsContent value="analytics" className="mt-6 animate-in fade-in">
           <WhatsAppAnalyticsDashboard />
-        </TabsContent>
-
-        <TabsContent value="dashboard" className="mt-6">
-          <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لوحة المحادثات</h3>
-            <p className="text-gray-500 mb-4">
-              يمكن الوصول إلى لوحة المحادثات من الصفحة الرئيسية
-            </p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
