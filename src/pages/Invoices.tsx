@@ -166,16 +166,24 @@ const Invoices = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
-      <BreadcrumbNav items={[
-        { label: 'الرئيسية', href: '/dashboard' },
-        { label: 'الفواتير' }
-      ]} />
-      {/* رأس الصفحة مع الإحصائيات المحدثة */}
+      <PageHeader
+        title="الفواتير"
+        description="إدارة وتتبع جميع فواتير العملاء والمدفوعات"
+        icon={Receipt}
+        actions={
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 ml-2" />
+            فاتورة جديدة
+          </Button>
+        }
+      />
+
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <FileText className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -186,10 +194,10 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <CreditCard className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -200,11 +208,11 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-muted rounded-lg">
-                <CreditCard className="h-5 w-5 text-primary" />
+                <Wallet className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">مدفوعة جزئياً</p>
@@ -214,10 +222,10 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-destructive/10 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div>
@@ -228,7 +236,7 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-muted rounded-lg">
@@ -244,6 +252,7 @@ const Invoices = () => {
           </CardContent>
         </Card>
       </div>
+
 
       {/* أدوات التصفية والبحث */}
       <Card>
