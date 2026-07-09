@@ -30,10 +30,14 @@ export const WhatsAppAdminTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             الإعدادات
+          </TabsTrigger>
+          <TabsTrigger value="sla" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            SLA وأوقات العمل
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
@@ -45,7 +49,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            إدارة الموظفين
+            الموظفين
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
