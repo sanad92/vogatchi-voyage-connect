@@ -1,10 +1,12 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 
 export const useWhatsApp = () => {
   const orgId = useOrgId();
+  const queryClient = useQueryClient();
 
   const {
     data: conversations,
@@ -34,6 +36,41 @@ export const useWhatsApp = () => {
     staleTime: 10_000,
     refetchInterval: 30_000,
   });
+
+  // Realtime — new conversations and new messages both refresh the list
+  useEffect(() => {
+    if (!orgId) return;
+    const channel = supabase
+      .channel(`whatsapp_conversations:${orgId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_conversations',
+          filter: `organization_id=eq.${orgId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'whatsapp_messages',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orgId, queryClient]);
 
   return { conversations, conversationsLoading, conversationsError };
 };
