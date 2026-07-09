@@ -8,6 +8,25 @@ const corsHeaders = {
 
 const GRAPH = () => `https://graph.facebook.com/${Deno.env.get("META_GRAPH_API_VERSION") ?? "v22.0"}`;
 
+async function appsecretProof(accessToken: string): Promise<string | null> {
+  const secret = Deno.env.get("META_APP_SECRET");
+  if (!secret) return null;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function appendProof(url: string, proof: string | null): string {
+  if (!proof) return url;
+  return url + (url.includes("?") ? "&" : "?") + "appsecret_proof=" + proof;
+}
+
 async function logEvent(supabase: any, orgId: string, type: string, payload: unknown) {
   try {
     await supabase.from("whatsapp_connection_events").insert({
@@ -70,8 +89,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden: owner/admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const proof = await appsecretProof(access_token);
+
     // 1) Validate phone number id with the provided token
-    const phoneRes = await fetch(`${GRAPH()}/${phone_number_id}?fields=id,display_phone_number,verified_name`, {
+    const phoneRes = await fetch(appendProof(`${GRAPH()}/${phone_number_id}?fields=id,display_phone_number,verified_name`, proof), {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     const phoneJson = await phoneRes.json();
@@ -81,7 +102,7 @@ serve(async (req) => {
     }
 
     // 2) Validate WABA id
-    const wabaRes = await fetch(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, {
+    const wabaRes = await fetch(appendProof(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, proof), {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     const wabaJson = await wabaRes.json();
@@ -92,7 +113,7 @@ serve(async (req) => {
 
     // 3) Subscribe app to WABA webhooks (idempotent, non-fatal)
     try {
-      await fetch(`${GRAPH()}/${waba_id}/subscribed_apps`, {
+      await fetch(appendProof(`${GRAPH()}/${waba_id}/subscribed_apps`, proof), {
         method: "POST",
         headers: { Authorization: `Bearer ${access_token}` },
       });
