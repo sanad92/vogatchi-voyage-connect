@@ -236,6 +236,7 @@ serve(async (req) => {
         content: messageType === 'text' ? content : (mediaCaption || null),
         media_url: mediaUrl || null,
         media_storage_path: mediaStoragePath || null,
+        media_provider_id: uploadedMediaId || null,
         media_mime_type: mediaMimeType || null,
         media_file_name: mediaFileName || null,
         media_caption: mediaCaption || null,
