@@ -55,7 +55,7 @@ serve(async (req) => {
     );
 
     const body = await req.json();
-    const { conversationId, messageType, content, mediaUrl, templateName, templateLanguage, templateParameters, sentBy } = body;
+    const { conversationId, messageType, content, mediaUrl, mediaStoragePath, mediaMimeType, mediaFileName, mediaCaption, templateName, templateLanguage, templateParameters, sentBy } = body;
 
     // === Input Validation ===
     if (!conversationId || typeof conversationId !== 'string' || !UUID_REGEX.test(conversationId)) {
