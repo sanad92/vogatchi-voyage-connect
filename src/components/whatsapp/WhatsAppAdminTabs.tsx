@@ -10,6 +10,7 @@ import {
   Users,
   Clock,
   Megaphone,
+  Workflow,
 } from 'lucide-react';
 import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
@@ -19,6 +20,7 @@ import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
+import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppAdminTabs: React.FC = () => {
