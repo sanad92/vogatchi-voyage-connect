@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { MessageCircle, Phone, Search, ArrowDownLeft, ArrowUpRight, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MessageCircle, Phone, Search, ArrowDownLeft, ArrowUpRight, Clock, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
@@ -151,17 +153,22 @@ const WhatsAppInboxContent: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>الوارد</span>
-                  <span className="inline-flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/whatsapp-inbox/${selected.id}`}>
+                      <ExternalLink className="h-3.5 w-3.5 me-1" />
+                      تفاصيل وبحث
+                    </Link>
+                  </Button>
+                  <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>الوارد</span>
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  <span>الصادر</span>
-                  <span className="inline-flex items-center gap-1">
+                    <span>الصادر</span>
                     <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  </span>
+                  </div>
                 </div>
               </div>
+
 
               {/* Messages */}
               <ScrollArea className="flex-1">
