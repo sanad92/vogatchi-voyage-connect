@@ -6461,6 +6461,7 @@ export type Database = {
           media_duration_seconds: number | null
           media_file_name: string | null
           media_mime_type: string | null
+          media_provider_id: string | null
           media_storage_path: string | null
           media_url: string | null
           message_id: string
@@ -6487,6 +6488,7 @@ export type Database = {
           media_duration_seconds?: number | null
           media_file_name?: string | null
           media_mime_type?: string | null
+          media_provider_id?: string | null
           media_storage_path?: string | null
           media_url?: string | null
           message_id: string
@@ -6513,6 +6515,7 @@ export type Database = {
           media_duration_seconds?: number | null
           media_file_name?: string | null
           media_mime_type?: string | null
+          media_provider_id?: string | null
           media_storage_path?: string | null
           media_url?: string | null
           message_id?: string

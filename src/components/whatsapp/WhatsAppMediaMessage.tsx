@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, MapPin, Loader2, Image as ImageIcon } from 'lucide-react';
+import { FileText, Download, MapPin, Loader2, RefreshCw } from 'lucide-react';
 import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 import { Button } from '@/components/ui/button';
 
@@ -8,11 +8,10 @@ interface Props {
   outbound: boolean;
 }
 
-const formatBytes = (n?: number) => (n ? `${(n / 1024).toFixed(1)} KB` : '');
-
 export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => {
   const path = message.media_storage_path as string | null | undefined;
-  const { data: signedUrl, isLoading } = useSignedMediaUrl(path);
+  const directUrl = message.media_url as string | null | undefined;
+  const { data: signedUrl, isLoading, isError, refetch } = useSignedMediaUrl(path);
   const type = message.message_type as string;
   const rawMime = (message.media_mime_type as string) || '';
   const mime = rawMime.split(';')[0].trim().toLowerCase();
@@ -49,11 +48,14 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
 
   const mediaContent = () => {
     if (!path) {
+      if (directUrl) {
+        return renderMedia(directUrl);
+      }
       const isAudio = type === 'audio' || type === 'voice';
       return (
-        <div className="text-xs opacity-70 italic">
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {isAudio
-            ? 'جاري معالجة الملف الصوتي... حدّث بعد لحظات'
+            ? 'تعذر تحميل الملف الصوتي من واتساب'
             : `[${type}] ${caption || 'الملف غير متاح'}`}
         </div>
       );
@@ -65,15 +67,26 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
         </div>
       );
     }
-    if (!signedUrl) {
-      return <div className="text-xs opacity-70">تعذر فتح الملف</div>;
+    if (isError || !signedUrl) {
+      return (
+        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <span>تعذر فتح الملف</span>
+          <Button type="button" variant="ghost" size="sm" className="h-6 px-2" onClick={() => refetch()}>
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        </div>
+      );
     }
 
+    return renderMedia(signedUrl);
+  };
+
+  const renderMedia = (url: string) => {
     if (type === 'image' || type === 'sticker' || mime.startsWith('image/')) {
       return (
-        <a href={signedUrl} target="_blank" rel="noreferrer" className="block">
+        <a href={url} target="_blank" rel="noreferrer" className="block">
           <img
-            src={signedUrl}
+            src={url}
             alt={caption || 'صورة'}
             className={`rounded-md object-cover ${type === 'sticker' ? 'max-h-32' : 'max-h-64'} w-auto`}
             loading="lazy"
@@ -86,21 +99,21 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
       const audioType = mime.startsWith('audio/') ? mime : 'audio/ogg';
       return (
         <audio controls className="w-64 max-w-full" preload="metadata">
-          <source src={signedUrl} type={audioType} />
-          <source src={signedUrl} type="audio/ogg" />
-          <source src={signedUrl} type="audio/mpeg" />
+          <source src={url} type={audioType} />
+          <source src={url} type="audio/ogg" />
+          <source src={url} type="audio/mpeg" />
         </audio>
       );
     }
 
     if (type === 'video' || mime.startsWith('video/')) {
-      return <video controls src={signedUrl} className="max-h-64 rounded-md" preload="metadata" />;
+      return <video controls src={url} className="max-h-64 rounded-md" preload="metadata" />;
     }
 
     // Document / other
     return (
       <a
-        href={signedUrl}
+        href={url}
         target="_blank"
         rel="noreferrer"
         download={fileName}

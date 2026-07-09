@@ -26,10 +26,14 @@ export interface WhatsAppMessage {
   conversation_id: string;
   message_id?: string;
   direction: 'inbound' | 'outbound';
-  message_type: 'text' | 'image' | 'document' | 'audio' | 'video' | 'template';
+  message_type: 'text' | 'image' | 'document' | 'audio' | 'voice' | 'video' | 'sticker' | 'template' | 'location' | 'reaction' | 'interactive' | 'button';
   content?: string;
   media_url?: string;
+  media_storage_path?: string;
   media_mime_type?: string;
+  media_file_name?: string;
+  media_caption?: string;
+  media_duration_seconds?: number;
   template_name?: string;
   template_language?: string;
   template_parameters?: any;

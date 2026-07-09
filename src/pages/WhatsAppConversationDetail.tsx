@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageComposer';
+import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
@@ -247,13 +248,19 @@ const WhatsAppConversationDetailContent: React.FC = () => {
                         <span className="opacity-70">•</span>
                         <span>{outbound ? 'صادر' : 'وارد'}</span>
                       </div>
-                      <div className="whitespace-pre-wrap break-words text-sm">
-                        {highlight(
-                          m.content ||
-                            (m.template_name ? `[قالب: ${m.template_name}]` : '—'),
-                          search
-                        )}
-                      </div>
+                      {search ? (
+                        <div className="whitespace-pre-wrap break-words text-sm">
+                          {highlight(
+                            m.content ||
+                              m.media_caption ||
+                              m.media_file_name ||
+                              (m.template_name ? `[قالب: ${m.template_name}]` : '—'),
+                            search
+                          )}
+                        </div>
+                      ) : (
+                        <WhatsAppMediaMessage message={m} outbound={outbound} />
+                      )}
                       <div
                         className={`flex items-center justify-between gap-2 text-[10px] pt-1 ${
                           outbound ? 'text-blue-100' : 'text-emerald-800/70'

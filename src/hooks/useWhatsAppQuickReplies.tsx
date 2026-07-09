@@ -23,7 +23,7 @@ export const useWhatsAppQuickReplies = () => {
     queryKey: ['whatsapp-quick-replies'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('whatsapp_quick_replies' as any)
+        .from('quick_replies' as any)
         .select('*')
         .order('created_at', { ascending: false }) as any);
 
@@ -40,10 +40,14 @@ export const useWhatsAppQuickReplies = () => {
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyData) => {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error('يجب تسجيل الدخول أولاً');
+
       const { data, error } = await (supabase
-        .from('whatsapp_quick_replies' as any)
+        .from('quick_replies' as any)
         .insert([{
           ...replyData,
+          created_by: authData.user.id,
           usage_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -73,7 +77,7 @@ export const useWhatsAppQuickReplies = () => {
       const { id, ...updateData } = replyData;
       
       const { data, error } = await (supabase
-        .from('whatsapp_quick_replies' as any)
+        .from('quick_replies' as any)
         .update({
           ...updateData,
           updated_at: new Date().toISOString()
@@ -102,7 +106,7 @@ export const useWhatsAppQuickReplies = () => {
   const deleteQuickReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
       const { error } = await (supabase
-        .from('whatsapp_quick_replies' as any)
+        .from('quick_replies' as any)
         .delete()
         .eq('id', replyId) as any);
 

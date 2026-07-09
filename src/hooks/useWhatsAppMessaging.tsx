@@ -13,7 +13,7 @@ export const useWhatsAppMessaging = () => {
   const queryClient = useQueryClient();
 
   const invalidate = (conversationId: string) => {
-    queryClient.invalidateQueries({ queryKey: ['whatsapp-messages', conversationId] });
+    queryClient.invalidateQueries({ queryKey: ['whatsapp-messages'] });
     queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
     queryClient.invalidateQueries({ queryKey: ['customer-whatsapp'] });
   };
