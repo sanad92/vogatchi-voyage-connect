@@ -124,10 +124,10 @@ export default function Quotes() {
                     صفحة {page} من {totalPages} ({totalCount} عرض)
                   </span>
                   <div className="flex gap-1">
-                    <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                    <Button variant="outline" size="icon" aria-label="الصفحة السابقة" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                       <ChevronRight className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                    <Button variant="outline" size="icon" aria-label="الصفحة التالية" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                   </div>
