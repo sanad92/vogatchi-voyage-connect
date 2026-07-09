@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send,
+  Info, StickyNote, Send, User,
 } from 'lucide-react';
+import { Customer360Panel } from './Customer360Panel';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -153,13 +154,21 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-4 mx-3 mt-3">
+      <Tabs defaultValue="customer" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid grid-cols-5 mx-3 mt-3">
+          <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="details"><Info className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="tags"><TagIcon className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="notes"><StickyNote className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="customer" className="flex-1 overflow-y-auto mt-0">
+          <Customer360Panel
+            phone={conversation.phone_number}
+            customerId={conversation.customer_id}
+          />
+        </TabsContent>
 
         <TabsContent value="details" className="flex-1 overflow-y-auto p-3 space-y-3 mt-0">
           <Card><CardContent className="p-3 space-y-2 text-sm">
