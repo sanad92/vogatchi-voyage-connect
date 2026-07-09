@@ -254,19 +254,11 @@ const Invoices = () => {
       </div>
 
 
-      {/* أدوات التصفية والبحث */}
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle>تصفية الفواتير</CardTitle>
-              <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
-            </div>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 ml-2" />
-              فاتورة جديدة
-            </Button>
-          </div>
+          <CardTitle>تصفية الفواتير</CardTitle>
+          <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
