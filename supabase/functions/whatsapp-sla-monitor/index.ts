@@ -77,9 +77,10 @@ Deno.serve(async (req) => {
               user_id: c.assigned_to,
               organization_id: orgId,
               type: 'sla_breach',
+              priority: 'urgent',
               title: 'خرق SLA - وقت الحل',
               message: `تجاوزت المحادثة الوقت المسموح للحل (${s.sla_resolution_minutes} دقيقة)`,
-              link: `/whatsapp-inbox/${c.id}`,
+              action_url: `/whatsapp-inbox/${c.id}`,
               is_read: false,
             });
             results.notified++;
