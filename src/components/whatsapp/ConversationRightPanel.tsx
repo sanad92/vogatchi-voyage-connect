@@ -156,14 +156,23 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="customer" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-5 mx-3 mt-3">
+      <Tabs defaultValue="ai" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid grid-cols-6 mx-3 mt-3">
+          <TabsTrigger value="ai"><Sparkles className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="details"><Info className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="tags"><TagIcon className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="notes"><StickyNote className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="ai" className="flex-1 overflow-y-auto mt-0">
+          <AIAssistantPanel
+            conversationId={conversationId}
+            conversation={conversation}
+            onInsertText={onInsertText}
+          />
+        </TabsContent>
 
         <TabsContent value="customer" className="flex-1 overflow-y-auto mt-0">
           <Customer360Panel
