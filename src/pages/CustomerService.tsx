@@ -50,7 +50,7 @@ const CustomerService = () => {
                 إدارة العملاء
               </Button>
             </Link>
-            <Link to="/whatsapp">
+            <Link to="/whatsapp-inbox">
               <Button className="w-full sm:w-auto">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 واتساب
