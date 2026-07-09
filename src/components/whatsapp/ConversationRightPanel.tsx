@@ -157,14 +157,19 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
 
       {/* Tabs */}
       <Tabs defaultValue="ai" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-6 mx-3 mt-3">
+        <TabsList className="grid grid-cols-7 mx-3 mt-3">
           <TabsTrigger value="ai"><Sparkles className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
+          <TabsTrigger value="followups"><Bell className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="details"><Info className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="tags"><TagIcon className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="notes"><StickyNote className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="followups" className="flex-1 overflow-y-auto p-3 mt-0">
+          <FollowupsPanel conversationId={conversationId} />
+        </TabsContent>
 
         <TabsContent value="ai" className="flex-1 overflow-y-auto mt-0">
           <AIAssistantPanel
