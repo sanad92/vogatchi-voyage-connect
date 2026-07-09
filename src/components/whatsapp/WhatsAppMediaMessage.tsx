@@ -49,9 +49,12 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
 
   const mediaContent = () => {
     if (!path) {
+      const isAudio = type === 'audio' || type === 'voice';
       return (
         <div className="text-xs opacity-70 italic">
-          [{type}] {caption || 'الملف غير متاح'}
+          {isAudio
+            ? 'جاري معالجة الملف الصوتي... حدّث بعد لحظات'
+            : `[${type}] ${caption || 'الملف غير متاح'}`}
         </div>
       );
     }
