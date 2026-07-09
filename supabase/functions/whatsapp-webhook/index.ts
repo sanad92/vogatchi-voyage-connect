@@ -112,58 +112,68 @@ serve(async (req) => {
   }
 });
 
+function normalizePhone(phone: string | null | undefined): string {
+  return (phone ?? '').replace(/\D/g, '');
+}
+
 async function processMessage(messageData: any, supabase: any, organizationId: string) {
   try {
     if (messageData.messages) {
       for (const message of messageData.messages) {
-        const phoneNumber = message.from;
+        const phoneNumber = normalizePhone(message.from);
+        if (!phoneNumber) {
+          console.warn('skip message: empty phone');
+          continue;
+        }
+        const nowIso = new Date().toISOString();
 
-        // Find or create conversation scoped to this org
-        let conversationId: string | null = null;
-        const { data: existing } = await supabase
+        // Atomic upsert on (organization_id, phone_number) — prevents duplicate
+        // conversations when concurrent webhook deliveries arrive.
+        const { data: convo, error: convErr } = await supabase
           .from('whatsapp_conversations')
-          .select('id')
-          .eq('organization_id', organizationId)
-          .eq('phone_number', phoneNumber)
-          .maybeSingle();
-
-        if (existing?.id) {
-          conversationId = existing.id;
-        } else {
-          const { data: created, error: convErr } = await supabase
-            .from('whatsapp_conversations')
-            .insert({
+          .upsert(
+            {
               organization_id: organizationId,
               phone_number: phoneNumber,
               status: 'active',
               priority: 'normal',
-              last_message_at: new Date().toISOString(),
-            })
-            .select('id')
-            .single();
-          if (convErr) {
-            console.error('conversation insert error:', convErr);
-            continue;
-          }
-          conversationId = created.id;
-        }
+              last_message_at: nowIso,
+            },
+            { onConflict: 'organization_id,phone_number' },
+          )
+          .select('id')
+          .single();
 
-        await supabase.from('whatsapp_messages').insert({
-          organization_id: organizationId,
-          conversation_id: conversationId,
-          message_id: message.id,
-          direction: 'inbound',
-          message_type: message.type,
-          content: message.text?.body ?? null,
-          media_url: message.image?.link || message.document?.link || message.audio?.link || message.video?.link,
-          media_mime_type: message.image?.mime_type || message.document?.mime_type || message.audio?.mime_type || message.video?.mime_type,
-          sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
-          status: 'delivered',
-        });
+        if (convErr || !convo?.id) {
+          console.error('conversation upsert error:', convErr);
+          continue;
+        }
+        const conversationId = convo.id;
+
+        // Upsert by (organization_id, message_id) — Meta may retry the same
+        // webhook; we ignore duplicates instead of inserting again.
+        const { error: msgErr } = await supabase
+          .from('whatsapp_messages')
+          .upsert(
+            {
+              organization_id: organizationId,
+              conversation_id: conversationId,
+              message_id: message.id,
+              direction: 'inbound',
+              message_type: message.type,
+              content: message.text?.body ?? null,
+              media_url: message.image?.link || message.document?.link || message.audio?.link || message.video?.link,
+              media_mime_type: message.image?.mime_type || message.document?.mime_type || message.audio?.mime_type || message.video?.mime_type,
+              sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+              status: 'delivered',
+            },
+            { onConflict: 'organization_id,message_id', ignoreDuplicates: true },
+          );
+        if (msgErr) console.error('message upsert error:', msgErr);
 
         await supabase
           .from('whatsapp_conversations')
-          .update({ last_message_at: new Date().toISOString() })
+          .update({ last_message_at: nowIso })
           .eq('id', conversationId);
       }
     }
