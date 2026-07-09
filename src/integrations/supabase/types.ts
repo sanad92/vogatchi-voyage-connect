@@ -1839,6 +1839,169 @@ export type Database = {
           },
         ]
       }
+      conversation_assignments_history: {
+        Row: {
+          action: string
+          conversation_id: string
+          created_at: string
+          from_user_id: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string
+          performed_by: string | null
+          reason: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          action: string
+          conversation_id: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          performed_by?: string | null
+          reason?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          conversation_id?: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          performed_by?: string | null
+          reason?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_assignments_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_internal_notes: {
+        Row: {
+          author_id: string
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          mentions: string[] | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_internal_notes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_tag_assignments: {
+        Row: {
+          assigned_by: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          tag_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_tag_assignments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_tags: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cost_centers: {
         Row: {
           code: string
@@ -6389,44 +6552,74 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          ai_summary: string | null
+          ai_summary_updated_at: string | null
           assigned_to: string | null
           assignment_reason: string | null
           auto_assigned: boolean | null
+          category: string | null
+          closed_at: string | null
+          closed_by: string | null
           created_at: string | null
           customer_id: string | null
+          first_response_at: string | null
           id: string
+          is_starred: boolean
+          last_activity_at: string | null
           last_message_at: string | null
+          last_note_preview: string | null
           organization_id: string | null
           phone_number: string
           priority: string | null
+          resolved_at: string | null
           status: string | null
           updated_at: string | null
         }
         Insert: {
+          ai_summary?: string | null
+          ai_summary_updated_at?: string | null
           assigned_to?: string | null
           assignment_reason?: string | null
           auto_assigned?: boolean | null
+          category?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string | null
           customer_id?: string | null
+          first_response_at?: string | null
           id?: string
+          is_starred?: boolean
+          last_activity_at?: string | null
           last_message_at?: string | null
+          last_note_preview?: string | null
           organization_id?: string | null
           phone_number: string
           priority?: string | null
+          resolved_at?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Update: {
+          ai_summary?: string | null
+          ai_summary_updated_at?: string | null
           assigned_to?: string | null
           assignment_reason?: string | null
           auto_assigned?: boolean | null
+          category?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string | null
           customer_id?: string | null
+          first_response_at?: string | null
           id?: string
+          is_starred?: boolean
+          last_activity_at?: string | null
           last_message_at?: string | null
+          last_note_preview?: string | null
           organization_id?: string | null
           phone_number?: string
           priority?: string | null
+          resolved_at?: string | null
           status?: string | null
           updated_at?: string | null
         }
