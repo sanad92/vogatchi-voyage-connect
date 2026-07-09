@@ -108,6 +108,14 @@ const WhatsAppInboxContent: React.FC = () => {
                           {c.customer.name}
                         </div>
                       )}
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                        <RefreshCw className="h-2.5 w-2.5" />
+                        <span>
+                          {c.last_inbound_at
+                            ? `آخر مزامنة ${formatDistanceToNow(new Date(c.last_inbound_at), { addSuffix: true, locale: ar })}`
+                            : 'لا يوجد استلام بعد'}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Badge variant="outline" className="text-[10px] py-0 h-4">
                           {c.status === 'active'
