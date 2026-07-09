@@ -167,10 +167,8 @@ const WhatsAppInboxContent: React.FC = () => {
                     <span className="h-2 w-2 rounded-full bg-blue-500" />
                   </div>
                 </div>
-                    <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  </span>
-                </div>
               </div>
+
 
               {/* Messages */}
               <ScrollArea className="flex-1">
