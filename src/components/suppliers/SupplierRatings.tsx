@@ -7,6 +7,7 @@ import { Star, Plus, User } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOrgId } from '@/hooks/useOrgId';
 
 interface SupplierRatingsProps {
   supplierId?: string | null;
@@ -16,6 +17,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
   const [newRating, setNewRating] = useState({
     supplier_id: supplierId || '',
@@ -61,6 +63,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
         .from('supplier_ratings')
         .insert([{
           ...rating,
+          organization_id: orgId as string,
           overall_rating: overallRating,
           rating_date: new Date().toISOString(),
           rated_by: 'current_user' // يمكن تحديث هذا ليكون المستخدم الحالي

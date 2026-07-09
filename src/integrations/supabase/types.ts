@@ -5860,12 +5860,13 @@ export type Database = {
           delivery_time: number | null
           feedback: string | null
           id: string
+          organization_id: string
           overall_rating: number | null
           price_competitiveness: number | null
           rated_by: string | null
           rating_date: string | null
           service_quality: number | null
-          supplier_id: string | null
+          supplier_id: string
         }
         Insert: {
           communication?: number | null
@@ -5873,12 +5874,13 @@ export type Database = {
           delivery_time?: number | null
           feedback?: string | null
           id?: string
+          organization_id: string
           overall_rating?: number | null
           price_competitiveness?: number | null
           rated_by?: string | null
           rating_date?: string | null
           service_quality?: number | null
-          supplier_id?: string | null
+          supplier_id: string
         }
         Update: {
           communication?: number | null
@@ -5886,12 +5888,13 @@ export type Database = {
           delivery_time?: number | null
           feedback?: string | null
           id?: string
+          organization_id?: string
           overall_rating?: number | null
           price_competitiveness?: number | null
           rated_by?: string | null
           rating_date?: string | null
           service_quality?: number | null
-          supplier_id?: string | null
+          supplier_id?: string
         }
         Relationships: [
           {
