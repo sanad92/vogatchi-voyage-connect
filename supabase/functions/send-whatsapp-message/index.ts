@@ -8,10 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VALID_MESSAGE_TYPES = ['text', 'image', 'document', 'template'] as const;
+const VALID_MESSAGE_TYPES = ['text', 'image', 'audio', 'video', 'document', 'template'] as const;
 const MAX_CONTENT_LENGTH = 4096;
 const MAX_TEMPLATE_PARAMS = 20;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MEDIA_TYPES = new Set(['image', 'audio', 'video', 'document']);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -54,7 +55,7 @@ serve(async (req) => {
     );
 
     const body = await req.json();
-    const { conversationId, messageType, content, mediaUrl, templateName, templateLanguage, templateParameters, sentBy } = body;
+    const { conversationId, messageType, content, mediaUrl, mediaStoragePath, mediaMimeType, mediaFileName, mediaCaption, templateName, templateLanguage, templateParameters, sentBy } = body;
 
     // === Input Validation ===
     if (!conversationId || typeof conversationId !== 'string' || !UUID_REGEX.test(conversationId)) {
@@ -82,8 +83,8 @@ serve(async (req) => {
       }
     }
 
-    if ((messageType === 'image' || messageType === 'document') && (!mediaUrl || typeof mediaUrl !== 'string')) {
-      return new Response(JSON.stringify({ error: 'mediaUrl is required for image/document messages' }), {
+    if (MEDIA_TYPES.has(messageType) && !mediaUrl && !mediaStoragePath) {
+      return new Response(JSON.stringify({ error: 'mediaUrl or mediaStoragePath is required for media messages' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -128,6 +129,32 @@ serve(async (req) => {
       throw new Error('WhatsApp not connected for this organization');
     }
 
+    // If media is provided as a Storage path, upload it to Meta and get a media id
+    let uploadedMediaId: string | null = null;
+    if (MEDIA_TYPES.has(messageType) && mediaStoragePath) {
+      const { data: file, error: dlErr } = await supabase.storage
+        .from('whatsapp-media')
+        .download(mediaStoragePath);
+      if (dlErr || !file) throw new Error('Could not read uploaded media from storage');
+      const mime = mediaMimeType || file.type || 'application/octet-stream';
+      const fname = mediaFileName || mediaStoragePath.split('/').pop() || 'file';
+
+      const gvUp = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
+      const form = new FormData();
+      form.append('messaging_product', 'whatsapp');
+      form.append('type', mime);
+      form.append('file', new File([await file.arrayBuffer()], fname, { type: mime }));
+
+      const upRes = await fetch(`https://graph.facebook.com/${gvUp}/${settings.phone_number_id}/media`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${settings.access_token}` },
+        body: form,
+      });
+      const upJson = await upRes.json();
+      if (!upRes.ok || !upJson.id) throw new Error(`Meta media upload failed: ${JSON.stringify(upJson)}`);
+      uploadedMediaId = upJson.id;
+    }
+
     // Prepare message payload
     let messagePayload: any = {
       messaging_product: "whatsapp",
@@ -135,15 +162,22 @@ serve(async (req) => {
       type: messageType
     };
 
+    const mediaRef: any = uploadedMediaId ? { id: uploadedMediaId } : { link: mediaUrl };
     switch (messageType) {
       case 'text':
         messagePayload.text = { body: content };
         break;
       case 'image':
-        messagePayload.image = { link: mediaUrl };
+        messagePayload.image = { ...mediaRef, caption: mediaCaption || undefined };
+        break;
+      case 'video':
+        messagePayload.video = { ...mediaRef, caption: mediaCaption || undefined };
+        break;
+      case 'audio':
+        messagePayload.audio = mediaRef;
         break;
       case 'document':
-        messagePayload.document = { link: mediaUrl };
+        messagePayload.document = { ...mediaRef, filename: mediaFileName || undefined, caption: mediaCaption || undefined };
         break;
       case 'template':
         messagePayload.template = {
@@ -199,8 +233,12 @@ serve(async (req) => {
         message_id: result.messages[0].id,
         direction: 'outbound',
         message_type: messageType,
-        content: messageType === 'text' ? content : null,
-        media_url: mediaUrl,
+        content: messageType === 'text' ? content : (mediaCaption || null),
+        media_url: mediaUrl || null,
+        media_storage_path: mediaStoragePath || null,
+        media_mime_type: mediaMimeType || null,
+        media_file_name: mediaFileName || null,
+        media_caption: mediaCaption || null,
         template_name: templateName,
         template_language: templateLanguage,
         template_parameters: templateParameters,

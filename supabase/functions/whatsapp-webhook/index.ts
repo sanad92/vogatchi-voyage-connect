@@ -152,6 +152,46 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         // Upsert by (organization_id, message_id) — Meta may retry the same
         // webhook; we ignore duplicates instead of inserting again.
+        const mediaTypes = ['image', 'audio', 'voice', 'video', 'document', 'sticker'];
+        let mediaPath: string | null = null;
+        let mediaMime: string | null = null;
+        let mediaFileName: string | null = null;
+        let mediaCaption: string | null = null;
+        let contentText: string | null = message.text?.body ?? null;
+
+        if (mediaTypes.includes(message.type)) {
+          const media = message[message.type];
+          mediaMime = media?.mime_type ?? null;
+          mediaFileName = media?.filename ?? null;
+          mediaCaption = media?.caption ?? null;
+          if (media?.id) {
+            try {
+              const downloaded = await downloadAndStoreMedia(
+                supabase, organizationId, conversationId, message.id, media.id, mediaMime,
+              );
+              mediaPath = downloaded.path;
+              mediaMime = downloaded.mimeType || mediaMime;
+            } catch (e) {
+              console.error('media download failed', message.id, e);
+            }
+          }
+          if (mediaCaption && !contentText) contentText = mediaCaption;
+        } else if (message.type === 'location' && message.location) {
+          contentText = JSON.stringify({
+            lat: message.location.latitude,
+            lng: message.location.longitude,
+            name: message.location.name,
+            address: message.location.address,
+          });
+        } else if (message.type === 'interactive' && message.interactive) {
+          const ir = message.interactive;
+          contentText = ir.button_reply?.title || ir.list_reply?.title || ir.list_reply?.description || null;
+        } else if (message.type === 'button' && message.button) {
+          contentText = message.button.text ?? null;
+        } else if (message.type === 'reaction' && message.reaction) {
+          contentText = message.reaction.emoji ?? null;
+        }
+
         const { error: msgErr } = await supabase
           .from('whatsapp_messages')
           .upsert(
@@ -161,9 +201,11 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               message_id: message.id,
               direction: 'inbound',
               message_type: message.type,
-              content: message.text?.body ?? null,
-              media_url: message.image?.link || message.document?.link || message.audio?.link || message.video?.link,
-              media_mime_type: message.image?.mime_type || message.document?.mime_type || message.audio?.mime_type || message.video?.mime_type,
+              content: contentText,
+              media_storage_path: mediaPath,
+              media_mime_type: mediaMime,
+              media_file_name: mediaFileName,
+              media_caption: mediaCaption,
               sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
               status: 'delivered',
             },
@@ -193,4 +235,59 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
   } catch (error) {
     console.error('Error processing message:', error);
   }
+}
+
+const MIME_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+  'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/amr': 'amr', 'audio/aac': 'aac',
+  'video/mp4': 'mp4', 'video/3gpp': '3gp',
+  'application/pdf': 'pdf', 'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+};
+
+async function downloadAndStoreMedia(
+  supabase: any,
+  organizationId: string,
+  conversationId: string,
+  messageId: string,
+  mediaId: string,
+  hintedMime: string | null,
+): Promise<{ path: string; mimeType: string | null }> {
+  // Get per-org access token
+  const { data: settings } = await supabase
+    .from('whatsapp_settings')
+    .select('access_token, api_version')
+    .eq('organization_id', organizationId)
+    .maybeSingle();
+
+  const accessToken = settings?.access_token;
+  if (!accessToken) throw new Error('no access_token for org');
+  const gv = settings?.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
+
+  // 1) get temporary URL
+  const metaRes = await fetch(`https://graph.facebook.com/${gv}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!metaRes.ok) throw new Error(`meta media meta failed ${metaRes.status}`);
+  const meta = await metaRes.json();
+  const mimeType = meta.mime_type || hintedMime || 'application/octet-stream';
+
+  // 2) download binary
+  const fileRes = await fetch(meta.url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!fileRes.ok) throw new Error(`meta media download failed ${fileRes.status}`);
+  const bytes = new Uint8Array(await fileRes.arrayBuffer());
+
+  const ext = MIME_EXT[mimeType] || mimeType.split('/')[1] || 'bin';
+  const path = `${organizationId}/${conversationId}/${messageId}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('whatsapp-media')
+    .upload(path, bytes, { contentType: mimeType, upsert: true });
+  if (error) throw error;
+
+  return { path, mimeType };
 }

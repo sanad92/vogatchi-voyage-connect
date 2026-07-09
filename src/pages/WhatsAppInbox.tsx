@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Phone, Search, ArrowDownLeft, ArrowUpRight, Clock, ExternalLink, RefreshCw } from 'lucide-react';
+import { MessageCircle, Phone, Search, ArrowDownLeft, ArrowUpRight, Clock, ExternalLink, RefreshCw, Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading } = useWhatsApp();
@@ -218,9 +219,7 @@ const WhatsAppInboxContent: React.FC = () => {
                                   </>
                                 )}
                               </div>
-                              <div className="whitespace-pre-wrap break-words text-sm">
-                                {m.content || (m.template_name ? `[قالب: ${m.template_name}]` : '—')}
-                              </div>
+                              <WhatsAppMediaMessage message={m} outbound={outbound} />
                               <div
                                 className={`flex items-center justify-between gap-2 text-[10px] pt-1 ${
                                   outbound ? 'text-blue-100' : 'text-emerald-800/70'
@@ -231,7 +230,17 @@ const WhatsAppInboxContent: React.FC = () => {
                                   {format(new Date(m.sent_at), 'yyyy/MM/dd HH:mm')}
                                 </span>
                                 {outbound && (
-                                  <span className="uppercase">{m.status}</span>
+                                  <span className="inline-flex items-center gap-0.5">
+                                    {m.read_at ? (
+                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2 text-sky-200" /></>
+                                    ) : m.delivered_at || m.status === 'delivered' ? (
+                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2" /></>
+                                    ) : m.status === 'sent' ? (
+                                      <Check className="h-3 w-3" />
+                                    ) : (
+                                      <span className="uppercase">{m.status}</span>
+                                    )}
+                                  </span>
                                 )}
                               </div>
                               {m.status === 'failed' && m.error_message && (
