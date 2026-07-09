@@ -47,9 +47,10 @@ const PRIORITY_COLOR: Record<string, string> = {
 interface Props {
   conversationId: string;
   conversation: any;
+  onInsertText?: (text: string) => void;
 }
 
-export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conversation }) => {
+export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conversation, onInsertText }) => {
   const organizationId = useOrgId();
   const { assign, setStatus, setPriority, toggleStar } = useConversationActions(conversationId);
   const { tags, createTag } = useConversationTags();
