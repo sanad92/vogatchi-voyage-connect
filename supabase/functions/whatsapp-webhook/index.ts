@@ -157,6 +157,9 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
         let mediaMime: string | null = null;
         let mediaFileName: string | null = null;
         let mediaCaption: string | null = null;
+        let mediaProviderId: string | null = null;
+        let mediaDownloadStatus: string | null = null;
+        let mediaDownloadError: string | null = null;
         let contentText: string | null = message.text?.body ?? null;
 
         if (mediaTypes.includes(message.type)) {
@@ -164,6 +167,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           mediaMime = normalizeMime(media?.mime_type);
           mediaFileName = media?.filename ?? null;
           mediaCaption = media?.caption ?? null;
+          mediaProviderId = media?.id ?? null;
           if (media?.id) {
             try {
               const downloaded = await downloadAndStoreMedia(
@@ -171,9 +175,17 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               );
               mediaPath = downloaded.path;
               mediaMime = downloaded.mimeType || mediaMime;
+              mediaDownloadStatus = 'success';
             } catch (e) {
-              console.error('media download failed', { messageId: message.id, mediaId: media.id, mime: mediaMime, error: String(e) });
+              mediaDownloadStatus = 'failed';
+              mediaDownloadError = String(e?.message ?? e).slice(0, 500);
+              console.error('[wa-webhook] media download failed', {
+                messageId: message.id, mediaId: media.id, mime: mediaMime, error: mediaDownloadError,
+              });
             }
+          } else {
+            mediaDownloadStatus = 'failed';
+            mediaDownloadError = 'no media id in webhook payload';
           }
           if (mediaCaption && !contentText) contentText = mediaCaption;
         } else if (message.type === 'location' && message.location) {
@@ -203,16 +215,20 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               message_type: message.type,
               content: contentText,
               media_storage_path: mediaPath,
-              media_provider_id: media?.id ?? null,
+              media_provider_id: mediaProviderId,
               media_mime_type: mediaMime,
               media_file_name: mediaFileName,
               media_caption: mediaCaption,
+              media_download_status: mediaDownloadStatus,
+              media_download_error: mediaDownloadError,
+              media_download_attempts: mediaDownloadStatus ? 1 : 0,
+              media_last_attempt_at: mediaDownloadStatus ? new Date().toISOString() : null,
               sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
               status: 'delivered',
             },
             { onConflict: 'organization_id,message_id', ignoreDuplicates: true },
           );
-        if (msgErr) console.error('message upsert error:', msgErr);
+        if (msgErr) console.error('[wa-webhook] message upsert error:', msgErr);
 
         await supabase
           .from('whatsapp_conversations')
@@ -262,7 +278,6 @@ async function downloadAndStoreMedia(
   mediaId: string,
   hintedMime: string | null,
 ): Promise<{ path: string; mimeType: string | null }> {
-  // Get per-org access token
   const { data: settings } = await supabase
     .from('whatsapp_settings')
     .select('access_token, api_version')
@@ -273,20 +288,45 @@ async function downloadAndStoreMedia(
   if (!accessToken) throw new Error('no access_token for org');
   const gv = settings?.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
 
-  // 1) get temporary URL
-  const metaRes = await fetch(`https://graph.facebook.com/${gv}/${mediaId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!metaRes.ok) throw new Error(`meta media meta failed ${metaRes.status}`);
+  // Retry helper: 3 attempts with exponential backoff (300ms, 900ms, 2700ms).
+  const fetchWithRetry = async (url: string, init: RequestInit, label: string): Promise<Response> => {
+    let lastErr: unknown = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(url, init);
+        if (res.ok) return res;
+        // Retry on 5xx and 429; fail fast on 4xx.
+        if (res.status >= 500 || res.status === 429) {
+          lastErr = new Error(`${label} ${res.status}`);
+        } else {
+          const body = await res.text().catch(() => '');
+          throw new Error(`${label} ${res.status}: ${body.slice(0, 200)}`);
+        }
+      } catch (e) {
+        lastErr = e;
+      }
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 300 * Math.pow(3, attempt - 1)));
+    }
+    throw lastErr instanceof Error ? lastErr : new Error(`${label} failed`);
+  };
+
+  // 1) Get temporary URL for the media
+  const metaRes = await fetchWithRetry(
+    `https://graph.facebook.com/${gv}/${mediaId}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+    'meta media meta',
+  );
   const meta = await metaRes.json();
   const mimeType = normalizeMime(meta.mime_type) || hintedMime || 'application/octet-stream';
 
-  // 2) download binary
-  const fileRes = await fetch(meta.url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!fileRes.ok) throw new Error(`meta media download failed ${fileRes.status}`);
+  // 2) Download the binary
+  const fileRes = await fetchWithRetry(
+    meta.url,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+    'meta media download',
+  );
   const bytes = new Uint8Array(await fileRes.arrayBuffer());
+  if (bytes.byteLength === 0) throw new Error('downloaded empty file');
 
   const rawExt = MIME_EXT[mimeType] || mimeType.split('/')[1] || 'bin';
   const ext = rawExt.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
@@ -295,7 +335,10 @@ async function downloadAndStoreMedia(
   const { error } = await supabase.storage
     .from('whatsapp-media')
     .upload(path, bytes, { contentType: mimeType, upsert: true });
-  if (error) throw error;
+  if (error) throw new Error(`storage upload: ${error.message ?? String(error)}`);
 
+  console.log('[wa-webhook] media stored', { path, mimeType, size: bytes.byteLength });
   return { path, mimeType };
 }
+
+
