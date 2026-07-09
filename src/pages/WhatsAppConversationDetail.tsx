@@ -130,7 +130,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
+    <div className="h-[calc(100vh-4rem)] flex bg-background" dir="rtl">
+      <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
