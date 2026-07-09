@@ -13,6 +13,7 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading } = useWhatsApp();
