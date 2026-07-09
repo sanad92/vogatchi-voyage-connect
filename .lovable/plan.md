@@ -1,72 +1,39 @@
-## المشكلة
-الرسائل الصوتية والميديا لا تعمل لأن:
-1. **الاستقبال (webhook):** WhatsApp Cloud لا يُرسل رابطاً مباشراً للميديا؛ يرسل `media_id` فقط. الكود الحالي يقرأ `message.image.link` وهو دائماً `undefined`. النتيجة: رسائل الميديا تُحفظ بدون رابط، وأحياناً بدون محتوى.
-2. **التخزين:** لا يوجد Bucket لملفات واتساب.
-3. **العرض:** واجهة `WhatsAppInbox` لا ترسم صور/صوت/فيديو/مستندات — تعرض النص فقط أو "[قالب]".
-4. **الإرسال:** الـ Composer نصّي فقط، لا يدعم مرفقات.
+## إصلاح تنزيل وعرض الرسائل الصوتية في WhatsApp
 
-## الخطة (نظام محترم لدعم كامل الميديا)
+### السبب الجذري
+عند وصول voice note من واتساب، `mime_type` يكون `"audio/ogg; codecs=opus"`. الكود لا يفصل معامل `codecs=...` قبل:
+- بحث الامتداد في جدول `MIME_EXT` (فيفشل ويقع للـ fallback)
+- استخدامه في اسم الملف داخل Storage (فيحوي `;` و مسافة → upload يفشل)
+- تخزينه في `media_mime_type` (فعنصر `<audio>` قد لا يشغّله في بعض المتصفحات)
 
-### 1) قاعدة البيانات
-Migration واحد يضيف أعمدة الميديا الناقصة على `whatsapp_messages`:
-- `media_storage_path text` (المسار داخل bucket بعد التنزيل)
-- `media_file_name text`
-- `media_caption text`
-- `media_duration_seconds int` (للصوت/الفيديو)
+النتيجة: `media_storage_path = null` → الواجهة تعرض «الملف غير متاح».
 
-### 2) Storage Bucket
-- إنشاء bucket `whatsapp-media` (private).
-- سياسات RLS على `storage.objects` تسمح لأعضاء المنظمة (`organization_members`) بالقراءة/الكتابة لملفات تحت `<organization_id>/...` فقط.
+### التعديلات
 
-### 3) استقبال الميديا (`whatsapp-webhook`)
-عند وصول رسالة نوعها `image | audio | voice | video | document | sticker`:
-- استدعاء Graph API: `GET /{media_id}` مع `Authorization: Bearer <access_token>` (من `whatsapp_settings.access_token`) للحصول على `url` مؤقت + `mime_type`.
-- تنزيل الملف كـ blob بنفس التوكن.
-- رفعه إلى `whatsapp-media/<org_id>/<conversation_id>/<message_id>.<ext>`.
-- حفظ `media_storage_path` و`media_mime_type` و`media_file_name` و`content` (caption للصور/الفيديو).
-- دعم `location` (حفظ إحداثيات في `content` JSON)، و`interactive` (button/list reply → حفظ نص الاختيار)، و`reaction` (تحديث الرسالة المشار إليها).
+**1) `supabase/functions/whatsapp-webhook/index.ts`**
+- إضافة دالة `normalizeMime(m)` ترجع الجزء قبل `;` وبحروف صغيرة (`audio/ogg; codecs=opus` → `audio/ogg`).
+- تطبيقها على `mediaMime` القادم من الـ payload قبل الحفظ.
+- داخل `downloadAndStoreMedia`: تطبيقها على `meta.mime_type` قبل بحث `MIME_EXT` وقبل تمريرها كـ `contentType` للـ Storage.
+- تعقيم الـ extension كخط دفاع ثانٍ: `ext.replace(/[^a-z0-9]/gi, '') || 'bin'`.
+- إضافة تسجيل واضح عند فشل التنزيل يوضح: mediaId، الحالة، السبب — لتسهيل التشخيص لاحقاً.
+- تحديث `MIME_EXT` ليشمل `audio/webm` و `audio/wav` احتياطاً.
 
-### 4) واجهة العرض (`WhatsAppInbox.tsx` + مكوّن جديد `WhatsAppMediaMessage.tsx`)
-- Hook مساعد `useSignedMediaUrl(path)` يُنتج Signed URL صلاحيته ساعة.
-- رسم حسب `message_type`:
-  - `image` → `<img>` قابلة للفتح على شاشة كاملة.
-  - `audio` / `voice` → `<audio controls>` مع مؤشر مدة.
-  - `video` → `<video controls>` بعرض مصغّر.
-  - `document` → بطاقة باسم الملف + أيقونة + زر تنزيل (blob download لتفادي مشاكل CORS).
-  - `sticker` → `<img>` بحجم صغير.
-  - `location` → رابط خرائط جوجل.
-  - `template` / `interactive` → عرض العنوان + الأزرار كنص.
-- Caption يظهر أسفل الميديا.
+**2) `src/components/whatsapp/WhatsAppMediaMessage.tsx`**
+- عند اكتشاف نوع `audio`/`voice` بدون `media_storage_path`، عرض رسالة أوضح: «جاري معالجة الملف الصوتي… حدّث بعد لحظات» بدلاً من «الملف غير متاح».
+- توحيد فحص الـ mime عبر `mime.split(';')[0].trim()` قبل مطابقة `image/`, `audio/`, `video/`.
+- تعيين `type="audio/ogg"` صراحةً على عنصر `<audio>` عند وصول voice note، لضمان تشغيله في Safari/iOS.
 
-### 5) إرسال الميديا (Composer + `send-whatsapp-message`)
-- زرّ 📎 في الـ Composer يفتح اختيار ملف (صورة/فيديو/صوت/مستند) — يعرض معاينة وحقل caption.
-- الرفع أولاً إلى `whatsapp-media/<org>/<conv>/outbound-<uuid>.<ext>`.
-- استدعاء edge function `send-whatsapp-message` مع `{ conversationId, mediaPath, mimeType, caption, fileName }`.
-- الـ edge function:
-  1. تنزيل الملف من Storage.
-  2. رفعه إلى Meta: `POST /{phone_number_id}/media` (multipart) → استلام `media_id`.
-  3. إرسال الرسالة: `POST /{phone_number_id}/messages` بـ `type` المناسب و`id: media_id`.
-  4. حفظ الرسالة الصادرة في `whatsapp_messages` مع `media_storage_path` (نفس المسار للعرض الفوري).
+**3) إعادة معالجة الرسائل الفاشلة سابقاً (اختياري لكن مستحسن)**
+- زر «إعادة تنزيل» صغير بجانب الرسائل الصوتية التي `media_storage_path IS NULL` يستدعي edge function جديدة `whatsapp-retry-media` تأخذ `message_id` وتعيد تشغيل نفس مسار التنزيل. هذا يستعيد كل الصوتيات التي فُقدت من قبل دون انتظار رسائل جديدة.
 
-### 6) نقاط جودة إضافية
-- عرض حالة التسليم (✓/✓✓/✓✓ أزرق) بجانب كل رسالة صادرة اعتماداً على `status`/`delivered_at`/`read_at`.
-- Skeleton أثناء تحميل الميديا الكبيرة.
-- حد أقصى لحجم الملف (16MB صوت/فيديو، 100MB مستند وفق حدود WhatsApp Cloud).
-- Toast خطأ واضح عند فشل تنزيل/رفع.
+### الملفات المتأثرة
+- `supabase/functions/whatsapp-webhook/index.ts` (تعديل)
+- `src/components/whatsapp/WhatsAppMediaMessage.tsx` (تعديل)
+- `supabase/functions/whatsapp-retry-media/index.ts` (جديد، اختياري)
 
-## الملفات المتأثرة
-- Migration جديد (أعمدة + bucket + policies).
-- `supabase/functions/whatsapp-webhook/index.ts` — منطق تنزيل الميديا.
-- `supabase/functions/send-whatsapp-message/index.ts` — منطق رفع + إرسال الميديا.
-- `src/hooks/useWhatsAppMedia.tsx` (جديد) — signed URL + upload helper.
-- `src/components/whatsapp/WhatsAppMediaMessage.tsx` (جديد) — عرض حسب النوع.
-- `src/components/whatsapp/WhatsAppMessageComposer.tsx` — زرّ المرفقات.
-- `src/pages/WhatsAppInbox.tsx` — استبدال بلوك عرض المحتوى بمكوّن الميديا الجديد + مؤشرات حالة التسليم.
+### تحقق بعد التنفيذ
+- إرسال voice note جديدة من واتساب ورؤيتها تُشغَّل داخل `/whatsapp-inbox`.
+- فحص `edge-function-logs` للتأكد من عدم وجود «media download failed».
+- فحص جدول `whatsapp_messages` بأن `media_storage_path` مُعبّأ لرسائل النوع `audio`.
 
-## ملاحظة قبل التنفيذ
-هذه خطة كاملة (استقبال + عرض + إرسال). لتفادي جولة طويلة جداً، أقترح تقسيمها إلى مرحلتين:
-
-- **المرحلة 1 (فورية):** DB + Bucket + استقبال + عرض الميديا الواردة (بنود 1–4 + مؤشرات التسليم).
-- **المرحلة 2:** إرسال الميديا من الـ Composer (بنود 5).
-
-هل تريد تنفيذ المرحلتين معاً أم البدء بالمرحلة 1 فقط؟
+هل أضمّن خطوة **إعادة معالجة الرسائل الصوتية القديمة** (النقطة 3) أم أكتفي بالإصلاح للرسائل الجديدة فقط؟

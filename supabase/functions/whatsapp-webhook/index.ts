@@ -161,7 +161,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         if (mediaTypes.includes(message.type)) {
           const media = message[message.type];
-          mediaMime = media?.mime_type ?? null;
+          mediaMime = normalizeMime(media?.mime_type);
           mediaFileName = media?.filename ?? null;
           mediaCaption = media?.caption ?? null;
           if (media?.id) {
@@ -172,7 +172,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               mediaPath = downloaded.path;
               mediaMime = downloaded.mimeType || mediaMime;
             } catch (e) {
-              console.error('media download failed', message.id, e);
+              console.error('media download failed', { messageId: message.id, mediaId: media.id, mime: mediaMime, error: String(e) });
             }
           }
           if (mediaCaption && !contentText) contentText = mediaCaption;
