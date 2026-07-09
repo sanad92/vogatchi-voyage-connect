@@ -1,53 +1,39 @@
-## خطة اختبار ربط WhatsApp Business عبر Embedded Signup
+## ربط WhatsApp Cloud يدوياً بالتوكن الدائم
 
-القيم اتحطت (`.env` + backend secrets). قبل ما تضغط زر "Connect" على `/whatsapp-admin`، محتاج نتأكد من الإعدادات في Meta App Dashboard علشان الاختبار ينجح من أول مرة.
+عظيم — التوكن جاهز. هذه الخطة تضيف واجهة ربط يدوي في `/whatsapp-admin` تستقبل التوكن + Phone Number ID + WABA ID، تتحقق منهم مع Meta، وتحفظهم في القاعدة.
 
-### 1) تحقق من إعدادات Meta App Dashboard
+**⚠️ مهم:** لا تلصق التوكن في الشات — سنطلبه فقط داخل النموذج الآمن في التطبيق.
 
-**Facebook Login for Business → Configurations** (نفس `META_CONFIG_ID = 1833848214262321`):
-- Login variation: **WhatsApp Embedded Signup**
-- Assets: WhatsApp Business Account + Phone numbers
-- Permissions: `whatsapp_business_management`, `whatsapp_business_messaging`, `business_management`
+### الملفات
 
-**App Settings → Basic**:
-- App Domains يحتوي: `vogatchi-voyage-connect.lovable.app` و `id-preview--49aa510d-479d-4612-891c-0963e841fe97.lovable.app`
-- Privacy Policy URL: `https://vogatchi-voyage-connect.lovable.app/privacy`
-- Data Deletion Callback URL: `https://gvozalurfthzxpuasplo.supabase.co/functions/v1/whatsapp-data-deletion`
+**1. Edge Function جديدة — `supabase/functions/whatsapp-manual-connect/index.ts`**
+- تستقبل: `access_token`, `phone_number_id`, `waba_id`, `organization_id`
+- تتحقق أن المستدعي owner/admin على المنظمة (عبر `organization_members`)
+- تختبر التوكن بـ Graph API:
+  - `GET /{phone_number_id}?fields=id,display_phone_number,verified_name`
+  - `GET /{waba_id}?fields=id,name,currency,timezone_id`
+- تشترك في webhooks: `POST /{waba_id}/subscribed_apps`
+- Upsert في `whatsapp_settings` بنفس بنية `whatsapp-oauth-exchange` مع:
+  - `connection_method = 'manual_token'`
+  - `token_expires_at = null` (توكن دائم)
+  - `onboarding_status = 'connected'`, `is_active = true`
+- تسجّل النتيجة في `whatsapp_connection_events`
 
-**Facebook Login for Business → Settings**:
-- Valid OAuth Redirect URIs: `https://vogatchi-voyage-connect.lovable.app/` و `https://id-preview--49aa510d-479d-4612-891c-0963e841fe97.lovable.app/`
+**2. Dialog جديد — `src/components/whatsapp/ManualConnectDialog.tsx`**
+- حقول: Permanent Access Token (password)، Phone Number ID، WABA ID
+- زر "اختبار وربط" يستدعي الـ edge function ويعرض اسم البزنس ورقم الهاتف عند النجاح
+- عند النجاح يبطل الـ queries المتعلقة بـ whatsapp-settings ويقفل نفسه
 
-**WhatsApp → Configuration → Webhook**:
-- Callback URL: `https://gvozalurfthzxpuasplo.supabase.co/functions/v1/whatsapp-webhook`
-- Verify Token: نفس القيمة الموجودة في `WHATSAPP_VERIFY_TOKEN` عندنا
-- Subscribed fields: `messages`, `message_template_status_update`
+**3. تعديل — `src/components/whatsapp/WhatsAppAdminTabs.tsx`**
+- إضافة زر "ربط يدوي (Advanced)" في تبويب الإعدادات بجوار `WhatsAppConnectCard` يفتح الديالوج
 
-**App Mode**: لو التطبيق لسه Development، ضيف حسابك كـ Tester (Roles → Testers) — بدون كده الـ Embedded Signup هيرفض.
+### ملاحظات تقنية
+- التوكن يُخزَّن في `whatsapp_settings.access_token` (نفس مكان مسار Embedded Signup) ولا يُرجَع للعميل أبداً
+- نفس أسرار Meta الحالية (`META_APP_ID`, `META_APP_SECRET`, `META_GRAPH_API_VERSION`) — لا أسرار جديدة
+- لا تغييرات على قاعدة البيانات ولا على `whatsapp-oauth-exchange` ولا على الـ webhook
 
-### 2) سيناريو الاختبار
-
-1. سجل دخول في المعاينة → افتح `/whatsapp-admin` → تبويب Connect.
-2. اضغط **ربط حساب WhatsApp Business** → نافذة Meta تفتح.
-3. اختر (أو أنشئ) WABA + رقم هاتف → Finish.
-4. المفروض تشوف toast "تم ربط حساب WhatsApp بنجاح" + الكارت يعرض: الرقم، Phone Number ID، WABA ID، وBadge أخضر "متصل".
-
-### 3) نقاط المراقبة (لو حصل خطأ)
-
-أنا هراقب أثناء الاختبار:
-- **Browser console** — أخطاء SDK / postMessage.
-- **Edge Function logs** لـ `whatsapp-oauth-exchange` — استجابة `debug_token` و `oauth/access_token` و `phone_numbers`.
-- **جدول `whatsapp_connection_events`** — أي حدث فشل (`oauth_exchange_failed`, `oauth_waba_missing`, `no_phone_number`).
-
-### 4) اختبار رسالة واردة (بعد نجاح الربط)
-
-- أرسل رسالة WhatsApp من رقم شخصي إلى الرقم اللي ربطته.
-- تابع Edge Function logs لـ `whatsapp-webhook` — يجب يلاقي `waba_id` ويوجه للمنظمة الصح.
-- افتح `/whatsapp` → المحادثة الجديدة تظهر.
-
-### 5) اختبار رسالة صادرة
-
-- من نفس المحادثة، ابعت رد → `send-whatsapp-message` يستخدم `access_token` الخاص بالمنظمة.
-
----
-
-**قبل ما نبدأ**: أكدلي إن الـ 4 نقاط في القسم (1) مضبوطة، وقلي دخلت `/whatsapp-admin` وضغطت الزر، وأنا هراقب الـ logs مباشرة.
+### الاختبار
+1. `/whatsapp-admin` → الإعدادات → "ربط يدوي"
+2. إدخال التوكن + Phone Number ID + WABA ID
+3. التحقق من ظهور اسم البزنس ورقم الهاتف
+4. إرسال رسالة تجريبية من المحادثات

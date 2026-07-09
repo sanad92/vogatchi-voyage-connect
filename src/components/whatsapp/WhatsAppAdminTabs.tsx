@@ -15,6 +15,7 @@ import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
+import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppAdminTabs: React.FC = () => {
   return (
@@ -55,6 +56,9 @@ export const WhatsAppAdminTabs: React.FC = () => {
         </TabsList>
 
         <TabsContent value="settings" className="mt-6 space-y-6">
+          <div className="flex justify-end">
+            <ManualConnectDialog />
+          </div>
           <WhatsAppConnectCard />
           <WhatsAppSettings />
         </TabsContent>
