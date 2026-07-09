@@ -89,8 +89,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden: owner/admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const proof = await appsecretProof(access_token);
+
     // 1) Validate phone number id with the provided token
-    const phoneRes = await fetch(`${GRAPH()}/${phone_number_id}?fields=id,display_phone_number,verified_name`, {
+    const phoneRes = await fetch(appendProof(`${GRAPH()}/${phone_number_id}?fields=id,display_phone_number,verified_name`, proof), {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     const phoneJson = await phoneRes.json();
@@ -100,7 +102,7 @@ serve(async (req) => {
     }
 
     // 2) Validate WABA id
-    const wabaRes = await fetch(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, {
+    const wabaRes = await fetch(appendProof(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, proof), {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     const wabaJson = await wabaRes.json();
@@ -111,7 +113,7 @@ serve(async (req) => {
 
     // 3) Subscribe app to WABA webhooks (idempotent, non-fatal)
     try {
-      await fetch(`${GRAPH()}/${waba_id}/subscribed_apps`, {
+      await fetch(appendProof(`${GRAPH()}/${waba_id}/subscribed_apps`, proof), {
         method: "POST",
         headers: { Authorization: `Bearer ${access_token}` },
       });
