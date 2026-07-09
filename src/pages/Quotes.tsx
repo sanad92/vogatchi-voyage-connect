@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Plus, Search, Eye, Trash2, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function Quotes() {
+  usePageTitle('عروض الأسعار');
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
@@ -23,13 +26,18 @@ export default function Quotes() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-bold">عروض الأسعار</h1>
-        <Button onClick={() => navigate('/quotes/new')}>
-          <Plus className="h-4 w-4 ml-1" />
-          عرض سعر جديد
-        </Button>
-      </div>
+      <PageHeader
+        title="عروض الأسعار"
+        description="إنشاء وإدارة عروض الأسعار للعملاء"
+        icon={FileSpreadsheet}
+        actions={
+          <Button onClick={() => navigate('/quotes/new')}>
+            <Plus className="h-4 w-4 ml-1" />
+            عرض سعر جديد
+          </Button>
+        }
+      />
+
 
       <Card>
         <CardHeader className="pb-3">
