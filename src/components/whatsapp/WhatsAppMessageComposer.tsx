@@ -140,9 +140,8 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" title="الردود السريعة" onClick={() => setShowQuickReplies((v) => !v)}>
-              <Zap className="w-4 h-4" />
-            </Button>
+            <QuickRepliesPicker variables={variables} onPick={(t) => setMessage(t)} />
+            <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
             <Button
               variant="outline"
               size="sm"
