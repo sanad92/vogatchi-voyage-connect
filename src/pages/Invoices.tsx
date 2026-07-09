@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus, CreditCard } from "lucide-react";
+import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus, CreditCard, Wallet, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +15,8 @@ import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
 import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
-import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
+import PageHeader from "@/components/layout/PageHeader";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Invoices = () => {
   useInitialInvoices();
