@@ -45,6 +45,10 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
+  const [prefillText, setPrefillText] = useState('');
+  const [prefillNonce, setPrefillNonce] = useState(0);
+  const insertText = (text: string) => { setPrefillText(text); setPrefillNonce((n) => n + 1); };
+
 
   const { data: conversation, isLoading: convLoading } = useQuery({
     queryKey: ['whatsapp-conversation-detail', conversationId],
