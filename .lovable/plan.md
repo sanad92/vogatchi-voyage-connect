@@ -1,15 +1,18 @@
-## الوضع الحالي
-- مسار `/whatsapp` يعيد التوجيه فعلاً إلى `/whatsapp-inbox` (تم في الجولة السابقة).
-- لا يوجد أي رابط للـ `/whatsapp` في القائمة الجانبية (`DashboardSidebar.tsx`) — القائمة نظيفة.
-- ما زال هناك ملف الصفحة القديمة `src/pages/WhatsApp.tsx` مستوردًا في `src/App.tsx` (سطر 98) رغم أنه لم يعد مستخدماً في أي Route.
+## هدف الاختبار
+التأكد أن أي رسالة واردة جديدة من واتساب تُحفظ في `whatsapp_messages` وتظهر فوراً في `/whatsapp-inbox` عبر Realtime، بعد إصلاح قيد التفرد.
 
-## الخطة (تنظيف نهائي)
-1. **إزالة الاستيراد غير المستخدم** في `src/App.tsx`:
-   حذف السطر `const WhatsApp = lazy(() => import("@/pages/WhatsApp"));`.
-2. **حذف الملف** `src/pages/WhatsApp.tsx` نهائياً بحيث لا تبقى أي واجهة ثانية في الشيفرة.
-3. الإبقاء على مسار الـ Redirect `/whatsapp → /whatsapp-inbox` لتغطية أي روابط قديمة/مفضّلات.
-4. لا تغيير على `WhatsAppDashboard` المكوّن نفسه؛ يمكن حذفه لاحقاً إن أردت (يُستعمل داخل صفحة `WhatsApp.tsx` فقط، وسيصبح غير مرجوع بعد الحذف — يمكن تركه بدون ضرر أو حذفه في خطوة تنظيف منفصلة).
+## طريقة التحقق (بدون انتظار رسالة حقيقية)
 
-## النتيجة
-- لا توجد سوى واجهة واحدة `/whatsapp-inbox` (+ صفحة التفاصيل و`/whatsapp-admin` للإعدادات).
-- أي زيارة لـ `/whatsapp` تعيد التوجيه فوراً وبشفافية إلى الصندوق الموحّد.
+1. **محاكاة Webhook**: إرسال POST إلى edge function `whatsapp-webhook` بنفس صيغة payload الحقيقي من Meta (رأيته سابقاً في السجلات) مع `message_id` جديد لتفادي الازدواج.
+2. **قراءة السجلات** فور الإرسال للتأكد من عدم ظهور أي خطأ `42P10` (خطأ ON CONFLICT الذي أصلحناه).
+3. **استعلام قاعدة البيانات** للتحقق من إدراج الصف الجديد في `whatsapp_messages` بقيمة `direction=inbound` والمحتوى المُرسل.
+4. **التحقق من تفعيل Realtime على الجدول** — تشغيل استعلام على `pg_publication_tables` للتأكد أن `whatsapp_messages` ضمن publication `supabase_realtime`. إن لم يكن، إضافته بـ migration واحد سريع:
+   ```sql
+   ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_messages;
+   ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_conversations;
+   ```
+5. **تقرير مختصر** للمستخدم يوضّح: تم استقبال الرسالة ✅ / تم الحفظ ✅ / Realtime مفعّل ✅، مع رقم الرسالة الاختبارية ووقت وصولها في الواجهة.
+
+## ملاحظات
+- لن يتم إرسال رسالة حقيقية إلى أي مستخدم خارجي، فقط payload اختباري مباشر للـ webhook داخل حسابك.
+- لن يتم أي تعديل على الكود إلا في حالة اكتشاف أن Realtime غير مفعّل على الجدول (خطوة migration اختيارية).
