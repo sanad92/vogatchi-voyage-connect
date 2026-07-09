@@ -83,13 +83,17 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
       const tMap = idx(transports.data || []);
       const cMap = idx(cars.data || []);
 
-      return invoices.map((inv: any) => ({
-        ...inv,
-        hotel_booking: inv.booking_type === 'hotel' ? hMap[inv.booking_id] : null,
-        flight_booking: inv.booking_type === 'flight' ? fMap[inv.booking_id] : null,
-        transport_booking: inv.booking_type === 'transport' ? tMap[inv.booking_id] : null,
-        car_rental: inv.booking_type === 'car_rental' ? cMap[inv.booking_id] : null,
-      }));
+      return invoices.map((inv: any) => {
+        const fb = inv.booking_type === 'flight' ? fMap[inv.booking_id] : null;
+        return {
+          ...inv,
+          hotel_booking: inv.booking_type === 'hotel' ? hMap[inv.booking_id] : null,
+          flight_booking: fb ? { ...fb, airline_name: fb.airline?.name || null } : null,
+          transport_booking: inv.booking_type === 'transport' ? tMap[inv.booking_id] : null,
+          car_rental: inv.booking_type === 'car_rental' ? cMap[inv.booking_id] : null,
+        };
+      });
+
     },
     staleTime: 3 * 60 * 1000,
   });
