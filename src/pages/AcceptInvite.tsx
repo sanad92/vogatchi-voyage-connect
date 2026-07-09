@@ -28,7 +28,7 @@ const AcceptInvite = () => {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <X className="w-12 h-12 text-destructive mx-auto mb-4" />
@@ -43,7 +43,7 @@ const AcceptInvite = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2">
@@ -64,7 +64,7 @@ const AcceptInvite = () => {
 
   if (acceptMutation.isPending || !result) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
@@ -76,7 +76,7 @@ const AcceptInvite = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+    <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6 text-center">
           {result.success ? (
