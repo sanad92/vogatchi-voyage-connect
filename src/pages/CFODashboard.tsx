@@ -102,6 +102,10 @@ const CFODashboard = () => {
         <Badge variant="outline" className="gap-1">
           <Activity className="h-3 w-3" /> Real-time من المحرك المحاسبي
         </Badge>
+        <Button size="sm" variant="secondary" onClick={runBackfill} disabled={backfilling} className="gap-1">
+          <RefreshCw className={`h-3.5 w-3.5 ${backfilling ? 'animate-spin' : ''}`} />
+          {backfilling ? 'جارٍ الترحيل…' : 'إعادة ترحيل القيود'}
+        </Button>
       </div>
 
       <Alert>
