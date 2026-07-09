@@ -129,6 +129,32 @@ serve(async (req) => {
       throw new Error('WhatsApp not connected for this organization');
     }
 
+    // If media is provided as a Storage path, upload it to Meta and get a media id
+    let uploadedMediaId: string | null = null;
+    if (MEDIA_TYPES.has(messageType) && mediaStoragePath) {
+      const { data: file, error: dlErr } = await supabase.storage
+        .from('whatsapp-media')
+        .download(mediaStoragePath);
+      if (dlErr || !file) throw new Error('Could not read uploaded media from storage');
+      const mime = mediaMimeType || file.type || 'application/octet-stream';
+      const fname = mediaFileName || mediaStoragePath.split('/').pop() || 'file';
+
+      const gvUp = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
+      const form = new FormData();
+      form.append('messaging_product', 'whatsapp');
+      form.append('type', mime);
+      form.append('file', new File([await file.arrayBuffer()], fname, { type: mime }));
+
+      const upRes = await fetch(`https://graph.facebook.com/${gvUp}/${settings.phone_number_id}/media`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${settings.access_token}` },
+        body: form,
+      });
+      const upJson = await upRes.json();
+      if (!upRes.ok || !upJson.id) throw new Error(`Meta media upload failed: ${JSON.stringify(upJson)}`);
+      uploadedMediaId = upJson.id;
+    }
+
     // Prepare message payload
     let messagePayload: any = {
       messaging_product: "whatsapp",
@@ -136,15 +162,22 @@ serve(async (req) => {
       type: messageType
     };
 
+    const mediaRef: any = uploadedMediaId ? { id: uploadedMediaId } : { link: mediaUrl };
     switch (messageType) {
       case 'text':
         messagePayload.text = { body: content };
         break;
       case 'image':
-        messagePayload.image = { link: mediaUrl };
+        messagePayload.image = { ...mediaRef, caption: mediaCaption || undefined };
+        break;
+      case 'video':
+        messagePayload.video = { ...mediaRef, caption: mediaCaption || undefined };
+        break;
+      case 'audio':
+        messagePayload.audio = mediaRef;
         break;
       case 'document':
-        messagePayload.document = { link: mediaUrl };
+        messagePayload.document = { ...mediaRef, filename: mediaFileName || undefined, caption: mediaCaption || undefined };
         break;
       case 'template':
         messagePayload.template = {
