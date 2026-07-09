@@ -341,5 +341,4 @@ async function downloadAndStoreMedia(
   return { path, mimeType };
 }
 
-// Exported so retry-whatsapp-media function can reuse it via HTTP call in the future.
-export { downloadAndStoreMedia };
+
