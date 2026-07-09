@@ -1,18 +1,18 @@
-## هدف الاختبار
-التأكد أن أي رسالة واردة جديدة من واتساب تُحفظ في `whatsapp_messages` وتظهر فوراً في `/whatsapp-inbox` عبر Realtime، بعد إصلاح قيد التفرد.
+## الهدف
+عرض "آخر مزامنة" لكل محادثة داخل قائمة `/whatsapp-inbox` — أي وقت آخر رسالة واردة فعلياً من WhatsApp Cloud (مختلف عن `last_message_at` الذي يشمل الصادر أيضاً).
 
-## طريقة التحقق (بدون انتظار رسالة حقيقية)
+## التنفيذ
 
-1. **محاكاة Webhook**: إرسال POST إلى edge function `whatsapp-webhook` بنفس صيغة payload الحقيقي من Meta (رأيته سابقاً في السجلات) مع `message_id` جديد لتفادي الازدواج.
-2. **قراءة السجلات** فور الإرسال للتأكد من عدم ظهور أي خطأ `42P10` (خطأ ON CONFLICT الذي أصلحناه).
-3. **استعلام قاعدة البيانات** للتحقق من إدراج الصف الجديد في `whatsapp_messages` بقيمة `direction=inbound` والمحتوى المُرسل.
-4. **التحقق من تفعيل Realtime على الجدول** — تشغيل استعلام على `pg_publication_tables` للتأكد أن `whatsapp_messages` ضمن publication `supabase_realtime`. إن لم يكن، إضافته بـ migration واحد سريع:
-   ```sql
-   ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_messages;
-   ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_conversations;
-   ```
-5. **تقرير مختصر** للمستخدم يوضّح: تم استقبال الرسالة ✅ / تم الحفظ ✅ / Realtime مفعّل ✅، مع رقم الرسالة الاختبارية ووقت وصولها في الواجهة.
+1. **تعديل `src/hooks/useWhatsApp.tsx`**:
+   - بعد جلب المحادثات، تنفيذ استعلام إضافي على `whatsapp_messages` يجلب لكل `conversation_id` (من المحادثات المُرجَعة) القيمة `max(sent_at)` حيث `direction='inbound'`.
+   - دمج النتيجة كحقل مشتق `last_inbound_at` على كل محادثة.
+   - إبقاء الاعتماد على Realtime الحالي (تحديث القائمة عند وصول أي رسالة جديدة).
+
+2. **تعديل `src/pages/WhatsAppInbox.tsx`** — بطاقة المحادثة في القائمة الجانبية:
+   - إضافة سطر صغير أسفل الاسم/الرقم بصيغة:
+     `آخر مزامنة: منذ 3 دقائق` (أو "لا يوجد استلام بعد" عند عدم وجود وارد).
+   - أيقونة صغيرة (⟳ / `RefreshCw` من lucide) + تنسيق `text-[10px] text-muted-foreground`.
 
 ## ملاحظات
-- لن يتم إرسال رسالة حقيقية إلى أي مستخدم خارجي، فقط payload اختباري مباشر للـ webhook داخل حسابك.
-- لن يتم أي تعديل على الكود إلا في حالة اكتشاف أن Realtime غير مفعّل على الجدول (خطوة migration اختيارية).
+- لا حاجة لتغيير قاعدة البيانات؛ الحقل مشتق عند الجلب.
+- لن يمس عرض الرسائل نفسها ولا `last_message_at` المستخدم للترتيب.
