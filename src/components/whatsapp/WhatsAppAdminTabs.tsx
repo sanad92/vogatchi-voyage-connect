@@ -69,6 +69,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
           <WhatsAppSettings />
         </TabsContent>
 
+        <TabsContent value="sla" className="mt-6">
+          <WhatsAppSLASettings />
+        </TabsContent>
+
         <TabsContent value="templates" className="mt-6">
           <WhatsAppTemplateManager />
         </TabsContent>
