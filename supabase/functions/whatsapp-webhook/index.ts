@@ -203,6 +203,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               message_type: message.type,
               content: contentText,
               media_storage_path: mediaPath,
+              media_provider_id: media?.id ?? null,
               media_mime_type: mediaMime,
               media_file_name: mediaFileName,
               media_caption: mediaCaption,
