@@ -14,6 +14,7 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
+import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading } = useWhatsApp();
