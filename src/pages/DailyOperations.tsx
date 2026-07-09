@@ -23,7 +23,7 @@ const DailyOperations = () => {
           *,
           customers(name, phone, email)
         `)
-        .eq('check_in_date', today)
+        .eq('start_date', today)
         .order('created_at', { ascending: true }) as any);
 
       if (error) throw error;
