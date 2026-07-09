@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Settings, 
-  MessageSquare, 
-  FileText, 
+import {
+  Settings,
+  MessageSquare,
+  FileText,
   Zap,
   BarChart3,
-  Users
+  Users,
+  Clock,
 } from 'lucide-react';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
@@ -15,6 +16,7 @@ import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
+import { WhatsAppSLASettings } from './WhatsAppSLASettings';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppAdminTabs: React.FC = () => {
