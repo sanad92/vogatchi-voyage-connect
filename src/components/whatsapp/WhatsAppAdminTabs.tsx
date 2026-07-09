@@ -10,6 +10,7 @@ import {
   Users,
   Clock,
   Megaphone,
+  Workflow,
 } from 'lucide-react';
 import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
@@ -19,6 +20,7 @@ import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
+import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppAdminTabs: React.FC = () => {
@@ -32,14 +34,18 @@ export const WhatsAppAdminTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             الإعدادات
           </TabsTrigger>
           <TabsTrigger value="sla" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            SLA وأوقات العمل
+            SLA
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center gap-2">
+            <Workflow className="w-4 h-4" />
+            الأتمتة
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
@@ -77,6 +83,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
 
         <TabsContent value="sla" className="mt-6">
           <WhatsAppSLASettings />
+        </TabsContent>
+
+        <TabsContent value="automation" className="mt-6">
+          <WhatsAppAutomationBuilder />
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">
