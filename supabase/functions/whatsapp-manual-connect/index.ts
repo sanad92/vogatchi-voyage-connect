@@ -127,7 +127,6 @@ serve(async (req) => {
       waba_id,
       business_name: wabaJson?.name ?? null,
       phone_number_id: phoneJson.id,
-      phone_number: phoneJson.display_phone_number ?? null,
       display_phone_number: phoneJson.display_phone_number ?? null,
       access_token,
       token_expires_at: null,
