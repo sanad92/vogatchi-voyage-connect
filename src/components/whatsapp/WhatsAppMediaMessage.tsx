@@ -14,7 +14,8 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
   const path = message.media_storage_path as string | null | undefined;
   const { data: signedUrl, isLoading } = useSignedMediaUrl(path);
   const type = message.message_type as string;
-  const mime = (message.media_mime_type as string) || '';
+  const rawMime = (message.media_mime_type as string) || '';
+  const mime = rawMime.split(';')[0].trim().toLowerCase();
   const caption = message.media_caption || (type === 'text' ? null : message.content);
   const fileName = message.media_file_name || 'file';
 
