@@ -7374,6 +7374,7 @@ export type Database = {
         Args: { _keep_id: string; _merge_ids: string[]; _org_id: string }
         Returns: Json
       }
+      normalize_phone_digits: { Args: { _phone: string }; Returns: string }
       post_journal_entry:
         | {
             Args: {
