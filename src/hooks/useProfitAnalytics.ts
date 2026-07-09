@@ -153,7 +153,8 @@ export const useProfitAnalytics = (startDate?: string, endDate?: string) => {
           employeeId: b.employees?.id || null,
           sellingPrice: selling, cost, additionalCosts: 0, profit,
           profitMargin: selling > 0 ? (profit / selling) * 100 : 0,
-          date: b.booking_date || '',
+          date: b.departure_date || '',
+
         });
       });
 
