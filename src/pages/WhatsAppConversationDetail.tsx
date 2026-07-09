@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageComposer';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
+import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
