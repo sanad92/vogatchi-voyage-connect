@@ -17,18 +17,17 @@ interface LegacyEmptyStateProps {
 }
 
 const EmptyState = ({ icon = Inbox, title, description, action, className }: LegacyEmptyStateProps) => {
+  // The canonical EmptyState only accepts a structured `action` object; when
+  // callers pass a ReactNode we can't forward it as a button, so render the
+  // canonical component and stack the raw node underneath.
   return (
-    <CanonicalEmptyState
-      icon={icon}
-      title={title}
-      description={description}
-      className={className}
-    >
-      {/* @ts-expect-error – legacy shim renders raw ReactNode action below icon */}
-      {action ? <div className="mt-1">{action}</div> : null}
-    </CanonicalEmptyState>
+    <div className={className}>
+      <CanonicalEmptyState icon={icon} title={title} description={description} />
+      {action ? <div className="-mt-4 flex justify-center pb-6">{action}</div> : null}
+    </div>
   );
 };
 
 export default EmptyState;
+
 
