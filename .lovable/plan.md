@@ -1,105 +1,183 @@
-# Vogatchi — Final Product Polish Sprint (Pre-Launch)
 
-Goal: elevate Vogatchi from an ERP feel to a premium SaaS product (HubSpot / Linear / Intercom / Stripe caliber) **without touching business logic, workflows, DB schema, migrations, APIs, or removing features**. All work is presentational and additive/backward-compatible.
+# Vogatchi — Financial Architecture Review & Implementation Roadmap
 
-The scope is very large, so I'll execute it as **6 sequential waves**, each independently shippable and verifiable. After each wave I'll do a QA pass (Playwright screenshots on key routes) before moving on. If mid-sprint you want to stop at any wave, the app is still in a better state than before.
-
----
-
-## Wave 1 — Design System Hardening (foundation)
-
-No page changes yet — just tighten the primitives every later wave depends on.
-
-- Audit `src/index.css` tokens and confirm all color/shadow/gradient usage flows through semantic tokens (no `text-white` / `bg-black` / hex leftovers). Fix any offenders discovered while working on later waves as we touch them.
-- Consolidate the two `EmptyState` implementations (`src/components/common/EmptyState.tsx` and `src/components/ui/empty-state.tsx`) into one canonical import path with a shim so existing imports keep working.
-- Standardize primitives used everywhere:
-  - `PageHeader` (already exists) — adopt across pages that still roll their own header.
-  - `SectionHeader`, `PageSkeleton`, `EmptyState` — enforce as the only allowed variants.
-  - Unify Badge status colors via `.status-active / -pending / -error / -info / -inactive` (already in `index.css`) — replace ad-hoc colored badges as we touch each page.
-- Add a shared `StatCard`, `KpiCard`, `TimelineItem`, `DetailRow`, `Toolbar` (search + filters + bulk actions), `PageContainer` primitive so subsequent waves are pure composition.
-- Refine motion tokens: standard `fade-in`, `slide-in-from-bottom-4`, hover-lift, focus-ring are already defined — document usage and apply consistently.
-
-Deliverable: no visual regression, but every later wave is a 1-line composition instead of bespoke markup.
+Scope: review only. No schema or code changes in this step. Findings validated against the live database (row counts, routines, table structure) and the current hooks/pages.
 
 ---
 
-## Wave 2 — Navigation & Shell
+## 1. Current State — What Exists
 
-- **Sidebar** (`src/components/layout/DashboardSidebar.tsx`): regroup items into a smaller number of semantic sections (Workspace / Sales / Operations / Finance / Admin), collapse rarely-used items under a "More" group, keep icon-only collapsed state polished, active-route highlight refined, pinned/favorite section for the user's frequent modules (client-side localStorage — no schema change).
-- **Topbar** (`DashboardTopbar.tsx`): tighten spacing, add global search (⌘K style trigger — opens a client-side quick-nav palette over existing routes only, no new backend), notifications bell polish, org switcher polish, breadcrumb refinement.
-- **Breadcrumbs**: standardize `BreadcrumbNav` usage across every page (already exists on CRM etc.).
-- **Page titles**: audit `document.title` via a small `usePageTitle` hook applied per route (presentational only).
+**Master data**
+- `chart_of_accounts` (78 rows) with `account_type` enum (asset/liability/equity/revenue/expense), parent hierarchy, `is_system` flag.
+- `cost_centers`, `accounting_periods` (open/closed), `exchange_rates`, `bank_accounts` (multi-currency).
+- `suppliers` (+ `supplier_contracts`, `supplier_currencies`, `supplier_rates`, `supplier_allotments`).
+- `customers`.
 
----
+**Transactional layer**
+- Unified `bookings` (191) with `selling_price`, `cost_price`, `profit`, `currency`, plus legacy specialized tables: `hotel_bookings`, `flight_bookings`, `transport_bookings`, `car_rentals` (all still actively written, invoices join polymorphically via `booking_type` + `booking_id`).
+- `invoices` (171) + `invoice_items`.
+- `payment_transactions` (**only 2 rows**) — customer payments/Paymob.
+- `supplier_payments` (169) — supplier settlements.
+- `expense_transactions` (**0 rows**), `bank_account_transactions` (**0 rows**).
+- `journal_entries` (391) + `journal_entry_lines` (1,142).
+- `commission_payments`, `monthly_salaries`, `rent_payments`.
 
-## Wave 3 — Dashboard as Executive Control Center
-
-Rework `src/pages/OptimizedIndex.tsx` and `src/components/dashboard/*` composition only — same data sources, same hooks.
-
-Layout blocks (top → bottom):
-1. Hero greeting (already improved) + today's date + org name.
-2. KPI row: Revenue (period), Bookings, Active Quotes, Outstanding Invoices, WhatsApp Open Conversations — all from existing hooks.
-3. Two-column: **Today's work** (tasks, follow-ups, unpaid invoices due) + **Recent activity** (recent bookings, recent messages, recent payments).
-4. **Business health** chart strip (revenue trend, bookings trend) — reuse existing chart data.
-5. **Quick actions** dock (New Quote, New Booking, New Customer, Open Inbox).
-
-All from existing hooks — no new queries.
-
----
-
-## Wave 4 — CRM as Customer Workspace + WhatsApp as Inbox
-
-- **Customer profile page** → workspace layout: left rail (identity + KPIs + next actions), main area with tabs (Timeline / Quotes / Bookings / Invoices / Payments / WhatsApp / Notes / Files). All data already wired via `useCustomer360`.
-- **CRM list** (`CRMDashboard.tsx`): tighten tab bar, card-based customer rows on the customers tab, better empty & loading states, saved-filter chips (client-side).
-- **WhatsApp** (`WhatsAppDashboard.tsx`, `ConversationRightPanel.tsx`, `WhatsAppCRMPanel.tsx`): 3-pane Intercom-style layout on desktop (Conversations | Chat | Customer context), quick actions in the right pane (Open Customer, Create Quote, Create Booking, Open Invoice — all link to existing routes). Mobile keeps the current stacked layout.
+**Reporting hooks (frontend)**
+- `useFinancialReports.ts` calls RPCs: `get_trial_balance`, `get_income_statement`, `get_balance_sheet`, `get_cash_flow`, `get_customer_aging`, and `seed_default_chart_of_accounts`.
+- `useFinancialReportsImproved.tsx`, `useProfitAnalytics`, `useProfitLossCalculations`, `useRevenueBreakdown`, `useExpenseBreakdown`, `useFinancialSummary`, CFODashboard, ProfitAnalytics, Reports.
 
 ---
 
-## Wave 5 — Quotes / Bookings / Invoices Polish
+## 2. Critical Gaps (Verified)
 
-For each, no logic changes — only presentation:
-- **Quotes**: cleaner pricing block, clearer primary action (Send / Convert), collapsible secondary fields, refined PDF preview drawer.
-- **Bookings**: scannable header (customer, dates, status, total), collapsible sections for supplier/pax/financials, prominent status badge, financial summary card.
-- **Invoices**: outstanding balance hero, payment status badge, "Record payment" primary CTA, cleaner line-items table.
+### 🔴 P0 — Blocking accounting integrity
 
----
+1. **All accounting RPCs are missing.** `information_schema.routines` shows zero functions named `get_trial_balance`, `get_income_statement`, `get_balance_sheet`, `get_cash_flow`, `get_customer_aging`, or `seed_default_chart_of_accounts`. Every call in `useFinancialReports.ts` and `useChartOfAccounts.ts` fails silently → the CFO/Reports pages render empty or fall back to ad-hoc JS aggregation.
+2. **No automatic journal posting.** No triggers or RPCs post journals for invoices, customer payments, supplier payments, expenses, salaries, rent, bank transfers, or FX revaluation. The 391 existing journal entries appear to be seeded/manual → COA and journals are decorative, not authoritative.
+3. **Double-entry is not enforced.** No DB-level constraint that `sum(debit) = sum(credit)` per entry; no period-close guard preventing writes into closed periods; no immutability on posted entries.
+4. **Two disjoint payment ledgers.** Customer money = `payment_transactions` (2 rows) + `bank_account_transactions` (0). Supplier money = `supplier_payments` (169). Neither feeds `bank_accounts.current_balance` deterministically, and neither posts to GL. Bank balances drift.
+5. **Polymorphic invoice → booking mapping is fragile.** `invoices.booking_id` resolves against 4 different tables via `booking_type` in JS (`useInvoicesData.tsx`) with no FK. Deleting a hotel_booking leaves orphan invoices with no referential guard.
+6. **Profit is stored, not derived.** `bookings.profit`, `hotel_bookings.total_profit`, etc. are frozen at write-time. Changes to `cost_price` / supplier rate / FX do not recompute; no historical FX snapshot either → P&L drifts vs. real cost.
 
-## Wave 6 — Tables, Forms, States, Accessibility, Final QA
+### 🟠 P1 — Correctness & control
 
-- **Tables**: shared `DataTable` polish — sticky header, zebra off, better row hover, bulk-action toolbar, empty state, skeleton rows, saved filters (client-side).
-- **Forms**: group related fields into cards, inline validation styling, consistent field spacing, keyboard/tab order review, helpful placeholders.
-- **States**: audit every page for consistent Loading (`PageSkeleton`), Empty (`EmptyState`), Error (with Retry), Success (toast) patterns. Any TanStack Query hook without error+retry gets one.
-- **Accessibility**: aria-labels on icon-only buttons, focus-visible rings via `.focus-ring`, contrast pass, 44px tap targets on mobile, `prefers-reduced-motion` already handled globally — verify.
-- **Responsive**: desktop-first verification then tablet & mobile check with Playwright screenshots at 1440 / 1024 / 390.
-- **Final QA**: Playwright pass on Dashboard, CRM, Customer 360, WhatsApp, Quotes, Bookings, Invoices, Reports — screenshots + console/network error check.
+7. **Multi-currency without a functional currency.** Bookings, invoices, expenses each carry `currency`, but there is no journal-time conversion to a single reporting currency (EGP is assumed in one hook, USD elsewhere). No FX gain/loss account. `useMultiCurrency` converts at read-time using the current rate, which is wrong for historical reports.
+8. **AR / AP sub-ledgers do not exist.** Customer balance = SUM(invoices) − SUM(payment_transactions), computed ad hoc in JS. Supplier balance = SUM(booking cost) − SUM(supplier_payments). No aging buckets, no statement-of-account, no credit-limit enforcement against real outstanding.
+9. **Expenses module is empty in production** (`expense_transactions=0`) yet UI and reports assume it. Salaries/rent are in separate tables and never converge into `expense_transactions` or GL.
+10. **Booking as central entity is incomplete.** `UnifiedBookingDetails` shows service info but not: linked invoice(s) + status, supplier payables + status, customer receivable, documents (voucher/ticket), FX-normalized profit, or the audit trail of price/cost changes.
+11. **No period close workflow.** `accounting_periods` table exists but nothing enforces `status='closed'`; users can still insert back-dated invoices/payments.
+12. **Audit trail is partial.** `admin_audit_log` exists but is not wired to financial mutations (invoice edit, payment reversal, cost change, journal edit).
+13. **Permissions.** RBAC exists at row level but there is no "Finance" role separation — any user who can see bookings can currently create invoices and payments in the UI.
 
----
+### 🟡 P2 — Reporting & UX
 
-## Technical section
-
-- Files primarily touched (all presentational):
-  - `src/index.css`, `src/components/ui/*`, `src/components/common/*`, `src/components/layout/*`
-  - `src/components/dashboard/*`, `src/pages/OptimizedIndex.tsx`
-  - `src/components/crm/**`, `src/pages/CRM.tsx`, customer-detail components
-  - `src/components/whatsapp/**`, `src/pages/WhatsAppAdmin.tsx`
-  - Quote / Booking / Invoice **view** components only (not their hooks or submission logic)
-- No files touched: `src/integrations/supabase/*`, any hook under `src/hooks/*` that owns mutations/queries (read-only refactor of loading/error rendering is allowed at the component layer), `supabase/**`, `.env`.
-- No new dependencies unless strictly required (framer-motion is not currently installed; I'll use existing tailwind animation utilities + `animate-in` classes already defined to avoid adding a dep).
-- Every change guarded so existing props/exports keep working (shims where needed).
+14. GL viewer (`JournalEntriesPage`) has no drill-down from account → entries → source document.
+15. No Reconciliation UI (bank statement vs. `bank_account_transactions`).
+16. No Cash Flow direct/indirect statement; the RPC is missing.
+17. No travel-specific KPIs surfaced: gross booking value, take-rate %, ADR, RevPAB, avg. lead time, cancellation ratio, refund exposure, supplier concentration, employee commission margin, cash conversion cycle.
+18. Invoice numbering has no per-org sequence guarantee at DB level (uniqueness relies on JS).
 
 ---
 
-## Deliverable
+## 3. Target Architecture (Booking-Centric ERP)
 
-At the end I'll produce the requested **Product Polish Report**: what changed per wave, UX / Visual / Navigation / Consistency / A11y improvements, remaining opportunities, and honest scores for UX / UI / Product Maturity / Enterprise Readiness / SaaS Design Quality (out of 100).
+```text
+                       ┌──────────────────────┐
+                       │      BOOKING         │  (single source of truth)
+                       │  selling / cost /    │
+                       │  currency / status   │
+                       └───────┬──────┬───────┘
+                               │      │
+      revenue side ◄───────────┘      └─────────► cost side
+             │                                        │
+    ┌────────▼────────┐                    ┌──────────▼──────────┐
+    │  INVOICE (AR)   │                    │  SUPPLIER BILL (AP) │
+    │  + items        │                    │  + items            │
+    └────────┬────────┘                    └──────────┬──────────┘
+             │                                        │
+    ┌────────▼────────┐                    ┌──────────▼──────────┐
+    │ CUSTOMER PAYMENT│                    │  SUPPLIER PAYMENT   │
+    └────────┬────────┘                    └──────────┬──────────┘
+             │                                        │
+             └──────────────┬─────────────────────────┘
+                            ▼
+                 ┌────────────────────┐
+                 │  JOURNAL ENTRIES   │  (auto-posted, immutable,
+                 │  + entry_lines     │   FX-normalized, period-guarded)
+                 └─────────┬──────────┘
+                           ▼
+              GL · Trial Balance · P&L · BS · Cash Flow · AR/AP Aging
+```
+
+Principles:
+1. Every financial mutation posts a balanced journal in the same transaction (DB trigger/RPC), tagged with `source_type` + `source_id` + `booking_id`.
+2. Store both `amount` (original currency) and `amount_base` (org functional currency, with `fx_rate` and `fx_date` snapshot).
+3. `bank_accounts.current_balance` is a **view/RPC** computed from `bank_account_transactions`, not a mutable column.
+4. Booking detail page is the operator's cockpit: services · invoices · payments · supplier bills · supplier payments · documents · P&L · timeline.
 
 ---
 
-## Confirmation needed before I start
+## 4. Prioritized Roadmap
 
-This sprint is large (est. multi-turn execution). Two quick calls:
+### Wave 1 — Quick Wins (1 sprint, no schema change)
+- Ship the missing RPCs (`get_trial_balance`, `get_income_statement`, `get_balance_sheet`, `get_cash_flow`, `get_customer_aging`, `seed_default_chart_of_accounts`) as `SECURITY DEFINER` functions reading existing `journal_entry_lines`. Unblocks CFODashboard/Reports immediately.
+- Add read-only **Booking Financial Panel** to `UnifiedBookingDetails`: invoice list + status, customer paid/outstanding, supplier bill/paid/outstanding, derived profit, FX note.
+- Add **Customer Ledger** and **Supplier Ledger** pages driven by existing invoices + payments + supplier_payments.
+- Add a warning banner on ProfitAnalytics that profit uses stored values (transparency while we fix it).
+- Wire `admin_audit_log` triggers on `invoices`, `payment_transactions`, `supplier_payments`, `expense_transactions`, `journal_entries`.
 
-1. **Global search (⌘K palette) in Wave 2** — client-side navigation only (jump to routes / customers already in cache). OK to add? It's a big UX win but is a small new surface.
-2. **Framer-motion**: I plan to **not** add it and rely on existing Tailwind/`animate-in` utilities. Confirm that's fine, or say "add framer-motion" if you want richer transitions.
+### Wave 2 — Double-Entry Foundation (2 sprints, schema)
+- Add `organization_settings.functional_currency` + `fx_rate_source`.
+- Add `amount_base`, `fx_rate`, `fx_date` to: `invoices`, `invoice_items`, `payment_transactions`, `supplier_payments`, `expense_transactions`, `bank_account_transactions`, `bookings.cost_price/selling_price`.
+- Add `journal_entries.source_type`, `source_id`, `booking_id`, `posted_at`, `posted_by`, `reversed_by_entry_id`, `is_locked`.
+- DB constraint: `sum(debit) = sum(credit)` per entry (deferred trigger).
+- DB trigger: reject writes to `journal_*` when the entry's period is `closed`.
+- Posting RPCs (idempotent, one per source): `post_invoice`, `post_customer_payment`, `post_supplier_bill`, `post_supplier_payment`, `post_expense`, `post_bank_transfer`, `post_salary`, `post_rent_payment`, `post_fx_revaluation`. Called from a single AFTER INSERT/UPDATE trigger per source table.
+- Introduce `supplier_bills` table (AP header) — today supplier cost lives implicitly inside booking, which breaks proper AP. Bill = booking cost snapshot at confirmation; supplier_payments settle bills, not bookings.
 
-If you just say "go", I'll assume yes to (1) and no framer-motion for (2), and start with Wave 1.
+### Wave 3 — Reporting & Sub-Ledgers (1 sprint)
+- GL viewer with account → entries → source drill-down.
+- Trial Balance, P&L (by period, by cost center, by booking type, by currency), Balance Sheet, Cash Flow (direct method from `bank_account_transactions`, indirect from P&L).
+- Customer Aging (0/30/60/90/90+), Supplier Aging, Statement of Account (PDF).
+- Bank Reconciliation UI (import statement CSV → match transactions → mark reconciled).
+- Period Close workflow: preview trial balance → lock period → post closing entry.
+
+### Wave 4 — Travel-Specific KPIs & Booking Cockpit (1 sprint)
+- Booking P&L card with FX-normalized profit + margin %, commission accrual, net profit.
+- KPI dashboard: Gross Booking Value, Net Revenue, Take-rate %, Attach rate, ADR, RevPAB, Avg. Lead Time, Cancellation %, Refund Ratio, Supplier Concentration (top 5), Employee Contribution Margin, Cash Conversion Cycle, Deposit Coverage %.
+- Travel-specific reports: Supplier Payable by Due Date, Refund Liability, Deferred Revenue (paid but not-yet-travelled), Unbilled Bookings.
+
+### Wave 5 — Governance (0.5 sprint)
+- Finance role separation: `finance_viewer`, `finance_operator`, `finance_controller` (only controller can reverse posted entries or reopen a period).
+- Immutable posted entries — edits require a reversing entry.
+- Signed export (PDF + hash) for Trial Balance and closing package.
+
+---
+
+## 5. Required Reports (Definition of Done)
+
+| Report | Grain | Filters | Source |
+|---|---|---|---|
+| General Ledger | account × date | period, cost center | `journal_entry_lines` |
+| Trial Balance | account | as-of-date | RPC |
+| P&L | account_type | period, currency, cost_center, booking_type | RPC |
+| Balance Sheet | account | as-of-date | RPC |
+| Cash Flow (direct) | bank txn | period | `bank_account_transactions` |
+| Customer Aging | customer | as-of-date | invoices − payments |
+| Supplier Aging | supplier | as-of-date | supplier_bills − supplier_payments |
+| Bank Reconciliation | bank account | period | statement vs. txns |
+| Booking Profitability | booking | period, employee, destination | bookings + bills + FX |
+| Deferred Revenue | booking | as-of-date | paid & not-travelled |
+
+---
+
+## 6. Risks & Assumptions
+
+- **Assumption:** functional currency is EGP unless the org sets otherwise. Confirm with product before Wave 2.
+- **Assumption:** existing 391 journal entries are seed/demo and can be re-posted from source via a one-off backfill script; if any are real, we quarantine them under a "legacy" batch.
+- **Risk:** legacy specialized booking tables (`hotel_bookings`, `flight_bookings`, …) still receive writes — Wave 2 posting triggers must live on both the specialized tables and unified `bookings` until migration completes.
+- **Risk:** switching bank balance to computed view breaks any UI that writes to `bank_accounts.current_balance` directly — audit needed before Wave 2.
+
+---
+
+## 7. Scorecard (current state)
+
+| Dimension | Score /100 | Note |
+|---|---|---|
+| Chart of Accounts | 70 | Structure fine, unused by system |
+| Double-Entry Integrity | 15 | No auto-posting, no balance constraint |
+| AR sub-ledger | 40 | Invoices yes, payments almost empty |
+| AP sub-ledger | 35 | No bill entity, payments float |
+| Multi-currency | 25 | No functional currency, no FX snapshot |
+| Bank & Cash | 20 | Balances not derived, no reconciliation |
+| Reporting | 20 | RPCs missing → pages empty |
+| Booking-centric view | 45 | Info scattered across tabs |
+| Audit & Period Control | 25 | Tables exist, unused |
+| Travel KPIs | 15 | Not surfaced |
+| **Overall Financial Maturity** | **28/100** | Ledger scaffolding present, engine absent |
+
+---
+
+## 8. Deliverable of Next Step
+
+On approval, Wave 1 will be implemented first (RPCs + Booking Financial Panel + Ledgers + audit triggers). No schema changes, no data mutations. Waves 2–5 will each be re-planned before execution.
