@@ -7,6 +7,7 @@ import { WhatsAppMessage } from '@/types/whatsapp';
 
 export const useWhatsAppMessages = (conversationId?: string) => {
   const orgId = useOrgId();
+  const queryClient = useQueryClient();
 
   const {
     data: messages,
