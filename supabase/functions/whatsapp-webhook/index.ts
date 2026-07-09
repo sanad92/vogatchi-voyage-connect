@@ -161,7 +161,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         if (mediaTypes.includes(message.type)) {
           const media = message[message.type];
-          mediaMime = media?.mime_type ?? null;
+          mediaMime = normalizeMime(media?.mime_type);
           mediaFileName = media?.filename ?? null;
           mediaCaption = media?.caption ?? null;
           if (media?.id) {
@@ -172,7 +172,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               mediaPath = downloaded.path;
               mediaMime = downloaded.mimeType || mediaMime;
             } catch (e) {
-              console.error('media download failed', message.id, e);
+              console.error('media download failed', { messageId: message.id, mediaId: media.id, mime: mediaMime, error: String(e) });
             }
           }
           if (mediaCaption && !contentText) contentText = mediaCaption;
@@ -239,13 +239,19 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
 const MIME_EXT: Record<string, string> = {
   'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
-  'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/amr': 'amr', 'audio/aac': 'aac',
-  'video/mp4': 'mp4', 'video/3gpp': '3gp',
+  'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/amr': 'amr',
+  'audio/aac': 'aac', 'audio/webm': 'webm', 'audio/wav': 'wav', 'audio/x-wav': 'wav',
+  'video/mp4': 'mp4', 'video/3gpp': '3gp', 'video/webm': 'webm',
   'application/pdf': 'pdf', 'application/msword': 'doc',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
   'application/vnd.ms-excel': 'xls',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
 };
+
+function normalizeMime(m: string | null | undefined): string | null {
+  if (!m) return null;
+  return m.split(';')[0].trim().toLowerCase() || null;
+}
 
 async function downloadAndStoreMedia(
   supabase: any,
@@ -272,7 +278,7 @@ async function downloadAndStoreMedia(
   });
   if (!metaRes.ok) throw new Error(`meta media meta failed ${metaRes.status}`);
   const meta = await metaRes.json();
-  const mimeType = meta.mime_type || hintedMime || 'application/octet-stream';
+  const mimeType = normalizeMime(meta.mime_type) || hintedMime || 'application/octet-stream';
 
   // 2) download binary
   const fileRes = await fetch(meta.url, {
@@ -281,7 +287,8 @@ async function downloadAndStoreMedia(
   if (!fileRes.ok) throw new Error(`meta media download failed ${fileRes.status}`);
   const bytes = new Uint8Array(await fileRes.arrayBuffer());
 
-  const ext = MIME_EXT[mimeType] || mimeType.split('/')[1] || 'bin';
+  const rawExt = MIME_EXT[mimeType] || mimeType.split('/')[1] || 'bin';
+  const ext = rawExt.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
   const path = `${organizationId}/${conversationId}/${messageId}.${ext}`;
 
   const { error } = await supabase.storage

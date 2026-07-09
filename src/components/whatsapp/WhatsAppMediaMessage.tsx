@@ -14,7 +14,8 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
   const path = message.media_storage_path as string | null | undefined;
   const { data: signedUrl, isLoading } = useSignedMediaUrl(path);
   const type = message.message_type as string;
-  const mime = (message.media_mime_type as string) || '';
+  const rawMime = (message.media_mime_type as string) || '';
+  const mime = rawMime.split(';')[0].trim().toLowerCase();
   const caption = message.media_caption || (type === 'text' ? null : message.content);
   const fileName = message.media_file_name || 'file';
 
@@ -48,9 +49,12 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
 
   const mediaContent = () => {
     if (!path) {
+      const isAudio = type === 'audio' || type === 'voice';
       return (
         <div className="text-xs opacity-70 italic">
-          [{type}] {caption || 'الملف غير متاح'}
+          {isAudio
+            ? 'جاري معالجة الملف الصوتي... حدّث بعد لحظات'
+            : `[${type}] ${caption || 'الملف غير متاح'}`}
         </div>
       );
     }
@@ -79,7 +83,14 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
     }
 
     if (type === 'audio' || type === 'voice' || mime.startsWith('audio/')) {
-      return <audio controls src={signedUrl} className="w-64 max-w-full" preload="metadata" />;
+      const audioType = mime.startsWith('audio/') ? mime : 'audio/ogg';
+      return (
+        <audio controls className="w-64 max-w-full" preload="metadata">
+          <source src={signedUrl} type={audioType} />
+          <source src={signedUrl} type="audio/ogg" />
+          <source src={signedUrl} type="audio/mpeg" />
+        </audio>
+      );
     }
 
     if (type === 'video' || mime.startsWith('video/')) {
