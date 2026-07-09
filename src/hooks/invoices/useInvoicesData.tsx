@@ -66,14 +66,15 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
           ? supabase.from('hotel_bookings').select('id, customer_name, hotel_name, destination_city, check_in_date, check_out_date, internal_booking_number, voucher_sent').in('id', hotelIds)
           : Promise.resolve({ data: [] as any[] }),
         flightIds.length
-          ? supabase.from('flight_bookings').select('id, customer_name, airline_name, departure_date, booking_reference, confirmation_number').in('id', flightIds)
+          ? supabase.from('flight_bookings').select('id, customer_name, airline:airlines(name), departure_date, booking_reference, confirmation_number').in('id', flightIds)
           : Promise.resolve({ data: [] as any[] }),
         transportIds.length
-          ? supabase.from('transport_bookings').select('id, customer_name, service_type, pickup_location, dropoff_location, service_date, booking_reference').in('id', transportIds)
+          ? supabase.from('transport_bookings').select('id, customer_name, pickup_location, dropoff_location, departure_date, booking_reference').in('id', transportIds)
           : Promise.resolve({ data: [] as any[] }),
         carIds.length
-          ? supabase.from('car_rentals').select('id, customer_name, vehicle_make, vehicle_model, pickup_date, return_date, rental_reference').in('id', carIds)
+          ? supabase.from('car_rentals').select('id, customer_name, vehicle_make, vehicle_model, rental_start_date, rental_end_date, rental_reference').in('id', carIds)
           : Promise.resolve({ data: [] as any[] }),
+
       ]);
 
       const idx = (arr: any[]) => Object.fromEntries((arr || []).map((r: any) => [r.id, r]));
