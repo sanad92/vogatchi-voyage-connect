@@ -4,10 +4,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, Settings, User } from 'lucide-react';
+import { Menu, LogOut, Settings, Search } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Link } from 'react-router-dom';
+import CommandPalette, { useCommandPalette } from '@/components/common/CommandPalette';
 
 interface DashboardTopbarProps {
   onMenuClick: () => void;
@@ -15,6 +16,7 @@ interface DashboardTopbarProps {
 
 const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
   const { user, profile, signOut } = useOptimizedAuth();
+  const [paletteOpen, setPaletteOpen] = useCommandPalette();
 
   return (
     <header className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/60" dir="rtl">
@@ -36,11 +38,35 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
           </div>
         </div>
 
+        {/* Center: global search trigger */}
+        <button
+          type="button"
+          onClick={() => setPaletteOpen(true)}
+          className="hidden md:flex flex-1 max-w-md items-center gap-2 h-9 px-3 rounded-lg border border-border/60 bg-muted/40 hover:bg-muted/70 hover:border-border transition-colors text-sm text-muted-foreground focus-ring"
+          aria-label="بحث سريع"
+        >
+          <Search className="h-4 w-4" />
+          <span className="flex-1 text-right">ابحث عن أي صفحة أو إجراء…</span>
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <span>⌘</span><span>K</span>
+          </kbd>
+        </button>
+
         {/* Left: Notifications, Org, Profile */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 mr-auto">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setPaletteOpen(true)}
+            aria-label="بحث سريع"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
           <NotificationBell />
           <div className="hidden sm:block h-6 w-px bg-border/60 mx-1" />
           <OrgSwitcher />
+
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
