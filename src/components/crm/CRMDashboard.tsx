@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Brain, Users, TrendingUp, Calendar, Send, MessageSquare, AlertTriangle, Plus } from 'lucide-react';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import CRMStats from './dashboard/CRMStats';
 import CRMOverview from './dashboard/CRMOverview';
 import CustomerSegments from './segments/CustomerSegments';
@@ -14,6 +16,7 @@ import MarketingCampaigns from './MarketingCampaigns';
 import CustomerInteractions from './CustomerInteractions';
 import CRMCustomerList from './dashboard/CRMCustomerList';
 import { useCRM } from '@/hooks/useCRM';
+
 
 export const CRMDashboard = () => {
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
