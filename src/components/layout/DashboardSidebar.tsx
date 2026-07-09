@@ -77,6 +77,7 @@ const navGroups: NavGroup[] = [
       { title: 'المستندات', href: '/documents', icon: FileText, requiredPermission: 'documents_view' },
       // { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, requiredPermission: 'financial_view' }, // Deferred: payment_orders table not implemented yet
       { title: 'الحسابات البنكية', href: '/bank-accounts', icon: Building2, requiredPermission: 'financial_view' },
+      { title: 'تسوية البنك', href: '/bank-reconciliation', icon: Building2, requiredPermission: 'financial_view' },
       { title: 'المصروفات', href: '/expense-management', icon: Calculator, requiredPermission: 'expenses_view' },
     ],
   },
@@ -101,6 +102,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'التقارير التشغيلية', href: '/reports', icon: FileText },
       { title: 'تحليل الأرباح', href: '/profit-analytics', icon: TrendingUp, requiredPermission: 'reports_advanced' },
+      { title: 'مؤشرات السفر KPIs', href: '/travel-kpis', icon: TrendingUp, requiredPermission: 'reports_view' },
       { title: 'الإحصائيات', href: '/crm-dashboard', icon: BarChart3, requiredPermission: 'crm_view' },
       { title: 'مركز التصدير', href: '/export-center', icon: FileText },
     ],
