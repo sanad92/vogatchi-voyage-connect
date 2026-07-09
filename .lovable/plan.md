@@ -1,16 +1,31 @@
-تم ربط الرقم بنجاح ✅ (Vogatchi Trips / +20 11 03442882، WABA: 25036890362652380).
+## المشكلة
 
-## تحقق سريع
+- الرسائل موجودة في قاعدة البيانات (3 محادثات + رسائل واردة/صادرة على رقمك).
+- لكن `useWhatsAppMessages` يستخدم embed غير صحيح:
+  ```ts
+  sender:profiles!sent_by(full_name)
+  ```
+  لا يوجد Foreign Key من `whatsapp_messages.sent_by` إلى `profiles`، فـ PostgREST يرجّع خطأ علاقة → الاستعلام يفشل → الشاشة تعرض "لا توجد رسائل" وتُعيد المحاولة كل 5 ثوانٍ (اللي شفناه في session replay).
 
-1. من `/whatsapp-admin` → Settings يظهر الرقم كـ Connected.
-2. جرّب إرسال رسالة تجريبية عبر Send Message.
-3. تأكد أن الرسائل الواردة تصل (Webhook مشترك تلقائياً على WABA).
+## الإصلاح
 
-## خطوات اختيارية أقدر أنفذها لو تحب
+### 1. `src/hooks/useWhatsAppMessages.tsx`
+- إزالة embed الخاص بـ `sender` (اختياري للعرض فقط).
+- إضافة فلترة بـ `organization_id` وضمّه في `queryKey` عبر `useOrgId`.
 
-- **A. تحديث `useWhatsAppSettings`**: الاستعلام الحالي يرجّع 406 لأنه يستخدم `.single()` بدون `organization_id`. أفلترها بالمنظمة وأستخدم `maybeSingle()`.
-- **B. زر Disconnect** للربط اليدوي (يعتمد على `whatsapp-disconnect` الموجود).
-- **C. اختبار Webhook**: إرسال رسالة من هاتف خارجي والتأكد من تسجيلها في `whatsapp_messages`.
-- **D. إضافة قوالب رسائل (Templates)** من WhatsApp Manager وربطها.
+### 2. `src/hooks/useWhatsApp.tsx`
+- إضافة فلترة بـ `organization_id` وضمّه في `queryKey` (دفاعي — الـ RLS يعمل لكن الكاش يتلوّث بين المنظمات).
 
-قل لي أي البنود تحب أنفذه.
+### 3. (اختياري لاحقاً) إضافة FK
+هجرة تضيف `ALTER TABLE whatsapp_messages ADD CONSTRAINT ... FOREIGN KEY (sent_by) REFERENCES profiles(id)` — تمكّننا من إعادة embed الـ sender لعرض اسم الموظف اللي بعت.
+
+## الخطوة التالية بعد الإصلاح
+
+بعد ظهور المحادثات والرسائل بشكل صحيح:
+
+- **A. Realtime**: تفعيل Supabase Realtime على `whatsapp_messages` عشان الرسائل الجديدة تظهر فوراً بدون polling 5s.
+- **B. ربط العميل تلقائياً**: عند وصول رسالة جديدة من رقم غير معروف، إنشاء/ربط `customer` تلقائياً بالمحادثة.
+- **C. إنشاء قالب WhatsApp**: عشان تقدر تبدأ محادثات جديدة (خارج نافذة 24 ساعة). قالب ترحيبي بسيط (`welcome_ar`) يتم اعتماده من Meta.
+- **D. Quick Replies + Auto-Assignment**: تفعيل التوزيع التلقائي للمحادثات على الموظفين.
+
+هبدأ بـ (1) و(2) فقط في التنفيذ الحالي، بعدها تختار البند التالي.
