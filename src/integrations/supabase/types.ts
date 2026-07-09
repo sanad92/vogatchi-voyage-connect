@@ -4185,48 +4185,72 @@ export type Database = {
       }
       journal_entries: {
         Row: {
+          auto_generated: boolean
+          booking_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           description: string | null
           entry_date: string
           entry_number: string
+          functional_currency: string | null
+          fx_rate: number | null
           id: string
+          is_locked: boolean
           organization_id: string
+          posted_at: string | null
           reference_id: string | null
           reference_type: string | null
+          source_id: string | null
+          source_type: string | null
           status: string
           total_credit: number
           total_debit: number
           updated_at: string
         }
         Insert: {
+          auto_generated?: boolean
+          booking_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
           entry_date?: string
           entry_number: string
+          functional_currency?: string | null
+          fx_rate?: number | null
           id?: string
+          is_locked?: boolean
           organization_id: string
+          posted_at?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string
           total_credit?: number
           total_debit?: number
           updated_at?: string
         }
         Update: {
+          auto_generated?: boolean
+          booking_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
           entry_date?: string
           entry_number?: string
+          functional_currency?: string | null
+          fx_rate?: number | null
           id?: string
+          is_locked?: boolean
           organization_id?: string
+          posted_at?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string
           total_credit?: number
           total_debit?: number
@@ -7836,7 +7860,20 @@ export type Database = {
     }
     Functions: {
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
+      _next_entry_number: { Args: { _org: string }; Returns: string }
+      _resolve_account: {
+        Args: { _code: string; _org: string }
+        Returns: string
+      }
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      backfill_journals: {
+        Args: { _org_id: string }
+        Returns: {
+          expenses_posted: number
+          invoices_posted: number
+          supplier_payments_posted: number
+        }[]
+      }
       booking_make_journal: {
         Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
         Returns: undefined
@@ -8109,6 +8146,11 @@ export type Database = {
         Returns: Json
       }
       normalize_phone_digits: { Args: { _phone: string }; Returns: string }
+      post_expense_transaction: {
+        Args: { _expense_id: string }
+        Returns: string
+      }
+      post_invoice: { Args: { _invoice_id: string }; Returns: string }
       post_journal_entry:
         | {
             Args: {
@@ -8133,6 +8175,7 @@ export type Database = {
             }
             Returns: string
           }
+      post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       seed_default_chart_of_accounts: {
@@ -8143,6 +8186,10 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
+      unpost_journal: {
+        Args: { _source_id: string; _source_type: string }
+        Returns: boolean
+      }
       update_booking_status: {
         Args: {
           p_booking_id: string
