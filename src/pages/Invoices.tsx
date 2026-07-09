@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus, CreditCard } from "lucide-react";
+import { FileText, Search, Eye, Edit, Trash2, AlertCircle, Plus, CreditCard, Wallet, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,10 +15,12 @@ import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
 import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
-import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
+import PageHeader from "@/components/layout/PageHeader";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Invoices = () => {
   useInitialInvoices();
+  usePageTitle('الفواتير');
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -165,16 +166,24 @@ const Invoices = () => {
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
-      <BreadcrumbNav items={[
-        { label: 'الرئيسية', href: '/dashboard' },
-        { label: 'الفواتير' }
-      ]} />
-      {/* رأس الصفحة مع الإحصائيات المحدثة */}
+      <PageHeader
+        title="الفواتير"
+        description="إدارة وتتبع جميع فواتير العملاء والمدفوعات"
+        icon={Receipt}
+        actions={
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 ml-2" />
+            فاتورة جديدة
+          </Button>
+        }
+      />
+
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <FileText className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -185,10 +194,10 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <CreditCard className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -199,11 +208,11 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-muted rounded-lg">
-                <CreditCard className="h-5 w-5 text-primary" />
+                <Wallet className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">مدفوعة جزئياً</p>
@@ -213,10 +222,10 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-destructive/10 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div>
@@ -227,7 +236,7 @@ const Invoices = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-muted rounded-lg">
@@ -244,19 +253,12 @@ const Invoices = () => {
         </Card>
       </div>
 
-      {/* أدوات التصفية والبحث */}
+
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle>تصفية الفواتير</CardTitle>
-              <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
-            </div>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 ml-2" />
-              فاتورة جديدة
-            </Button>
-          </div>
+          <CardTitle>تصفية الفواتير</CardTitle>
+          <CardDescription>استخدم الخيارات أدناه للبحث وتصفية الفواتير</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
