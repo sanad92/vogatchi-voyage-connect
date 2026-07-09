@@ -153,13 +153,20 @@ const WhatsAppInboxContent: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>الوارد</span>
-                  <span className="inline-flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/whatsapp-inbox/${selected.id}`}>
+                      <ExternalLink className="h-3.5 w-3.5 me-1" />
+                      تفاصيل وبحث
+                    </Link>
+                  </Button>
+                  <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>الوارد</span>
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  <span>الصادر</span>
-                  <span className="inline-flex items-center gap-1">
+                    <span>الصادر</span>
+                    <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  </div>
+                </div>
                     <span className="h-2 w-2 rounded-full bg-blue-500" />
                   </span>
                 </div>
