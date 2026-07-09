@@ -97,6 +97,7 @@ const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
 // Communication
 const WhatsApp = lazy(() => import("@/pages/WhatsApp"));
 const WhatsAppAdmin = lazy(() => import("@/pages/WhatsAppAdmin"));
+const WhatsAppInbox = lazy(() => import("@/pages/WhatsAppInbox"));
 
 // Admin
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
@@ -274,8 +275,9 @@ function App() {
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<TeamManagement />} />
-                              <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
-                              <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
+                             <Route path="/whatsapp" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsApp /></PermissionRouteGuard>} />
+                             <Route path="/whatsapp-inbox" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppInbox /></PermissionRouteGuard>} />
+                             <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />
                               <Route path="/admin/cms" element={<PermissionRouteGuard requiredPermission="admin_settings"><CMSPages /></PermissionRouteGuard>} />
                               <Route path="/admin/cms/pages/:id/blocks" element={<PermissionRouteGuard requiredPermission="admin_settings"><PageBlocks /></PermissionRouteGuard>} />
                               <Route path="/monitoring" element={<PermissionRouteGuard requiredPermission="admin_settings"><MonitoringDashboard /></PermissionRouteGuard>} />
