@@ -152,6 +152,46 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         // Upsert by (organization_id, message_id) — Meta may retry the same
         // webhook; we ignore duplicates instead of inserting again.
+        const mediaTypes = ['image', 'audio', 'voice', 'video', 'document', 'sticker'];
+        let mediaPath: string | null = null;
+        let mediaMime: string | null = null;
+        let mediaFileName: string | null = null;
+        let mediaCaption: string | null = null;
+        let contentText: string | null = message.text?.body ?? null;
+
+        if (mediaTypes.includes(message.type)) {
+          const media = message[message.type];
+          mediaMime = media?.mime_type ?? null;
+          mediaFileName = media?.filename ?? null;
+          mediaCaption = media?.caption ?? null;
+          if (media?.id) {
+            try {
+              const downloaded = await downloadAndStoreMedia(
+                supabase, organizationId, conversationId, message.id, media.id, mediaMime,
+              );
+              mediaPath = downloaded.path;
+              mediaMime = downloaded.mimeType || mediaMime;
+            } catch (e) {
+              console.error('media download failed', message.id, e);
+            }
+          }
+          if (mediaCaption && !contentText) contentText = mediaCaption;
+        } else if (message.type === 'location' && message.location) {
+          contentText = JSON.stringify({
+            lat: message.location.latitude,
+            lng: message.location.longitude,
+            name: message.location.name,
+            address: message.location.address,
+          });
+        } else if (message.type === 'interactive' && message.interactive) {
+          const ir = message.interactive;
+          contentText = ir.button_reply?.title || ir.list_reply?.title || ir.list_reply?.description || null;
+        } else if (message.type === 'button' && message.button) {
+          contentText = message.button.text ?? null;
+        } else if (message.type === 'reaction' && message.reaction) {
+          contentText = message.reaction.emoji ?? null;
+        }
+
         const { error: msgErr } = await supabase
           .from('whatsapp_messages')
           .upsert(
@@ -161,9 +201,11 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               message_id: message.id,
               direction: 'inbound',
               message_type: message.type,
-              content: message.text?.body ?? null,
-              media_url: message.image?.link || message.document?.link || message.audio?.link || message.video?.link,
-              media_mime_type: message.image?.mime_type || message.document?.mime_type || message.audio?.mime_type || message.video?.mime_type,
+              content: contentText,
+              media_storage_path: mediaPath,
+              media_mime_type: mediaMime,
+              media_file_name: mediaFileName,
+              media_caption: mediaCaption,
               sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
               status: 'delivered',
             },
