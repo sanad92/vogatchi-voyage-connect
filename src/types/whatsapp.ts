@@ -34,6 +34,11 @@ export interface WhatsAppMessage {
   media_file_name?: string;
   media_caption?: string;
   media_duration_seconds?: number;
+  media_provider_id?: string;
+  media_download_status?: 'pending' | 'success' | 'failed' | null;
+  media_download_error?: string | null;
+  media_download_attempts?: number;
+  media_last_attempt_at?: string | null;
   template_name?: string;
   template_language?: string;
   template_parameters?: any;
