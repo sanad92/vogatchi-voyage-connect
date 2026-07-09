@@ -10,6 +10,7 @@ interface Props {
 
 export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => {
   const path = message.media_storage_path as string | null | undefined;
+  const directUrl = message.media_url as string | null | undefined;
   const { data: signedUrl, isLoading, isError, refetch } = useSignedMediaUrl(path);
   const type = message.message_type as string;
   const rawMime = (message.media_mime_type as string) || '';
@@ -47,6 +48,9 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
 
   const mediaContent = () => {
     if (!path) {
+      if (directUrl) {
+        return renderMedia(directUrl);
+      }
       const isAudio = type === 'audio' || type === 'voice';
       return (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -74,11 +78,15 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
       );
     }
 
+    return renderMedia(signedUrl);
+  };
+
+  const renderMedia = (url: string) => {
     if (type === 'image' || type === 'sticker' || mime.startsWith('image/')) {
       return (
-        <a href={signedUrl} target="_blank" rel="noreferrer" className="block">
+        <a href={url} target="_blank" rel="noreferrer" className="block">
           <img
-            src={signedUrl}
+            src={url}
             alt={caption || 'صورة'}
             className={`rounded-md object-cover ${type === 'sticker' ? 'max-h-32' : 'max-h-64'} w-auto`}
             loading="lazy"
@@ -91,21 +99,21 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
       const audioType = mime.startsWith('audio/') ? mime : 'audio/ogg';
       return (
         <audio controls className="w-64 max-w-full" preload="metadata">
-          <source src={signedUrl} type={audioType} />
-          <source src={signedUrl} type="audio/ogg" />
-          <source src={signedUrl} type="audio/mpeg" />
+          <source src={url} type={audioType} />
+          <source src={url} type="audio/ogg" />
+          <source src={url} type="audio/mpeg" />
         </audio>
       );
     }
 
     if (type === 'video' || mime.startsWith('video/')) {
-      return <video controls src={signedUrl} className="max-h-64 rounded-md" preload="metadata" />;
+      return <video controls src={url} className="max-h-64 rounded-md" preload="metadata" />;
     }
 
     // Document / other
     return (
       <a
-        href={signedUrl}
+        href={url}
         target="_blank"
         rel="noreferrer"
         download={fileName}
