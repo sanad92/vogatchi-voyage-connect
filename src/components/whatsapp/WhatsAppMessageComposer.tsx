@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { Send, Paperclip, Image as ImageIcon, Zap, X, FileText } from 'lucide-react';
+import { Send, Paperclip, Image as ImageIcon, X, FileText } from 'lucide-react';
 import { useWhatsAppMessaging } from '@/hooks/useWhatsAppMessaging';
-import { useWhatsAppQuickReplies } from '@/hooks/useWhatsAppQuickReplies';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
+import { QuickRepliesPicker } from './QuickRepliesPicker';
+import { TemplatesPicker } from './TemplatesPicker';
+import type { VariableContext } from '@/lib/whatsappVariables';
 import { toast } from 'sonner';
 
 interface Props {
@@ -12,16 +15,26 @@ interface Props {
   onMessageSent?: () => void;
   prefillText?: string;
   prefillNonce?: number;
+  contactName?: string | null;
+  contactPhone?: string | null;
 }
 
 const MAX_MB = 16;
 
-export const WhatsAppMessageComposer: React.FC<Props> = ({ conversationId, onMessageSent, prefillText, prefillNonce }) => {
+export const WhatsAppMessageComposer: React.FC<Props> = ({
+  conversationId,
+  onMessageSent,
+  prefillText,
+  prefillNonce,
+  contactName,
+  contactPhone,
+}) => {
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<{ file: File; preview?: string } | null>(null);
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useOptimizedAuth() as any;
+  const { data: currentOrg } = useCurrentOrganization() as any;
 
   useEffect(() => {
     if (prefillText !== undefined && prefillNonce !== undefined) {
@@ -29,10 +42,13 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({ conversationId, onMes
     }
   }, [prefillText, prefillNonce]);
 
-
   const { sendTextMessage, sendMedia, isSending } = useWhatsAppMessaging();
-  const { quickReplies } = useWhatsAppQuickReplies() as {
-    quickReplies: Array<{ id: string; title: string; content: string }> | undefined;
+
+  const variables: VariableContext = {
+    customer_name: contactName || null,
+    customer_phone: contactPhone || null,
+    agent_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
+    organization_name: currentOrg?.name || null,
   };
 
   const handlePickFile = (accept: string, ref: React.RefObject<HTMLInputElement>) => {
