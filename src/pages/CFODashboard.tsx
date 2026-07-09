@@ -33,12 +33,31 @@ const todayStr = today.toISOString().slice(0, 10);
 const CFODashboard = () => {
   const [start, setStart] = useState(firstOfMonth);
   const [end, setEnd] = useState(todayStr);
+  const [backfilling, setBackfilling] = useState(false);
+  const orgId = useOrgId();
+  const qc = useQueryClient();
 
   const income = useIncomeStatement(start, end);
   const balance = useBalanceSheet(end);
   const cash = useCashFlow(start, end);
   const aging = useCustomerAging();
   const trial = useTrialBalance(end);
+
+  const runBackfill = async () => {
+    if (!orgId) return;
+    setBackfilling(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('backfill_journals', { _org_id: orgId });
+      if (error) throw error;
+      const r = Array.isArray(data) ? data[0] : data;
+      toast.success(`تم ترحيل القيود: ${r?.invoices_posted || 0} فاتورة، ${r?.supplier_payments_posted || 0} سداد مورد، ${r?.expenses_posted || 0} مصروف`);
+      qc.invalidateQueries();
+    } catch (e: any) {
+      toast.error('فشل الترحيل: ' + (e?.message || 'خطأ غير معروف'));
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const kpis = useMemo(() => {
     const rows = income.data || [];
