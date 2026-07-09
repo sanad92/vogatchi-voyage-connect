@@ -97,6 +97,7 @@ const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
 // Communication
 const WhatsApp = lazy(() => import("@/pages/WhatsApp"));
 const WhatsAppAdmin = lazy(() => import("@/pages/WhatsAppAdmin"));
+const WhatsAppInbox = lazy(() => import("@/pages/WhatsAppInbox"));
 
 // Admin
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
