@@ -108,29 +108,6 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
       <input ref={fileInputRef} type="file" hidden onChange={handleFileChange} />
       <input ref={imageInputRef} type="file" hidden onChange={handleFileChange} />
 
-      {showQuickReplies && quickReplies && quickReplies.length > 0 && (
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium">الردود السريعة</h4>
-              <Button variant="ghost" size="sm" onClick={() => setShowQuickReplies(false)}>إغلاق</Button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {quickReplies.map((r) => (
-                <Button
-                  key={r.id}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs justify-start"
-                  onClick={() => { setMessage(r.content); setShowQuickReplies(false); }}
-                >
-                  {r.title}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {pending && (
         <div className="flex items-center gap-3 p-2 border rounded-md bg-muted/40">
