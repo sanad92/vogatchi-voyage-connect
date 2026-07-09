@@ -9,7 +9,9 @@ import {
   BarChart3,
   Users,
   Clock,
+  Megaphone,
 } from 'lucide-react';
+import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
 import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
@@ -30,7 +32,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             الإعدادات
@@ -46,6 +48,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
           <TabsTrigger value="quick-replies" className="flex items-center gap-2">
             <Zap className="w-4 h-4" />
             الردود السريعة
+          </TabsTrigger>
+          <TabsTrigger value="broadcasts" className="flex items-center gap-2">
+            <Megaphone className="w-4 h-4" />
+            الحملات
           </TabsTrigger>
           <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
@@ -79,6 +85,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
 
         <TabsContent value="quick-replies" className="mt-6">
           <WhatsAppQuickReplies />
+        </TabsContent>
+
+        <TabsContent value="broadcasts" className="mt-6">
+          <WhatsAppBroadcastManager />
         </TabsContent>
 
         <TabsContent value="employees" className="mt-6">
