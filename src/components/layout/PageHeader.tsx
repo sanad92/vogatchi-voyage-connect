@@ -32,7 +32,7 @@ const PageHeader = ({ title, description, icon: Icon, actions, badge, className 
             <Icon className="h-5 w-5" />
           </div>
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground truncate">
               {title}
@@ -47,9 +47,10 @@ const PageHeader = ({ title, description, icon: Icon, actions, badge, className 
         </div>
       </div>
       {actions && (
-        <div className="flex items-center gap-2 shrink-0">{actions}</div>
+        <div className="flex items-center gap-2 flex-wrap shrink-0">{actions}</div>
       )}
     </header>
+
   );
 };
 
