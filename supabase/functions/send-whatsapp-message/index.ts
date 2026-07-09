@@ -8,10 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VALID_MESSAGE_TYPES = ['text', 'image', 'document', 'template'] as const;
+const VALID_MESSAGE_TYPES = ['text', 'image', 'audio', 'video', 'document', 'template'] as const;
 const MAX_CONTENT_LENGTH = 4096;
 const MAX_TEMPLATE_PARAMS = 20;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MEDIA_TYPES = new Set(['image', 'audio', 'video', 'document']);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
