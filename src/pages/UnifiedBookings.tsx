@@ -213,7 +213,7 @@ const UnifiedBookings = () => {
                         </TableCell>
                         <TableCell>{b.start_date || '—'}</TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الحجز">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
