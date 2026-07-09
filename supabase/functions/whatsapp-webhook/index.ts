@@ -258,6 +258,15 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
                 extra: { keyword: contentText },
               },
             }).catch(() => {});
+            // Chatbot auto-reply
+            supabase.functions.invoke('whatsapp-chatbot-reply', {
+              body: {
+                organization_id: organizationId,
+                conversation_id: conversationId,
+                message_id: insertedMsg?.id,
+                user_message: contentText,
+              },
+            }).catch((e: any) => console.error('[wa-webhook] chatbot invoke failed', e));
           }
         } catch (e) {
           console.error('[wa-webhook] automation invoke error', e);

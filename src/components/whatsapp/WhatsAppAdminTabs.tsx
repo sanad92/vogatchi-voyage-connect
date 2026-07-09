@@ -11,6 +11,7 @@ import {
   Clock,
   Megaphone,
   Workflow,
+  Bot,
 } from 'lucide-react';
 import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
@@ -21,6 +22,7 @@ import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
 import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
+import { WhatsAppChatbotSettings } from './WhatsAppChatbotSettings';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppAdminTabs: React.FC = () => {
@@ -34,7 +36,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             الإعدادات
@@ -42,6 +44,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
           <TabsTrigger value="sla" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
             SLA
+          </TabsTrigger>
+          <TabsTrigger value="chatbot" className="flex items-center gap-2">
+            <Bot className="w-4 h-4" />
+            البوت
           </TabsTrigger>
           <TabsTrigger value="automation" className="flex items-center gap-2">
             <Workflow className="w-4 h-4" />
@@ -83,6 +89,10 @@ export const WhatsAppAdminTabs: React.FC = () => {
 
         <TabsContent value="sla" className="mt-6">
           <WhatsAppSLASettings />
+        </TabsContent>
+
+        <TabsContent value="chatbot" className="mt-6">
+          <WhatsAppChatbotSettings />
         </TabsContent>
 
         <TabsContent value="automation" className="mt-6">

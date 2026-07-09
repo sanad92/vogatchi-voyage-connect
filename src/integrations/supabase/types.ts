@@ -6818,6 +6818,129 @@ export type Database = {
           },
         ]
       }
+      whatsapp_chatbot_interactions: {
+        Row: {
+          bot_reply: string | null
+          conversation_id: string | null
+          created_at: string
+          error_message: string | null
+          handoff_reason: string | null
+          id: string
+          latency_ms: number | null
+          message_id: string | null
+          model_used: string | null
+          organization_id: string
+          user_message: string | null
+          was_handed_off: boolean
+        }
+        Insert: {
+          bot_reply?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          handoff_reason?: string | null
+          id?: string
+          latency_ms?: number | null
+          message_id?: string | null
+          model_used?: string | null
+          organization_id: string
+          user_message?: string | null
+          was_handed_off?: boolean
+        }
+        Update: {
+          bot_reply?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          handoff_reason?: string | null
+          id?: string
+          latency_ms?: number | null
+          message_id?: string | null
+          model_used?: string | null
+          organization_id?: string
+          user_message?: string | null
+          was_handed_off?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_chatbot_interactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_chatbot_interactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_chatbot_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_chatbot_settings: {
+        Row: {
+          auto_handoff_on_error: boolean
+          bot_name: string
+          created_at: string
+          handoff_keywords: Json
+          id: string
+          is_enabled: boolean
+          max_bot_replies: number
+          model: string
+          organization_id: string
+          respond_only_outside_hours: boolean
+          system_prompt: string
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          auto_handoff_on_error?: boolean
+          bot_name?: string
+          created_at?: string
+          handoff_keywords?: Json
+          id?: string
+          is_enabled?: boolean
+          max_bot_replies?: number
+          model?: string
+          organization_id: string
+          respond_only_outside_hours?: boolean
+          system_prompt?: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          auto_handoff_on_error?: boolean
+          bot_name?: string
+          created_at?: string
+          handoff_keywords?: Json
+          id?: string
+          is_enabled?: boolean
+          max_bot_replies?: number
+          model?: string
+          organization_id?: string
+          respond_only_outside_hours?: boolean
+          system_prompt?: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_chatbot_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_connection_events: {
         Row: {
           created_at: string
