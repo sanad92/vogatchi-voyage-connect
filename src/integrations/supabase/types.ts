@@ -6459,7 +6459,7 @@ export type Database = {
           id: string
           media_mime_type: string | null
           media_url: string | null
-          message_id: string | null
+          message_id: string
           message_type: string | null
           organization_id: string | null
           read_at: string | null
@@ -6481,7 +6481,7 @@ export type Database = {
           id?: string
           media_mime_type?: string | null
           media_url?: string | null
-          message_id?: string | null
+          message_id: string
           message_type?: string | null
           organization_id?: string | null
           read_at?: string | null
@@ -6503,7 +6503,7 @@ export type Database = {
           id?: string
           media_mime_type?: string | null
           media_url?: string | null
-          message_id?: string | null
+          message_id?: string
           message_type?: string | null
           organization_id?: string | null
           read_at?: string | null
