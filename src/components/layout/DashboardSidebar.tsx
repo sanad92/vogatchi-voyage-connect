@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -8,10 +8,14 @@ import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap, ClipboardList, BanknoteIcon, AlertTriangle
+  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
+  ClipboardList, BanknoteIcon, AlertTriangle, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
+
 
 interface NavItem {
   title: string;
