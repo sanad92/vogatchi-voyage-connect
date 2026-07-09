@@ -83,7 +83,14 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
     }
 
     if (type === 'audio' || type === 'voice' || mime.startsWith('audio/')) {
-      return <audio controls src={signedUrl} className="w-64 max-w-full" preload="metadata" />;
+      const audioType = mime.startsWith('audio/') ? mime : 'audio/ogg';
+      return (
+        <audio controls className="w-64 max-w-full" preload="metadata">
+          <source src={signedUrl} type={audioType} />
+          <source src={signedUrl} type="audio/ogg" />
+          <source src={signedUrl} type="audio/mpeg" />
+        </audio>
+      );
     }
 
     if (type === 'video' || mime.startsWith('video/')) {
