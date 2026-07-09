@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send,
+  Info, StickyNote, Send, User,
 } from 'lucide-react';
+import { Customer360Panel } from './Customer360Panel';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
