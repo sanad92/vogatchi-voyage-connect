@@ -14,6 +14,7 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
+import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading } = useWhatsApp();
@@ -46,9 +47,12 @@ const WhatsAppInboxContent: React.FC = () => {
       <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
         <MessageCircle className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-bold">صندوق رسائل واتساب</h1>
-        <Badge variant="secondary" className="ms-auto">
-          {conversations?.length || 0} محادثة
-        </Badge>
+        <div className="ms-auto flex items-center gap-2">
+          <FollowupsBell />
+          <Badge variant="secondary">
+            {conversations?.length || 0} محادثة
+          </Badge>
+        </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-[340px,1fr] overflow-hidden">
