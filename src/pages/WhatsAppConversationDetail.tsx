@@ -294,6 +294,11 @@ const WhatsAppConversationDetailContent: React.FC = () => {
       <div className="border-t bg-card p-3">
         <WhatsAppMessageComposer conversationId={conversationId} onMessageSent={() => {}} />
       </div>
+      </div>
+      {/* Right panel */}
+      <aside className="hidden lg:flex w-[340px] shrink-0">
+        <ConversationRightPanel conversationId={conversationId} conversation={conversation} />
+      </aside>
     </div>
   );
 };
