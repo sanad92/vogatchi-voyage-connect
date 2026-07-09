@@ -63,6 +63,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
         .from('supplier_ratings')
         .insert([{
           ...rating,
+          organization_id: orgId as string,
           overall_rating: overallRating,
           rating_date: new Date().toISOString(),
           rated_by: 'current_user' // يمكن تحديث هذا ليكون المستخدم الحالي
