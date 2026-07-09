@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageComposer';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
+import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
@@ -129,7 +130,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
+    <div className="h-[calc(100vh-4rem)] flex bg-background" dir="rtl">
+      <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
@@ -292,6 +294,11 @@ const WhatsAppConversationDetailContent: React.FC = () => {
       <div className="border-t bg-card p-3">
         <WhatsAppMessageComposer conversationId={conversationId} onMessageSent={() => {}} />
       </div>
+      </div>
+      {/* Right panel */}
+      <aside className="hidden lg:flex w-[340px] shrink-0">
+        <ConversationRightPanel conversationId={conversationId} conversation={conversation} />
+      </aside>
     </div>
   );
 };
