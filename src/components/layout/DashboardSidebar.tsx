@@ -141,6 +141,28 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     return initial;
   });
 
+  // Client-side favorites (per-browser). No schema change.
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch { /* ignore */ }
+  }, [favorites]);
+
+  const toggleFavorite = (href: string) => {
+    setFavorites((prev) =>
+      prev.includes(href) ? prev.filter((h) => h !== href) : [...prev, href].slice(0, 8)
+    );
+  };
+
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
@@ -158,7 +180,16 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     return group.items.some(item => canAccessItem(item));
   };
 
+  // Resolve favorite items by looking them up across all groups
+  const favoriteItems = useMemo(() => {
+    const flat: NavItem[] = allGroups.flatMap((g) => g.items);
+    return favorites
+      .map((href) => flat.find((it) => it.href === href))
+      .filter((it): it is NavItem => !!it && canAccessItem(it));
+  }, [favorites, allGroups, isSuperAdmin, hasPermission]);
+
   const sidebarContent = (
+
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={cn(
