@@ -1,8 +1,14 @@
+/**
+ * Backward-compat shim.
+ * The canonical EmptyState lives at `@/components/ui/empty-state`.
+ * This file keeps historical imports (`@/components/common/EmptyState`)
+ * working and forwards a `ReactNode` action into the new shape.
+ */
 import { ReactNode } from 'react';
-import { LucideIcon, Inbox } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Inbox, type LucideIcon } from 'lucide-react';
+import { EmptyState as CanonicalEmptyState } from '@/components/ui/empty-state';
 
-interface EmptyStateProps {
+interface LegacyEmptyStateProps {
   icon?: LucideIcon;
   title: string;
   description?: string;
@@ -10,28 +16,19 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const EmptyState = ({ icon: Icon = Inbox, title, description, action, className }: EmptyStateProps) => {
+const EmptyState = ({ icon = Inbox, title, description, action, className }: LegacyEmptyStateProps) => {
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center text-center',
-        'rounded-xl border border-dashed border-border bg-card/30',
-        'px-6 py-14',
-        className,
-      )}
+    <CanonicalEmptyState
+      icon={icon}
+      title={title}
+      description={description}
+      className={className}
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
-        <Icon className="h-7 w-7" />
-      </div>
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      {description && (
-        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground leading-relaxed">
-          {description}
-        </p>
-      )}
-      {action && <div className="mt-5">{action}</div>}
-    </div>
+      {/* @ts-expect-error – legacy shim renders raw ReactNode action below icon */}
+      {action ? <div className="mt-1">{action}</div> : null}
+    </CanonicalEmptyState>
   );
 };
 
 export default EmptyState;
+
