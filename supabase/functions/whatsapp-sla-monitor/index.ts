@@ -54,9 +54,10 @@ Deno.serve(async (req) => {
               user_id: c.assigned_to,
               organization_id: orgId,
               type: 'sla_breach',
+              priority: 'high',
               title: 'خرق SLA - وقت الاستجابة الأولى',
               message: `تم تجاوز وقت الاستجابة الأولى (${s.sla_first_response_minutes} دقيقة) لمحادثة`,
-              link: `/whatsapp-inbox/${c.id}`,
+              action_url: `/whatsapp-inbox/${c.id}`,
               is_read: false,
             });
             results.notified++;
