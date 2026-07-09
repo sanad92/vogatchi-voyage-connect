@@ -32,8 +32,9 @@ export const useWhatsAppAnalytics = (filters: AnalyticsFilters = {}) => {
           .select('id, status, trigger_type, created_at')
           .eq('organization_id', orgId).gte('created_at', since),
         s.from('whatsapp_followups')
-          .select('id, status, scheduled_at, completed_at')
+          .select('id, status, remind_at, completed_at')
           .eq('organization_id', orgId).gte('created_at', since),
+
       ]);
 
       const conversations = convRes.data || [];

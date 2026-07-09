@@ -48,23 +48,23 @@ export const useCustomer360 = (phone?: string | null, customerId?: string | null
       const cid = customer?.id;
 
       // 2) Fetch bookings / hotels / flights / payments in parallel
-      const [bookingsRes, hotelsRes, flightsRes, paymentsRes, convsRes] = await Promise.all([
+      // payment_transactions has no customer_id column — resolve payments through invoices → booking → paid amount
+      const [bookingsRes, hotelsRes, flightsRes, invoicesRes, convsRes] = await Promise.all([
         cid ? (supabase as any).from('bookings').select('*').eq('customer_id', cid).order('created_at', { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
         cid ? (supabase as any).from('hotel_bookings').select('*').eq('customer_id', cid).order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
         cid ? (supabase as any).from('flight_bookings').select('*').eq('customer_id', cid).order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
-        cid ? (supabase as any).from('payment_transactions').select('*').eq('customer_id', cid).order('created_at', { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
+        cid ? (supabase as any).from('invoices').select('id, invoice_number, final_amount, total_paid_amount, currency, status, payment_status, issued_date').eq('customer_id', cid).order('issued_date', { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
         cid ? (supabase as any).from('whatsapp_conversations').select('id, status, last_message_at, created_at').eq('customer_id', cid).order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
       ]);
 
       const bookings = bookingsRes.data || [];
       const hotelBookings = hotelsRes.data || [];
       const flightBookings = flightsRes.data || [];
-      const payments = paymentsRes.data || [];
+      const payments = invoicesRes.data || [];
       const conversations = convsRes.data || [];
 
-      const totalSpent = payments
-        .filter((p: any) => p.status === 'completed' || p.status === 'paid' || p.status === 'success')
-        .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+      const totalSpent = payments.reduce((sum: number, p: any) => sum + Number(p.total_paid_amount || 0), 0);
+
 
       const totalBookings = bookings.length + hotelBookings.length + flightBookings.length;
       const lastBookingDate =

@@ -186,7 +186,7 @@ export const WhatsAppCRMPanel: React.FC<Props> = ({ conversationId, conversation
                     <Badge className={STATUS_COLOR[q.status] || ''}>{q.status}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center justify-between mt-0.5">
-                    <span>{Number(q.total_amount || 0).toLocaleString()} {q.currency}</span>
+                    <span>{Number(q.total_amount || 0).toLocaleString()} EGP</span>
                     <span>{q.created_at && format(new Date(q.created_at), 'yyyy/MM/dd')}</span>
                   </div>
                 </Link>
@@ -203,23 +203,29 @@ export const WhatsAppCRMPanel: React.FC<Props> = ({ conversationId, conversation
         </div>
         <div className="space-y-1.5">
           {hotels.length === 0 && <p className="text-xs text-muted-foreground">لا توجد حجوزات</p>}
-          {hotels.map((h: any) => (
-            <Card key={h.id}>
-              <CardContent className="p-2.5">
-                <Link to={`/hotel-bookings/${h.id}`} className="block hover:underline">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium truncate">{h.hotel_name || 'فندق'}</span>
-                    <Badge className={STATUS_COLOR[h.status] || ''}>{h.status}</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {h.check_in_date && format(new Date(h.check_in_date), 'yyyy/MM/dd')}
-                    {' → '}
-                    {h.check_out_date && format(new Date(h.check_out_date), 'yyyy/MM/dd')}
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          {hotels.map((h: any) => {
+            const statusName = h.status?.name || '-';
+            return (
+              <Card key={h.id}>
+                <CardContent className="p-2.5">
+                  <Link to={`/hotel-bookings/${h.id}`} className="block hover:underline">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium truncate">{h.hotel_name || 'فندق'}</span>
+                      <Badge className={STATUS_COLOR[statusName.toLowerCase()] || ''}>{statusName}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 flex justify-between">
+                      <span>
+                        {h.check_in_date && format(new Date(h.check_in_date), 'yyyy/MM/dd')}
+                        {' → '}
+                        {h.check_out_date && format(new Date(h.check_out_date), 'yyyy/MM/dd')}
+                      </span>
+                      <span>{Number(h.total_cost_customer || 0).toLocaleString()} {h.currency || 'EGP'}</span>
+                    </div>
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -230,27 +236,30 @@ export const WhatsAppCRMPanel: React.FC<Props> = ({ conversationId, conversation
         </div>
         <div className="space-y-1.5">
           {flights.length === 0 && <p className="text-xs text-muted-foreground">لا توجد حجوزات</p>}
-          {flights.map((f: any) => (
-            <Card key={f.id}>
-              <CardContent className="p-2.5">
-                <Link to={`/flight-bookings/${f.id}`} className="block hover:underline">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {f.departure_airport || '?'} → {f.arrival_airport || '?'}
-                    </span>
-                    <Badge className={STATUS_COLOR[f.status] || ''}>{f.status}</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {f.departure_date && format(new Date(f.departure_date), 'yyyy/MM/dd')}
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          {flights.map((f: any) => {
+            const statusName = f.status?.name || '-';
+            const dep = f.departure_airport?.iata_code || f.departure_airport?.city || '?';
+            const arr = f.arrival_airport?.iata_code || f.arrival_airport?.city || '?';
+            return (
+              <Card key={f.id}>
+                <CardContent className="p-2.5">
+                  <Link to={`/flight-bookings/${f.id}`} className="block hover:underline">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{dep} → {arr}</span>
+                      <Badge className={STATUS_COLOR[statusName.toLowerCase()] || ''}>{statusName}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 flex justify-between">
+                      <span>{f.departure_date && format(new Date(f.departure_date), 'yyyy/MM/dd')}</span>
+                      <span>{Number(f.total_cost || 0).toLocaleString()} {f.currency || 'EGP'}</span>
+                    </div>
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
-      {/* Follow-ups */}
       <div>
         <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5">
           <Bell className="h-3.5 w-3.5" /> المتابعات ({followUps.length})

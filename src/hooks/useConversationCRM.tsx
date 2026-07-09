@@ -11,20 +11,21 @@ export const useConversationCRM = (conversationId: string, customerId?: string |
     queryKey: ['conversation-crm', orgId, customerId],
     enabled: !!orgId && !!customerId,
     queryFn: async () => {
+      const s = supabase as any;
       const [quotesRes, hotelsRes, flightsRes, followupsRes] = await Promise.all([
-        (supabase as any).from('quotes')
-          .select('id, quote_number, status, total_amount, currency, created_at, valid_until')
+        s.from('quotes')
+          .select('id, quote_number, status, total_amount, created_at, valid_until')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false }).limit(10),
-        (supabase as any).from('hotel_bookings')
-          .select('id, hotel_name, check_in_date, check_out_date, status, total_amount, currency')
+        s.from('hotel_bookings')
+          .select('id, hotel_name, check_in_date, check_out_date, total_cost_customer, currency, status:booking_statuses(name)')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false }).limit(10),
-        (supabase as any).from('flight_bookings')
-          .select('id, departure_airport, arrival_airport, departure_date, status, total_amount, currency')
+        s.from('flight_bookings')
+          .select('id, departure_date, total_cost, currency, status:booking_statuses(name), departure_airport:airports!flight_bookings_departure_airport_id_fkey(iata_code, city), arrival_airport:airports!flight_bookings_arrival_airport_id_fkey(iata_code, city)')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false }).limit(10),
-        (supabase as any).from('customer_follow_ups')
+        s.from('customer_follow_ups')
           .select('id, follow_up_type, status, scheduled_date, notes')
           .eq('customer_id', customerId)
           .order('scheduled_date', { ascending: false }).limit(10),
@@ -38,20 +39,18 @@ export const useConversationCRM = (conversationId: string, customerId?: string |
     },
   });
 
-  // Search customers by name/phone/email
   const searchCustomers = async (q: string) => {
     if (!q.trim() || !orgId) return [];
     const like = `%${q.trim()}%`;
     const { data } = await (supabase as any)
       .from('customers')
-      .select('id, name, full_name, phone, email')
+      .select('id, name, phone, email')
       .eq('organization_id', orgId)
-      .or(`name.ilike.${like},full_name.ilike.${like},phone.ilike.${like},email.ilike.${like}`)
+      .or(`name.ilike.${like},phone.ilike.${like},email.ilike.${like}`)
       .limit(10);
     return data || [];
   };
 
-  // Link conversation → existing customer
   const linkCustomer = useMutation({
     mutationFn: async (cid: string) => {
       const { error } = await (supabase as any)
@@ -69,7 +68,6 @@ export const useConversationCRM = (conversationId: string, customerId?: string |
     onError: (e: any) => toast.error(e.message || 'فشل الربط'),
   });
 
-  // Create new customer from conversation + link
   const createAndLinkCustomer = useMutation({
     mutationFn: async ({ name, phone, email }: { name: string; phone: string; email?: string }) => {
       const { data, error } = await (supabase as any)
@@ -77,7 +75,6 @@ export const useConversationCRM = (conversationId: string, customerId?: string |
         .insert({
           organization_id: orgId,
           name,
-          full_name: name,
           phone,
           email: email || null,
         })
