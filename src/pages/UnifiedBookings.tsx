@@ -182,13 +182,12 @@ const UnifiedBookings = () => {
                   {bookings.map((b) => {
                     const tc = typeConfig[b.booking_type];
                     const TypeIcon = tc.icon;
-                    const sl = statusLabels[b.status] || statusLabels.pending;
                     return (
                       <TableRow key={b.id} className="cursor-pointer transition-colors hover:bg-muted/60"
                         onClick={() => navigate(`/bookings/${b.id}`)}>
                         <TableCell className="font-mono text-sm">{b.booking_number}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={tc.color}>
+                          <Badge variant="outline" className={tc.className}>
                             <TypeIcon className="h-3 w-3 ml-1" />
                             {tc.label}
                           </Badge>
@@ -198,7 +197,7 @@ const UnifiedBookings = () => {
                         <TableCell>{b.selling_price?.toLocaleString()} {b.currency}</TableCell>
                         <TableCell>{b.cost_price?.toLocaleString()} {b.currency}</TableCell>
                         <TableCell>
-                          <div className={`flex items-center gap-1 font-bold ${b.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className={`flex items-center gap-1 font-semibold ${b.profit >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                             {b.profit >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                             {b.profit?.toLocaleString()} {b.currency}
                           </div>
@@ -209,7 +208,7 @@ const UnifiedBookings = () => {
                               {(b.booking_statuses as any).name_ar}
                             </Badge>
                           ) : (
-                            <Badge className={sl.variant}>{sl.label}</Badge>
+                            <Badge variant={statusVariants[b.status] || 'secondary'}>{statusLabelsAr[b.status] || b.status}</Badge>
                           )}
                         </TableCell>
                         <TableCell>{b.start_date || '—'}</TableCell>
