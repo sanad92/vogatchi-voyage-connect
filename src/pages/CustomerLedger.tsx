@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, AlertCircle, User } from 'lucide-react';
+import { BookOpen, AlertCircle, User, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const fmt = (n: number, ccy = 'EGP') => `${(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${ccy}`;
 
@@ -99,12 +100,29 @@ export default function CustomerLedger() {
   }, [rows]);
 
   return (
-    <div className="space-y-4 p-4" dir="rtl">
-      <PageHeader
-        icon={BookOpen}
-        title="كشف حساب العميل"
-        description="عرض للقراءة فقط مبني على الفواتير والتحصيلات القائمة."
-      />
+    <div className="space-y-4 p-4 print:p-0" dir="rtl">
+      <style>{`@media print { header, aside, nav, .no-print { display: none !important; } body { background: white !important; } }`}</style>
+      <div className="flex items-start justify-between gap-4 no-print">
+        <PageHeader
+          icon={BookOpen}
+          title="كشف حساب العميل"
+          description="عرض للقراءة فقط مبني على الفواتير والتحصيلات القائمة."
+        />
+        <Button variant="outline" onClick={() => window.print()} disabled={!customerId}>
+          <Printer className="h-4 w-4 ml-2" />
+          طباعة / PDF
+        </Button>
+      </div>
+      {data?.customer && (
+        <div className="hidden print:block mb-4 border-b pb-3">
+          <h1 className="text-2xl font-bold">كشف حساب العميل</h1>
+          <div className="text-sm mt-2">
+            <div>العميل: {data.customer.name}</div>
+            {data.customer.phone && <div>الهاتف: {data.customer.phone}</div>}
+            <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-EG')}</div>
+          </div>
+        </div>
+      )}
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
