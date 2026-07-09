@@ -56,6 +56,9 @@ export const WhatsAppAdminTabs: React.FC = () => {
         </TabsList>
 
         <TabsContent value="settings" className="mt-6 space-y-6">
+          <div className="flex justify-end">
+            <ManualConnectDialog />
+          </div>
           <WhatsAppConnectCard />
           <WhatsAppSettings />
         </TabsContent>
