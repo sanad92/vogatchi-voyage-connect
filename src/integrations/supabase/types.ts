@@ -6640,6 +6640,59 @@ export type Database = {
           },
         ]
       }
+      whatsapp_followups: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          conversation_id: string
+          created_at: string
+          created_by: string
+          id: string
+          note: string | null
+          organization_id: string
+          remind_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          conversation_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          note?: string | null
+          organization_id: string
+          remind_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          conversation_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          note?: string | null
+          organization_id?: string
+          remind_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_followups_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_messages: {
         Row: {
           content: string | null
