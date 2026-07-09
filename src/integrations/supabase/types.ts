@@ -6457,7 +6457,11 @@ export type Database = {
           error_code: string | null
           error_message: string | null
           id: string
+          media_caption: string | null
+          media_duration_seconds: number | null
+          media_file_name: string | null
           media_mime_type: string | null
+          media_storage_path: string | null
           media_url: string | null
           message_id: string
           message_type: string | null
@@ -6479,7 +6483,11 @@ export type Database = {
           error_code?: string | null
           error_message?: string | null
           id?: string
+          media_caption?: string | null
+          media_duration_seconds?: number | null
+          media_file_name?: string | null
           media_mime_type?: string | null
+          media_storage_path?: string | null
           media_url?: string | null
           message_id: string
           message_type?: string | null
@@ -6501,7 +6509,11 @@ export type Database = {
           error_code?: string | null
           error_message?: string | null
           id?: string
+          media_caption?: string | null
+          media_duration_seconds?: number | null
+          media_file_name?: string | null
           media_mime_type?: string | null
+          media_storage_path?: string | null
           media_url?: string | null
           message_id?: string
           message_type?: string | null
