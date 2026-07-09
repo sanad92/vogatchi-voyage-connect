@@ -20,6 +20,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Invoices = () => {
   useInitialInvoices();
+  usePageTitle('الفواتير');
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
