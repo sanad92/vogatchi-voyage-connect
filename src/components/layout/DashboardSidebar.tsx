@@ -295,28 +295,45 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       {visibleItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href);
+                        const isFav = favorites.includes(item.href);
 
                         const linkContent = (
                           <Link
                             to={item.href}
                             onClick={onMobileClose}
                             className={cn(
-                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              "group/nav relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                               collapsed && "justify-center px-2",
                               active
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                             )}
                           >
+                            {active && !collapsed && (
+                              <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                            )}
                             <Icon className={cn(
                               "h-[18px] w-[18px] flex-shrink-0",
-                              active && "text-sidebar-primary-foreground"
+                              active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-foreground"
                             )} />
                             {!collapsed && <span className="truncate">{item.title}</span>}
                             {!collapsed && item.badge && (
                               <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
                                 {item.badge}
                               </span>
+                            )}
+                            {!collapsed && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.href); }}
+                                aria-label={isFav ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                                className={cn(
+                                  "ms-auto p-0.5 rounded transition-opacity",
+                                  isFav ? "opacity-100 text-warning" : "opacity-0 group-hover/nav:opacity-60 hover:opacity-100 text-sidebar-muted"
+                                )}
+                              >
+                                <Star className={cn("h-3.5 w-3.5", isFav && "fill-current")} />
+                              </button>
                             )}
                           </Link>
                         );
@@ -335,6 +352,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       })}
                     </div>
                   )}
+
                 </div>
               );
             })}
