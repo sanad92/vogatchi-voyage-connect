@@ -1,28 +1,37 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedBookings, BookingType, BookingStatus } from '@/hooks/useUnifiedBookings';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Hotel, Plane, Car, Truck, Eye, TrendingUp, TrendingDown, CalendarCheck, Clock, XCircle } from 'lucide-react';
+import { Plus, Search, Hotel, Plane, Car, Truck, Eye, TrendingUp, TrendingDown, CalendarCheck, Clock, CalendarDays } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
-const typeConfig: Record<BookingType, { label: string; icon: React.ElementType; color: string }> = {
-  hotel: { label: 'فندق', icon: Hotel, color: 'bg-blue-100 text-blue-800' },
-  flight: { label: 'طيران', icon: Plane, color: 'bg-purple-100 text-purple-800' },
-  car_rental: { label: 'تأجير سيارات', icon: Car, color: 'bg-amber-100 text-amber-800' },
-  transport: { label: 'نقل', icon: Truck, color: 'bg-green-100 text-green-800' },
+const typeConfig: Record<BookingType, { label: string; icon: React.ElementType; className: string }> = {
+  hotel: { label: 'فندق', icon: Hotel, className: 'bg-primary/10 text-primary border-primary/20' },
+  flight: { label: 'طيران', icon: Plane, className: 'bg-accent text-accent-foreground border-border' },
+  car_rental: { label: 'تأجير سيارات', icon: Car, className: 'bg-muted text-foreground border-border' },
+  transport: { label: 'نقل', icon: Truck, className: 'bg-secondary text-secondary-foreground border-border' },
 };
 
-const statusLabels: Record<BookingStatus, { label: string; variant: string }> = {
-  pending: { label: 'معلق', variant: 'bg-yellow-100 text-yellow-800' },
-  confirmed: { label: 'مؤكد', variant: 'bg-green-100 text-green-800' },
-  cancelled: { label: 'ملغي', variant: 'bg-red-100 text-red-800' },
-  completed: { label: 'مكتمل', variant: 'bg-blue-100 text-blue-800' },
+const statusVariants: Record<BookingStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  pending: 'secondary',
+  confirmed: 'default',
+  cancelled: 'destructive',
+  completed: 'outline',
 };
+
+const statusLabelsAr: Record<BookingStatus, string> = {
+  pending: 'معلق',
+  confirmed: 'مؤكد',
+  cancelled: 'ملغي',
+  completed: 'مكتمل',
+};
+
 
 const UnifiedBookings = () => {
   const navigate = useNavigate();
