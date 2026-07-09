@@ -8,6 +8,25 @@ const corsHeaders = {
 
 const GRAPH = () => `https://graph.facebook.com/${Deno.env.get("META_GRAPH_API_VERSION") ?? "v22.0"}`;
 
+async function appsecretProof(accessToken: string): Promise<string | null> {
+  const secret = Deno.env.get("META_APP_SECRET");
+  if (!secret) return null;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function appendProof(url: string, proof: string | null): string {
+  if (!proof) return url;
+  return url + (url.includes("?") ? "&" : "?") + "appsecret_proof=" + proof;
+}
+
 async function logEvent(supabase: any, orgId: string, type: string, payload: unknown) {
   try {
     await supabase.from("whatsapp_connection_events").insert({
