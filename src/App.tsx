@@ -140,6 +140,10 @@ const SupplierAllotmentsPage = lazy(() => import("@/pages/SupplierAllotmentsPage
 const CostCentersPage = lazy(() => import("@/pages/CostCentersPage"));
 const AccountingPeriodsPage = lazy(() => import("@/pages/AccountingPeriodsPage"));
 const CFODashboard = lazy(() => import("@/pages/CFODashboard"));
+const CustomerLedger = lazy(() => import("@/pages/CustomerLedger"));
+const SupplierLedger = lazy(() => import("@/pages/SupplierLedger"));
+const ExecutiveFinance = lazy(() => import("@/pages/ExecutiveFinance"));
+const FinancialValidation = lazy(() => import("@/pages/FinancialValidation"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -295,6 +299,10 @@ function App() {
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-reports" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingReportsPage /></PermissionRouteGuard>} />
                               <Route path="/cfo-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><CFODashboard /></PermissionRouteGuard>} />
+                              <Route path="/customer-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><CustomerLedger /></PermissionRouteGuard>} />
+                              <Route path="/supplier-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><SupplierLedger /></PermissionRouteGuard>} />
+                              <Route path="/executive-finance" element={<PermissionRouteGuard requiredPermission="financial_view"><ExecutiveFinance /></PermissionRouteGuard>} />
+                              <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
