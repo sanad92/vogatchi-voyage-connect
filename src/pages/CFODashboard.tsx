@@ -80,17 +80,10 @@ const CFODashboard = () => {
         </Badge>
       </div>
 
-      <Alert variant="destructive" className="border-amber-500/40 bg-amber-500/5 text-amber-900 dark:text-amber-200">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="text-xs">
-          محرك التسجيل المحاسبي غير مُفعّل بعد: دوال <code>get_trial_balance</code>, <code>get_income_statement</code>, <code>get_balance_sheet</code>, <code>get_cash_flow</code>, <code>get_customer_aging</code> غير موجودة. هذه اللوحة قد تعرض قيماً صفرية.
-          استخدم مؤقتاً <a href="/executive-finance" className="underline font-medium">لوحة التحكم التنفيذية</a> و<a href="/financial-validation" className="underline font-medium">تقرير التحقق المالي</a> المبنيين على البيانات الحالية مباشرة.
-        </AlertDescription>
-      </Alert>
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          جميع الأرقام في هذه اللوحة بالجنيه المصري (EGP). القيود المسجلة بعملات أخرى تُحوَّل بسعر الصرف الفعلي للقيد.
+          الأرقام مستمدة من الجداول التشغيلية (فواتير، حجوزات، مدفوعات موردين، مصروفات، حسابات بنكية) عبر دوال RPC مخصّصة. جميع القيم بالجنيه المصري (EGP) ما لم يُذكر خلاف ذلك. للحصول على تفصيل لكل عملة، راجع <a href="/executive-finance" className="underline font-medium">اللوحة التنفيذية</a>.
         </AlertDescription>
       </Alert>
 
