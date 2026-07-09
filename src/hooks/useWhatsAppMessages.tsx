@@ -61,5 +61,34 @@ export const useWhatsAppMessages = (conversationId?: string) => {
     refetchInterval: 5_000,
   });
 
+  // Realtime subscription — refresh instantly on new/updated messages
+  useEffect(() => {
+    if (!conversationId) return;
+    const channel = supabase
+      .channel(`whatsapp_messages:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ['whatsapp-messages', orgId, conversationId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['whatsapp-conversations', orgId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, orgId, queryClient]);
+
   return { messages, isLoading, error };
 };
