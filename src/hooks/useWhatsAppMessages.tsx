@@ -1,24 +1,27 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
 import { WhatsAppMessage } from '@/types/whatsapp';
 
 export const useWhatsAppMessages = (conversationId?: string) => {
-  const { 
-    data: messages, 
-    isLoading, 
-    error 
+  const orgId = useOrgId();
+
+  const {
+    data: messages,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ['whatsapp-messages', conversationId],
+    queryKey: ['whatsapp-messages', orgId, conversationId],
     queryFn: async () => {
       if (!conversationId) return [];
 
+      // Note: no `sender:profiles!sent_by(...)` embed — there is no FK from
+      // whatsapp_messages.sent_by to profiles, so PostgREST rejects the embed
+      // and the whole query fails (shows "لا توجد رسائل").
       const { data, error } = await supabase
         .from('whatsapp_messages')
-        .select(`
-          *,
-          sender:profiles!sent_by(full_name)
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
         .order('sent_at', { ascending: true });
 
@@ -27,20 +30,19 @@ export const useWhatsAppMessages = (conversationId?: string) => {
         throw error;
       }
 
-      // تحويل البيانات للتأكد من مطابقة الأنواع
       const typedMessages: WhatsAppMessage[] = (data || []).map((msg: any) => ({
         id: msg.id,
         conversation_id: msg.conversation_id,
         message_id: msg.message_id,
-        direction: msg.direction as 'inbound' | 'outbound',
-        message_type: msg.message_type as 'text' | 'image' | 'document' | 'audio' | 'video' | 'template',
+        direction: msg.direction,
+        message_type: msg.message_type,
         content: msg.content,
         media_url: msg.media_url,
         media_mime_type: msg.media_mime_type,
         template_name: msg.template_name,
         template_language: msg.template_language,
         template_parameters: msg.template_parameters,
-        status: msg.status as 'sent' | 'delivered' | 'read' | 'failed',
+        status: msg.status,
         error_code: msg.error_code,
         error_message: msg.error_message,
         sent_by: msg.sent_by,
@@ -48,19 +50,14 @@ export const useWhatsAppMessages = (conversationId?: string) => {
         delivered_at: msg.delivered_at,
         read_at: msg.read_at,
         created_at: msg.created_at,
-        sender: msg.sender
       }));
 
       return typedMessages;
     },
-    enabled: !!conversationId,
-    staleTime: 10000, // 10 seconds
-    refetchInterval: 5000 // Refresh every 5 seconds for real-time feel
+    enabled: !!conversationId && !!orgId,
+    staleTime: 10_000,
+    refetchInterval: 5_000,
   });
 
-  return {
-    messages,
-    isLoading,
-    error
-  };
+  return { messages, isLoading, error };
 };
