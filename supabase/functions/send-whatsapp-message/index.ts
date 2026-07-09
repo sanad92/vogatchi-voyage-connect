@@ -83,8 +83,8 @@ serve(async (req) => {
       }
     }
 
-    if ((messageType === 'image' || messageType === 'document') && (!mediaUrl || typeof mediaUrl !== 'string')) {
-      return new Response(JSON.stringify({ error: 'mediaUrl is required for image/document messages' }), {
+    if (MEDIA_TYPES.has(messageType) && !mediaUrl && !mediaStoragePath) {
+      return new Response(JSON.stringify({ error: 'mediaUrl or mediaStoragePath is required for media messages' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
