@@ -113,8 +113,10 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
           </DropdownMenu>
         </div>
       </div>
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </header>
   );
 };
 
 export default DashboardTopbar;
+
