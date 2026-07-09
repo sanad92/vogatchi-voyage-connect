@@ -17,6 +17,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
   const [newRating, setNewRating] = useState({
     supplier_id: supplierId || '',
