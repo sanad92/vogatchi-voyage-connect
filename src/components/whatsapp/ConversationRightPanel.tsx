@@ -23,10 +23,11 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User, Sparkles,
+  Info, StickyNote, Send, User, Sparkles, Bell,
 } from 'lucide-react';
 import { Customer360Panel } from './Customer360Panel';
 import { AIAssistantPanel } from './AIAssistantPanel';
+import { FollowupsPanel } from './FollowupsPanel';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
