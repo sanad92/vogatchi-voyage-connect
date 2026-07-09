@@ -34,8 +34,10 @@ const DashboardSkeleton = () => (
 );
 
 const OptimizedIndex = () => {
+  usePageTitle('لوحة التحكم');
   const { user } = useOptimizedAuth();
   const { dashboardData, isLoading, error } = useOptimizedDashboard();
+
 
   if (error) {
     return (
