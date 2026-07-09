@@ -301,6 +301,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
           onMessageSent={() => {}}
           prefillText={prefillText}
           prefillNonce={prefillNonce}
+          contactName={conversation.customer?.name || null}
+          contactPhone={conversation.phone_number || null}
         />
       </div>
       </div>
