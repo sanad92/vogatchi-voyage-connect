@@ -6458,8 +6458,12 @@ export type Database = {
           error_message: string | null
           id: string
           media_caption: string | null
+          media_download_attempts: number | null
+          media_download_error: string | null
+          media_download_status: string | null
           media_duration_seconds: number | null
           media_file_name: string | null
+          media_last_attempt_at: string | null
           media_mime_type: string | null
           media_provider_id: string | null
           media_storage_path: string | null
@@ -6485,8 +6489,12 @@ export type Database = {
           error_message?: string | null
           id?: string
           media_caption?: string | null
+          media_download_attempts?: number | null
+          media_download_error?: string | null
+          media_download_status?: string | null
           media_duration_seconds?: number | null
           media_file_name?: string | null
+          media_last_attempt_at?: string | null
           media_mime_type?: string | null
           media_provider_id?: string | null
           media_storage_path?: string | null
@@ -6512,8 +6520,12 @@ export type Database = {
           error_message?: string | null
           id?: string
           media_caption?: string | null
+          media_download_attempts?: number | null
+          media_download_error?: string | null
+          media_download_status?: string | null
           media_duration_seconds?: number | null
           media_file_name?: string | null
+          media_last_attempt_at?: string | null
           media_mime_type?: string | null
           media_provider_id?: string | null
           media_storage_path?: string | null
