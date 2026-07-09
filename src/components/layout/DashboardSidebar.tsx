@@ -88,6 +88,7 @@ const navGroups: NavGroup[] = [
       { title: 'لوحة CFO', href: '/cfo-dashboard', icon: TrendingUp },
       { title: 'شجرة الحسابات', href: '/chart-of-accounts', icon: FileText },
       { title: 'القيود المحاسبية', href: '/journal-entries', icon: Receipt },
+      { title: 'دفتر الأستاذ العام', href: '/general-ledger', icon: FileText },
       { title: 'التقارير المحاسبية', href: '/accounting-reports', icon: TrendingUp },
       { title: 'مراكز التكلفة', href: '/cost-centers', icon: BarChart3 },
       { title: 'الفترات المحاسبية', href: '/accounting-periods', icon: FileText },

@@ -8064,6 +8064,33 @@ export type Database = {
           phone: string
         }[]
       }
+      get_general_ledger: {
+        Args: {
+          _account_id: string
+          _end_date?: string
+          _org_id: string
+          _start_date?: string
+        }
+        Returns: {
+          booking_id: string
+          credit: number
+          currency: string
+          debit: number
+          description: string
+          entry_date: string
+          entry_id: string
+          entry_number: string
+          is_locked: boolean
+          line_description: string
+          line_id: string
+          reference_id: string
+          reference_type: string
+          running_balance: number
+          source_id: string
+          source_type: string
+          status: string
+        }[]
+      }
       get_income_statement: {
         Args: {
           _currency?: string
