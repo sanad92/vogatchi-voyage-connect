@@ -66,31 +66,43 @@ const OptimizedIndex = () => {
       <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto" dir="rtl">
         <DashboardHeader />
 
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            القيم الإجمالية في هذه الصفحة معروضة بالجنيه المصري كمعادل تقريبي.
-            للحصول على أرقام مفصّلة لكل عملة، استخدم صفحة <strong>التقارير المالية المحسّنة</strong>.
-          </AlertDescription>
-        </Alert>
+        <div className="animate-in fade-in" style={{ animationDelay: '50ms' }}>
+          <Alert className="border-border/60 bg-muted/40">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              القيم الإجمالية في هذه الصفحة معروضة بالجنيه المصري كمعادل تقريبي.
+              للحصول على أرقام مفصّلة لكل عملة، استخدم صفحة <strong>التقارير المالية المحسّنة</strong>.
+            </AlertDescription>
+          </Alert>
+        </div>
 
-        <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} byCurrency={byCurrency} />
+        <div className="animate-in fade-in" style={{ animationDelay: '100ms' }}>
+          <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} byCurrency={byCurrency} />
+        </div>
 
-        <DataQualityAlertCard />
+        <div className="animate-in fade-in" style={{ animationDelay: '150ms' }}>
+          <DataQualityAlertCard />
+        </div>
 
-        <AlertsStrip
-          outstandingCount={alerts?.outstandingCount || 0}
-          checkoutsToday={alerts?.checkoutsToday || 0}
-        />
+        <div className="animate-in fade-in" style={{ animationDelay: '200ms' }}>
+          <AlertsStrip
+            outstandingCount={alerts?.outstandingCount || 0}
+            checkoutsToday={alerts?.checkoutsToday || 0}
+          />
+        </div>
 
         <OptimizedErrorBoundary>
-          <QuickActions />
+          <div className="animate-in fade-in" style={{ animationDelay: '250ms' }}>
+            <QuickActions />
+          </div>
         </OptimizedErrorBoundary>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <OptimizedErrorBoundary>
-            <RevenueChart />
-          </OptimizedErrorBoundary>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-in fade-in" style={{ animationDelay: '300ms' }}>
+          <div className="xl:col-span-2">
+            <OptimizedErrorBoundary>
+              <RevenueChart />
+            </OptimizedErrorBoundary>
+          </div>
           <OptimizedErrorBoundary>
             <TodayOverview
               todayBookings={today?.todayBookingsCount || 0}
@@ -100,12 +112,15 @@ const OptimizedIndex = () => {
           </OptimizedErrorBoundary>
         </div>
 
-        <OptimizedErrorBoundary>
-          <BookingsTable />
-        </OptimizedErrorBoundary>
+        <div className="animate-in fade-in" style={{ animationDelay: '350ms' }}>
+          <OptimizedErrorBoundary>
+            <BookingsTable />
+          </OptimizedErrorBoundary>
+        </div>
       </div>
     </OptimizedErrorBoundary>
   );
 };
+
 
 export default OptimizedIndex;
