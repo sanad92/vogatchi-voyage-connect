@@ -204,7 +204,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           contentText = message.reaction.emoji ?? null;
         }
 
-        const { error: msgErr } = await supabase
+        const { data: insertedMsg, error: msgErr } = await supabase
           .from('whatsapp_messages')
           .upsert(
             {
@@ -226,14 +226,42 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
               status: 'delivered',
             },
-            { onConflict: 'organization_id,message_id', ignoreDuplicates: true },
-          );
+            { onConflict: 'organization_id,message_id', ignoreDuplicates: false },
+          )
+          .select('id')
+          .maybeSingle();
         if (msgErr) console.error('[wa-webhook] message upsert error:', msgErr);
 
         await supabase
           .from('whatsapp_conversations')
           .update({ last_message_at: nowIso })
           .eq('id', conversationId);
+
+        // Fire-and-forget automation engine triggers
+        try {
+          supabase.functions.invoke('whatsapp-automation-engine', {
+            body: {
+              trigger_type: 'message_received',
+              organization_id: organizationId,
+              conversation_id: conversationId,
+              message_id: insertedMsg?.id,
+              extra: { keyword: contentText },
+            },
+          }).catch((e: any) => console.error('[wa-webhook] automation trigger failed', e));
+          if (contentText) {
+            supabase.functions.invoke('whatsapp-automation-engine', {
+              body: {
+                trigger_type: 'keyword_match',
+                organization_id: organizationId,
+                conversation_id: conversationId,
+                message_id: insertedMsg?.id,
+                extra: { keyword: contentText },
+              },
+            }).catch(() => {});
+          }
+        } catch (e) {
+          console.error('[wa-webhook] automation invoke error', e);
+        }
       }
     }
 
