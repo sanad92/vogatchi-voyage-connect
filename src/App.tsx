@@ -147,6 +147,7 @@ const FinancialValidation = lazy(() => import("@/pages/FinancialValidation"));
 const GeneralLedger = lazy(() => import("@/pages/GeneralLedger"));
 const BankReconciliation = lazy(() => import("@/pages/BankReconciliation"));
 const TravelKPIs = lazy(() => import("@/pages/TravelKPIs"));
+const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -311,6 +312,8 @@ function App() {
                               <Route path="/general-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><GeneralLedger /></PermissionRouteGuard>} />
                               <Route path="/bank-reconciliation" element={<PermissionRouteGuard requiredPermission="financial_view"><BankReconciliation /></PermissionRouteGuard>} />
                               <Route path="/travel-kpis" element={<PermissionRouteGuard requiredPermission="financial_view"><TravelKPIs /></PermissionRouteGuard>} />
+                              <Route path="/ai-assistant" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
+                              <Route path="/ai-assistant/:threadId" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
                               <Route path="*" element={<NotFound />} />
                             </Routes>
