@@ -30,6 +30,7 @@ const ITEMS: PaletteItem[] = [
   { label: 'حجز جديد', href: '/bookings/new', icon: PlusCircle, group: 'إنشاء سريع', keywords: 'new booking' },
   { label: 'عرض سعر جديد', href: '/quotes/new', icon: PlusCircle, group: 'إنشاء سريع', keywords: 'new quote' },
   { label: 'فاتورة جديدة', href: '/invoices/new', icon: PlusCircle, group: 'إنشاء سريع', keywords: 'new invoice' },
+  { label: 'اسأل المساعد الذكي', href: '/ai-assistant', icon: PlusCircle, group: 'إنشاء سريع', keywords: 'ai assistant chat سؤال' },
 
   // Workspace
   { label: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard, group: 'الرئيسية', keywords: 'dashboard home' },
