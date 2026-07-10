@@ -32,6 +32,8 @@ interface NavGroup {
   requiredPermission?: string;
 }
 
+// V1 Launch — Simplified sidebar. Only 10 core modules are exposed.
+// Non-core routes remain reachable via Command Palette (Cmd+K) and direct URLs.
 const navGroups: NavGroup[] = [
   {
     label: 'الرئيسية',
@@ -39,85 +41,39 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
       { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', badge: 'AI' },
-      { title: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
-      { title: 'جودة البيانات', href: '/data-quality', icon: AlertTriangle },
     ],
   },
   {
-    label: 'الحجوزات',
+    label: 'المبيعات',
     icon: ClipboardList,
-    requiredPermission: 'bookings_view',
     items: [
-      { title: 'كل الحجوزات', href: '/bookings', icon: ClipboardList },
       { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, requiredPermission: 'quotes_view' },
-      { title: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar },
-      // العروض المتخصصة (قديم - تبقى متاحة عبر روابط مباشرة لكن الواجهة الموحدة هي الأساس)
-      { title: 'فنادق (عرض مفصّل)', href: '/hotel-bookings', icon: Hotel },
-      { title: 'طيران (عرض مفصّل)', href: '/flight-bookings', icon: Plane },
-      { title: 'سيارات (عرض مفصّل)', href: '/car-rentals', icon: Car },
-      { title: 'نقل (عرض مفصّل)', href: '/transport-bookings', icon: Truck },
+      { title: 'الحجوزات', href: '/bookings', icon: ClipboardList, requiredPermission: 'bookings_view' },
+      { title: 'الفواتير', href: '/invoices', icon: Receipt, requiredPermission: 'invoices_view' },
+      { title: 'المدفوعات والبنوك', href: '/bank-accounts', icon: CreditCard, requiredPermission: 'financial_view' },
     ],
   },
   {
-    label: 'العملاء',
+    label: 'العملاء والتواصل',
     icon: Users,
-    requiredPermission: 'customers_view',
     items: [
-      { title: 'إدارة العملاء', href: '/customers', icon: Users },
-      { title: 'خدمة العملاء', href: '/customer-service', icon: MessageSquare, requiredPermission: 'customer_service_view' },
+      { title: 'العملاء', href: '/customers', icon: Users, requiredPermission: 'customers_view' },
       { title: 'CRM', href: '/crm', icon: UserCheck, requiredPermission: 'crm_view' },
+      { title: 'واتساب', href: '/whatsapp-inbox', icon: MessageSquare, requiredPermission: 'whatsapp_view' },
     ],
   },
   {
-    label: 'المالية',
-    icon: Receipt,
-    requiredPermission: 'invoices_view',
-    items: [
-      { title: 'الفواتير', href: '/invoices', icon: Receipt },
-      { title: 'المستندات', href: '/documents', icon: FileText, requiredPermission: 'documents_view' },
-      // { title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, requiredPermission: 'financial_view' }, // Deferred: payment_orders table not implemented yet
-      { title: 'الحسابات البنكية', href: '/bank-accounts', icon: Building2, requiredPermission: 'financial_view' },
-      { title: 'تسوية البنك', href: '/bank-reconciliation', icon: Building2, requiredPermission: 'financial_view' },
-      { title: 'المصروفات', href: '/expense-management', icon: Calculator, requiredPermission: 'expenses_view' },
-    ],
-  },
-  {
-    label: 'المحاسبة',
+    label: 'تحليلات',
     icon: BarChart3,
-    requiredPermission: 'financial_view',
     items: [
-      { title: 'لوحة CFO', href: '/cfo-dashboard', icon: TrendingUp },
-      { title: 'شجرة الحسابات', href: '/chart-of-accounts', icon: FileText },
-      { title: 'القيود المحاسبية', href: '/journal-entries', icon: Receipt },
-      { title: 'دفتر الأستاذ العام', href: '/general-ledger', icon: FileText },
-      { title: 'التقارير المحاسبية', href: '/accounting-reports', icon: TrendingUp },
-      { title: 'مراكز التكلفة', href: '/cost-centers', icon: BarChart3 },
-      { title: 'الفترات المحاسبية', href: '/accounting-periods', icon: FileText },
+      { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
     ],
   },
   {
-    label: 'التقارير',
-    icon: BarChart3,
-    requiredPermission: 'reports_view',
-    items: [
-      { title: 'التقارير التشغيلية', href: '/reports', icon: FileText },
-      { title: 'تحليل الأرباح', href: '/profit-analytics', icon: TrendingUp, requiredPermission: 'reports_advanced' },
-      { title: 'مؤشرات السفر KPIs', href: '/travel-kpis', icon: TrendingUp, requiredPermission: 'reports_view' },
-      { title: 'الإحصائيات', href: '/crm-dashboard', icon: BarChart3, requiredPermission: 'crm_view' },
-      { title: 'مركز التصدير', href: '/export-center', icon: FileText },
-    ],
-  },
-  {
-    label: 'الإدارة',
+    label: 'الإعدادات',
     icon: Settings,
     items: [
-      { title: 'الموردين', href: '/suppliers', icon: Truck, requiredPermission: 'suppliers_view' },
-      { title: 'الأسعار الموسمية', href: '/supplier-rates', icon: Truck, requiredPermission: 'suppliers_view' },
-      { title: 'بلوكات المخزون', href: '/supplier-allotments', icon: Truck, requiredPermission: 'suppliers_view' },
-      { title: 'فريق العمل', href: '/team', icon: Users },
-      { title: 'الأتمتة', href: '/automation', icon: Zap, requiredPermission: 'automation_view' },
-      { title: 'سجل التدقيق', href: '/audit-log', icon: Shield, requiredPermission: 'audit_view' },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },
     ],
   },

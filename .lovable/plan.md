@@ -1,93 +1,107 @@
-# خطة تفعيل مساعد Vogatchi AI الذكي
 
-## الهدف
-مساعد ذكي داخل المنصة (للإدارة: Admin / CFO / Manager فقط) يقدر يعمل:
-1. **تحليل مالي وتشغيلي**: يقرأ تقارير المنصة الحالية (P&L، Ledgers، Receivables، Payables، KPIs) ويجاوب بلغة طبيعية.
-2. **اقتراحات تحسين**: يرصد فرص لرفع الهامش، تحسين التحصيل، إعادة الاستهداف.
-3. **Actions تشغيلية**: ينفذ إجراءات فعلية بعد تأكيد المستخدم (إنشاء عرض سعر، رسالة واتساب، تسجيل دفعة، إنشاء فاتورة، إضافة مصروف).
-4. **صياغة محتوى**: ردود عملاء، إيميلات، عروض أسعار، ملخصات.
+# Launch Preparation Sprint — V1 Feature Freeze
 
-## شكل التفاعل
-- **صفحة كاملة** `/ai-assistant` على شكل ChatGPT بـ Threads محفوظة في قاعدة البيانات.
-- **Floating Widget** في كل صفحة (زر ثابت أسفل يمين + اختصار `Cmd+K`) يفتح شات مصغّر يفهم سياق الصفحة الحالية (حجز / عميل / تقرير) ويقدر يفتح المحادثة كاملة في الصفحة الرئيسية.
+## Objective
+Freeze new features. Ship a stable, professional V1 by simplifying navigation, hiding incomplete modules, polishing UI, and validating the demo flow: **Customer → Quote → Booking → Invoice → Payment → WhatsApp → Dashboard**.
 
-## البنية التقنية
+---
 
-### 1. Backend — Edge Function `ai-assistant-chat`
-- Streaming chat عبر **AI SDK** + **Lovable AI Gateway** (`openai/gpt-5.5` افتراضي).
-- Tool Calling (بحد `stepCountIs(50)`) بأدوات معرّفة على السيرفر تقرأ/تكتب في Supabase بسياق المستخدم (JWT).
-- كل tool ينفذ RLS تلقائي (نفس صلاحيات المستخدم) + فحص إضافي لدور Admin/CFO/Manager قبل الأدوات الحساسة.
+## Scope of Changes (Frontend/Nav only — no business-logic edits, no DB changes, no route deletions)
 
-**أدوات القراءة (Read Tools):**
-- `get_financial_summary` — P&L، Cash Position، AR/AP، خلال فترة.
-- `get_customer_360` — بيانات عميل + رصيد + حجوزات + تفاعلات.
-- `get_supplier_position` — رصيد مورد + مستحقات.
-- `get_booking_details` — تفاصيل حجز + ربحيته + مدفوعاته.
-- `search_bookings` — بحث بمرشحات (تاريخ، حالة، عميل، مورد).
-- `get_kpis` — Take-rate، ADR، Cancellation Rate، Cash Conversion Cycle.
-- `get_overdue_invoices` / `get_supplier_dues`.
-- `get_gl_account` — حركة حساب من دفتر الأستاذ.
+### 1. Simplified Sidebar (Core V1 Modules Only)
+Rebuild `src/components/layout/DashboardSidebar.tsx` to expose only the 10 approved modules, grouped cleanly:
 
-**أدوات كتابة (Write Tools — كل واحدة تتطلب `needsApproval: true`):**
-- `create_quote_draft`
-- `send_whatsapp_message`
-- `record_customer_payment`
-- `create_invoice_draft`
-- `add_expense_draft`
-- `create_customer_note`
+```
+الرئيسية
+  • لوحة التحكم              /dashboard
+  • المساعد الذكي (AI)        /ai-assistant
+  • العمليات اليومية          /daily-operations
 
-### 2. قاعدة البيانات — جداول جديدة
-- `ai_assistant_threads` (id, organization_id, user_id, title, created_at, updated_at, pinned).
-- `ai_assistant_messages` (id, thread_id, role, parts JSONB, created_at) — يخزن `UIMessage[]` بصيغة AI SDK.
-- `ai_assistant_actions_log` (id, thread_id, user_id, tool_name, input JSONB, output JSONB, approved_by, executed_at) — Audit trail كامل.
-- RLS صارم: كل سجل مربوط بـ `organization_id` + المستخدم، ومحصور على Admin/CFO/Manager عبر `has_role`.
+المبيعات
+  • عروض الأسعار             /quotes
+  • الحجوزات                 /bookings
+  • الفواتير                 /invoices
+  • المدفوعات                /bank-accounts   (renamed: "المدفوعات والحسابات البنكية")
 
-### 3. Frontend
-- **صفحة**: `src/pages/AIAssistant.tsx` مع Thread list جانبي + Chat window (AI Elements: Conversation, Message, MessageResponse, PromptInput, Tool, Shimmer).
-- **Route**: `/ai-assistant` و `/ai-assistant/:threadId` — كل thread له URL ثابت.
-- **Widget عائم**: `src/components/ai/AssistantFloatingWidget.tsx` — زر + Sheet جانبي، يفتح Thread جديد أو يكمل الأخير، يمرر Context الصفحة (route + entity id) كـ system hint.
-- **Command Palette Integration**: إضافة أمر "اسأل المساعد الذكي" في `CommandPalette`.
-- **Sidebar**: عنصر جديد "المساعد الذكي" في `DashboardSidebar` (يظهر للإدارة فقط).
-- **Tool UI**: كل tool call يظهر بـ AI Elements `<Tool>` مطويًا افتراضيًا؛ الـ Write Tools تعرض بطاقة "موافقة" واضحة قبل التنفيذ.
+العملاء والتواصل
+  • CRM                     /crm
+  • واتساب                   /whatsapp-inbox
 
-### 4. الصلاحيات
-- Gate على مستوى:
-  - **Route**: guard يفحص `has_role('admin')` أو `has_role('cfo')` أو `has_role('manager')`.
-  - **Edge Function**: نفس الفحص server-side قبل أي tool.
-  - **UI**: إخفاء الويدجت والسايدبار للأدوار الأخرى.
+تحليلات
+  • التقارير                 /reports
 
-### 5. Context Awareness
-كل رسالة تُرسل مع:
-- Organization ID، User ID، User Role.
-- Current route + entity IDs من الصفحة الحالية (لو موجود).
-- تاريخ اليوم + العملة الافتراضية.
-- آخر 20 رسالة من نفس الـ thread.
+الإعدادات
+  • الإعدادات                /admin-settings
+```
 
-### 6. الأمان
-- كل write tool: `needsApproval` + سجل في `ai_assistant_actions_log`.
-- Rate limiting على Edge Function (100 req/user/day).
-- منع أي tool من تجاوز RLS (استخدام JWT الخاص بالمستخدم، ليس service role).
-- منع الأدوات من قراءة/كتابة بيانات مؤسسة أخرى.
+All other menu entries (accounting deep pages, supplier rates, allotments, KPIs, site customization, database, monitoring, page blocks, duplicate customers, data quality, bookings-calendar, hotel/flight/car/transport detail lists, export center, automation, audit-log) will be **removed from the sidebar** but their **routes stay intact** (accessible via direct URL, deep links from other pages, or Command Palette for admins).
 
-## Roadmap تنفيذي (على 3 مراحل)
+### 2. Route Audit
+- Keep every existing route registered in `App.tsx`.
+- Remove/redirect any nav entry that points to a route that doesn't exist.
+- Verify `NotFound` page renders for unknown paths (already present).
 
-**Phase A — الأساس (Foundation)**
-1. جداول DB + RLS + policies + grants.
-2. Edge Function `ai-assistant-chat` مع 3 Read Tools أساسية (financial_summary, customer_360, booking_details).
-3. صفحة `/ai-assistant` بـ Threads + Chat عبر AI Elements.
-4. Sidebar entry + route guards.
+### 3. Command Palette (Cmd+K)
+- Keep the full advanced module list available in Command Palette for power users and admins (so hidden modules remain discoverable without cluttering the sidebar).
+- Gate advanced/deep entries behind admin/owner role.
 
-**Phase B — التوسع**
-5. باقي Read Tools (KPIs, GL, overdue, suppliers, search).
-6. Floating Widget + Command Palette integration + Context passing.
-7. Prompt engineering متخصص لتحليل بيانات وكالة سفر.
+### 4. Role-Based Hiding
+- `viewer` and `agent` roles: sidebar limited to Dashboard, CRM, WhatsApp, Quotes, Bookings, Invoices, Reports (no Settings, no AI Assistant).
+- `manager`: adds Daily Operations, Payments.
+- `admin`/`owner`: full V1 sidebar including AI Assistant + Settings.
 
-**Phase C — Actions**
-8. Write Tools مع `needsApproval` UI.
-9. جدول `ai_assistant_actions_log` + شاشة عرضه ضمن Audit Log.
-10. قوالب صياغة (رد عميل، إيميل تأكيد، عرض سعر).
+### 5. UI Polish Pass
+- **Empty states**: Add consistent empty state (icon + title + subtitle + CTA) to Quotes, Bookings, Invoices, CRM, WhatsApp Inbox if missing.
+- **Loading states**: Unify skeleton usage; PageLoader is already consistent.
+- **Buttons**: Ensure primary action buttons use `variant="default"` with consistent labels (e.g., "إنشاء", "حفظ", "إلغاء").
+- **Spacing**: Verify `container mx-auto p-6 space-y-6` pattern on top-level pages.
+- No hardcoded colors — audit with grep for `text-white`, `bg-black`, `#hex` in components touched.
 
-## ملاحظات
-- استخدام **Lovable AI Gateway** (لا يحتاج API key من المستخدم).
-- الموديل الافتراضي: `openai/gpt-5.5` (يمكن التبديل لـ `google/gemini-2.5-flash` للسرعة/التوفير في محادثات قصيرة).
-- لن يتم تعديل أي منطق مالي موجود؛ المساعد **يقرأ ويقترح ويطبّق عبر Actions موافق عليها** فقط.
+### 6. Demo/Test Content Removal
+- Search UI for hardcoded demo strings like "Test", "Demo", "Lorem", "example.com" placeholders in labels/headings (not in seed data or DB).
+- Leave `generate-demo-data` edge function intact (admin-triggered only).
+
+### 7. Demo Flow Validation
+Manually trace via Playwright headless:
+1. Create customer → `/customers` → `/new-customer`
+2. Create quote → `/quotes/new` (from customer)
+3. Convert quote → booking `/bookings`
+4. Generate invoice `/invoices` from booking
+5. Record payment
+6. Send WhatsApp follow-up `/whatsapp-inbox`
+7. Verify Dashboard reflects new data
+
+Capture screenshots at each step. Log broken links / dead CTAs.
+
+### 8. Launch Readiness Report
+Deliverable file: `LAUNCH_READINESS.md` at project root with:
+- ✅ Completed V1 modules
+- 🟡 Hidden-but-functional modules (available via URL/Cmd+K)
+- 🔴 Blockers (bugs, missing data, incomplete flows)
+- 📋 Recommended hidden modules list with justifications
+- 🚦 **Go / No-Go recommendation** for V1 launch
+
+---
+
+## Files to Modify
+- `src/components/layout/DashboardSidebar.tsx` — full rewrite of `navGroups` (simplified, role-aware).
+- `src/components/common/CommandPalette.tsx` — extend with advanced entries.
+- `LAUNCH_READINESS.md` — new file (deliverable).
+
+## Files NOT Modified
+- `src/App.tsx` (all routes preserved).
+- No page-level code, no hooks, no DB migrations, no edge functions.
+- No component logic changes.
+
+## Verification
+- `tsgo` typecheck.
+- Playwright walkthrough of demo flow with screenshots.
+- Manual visual review of sidebar in each role state.
+
+---
+
+## Out of Scope
+- New features, new modules, new pages.
+- Deleting any code/routes/tables.
+- Refactoring business logic.
+- Backend changes.
