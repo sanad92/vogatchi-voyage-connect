@@ -69,6 +69,15 @@ const ITEMS: PaletteItem[] = [
   // Reports
   { label: 'التقارير التشغيلية', href: '/reports', icon: FileText, group: 'التقارير' },
   { label: 'تحليل الأرباح', href: '/profit-analytics', icon: TrendingUp, group: 'التقارير' },
+  { label: 'مؤشرات السفر KPIs', href: '/travel-kpis', icon: TrendingUp, group: 'التقارير' },
+  { label: 'دفتر الأستاذ العام', href: '/general-ledger', icon: FileText, group: 'المحاسبة' },
+  { label: 'تسوية البنك', href: '/bank-reconciliation', icon: Building2, group: 'المالية' },
+  { label: 'المصروفات', href: '/expense-management', icon: Calculator, group: 'المالية' },
+  { label: 'تقويم الحجوزات', href: '/bookings-calendar', icon: Calendar, group: 'الرئيسية' },
+  { label: 'جودة البيانات', href: '/data-quality', icon: AlertTriangle, group: 'الإدارة' },
+  { label: 'مركز التصدير', href: '/export-center', icon: FileText, group: 'الإدارة' },
+  { label: 'تخصيص الموقع', href: '/site-customization', icon: Settings, group: 'الإدارة' },
+
 
   // Admin
   { label: 'الموردين', href: '/suppliers', icon: Truck, group: 'الإدارة' },
