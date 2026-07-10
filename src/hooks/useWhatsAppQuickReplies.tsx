@@ -43,10 +43,22 @@ export const useWhatsAppQuickReplies = () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) throw new Error('يجب تسجيل الدخول أولاً');
 
+      // Get current organization for scoping
+      const { data: orgRow, error: orgErr } = await (supabase
+        .from('organization_members' as any)
+        .select('organization_id')
+        .eq('user_id', authData.user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle() as any);
+      if (orgErr) throw orgErr;
+      if (!orgRow?.organization_id) throw new Error('لا توجد منظمة نشطة');
+
       const { data, error } = await (supabase
         .from('quick_replies' as any)
         .insert([{
           ...replyData,
+          organization_id: orgRow.organization_id,
           created_by: authData.user.id,
           usage_count: 0,
           created_at: new Date().toISOString(),

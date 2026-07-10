@@ -5245,6 +5245,7 @@ export type Database = {
           created_by: string | null
           id: string
           is_global: boolean | null
+          organization_id: string
           title: string
           updated_at: string | null
           usage_count: number | null
@@ -5256,6 +5257,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_global?: boolean | null
+          organization_id: string
           title: string
           updated_at?: string | null
           usage_count?: number | null
@@ -5267,6 +5269,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_global?: boolean | null
+          organization_id?: string
           title?: string
           updated_at?: string | null
           usage_count?: number | null
