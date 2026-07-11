@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageCircle, CheckCircle2, XCircle, Unplug } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 
@@ -67,20 +66,6 @@ export const WhatsAppConnectCard: React.FC = () => {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['whatsapp-connection', orgId],
-    enabled: !!orgId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_settings')
-        .select('id, business_name, phone_number_id, display_phone_number, waba_id, onboarding_status, connected_at, is_active')
-        .eq('organization_id', orgId!)
-        .maybeSingle();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-  });
-
   const exchangeMutation = useMutation({
     mutationFn: async (payload: { code: string; waba_id?: string; phone_number_id?: string }) => {
       const { data, error } = await supabase.functions.invoke('whatsapp-oauth-exchange', {
@@ -91,28 +76,11 @@ export const WhatsAppConnectCard: React.FC = () => {
       return data;
     },
     onSuccess: () => {
-      toast.success('تم ربط حساب WhatsApp بنجاح');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connection', orgId] });
+      toast.success('تم ربط رقم WhatsApp بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings', orgId] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
     },
     onError: (e: any) => toast.error(e?.message || 'فشل ربط الحساب'),
-  });
-
-  const disconnectMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('whatsapp-disconnect', {
-        body: { organization_id: orgId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('تم فصل حساب WhatsApp');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connection', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
-    },
-    onError: (e: any) => toast.error(e?.message || 'فشل الفصل'),
   });
 
   const launchSignup = () => {
@@ -138,17 +106,15 @@ export const WhatsAppConnectCard: React.FC = () => {
     );
   };
 
-  const connected = settings?.onboarding_status === 'connected' && settings?.is_active;
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-green-600" />
-          ربط حساب WhatsApp Business
+          ربط رقم WhatsApp Business
         </CardTitle>
         <CardDescription>
-          اربط حساب WhatsApp Business الخاص بمنظمتك عبر Meta Embedded Signup — بدون الحاجة لإدخال توكن يدويًا.
+          اختر (أو أنشئ) حساب WhatsApp Business ورقم الهاتف الذي تريد إضافته لهذه المؤسسة. يمكنك ربط أكثر من رقم.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -158,55 +124,22 @@ export const WhatsAppConnectCard: React.FC = () => {
           </div>
         )}
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" /> جاري التحميل...
-          </div>
-        ) : connected ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                <CheckCircle2 className="w-3 h-3 mr-1" /> متصل
-              </Badge>
-              {settings?.business_name && <span className="text-sm">{settings.business_name}</span>}
-            </div>
-            <dl className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div><dt className="text-muted-foreground">الرقم</dt><dd className="font-medium">{settings?.display_phone_number ?? '—'}</dd></div>
-              <div><dt className="text-muted-foreground">Phone Number ID</dt><dd className="font-mono text-xs">{settings?.phone_number_id ?? '—'}</dd></div>
-              <div><dt className="text-muted-foreground">WABA ID</dt><dd className="font-mono text-xs">{settings?.waba_id ?? '—'}</dd></div>
-            </dl>
-            <Button
-              variant="outline"
-              onClick={() => disconnectMutation.mutate()}
-              disabled={disconnectMutation.isPending}
-            >
-              {disconnectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Unplug className="w-4 h-4 mr-2" />}
-              فصل الحساب
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {settings?.onboarding_status === 'disconnected' && (
-              <Badge variant="outline" className="text-muted-foreground">
-                <XCircle className="w-3 h-3 mr-1" /> مفصول
-              </Badge>
+        <div className="space-y-3">
+          <Button
+            onClick={launchSignup}
+            disabled={!configured || !sdkReady || exchangeMutation.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {exchangeMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> جاري الربط...</>
+            ) : (
+              <><MessageCircle className="w-4 h-4 mr-2" /> ربط رقم WhatsApp جديد</>
             )}
-            <Button
-              onClick={launchSignup}
-              disabled={!configured || !sdkReady || exchangeMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {exchangeMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> جاري الربط...</>
-              ) : (
-                <><MessageCircle className="w-4 h-4 mr-2" /> ربط حساب WhatsApp Business</>
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              ستُفتح نافذة Meta لاختيار (أو إنشاء) حساب WhatsApp Business ورقم الهاتف الذي تريد ربطه. لن يظهر لنا أي كلمة سر.
-            </p>
-          </div>
-        )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            ستُفتح نافذة Meta لاختيار الرقم الذي تريد ربطه. لن يظهر لنا أي كلمة سر. يمكنك تكرار هذه الخطوة لإضافة أرقام أخرى.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
