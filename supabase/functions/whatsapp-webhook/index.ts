@@ -37,6 +37,8 @@ async function computeAppSecretProof(accessToken: string, appSecret: string): Pr
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
   return hexEncode(await crypto.subtle.sign('HMAC', key, enc.encode(accessToken)));
+}
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
