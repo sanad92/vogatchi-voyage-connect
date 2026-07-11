@@ -202,5 +202,7 @@ export const useWhatsAppSettings = () => {
     error,
     updateSettings: updateSettingsMutation.mutate,
     isUpdating: updateSettingsMutation.isPending,
+    testConnection: testConnectionMutation.mutateAsync,
+    isTesting: testConnectionMutation.isPending,
   };
 };
