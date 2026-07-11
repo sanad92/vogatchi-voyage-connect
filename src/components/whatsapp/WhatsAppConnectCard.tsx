@@ -67,20 +67,6 @@ export const WhatsAppConnectCard: React.FC = () => {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['whatsapp-connection', orgId],
-    enabled: !!orgId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_settings')
-        .select('id, business_name, phone_number_id, display_phone_number, waba_id, onboarding_status, connected_at, is_active')
-        .eq('organization_id', orgId!)
-        .maybeSingle();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-  });
-
   const exchangeMutation = useMutation({
     mutationFn: async (payload: { code: string; waba_id?: string; phone_number_id?: string }) => {
       const { data, error } = await supabase.functions.invoke('whatsapp-oauth-exchange', {
@@ -91,28 +77,11 @@ export const WhatsAppConnectCard: React.FC = () => {
       return data;
     },
     onSuccess: () => {
-      toast.success('تم ربط حساب WhatsApp بنجاح');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connection', orgId] });
+      toast.success('تم ربط رقم WhatsApp بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings', orgId] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
     },
     onError: (e: any) => toast.error(e?.message || 'فشل ربط الحساب'),
-  });
-
-  const disconnectMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('whatsapp-disconnect', {
-        body: { organization_id: orgId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('تم فصل حساب WhatsApp');
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connection', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings'] });
-    },
-    onError: (e: any) => toast.error(e?.message || 'فشل الفصل'),
   });
 
   const launchSignup = () => {
