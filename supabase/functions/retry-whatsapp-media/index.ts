@@ -22,6 +22,25 @@ function normalizeMime(m: string | null | undefined): string | null {
   return m.split(';')[0].trim().toLowerCase() || null;
 }
 
+function hexEncode(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeAppSecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  return hexEncode(await crypto.subtle.sign('HMAC', key, enc.encode(accessToken)));
+}
+
+function appendProof(url: string, proof: string | null): string {
+  if (!proof) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}appsecret_proof=${proof}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -124,10 +143,12 @@ serve(async (req) => {
 
     const accessToken = settings.access_token;
     const gv = settings.api_version || 'v22.0';
+    const appSecret = Deno.env.get('META_APP_SECRET') ?? Deno.env.get('WHATSAPP_APP_SECRET');
+    const proof = appSecret ? await computeAppSecretProof(accessToken, appSecret) : null;
 
     try {
       // 1) meta lookup
-      const metaRes = await fetch(`https://graph.facebook.com/${gv}/${message.media_provider_id}`, {
+      const metaRes = await fetch(appendProof(`https://graph.facebook.com/${gv}/${message.media_provider_id}`, proof), {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!metaRes.ok) {
@@ -140,7 +161,7 @@ serve(async (req) => {
         || 'application/octet-stream';
 
       // 2) binary download
-      const fileRes = await fetch(meta.url, {
+      const fileRes = await fetch(appendProof(meta.url, proof), {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!fileRes.ok) {
