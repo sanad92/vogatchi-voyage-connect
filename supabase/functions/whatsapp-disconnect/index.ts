@@ -26,7 +26,7 @@ serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const { organization_id } = await req.json().catch(() => ({}));
+    const { organization_id, whatsapp_settings_id } = await req.json().catch(() => ({}));
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "Missing organization_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -46,11 +46,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: existing } = await admin
+    // Target a specific inbox (multi-inbox), or fall back to the default inbox.
+    let query = admin
       .from("whatsapp_settings")
-      .select("id, waba_id, access_token")
-      .eq("organization_id", organization_id)
-      .maybeSingle();
+      .select("id, waba_id, access_token, is_default")
+      .eq("organization_id", organization_id);
+    query = whatsapp_settings_id
+      ? query.eq("id", whatsapp_settings_id)
+      : query.eq("is_default", true);
+    const { data: existing } = await query.maybeSingle();
 
     if (existing?.waba_id && existing?.access_token) {
       const gv = Deno.env.get("META_GRAPH_API_VERSION") ?? "v22.0";
@@ -69,10 +73,27 @@ serve(async (req) => {
         access_token: null,
         token_expires_at: null,
         is_active: false,
+        is_default: false,
         onboarding_status: "disconnected",
         disconnected_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }).eq("id", existing.id);
+
+      // If we disconnected the default, promote another active inbox to default.
+      if (existing.is_default) {
+        const { data: next } = await admin
+          .from("whatsapp_settings")
+          .select("id")
+          .eq("organization_id", organization_id)
+          .eq("is_active", true)
+          .neq("id", existing.id)
+          .order("connected_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (next?.id) {
+          await admin.from("whatsapp_settings").update({ is_default: true }).eq("id", next.id);
+        }
+      }
     }
 
     await admin.from("whatsapp_connection_events").insert({
