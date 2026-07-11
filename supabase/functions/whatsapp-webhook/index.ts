@@ -198,7 +198,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           if (media?.id) {
             try {
               const downloaded = await downloadAndStoreMedia(
-                supabase, organizationId, conversationId, message.id, media.id, mediaMime,
+                supabase, organizationId, whatsappSettingsId, conversationId, message.id, media.id, mediaMime,
               );
               mediaPath = downloaded.path;
               mediaMime = downloaded.mimeType || mediaMime;
