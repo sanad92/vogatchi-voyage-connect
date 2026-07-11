@@ -91,23 +91,39 @@ serve(async (req) => {
       if (body.object === 'whatsapp_business_account') {
         for (const entry of body.entry ?? []) {
           const wabaId: string = entry.id;
-          // Route to the org that owns this WABA
-          const { data: settings } = await supabase
-            .from('whatsapp_settings')
-            .select('id, organization_id')
-            .eq('waba_id', wabaId)
-            .maybeSingle();
-
-          const organizationId = settings?.organization_id ?? null;
-          if (!organizationId) {
-            console.warn('No org mapped for waba_id', wabaId);
-            continue;
-          }
 
           for (const change of entry.changes ?? []) {
-            if (change.field === 'messages') {
-              await processMessage(change.value, supabase, organizationId);
+            if (change.field !== 'messages') continue;
+
+            // Route by phone_number_id (per-inbox). Falls back to waba_id
+            // only when the payload does not include metadata.
+            const phoneNumberId: string | undefined = change.value?.metadata?.phone_number_id;
+            let settings: { id: string; organization_id: string } | null = null;
+
+            if (phoneNumberId) {
+              const { data } = await supabase
+                .from('whatsapp_settings')
+                .select('id, organization_id')
+                .eq('phone_number_id', phoneNumberId)
+                .maybeSingle();
+              settings = data ?? null;
             }
+            if (!settings) {
+              const { data } = await supabase
+                .from('whatsapp_settings')
+                .select('id, organization_id')
+                .eq('waba_id', wabaId)
+                .eq('is_default', true)
+                .maybeSingle();
+              settings = data ?? null;
+            }
+
+            if (!settings?.organization_id) {
+              console.warn('No inbox mapped for phone_number_id/waba_id', { phoneNumberId, wabaId });
+              continue;
+            }
+
+            await processMessage(change.value, supabase, settings.organization_id, settings.id);
           }
         }
       }
