@@ -139,17 +139,28 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
+    // Multi-inbox: upsert by (organization_id, phone_number_id)
     const { data: existing } = await admin
       .from("whatsapp_settings")
       .select("id")
       .eq("organization_id", organization_id)
+      .eq("phone_number_id", phoneJson.id)
+      .maybeSingle();
+
+    const { data: defaultRow } = await admin
+      .from("whatsapp_settings")
+      .select("id")
+      .eq("organization_id", organization_id)
+      .eq("is_default", true)
       .maybeSingle();
 
     if (existing?.id) {
       const { error } = await admin.from("whatsapp_settings").update(payload).eq("id", existing.id);
       if (error) throw error;
     } else {
-      const { error } = await admin.from("whatsapp_settings").insert(payload);
+      const { error } = await admin
+        .from("whatsapp_settings")
+        .insert({ ...payload, is_default: !defaultRow?.id });
       if (error) throw error;
     }
 
