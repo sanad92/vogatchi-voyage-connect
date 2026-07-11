@@ -107,17 +107,15 @@ export const WhatsAppConnectCard: React.FC = () => {
     );
   };
 
-  const connected = settings?.onboarding_status === 'connected' && settings?.is_active;
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-green-600" />
-          ربط حساب WhatsApp Business
+          ربط رقم WhatsApp Business
         </CardTitle>
         <CardDescription>
-          اربط حساب WhatsApp Business الخاص بمنظمتك عبر Meta Embedded Signup — بدون الحاجة لإدخال توكن يدويًا.
+          اختر (أو أنشئ) حساب WhatsApp Business ورقم الهاتف الذي تريد إضافته لهذه المؤسسة. يمكنك ربط أكثر من رقم.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -127,55 +125,22 @@ export const WhatsAppConnectCard: React.FC = () => {
           </div>
         )}
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" /> جاري التحميل...
-          </div>
-        ) : connected ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                <CheckCircle2 className="w-3 h-3 mr-1" /> متصل
-              </Badge>
-              {settings?.business_name && <span className="text-sm">{settings.business_name}</span>}
-            </div>
-            <dl className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div><dt className="text-muted-foreground">الرقم</dt><dd className="font-medium">{settings?.display_phone_number ?? '—'}</dd></div>
-              <div><dt className="text-muted-foreground">Phone Number ID</dt><dd className="font-mono text-xs">{settings?.phone_number_id ?? '—'}</dd></div>
-              <div><dt className="text-muted-foreground">WABA ID</dt><dd className="font-mono text-xs">{settings?.waba_id ?? '—'}</dd></div>
-            </dl>
-            <Button
-              variant="outline"
-              onClick={() => disconnectMutation.mutate()}
-              disabled={disconnectMutation.isPending}
-            >
-              {disconnectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Unplug className="w-4 h-4 mr-2" />}
-              فصل الحساب
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {settings?.onboarding_status === 'disconnected' && (
-              <Badge variant="outline" className="text-muted-foreground">
-                <XCircle className="w-3 h-3 mr-1" /> مفصول
-              </Badge>
+        <div className="space-y-3">
+          <Button
+            onClick={launchSignup}
+            disabled={!configured || !sdkReady || exchangeMutation.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {exchangeMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> جاري الربط...</>
+            ) : (
+              <><MessageCircle className="w-4 h-4 mr-2" /> ربط رقم WhatsApp جديد</>
             )}
-            <Button
-              onClick={launchSignup}
-              disabled={!configured || !sdkReady || exchangeMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {exchangeMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> جاري الربط...</>
-              ) : (
-                <><MessageCircle className="w-4 h-4 mr-2" /> ربط حساب WhatsApp Business</>
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              ستُفتح نافذة Meta لاختيار (أو إنشاء) حساب WhatsApp Business ورقم الهاتف الذي تريد ربطه. لن يظهر لنا أي كلمة سر.
-            </p>
-          </div>
-        )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            ستُفتح نافذة Meta لاختيار الرقم الذي تريد ربطه. لن يظهر لنا أي كلمة سر. يمكنك تكرار هذه الخطوة لإضافة أرقام أخرى.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
