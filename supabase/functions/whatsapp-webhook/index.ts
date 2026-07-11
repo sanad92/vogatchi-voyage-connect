@@ -325,6 +325,14 @@ async function downloadAndStoreMedia(
   if (!accessToken) throw new Error('no access_token for org');
   const gv = settings?.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
 
+  const appSecret = Deno.env.get('META_APP_SECRET') ?? Deno.env.get('WHATSAPP_APP_SECRET');
+  const proof = appSecret ? await computeAppSecretProof(accessToken, appSecret) : null;
+  const withProof = (url: string) => {
+    if (!proof) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}appsecret_proof=${proof}`;
+  };
+
   // Retry helper: 3 attempts with exponential backoff (300ms, 900ms, 2700ms).
   const fetchWithRetry = async (url: string, init: RequestInit, label: string): Promise<Response> => {
     let lastErr: unknown = null;
@@ -349,16 +357,16 @@ async function downloadAndStoreMedia(
 
   // 1) Get temporary URL for the media
   const metaRes = await fetchWithRetry(
-    `https://graph.facebook.com/${gv}/${mediaId}`,
+    withProof(`https://graph.facebook.com/${gv}/${mediaId}`),
     { headers: { Authorization: `Bearer ${accessToken}` } },
     'meta media meta',
   );
   const meta = await metaRes.json();
   const mimeType = normalizeMime(meta.mime_type) || hintedMime || 'application/octet-stream';
 
-  // 2) Download the binary
+  // 2) Download the binary (lookaside CDN; appsecret_proof also required when enforced)
   const fileRes = await fetchWithRetry(
-    meta.url,
+    withProof(meta.url),
     { headers: { Authorization: `Bearer ${accessToken}` } },
     'meta media download',
   );
