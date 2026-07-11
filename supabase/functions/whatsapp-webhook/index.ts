@@ -338,6 +338,7 @@ function normalizeMime(m: string | null | undefined): string | null {
 async function downloadAndStoreMedia(
   supabase: any,
   organizationId: string,
+  whatsappSettingsId: string,
   conversationId: string,
   messageId: string,
   mediaId: string,
@@ -346,11 +347,11 @@ async function downloadAndStoreMedia(
   const { data: settings } = await supabase
     .from('whatsapp_settings')
     .select('access_token, api_version')
-    .eq('organization_id', organizationId)
+    .eq('id', whatsappSettingsId)
     .maybeSingle();
 
   const accessToken = settings?.access_token;
-  if (!accessToken) throw new Error('no access_token for org');
+  if (!accessToken) throw new Error('no access_token for inbox');
   const gv = settings?.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
 
   const appSecret = Deno.env.get('META_APP_SECRET') ?? Deno.env.get('WHATSAPP_APP_SECRET');
