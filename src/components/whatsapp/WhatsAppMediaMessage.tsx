@@ -120,6 +120,18 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
         return renderRetryError(isAudio ? 'تعذر تحميل الملف الصوتي' : `تعذر تحميل [${type}]`);
       }
 
+      // No provider id → cannot recover (usually an old message received before media handling was enabled)
+      if (!providerId) {
+        return (
+          <div className="rounded-md border border-muted-foreground/20 bg-muted/40 px-3 py-2 text-xs opacity-80">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>الملف غير متاح — يرجى إعادة إرساله من العميل</span>
+            </div>
+          </div>
+        );
+      }
+
       // Still pending or unknown — show loading with manual retry option
       return (
         <div className="rounded-md border border-muted-foreground/20 bg-muted/40 px-3 py-2 text-xs space-y-1.5">
@@ -127,18 +139,16 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>جاري معالجة الملف...</span>
           </div>
-          {providerId && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-[11px]"
-              disabled={retrying}
-              onClick={handleRetry}
-            >
-              <RefreshCw className="h-3 w-3 mr-1" /> إعادة المحاولة الآن
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[11px]"
+            disabled={retrying}
+            onClick={handleRetry}
+          >
+            <RefreshCw className="h-3 w-3 mr-1" /> إعادة المحاولة الآن
+          </Button>
         </div>
       );
     }
