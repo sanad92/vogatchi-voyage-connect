@@ -22,6 +22,25 @@ function normalizeMime(m: string | null | undefined): string | null {
   return m.split(';')[0].trim().toLowerCase() || null;
 }
 
+function hexEncode(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeAppSecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  return hexEncode(await crypto.subtle.sign('HMAC', key, enc.encode(accessToken)));
+}
+
+function appendProof(url: string, proof: string | null): string {
+  if (!proof) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}appsecret_proof=${proof}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
