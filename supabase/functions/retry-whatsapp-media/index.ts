@@ -143,10 +143,12 @@ serve(async (req) => {
 
     const accessToken = settings.access_token;
     const gv = settings.api_version || 'v22.0';
+    const appSecret = Deno.env.get('META_APP_SECRET') ?? Deno.env.get('WHATSAPP_APP_SECRET');
+    const proof = appSecret ? await computeAppSecretProof(accessToken, appSecret) : null;
 
     try {
       // 1) meta lookup
-      const metaRes = await fetch(`https://graph.facebook.com/${gv}/${message.media_provider_id}`, {
+      const metaRes = await fetch(appendProof(`https://graph.facebook.com/${gv}/${message.media_provider_id}`, proof), {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!metaRes.ok) {
@@ -159,7 +161,7 @@ serve(async (req) => {
         || 'application/octet-stream';
 
       // 2) binary download
-      const fileRes = await fetch(meta.url, {
+      const fileRes = await fetch(appendProof(meta.url, proof), {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!fileRes.ok) {
