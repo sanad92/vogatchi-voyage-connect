@@ -23,7 +23,7 @@ import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
 import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
-import { WhatsAppConnectCard } from './WhatsAppConnectCard';
+import { WhatsAppInboxList } from './WhatsAppInboxList';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
 import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { WhatsAppChatbotSettings } from './WhatsAppChatbotSettings';
