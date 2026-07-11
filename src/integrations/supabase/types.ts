@@ -6766,6 +6766,7 @@ export type Database = {
           trigger_config: Json
           trigger_type: string
           updated_at: string
+          whatsapp_settings_id: string | null
         }
         Insert: {
           actions?: Json
@@ -6783,6 +6784,7 @@ export type Database = {
           trigger_config?: Json
           trigger_type: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Update: {
           actions?: Json
@@ -6800,6 +6802,7 @@ export type Database = {
           trigger_config?: Json
           trigger_type?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -6807,6 +6810,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_automation_rules_v2_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -6828,6 +6838,7 @@ export type Database = {
           sent_at: string | null
           status: string
           updated_at: string
+          whatsapp_settings_id: string | null
         }
         Insert: {
           broadcast_id: string
@@ -6845,6 +6856,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Update: {
           broadcast_id?: string
@@ -6862,6 +6874,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -6892,6 +6905,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_broadcast_recipients_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
+            referencedColumns: ["id"]
+          },
         ]
       }
       whatsapp_broadcasts: {
@@ -6916,6 +6936,7 @@ export type Database = {
           template_id: string | null
           total_recipients: number
           updated_at: string
+          whatsapp_settings_id: string | null
         }
         Insert: {
           audience_filter?: Json | null
@@ -6938,6 +6959,7 @@ export type Database = {
           template_id?: string | null
           total_recipients?: number
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Update: {
           audience_filter?: Json | null
@@ -6960,6 +6982,7 @@ export type Database = {
           template_id?: string | null
           total_recipients?: number
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -6974,6 +6997,13 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_broadcasts_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7060,6 +7090,7 @@ export type Database = {
           system_prompt: string
           updated_at: string
           welcome_message: string | null
+          whatsapp_settings_id: string | null
         }
         Insert: {
           auto_handoff_on_error?: boolean
@@ -7075,6 +7106,7 @@ export type Database = {
           system_prompt?: string
           updated_at?: string
           welcome_message?: string | null
+          whatsapp_settings_id?: string | null
         }
         Update: {
           auto_handoff_on_error?: boolean
@@ -7090,6 +7122,7 @@ export type Database = {
           system_prompt?: string
           updated_at?: string
           welcome_message?: string | null
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -7097,6 +7130,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_chatbot_settings_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7160,6 +7200,7 @@ export type Database = {
           sla_first_response_deadline: string | null
           status: string | null
           updated_at: string | null
+          whatsapp_settings_id: string | null
         }
         Insert: {
           ai_summary?: string | null
@@ -7187,6 +7228,7 @@ export type Database = {
           sla_first_response_deadline?: string | null
           status?: string | null
           updated_at?: string | null
+          whatsapp_settings_id?: string | null
         }
         Update: {
           ai_summary?: string | null
@@ -7214,6 +7256,7 @@ export type Database = {
           sla_first_response_deadline?: string | null
           status?: string | null
           updated_at?: string | null
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -7228,6 +7271,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7246,6 +7296,7 @@ export type Database = {
           remind_at: string
           status: string
           updated_at: string
+          whatsapp_settings_id: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -7260,6 +7311,7 @@ export type Database = {
           remind_at: string
           status?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -7274,6 +7326,7 @@ export type Database = {
           remind_at?: string
           status?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -7281,6 +7334,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_followups_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7316,6 +7376,7 @@ export type Database = {
           template_language: string | null
           template_name: string | null
           template_parameters: Json | null
+          whatsapp_settings_id: string | null
         }
         Insert: {
           content?: string | null
@@ -7347,6 +7408,7 @@ export type Database = {
           template_language?: string | null
           template_name?: string | null
           template_parameters?: Json | null
+          whatsapp_settings_id?: string | null
         }
         Update: {
           content?: string | null
@@ -7378,6 +7440,7 @@ export type Database = {
           template_language?: string | null
           template_name?: string | null
           template_parameters?: Json | null
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -7385,6 +7448,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7442,6 +7512,8 @@ export type Database = {
           display_phone_number: string | null
           id: string
           is_active: boolean | null
+          is_default: boolean
+          label: string | null
           meta_user_id: string | null
           onboarding_status: string | null
           organization_id: string | null
@@ -7469,6 +7541,8 @@ export type Database = {
           display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
+          is_default?: boolean
+          label?: string | null
           meta_user_id?: string | null
           onboarding_status?: string | null
           organization_id?: string | null
@@ -7496,6 +7570,8 @@ export type Database = {
           display_phone_number?: string | null
           id?: string
           is_active?: boolean | null
+          is_default?: boolean
+          label?: string | null
           meta_user_id?: string | null
           onboarding_status?: string | null
           organization_id?: string | null
@@ -7529,6 +7605,7 @@ export type Database = {
           sla_resolution_minutes: number
           timezone: string
           updated_at: string
+          whatsapp_settings_id: string | null
         }
         Insert: {
           auto_reply_enabled?: boolean
@@ -7541,6 +7618,7 @@ export type Database = {
           sla_resolution_minutes?: number
           timezone?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
         Update: {
           auto_reply_enabled?: boolean
@@ -7553,8 +7631,17 @@ export type Database = {
           sla_resolution_minutes?: number
           timezone?: string
           updated_at?: string
+          whatsapp_settings_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sla_settings_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_templates: {
         Row: {
@@ -7575,6 +7662,7 @@ export type Database = {
           template_id: string | null
           updated_at: string | null
           variables: Json | null
+          whatsapp_settings_id: string | null
         }
         Insert: {
           approval_status?: string | null
@@ -7594,6 +7682,7 @@ export type Database = {
           template_id?: string | null
           updated_at?: string | null
           variables?: Json | null
+          whatsapp_settings_id?: string | null
         }
         Update: {
           approval_status?: string | null
@@ -7613,6 +7702,7 @@ export type Database = {
           template_id?: string | null
           updated_at?: string | null
           variables?: Json | null
+          whatsapp_settings_id?: string | null
         }
         Relationships: [
           {
@@ -7620,6 +7710,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_templates_whatsapp_settings_id_fkey"
+            columns: ["whatsapp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_settings"
             referencedColumns: ["id"]
           },
         ]
