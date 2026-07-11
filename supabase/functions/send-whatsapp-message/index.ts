@@ -107,10 +107,10 @@ serve(async (req) => {
       }
     }
 
-    // Get conversation (with its organization_id) to scope credentials
+    // Get conversation (with its organization_id and inbox) to scope credentials
     const { data: conversation } = await supabase
       .from('whatsapp_conversations')
-      .select('phone_number, organization_id')
+      .select('phone_number, organization_id, whatsapp_settings_id')
       .eq('id', conversationId)
       .single();
 
@@ -118,12 +118,27 @@ serve(async (req) => {
       throw new Error('Conversation not found');
     }
 
-    // Get WhatsApp settings for this organization
-    const { data: settings } = await supabase
-      .from('whatsapp_settings')
-      .select('phone_number_id, access_token, api_version, onboarding_status')
-      .eq('organization_id', conversation.organization_id)
-      .maybeSingle();
+    // Load the specific WhatsApp inbox for this conversation; fall back to the
+    // organization's default inbox for legacy conversations.
+    let settings: any = null;
+    if (conversation.whatsapp_settings_id) {
+      const { data } = await supabase
+        .from('whatsapp_settings')
+        .select('id, phone_number_id, access_token, api_version, onboarding_status')
+        .eq('id', conversation.whatsapp_settings_id)
+        .eq('organization_id', conversation.organization_id)
+        .maybeSingle();
+      settings = data;
+    }
+    if (!settings) {
+      const { data } = await supabase
+        .from('whatsapp_settings')
+        .select('id, phone_number_id, access_token, api_version, onboarding_status')
+        .eq('organization_id', conversation.organization_id)
+        .eq('is_default', true)
+        .maybeSingle();
+      settings = data;
+    }
 
     if (!settings || !settings.access_token || !settings.phone_number_id) {
       throw new Error('WhatsApp not connected for this organization');
