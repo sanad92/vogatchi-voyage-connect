@@ -160,6 +160,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           .upsert(
             {
               organization_id: organizationId,
+              whatsapp_settings_id: whatsappSettingsId,
               phone_number: phoneNumber,
               status: 'active',
               priority: 'normal',
