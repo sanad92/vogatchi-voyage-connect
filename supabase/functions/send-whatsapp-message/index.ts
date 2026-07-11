@@ -244,6 +244,7 @@ serve(async (req) => {
       .from('whatsapp_messages')
       .insert({
         organization_id: conversation.organization_id,
+        whatsapp_settings_id: settings.id,
         conversation_id: conversationId,
         message_id: result.messages[0].id,
         direction: 'outbound',
