@@ -81,7 +81,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
         </div>
 
         <TabsContent value="settings" className="mt-6 space-y-6 animate-in fade-in">
-          <WhatsAppConnectCard />
+          <WhatsAppInboxList />
           <WhatsAppSettings />
         </TabsContent>
 
