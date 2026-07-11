@@ -142,7 +142,7 @@ function normalizePhone(phone: string | null | undefined): string {
   return (phone ?? '').replace(/\D/g, '');
 }
 
-async function processMessage(messageData: any, supabase: any, organizationId: string) {
+async function processMessage(messageData: any, supabase: any, organizationId: string, whatsappSettingsId: string) {
   try {
     if (messageData.messages) {
       for (const message of messageData.messages) {
