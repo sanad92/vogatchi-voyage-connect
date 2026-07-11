@@ -30,6 +30,14 @@ async function verifySignature(body: Uint8Array, signature: string, appSecret: s
   return timingSafeEqual(mac, expected);
 }
 
+async function computeAppSecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  return hexEncode(await crypto.subtle.sign('HMAC', key, enc.encode(accessToken)));
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
