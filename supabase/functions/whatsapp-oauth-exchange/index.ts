@@ -143,17 +143,34 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
+    // Multi-inbox: upsert by (organization_id, phone_number_id). Different phones
+    // for the same org create separate rows; connecting the same phone again
+    // refreshes the existing row.
     const { data: existing } = await admin
       .from("whatsapp_settings")
       .select("id")
       .eq("organization_id", organization_id)
+      .eq("phone_number_id", phone.id)
       .maybeSingle();
+
+    // Check if this org already has a default inbox; if not, mark this one default.
+    const { data: defaultRow } = await admin
+      .from("whatsapp_settings")
+      .select("id")
+      .eq("organization_id", organization_id)
+      .eq("is_default", true)
+      .maybeSingle();
+
+    const payloadWithDefault = {
+      ...payload,
+      is_default: existing?.id ? undefined : !defaultRow?.id,
+    };
 
     if (existing?.id) {
       const { error } = await admin.from("whatsapp_settings").update(payload).eq("id", existing.id);
       if (error) throw error;
     } else {
-      const { error } = await admin.from("whatsapp_settings").insert(payload);
+      const { error } = await admin.from("whatsapp_settings").insert(payloadWithDefault);
       if (error) throw error;
     }
 
