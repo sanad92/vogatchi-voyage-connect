@@ -61,6 +61,7 @@ const navGroups: NavGroup[] = [
       { title: 'العملاء', href: '/customers', icon: Users, requiredPermission: 'customers_view' },
       { title: 'CRM', href: '/crm', icon: UserCheck, requiredPermission: 'crm_view' },
       { title: 'واتساب', href: '/whatsapp-inbox', icon: MessageSquare, requiredPermission: 'whatsapp_view' },
+      { title: 'إدارة واتساب', href: '/whatsapp-admin', icon: Settings, requiredPermission: 'whatsapp_admin' },
     ],
   },
   {
