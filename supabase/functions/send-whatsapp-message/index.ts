@@ -225,21 +225,7 @@ serve(async (req) => {
 
     // Send message to WhatsApp API (per-org token + api version)
     const gv = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
-    // Compute appsecret_proof if META_APP_SECRET is configured (required when the Meta app enforces it)
-    const appSecret = Deno.env.get('META_APP_SECRET');
-    let proofQS = '';
-    if (appSecret) {
-      const key = await crypto.subtle.importKey(
-        'raw',
-        new TextEncoder().encode(appSecret),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign'],
-      );
-      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(settings.access_token));
-      const proof = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-      proofQS = `?appsecret_proof=${proof}`;
-    }
+
     const whatsappResponse = await fetch(`https://graph.facebook.com/${gv}/${settings.phone_number_id}/messages${proofQS}`, {
       method: 'POST',
       headers: {
