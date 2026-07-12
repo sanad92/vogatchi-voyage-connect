@@ -37,6 +37,14 @@ async function computeAppSecretProof(accessToken: string, appSecret: string): Pr
 
 function appendProof(url: string, proof: string | null): string {
   if (!proof) return url;
+  // Only Graph API accepts appsecret_proof. The media CDN (lookaside.fbsbx.com)
+  // uses a pre-signed URL and returns 401 if the query string is modified.
+  try {
+    const host = new URL(url).hostname;
+    if (!/(^|\.)graph\.(facebook|whatsapp)\.com$/i.test(host)) return url;
+  } catch {
+    return url;
+  }
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}appsecret_proof=${proof}`;
 }
