@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
+import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppInboxList: React.FC = () => {
   const {
@@ -43,14 +44,17 @@ export const WhatsAppInboxList: React.FC = () => {
               يمكنك ربط أكثر من رقم WhatsApp Business لنفس المؤسسة — كل رقم بصندوق وارد مستقل. الرقم المُميّز كافتراضي هو الذي يُستخدم للأتمتة والإرسال الافتراضي.
             </CardDescription>
           </div>
-          <Button
-            onClick={() => setShowConnect((s) => !s)}
-            size="sm"
-            className="gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            {showConnect ? 'إغلاق' : 'ربط رقم جديد'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ManualConnectDialog />
+            <Button
+              onClick={() => setShowConnect((s) => !s)}
+              size="sm"
+              className="gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              {showConnect ? 'إغلاق' : 'ربط رقم جديد'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
