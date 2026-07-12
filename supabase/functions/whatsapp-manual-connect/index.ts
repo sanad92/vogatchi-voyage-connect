@@ -27,6 +27,28 @@ function appendProof(url: string, proof: string | null): string {
   return url + (url.includes("?") ? "&" : "?") + "appsecret_proof=" + proof;
 }
 
+function normalizeDigits(value: unknown): string {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+async function fetchMetaJson(url: string, accessToken: string): Promise<{ ok: boolean; status: number; json: any }> {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const text = await response.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch (_) {
+    json = { raw: text };
+  }
+  return { ok: response.ok, status: response.status, json };
+}
+
+function metaErrorMessage(payload: any): string | null {
+  return payload?.error?.message ?? payload?.title ?? payload?.message ?? null;
+}
+
 async function logEvent(supabase: any, orgId: string, type: string, payload: unknown) {
   try {
     await supabase.from("whatsapp_connection_events").insert({
@@ -91,24 +113,50 @@ serve(async (req) => {
 
     const proof = await appsecretProof(access_token);
 
-    // 1) Validate phone number id with the provided token
-    const phoneRes = await fetch(appendProof(`${GRAPH()}/${phone_number_id}?fields=id,display_phone_number,verified_name`, proof), {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
-    const phoneJson = await phoneRes.json();
-    if (!phoneRes.ok || !phoneJson?.id) {
-      await logEvent(admin, organization_id, "manual_connect_failed", { step: "phone", phoneJson });
-      return new Response(JSON.stringify({ error: "Phone Number ID غير صالح أو التوكن لا يملك صلاحية الوصول له", details: phoneJson }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // 2) Validate WABA id
-    const wabaRes = await fetch(appendProof(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, proof), {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
-    const wabaJson = await wabaRes.json();
-    if (!wabaRes.ok || !wabaJson?.id) {
+    // 1) Validate WABA id first, then use it as a fallback source for phone numbers.
+    const wabaCheck = await fetchMetaJson(appendProof(`${GRAPH()}/${waba_id}?fields=id,name,currency,timezone_id`, proof), access_token);
+    const wabaJson = wabaCheck.json;
+    if (!wabaCheck.ok || !wabaJson?.id) {
       await logEvent(admin, organization_id, "manual_connect_failed", { step: "waba", wabaJson });
       return new Response(JSON.stringify({ error: "WABA ID غير صالح أو التوكن لا يملك صلاحية الوصول له", details: wabaJson }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 2) Validate phone number. Some Meta tokens fail direct phone lookup but can list WABA phone numbers.
+    const requestedPhone = phone_number_id.trim();
+    const phoneCheck = await fetchMetaJson(appendProof(`${GRAPH()}/${requestedPhone}?fields=id,display_phone_number,verified_name`, proof), access_token);
+    let phoneJson = phoneCheck.ok && phoneCheck.json?.id ? phoneCheck.json : null;
+
+    if (!phoneJson) {
+      const phoneListCheck = await fetchMetaJson(
+        appendProof(`${GRAPH()}/${waba_id}/phone_numbers?fields=id,display_phone_number,verified_name&limit=100`, proof),
+        access_token,
+      );
+      const phoneRows = Array.isArray(phoneListCheck.json?.data) ? phoneListCheck.json.data : [];
+      const requestedDigits = normalizeDigits(requestedPhone);
+      phoneJson = phoneRows.find((phone: any) =>
+        phone?.id === requestedPhone || normalizeDigits(phone?.display_phone_number) === requestedDigits
+      ) ?? null;
+
+      if (!phoneJson) {
+        const primaryMessage = metaErrorMessage(phoneCheck.json);
+        await logEvent(admin, organization_id, "manual_connect_failed", {
+          step: "phone",
+          phone_status: phoneCheck.status,
+          phone_error: phoneCheck.json,
+          phone_list_status: phoneListCheck.status,
+          phone_list_error: phoneListCheck.json?.error ?? null,
+          available_phone_ids: phoneRows.map((phone: any) => phone?.id).filter(Boolean),
+        });
+        return new Response(JSON.stringify({
+          error: primaryMessage
+            ? `تعذر التحقق من رقم واتساب: ${primaryMessage}`
+            : "تعذر التحقق من رقم واتساب. تأكد أن الرقم تابع لنفس WABA وأن التوكن لديه صلاحيات WhatsApp Business Management وMessaging.",
+          details: {
+            phone: phoneCheck.json,
+            phone_list: phoneListCheck.json,
+          },
+        }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // 3) Subscribe app to WABA webhooks (idempotent, non-fatal)
