@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
+import { ManualConnectDialog } from './ManualConnectDialog';
 
 export const WhatsAppInboxList: React.FC = () => {
   const {
