@@ -18,6 +18,22 @@ export const ManualConnectDialog: React.FC = () => {
   const [wabaId, setWabaId] = useState('');
   const [result, setResult] = useState<{ business_name?: string; display_phone_number?: string } | null>(null);
 
+  const getFunctionErrorMessage = async (error: any) => {
+    const fallback = error?.message || 'فشل الربط';
+    const response = error?.context;
+    if (!response || typeof response.clone !== 'function') return fallback;
+
+    try {
+      const payload = await response.clone().json();
+      const metaMessage = payload?.details?.phone?.error?.message
+        || payload?.details?.phone_list?.error?.message
+        || payload?.details?.error?.message;
+      return payload?.error || metaMessage || fallback;
+    } catch (_) {
+      return fallback;
+    }
+  };
+
   const connectMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('whatsapp-manual-connect', {
@@ -28,7 +44,7 @@ export const ManualConnectDialog: React.FC = () => {
           waba_id: wabaId.trim(),
         },
       });
-      if (error) throw error;
+      if (error) throw new Error(await getFunctionErrorMessage(error));
       if (data?.error) throw new Error(data.error);
       return data;
     },
