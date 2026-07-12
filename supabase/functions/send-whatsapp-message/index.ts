@@ -144,6 +144,22 @@ serve(async (req) => {
       throw new Error('WhatsApp not connected for this organization');
     }
 
+    // Compute appsecret_proof if META_APP_SECRET is configured
+    const appSecret = Deno.env.get('META_APP_SECRET');
+    let proofQS = '';
+    if (appSecret) {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(appSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+      );
+      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(settings.access_token));
+      const proof = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+      proofQS = `?appsecret_proof=${proof}`;
+    }
+
     // If media is provided as a Storage path, upload it to Meta and get a media id
     let uploadedMediaId: string | null = null;
     if (MEDIA_TYPES.has(messageType) && mediaStoragePath) {
@@ -160,11 +176,12 @@ serve(async (req) => {
       form.append('type', mime);
       form.append('file', new File([await file.arrayBuffer()], fname, { type: mime }));
 
-      const upRes = await fetch(`https://graph.facebook.com/${gvUp}/${settings.phone_number_id}/media`, {
+      const upRes = await fetch(`https://graph.facebook.com/${gvUp}/${settings.phone_number_id}/media${proofQS}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${settings.access_token}` },
         body: form,
       });
+
       const upJson = await upRes.json();
       if (!upRes.ok || !upJson.id) throw new Error(`Meta media upload failed: ${JSON.stringify(upJson)}`);
       uploadedMediaId = upJson.id;
