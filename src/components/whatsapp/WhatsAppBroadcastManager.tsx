@@ -252,8 +252,11 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                       <TableCell>{b.total_recipients}</TableCell>
                       <TableCell className="min-w-[140px]">
                         <Progress value={progress} className="h-2" />
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {b.sent_count} أُرسل · {b.failed_count} فشل
+                        <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+                          <span>{b.sent_count} أُرسل</span>
+                          <span className="text-emerald-600">{b.delivered_count} مُسلَّم</span>
+                          <span className="text-teal-600">{b.read_count} مقروء</span>
+                          <span className="text-red-600">{b.failed_count} فشل</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">
