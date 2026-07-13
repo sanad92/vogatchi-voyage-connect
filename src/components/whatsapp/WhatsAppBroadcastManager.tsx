@@ -261,6 +261,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <BroadcastDetailsButton broadcast={b} />
                           {(b.status === 'draft' || b.status === 'scheduled') && (
                             <Button size="sm" variant="ghost" onClick={() => sendBroadcast(b.id)} disabled={isSending}>
                               <Send className="w-4 h-4" />
@@ -285,5 +286,140 @@ export const WhatsAppBroadcastManager: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Broadcast details dialog: per-recipient delivery status with live updates.
+// ---------------------------------------------------------------------------
+
+const recipientStatusMeta: Record<string, { label: string; className: string; icon: any }> = {
+  pending:   { label: 'في الانتظار', className: 'bg-muted text-muted-foreground',           icon: Clock },
+  sent:      { label: 'مُرسل',        className: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200', icon: Check },
+  delivered: { label: 'مُسلَّم',      className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200', icon: CheckCheck },
+  read:      { label: 'مقروء',        className: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200', icon: Eye },
+  failed:    { label: 'فشل',          className: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200', icon: XCircle },
+  skipped:   { label: 'متجاوز',       className: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200', icon: Ban },
+};
+
+const BroadcastDetailsButton: React.FC<{ broadcast: WhatsAppBroadcast }> = ({ broadcast }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)} title="تفاصيل الحملة">
+        <Eye className="w-4 h-4" />
+      </Button>
+      {open && <BroadcastDetailsDialog broadcast={broadcast} open={open} onOpenChange={setOpen} />}
+    </>
+  );
+};
+
+const BroadcastDetailsDialog: React.FC<{
+  broadcast: WhatsAppBroadcast;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}> = ({ broadcast, open, onOpenChange }) => {
+  const { data: recipients = [], isLoading } = useBroadcastRecipients(broadcast.id);
+  const qc = useQueryClient();
+
+  // Realtime: refresh recipient list when webhook updates rows.
+  useEffect(() => {
+    if (!open) return;
+    const channel = supabase.channel(`wa-broadcast-recipients-${broadcast.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'whatsapp_broadcast_recipients',
+        filter: `broadcast_id=eq.${broadcast.id}`,
+      }, () => {
+        qc.invalidateQueries({ queryKey: ['broadcast-recipients', broadcast.id] });
+        qc.invalidateQueries({ queryKey: ['whatsapp-broadcasts', broadcast.organization_id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [open, broadcast.id, broadcast.organization_id, qc]);
+
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { pending: 0, sent: 0, delivered: 0, read: 0, failed: 0, skipped: 0 };
+    for (const r of recipients as any[]) c[r.status] = (c[r.status] ?? 0) + 1;
+    return c;
+  }, [recipients]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Megaphone className="w-5 h-5" /> {broadcast.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-sm mb-4">
+          {(['pending','sent','delivered','read','failed','skipped'] as const).map((k) => {
+            const meta = recipientStatusMeta[k];
+            const Icon = meta.icon;
+            return (
+              <div key={k} className={`rounded-md p-2 ${meta.className}`}>
+                <Icon className="w-4 h-4 mx-auto mb-1" />
+                <div className="font-bold">{counts[k] ?? 0}</div>
+                <div className="text-xs">{meta.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+        ) : recipients.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">لا يوجد مستلمون</div>
+        ) : (
+          <div className="border rounded-md overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>المستلم</TableHead>
+                  <TableHead>الرقم</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>سبب الفشل</TableHead>
+                  <TableHead>آخر تحديث</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(recipients as any[]).map((r) => {
+                  const meta = recipientStatusMeta[r.status] ?? recipientStatusMeta.pending;
+                  const Icon = meta.icon;
+                  const lastTs = r.read_at || r.delivered_at || r.failed_at || r.sent_at || r.updated_at || r.created_at;
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-sm">{r.customer_name || '—'}</TableCell>
+                      <TableCell className="text-xs font-mono" dir="ltr">{r.phone_number}</TableCell>
+                      <TableCell>
+                        <Badge className={`gap-1 ${meta.className}`} variant="outline">
+                          <Icon className="w-3 h-3" /> {meta.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs max-w-xs">
+                        {r.status === 'failed' ? (
+                          <div className="space-y-1">
+                            <div className="text-red-700 dark:text-red-300">{r.error_message || 'فشل غير محدد'}</div>
+                            {r.error_code && (
+                              <div className="text-muted-foreground">
+                                رمز الخطأ: <code className="text-xs">{r.error_code}</code>
+                                {r.error_code === '131047' && ' — انتهت نافذة الـ 24 ساعة، استخدم قالباً معتمداً'}
+                              </div>
+                            )}
+                          </div>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {lastTs ? format(new Date(lastTs), 'dd MMM HH:mm:ss', { locale: ar }) : '—'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
