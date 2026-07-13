@@ -142,6 +142,28 @@ function normalizePhone(phone: string | null | undefined): string {
   return (phone ?? '').replace(/\D/g, '');
 }
 
+async function recomputeBroadcastCounters(supabase: any, broadcastId: string) {
+  const { data: rows } = await supabase
+    .from('whatsapp_broadcast_recipients')
+    .select('status')
+    .eq('broadcast_id', broadcastId);
+  const counts = { sent: 0, delivered: 0, read: 0, failed: 0 };
+  for (const r of rows ?? []) {
+    // "sent" is a superset that includes anything that left our servers
+    // (sent/delivered/read). Failed is exclusive.
+    if (r.status === 'failed') counts.failed++;
+    else if (r.status === 'read') { counts.sent++; counts.delivered++; counts.read++; }
+    else if (r.status === 'delivered') { counts.sent++; counts.delivered++; }
+    else if (r.status === 'sent') counts.sent++;
+  }
+  await supabase.from('whatsapp_broadcasts').update({
+    sent_count: counts.sent,
+    delivered_count: counts.delivered,
+    read_count: counts.read,
+    failed_count: counts.failed,
+  }).eq('id', broadcastId);
+}
+
 async function processMessage(messageData: any, supabase: any, organizationId: string, whatsappSettingsId: string) {
   try {
     if (messageData.messages) {
