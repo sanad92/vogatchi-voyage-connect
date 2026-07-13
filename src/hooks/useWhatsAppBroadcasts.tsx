@@ -126,7 +126,20 @@ export function useWhatsAppBroadcasts() {
       toast.success('بدء إرسال الحملة');
       qc.invalidateQueries({ queryKey: ['whatsapp-broadcasts', orgId] });
     },
-    onError: (e: any) => toast.error(e.message || 'فشل الإرسال'),
+    onError: async (e: any) => {
+      let msg = e?.message || 'فشل الإرسال';
+      try {
+        const ctx = e?.context;
+        if (ctx && typeof ctx.json === 'function') {
+          const j = await ctx.json();
+          if (j?.error) msg = j.error;
+        } else if (ctx && typeof ctx.text === 'function') {
+          const t = await ctx.text();
+          try { msg = JSON.parse(t)?.error || t || msg; } catch { msg = t || msg; }
+        }
+      } catch {}
+      toast.error(msg);
+    },
   });
 
   const cancelBroadcast = useMutation({
