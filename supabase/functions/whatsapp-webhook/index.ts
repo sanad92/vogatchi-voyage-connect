@@ -142,6 +142,28 @@ function normalizePhone(phone: string | null | undefined): string {
   return (phone ?? '').replace(/\D/g, '');
 }
 
+async function recomputeBroadcastCounters(supabase: any, broadcastId: string) {
+  const { data: rows } = await supabase
+    .from('whatsapp_broadcast_recipients')
+    .select('status')
+    .eq('broadcast_id', broadcastId);
+  const counts = { sent: 0, delivered: 0, read: 0, failed: 0 };
+  for (const r of rows ?? []) {
+    // "sent" is a superset that includes anything that left our servers
+    // (sent/delivered/read). Failed is exclusive.
+    if (r.status === 'failed') counts.failed++;
+    else if (r.status === 'read') { counts.sent++; counts.delivered++; counts.read++; }
+    else if (r.status === 'delivered') { counts.sent++; counts.delivered++; }
+    else if (r.status === 'sent') counts.sent++;
+  }
+  await supabase.from('whatsapp_broadcasts').update({
+    sent_count: counts.sent,
+    delivered_count: counts.delivered,
+    read_count: counts.read,
+    failed_count: counts.failed,
+  }).eq('id', broadcastId);
+}
+
 async function processMessage(messageData: any, supabase: any, organizationId: string, whatsappSettingsId: string) {
   try {
     if (messageData.messages) {
@@ -304,14 +326,49 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
     if (messageData.statuses) {
       for (const status of messageData.statuses) {
-        const patch: Record<string, unknown> = { status: status.status };
-        if (status.status === 'delivered') patch.delivered_at = new Date(parseInt(status.timestamp) * 1000).toISOString();
-        if (status.status === 'read') patch.read_at = new Date(parseInt(status.timestamp) * 1000).toISOString();
+        const tsIso = status.timestamp
+          ? new Date(parseInt(status.timestamp) * 1000).toISOString()
+          : new Date().toISOString();
+
+        // 1) Update conversation message row (existing behavior)
+        const msgPatch: Record<string, unknown> = { status: status.status };
+        if (status.status === 'delivered') msgPatch.delivered_at = tsIso;
+        if (status.status === 'read') msgPatch.read_at = tsIso;
         await supabase
           .from('whatsapp_messages')
-          .update(patch)
+          .update(msgPatch)
           .eq('message_id', status.id)
           .eq('organization_id', organizationId);
+
+        // 2) Update broadcast recipient row (if this wamid came from a broadcast)
+        const recipientPatch: Record<string, unknown> = { status: status.status };
+        if (status.status === 'sent') recipientPatch.sent_at = tsIso;
+        if (status.status === 'delivered') recipientPatch.delivered_at = tsIso;
+        if (status.status === 'read') recipientPatch.read_at = tsIso;
+        if (status.status === 'failed') {
+          recipientPatch.failed_at = tsIso;
+          const err = Array.isArray(status.errors) && status.errors.length ? status.errors[0] : null;
+          if (err) {
+            recipientPatch.error_code = err.code != null ? String(err.code) : null;
+            recipientPatch.error_message = err.error_data?.details || err.message || err.title || 'Delivery failed';
+            recipientPatch.error_details = err;
+          }
+        }
+
+        const { data: updatedRecipients } = await supabase
+          .from('whatsapp_broadcast_recipients')
+          .update(recipientPatch)
+          .eq('provider_message_id', status.id)
+          .eq('organization_id', organizationId)
+          .select('broadcast_id');
+
+        // 3) Recompute counters on affected broadcasts
+        const broadcastIds = Array.from(
+          new Set((updatedRecipients ?? []).map((r: any) => r.broadcast_id).filter(Boolean)),
+        );
+        for (const bId of broadcastIds) {
+          await recomputeBroadcastCounters(supabase, bId as string);
+        }
       }
     }
   } catch (error) {

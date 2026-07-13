@@ -6828,12 +6828,16 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           delivered_at: string | null
+          error_code: string | null
+          error_details: Json | null
           error_message: string | null
+          failed_at: string | null
           id: string
           message_id: string | null
           organization_id: string
           personalization: Json | null
           phone_number: string
+          provider_message_id: string | null
           read_at: string | null
           sent_at: string | null
           status: string
@@ -6846,12 +6850,16 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           delivered_at?: string | null
+          error_code?: string | null
+          error_details?: Json | null
           error_message?: string | null
+          failed_at?: string | null
           id?: string
           message_id?: string | null
           organization_id: string
           personalization?: Json | null
           phone_number: string
+          provider_message_id?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
@@ -6864,12 +6872,16 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           delivered_at?: string | null
+          error_code?: string | null
+          error_details?: Json | null
           error_message?: string | null
+          failed_at?: string | null
           id?: string
           message_id?: string | null
           organization_id?: string
           personalization?: Json | null
           phone_number?: string
+          provider_message_id?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string

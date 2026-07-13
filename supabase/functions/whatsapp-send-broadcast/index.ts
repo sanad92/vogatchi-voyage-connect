@@ -140,19 +140,48 @@ Deno.serve(async (req) => {
         const text = await resp.text();
         if (!resp.ok) {
           let msg = text;
-          try { msg = JSON.parse(text)?.error?.message || text; } catch {}
+          let code: string | null = null;
+          let details: any = null;
+          try {
+            const parsed = JSON.parse(text);
+            msg = parsed?.error?.message || text;
+            code = parsed?.error?.code != null ? String(parsed.error.code) : null;
+            details = parsed?.error ?? null;
+          } catch {}
+          await supabase.from('whatsapp_broadcast_recipients').update({
+            status: 'failed',
+            failed_at: new Date().toISOString(),
+            error_message: msg,
+            error_code: code,
+            error_details: details,
+          }).eq('id', r.id);
+          failed++;
           throw new Error(`Meta ${resp.status}: ${msg}`);
         }
 
+        let providerMsgId: string | null = null;
+        try { providerMsgId = JSON.parse(text)?.messages?.[0]?.id ?? null; } catch {}
+
         await supabase.from('whatsapp_broadcast_recipients').update({
-          status: 'sent', sent_at: new Date().toISOString(),
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          provider_message_id: providerMsgId,
+          error_message: null,
+          error_code: null,
+          error_details: null,
         }).eq('id', r.id);
         sent++;
       } catch (e: any) {
-        await supabase.from('whatsapp_broadcast_recipients').update({
-          status: 'failed', error_message: String(e?.message || e),
-        }).eq('id', r.id);
-        failed++;
+        // Failure already persisted above for HTTP errors; only insert here for
+        // unexpected exceptions (network, invalid phone, etc.).
+        if (!/^Meta \d+:/.test(String(e?.message || ''))) {
+          await supabase.from('whatsapp_broadcast_recipients').update({
+            status: 'failed',
+            failed_at: new Date().toISOString(),
+            error_message: String(e?.message || e),
+          }).eq('id', r.id);
+          failed++;
+        }
       }
 
       await new Promise((res) => setTimeout(res, 250));
