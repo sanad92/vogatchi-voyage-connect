@@ -1,42 +1,34 @@
-# خطة إصلاح خطأ 401 عند تحميل الوسائط من Meta
+# الخطة
 
-## السبب الجذري
+## 1) إصلاح إرسال حملات واتساب
 
-في `supabase/functions/retry-whatsapp-media/index.ts` نستدعي Meta في خطوتين:
+**السبب الجذري:** `whatsapp-send-broadcast` يستدعي `send-whatsapp-message` بجسم غير متوافق (`{ phone, message, organization_id, template_id }`) بينما الدالة الأخرى تتطلّب `{ conversationId, messageType, content, ... }` مع Authorization header لمستخدم مسجّل. النتيجة: 401/400 لكل مستلم، فتُسجَّل الحملة كـ failed دون أي رسالة واضحة في الواجهة.
 
-1. **Lookup** على `graph.facebook.com/{media_id}` → نجح (رجع URL + mime).
-2. **Download** على الـURL الراجع (عادةً `lookaside.fbsbx.com/whatsapp_business/...`) → يرجع **401 Authentication Error**.
+**الحل:** جعل `whatsapp-send-broadcast` يُرسل مباشرة إلى Meta Graph API بدل الاعتماد على `send-whatsapp-message`:
+- قراءة `whatsapp_settings` النشطة للمؤسسة (`phone_number_id`, `access_token`, `api_version`, و `app_secret` إن وُجد لحساب `appsecret_proof`).
+- لكل مستلم: `POST https://graph.facebook.com/{v}/{phone_number_id}/messages` مع body `text` (أو `template` إذا `broadcast.template_id` موجود مع اسم القالب واللغة).
+- تسجيل الرسالة الناجحة في `whatsapp_messages` و ربطها/إنشاء `whatsapp_conversations` للرقم (اختياري لكن مفيد).
+- عند الفشل: حفظ نص الخطأ الفعلي القادم من Meta في `whatsapp_broadcast_recipients.error_message` وتحديث `failed_count`.
+- إبقاء throttle 250ms.
+- تحسين رسالة الخطأ في `useWhatsAppBroadcasts.sendBroadcast` لعرض `error.context` بدل النص العام.
 
-السبب: نُلحق `appsecret_proof` بـ **كلا** الطلبين. لكن `lookaside.fbsbx.com` (شبكة CDN لتحميل الوسائط):
-- يقبل فقط `Authorization: Bearer <token>` بدون `appsecret_proof`.
-- إلحاق `appsecret_proof` بالـquery string كثيرًا ما يكسر التوقيع المُضمَّن مسبقًا في الـURL، فيرد بـ 401.
+## 2) تفعيل إضافة الموظفين في WhatsApp
 
-أيضًا نفس المشكلة موجودة في `whatsapp-webhook/index.ts` عند تنزيل الوسائط الواردة، وسنُصلحها بنفس الطريقة لتفادي فشل حفظ وسائط الرسائل الجديدة.
+**السبب:** `WhatsAppEmployeeManagement.tsx` واجهة ساكنة — الأزرار بدون `onClick` ولا تجلب/تعرض أي بيانات.
 
-## التعديلات
+**الحل:** استبدال المكوّن بواجهة وظيفية تعتمد على البنية الموجودة:
+- استخدام `useOrgMembers` لعرض أعضاء المؤسسة وأدوارهم (`agent` = موظف خدمة عملاء).
+- زر «إضافة موظف» يفتح `AddTeamMemberWizard` (الموجود مسبقاً) مع تمرير الدور الافتراضي `agent`.
+- جدول يعرض: الاسم، البريد، الهاتف، الدور، حالة الجلسة (من `whatsapp_sessions` عبر join خفيف)، وزر تحديث الدور / إزالة عبر `useOrgMembers.updateRole` و `removeMember`.
+- الاحتفاظ بحالة فارغة عندما لا يوجد أعضاء بدور `agent/manager/admin`.
 
-### 1) `supabase/functions/retry-whatsapp-media/index.ts`
-- تعديل `appendProof(url, proof)` بحيث يُلحق `appsecret_proof` **فقط** إذا كان الـhost هو `graph.facebook.com` أو `graph.whatsapp.com`.
-- لا يُلحق شيئًا لطلبات `lookaside.fbsbx.com` أو أي CDN آخر.
-- تحسين رسالة الخطأ: تضمين حالة الاستجابة + أول 300 حرف من الـbody، وإضافة `www-authenticate` header إن وُجد لتشخيص أسرع.
-- الإبقاء على منطق تحديث الصف كما هو (status=failed, error, attempts+1).
+## تفاصيل تقنية
 
-### 2) `supabase/functions/whatsapp-webhook/index.ts`
-- تطبيق نفس منطق `appendProof` المحصور على `graph.*` فقط، لتفادي 401 على الرسائل الواردة الجديدة.
+**ملفات ستُعدَّل:**
+- `supabase/functions/whatsapp-send-broadcast/index.ts` — إعادة كتابة منطق الإرسال ليتحدث مع Graph API مباشرة، مع دعم `appsecret_proof` (crypto HMAC-SHA256 لـ access_token باستخدام `META_APP_SECRET`).
+- `src/hooks/useWhatsAppBroadcasts.tsx` — استخراج رسالة الخطأ من `error.context` في `sendBroadcast.onError`.
+- `src/components/whatsapp/WhatsAppEmployeeManagement.tsx` — إعادة بناء المكوّن ليستخدم `useOrgMembers` + `AddTeamMemberWizard`.
 
-### 3) الواجهة (اختياري تحسين تجربة المستخدم)
-- في `WhatsAppMediaMessage.tsx` عندما تفشل إعادة المحاولة بسبب 401: عرض تلميح واضح "قد تكون بيانات اتصال Meta منتهية — يرجى إعادة ربط الرقم من إعدادات WhatsApp".
+**لا حاجة لتغييرات قاعدة بيانات** — الجداول (`whatsapp_settings`, `whatsapp_broadcasts`, `whatsapp_broadcast_recipients`, `organization_members`) موجودة بالفعل.
 
-## التحقق بعد التطبيق
-
-1. Deploy للـfunctions المعدَّلة.
-2. الضغط على "إعادة المحاولة" على الرسالة `8909da47-...`:
-   - المتوقع: `success: true` وحفظ الملف في `whatsapp-media` storage.
-   - إن استمر 401 → التوكن نفسه غير صالح ويلزم إعادة الربط من `/whatsapp-admin`.
-3. مراقبة `edge_function_logs` للتأكد من اختفاء `meta media download 401`.
-
-## الملفات المتأثرة
-
-- `supabase/functions/retry-whatsapp-media/index.ts`
-- `supabase/functions/whatsapp-webhook/index.ts`
-- `src/components/whatsapp/WhatsAppMediaMessage.tsx` (تحسين رسالة الخطأ فقط)
+**سِرّ مطلوب:** `META_APP_SECRET` يُستخدم بالفعل في دوال أخرى؛ نفس القيمة تُقرأ هنا.
