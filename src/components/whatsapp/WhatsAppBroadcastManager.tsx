@@ -162,6 +162,18 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                   onChange={(e) => setForm({ ...form, message_body: e.target.value })} />
               </div>
 
+              {form.template_id === 'none' && (
+                <Alert variant="default" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertTitle className="text-amber-900 dark:text-amber-200">تنبيه: قيود نافذة الـ 24 ساعة</AlertTitle>
+                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-sm">
+                    الرسائل النصية الحرة تصل فقط للعملاء الذين راسلوا رقمك خلال آخر <strong>24 ساعة</strong>.
+                    باقي الأرقام سيرفضها واتساب بالخطأ <code className="text-xs">131047 (Re-engagement)</code>.
+                    <br />لإرسال حملة لجميع العملاء، اختر <strong>قالباً معتمداً</strong> من Meta بدلاً من الرسالة الحرة.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {form.audience_type === 'manual' && (
                 <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
                   {eligibleCustomers.length === 0 && (
