@@ -8406,6 +8406,10 @@ export type Database = {
         Returns: Json
       }
       normalize_phone_digits: { Args: { _phone: string }; Returns: string }
+      org_has_active_subscription: {
+        Args: { _org_id: string }
+        Returns: boolean
+      }
       post_expense_transaction: {
         Args: { _expense_id: string }
         Returns: string
