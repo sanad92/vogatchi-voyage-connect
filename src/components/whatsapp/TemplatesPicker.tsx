@@ -26,6 +26,8 @@ interface Props {
   /** Optional custom trigger node; falls back to a small icon button. Ignored when hideTrigger=true. */
   triggerNode?: React.ReactNode;
   hideTrigger?: boolean;
+}
+
 
 // Maps a template category / name to a human-facing bucket
 const CATEGORY_BUCKETS: Array<{ key: string; label: string; match: (t: any) => boolean }> = [
