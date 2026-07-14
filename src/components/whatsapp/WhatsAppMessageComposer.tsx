@@ -259,18 +259,6 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Hidden template picker used in closed-window mode; direct-send on click. */}
-      <div className="hidden">
-        <TemplatesPicker
-          variables={variables}
-          onPick={() => {}}
-          open={templatePickerOpen}
-          onOpenChange={setTemplatePickerOpen}
-          approvedOnly
-          onSendDirect={handleDirectTemplateSend}
-          hideTrigger
-        />
-      </div>
     </div>
   );
 };
