@@ -127,9 +127,11 @@ export const TemplatesPicker: React.FC<Props> = ({
     <Popover open={open} onOpenChange={setOpen}>
       {!hideTrigger && (
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" title="القوالب المعتمدة">
-            <FileText className="w-4 h-4" />
-          </Button>
+          {triggerNode ?? (
+            <Button variant="outline" size="sm" title="القوالب المعتمدة">
+              <FileText className="w-4 h-4" />
+            </Button>
+          )}
         </PopoverTrigger>
       )}
       <PopoverContent align="end" className="w-[420px] p-0" side="top">
