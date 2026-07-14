@@ -1,34 +1,88 @@
-# الخطة
+# Smart WhatsApp 24h Window + Auto Template Fallback
 
-## 1) إصلاح إرسال حملات واتساب
+Goal: Never let a freeform message hit Meta when the customer is outside the 24h customer-service window. Detect the window client-side, show a clear status badge, and auto-open a Template Picker (grouped by category, variables pre-filled) when required.
 
-**السبب الجذري:** `whatsapp-send-broadcast` يستدعي `send-whatsapp-message` بجسم غير متوافق (`{ phone, message, organization_id, template_id }`) بينما الدالة الأخرى تتطلّب `{ conversationId, messageType, content, ... }` مع Authorization header لمستخدم مسجّل. النتيجة: 401/400 لكل مستلم، فتُسجَّل الحملة كـ failed دون أي رسالة واضحة في الواجهة.
+## 1. Window detection hook — `src/hooks/useWhatsAppWindow.tsx` (new)
 
-**الحل:** جعل `whatsapp-send-broadcast` يُرسل مباشرة إلى Meta Graph API بدل الاعتماد على `send-whatsapp-message`:
-- قراءة `whatsapp_settings` النشطة للمؤسسة (`phone_number_id`, `access_token`, `api_version`, و `app_secret` إن وُجد لحساب `appsecret_proof`).
-- لكل مستلم: `POST https://graph.facebook.com/{v}/{phone_number_id}/messages` مع body `text` (أو `template` إذا `broadcast.template_id` موجود مع اسم القالب واللغة).
-- تسجيل الرسالة الناجحة في `whatsapp_messages` و ربطها/إنشاء `whatsapp_conversations` للرقم (اختياري لكن مفيد).
-- عند الفشل: حفظ نص الخطأ الفعلي القادم من Meta في `whatsapp_broadcast_recipients.error_message` وتحديث `failed_count`.
-- إبقاء throttle 250ms.
-- تحسين رسالة الخطأ في `useWhatsAppBroadcasts.sendBroadcast` لعرض `error.context` بدل النص العام.
+Computes the "last inbound message" timestamp for a conversation and derives:
+- `lastInboundAt: Date | null`
+- `isWindowOpen: boolean` (now − lastInboundAt < 24h)
+- `minutesRemaining: number`
+- `expiresAt: Date | null`
 
-## 2) تفعيل إضافة الموظفين في WhatsApp
+Source of truth: query `whatsapp_messages` where `conversation_id = X AND direction = 'inbound'` order by `sent_at desc limit 1`. Subscribes to realtime inserts on that conversation so the badge flips instantly when a new inbound arrives. Re-evaluates every 60s via a `useState` tick.
 
-**السبب:** `WhatsAppEmployeeManagement.tsx` واجهة ساكنة — الأزرار بدون `onClick` ولا تجلب/تعرض أي بيانات.
+## 2. Status badge — `src/components/whatsapp/WindowStatusBadge.tsx` (new)
 
-**الحل:** استبدال المكوّن بواجهة وظيفية تعتمد على البنية الموجودة:
-- استخدام `useOrgMembers` لعرض أعضاء المؤسسة وأدوارهم (`agent` = موظف خدمة عملاء).
-- زر «إضافة موظف» يفتح `AddTeamMemberWizard` (الموجود مسبقاً) مع تمرير الدور الافتراضي `agent`.
-- جدول يعرض: الاسم، البريد، الهاتف، الدور، حالة الجلسة (من `whatsapp_sessions` عبر join خفيف)، وزر تحديث الدور / إزالة عبر `useOrgMembers.updateRole` و `removeMember`.
-- الاحتفاظ بحالة فارغة عندما لا يوجد أعضاء بدور `agent/manager/admin`.
+Two visual states:
+- Open: green badge "نافذة الرد مفتوحة · متبقي Xس Ym" — freeform allowed.
+- Closed: amber badge "نافذة الرد مغلقة · مطلوب قالب معتمد" — freeform blocked.
 
-## تفاصيل تقنية
+Tooltip explains Meta 24h rule + error 131047.
 
-**ملفات ستُعدَّل:**
-- `supabase/functions/whatsapp-send-broadcast/index.ts` — إعادة كتابة منطق الإرسال ليتحدث مع Graph API مباشرة، مع دعم `appsecret_proof` (crypto HMAC-SHA256 لـ access_token باستخدام `META_APP_SECRET`).
-- `src/hooks/useWhatsAppBroadcasts.tsx` — استخراج رسالة الخطأ من `error.context` في `sendBroadcast.onError`.
-- `src/components/whatsapp/WhatsAppEmployeeManagement.tsx` — إعادة بناء المكوّن ليستخدم `useOrgMembers` + `AddTeamMemberWizard`.
+## 3. Composer integration — `src/components/whatsapp/WhatsAppMessageComposer.tsx`
 
-**لا حاجة لتغييرات قاعدة بيانات** — الجداول (`whatsapp_settings`, `whatsapp_broadcasts`, `whatsapp_broadcast_recipients`, `organization_members`) موجودة بالفعل.
+- Accept `isWindowOpen` prop (parent supplies from `useWhatsAppWindow`).
+- Render `WindowStatusBadge` above textarea.
+- When closed:
+  - Textarea placeholder: "نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً".
+  - Send button intercepts: instead of calling `sendTextMessage`, opens the Template Picker (controlled `open` state) and shows a toast: "لا يمكن إرسال رسالة حرة الآن — اختر قالباً".
+  - Media send also blocked with same guidance (Meta requires template session too).
+- When open: behavior unchanged.
 
-**سِرّ مطلوب:** `META_APP_SECRET` يُستخدم بالفعل في دوال أخرى؛ نفس القيمة تُقرأ هنا.
+The interception happens BEFORE `supabase.functions.invoke`, so no request reaches Meta.
+
+## 4. Template Picker upgrade — `src/components/whatsapp/TemplatesPicker.tsx`
+
+- Group approved templates by category with these buckets (map by template.category or name prefix):
+  - Booking, Payments, Hotels, Flights, CRM Follow-up, Marketing, Other.
+- Add `autoOpen` + `onOpenChange` props so composer can force-open it.
+- Add `onSendDirect` prop: when set (closed-window mode), clicking a template calls it instead of just filling text — parent sends the template via edge function immediately.
+- Only show `status === 'approved'` when in closed-window mode (freeform mode keeps current behavior).
+
+## 5. Send template directly — extend `useWhatsAppMessaging`
+
+Add `sendTemplate(conversationId, template, variables)` that calls `send-whatsapp-message` edge function with:
+```
+{ conversationId, messageType: 'template', templateName, templateLanguage, templateComponents: [...] }
+```
+(The function already supports template type; we just pass the payload.) On success it inserts an outbound row with `message_type='template'`.
+
+## 6. Variable prefill
+
+`useWhatsAppWindow` returns `variableContext` built from:
+- Customer: name/phone via `whatsapp_conversations.customer_id → customers`.
+- Latest booking: query `bookings` where `customer_id = X` order by created_at desc limit 1 → booking_reference, destination, dates.
+- Latest invoice: `invoices` limit 1 → invoice_number, total, currency.
+- Agent + org: from existing auth hooks.
+
+Merged into `VariableContext` and passed to TemplatesPicker so `interpolateVariables` fills `{{booking_ref}}`, `{{invoice_total}}`, etc. Unknown vars stay as-is.
+
+## 7. UI status in conversation list (optional, low cost)
+
+Small dot on each conversation row using the same hook (per-row) — green/amber — so agents scanning the list see who needs templates. Wire only if the existing conversation list component is small; otherwise defer.
+
+## 8. Files touched
+
+New:
+- `src/hooks/useWhatsAppWindow.tsx`
+- `src/components/whatsapp/WindowStatusBadge.tsx`
+
+Edited:
+- `src/components/whatsapp/WhatsAppMessageComposer.tsx`
+- `src/components/whatsapp/TemplatesPicker.tsx`
+- `src/hooks/useWhatsAppMessaging.tsx`
+- `src/lib/whatsappVariables.ts` (add booking/invoice keys to `AVAILABLE_VARIABLES`)
+- Parent(s) that render `WhatsAppMessageComposer` — pass conversationId + wire window hook (likely `WhatsAppConversationDetail.tsx` and `useCustomerWhatsApp` consumer). Minimal prop threading.
+
+## 9. Non-goals / preserved
+
+- No schema changes, no migrations, no RLS changes.
+- Existing broadcast pipeline untouched.
+- `send-whatsapp-message` edge function untouched (already supports template type).
+- Business logic for messaging, storage, realtime — unchanged.
+
+## 10. Verification
+
+- Manually: open a conversation where last inbound > 24h → badge amber, textarea disabled, clicking Send opens template picker, choosing template sends and appears in thread as outbound template. Conversation with recent inbound → badge green, freeform works.
+- Confirm no network call to `send-whatsapp-message` with `messageType:'text'` while window is closed (check network tab).

@@ -83,11 +83,56 @@ export const useWhatsAppMessaging = () => {
     },
   });
 
+  const sendTemplateMutation = useMutation({
+    mutationFn: async (data: {
+      conversationId: string;
+      templateName: string;
+      templateLanguage?: string;
+      templateParameters?: string[];
+    }) => {
+      const { data: result, error } = await supabase.functions.invoke('send-whatsapp-message', {
+        body: {
+          conversationId: data.conversationId,
+          messageType: 'template',
+          templateName: data.templateName,
+          templateLanguage: data.templateLanguage || 'ar',
+          templateParameters: data.templateParameters || [],
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: (_d, vars) => {
+      invalidate(vars.conversationId);
+      toast.success('تم إرسال القالب');
+    },
+    onError: (error: any) => {
+      console.error('WhatsApp template send error:', error);
+      toast.error(error?.message || 'فشل إرسال القالب');
+    },
+  });
+
   return {
     sendTextMessage: (conversationId: string, content: string) =>
       sendTextMessageMutation.mutateAsync({ conversationId, content }),
     sendMedia: (conversationId: string, file: File, caption?: string) =>
       sendMediaMutation.mutateAsync({ conversationId, file, caption }),
-    isSending: sendTextMessageMutation.isPending || sendMediaMutation.isPending,
+    sendTemplate: (
+      conversationId: string,
+      templateName: string,
+      templateParameters?: string[],
+      templateLanguage?: string,
+    ) =>
+      sendTemplateMutation.mutateAsync({
+        conversationId,
+        templateName,
+        templateLanguage,
+        templateParameters,
+      }),
+    isSending:
+      sendTextMessageMutation.isPending ||
+      sendMediaMutation.isPending ||
+      sendTemplateMutation.isPending,
   };
 };

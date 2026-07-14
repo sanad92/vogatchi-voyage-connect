@@ -5,8 +5,10 @@ import { Send, Paperclip, Image as ImageIcon, X, FileText } from 'lucide-react';
 import { useWhatsAppMessaging } from '@/hooks/useWhatsAppMessaging';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
+import { useWhatsAppWindow } from '@/hooks/useWhatsAppWindow';
 import { QuickRepliesPicker } from './QuickRepliesPicker';
 import { TemplatesPicker } from './TemplatesPicker';
+import { WindowStatusBadge } from './WindowStatusBadge';
 import type { VariableContext } from '@/lib/whatsappVariables';
 import { toast } from 'sonner';
 
@@ -31,10 +33,14 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<{ file: File; preview?: string } | null>(null);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user } = useOptimizedAuth() as any;
   const { data: currentOrg } = useCurrentOrganization() as any;
+
+  const windowState = useWhatsAppWindow(conversationId);
+  const { isWindowOpen, contextVars } = windowState;
 
   useEffect(() => {
     if (prefillText !== undefined && prefillNonce !== undefined) {
@@ -42,16 +48,28 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     }
   }, [prefillText, prefillNonce]);
 
-  const { sendTextMessage, sendMedia, isSending } = useWhatsAppMessaging();
+  const { sendTextMessage, sendMedia, sendTemplate, isSending } = useWhatsAppMessaging();
 
   const variables: VariableContext = {
-    customer_name: contactName || null,
-    customer_phone: contactPhone || null,
+    customer_name: contextVars.customer_name || contactName || null,
+    customer_phone: contextVars.customer_phone || contactPhone || null,
     agent_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
     organization_name: currentOrg?.name || null,
+    booking_reference: contextVars.booking_reference || null,
+    booking_destination: contextVars.booking_destination || null,
+    booking_check_in: contextVars.booking_check_in || null,
+    booking_check_out: contextVars.booking_check_out || null,
+    invoice_number: contextVars.invoice_number || null,
+    invoice_total: contextVars.invoice_total || null,
+    invoice_currency: contextVars.invoice_currency || null,
   };
 
   const handlePickFile = (accept: string, ref: React.RefObject<HTMLInputElement>) => {
+    if (!isWindowOpen) {
+      toast.error('نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً بدلاً من إرسال ملفات');
+      setTemplatePickerOpen(true);
+      return;
+    }
     if (ref.current) {
       ref.current.accept = accept;
       ref.current.click();
@@ -76,6 +94,15 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
   };
 
   const handleSend = async () => {
+    // Intercept BEFORE any Meta request when the 24h window is closed.
+    if (!isWindowOpen) {
+      toast.warning('نافذة 24 ساعة مغلقة — اختر قالباً معتمداً لإكمال الإرسال', {
+        description: 'وفقاً لسياسة Meta لا يمكن إرسال رسائل حرة بعد مرور 24 ساعة على آخر رسالة من العميل.',
+      });
+      setTemplatePickerOpen(true);
+      return;
+    }
+
     try {
       if (pending) {
         await sendMedia(conversationId, pending.file, message.trim() || undefined);
@@ -103,11 +130,55 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     }
   };
 
+  const handleDirectTemplateSend = async (payload: {
+    templateName: string;
+    templateLanguage: string;
+    templateParameters: string[];
+    previewText: string;
+  }) => {
+    try {
+      await sendTemplate(
+        conversationId,
+        payload.templateName,
+        payload.templateParameters,
+        payload.templateLanguage,
+      );
+      setMessage('');
+      clearPending();
+      onMessageSent?.();
+    } catch (err) {
+      console.error('template send failed:', err);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <input ref={fileInputRef} type="file" hidden onChange={handleFileChange} />
       <input ref={imageInputRef} type="file" hidden onChange={handleFileChange} />
 
+      <div className="flex items-center justify-between gap-2">
+        <WindowStatusBadge state={windowState} />
+        {!isWindowOpen && (
+          <TemplatesPicker
+            variables={variables}
+            onPick={() => {}}
+            open={templatePickerOpen}
+            onOpenChange={setTemplatePickerOpen}
+            approvedOnly
+            onSendDirect={handleDirectTemplateSend}
+            triggerNode={
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px] border-amber-300 text-amber-800 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300"
+              >
+                <FileText className="w-3 h-3 ml-1" />
+                اختر قالباً
+              </Button>
+            }
+          />
+        )}
+      </div>
 
       {pending && (
         <div className="flex items-center gap-3 p-2 border rounded-md bg-muted/40">
@@ -132,20 +203,29 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={pending ? 'اكتب تعليقاً (اختياري)...' : 'اكتب رسالتك هنا...'}
+            placeholder={
+              !isWindowOpen
+                ? 'نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً'
+                : pending
+                  ? 'اكتب تعليقاً (اختياري)...'
+                  : 'اكتب رسالتك هنا...'
+            }
             className="min-h-[70px] resize-none"
-            disabled={isSending}
+            disabled={isSending || !isWindowOpen}
           />
         </div>
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-1">
             <QuickRepliesPicker variables={variables} onPick={(t) => setMessage(t)} />
-            <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
+            {/* Freeform template pick (window open) */}
+            {isWindowOpen && (
+              <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
+            )}
             <Button
               variant="outline"
               size="sm"
-              title="إرفاق صورة"
+              title={isWindowOpen ? 'إرفاق صورة' : 'مغلق — استخدم قالباً'}
               onClick={() => handlePickFile('image/*', imageInputRef)}
               disabled={isSending}
             >
@@ -154,7 +234,7 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
             <Button
               variant="outline"
               size="sm"
-              title="إرفاق ملف / صوت / فيديو"
+              title={isWindowOpen ? 'إرفاق ملف / صوت / فيديو' : 'مغلق — استخدم قالباً'}
               onClick={() => handlePickFile('audio/*,video/*,application/*', fileInputRef)}
               disabled={isSending}
             >
@@ -164,17 +244,21 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 
           <Button
             onClick={handleSend}
-            disabled={(!message.trim() && !pending) || isSending}
+            disabled={isSending || (isWindowOpen && !message.trim() && !pending)}
             className="h-full min-h-[70px]"
+            variant={isWindowOpen ? 'default' : 'secondary'}
           >
             {isSending ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-            ) : (
+            ) : isWindowOpen ? (
               <Send className="w-5 h-5" />
+            ) : (
+              <FileText className="w-5 h-5" />
             )}
           </Button>
         </div>
       </div>
+
     </div>
   );
 };
