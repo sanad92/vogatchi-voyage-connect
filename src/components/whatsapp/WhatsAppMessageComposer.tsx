@@ -159,15 +159,24 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
       <div className="flex items-center justify-between gap-2">
         <WindowStatusBadge state={windowState} />
         {!isWindowOpen && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-[11px] border-amber-300 text-amber-800 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300"
-            onClick={() => setTemplatePickerOpen(true)}
-          >
-            <FileText className="w-3 h-3 ml-1" />
-            اختر قالباً
-          </Button>
+          <TemplatesPicker
+            variables={variables}
+            onPick={() => {}}
+            open={templatePickerOpen}
+            onOpenChange={setTemplatePickerOpen}
+            approvedOnly
+            onSendDirect={handleDirectTemplateSend}
+            triggerNode={
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px] border-amber-300 text-amber-800 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300"
+              >
+                <FileText className="w-3 h-3 ml-1" />
+                اختر قالباً
+              </Button>
+            }
+          />
         )}
       </div>
 
