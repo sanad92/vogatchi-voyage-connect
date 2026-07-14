@@ -64,6 +64,7 @@ export const TemplatesPicker: React.FC<Props> = ({
   onOpenChange,
   approvedOnly,
   hideTrigger,
+  triggerNode,
 }) => {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
