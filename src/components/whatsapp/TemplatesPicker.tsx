@@ -23,9 +23,9 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
   /** Only show approved templates (used in closed-window / direct-send mode). */
   approvedOnly?: boolean;
-  /** Optional trigger override; falls back to a small icon button. */
+  /** Optional custom trigger node; falls back to a small icon button. Ignored when hideTrigger=true. */
+  triggerNode?: React.ReactNode;
   hideTrigger?: boolean;
-}
 
 // Maps a template category / name to a human-facing bucket
 const CATEGORY_BUCKETS: Array<{ key: string; label: string; match: (t: any) => boolean }> = [
