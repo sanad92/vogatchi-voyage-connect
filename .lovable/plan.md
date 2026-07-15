@@ -1,88 +1,118 @@
-# Smart WhatsApp 24h Window + Auto Template Fallback
+# Travel Template Center — Implementation Plan
 
-Goal: Never let a freeform message hit Meta when the customer is outside the 24h customer-service window. Detect the window client-side, show a clear status badge, and auto-open a Template Picker (grouped by category, variables pre-filled) when required.
+A new first-class module for managing WhatsApp templates tailored to travel agencies. Built alongside the existing WhatsApp module — no breaking changes to current messaging, broadcasts, or 24-hour window logic. All new work lives under a new "مركز القوالب" (Template Center) tab and a shared library.
 
-## 1. Window detection hook — `src/hooks/useWhatsAppWindow.tsx` (new)
+## 1. Data Model (new migration)
 
-Computes the "last inbound message" timestamp for a conversation and derives:
-- `lastInboundAt: Date | null`
-- `isWindowOpen: boolean` (now − lastInboundAt < 24h)
-- `minutesRemaining: number`
-- `expiresAt: Date | null`
+Extend `whatsapp_templates` (additive, nullable) with:
+- `category_key` (text) — canonical category id (marketing, booking_hotels, flights, payments, visas, customer_service, crm_followups, seasonal)
+- `subcategory` (text, nullable)
+- `description` (text)
+- `tags` (text[])
+- `preview_variables` (jsonb) — sample data for previewing
+- `variable_schema` (jsonb) — declared variables with type/source hint (customer.name, booking.reference, etc.)
+- `meta_template_id` (text) — Meta side id
+- `meta_status` (text) — approved/pending/rejected/paused (mirrors Meta)
+- `meta_synced_at` (timestamptz)
+- `meta_rejection_reason` (text)
+- `usage_count` (int default 0)
+- `last_used_at` (timestamptz)
+- `is_library_seed` (bool default false) — marks templates from bundled library
+- `library_source_key` (text) — stable id for library upserts
+- `locale` (text default 'ar')
 
-Source of truth: query `whatsapp_messages` where `conversation_id = X AND direction = 'inbound'` order by `sent_at desc limit 1`. Subscribes to realtime inserts on that conversation so the badge flips instantly when a new inbound arrives. Re-evaluates every 60s via a `useState` tick.
+New table `whatsapp_template_analytics`:
+- template_id, organization_id, date, sent_count, delivered_count, read_count, replied_count, failed_count
+- Unique(template_id, date)
+- Populated via trigger on `whatsapp_messages` (increments counters).
 
-## 2. Status badge — `src/components/whatsapp/WindowStatusBadge.tsx` (new)
+New table `whatsapp_template_suggestions_log` (optional, small):
+- Records which template was suggested from which context (booking/crm/invoice) for future ML. Skip if we want to stay minimal — will implement in-memory only.
 
-Two visual states:
-- Open: green badge "نافذة الرد مفتوحة · متبقي Xس Ym" — freeform allowed.
-- Closed: amber badge "نافذة الرد مغلقة · مطلوب قالب معتمد" — freeform blocked.
+RLS: org-scoped, matches existing `whatsapp_templates` policies. GRANT statements included.
 
-Tooltip explains Meta 24h rule + error 131047.
+## 2. Travel Template Library (seed content)
 
-## 3. Composer integration — `src/components/whatsapp/WhatsAppMessageComposer.tsx`
+A TypeScript module `src/data/travelTemplateLibrary.ts` shipping ~90 curated templates in Arabic + English variants, grouped by category:
 
-- Accept `isWindowOpen` prop (parent supplies from `useWhatsAppWindow`).
-- Render `WindowStatusBadge` above textarea.
-- When closed:
-  - Textarea placeholder: "نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً".
-  - Send button intercepts: instead of calling `sendTextMessage`, opens the Template Picker (controlled `open` state) and shows a toast: "لا يمكن إرسال رسالة حرة الآن — اختر قالباً".
-  - Media send also blocked with same guidance (Meta requires template session too).
-- When open: behavior unchanged.
+- Marketing (15): seasonal offers, new destinations, flash deals, loyalty perks
+- Booking & Hotels (15): booking confirmed, hotel voucher, check-in reminder, check-out thanks, upgrade offer
+- Flights (12): ticket issued, schedule change, check-in open, gate change, delay, arrival
+- Payments (10): payment link, reminder (D-3, D-1, overdue), receipt, refund issued
+- Visas (8): documents needed, application submitted, approved, rejected, appointment reminder
+- Customer Service (10): greeting, out-of-office, agent handover, satisfaction survey, review request
+- CRM Follow-ups (10): lead nurture, quote follow-up, re-engagement 30/60/90 days, birthday, anniversary
+- Seasonal (10): Ramadan, Eid, Hajj/Umrah, summer, winter, back-to-school, national days
 
-The interception happens BEFORE `supabase.functions.invoke`, so no request reaches Meta.
+Each entry: `{ key, category, locale, name, description, body, header, footer, variables[], tags[], previewVariables }`. Users import them into their org with one click; imports write to `whatsapp_templates` with `is_library_seed=true`, `library_source_key=<key>`. Re-importing is idempotent (upsert on org_id+library_source_key).
 
-## 4. Template Picker upgrade — `src/components/whatsapp/TemplatesPicker.tsx`
+## 3. Edge Functions
 
-- Group approved templates by category with these buckets (map by template.category or name prefix):
-  - Booking, Payments, Hotels, Flights, CRM Follow-up, Marketing, Other.
-- Add `autoOpen` + `onOpenChange` props so composer can force-open it.
-- Add `onSendDirect` prop: when set (closed-window mode), clicking a template calls it instead of just filling text — parent sends the template via edge function immediately.
-- Only show `status === 'approved'` when in closed-window mode (freeform mode keeps current behavior).
+- `whatsapp-sync-templates` (new): pulls templates from Meta Graph API, upserts `meta_template_id`, `meta_status`, `meta_rejection_reason`, `meta_synced_at`. Reuses appsecret_proof pattern from existing `whatsapp-list-templates`.
+- `whatsapp-submit-template` (new): submits a local template to Meta for approval; stores returned id + status.
+- `ai-generate-template` (new): uses existing Lovable AI Gateway (google/gemini-3.5-flash) to draft a template body from a natural-language brief + category + tone. Returns `{ name, body, header, footer, variables, suggestedCategory }`. Server-side only, uses `LOVABLE_API_KEY`.
 
-## 5. Send template directly — extend `useWhatsAppMessaging`
+No changes to existing send/broadcast/webhook functions.
 
-Add `sendTemplate(conversationId, template, variables)` that calls `send-whatsapp-message` edge function with:
-```
-{ conversationId, messageType: 'template', templateName, templateLanguage, templateComponents: [...] }
-```
-(The function already supports template type; we just pass the payload.) On success it inserts an outbound row with `message_type='template'`.
+## 4. Frontend
 
-## 6. Variable prefill
+New route/tab inside existing WhatsApp admin: **Template Center**. Under `src/components/whatsapp/template-center/`:
 
-`useWhatsAppWindow` returns `variableContext` built from:
-- Customer: name/phone via `whatsapp_conversations.customer_id → customers`.
-- Latest booking: query `bookings` where `customer_id = X` order by created_at desc limit 1 → booking_reference, destination, dates.
-- Latest invoice: `invoices` limit 1 → invoice_number, total, currency.
-- Agent + org: from existing auth hooks.
+- `TemplateCenter.tsx` — main shell with sidebar (categories + counts) + main pane
+- `TemplateList.tsx` — grid/list with search, filters (category, status, locale, tags), sort (recent, most used)
+- `TemplateCard.tsx` — name, category badge, Meta status pill, usage stats, quick actions
+- `TemplateEditor.tsx` — form with header/body/footer, variable inserter, live preview, Meta submit button
+- `TemplatePreview.tsx` — WhatsApp-style bubble preview (already partially exists — extract to shared)
+- `VariableInserter.tsx` — grouped picker (Customer, Booking, Hotel, Flight, Invoice, Payment, Consultant, Company) with insert-at-cursor
+- `TemplateLibraryDialog.tsx` — browse bundled 90-template library, filter by category/locale, "Import to my templates" (single + bulk)
+- `TemplateAnalyticsPanel.tsx` — per-template chart: sent/delivered/read/replied, 30-day trend, top-performing
+- `AiTemplateGeneratorDialog.tsx` — brief textarea + category select + tone + language → calls `ai-generate-template` → prefills editor
+- `MetaSyncButton.tsx` — triggers `whatsapp-sync-templates`, shows last sync time
+- `TemplateSuggestions.tsx` — reusable component embedded in Booking/CRM/Invoice detail pages, shows 3-5 relevant templates based on entity type + status with one-click send
 
-Merged into `VariableContext` and passed to TemplatesPicker so `interpolateVariables` fills `{{booking_ref}}`, `{{invoice_total}}`, etc. Unknown vars stay as-is.
+Hook `useWhatsAppTemplateCenter.tsx` — extends existing `useWhatsAppTemplates` with:
+- filters state
+- library import mutation
+- Meta sync mutation
+- analytics fetch
+- suggestions selector (`getSuggestionsFor(context)`)
 
-## 7. UI status in conversation list (optional, low cost)
+Variable interpolation extended in `src/lib/whatsappVariables.ts` to cover hotel, flight, payment, consultant, company groups.
 
-Small dot on each conversation row using the same hook (per-row) — green/amber — so agents scanning the list see who needs templates. Wire only if the existing conversation list component is small; otherwise defer.
+Suggestions integration points (minimal, additive):
+- `UnifiedBookingDetails` — add `<TemplateSuggestions context={{ type: 'booking', booking }} />` sidebar block
+- `CRM` lead detail — add same for CRM follow-ups
+- Invoice detail — add for payment reminders
 
-## 8. Files touched
+## 5. Multilingual
 
-New:
-- `src/hooks/useWhatsAppWindow.tsx`
-- `src/components/whatsapp/WindowStatusBadge.tsx`
+- `locale` column on templates ('ar' | 'en'), UI has locale filter
+- Library ships each template in both languages where meaningful
+- Editor has RTL/LTR toggle based on locale
+- All UI strings continue in Arabic (matches existing app)
 
-Edited:
-- `src/components/whatsapp/WhatsAppMessageComposer.tsx`
-- `src/components/whatsapp/TemplatesPicker.tsx`
-- `src/hooks/useWhatsAppMessaging.tsx`
-- `src/lib/whatsappVariables.ts` (add booking/invoice keys to `AVAILABLE_VARIABLES`)
-- Parent(s) that render `WhatsAppMessageComposer` — pass conversationId + wire window hook (likely `WhatsAppConversationDetail.tsx` and `useCustomerWhatsApp` consumer). Minimal prop threading.
+## 6. Backward compatibility
 
-## 9. Non-goals / preserved
+- Old `whatsapp_templates` rows keep working; new columns nullable with defaults
+- Existing `TemplatesPicker`, `WhatsAppMessageComposer`, broadcast flow untouched
+- New tab surfaces alongside existing "قوالب الرسائل" tab; old placeholder `WhatsAppTemplateManager` replaced by new `TemplateCenter` under same route slot
 
-- No schema changes, no migrations, no RLS changes.
-- Existing broadcast pipeline untouched.
-- `send-whatsapp-message` edge function untouched (already supports template type).
-- Business logic for messaging, storage, realtime — unchanged.
+## 7. Delivery order
 
-## 10. Verification
+1. Migration (schema + analytics table + trigger)
+2. Library seed file
+3. Extended variables lib + interpolation
+4. Hooks + edge functions
+5. UI shell + list/editor/preview
+6. Library dialog + AI generator
+7. Analytics panel
+8. Suggestion component + wiring into Booking/CRM/Invoice
+9. Meta sync/submit buttons wired
 
-- Manually: open a conversation where last inbound > 24h → badge amber, textarea disabled, clicking Send opens template picker, choosing template sends and appears in thread as outbound template. Conversation with recent inbound → badge green, freeform works.
-- Confirm no network call to `send-whatsapp-message` with `messageType:'text'` while window is closed (check network tab).
+## Technical notes
+
+- Analytics counters updated via `AFTER INSERT` trigger on `whatsapp_messages` when `template_name` present; matches to template via `(org, name, language)`.
+- AI generator prompts model to output strict JSON; parsed with try/catch and fallback to raw text prefill.
+- Meta sync uses `appsecret_proof` (SHA256 HMAC of access_token) — same pattern already in `whatsapp-list-templates`.
+- All new queries scoped by `organization_id` from `useOrgId`.
+- No changes to production data: migration is additive; library import is explicit user action.
