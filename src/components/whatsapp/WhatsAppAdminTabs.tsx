@@ -19,7 +19,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { WhatsAppBroadcastManager } from './WhatsAppBroadcastManager';
 import { WhatsAppSettings } from './WhatsAppSettings';
-import { WhatsAppTemplateManager } from './WhatsAppTemplateManager';
+import { TemplateCenter } from './template-center/TemplateCenter';
 import { WhatsAppQuickReplies } from './WhatsAppQuickReplies';
 import { WhatsAppAnalyticsDashboard } from './WhatsAppAnalyticsDashboard';
 import { WhatsAppEmployeeManagement } from './WhatsAppEmployeeManagement';
@@ -34,7 +34,7 @@ const TABS = [
   { value: 'sla', label: 'SLA', icon: Clock },
   { value: 'chatbot', label: 'البوت', icon: Bot },
   { value: 'automation', label: 'الأتمتة', icon: Workflow },
-  { value: 'templates', label: 'القوالب', icon: FileText },
+  { value: 'templates', label: 'مركز القوالب', icon: FileText },
   { value: 'quick-replies', label: 'الردود السريعة', icon: Zap },
   { value: 'broadcasts', label: 'الحملات', icon: Megaphone },
   { value: 'employees', label: 'الموظفون', icon: Users },
@@ -98,7 +98,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6 animate-in fade-in">
-          <WhatsAppTemplateManager />
+          <TemplateCenter />
         </TabsContent>
 
         <TabsContent value="quick-replies" className="mt-6 animate-in fade-in">
