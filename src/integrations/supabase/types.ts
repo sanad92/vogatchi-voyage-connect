@@ -7655,24 +7655,95 @@ export type Database = {
           },
         ]
       }
+      whatsapp_template_analytics: {
+        Row: {
+          created_at: string
+          date: string
+          delivered_count: number
+          failed_count: number
+          id: string
+          organization_id: string
+          read_count: number
+          replied_count: number
+          sent_count: number
+          template_id: string | null
+          template_language: string | null
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          delivered_count?: number
+          failed_count?: number
+          id?: string
+          organization_id: string
+          read_count?: number
+          replied_count?: number
+          sent_count?: number
+          template_id?: string | null
+          template_language?: string | null
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          delivered_count?: number
+          failed_count?: number
+          id?: string
+          organization_id?: string
+          read_count?: number
+          replied_count?: number
+          sent_count?: number
+          template_id?: string | null
+          template_language?: string | null
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_template_analytics_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_templates: {
         Row: {
           approval_status: string | null
           body_text: string
           buttons: Json | null
           category: string | null
+          category_key: string | null
           created_at: string | null
+          description: string | null
           footer_text: string | null
           header_text: string | null
           header_type: string | null
           id: string
+          is_library_seed: boolean
           language: string | null
+          last_used_at: string | null
+          library_source_key: string | null
+          locale: string
+          meta_rejection_reason: string | null
+          meta_status: string | null
+          meta_synced_at: string | null
+          meta_template_id: string | null
           name: string
           organization_id: string | null
+          preview_variables: Json | null
           rejection_reason: string | null
           status: string | null
+          subcategory: string | null
+          tags: string[] | null
           template_id: string | null
           updated_at: string | null
+          usage_count: number
+          variable_schema: Json | null
           variables: Json | null
           whatsapp_settings_id: string | null
         }
@@ -7681,18 +7752,33 @@ export type Database = {
           body_text: string
           buttons?: Json | null
           category?: string | null
+          category_key?: string | null
           created_at?: string | null
+          description?: string | null
           footer_text?: string | null
           header_text?: string | null
           header_type?: string | null
           id?: string
+          is_library_seed?: boolean
           language?: string | null
+          last_used_at?: string | null
+          library_source_key?: string | null
+          locale?: string
+          meta_rejection_reason?: string | null
+          meta_status?: string | null
+          meta_synced_at?: string | null
+          meta_template_id?: string | null
           name: string
           organization_id?: string | null
+          preview_variables?: Json | null
           rejection_reason?: string | null
           status?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
           template_id?: string | null
           updated_at?: string | null
+          usage_count?: number
+          variable_schema?: Json | null
           variables?: Json | null
           whatsapp_settings_id?: string | null
         }
@@ -7701,18 +7787,33 @@ export type Database = {
           body_text?: string
           buttons?: Json | null
           category?: string | null
+          category_key?: string | null
           created_at?: string | null
+          description?: string | null
           footer_text?: string | null
           header_text?: string | null
           header_type?: string | null
           id?: string
+          is_library_seed?: boolean
           language?: string | null
+          last_used_at?: string | null
+          library_source_key?: string | null
+          locale?: string
+          meta_rejection_reason?: string | null
+          meta_status?: string | null
+          meta_synced_at?: string | null
+          meta_template_id?: string | null
           name?: string
           organization_id?: string | null
+          preview_variables?: Json | null
           rejection_reason?: string | null
           status?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
           template_id?: string | null
           updated_at?: string | null
+          usage_count?: number
+          variable_schema?: Json | null
           variables?: Json | null
           whatsapp_settings_id?: string | null
         }
