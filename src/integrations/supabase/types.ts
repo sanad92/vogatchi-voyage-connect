@@ -1293,6 +1293,168 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_tasks: {
+        Row: {
+          assignee_id: string | null
+          booking_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          organization_id: string
+          priority: string
+          source: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          booking_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          source?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          booking_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          source?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_timeline_events: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          booking_id: string
+          created_at: string
+          id: string
+          kind: string
+          occurred_at: string
+          organization_id: string
+          payload: Json
+          summary: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          booking_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          occurred_at?: string
+          organization_id: string
+          payload?: Json
+          summary?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          booking_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          organization_id?: string
+          payload?: Json
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_timeline_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_timeline_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_timeline_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_timeline_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_timeline_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_transport_details: {
         Row: {
           booking_id: string
@@ -1388,6 +1550,7 @@ export type Database = {
           supplier_id: string | null
           supplier_name: string | null
           updated_at: string | null
+          workflow_stage: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Insert: {
           booking_number: string
@@ -1414,6 +1577,7 @@ export type Database = {
           supplier_id?: string | null
           supplier_name?: string | null
           updated_at?: string | null
+          workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Update: {
           booking_number?: string
@@ -1440,6 +1604,7 @@ export type Database = {
           supplier_id?: string | null
           supplier_name?: string | null
           updated_at?: string | null
+          workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Relationships: [
           {
@@ -8600,6 +8765,17 @@ export type Database = {
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
+      booking_workflow_stage:
+        | "lead"
+        | "qualified"
+        | "quoted"
+        | "confirmed"
+        | "paid"
+        | "operations"
+        | "traveling"
+        | "completed"
+        | "post_travel"
+        | "cancelled"
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
       platform_role: "platform_admin" | "platform_owner"
     }
@@ -8730,6 +8906,18 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
+      booking_workflow_stage: [
+        "lead",
+        "qualified",
+        "quoted",
+        "confirmed",
+        "paid",
+        "operations",
+        "traveling",
+        "completed",
+        "post_travel",
+        "cancelled",
+      ],
       org_role: ["owner", "admin", "manager", "agent", "viewer"],
       platform_role: ["platform_admin", "platform_owner"],
     },
