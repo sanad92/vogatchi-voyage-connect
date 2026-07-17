@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Hotel, Plane, Car, Truck, User, DollarSign, TrendingUp, TrendingDown, FileText, MessageCircle, RefreshCw } from 'lucide-react';
+import { ArrowRight, Hotel, Plane, Car, Truck, User, DollarSign, TrendingUp, TrendingDown, FileText, MessageCircle, RefreshCw, LayoutGrid } from 'lucide-react';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
 import BookingFinancialWorkspace from '@/components/bookings/BookingFinancialWorkspace';
@@ -60,6 +60,9 @@ const UnifiedBookingDetails = () => {
           <TypeIcon className="h-3 w-3 ml-1" />{ti.label}
         </Badge>
         <div className="flex-1" />
+        <Button variant="default" size="sm" onClick={() => navigate(`/bookings/${booking.id}/workspace`)}>
+          <LayoutGrid className="h-4 w-4 ml-1" />مساحة العمل
+        </Button>
         {/* Quick Actions */}
         <Select value={booking.status} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-[140px]">

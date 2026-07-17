@@ -66,6 +66,7 @@ const TransportBookings = lazy(() => import("@/pages/TransportBookings"));
 const UnifiedBookings = lazy(() => import("@/pages/UnifiedBookings"));
 const NewUnifiedBooking = lazy(() => import("@/pages/NewUnifiedBooking"));
 const UnifiedBookingDetails = lazy(() => import("@/pages/UnifiedBookingDetails"));
+const BookingWorkspace = lazy(() => import("@/pages/BookingWorkspace"));
 
 // Quotes
 const Quotes = lazy(() => import("@/pages/Quotes"));
@@ -298,6 +299,7 @@ function App() {
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />
                               <Route path="/bookings/new" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewUnifiedBooking /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
+                              <Route path="/bookings/:id/workspace" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
                               <Route path="/erp-dashboard" element={<Navigate to="/cfo-dashboard" replace />} />
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />
