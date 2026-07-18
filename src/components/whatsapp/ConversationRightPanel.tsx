@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase,
+  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap,
 } from 'lucide-react';
+import { ConversationActionsPanel } from './ConversationActionsPanel';
 import { Customer360Panel } from './Customer360Panel';
 import { WhatsAppCRMPanel } from './WhatsAppCRMPanel';
 import { AIAssistantPanel } from './AIAssistantPanel';
