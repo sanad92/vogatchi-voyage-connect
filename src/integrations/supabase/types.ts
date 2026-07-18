@@ -7370,6 +7370,7 @@ export type Database = {
           last_note_preview: string | null
           organization_id: string | null
           phone_number: string
+          pinned_booking_id: string | null
           priority: string | null
           resolved_at: string | null
           sla_breached_first_response: boolean
@@ -7398,6 +7399,7 @@ export type Database = {
           last_note_preview?: string | null
           organization_id?: string | null
           phone_number: string
+          pinned_booking_id?: string | null
           priority?: string | null
           resolved_at?: string | null
           sla_breached_first_response?: boolean
@@ -7426,6 +7428,7 @@ export type Database = {
           last_note_preview?: string | null
           organization_id?: string | null
           phone_number?: string
+          pinned_booking_id?: string | null
           priority?: string | null
           resolved_at?: string | null
           sla_breached_first_response?: boolean
@@ -7448,6 +7451,41 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
+            columns: ["pinned_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
+            columns: ["pinned_booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
+            columns: ["pinned_booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
+            columns: ["pinned_booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
+            columns: ["pinned_booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
             referencedColumns: ["id"]
           },
           {

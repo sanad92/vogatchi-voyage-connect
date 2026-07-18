@@ -1,0 +1,2 @@
+ALTER TABLE public.whatsapp_conversations ADD COLUMN IF NOT EXISTS pinned_booking_id uuid REFERENCES public.bookings(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_wa_conv_pinned_booking ON public.whatsapp_conversations(pinned_booking_id) WHERE pinned_booking_id IS NOT NULL;

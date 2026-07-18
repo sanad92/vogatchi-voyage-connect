@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 import {
   FilePlus2,
   Receipt,
@@ -15,7 +16,10 @@ import {
   Briefcase,
   ExternalLink,
   UserPlus,
+  Pin,
+  PinOff,
 } from 'lucide-react';
+
 
 interface Props {
   conversation: any;
@@ -29,8 +33,10 @@ interface Props {
 export const ConversationActionsPanel = ({ conversation }: Props) => {
   const navigate = useNavigate();
   const orgId = useOrgId();
+  const queryClient = useQueryClient();
   const customerId: string | undefined = conversation?.customer_id;
   const phone: string | undefined = conversation?.phone_number;
+  const pinnedBookingId: string | undefined = conversation?.pinned_booking_id;
 
   // Recent bookings for this customer
   const { data: bookings } = useQuery({
@@ -48,6 +54,38 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
       return data || [];
     },
   });
+
+  // Pinned booking details (may not be in recent list)
+  const { data: pinnedBooking } = useQuery({
+    queryKey: ['conv-pinned-booking', pinnedBookingId],
+    enabled: !!pinnedBookingId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('bookings')
+        .select('id, booking_number, booking_type, status, workflow_stage, start_date, end_date, selling_price, currency')
+        .eq('id', pinnedBookingId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const pinMutation = useMutation({
+    mutationFn: async (bookingId: string | null) => {
+      const { error } = await (supabase as any)
+        .from('whatsapp_conversations')
+        .update({ pinned_booking_id: bookingId })
+        .eq('id', conversation.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, bookingId) => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['conv-pinned-booking'] });
+      toast.success(bookingId ? 'تم تثبيت الحجز' : 'تم إلغاء التثبيت');
+    },
+    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+  });
+
 
   // Latest quotes for this customer
   const { data: quotes } = useQuery({
@@ -78,6 +116,50 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
 
   return (
     <div className="p-3 space-y-4">
+      {/* Pinned active booking */}
+      {pinnedBooking && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Pin className="h-3.5 w-3.5" /> الحجز النشط
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                title="إلغاء التثبيت"
+                onClick={() => pinMutation.mutate(null)}
+                disabled={pinMutation.isPending}
+              >
+                <PinOff className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  {pinnedBooking.booking_number || pinnedBooking.id.slice(0, 8)}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {pinnedBooking.booking_type} · {pinnedBooking.start_date || '—'}
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-[10px] whitespace-nowrap">
+                {pinnedBooking.workflow_stage || pinnedBooking.status}
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={() => navigate(`/bookings/${pinnedBooking.id}/workspace`)}
+            >
+              فتح مساحة العمل <ExternalLink className="h-3 w-3 ms-1" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+
       {!customerId && (
         <Card className="border-dashed">
           <CardContent className="p-3 text-sm space-y-2">
@@ -164,15 +246,32 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
                     <span className="text-xs text-muted-foreground">
                       {Number(b.selling_price || 0).toLocaleString()} {b.currency || ''}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => navigate(`/bookings/${b.id}/workspace`)}
-                    >
-                      مساحة العمل <ExternalLink className="h-3 w-3 ms-1" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        title={pinnedBookingId === b.id ? 'مثبّت' : 'تثبيت كحجز نشط'}
+                        onClick={() => pinMutation.mutate(pinnedBookingId === b.id ? null : b.id)}
+                        disabled={pinMutation.isPending}
+                      >
+                        {pinnedBookingId === b.id ? (
+                          <PinOff className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <Pin className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => navigate(`/bookings/${b.id}/workspace`)}
+                      >
+                        مساحة العمل <ExternalLink className="h-3 w-3 ms-1" />
+                      </Button>
+                    </div>
                   </div>
+
                 </CardContent>
               </Card>
             ))}
