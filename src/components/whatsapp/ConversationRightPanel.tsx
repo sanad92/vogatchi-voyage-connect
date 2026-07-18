@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase,
+  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap,
 } from 'lucide-react';
+import { ConversationActionsPanel } from './ConversationActionsPanel';
 import { Customer360Panel } from './Customer360Panel';
 import { WhatsAppCRMPanel } from './WhatsAppCRMPanel';
 import { AIAssistantPanel } from './AIAssistantPanel';
@@ -159,8 +160,9 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
 
       {/* Tabs */}
       <Tabs defaultValue="ai" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-8 mx-3 mt-3">
+        <TabsList className="grid grid-cols-9 mx-3 mt-3">
           <TabsTrigger value="ai"><Sparkles className="h-4 w-4" /></TabsTrigger>
+          <TabsTrigger value="actions"><Zap className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="crm"><Briefcase className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="followups"><Bell className="h-4 w-4" /></TabsTrigger>
@@ -169,6 +171,10 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
           <TabsTrigger value="notes"><StickyNote className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="actions" className="flex-1 overflow-y-auto mt-0">
+          <ConversationActionsPanel conversation={conversation} />
+        </TabsContent>
 
         <TabsContent value="followups" className="flex-1 overflow-y-auto p-3 mt-0">
           <FollowupsPanel conversationId={conversationId} />
