@@ -246,15 +246,32 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
                     <span className="text-xs text-muted-foreground">
                       {Number(b.selling_price || 0).toLocaleString()} {b.currency || ''}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => navigate(`/bookings/${b.id}/workspace`)}
-                    >
-                      مساحة العمل <ExternalLink className="h-3 w-3 ms-1" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        title={pinnedBookingId === b.id ? 'مثبّت' : 'تثبيت كحجز نشط'}
+                        onClick={() => pinMutation.mutate(pinnedBookingId === b.id ? null : b.id)}
+                        disabled={pinMutation.isPending}
+                      >
+                        {pinnedBookingId === b.id ? (
+                          <PinOff className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <Pin className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => navigate(`/bookings/${b.id}/workspace`)}
+                      >
+                        مساحة العمل <ExternalLink className="h-3 w-3 ms-1" />
+                      </Button>
+                    </div>
                   </div>
+
                 </CardContent>
               </Card>
             ))}
