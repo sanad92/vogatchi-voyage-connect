@@ -33,8 +33,10 @@ interface Props {
 export const ConversationActionsPanel = ({ conversation }: Props) => {
   const navigate = useNavigate();
   const orgId = useOrgId();
+  const queryClient = useQueryClient();
   const customerId: string | undefined = conversation?.customer_id;
   const phone: string | undefined = conversation?.phone_number;
+  const pinnedBookingId: string | undefined = conversation?.pinned_booking_id;
 
   // Recent bookings for this customer
   const { data: bookings } = useQuery({
@@ -52,6 +54,38 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
       return data || [];
     },
   });
+
+  // Pinned booking details (may not be in recent list)
+  const { data: pinnedBooking } = useQuery({
+    queryKey: ['conv-pinned-booking', pinnedBookingId],
+    enabled: !!pinnedBookingId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('bookings')
+        .select('id, booking_number, booking_type, status, workflow_stage, start_date, end_date, selling_price, currency')
+        .eq('id', pinnedBookingId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const pinMutation = useMutation({
+    mutationFn: async (bookingId: string | null) => {
+      const { error } = await (supabase as any)
+        .from('whatsapp_conversations')
+        .update({ pinned_booking_id: bookingId })
+        .eq('id', conversation.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, bookingId) => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['conv-pinned-booking'] });
+      toast.success(bookingId ? 'تم تثبيت الحجز' : 'تم إلغاء التثبيت');
+    },
+    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+  });
+
 
   // Latest quotes for this customer
   const { data: quotes } = useQuery({
