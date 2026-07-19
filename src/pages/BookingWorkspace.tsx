@@ -3,9 +3,10 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
 import { useBookingWorkspace } from '@/hooks/useBookingWorkspace';
-import { WorkspaceHeader } from '@/components/bookings/workspace/WorkspaceHeader';
+import { WorkspaceExecutiveHeader } from '@/components/bookings/workspace/WorkspaceExecutiveHeader';
+import { FinancialSummaryStrip } from '@/components/bookings/workspace/FinancialSummaryStrip';
+import { SmartNextActionCard } from '@/components/bookings/workspace/SmartNextActionCard';
 import { StageStepper } from '@/components/bookings/workspace/StageStepper';
 import { OverviewTab } from '@/components/bookings/workspace/OverviewTab';
 import { ItineraryTab } from '@/components/bookings/workspace/ItineraryTab';
@@ -14,6 +15,11 @@ import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
+import {
+  derivePaymentStatus,
+  deriveProfitHealth,
+  type WorkflowContext,
+} from '@/lib/bookingWorkflow';
 
 const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
