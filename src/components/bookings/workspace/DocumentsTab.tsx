@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   FileText,
-  Passport,
+  IdCard,
   Plane,
   Ticket,
   Receipt,
@@ -17,9 +17,6 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import type { Workspace } from './types';
-
-// lucide has no `Passport` — use IdCard fallback
-import { IdCard } from 'lucide-react';
 
 interface Props {
   workspace: Workspace;
