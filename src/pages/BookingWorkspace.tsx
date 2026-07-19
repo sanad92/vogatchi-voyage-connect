@@ -166,25 +166,5 @@ const BookingWorkspace = () => {
   );
 };
 
-const SummaryStat = ({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: 'positive' | 'negative';
-}) => (
-  <div>
-    <p className="text-xs text-muted-foreground mb-1">{label}</p>
-    <p
-      className={`font-semibold truncate ${
-        tone === 'positive' ? 'text-emerald-600' : tone === 'negative' ? 'text-destructive' : ''
-      }`}
-    >
-      {value}
-    </p>
-  </div>
-);
 
 export default BookingWorkspace;
