@@ -83,55 +83,53 @@ const BookingWorkspace = () => {
         </Button>
       </div>
 
-      <WorkspaceHeader workspace={workspace} onOpenTab={setTab} />
-
-      <StageStepper
-        stage={workspace.booking.workflow_stage}
-        onChange={(next) => workspace.setStage(next)}
-      />
-
-      {/* Summary */}
-      <Card>
-        <CardContent className="pt-5">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-            <SummaryStat label="العميل" value={workspace.customer?.name || workspace.booking.customer_name || '—'} />
-            <SummaryStat label="المورد" value={workspace.supplier?.name || workspace.booking.supplier_name || '—'} />
-            <SummaryStat
-              label="التواريخ"
-              value={
-                workspace.booking.start_date
-                  ? `${workspace.booking.start_date}${workspace.booking.end_date ? ' → ' + workspace.booking.end_date : ''}`
-                  : '—'
-              }
+      {(() => {
+        const invoiced = workspace.financials.invoiced;
+        const paid = workspace.financials.paid;
+        const paymentStatus = derivePaymentStatus(invoiced, paid);
+        const profitHealth = deriveProfitHealth(workspace.financials.profit, workspace.financials.selling);
+        const hasVoucher = (workspace.invoices as any[]).some((inv: any) =>
+          /voucher|فاوتش/i.test(inv.document_type || inv.invoice_type || ''),
+        ) || Boolean((workspace.booking as any)?.voucher_number);
+        const ctx: WorkflowContext = {
+          stage: workspace.booking.workflow_stage,
+          bookingId: id!,
+          hasInvoice: (workspace.invoices ?? []).length > 0,
+          hasVoucher,
+          paymentStatus,
+          hasCustomerPhone: Boolean(workspace.customer?.phone),
+        };
+        return (
+          <>
+            <WorkspaceExecutiveHeader
+              workspace={workspace}
+              paymentStatus={paymentStatus}
+              profitHealth={profitHealth}
             />
-            <SummaryStat
-              label="سعر البيع"
-              value={`${Number(workspace.financials.selling).toLocaleString()} ${workspace.financials.currency}`}
+            <StageStepper
+              stage={workspace.booking.workflow_stage}
+              onChange={(next) => workspace.setStage(next)}
             />
-            <SummaryStat
-              label="الربح"
-              value={`${Number(workspace.financials.profit).toLocaleString()} ${workspace.financials.currency}`}
-              tone={workspace.financials.profit >= 0 ? 'positive' : 'negative'}
-            />
-          </div>
-        </CardContent>
-      </Card>
+            <FinancialSummaryStrip bookingId={id!} />
+            <SmartNextActionCard workspace={workspace} ctx={ctx} />
 
-      {/* Quick actions bar */}
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
-          <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => navigate(`/documents?booking_id=${id}`)}>
-          <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
-          <Wallet className="h-4 w-4 ml-1" /> تسجيل دفعة
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setTab('documents')}>
-          <Receipt className="h-4 w-4 ml-1" /> فاوتشر / مستندات
-        </Button>
-      </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
+                <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
+                <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
+                <Wallet className="h-4 w-4 ml-1" /> تسجيل دفعة
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setTab('documents')}>
+                <Receipt className="h-4 w-4 ml-1" /> فاوتشر / مستندات
+              </Button>
+            </div>
+          </>
+        );
+      })()}
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
         <TabsList className="grid grid-cols-4 md:grid-cols-7 h-auto">
