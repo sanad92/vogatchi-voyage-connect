@@ -92,7 +92,7 @@ const WhatsAppEmbed = ({
   onOpen: () => void;
   onOpenFull: () => void;
 }) => {
-  const { data: messages } = useWhatsAppMessages(conversationId);
+  const { messages } = useWhatsAppMessages(conversationId);
   const window = useWhatsAppWindow(conversationId);
   const recent = (messages ?? []).slice(-3);
 
@@ -106,9 +106,9 @@ const WhatsAppEmbed = ({
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${window?.isOpen ? 'bg-emerald-500' : 'bg-destructive'}`} />
+          <span className={`h-2 w-2 rounded-full ${window.isWindowOpen ? 'bg-emerald-500' : 'bg-destructive'}`} />
           <span className="text-xs">
-            {window?.isOpen ? 'النافذة مفتوحة — رسائل حرة' : 'النافذة مغلقة — قوالب فقط'}
+            {window.isWindowOpen ? 'النافذة مفتوحة — رسائل حرة' : 'النافذة مغلقة — قوالب فقط'}
           </span>
         </div>
         {!conversationId ? (
