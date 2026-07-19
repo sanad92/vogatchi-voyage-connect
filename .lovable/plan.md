@@ -1,87 +1,96 @@
 
-# المرحلة الثانية — Unified Booking Workspace
+# Phase 3 — Booking Workspace as Operational Command Center
 
-هدف المرحلة: بناء الواجهة الكاملة `/bookings/:id/workspace` فوق `useBookingWorkspace` من المرحلة الأولى، مع الحفاظ على الصفحة القديمة `/bookings/:id` تعمل كما هي.
+Goal: turn `/bookings/:id/workspace` from a passive tab shell into the daily driver for consultants: an executive header, live money picture, smart guidance for the next step, focused task buckets, unified documents, and embedded WhatsApp context — validated end-to-end across the full Lead→Completed flow.
 
-## المخرجات
+Scope is UI + light data plumbing only. No schema changes unless a check reveals a missing column (then a single additive migration). All logic reuses existing hooks: `useBookingWorkspace`, `useBookingFinancials`, `useInvoicePayments`, `useDocuments`, `useWhatsAppMessages`, `useWhatsAppWindow`, `useSuppliers`, `useOrgMembers`.
 
-- مسار جديد: `/bookings/:id/workspace` (Lazy route محمي بـ `bookings_view`).
-- زر "مساحة العمل" (Workspace) في صفحة `UnifiedBookingDetails` وفي جدول `/bookings` لكل صف، بدون حذف أي رابط قديم.
-- تجربة صفحة واحدة بتبويبات، RTL، Premium/Minimal، تعمل على الموبايل.
+## Deliverables
 
-## هيكل الشاشة
+### 1. Executive Header (`WorkspaceExecutiveHeader.tsx` — replaces current `WorkspaceHeader`)
+- Row 1: booking number • booking type icon • workflow stage pill (color-coded from stage enum) • booking status • payment status (`paid / partial / unpaid / refunded`) • profit status (`healthy / thin / loss`).
+- Row 2: customer name (linked) • destination (from itinerary hotel/flight) • travel dates (check-in→check-out or dep→ret) • assigned consultant (avatar) • SLA indicator (green/amber/red based on hours-to-travel and open tasks).
+- Reuses stage colors from tokens (`--primary`, `--success`, `--warning`, `--destructive`); no hardcoded hex.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ Header: رقم الحجز • نوع الحجز • Badge حالة • أزرار سريعة    │
-│  (WhatsApp • فاتورة • تسجيل دفعة • فاوتشر • تحديث)           │
-├──────────────────────────────────────────────────────────────┤
-│ Stage Stepper: lead → qualified → quoted → confirmed →       │
-│                paid → operations → traveling → completed →   │
-│                post_travel     (زر تغيير المرحلة)            │
-├──────────────────────────────────────────────────────────────┤
-│ Summary Row: العميل • المورد • تواريخ السفر • الربح/الهامش   │
-├───────────┬──────────────────────────────────────────────────┤
-│  Tabs     │  Content                                         │
-│  Overview │  Itinerary │ Financials │ Documents │ WhatsApp │
-│           │  Notes & Tasks │ Timeline                        │
-└──────────────────────────────────────────────────────────────┘
+### 2. Financial Summary Strip (`FinancialSummaryStrip.tsx`)
+Fixed 8-cell grid, always visible above tabs:
 ```
+Selling | Supplier Cost | Gross Profit | Margin %
+Customer Paid | Customer Balance | Supplier Paid | Supplier Balance
+```
+Data sources: `workspace.financials` + `useInvoicePayments(bookingId)` + `supplier_payments` filtered by `booking_id`. Colored deltas via semantic tokens.
 
-## التبويبات
+### 3. Smart Next Action Panel (`SmartNextActionCard.tsx`)
+Deterministic recommender keyed off `workflow_stage` + financial state:
+- `lead/qualified` → "Create Quote" (link to `/quotes/new?bookingId=…`)
+- `quoted` (no invoice) → "Convert to Invoice"
+- `confirmed` + unpaid → "Record Payment"
+- `paid` + no voucher doc → "Generate Voucher"
+- `operations`/`traveling` → "Send Pre-Travel WhatsApp"
+- `completed` → "Request Review"
+Each card: one-line rationale + primary CTA + secondary "Skip / Mark Done" that advances stage.
 
-- **Overview**: بطاقة العميل، Stage Stepper، ملخص الربح، أقرب مهمة مفتوحة، آخر رسالة واتساب، اختصارات (Create Invoice, Record Payment, Send WhatsApp Template).
-- **Itinerary**: بطاقات Hotel / Flight / Transport / Car حسب المتاح من `itinerary`، مع Empty state واضح لكل نوع وزر "إضافة تفاصيل" يفتح صفحات الإدخال الحالية.
-- **Financials**: يستخدم `BookingFinancialWorkspace` و `BookingAccountingPanel` الموجودين + جدول `payments` من الـ hook + شريط "المستحق / المدفوع / الرصيد".
-- **Documents**: عرض المرفقات الحالية من `booking` + رابط للفواتير + استخدام `useDocuments`؛ لا رفع جديد في هذه المرحلة (سيأتي في المرحلة 7).
-- **WhatsApp**: لوحة مضمّنة تعرض آخر محادثة (`conversation` من الـ hook) + `WindowStatusBadge` + زر "فتح المحادثة الكاملة" ينقل إلى `/whatsapp-admin?conversation=…`. إذا لا يوجد محادثة، زر "بدء محادثة" يفتح Composer بالقالب الافتراضي.
-- **Notes & Tasks**:
-  - قائمة `tasks` بحالات (open/in_progress/done) مع Priority + Due، أزرار إغلاق/إضافة (يستخدم `addTask`, `completeTask`).
-  - قائمة `customer_notes` للعميل مع نموذج إضافة ملاحظة (Reuse `useConversationNotes` أو استعلام مباشر لجدول `customer_notes` بنفس الـ hook).
-- **Timeline**: عرض عمودي عكسي لـ `timeline` (Kind → أيقونة، Summary، وقت نسبي بالعربية)، مع فلترة سريعة (كل، مراحل، مهام، مالي، واتساب).
+### 4. Task Buckets (upgrade `TasksTab.tsx`)
+Split `workspace.tasks` into 4 collapsible sections by `due_at` vs now: **Overdue** (red), **Today** (amber), **Upcoming** (default), **Completed** (muted, last 10). Retain existing add/complete actions. Add priority chips.
 
-## المكونات الجديدة
+### 5. Business Timeline (upgrade `TimelineTab.tsx`)
+Map raw `kind` values to business milestones with meaningful labels+icons+colors:
+`lead_created`, `quote_sent`, `quote_accepted`, `booking_confirmed`, `invoice_issued`, `payment_received`, `supplier_paid`, `voucher_issued`, `travel_started`, `travel_completed`, `review_requested`. Unknown kinds fall through to current generic renderer. Keep existing filter chips.
 
-- `src/pages/BookingWorkspace.tsx` — الصفحة نفسها + Tabs (shadcn Tabs)، تستخدم `useBookingWorkspace(id)`.
-- `src/components/bookings/workspace/WorkspaceHeader.tsx` — Header + Quick Actions.
-- `src/components/bookings/workspace/StageStepper.tsx` — Stepper مع مؤشر تقدم و`Popover` لتغيير المرحلة (يستدعي `setStage` ويسجّل `logEvent`).
-- `src/components/bookings/workspace/OverviewTab.tsx`.
-- `src/components/bookings/workspace/ItineraryTab.tsx`.
-- `src/components/bookings/workspace/FinancialsTab.tsx` (يغلف الموجود).
-- `src/components/bookings/workspace/DocumentsTab.tsx`.
-- `src/components/bookings/workspace/WhatsAppTab.tsx`.
-- `src/components/bookings/workspace/TasksTab.tsx`.
-- `src/components/bookings/workspace/TimelineTab.tsx`.
+### 6. Unified Documents Tab (`DocumentsTab.tsx` upgrade)
+Single grouped list with 6 categories: **Passport & Visa**, **Tickets**, **Hotel Vouchers**, **Invoices**, **Confirmations**, **Other**. Sources:
+- Invoices from `invoices` by `booking_id`
+- Passport/visa from `customer` fields + `useDocuments(customerId)`
+- Tickets/vouchers/confirmations from `booking.attachments` filtered by inferred `doc_type` or filename hint
+Each row: category icon, name, date, download/open. Empty state per group with an "Upload" placeholder button (opens existing document upload path if present; otherwise disabled with tooltip — no new backend this phase).
 
-كل مكوّن يستقبل مخرجات الـ hook عبر props (Presentational)، مما يبقي الاختبار سهلاً ويمنع تكرار الاستعلامات.
+### 7. Embedded WhatsApp Context (upgrade `OverviewTab.tsx`)
+Add compact panel: `WindowStatusBadge` + last 3 messages preview (from `useWhatsAppMessages(conversationId, { limit: 3 })`) + "Open Conversation" + quick-send template button. Full WA tab remains.
 
-## التعديلات على ملفات موجودة
+### 8. Profit Widget (`ProfitWidget.tsx`)
+Small card on Overview: profit amount, margin %, tiny sparkline placeholder (bar of paid vs outstanding), traffic-light health dot. Uses only existing `workspace.financials`.
 
-- `src/App.tsx`: إضافة `const BookingWorkspace = lazy(...)` و`<Route path="/bookings/:id/workspace" ...>`.
-- `src/pages/UnifiedBookingDetails.tsx`: زر "فتح مساحة العمل" في الهيدر يذهب إلى `/:id/workspace`.
-- `src/pages/UnifiedBookings.tsx` (جدول الحجوزات): إضافة أيقونة زر Workspace بجانب زر التفاصيل. (بدون إزالة زر التفاصيل).
+## Files
 
-## القرارات الفنية
+Create:
+- `src/components/bookings/workspace/WorkspaceExecutiveHeader.tsx`
+- `src/components/bookings/workspace/FinancialSummaryStrip.tsx`
+- `src/components/bookings/workspace/SmartNextActionCard.tsx`
+- `src/components/bookings/workspace/ProfitWidget.tsx`
+- `src/components/bookings/workspace/timelineMilestones.ts` (kind→meta map)
+- `src/lib/bookingWorkflow.ts` (pure recommender + payment/profit status derivers)
 
-- التبويب يُدار عبر `?tab=overview|itinerary|...` في الـ URL (deep-link + مشاركة).
-- الوقت النسبي بالعربية عبر `date-fns/locale/ar-SA`.
-- ألوان الحالة تستخدم tokens من `index.css` (`--primary`, `--success`, `--muted-foreground`) — لا ألوان صريحة.
-- كل الاستعلامات مسبوقة بـ `useOrgId` عبر `useBookingWorkspace` (موجود أصلاً — RLS).
-- Realtime يعمل تلقائياً (الـ hook فيه اشتراك على `booking_tasks`, `booking_timeline_events`, `bookings`).
-- لا تعديلات schema في هذه المرحلة. لا Edge functions جديدة.
+Edit:
+- `src/pages/BookingWorkspace.tsx` — swap header, mount Financial strip + SmartNextAction above tabs
+- `src/components/bookings/workspace/OverviewTab.tsx` — add ProfitWidget + WA embed
+- `src/components/bookings/workspace/TasksTab.tsx` — bucket layout
+- `src/components/bookings/workspace/TimelineTab.tsx` — milestone map
+- `src/components/bookings/workspace/DocumentsTab.tsx` — grouped categories
 
-## التحقق قبل الإغلاق
+No migration expected. If `supplier_payments.booking_id` is missing when queried, fall back to `null` and log a gap in the report (do not add a column silently).
 
-1. Build/typecheck ينجحان.
-2. Playwright: فتح `/bookings/<id>/workspace` بعد استرجاع الجلسة، والتقاط لقطات لكل تبويب (7 لقطات)، والتأكد من عدم وجود أخطاء Console.
-3. تجربة تغيير المرحلة → يظهر سطر جديد في تبويب Timeline (اختبار realtime).
-4. إضافة مهمة → تظهر فوراً في Tasks و Timeline.
+## Validation (must pass before marking complete)
 
-## خارج نطاق هذه المرحلة
+Use Playwright against localhost with the injected Supabase session. Prereq: seed or select an existing test org with at least one customer.
 
-- رفع مستندات جديدة (يأتي في المرحلة 7).
-- Action Bar داخل الواتساب من داخل المحادثة (المرحلة 3).
-- AI Concierge و Quote Builder (المرحلة 4).
-- Automation والتذكيرات (المرحلة 5).
+End-to-end script (`/tmp/browser/phase3/e2e.py`):
+1. **Lead** — create CRM lead via UI, capture screenshot.
+2. **Quote** — build quote from that lead, send.
+3. **Revision** — edit quote line, resend.
+4. **Acceptance** — mark quote accepted → confirms booking exists.
+5. **Booking** — open `/bookings/:id/workspace`, verify header + strip render with real numbers.
+6. **Invoice** — click SmartNextAction "Convert to Invoice", confirm invoice appears in Documents.
+7. **Payment** — record payment via SmartNextAction; verify Customer Balance updates.
+8. **Voucher** — trigger voucher generation; verify it appears under Hotel Vouchers.
+9. **Completed** — advance stage to `completed`; verify timeline shows all milestones in order.
 
-هل أبدأ التنفيذ بهذا الشكل، أم تفضّل تعديل ترتيب/محتوى التبويبات قبل البدء؟
+Each step: screenshot + assertion on visible text. Console errors captured.
+
+## Report format (delivered in chat after run)
+- Screenshots (attached paths)
+- Pass/fail per workflow step
+- Remaining gaps (features referenced but not wired)
+- Technical debt (fallbacks used, missing columns, mock data points)
+- Explicit "Phase 3 complete" only if all 9 steps pass; otherwise "Phase 3 blocked at step N".
+
+Proceed?
