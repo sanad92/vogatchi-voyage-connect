@@ -15,13 +15,14 @@ import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
+import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
 import {
   derivePaymentStatus,
   deriveProfitHealth,
   type WorkflowContext,
 } from '@/lib/bookingWorkflow';
 
-const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline'] as const;
+const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TAB_LABELS: Record<TabKey, string> = {
@@ -32,6 +33,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   whatsapp: 'واتساب',
   tasks: 'المهام والملاحظات',
   timeline: 'السجل الزمني',
+  automation: 'الأتمتة',
 };
 
 const BookingWorkspace = () => {
@@ -132,7 +134,7 @@ const BookingWorkspace = () => {
       })()}
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
-        <TabsList className="grid grid-cols-4 md:grid-cols-7 h-auto">
+        <TabsList className="grid grid-cols-4 md:grid-cols-8 h-auto">
           {TAB_KEYS.map((k) => (
             <TabsTrigger key={k} value={k} className="text-xs md:text-sm">
               {TAB_LABELS[k]}
@@ -160,6 +162,9 @@ const BookingWorkspace = () => {
         </TabsContent>
         <TabsContent value="timeline" className="mt-4">
           <TimelineTab workspace={workspace} />
+        </TabsContent>
+        <TabsContent value="automation" className="mt-4">
+          {id && <AutomationCenter bookingId={id} />}
         </TabsContent>
       </Tabs>
     </div>
