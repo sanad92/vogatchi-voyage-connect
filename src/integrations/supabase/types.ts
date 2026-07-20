@@ -884,6 +884,186 @@ export type Database = {
           },
         ]
       }
+      booking_automation_runs: {
+        Row: {
+          booking_id: string
+          completion_score: number
+          created_at: string
+          error_message: string | null
+          id: string
+          last_run_at: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          completion_score?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_run_at?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          completion_score?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_run_at?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_automation_runs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_runs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_runs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_runs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_runs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_automation_steps: {
+        Row: {
+          attempts: number
+          booking_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          last_attempt_at: string | null
+          organization_id: string
+          run_id: string
+          status: string
+          step_key: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          booking_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          last_attempt_at?: string | null
+          organization_id: string
+          run_id: string
+          status?: string
+          step_key: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          booking_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          last_attempt_at?: string | null
+          organization_id?: string
+          run_id?: string
+          status?: string
+          step_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_automation_steps_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_automation_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "booking_automation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_car_details: {
         Row: {
           booking_id: string
@@ -955,6 +1135,91 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_financial_snapshots: {
+        Row: {
+          booking_id: string
+          created_at: string
+          currency: string
+          expected_margin_pct: number
+          expected_profit: number
+          id: string
+          organization_id: string
+          payable_amount: number
+          receivable_amount: number
+          snapshot_at: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          currency?: string
+          expected_margin_pct?: number
+          expected_profit?: number
+          id?: string
+          organization_id: string
+          payable_amount?: number
+          receivable_amount?: number
+          snapshot_at?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          expected_margin_pct?: number
+          expected_profit?: number
+          id?: string
+          organization_id?: string
+          payable_amount?: number
+          receivable_amount?: number
+          snapshot_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_financial_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1520,6 +1785,85 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_vouchers: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          issued_at: string
+          organization_id: string
+          pdf_url: string | null
+          qr_payload: Json
+          updated_at: string
+          voucher_number: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          organization_id: string
+          pdf_url?: string | null
+          qr_payload?: Json
+          updated_at?: string
+          voucher_number: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          organization_id?: string
+          pdf_url?: string | null
+          qr_payload?: Json
+          updated_at?: string
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_vouchers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vouchers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vouchers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vouchers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vouchers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vouchers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4822,6 +5166,85 @@ export type Database = {
         }
         Relationships: []
       }
+      messaging_suggestions: {
+        Row: {
+          booking_id: string
+          channel: string
+          created_at: string
+          id: string
+          organization_id: string
+          status: string
+          template_key: string
+          template_variables: Json
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          channel: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          status?: string
+          template_key: string
+          template_variables?: Json
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          template_key?: string
+          template_variables?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_suggestions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_suggestions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_suggestions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_suggestions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_suggestions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_suggestions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_salaries: {
         Row: {
           absence_days: number | null
@@ -6170,6 +6593,110 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "supplier_currencies_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payment_orders: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          currency: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          reference_number: string
+          service_type: string
+          source_id: string | null
+          source_type: string | null
+          status: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          booking_id: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          reference_number: string
+          service_type: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          reference_number?: string
+          service_type?: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_orders_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
@@ -8758,6 +9285,14 @@ export type Database = {
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      retry_booking_automation_step: {
+        Args: { p_step_id: string }
+        Returns: string
+      }
+      run_booking_automation: {
+        Args: { p_booking_id: string }
+        Returns: string
+      }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
         Returns: undefined
