@@ -134,7 +134,7 @@ const BookingWorkspace = () => {
       })()}
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
-        <TabsList className="grid grid-cols-4 md:grid-cols-7 h-auto">
+        <TabsList className="grid grid-cols-4 md:grid-cols-8 h-auto">
           {TAB_KEYS.map((k) => (
             <TabsTrigger key={k} value={k} className="text-xs md:text-sm">
               {TAB_LABELS[k]}
