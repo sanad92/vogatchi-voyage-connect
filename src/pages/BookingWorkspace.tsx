@@ -15,6 +15,7 @@ import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
+import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
 import {
   derivePaymentStatus,
   deriveProfitHealth,
