@@ -22,7 +22,7 @@ import {
   type WorkflowContext,
 } from '@/lib/bookingWorkflow';
 
-const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline'] as const;
+const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TAB_LABELS: Record<TabKey, string> = {
@@ -33,6 +33,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   whatsapp: 'واتساب',
   tasks: 'المهام والملاحظات',
   timeline: 'السجل الزمني',
+  automation: 'الأتمتة',
 };
 
 const BookingWorkspace = () => {
