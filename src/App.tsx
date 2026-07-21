@@ -149,6 +149,9 @@ const GeneralLedger = lazy(() => import("@/pages/GeneralLedger"));
 const BankReconciliation = lazy(() => import("@/pages/BankReconciliation"));
 const TravelKPIs = lazy(() => import("@/pages/TravelKPIs"));
 const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
+const TreasuryManagement = lazy(() => import("@/pages/finance/TreasuryManagement"));
+const CashFlowDashboard = lazy(() => import("@/pages/finance/CashFlowDashboard"));
+const FinanceApprovals = lazy(() => import("@/pages/finance/FinanceApprovals"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
