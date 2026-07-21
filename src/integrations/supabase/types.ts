@@ -718,6 +718,7 @@ export type Database = {
           is_active: boolean | null
           notes: string | null
           organization_id: string | null
+          treasury_kind: string
           updated_at: string | null
         }
         Insert: {
@@ -732,6 +733,7 @@ export type Database = {
           is_active?: boolean | null
           notes?: string | null
           organization_id?: string | null
+          treasury_kind?: string
           updated_at?: string | null
         }
         Update: {
@@ -746,6 +748,7 @@ export type Database = {
           is_active?: boolean | null
           notes?: string | null
           organization_id?: string | null
+          treasury_kind?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -2708,6 +2711,109 @@ export type Database = {
           },
         ]
       }
+      credit_notes: {
+        Row: {
+          amount: number
+          amount_base: number
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          exchange_rate: number
+          id: string
+          invoice_id: string | null
+          note_date: string
+          note_number: string
+          organization_id: string
+          party_id: string | null
+          party_type: string
+          reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          note_date?: string
+          note_number: string
+          organization_id: string
+          party_id?: string | null
+          party_type: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          note_date?: string
+          note_number?: string
+          organization_id?: string
+          party_id?: string | null
+          party_type?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_communications: {
         Row: {
           booking_id: string | null
@@ -2910,6 +3016,188 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_payment_allocations: {
+        Row: {
+          amount: number
+          amount_base: number
+          created_at: string
+          id: string
+          invoice_id: string
+          organization_id: string
+          payment_id: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          organization_id: string
+          payment_id: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          organization_id?: string
+          payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payment_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payment_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_payments: {
+        Row: {
+          amount: number
+          amount_base: number
+          booking_id: string | null
+          client_ref: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          exchange_rate: number
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          organization_id: string
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          status: string
+          treasury_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          booking_id?: string | null
+          client_ref?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          organization_id: string
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          status?: string
+          treasury_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          booking_id?: string | null
+          client_ref?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          status?: string
+          treasury_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_treasury_account_id_fkey"
+            columns: ["treasury_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -3782,6 +4070,109 @@ export type Database = {
           },
           {
             foreignKeyName: "expense_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_transactions: {
+        Row: {
+          account_code: string | null
+          amount: number
+          amount_base: number
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          direction: string
+          exchange_rate: number
+          id: string
+          memo: string | null
+          occurred_at: string
+          organization_id: string
+          party_id: string | null
+          party_type: string | null
+          reference_id: string | null
+          reference_type: string | null
+        }
+        Insert: {
+          account_code?: string | null
+          amount: number
+          amount_base: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          direction: string
+          exchange_rate?: number
+          id?: string
+          memo?: string | null
+          occurred_at?: string
+          organization_id: string
+          party_id?: string | null
+          party_type?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Update: {
+          account_code?: string | null
+          amount?: number
+          amount_base?: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          direction?: string
+          exchange_rate?: number
+          id?: string
+          memo?: string | null
+          occurred_at?: string
+          organization_id?: string
+          party_id?: string | null
+          party_type?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -6037,6 +6428,146 @@ export type Database = {
           },
         ]
       }
+      refund_requests: {
+        Row: {
+          amount: number
+          amount_base: number
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string | null
+          created_at: string
+          currency: string
+          customer_id: string | null
+          exchange_rate: number
+          id: string
+          invoice_id: string | null
+          organization_id: string
+          paid_at: string | null
+          reason: string | null
+          rejection_reason: string | null
+          requested_by: string | null
+          source_payment_id: string | null
+          status: string
+          treasury_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          organization_id: string
+          paid_at?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          source_payment_id?: string | null
+          status?: string
+          treasury_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_id?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          source_payment_id?: string | null
+          status?: string
+          treasury_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_source_payment_id_fkey"
+            columns: ["source_payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_treasury_account_id_fkey"
+            columns: ["treasury_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rent_contracts: {
         Row: {
           annual_increase_percentage: number | null
@@ -6600,9 +7131,194 @@ export type Database = {
           },
         ]
       }
+      supplier_invoices: {
+        Row: {
+          amount: number
+          amount_base: number
+          amount_paid: number
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          exchange_rate: number
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          organization_id: string
+          payment_order_id: string | null
+          status: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          amount_paid?: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          organization_id: string
+          payment_order_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          amount_paid?: number
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          exchange_rate?: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          organization_id?: string
+          payment_order_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_payment_order_id_fkey"
+            columns: ["payment_order_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payment_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payment_allocations: {
+        Row: {
+          amount: number
+          amount_base: number
+          created_at: string
+          id: string
+          organization_id: string
+          payment_order_id: string | null
+          supplier_invoice_id: string | null
+          supplier_payment_id: string
+        }
+        Insert: {
+          amount: number
+          amount_base: number
+          created_at?: string
+          id?: string
+          organization_id: string
+          payment_order_id?: string | null
+          supplier_invoice_id?: string | null
+          supplier_payment_id: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number
+          created_at?: string
+          id?: string
+          organization_id?: string
+          payment_order_id?: string | null
+          supplier_invoice_id?: string | null
+          supplier_payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payment_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_allocations_payment_order_id_fkey"
+            columns: ["payment_order_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payment_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_allocations_supplier_invoice_id_fkey"
+            columns: ["supplier_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_allocations_supplier_payment_id_fkey"
+            columns: ["supplier_payment_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_payment_orders: {
         Row: {
           amount: number
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           booking_id: string
           created_at: string
           currency: string
@@ -6611,6 +7327,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           reference_number: string
+          rejection_reason: string | null
           service_type: string
           source_id: string | null
           source_type: string | null
@@ -6620,6 +7337,9 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id: string
           created_at?: string
           currency?: string
@@ -6628,6 +7348,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           reference_number: string
+          rejection_reason?: string | null
           service_type: string
           source_id?: string | null
           source_type?: string | null
@@ -6637,6 +7358,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id?: string
           created_at?: string
           currency?: string
@@ -6645,6 +7369,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           reference_number?: string
+          rejection_reason?: string | null
           service_type?: string
           source_id?: string | null
           source_type?: string | null
@@ -8942,6 +9667,14 @@ export type Database = {
         Returns: string
       }
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      approve_refund_request: {
+        Args: { _approve?: boolean; _reason?: string; _refund_id: string }
+        Returns: undefined
+      }
+      approve_supplier_payment_order: {
+        Args: { _approve?: boolean; _po_id: string; _reason?: string }
+        Returns: undefined
+      }
       backfill_journals: {
         Args: { _org_id: string }
         Returns: {
@@ -8997,6 +9730,17 @@ export type Database = {
           _name: string
           _phone?: string
           _slug: string
+        }
+        Returns: string
+      }
+      create_refund_request: {
+        Args: {
+          _amount: number
+          _booking_id: string
+          _currency?: string
+          _exchange_rate?: number
+          _reason?: string
+          _source_payment_id?: string
         }
         Returns: string
       }
@@ -9084,12 +9828,12 @@ export type Database = {
       get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_cash_flow:
         | {
-            Args: { _end_date: string; _org_id: string; _start_date: string }
+            Args: { _from?: string; _org: string; _to?: string }
             Returns: {
-              inflows: number
-              net_flow: number
-              outflows: number
-              period_date: string
+              day: string
+              incoming: number
+              net: number
+              outgoing: number
             }[]
           }
         | {
@@ -9131,6 +9875,19 @@ export type Database = {
           total_due: number
         }[]
       }
+      get_customer_ledger: {
+        Args: { _customer_id: string; _from?: string; _to?: string }
+        Returns: {
+          balance: number
+          booking_id: string
+          credit: number
+          currency: string
+          debit: number
+          entry_date: string
+          entry_type: string
+          reference: string
+        }[]
+      }
       get_data_quality_details: { Args: { _org_id: string }; Returns: Json }
       get_duplicate_customers: {
         Args: never
@@ -9139,6 +9896,10 @@ export type Database = {
           customer_ids: string[]
           phone: string
         }[]
+      }
+      get_finance_executive: {
+        Args: { _from?: string; _org: string; _to?: string }
+        Returns: Json
       }
       get_general_ledger: {
         Args: {
@@ -9190,6 +9951,19 @@ export type Database = {
           max_bookings_per_month: number
           max_storage_mb: number
           max_users: number
+        }[]
+      }
+      get_supplier_ledger: {
+        Args: { _from?: string; _supplier_id: string; _to?: string }
+        Returns: {
+          balance: number
+          booking_id: string
+          credit: number
+          currency: string
+          debit: number
+          entry_date: string
+          entry_type: string
+          reference: string
         }[]
       }
       get_supplier_performance: {
@@ -9253,6 +10027,14 @@ export type Database = {
         Args: { _org_id: string }
         Returns: boolean
       }
+      pay_refund_request: {
+        Args: {
+          _reference?: string
+          _refund_id: string
+          _treasury_account_id: string
+        }
+        Returns: undefined
+      }
       post_expense_transaction: {
         Args: { _expense_id: string }
         Returns: string
@@ -9284,6 +10066,37 @@ export type Database = {
           }
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
+      record_customer_payment: {
+        Args: {
+          _amount: number
+          _booking_id?: string
+          _client_ref?: string
+          _currency?: string
+          _customer_id?: string
+          _exchange_rate?: number
+          _invoice_id: string
+          _method?: string
+          _notes?: string
+          _payment_date?: string
+          _reference?: string
+          _treasury_account_id?: string
+        }
+        Returns: string
+      }
+      record_supplier_payment: {
+        Args: {
+          _amount: number
+          _currency?: string
+          _exchange_rate?: number
+          _method?: string
+          _notes?: string
+          _payment_date?: string
+          _po_id: string
+          _reference?: string
+          _treasury_account_id?: string
+        }
+        Returns: string
+      }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       retry_booking_automation_step: {
         Args: { p_step_id: string }

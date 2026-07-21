@@ -1,93 +1,71 @@
+# Phase 5 — Financial & Accounting Engine
 
-# Booking Automation Engine
+Ship a Booking-centered finance layer on top of the existing automation engine. Every record stays linked to `booking_id`; nothing in the current app breaks.
 
-Goal: make the **Booking** the master transaction. On booking creation (direct or from an accepted quote), atomically generate a linked set of downstream artifacts, expose them in the Booking Workspace, track completion, and allow safe reruns/retries.
+## Scope
 
-## 1. Data model (single migration)
+1. **Ledger foundations (DB)**
+   - `customer_payments` — customer receipts, linked to invoice + booking, currency + FX rate + `amount_base`.
+   - `customer_payment_allocations` — allocate a payment across one or more invoices.
+   - `supplier_invoices` — supplier bills tied to a `supplier_payment_order` + booking.
+   - `supplier_payment_allocations` — allocate `supplier_payments` across POs / supplier invoices.
+   - `credit_notes` (customer + supplier variants via `party_type`).
+   - `refund_requests` — status machine `requested → approved → paid → rejected`, linked to booking + payment.
+   - `treasury_accounts` — unified view over `bank_accounts` + cash/card/wallet/gateway types (add missing columns; keep existing table).
+   - `finance_transactions` — append-only, accounting-ready ledger (debit/credit, account codes, booking_id, party ref, currency, fx_rate, base_amount). Feeds future GL without posting journal entries yet.
+   - Approval columns on `supplier_payment_orders` (`approval_status`, `approved_by`, `approved_at`).
+   - All tables: GRANTs, RLS by `organization_id`, `updated_at` triggers.
 
-New table `booking_automation_runs` (one per booking, upserted):
-- `booking_id` (unique), `organization_id`
-- `status` (`pending` | `partial` | `completed` | `failed`)
-- `completion_score` int (0–100)
-- `last_run_at`, `error_message`
+2. **Historical currency engine**
+   - Every money row stores `currency`, `exchange_rate`, `amount_base` (org base currency, default EGP).
+   - `record_customer_payment`, `record_supplier_payment`, `record_refund` RPCs snapshot FX at time of transaction — never recomputed.
 
-New table `booking_automation_steps`:
-- `run_id` FK, `booking_id`, `organization_id`
-- `step_key` (`invoice`, `supplier_po`, `voucher`, `receivable`, `payable`, `profit`, `timeline`, `messaging_suggestions`)
-- `entity_type`, `entity_id` (link to created record)
-- `status` (`pending` | `completed` | `failed` | `skipped`)
-- `idempotency_key` UNIQUE per (booking_id, step_key, entity_key)
-- `error_message`, `attempts`, `last_attempt_at`
+3. **RPCs**
+   - `record_customer_payment(invoice_id, amount, currency, method, treasury_account_id, fx_rate)` → inserts payment, allocation, treasury tx, `finance_transactions` (Dr Cash / Cr AR), updates invoice paid/remaining, timeline event.
+   - `record_supplier_payment(po_id, amount, currency, method, treasury_account_id, fx_rate)` → similar, Dr AP / Cr Cash.
+   - `approve_supplier_payment_order(po_id)` — requires manager role.
+   - `create_refund_request` / `approve_refund` / `pay_refund` — full status workflow with ledger reversal.
+   - `get_customer_ledger(customer_id, from, to)` / `get_supplier_ledger(supplier_id, from, to)` — opening balance + running balance rows.
+   - `get_cash_flow(from, to)` / `get_finance_executive(from, to)`.
 
-New table `supplier_payment_orders` (Supplier Payment Order = PO to pay supplier):
-- `booking_id`, `organization_id`, `supplier_id`, `service_type` (hotel/flight/transfer/visa/insurance/activity/other)
-- `reference_number`, `amount`, `currency`, `due_date`
-- `status` (`draft`|`approved`|`paid`|`cancelled`)
-- `source_type`, `source_id` (link back to hotel_bookings/flight_bookings/etc.)
-- UNIQUE (booking_id, source_type, source_id) → idempotency
+4. **Hooks (frontend)**
+   - `useCustomerLedger`, `useSupplierLedger`, `useTreasuryAccounts`, `useCashFlow`, `useRefundRequests`, `useFinanceExecutive`, `useSupplierPOApprovals`.
+   - Reuse `useBookingFinancials` and existing invoice/payment hooks; add allocation dialogs.
 
-New table `booking_vouchers`:
-- `booking_id`, `organization_id`, `voucher_number` (unique), `qr_payload`, `issued_at`, `pdf_url` (nullable)
+5. **UI**
+   - **Booking Workspace / Financials tab** — extend with: PO approval strip, refund button, allocation dialog. Keep existing widgets intact.
+   - **Customer Ledger page** `/finance/customers/:id/ledger` — statement table + PDF export.
+   - **Supplier Ledger page** `/finance/suppliers/:id/ledger` — statement + aging buckets (0-30/31-60/61-90/90+).
+   - **Treasury page** `/finance/treasury` — accounts by type (bank/cash/card/wallet/gateway) with balances per currency.
+   - **Cash Flow dashboard** `/finance/cash-flow` — incoming/outgoing/net by day + by method.
+   - **Refunds page** `/finance/refunds` — approval queue.
+   - **Executive Finance Dashboard** `/finance/executive` — sales, costs, profit, cash, AR, AP, overdue, pending POs, top customers/suppliers, profitability by destination/consultant.
+   - **Profitability Analytics** `/finance/profitability` — pivot by booking / customer / supplier / consultant / destination / period.
 
-New table `booking_financial_snapshots` (non-accounting; tracks receivable/payable/profit):
-- `booking_id` UNIQUE, `organization_id`
-- `receivable_amount`, `payable_amount`, `expected_profit`, `expected_margin_pct`
-- `snapshot_at`
+6. **Validation**
+   - Playwright E2E: seed a booking → invoice → customer payment → PO approval → supplier payment → verify cash flow, both ledgers, executive dashboard all reflect the numbers and every row references the booking id.
+   - Screenshots of each stage saved to `/tmp/browser/phase5/`.
 
-New table `messaging_suggestions`:
-- `booking_id`, `organization_id`, `channel` (`whatsapp`|`email`), `template_key`, `template_variables jsonb`, `status` (`suggested`|`sent`|`dismissed`)
+## Technical section
 
-All tables: standard GRANTs, RLS scoped by `organization_id` via existing helpers, `updated_at` trigger where relevant.
+- Base currency read from `organizations.base_currency` (fallback `'EGP'`).
+- `finance_transactions` schema:
+  ```
+  id, organization_id, occurred_at, booking_id, reference_type, reference_id,
+  account_code (from chart_of_accounts, nullable), party_type ('customer'|'supplier'|'employee'|null),
+  party_id, debit numeric, credit numeric, currency, exchange_rate, base_amount, memo
+  ```
+  Append-only via trigger; no updates/deletes for non-admins.
+- All RPCs `SECURITY DEFINER`, `SET search_path = public`, permission check via `can_org_write(org_id)`.
+- Idempotency: `record_customer_payment` accepts optional `client_ref` unique per org to prevent duplicate submissions.
+- Cash flow view materialized in SQL as a function (not a materialized view) for real-time reads.
+- No changes to `journal_entries` yet — that's Phase 6 (GL posting).
 
-## 2. Server: single RPC `run_booking_automation(p_booking_id uuid)`
+## Deliverables checklist
 
-SECURITY DEFINER, idempotent, transactional. Steps in order, each wrapped in a BEGIN/EXCEPTION block writing to `booking_automation_steps`:
-
-1. Load booking + related detail rows (hotel/flight/transport/car).
-2. **Invoice**: if none linked to booking_id → create via existing `invoices` table using booking totals; else skip.
-3. **Supplier POs**: for each supplier attached (from hotel_bookings, flight_bookings, transport_bookings, car_rentals) → upsert `supplier_payment_orders` on (booking_id, source_type, source_id).
-4. **Voucher**: if none → generate `voucher_number` = `V-<booking_reference>`, `qr_payload` = JSON with booking_id + reference + customer + dates.
-5. **Financial snapshot**: recompute receivable = invoice remaining; payable = sum(PO amounts unpaid); expected_profit = selling − cost; margin = profit/selling*100.
-6. **Timeline events**: insert `booking_timeline_events` entries for any newly created artifact (dedup by `event_type`+`entity_id`).
-7. **Messaging suggestions**: seed suggestions ("booking_confirmation" WA + email; "payment_reminder" if balance > 0; "voucher_ready" if voucher created).
-8. Compute `completion_score` = weighted % of successful steps; write `booking_automation_runs`.
-
-Trigger `AFTER INSERT ON bookings` and `AFTER UPDATE ON quotes WHEN status='accepted'` → `PERFORM run_booking_automation(...)`. Safe on rerun.
-
-Second RPC `retry_booking_automation_step(p_step_id uuid)` to retry a single failed step.
-
-## 3. Frontend
-
-New hook `useBookingAutomation(bookingId)` — reads run + steps + linked artifacts, exposes `runNow()` and `retryStep()`.
-
-New components under `src/components/bookings/workspace/automation/`:
-- `AutomationCenter.tsx` — shows run status, completion score gauge, list of steps grouped by Completed / Pending / Failed with per-row Retry.
-- `CompletionScoreBadge.tsx` — used in Executive Header.
-- `SupplierPOList.tsx`, `VoucherCard.tsx`, `MessagingSuggestionsList.tsx`.
-
-Integration:
-- Add **Automation** tab to `BookingWorkspace.tsx`.
-- Surface completion score in `WorkspaceExecutiveHeader`.
-- Add supplier POs section under Financials tab; voucher under Documents tab; messaging suggestions under WhatsApp tab.
-- Extend `useQuoteConversion` to call `runNow()` right after booking creation (best-effort; trigger is authoritative).
-
-## 4. Idempotency & safety
-
-- UNIQUE constraints on all natural keys (invoice per booking, PO per source row, voucher per booking, snapshot per booking, timeline dedup).
-- All step writes use `ON CONFLICT DO NOTHING` / upsert; step ledger records `skipped` when already present.
-- No accounting journal entries created (explicit non-goal).
-- Preserves existing invoice/PO flows: hook creation is additive, existing manual creates still work.
-
-## 5. Validation
-
-- Run automation on an existing booking (rerun-safe check).
-- Convert a quote → verify invoice, POs (one per supplier), voucher, snapshot, timeline events, and suggestions all appear in the Workspace's Automation tab, and completion score = 100.
-- Simulate a supplier missing to confirm partial status + retry button works.
-
-## Deliverables
-
-- 1 migration
-- ~5 new tables + 2 RPCs + 2 triggers
-- 1 hook + ~5 new components
-- Workspace tab + header badge + section integrations
-- No breaking changes to existing pages or flows
+- [ ] Migration 1: ledger + treasury + finance_transactions schema, RLS, GRANTs.
+- [ ] Migration 2: RPCs (payments, refunds, approvals, ledger, cash flow, exec).
+- [ ] 7 hooks + 6 new pages + Financials tab extensions.
+- [ ] Routes wired in `App.tsx`, sidebar entries under **Finance**.
+- [ ] Playwright E2E validation + screenshots.
+- [ ] No regressions in existing Booking Workspace / Automation Center.
