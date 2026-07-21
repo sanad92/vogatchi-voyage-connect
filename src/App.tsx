@@ -310,7 +310,10 @@ function App() {
                               <Route path="/cfo-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><CFODashboard /></PermissionRouteGuard>} />
                               <Route path="/customer-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><CustomerLedger /></PermissionRouteGuard>} />
                               <Route path="/supplier-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><SupplierLedger /></PermissionRouteGuard>} />
-                              <Route path="/executive-finance" element={<PermissionRouteGuard requiredPermission="financial_view"><ExecutiveFinance /></PermissionRouteGuard>} />
+                             <Route path="/executive-finance" element={<PermissionRouteGuard requiredPermission="financial_view"><ExecutiveFinance /></PermissionRouteGuard>} />
+                             <Route path="/treasury" element={<PermissionRouteGuard requiredPermission="financial_view"><TreasuryManagement /></PermissionRouteGuard>} />
+                             <Route path="/cash-flow" element={<PermissionRouteGuard requiredPermission="financial_view"><CashFlowDashboard /></PermissionRouteGuard>} />
+                             <Route path="/finance-approvals" element={<PermissionRouteGuard requiredPermission="financial_view"><FinanceApprovals /></PermissionRouteGuard>} />
                               <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
