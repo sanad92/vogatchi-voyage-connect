@@ -9678,6 +9678,7 @@ export type Database = {
       backfill_journals: {
         Args: { _org_id: string }
         Returns: {
+          customer_payments_posted: number
           expenses_posted: number
           invoices_posted: number
           supplier_payments_posted: number
@@ -10035,6 +10036,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      post_customer_payment: { Args: { _payment_id: string }; Returns: string }
       post_expense_transaction: {
         Args: { _expense_id: string }
         Returns: string

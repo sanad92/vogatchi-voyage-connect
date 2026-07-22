@@ -152,6 +152,9 @@ const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
 const TreasuryManagement = lazy(() => import("@/pages/finance/TreasuryManagement"));
 const CashFlowDashboard = lazy(() => import("@/pages/finance/CashFlowDashboard"));
 const FinanceApprovals = lazy(() => import("@/pages/finance/FinanceApprovals"));
+const TrialBalance = lazy(() => import("@/pages/finance/TrialBalance"));
+const IncomeStatement = lazy(() => import("@/pages/finance/IncomeStatement"));
+const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -314,6 +317,9 @@ function App() {
                              <Route path="/treasury" element={<PermissionRouteGuard requiredPermission="financial_view"><TreasuryManagement /></PermissionRouteGuard>} />
                              <Route path="/cash-flow" element={<PermissionRouteGuard requiredPermission="financial_view"><CashFlowDashboard /></PermissionRouteGuard>} />
                              <Route path="/finance-approvals" element={<PermissionRouteGuard requiredPermission="financial_view"><FinanceApprovals /></PermissionRouteGuard>} />
+                             <Route path="/trial-balance" element={<PermissionRouteGuard requiredPermission="financial_view"><TrialBalance /></PermissionRouteGuard>} />
+                             <Route path="/income-statement" element={<PermissionRouteGuard requiredPermission="financial_view"><IncomeStatement /></PermissionRouteGuard>} />
+                             <Route path="/balance-sheet" element={<PermissionRouteGuard requiredPermission="financial_view"><BalanceSheet /></PermissionRouteGuard>} />
                               <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
