@@ -237,7 +237,9 @@ function App() {
                             <Route path="database" element={<DatabaseManager />} />
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
+                            <Route path="act-as" element={<PlatformActAsPage />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
+
                           </Routes>
                         </Suspense>
                       </PlatformLayout>
