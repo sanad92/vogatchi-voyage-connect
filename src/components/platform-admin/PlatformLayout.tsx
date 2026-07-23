@@ -21,12 +21,14 @@ const PlatformLayout = ({ children }: Props) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50/40 via-background to-orange-50/30 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10" dir="rtl">
+      <ImpersonationBanner />
       <PlatformSidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed(c => !c)}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
+
 
       <div className={cn(
         "transition-all duration-300 min-h-screen flex flex-col",
