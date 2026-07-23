@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils';
 import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 import { Button } from '@/components/ui/button';
 import { LogOut, ShieldAlert } from 'lucide-react';
+import ImpersonationBanner from '@/components/platform-admin/ImpersonationBanner';
+import { useWhiteLabel } from '@/hooks/useWhiteLabel';
+
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
