@@ -340,7 +340,15 @@ function App() {
                               <Route path="/travel-kpis" element={<PermissionRouteGuard requiredPermission="financial_view"><TravelKPIs /></PermissionRouteGuard>} />
                               <Route path="/ai-assistant" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
                               <Route path="/ai-assistant/:threadId" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
+                              {/* Phase 7 — Enterprise / SaaS Core */}
+                              <Route path="/organization" element={<OrganizationCenter />} />
+                              <Route path="/organization/branches" element={<PermissionRouteGuard requiredPermission="admin_settings"><BranchesPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/departments" element={<PermissionRouteGuard requiredPermission="admin_settings"><DepartmentsPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/feature-flags" element={<PermissionRouteGuard requiredPermission="admin_settings"><FeatureFlagsPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/white-label" element={<PermissionRouteGuard requiredPermission="admin_settings"><WhiteLabelPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/security" element={<PermissionRouteGuard requiredPermission="admin_settings"><SecurityCenterPage /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
+
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>
