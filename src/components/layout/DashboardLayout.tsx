@@ -17,11 +17,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isImpersonating, impersonatingOrgName, stop } = useOrgImpersonation();
+  useWhiteLabel(); // apply org branding at runtime
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      <ImpersonationBanner />
       {isImpersonating && (
         <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg">
+
           <div className="px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldAlert className="h-4 w-4 flex-shrink-0" />
