@@ -156,7 +156,17 @@ const TrialBalance = lazy(() => import("@/pages/finance/TrialBalance"));
 const IncomeStatement = lazy(() => import("@/pages/finance/IncomeStatement"));
 const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
 
+// Phase 7 - SaaS Core & Enterprise
+const OrganizationCenter = lazy(() => import("@/pages/organization/OrganizationCenter"));
+const BranchesPage = lazy(() => import("@/pages/organization/BranchesPage"));
+const DepartmentsPage = lazy(() => import("@/pages/organization/DepartmentsPage"));
+const FeatureFlagsPage = lazy(() => import("@/pages/organization/FeatureFlagsPage"));
+const WhiteLabelPage = lazy(() => import("@/pages/organization/WhiteLabelPage"));
+const SecurityCenterPage = lazy(() => import("@/pages/organization/SecurityCenterPage"));
+const PlatformActAsPage = lazy(() => import("@/pages/platform-admin/PlatformActAsPage"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
 
 // Query Client
 const queryClient = new QueryClient({
