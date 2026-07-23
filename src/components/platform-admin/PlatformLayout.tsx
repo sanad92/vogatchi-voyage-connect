@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import PlatformSidebar from './PlatformSidebar';
+import ImpersonationBanner from './ImpersonationBanner';
 import { cn } from '@/lib/utils';
+
 
 interface Props {
   children: ReactNode;
