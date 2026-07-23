@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import PlatformSidebar from './PlatformSidebar';
+import ImpersonationBanner from './ImpersonationBanner';
 import { cn } from '@/lib/utils';
+
 
 interface Props {
   children: ReactNode;
@@ -19,12 +21,14 @@ const PlatformLayout = ({ children }: Props) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50/40 via-background to-orange-50/30 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10" dir="rtl">
+      <ImpersonationBanner />
       <PlatformSidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed(c => !c)}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
+
 
       <div className={cn(
         "transition-all duration-300 min-h-screen flex flex-col",

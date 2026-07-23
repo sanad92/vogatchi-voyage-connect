@@ -156,7 +156,17 @@ const TrialBalance = lazy(() => import("@/pages/finance/TrialBalance"));
 const IncomeStatement = lazy(() => import("@/pages/finance/IncomeStatement"));
 const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
 
+// Phase 7 - SaaS Core & Enterprise
+const OrganizationCenter = lazy(() => import("@/pages/organization/OrganizationCenter"));
+const BranchesPage = lazy(() => import("@/pages/organization/BranchesPage"));
+const DepartmentsPage = lazy(() => import("@/pages/organization/DepartmentsPage"));
+const FeatureFlagsPage = lazy(() => import("@/pages/organization/FeatureFlagsPage"));
+const WhiteLabelPage = lazy(() => import("@/pages/organization/WhiteLabelPage"));
+const SecurityCenterPage = lazy(() => import("@/pages/organization/SecurityCenterPage"));
+const PlatformActAsPage = lazy(() => import("@/pages/platform-admin/PlatformActAsPage"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
 
 // Query Client
 const queryClient = new QueryClient({
@@ -227,7 +237,9 @@ function App() {
                             <Route path="database" element={<DatabaseManager />} />
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
+                            <Route path="act-as" element={<PlatformActAsPage />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
+
                           </Routes>
                         </Suspense>
                       </PlatformLayout>
@@ -328,7 +340,15 @@ function App() {
                               <Route path="/travel-kpis" element={<PermissionRouteGuard requiredPermission="financial_view"><TravelKPIs /></PermissionRouteGuard>} />
                               <Route path="/ai-assistant" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
                               <Route path="/ai-assistant/:threadId" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
+                              {/* Phase 7 — Enterprise / SaaS Core */}
+                              <Route path="/organization" element={<OrganizationCenter />} />
+                              <Route path="/organization/branches" element={<PermissionRouteGuard requiredPermission="admin_settings"><BranchesPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/departments" element={<PermissionRouteGuard requiredPermission="admin_settings"><DepartmentsPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/feature-flags" element={<PermissionRouteGuard requiredPermission="admin_settings"><FeatureFlagsPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/white-label" element={<PermissionRouteGuard requiredPermission="admin_settings"><WhiteLabelPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/security" element={<PermissionRouteGuard requiredPermission="admin_settings"><SecurityCenterPage /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
+
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>

@@ -1,71 +1,84 @@
-# Phase 5 — Financial & Accounting Engine
 
-Ship a Booking-centered finance layer on top of the existing automation engine. Every record stays linked to `booking_id`; nothing in the current app breaks.
+# Phase 7 – SaaS Core & Enterprise Platform
 
-## Scope
+This phase is very large. Before writing migrations and pages I want to confirm scope so we don't duplicate what already exists (Platform Admin, `user_roles`, `organizations`, `organization_settings`, `admin_audit_log`, `subscription_plans`, `subscriptions`, `platform_roles`, existing PermissionsManagement, etc.).
 
-1. **Ledger foundations (DB)**
-   - `customer_payments` — customer receipts, linked to invoice + booking, currency + FX rate + `amount_base`.
-   - `customer_payment_allocations` — allocate a payment across one or more invoices.
-   - `supplier_invoices` — supplier bills tied to a `supplier_payment_order` + booking.
-   - `supplier_payment_allocations` — allocate `supplier_payments` across POs / supplier invoices.
-   - `credit_notes` (customer + supplier variants via `party_type`).
-   - `refund_requests` — status machine `requested → approved → paid → rejected`, linked to booking + payment.
-   - `treasury_accounts` — unified view over `bank_accounts` + cash/card/wallet/gateway types (add missing columns; keep existing table).
-   - `finance_transactions` — append-only, accounting-ready ledger (debit/credit, account codes, booking_id, party ref, currency, fx_rate, base_amount). Feeds future GL without posting journal entries yet.
-   - Approval columns on `supplier_payment_orders` (`approval_status`, `approved_by`, `approved_at`).
-   - All tables: GRANTs, RLS by `organization_id`, `updated_at` triggers.
+## What already exists (will be reused, not rebuilt)
+- Organizations, organization_settings, organization_members
+- user_roles + has_role() + PermissionRouteGuard + PermissionsManagement
+- Platform Admin area (`/platform-admin/*`) with Analytics, Organizations, Plans, Subscriptions, Audit, Settings
+- admin_audit_log (immutable via triggers)
+- subscription_plans, subscriptions, subscription enforcement, bank_transfer_requests
+- useImpersonation / useOrgImpersonation (basic "act as")
 
-2. **Historical currency engine**
-   - Every money row stores `currency`, `exchange_rate`, `amount_base` (org base currency, default EGP).
-   - `record_customer_payment`, `record_supplier_payment`, `record_refund` RPCs snapshot FX at time of transaction — never recomputed.
+## What Phase 7 will add (net-new only)
 
-3. **RPCs**
-   - `record_customer_payment(invoice_id, amount, currency, method, treasury_account_id, fx_rate)` → inserts payment, allocation, treasury tx, `finance_transactions` (Dr Cash / Cr AR), updates invoice paid/remaining, timeline event.
-   - `record_supplier_payment(po_id, amount, currency, method, treasury_account_id, fx_rate)` → similar, Dr AP / Cr Cash.
-   - `approve_supplier_payment_order(po_id)` — requires manager role.
-   - `create_refund_request` / `approve_refund` / `pay_refund` — full status workflow with ledger reversal.
-   - `get_customer_ledger(customer_id, from, to)` / `get_supplier_ledger(supplier_id, from, to)` — opening balance + running balance rows.
-   - `get_cash_flow(from, to)` / `get_finance_executive(from, to)`.
+### 1. Database migrations
+- `branches` table (org-scoped, name, code, address, phone, manager_id, is_active) + GRANT + RLS
+- `departments` table (org-scoped, name, code, branch_id?, manager_id, is_active) + GRANT + RLS
+- Extend `profiles` / `organization_members` with `branch_id`, `department_id` (nullable)
+- `feature_flags` table (org-scoped key/value, plus global overrides) + RLS
+- `white_label_settings` table (org-scoped: logo_url, brand_name, primary_color, accent_color, custom_domain, email_from_name, favicon_url) + RLS
+- `security_settings` table (org-scoped: mfa_required, session_timeout_min, ip_allowlist jsonb, password_policy jsonb) + RLS
+- `impersonation_sessions` table (super_admin_id, target_org_id, target_user_id?, reason TEXT NOT NULL, mfa_verified bool, org_pin_verified bool, started_at, ended_at, ip, user_agent) — append-only, RLS: platform admins only
+- Trigger: any write during an active impersonation session copies `session_id` into `admin_audit_log.details`
 
-4. **Hooks (frontend)**
-   - `useCustomerLedger`, `useSupplierLedger`, `useTreasuryAccounts`, `useCashFlow`, `useRefundRequests`, `useFinanceExecutive`, `useSupplierPOApprovals`.
-   - Reuse `useBookingFinancials` and existing invoice/payment hooks; add allocation dialogs.
+### 2. Edge functions
+- `platform-impersonate-start` – validates MFA code + org PIN + reason, creates impersonation_session, returns short-lived scoped JWT claim
+- `platform-impersonate-stop` – closes session, writes audit
+- `org-generate-pin` – org owner sets/rotates the 6-digit PIN required for anyone to impersonate their org
+- `feature-flag-evaluate` – helper for server-side flag checks
 
-5. **UI**
-   - **Booking Workspace / Financials tab** — extend with: PO approval strip, refund button, allocation dialog. Keep existing widgets intact.
-   - **Customer Ledger page** `/finance/customers/:id/ledger` — statement table + PDF export.
-   - **Supplier Ledger page** `/finance/suppliers/:id/ledger` — statement + aging buckets (0-30/31-60/61-90/90+).
-   - **Treasury page** `/finance/treasury` — accounts by type (bank/cash/card/wallet/gateway) with balances per currency.
-   - **Cash Flow dashboard** `/finance/cash-flow` — incoming/outgoing/net by day + by method.
-   - **Refunds page** `/finance/refunds` — approval queue.
-   - **Executive Finance Dashboard** `/finance/executive` — sales, costs, profit, cash, AR, AP, overdue, pending POs, top customers/suppliers, profitability by destination/consultant.
-   - **Profitability Analytics** `/finance/profitability` — pivot by booking / customer / supplier / consultant / destination / period.
+### 3. Frontend – Org-scoped (under `/organization/*`)
+- `OrganizationCenter` – overview: branches count, departments count, users, plan, usage
+- `BranchesPage` – CRUD
+- `DepartmentsPage` – CRUD, optional branch link
+- `OrgUsersPage` – extend existing TeamManagement with branch/department assignment
+- `RolesPermissionsPage` – wrap existing PermissionsManagement + role templates
+- `OrgSettingsPage` – general + locale + currency (uses organization_settings)
+- `FeatureFlagsPage` – toggle org-level flags
+- `WhiteLabelPage` – branding form + live preview
+- `SecurityCenterPage` – MFA enforcement, session timeout, IP allowlist, org PIN management
+- `AuditCenterPage` – enhanced viewer with export CSV + filters by user/action/table/date
 
-6. **Validation**
-   - Playwright E2E: seed a booking → invoice → customer payment → PO approval → supplier payment → verify cash flow, both ledgers, executive dashboard all reflect the numbers and every row references the booking id.
-   - Screenshots of each stage saved to `/tmp/browser/phase5/`.
+### 4. Frontend – Platform-scoped (extends `/platform-admin/*`)
+- `PlatformDashboard` – MRR, active orgs, churn, top plans, recent signups (reuses existing analytics query)
+- `PlatformActAsPage` – search org → search user → require MFA code + org PIN + reason → start session → banner across app while active → "Return to my account" button
+- Global banner component `<ImpersonationBanner />` mounted in App layout
 
-## Technical section
+### 5. Runtime helpers
+- `useFeatureFlag(key)` hook
+- `useWhiteLabel()` – apply CSS variables + logo at boot
+- `useImpersonationSession()` – hydrates banner + injects `session_id` into every mutation for audit chain
 
-- Base currency read from `organizations.base_currency` (fallback `'EGP'`).
-- `finance_transactions` schema:
-  ```
-  id, organization_id, occurred_at, booking_id, reference_type, reference_id,
-  account_code (from chart_of_accounts, nullable), party_type ('customer'|'supplier'|'employee'|null),
-  party_id, debit numeric, credit numeric, currency, exchange_rate, base_amount, memo
-  ```
-  Append-only via trigger; no updates/deletes for non-admins.
-- All RPCs `SECURITY DEFINER`, `SET search_path = public`, permission check via `can_org_write(org_id)`.
-- Idempotency: `record_customer_payment` accepts optional `client_ref` unique per org to prevent duplicate submissions.
-- Cash flow view materialized in SQL as a function (not a materialized view) for real-time reads.
-- No changes to `journal_entries` yet — that's Phase 6 (GL posting).
+### 6. RBAC
+- Extend `has_permission` with new keys: `org.branches.manage`, `org.departments.manage`, `org.feature_flags.manage`, `org.white_label.manage`, `org.security.manage`, `platform.impersonate`
+- Route guards on all new pages
 
-## Deliverables checklist
+### 7. Backward compatibility guarantees
+- No changes to existing bookings/finance/whatsapp/crm/accounting logic
+- All new tables nullable-linked; existing rows keep working with `branch_id=NULL`
+- Existing RLS untouched; new tables get their own policies
+- Existing `useImpersonation` kept; new PlatformActAs uses stricter path but old callers still work
 
-- [ ] Migration 1: ledger + treasury + finance_transactions schema, RLS, GRANTs.
-- [ ] Migration 2: RPCs (payments, refunds, approvals, ledger, cash flow, exec).
-- [ ] 7 hooks + 6 new pages + Financials tab extensions.
-- [ ] Routes wired in `App.tsx`, sidebar entries under **Finance**.
-- [ ] Playwright E2E validation + screenshots.
-- [ ] No regressions in existing Booking Workspace / Automation Center.
+### 8. Validation
+- Playwright script under `/tmp/browser/phase7/`:
+  1. Login as platform owner
+  2. Create branch + department + assign user
+  3. Toggle a feature flag and verify UI reacts
+  4. Update white-label brand color and verify CSS variable applied
+  5. Attempt Act-As without reason → blocked; with reason + PIN + MFA → banner shows, mutation appears in audit with session_id
+  6. Return to own account
+- Screenshots saved and reviewed
+
+### 9. Deliverables in final message
+- Migrations list, files changed, routes added, Playwright results, remaining gaps / tech debt
+
+## Scope questions before I start
+1. **MFA source**: use Supabase Auth TOTP (built-in) for the "MFA" in Act-As? Or a simple 6-digit email OTP via existing email infra?
+2. **Org PIN**: 6-digit numeric, hashed with bcrypt in `security_settings` — OK?
+3. **Feature flags**: org-level only, or also per-user? I recommend org-level only for now.
+4. **White label custom domain**: store the value but do NOT wire DNS/hosting in this phase (out of scope) — OK?
+5. **Branches/Departments**: purely organizational (no data partitioning) or should bookings/customers gain optional `branch_id` filters? I recommend organizational only for now; data-partitioning can be Phase 7.5.
+
+Reply with answers (or "defaults OK") and I'll execute end-to-end in one go.
