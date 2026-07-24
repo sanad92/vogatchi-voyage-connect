@@ -3614,6 +3614,45 @@ export type Database = {
           },
         ]
       }
+      domain_events: {
+        Row: {
+          aggregate_id: string | null
+          aggregate_type: string
+          correlation_id: string | null
+          emitted_by: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          occurred_at: string
+          organization_id: string | null
+          payload: Json
+        }
+        Insert: {
+          aggregate_id?: string | null
+          aggregate_type: string
+          correlation_id?: string | null
+          emitted_by?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          occurred_at?: string
+          organization_id?: string | null
+          payload?: Json
+        }
+        Update: {
+          aggregate_id?: string | null
+          aggregate_type?: string
+          correlation_id?: string | null
+          emitted_by?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          occurred_at?: string
+          organization_id?: string | null
+          payload?: Json
+        }
+        Relationships: []
+      }
       email_queue: {
         Row: {
           attempts: number
@@ -3983,6 +4022,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      event_deliveries: {
+        Row: {
+          attempts: number
+          event_id: string
+          handler_key: string
+          id: string
+          last_error: string | null
+          next_retry_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          event_id: string
+          handler_key: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          event_id?: string
+          handler_key?: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_deliveries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_subscriptions: {
+        Row: {
+          config: Json
+          created_at: string
+          event_type: string
+          handler_key: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          event_type: string
+          handler_key: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          event_type?: string
+          handler_key?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
       }
       exchange_rates: {
         Row: {
@@ -10051,6 +10158,17 @@ export type Database = {
         }
         Returns: string
       }
+      emit_event: {
+        Args: {
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_idempotency_key: string
+          p_organization_id: string
+          p_payload: Json
+          p_type: string
+        }
+        Returns: string
+      }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
       ensure_employee_for_user: {
         Args: { _org_id: string; _user_id: string }
@@ -10320,6 +10438,38 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      handler_ai_summary_refresh: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_audit_write: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_enqueue_email: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_enqueue_whatsapp_suggestion: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_finance_post: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_notify_in_app: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_run_booking_automation: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_timeline_append: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
       has_platform_role: {
         Args: {
           _role: Database["public"]["Enums"]["platform_role"]
@@ -10383,6 +10533,7 @@ export type Database = {
             Returns: string
           }
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
+      process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       record_customer_payment: {
         Args: {
@@ -10419,6 +10570,10 @@ export type Database = {
       retry_booking_automation_step: {
         Args: { p_step_id: string }
         Returns: string
+      }
+      retry_event_delivery: {
+        Args: { p_delivery_id: string }
+        Returns: undefined
       }
       run_booking_automation: {
         Args: { p_booking_id: string }
