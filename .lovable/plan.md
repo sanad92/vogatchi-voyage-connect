@@ -1,84 +1,113 @@
+# Phase 8 – Workflow Orchestrator & Integration Layer
 
-# Phase 7 – SaaS Core & Enterprise Platform
+Connect all existing engines (Bookings, Automation, Finance, GL, WhatsApp, Notifications, AI, Audit) through a centralized, idempotent, event-driven bus. No UI redesign. No rebuild of existing modules.
 
-This phase is very large. Before writing migrations and pages I want to confirm scope so we don't duplicate what already exists (Platform Admin, `user_roles`, `organizations`, `organization_settings`, `admin_audit_log`, `subscription_plans`, `subscriptions`, `platform_roles`, existing PermissionsManagement, etc.).
+## What already exists (reuse, do not touch)
+- `automation_rules` / `automation_actions` / `automation_logs` + `useAutomationEngine`
+- `booking_automation_runs` / `_steps` + `run_booking_automation` RPC
+- `booking_timeline_events` (already the per-booking timeline)
+- `finance_transactions` (append-only) + Phase 6 GL auto-post trigger on `customer_payments`
+- `notifications` table + `useNotifications`
+- `email_queue` + `process-email-queue`
+- WhatsApp send functions + templates
+- `admin_audit_log` (immutable) + `ai_assistant_*` tables
 
-## What already exists (will be reused, not rebuilt)
-- Organizations, organization_settings, organization_members
-- user_roles + has_role() + PermissionRouteGuard + PermissionsManagement
-- Platform Admin area (`/platform-admin/*`) with Analytics, Organizations, Plans, Subscriptions, Audit, Settings
-- admin_audit_log (immutable via triggers)
-- subscription_plans, subscriptions, subscription enforcement, bank_transfer_requests
-- useImpersonation / useOrgImpersonation (basic "act as")
+## What Phase 8 adds (net-new only)
 
-## What Phase 7 will add (net-new only)
+### 1. Database — the Event Bus
+- `domain_events` table (append-only)
+  - `id uuid pk`, `organization_id uuid`, `event_type text`, `aggregate_type text`,
+    `aggregate_id uuid`, `payload jsonb`, `idempotency_key text unique`,
+    `occurred_at timestamptz`, `emitted_by uuid`, `correlation_id uuid`
+- `event_subscriptions` table — routes an `event_type` to a `handler_key` with config
+- `event_deliveries` table — one row per (event × handler); status pending/succeeded/failed/skipped, attempts, last_error, next_retry_at
+- Indexes: `(event_type, occurred_at)`, `(aggregate_type, aggregate_id)`, unique `idempotency_key`
+- RLS: org-scoped read; writes only via SECURITY DEFINER RPCs
 
-### 1. Database migrations
-- `branches` table (org-scoped, name, code, address, phone, manager_id, is_active) + GRANT + RLS
-- `departments` table (org-scoped, name, code, branch_id?, manager_id, is_active) + GRANT + RLS
-- Extend `profiles` / `organization_members` with `branch_id`, `department_id` (nullable)
-- `feature_flags` table (org-scoped key/value, plus global overrides) + RLS
-- `white_label_settings` table (org-scoped: logo_url, brand_name, primary_color, accent_color, custom_domain, email_from_name, favicon_url) + RLS
-- `security_settings` table (org-scoped: mfa_required, session_timeout_min, ip_allowlist jsonb, password_policy jsonb) + RLS
-- `impersonation_sessions` table (super_admin_id, target_org_id, target_user_id?, reason TEXT NOT NULL, mfa_verified bool, org_pin_verified bool, started_at, ended_at, ip, user_agent) — append-only, RLS: platform admins only
-- Trigger: any write during an active impersonation session copies `session_id` into `admin_audit_log.details`
+### 2. Core RPCs
+- `emit_event(p_type, p_aggregate_type, p_aggregate_id, p_payload, p_idempotency_key)`
+  - Inserts into `domain_events` (dedup on idempotency_key → no-op if exists)
+  - Fan-out inserts one `event_deliveries` row per matching active subscription
+- `process_event_deliveries(p_limit)` — SECURITY DEFINER worker RPC
+  - Picks pending deliveries, dispatches to in-DB handlers, updates status, exponential backoff on failure (max 5 attempts, then dead-letter)
+- `dead_letter_event_deliveries` view for the Ops UI
 
-### 2. Edge functions
-- `platform-impersonate-start` – validates MFA code + org PIN + reason, creates impersonation_session, returns short-lived scoped JWT claim
-- `platform-impersonate-stop` – closes session, writes audit
-- `org-generate-pin` – org owner sets/rotates the 6-digit PIN required for anyone to impersonate their org
-- `feature-flag-evaluate` – helper for server-side flag checks
+### 3. In-DB Handlers (all idempotent, all take `payload jsonb`)
+- `handler_timeline_append` — insert into `booking_timeline_events` (dedup on `(booking_id, event_type, source_event_id)`)
+- `handler_run_booking_automation` — call existing `run_booking_automation`
+- `handler_finance_post` — thin wrapper that reads booking/invoice/payment and ensures GL entries exist (delegates to existing Phase 6 logic; unique key = source event id)
+- `handler_notify_in_app` — insert into `notifications`
+- `handler_enqueue_email` — insert into `email_queue`
+- `handler_enqueue_whatsapp_suggestion` — insert into `messaging_suggestions`
+- `handler_audit_write` — insert into `admin_audit_log`
+- `handler_ai_summary_refresh` — mark AI thread stale (queue only; real refresh is client)
 
-### 3. Frontend – Org-scoped (under `/organization/*`)
-- `OrganizationCenter` – overview: branches count, departments count, users, plan, usage
-- `BranchesPage` – CRUD
-- `DepartmentsPage` – CRUD, optional branch link
-- `OrgUsersPage` – extend existing TeamManagement with branch/department assignment
-- `RolesPermissionsPage` – wrap existing PermissionsManagement + role templates
-- `OrgSettingsPage` – general + locale + currency (uses organization_settings)
-- `FeatureFlagsPage` – toggle org-level flags
-- `WhiteLabelPage` – branding form + live preview
-- `SecurityCenterPage` – MFA enforcement, session timeout, IP allowlist, org PIN management
-- `AuditCenterPage` – enhanced viewer with export CSV + filters by user/action/table/date
+### 4. Producers — one trigger per source table, emits standardized events
+- `bookings` → `booking.created`, `booking.stage_changed`, `booking.completed`
+- `quotes` → `quote.created`, `quote.accepted`, `quote.rejected`
+- `invoices` → `invoice.created`, `invoice.paid`
+- `customer_payments` → `customer.payment.recorded`
+- `supplier_payment_orders` → `supplier.po.created`, `supplier.po.approved`
+- `supplier_payments` → `supplier.payment.recorded`
+- `booking_vouchers` → `voucher.generated`
+- `refund_requests` → `refund.requested`, `refund.approved`, `refund.paid`
+- All triggers build a deterministic `idempotency_key` = `event_type || ':' || row.id || ':' || coalesce(status,'')`, so retries and re-saves never duplicate.
 
-### 4. Frontend – Platform-scoped (extends `/platform-admin/*`)
-- `PlatformDashboard` – MRR, active orgs, churn, top plans, recent signups (reuses existing analytics query)
-- `PlatformActAsPage` – search org → search user → require MFA code + org PIN + reason → start session → banner across app while active → "Return to my account" button
-- Global banner component `<ImpersonationBanner />` mounted in App layout
+### 5. Default subscriptions (seeded)
+| event_type | handlers |
+|---|---|
+| booking.created | timeline, automation, notify, audit |
+| booking.stage_changed | timeline, automation, notify, ai_summary |
+| booking.completed | timeline, notify, email, whatsapp, audit |
+| quote.accepted | timeline, automation (creates booking flow), notify |
+| invoice.created | timeline, finance, notify |
+| invoice.paid | timeline, finance, notify, whatsapp |
+| customer.payment.recorded | timeline, finance (GL already exists — handler is no-op safe), notify |
+| supplier.po.approved | timeline, notify, audit |
+| supplier.payment.recorded | timeline, finance, audit |
+| voucher.generated | timeline, email, whatsapp |
+| refund.approved | timeline, finance, notify, audit |
 
-### 5. Runtime helpers
-- `useFeatureFlag(key)` hook
-- `useWhiteLabel()` – apply CSS variables + logo at boot
-- `useImpersonationSession()` – hydrates banner + injects `session_id` into every mutation for audit chain
+### 6. Scheduler
+- `pg_cron` job every minute → `select process_event_deliveries(200)`
+- Second job every 5 min → retry `failed` deliveries whose `next_retry_at <= now()`
 
-### 6. RBAC
-- Extend `has_permission` with new keys: `org.branches.manage`, `org.departments.manage`, `org.feature_flags.manage`, `org.white_label.manage`, `org.security.manage`, `platform.impersonate`
-- Route guards on all new pages
+### 7. Notification Engine (thin, reuses existing tables)
+- `dispatch_notification(user_ids[], channel, template_key, payload)` RPC that routes to `notifications` / `email_queue` / WhatsApp suggestion. Called only from handlers — no direct callers in app code required.
 
-### 7. Backward compatibility guarantees
-- No changes to existing bookings/finance/whatsapp/crm/accounting logic
-- All new tables nullable-linked; existing rows keep working with `branch_id=NULL`
-- Existing RLS untouched; new tables get their own policies
-- Existing `useImpersonation` kept; new PlatformActAs uses stricter path but old callers still work
+### 8. Report sync
+- Reports already read live from `finance_transactions` / GL. Add materialized helper `refresh_finance_report_cache()` triggered from `handler_finance_post` (debounced via advisory lock so many events in a burst = one refresh).
 
-### 8. Validation
-- Playwright script under `/tmp/browser/phase7/`:
-  1. Login as platform owner
-  2. Create branch + department + assign user
-  3. Toggle a feature flag and verify UI reacts
-  4. Update white-label brand color and verify CSS variable applied
-  5. Attempt Act-As without reason → blocked; with reason + PIN + MFA → banner shows, mutation appears in audit with session_id
-  6. Return to own account
-- Screenshots saved and reviewed
+### 9. Frontend (minimal — no redesign)
+- `useDomainEvents(aggregate_id)` hook — powers existing Timeline tab if we want richer data (opt-in, existing timeline still works).
+- **Ops page only:** `/platform-admin/event-bus` — list recent events, deliveries, dead-letter, "retry" button. Reuses existing table styles. No new design system.
+- No changes to Booking Workspace, WhatsApp, Finance, or Sidebar beyond adding one Platform Admin link.
 
-### 9. Deliverables in final message
-- Migrations list, files changed, routes added, Playwright results, remaining gaps / tech debt
+### 10. Backward compatibility
+- Existing direct calls (e.g. `useAutomationEngine.executeTrigger`, direct `notifications` inserts, direct `email_queue` inserts) keep working.
+- New triggers only *add* events; they never modify existing rows or block writes.
+- If `process_event_deliveries` fails, business writes still succeed — the bus is best-effort with retries.
 
-## Scope questions before I start
-1. **MFA source**: use Supabase Auth TOTP (built-in) for the "MFA" in Act-As? Or a simple 6-digit email OTP via existing email infra?
-2. **Org PIN**: 6-digit numeric, hashed with bcrypt in `security_settings` — OK?
-3. **Feature flags**: org-level only, or also per-user? I recommend org-level only for now.
-4. **White label custom domain**: store the value but do NOT wire DNS/hosting in this phase (out of scope) — OK?
-5. **Branches/Departments**: purely organizational (no data partitioning) or should bookings/customers gain optional `branch_id` filters? I recommend organizational only for now; data-partitioning can be Phase 7.5.
+### 11. Idempotency guarantees
+- `domain_events.idempotency_key` is UNIQUE → producer retries are safe.
+- Each handler computes its own dedup key from `(handler_key, source_event_id)` before writing.
+- `event_deliveries` has UNIQUE `(event_id, handler_key)`.
 
-Reply with answers (or "defaults OK") and I'll execute end-to-end in one go.
+### 12. Validation
+- Playwright script `/tmp/browser/phase8/`:
+  1. Create booking → assert `booking.created` event + timeline row + automation run + notification.
+  2. Record customer payment → assert `customer.payment.recorded` + GL entry + timeline + notification, and that re-saving the same payment does NOT duplicate.
+  3. Approve supplier PO → assert audit + timeline.
+  4. Open `/platform-admin/event-bus`, verify deliveries all `succeeded`, dead-letter empty.
+- Screenshots + a text report of counts before/after.
+
+### 13. Deliverables
+- Migration list, files changed, routes added (`/platform-admin/event-bus` only), Playwright results, remaining integration gaps (e.g. handlers we intentionally left as no-op for future phases).
+
+## Confirm before I execute
+1. **Scheduler**: OK to enable `pg_cron` + `pg_net`? (needed for the 1-min worker; already used elsewhere in project)
+2. **Producer coverage**: the 9 source tables above — add/remove any?
+3. **Ops UI scope**: single `/platform-admin/event-bus` page is enough, or do you also want per-booking "events" drawer in the Workspace? Default: platform page only, no Workspace changes.
+4. **Dead-letter policy**: 5 attempts then park in dead-letter with manual retry — OK?
+
+Reply "defaults OK" or with changes and I'll execute end-to-end in one pass.
