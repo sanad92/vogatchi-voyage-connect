@@ -126,6 +126,7 @@ const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/Platform
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
 const PlatformEventBus = lazy(() => import("@/pages/platform-admin/PlatformEventBus"));
+const PlatformEventExplorer = lazy(() => import("@/pages/platform-admin/PlatformEventExplorer"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
 const PlatformAdminGlobalData = lazy(() => import("@/pages/platform-admin/PlatformAdminGlobalData"));
 
