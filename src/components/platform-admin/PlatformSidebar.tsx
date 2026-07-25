@@ -39,10 +39,13 @@ interface Props {
 
 const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) => {
   const location = useLocation();
-  const isActive = (href: string) => 
-    href === '/platform' 
-      ? location.pathname === '/platform' 
+  const { isPlatformOwner } = usePlatformAdmin();
+  const visibleItems = navItems.filter(i => !i.ownerOnly || isPlatformOwner);
+  const isActive = (href: string) =>
+    href === '/platform'
+      ? location.pathname === '/platform'
       : location.pathname === href || location.pathname.startsWith(href + '/');
+
 
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-amber-950 via-amber-900 to-orange-950 text-amber-50">
