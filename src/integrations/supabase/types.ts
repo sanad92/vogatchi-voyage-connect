@@ -3620,6 +3620,7 @@ export type Database = {
           aggregate_type: string
           correlation_id: string | null
           emitted_by: string | null
+          enriched_payload: Json | null
           event_type: string
           id: string
           idempotency_key: string
@@ -3632,6 +3633,7 @@ export type Database = {
           aggregate_type: string
           correlation_id?: string | null
           emitted_by?: string | null
+          enriched_payload?: Json | null
           event_type: string
           id?: string
           idempotency_key: string
@@ -3644,6 +3646,7 @@ export type Database = {
           aggregate_type?: string
           correlation_id?: string | null
           emitted_by?: string | null
+          enriched_payload?: Json | null
           event_type?: string
           id?: string
           idempotency_key?: string
@@ -4026,31 +4029,40 @@ export type Database = {
       event_deliveries: {
         Row: {
           attempts: number
+          completed_at: string | null
           event_id: string
           handler_key: string
           id: string
           last_error: string | null
           next_retry_at: string
+          processing_ms: number | null
+          started_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
           attempts?: number
+          completed_at?: string | null
           event_id: string
           handler_key: string
           id?: string
           last_error?: string | null
           next_retry_at?: string
+          processing_ms?: number | null
+          started_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           attempts?: number
+          completed_at?: string | null
           event_id?: string
           handler_key?: string
           id?: string
           last_error?: string | null
           next_retry_at?: string
+          processing_ms?: number | null
+          started_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -6046,6 +6058,44 @@ export type Database = {
           },
           {
             foreignKeyName: "monthly_salaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_rules: {
+        Row: {
+          channels: string[]
+          created_at: string
+          event_type: string
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          created_at?: string
+          event_type: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_rules_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -10170,6 +10220,10 @@ export type Database = {
         Returns: string
       }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
+      enrich_event_payload: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: Json
+      }
       ensure_employee_for_user: {
         Args: { _org_id: string; _user_id: string }
         Returns: string
@@ -10458,6 +10512,10 @@ export type Database = {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
       }
+      handler_notification_dispatch: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
       handler_notify_in_app: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
@@ -10567,6 +10625,7 @@ export type Database = {
         Returns: string
       }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      replay_event: { Args: { p_event_id: string }; Returns: number }
       retry_booking_automation_step: {
         Args: { p_step_id: string }
         Returns: string

@@ -1,15 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  Shield, Building2, CreditCard, BanknoteIcon, Settings, 
+import {
+  Shield, Building2, CreditCard, BanknoteIcon, Settings,
   UserCog, ScrollText, Database, Activity, Package, ChevronLeft,
-  LayoutDashboard, TrendingUp, Globe
+  LayoutDashboard, TrendingUp, Globe, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  ownerOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -21,6 +23,7 @@ const navItems: NavItem[] = [
   { title: 'التحويلات البنكية', href: '/platform/transfers', icon: BanknoteIcon },
   { title: 'حسابات المنصة', href: '/platform/accounts', icon: UserCog },
   { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText },
+  { title: 'Event Bus', href: '/platform/event-bus', icon: Zap, ownerOnly: true },
   { title: 'إعدادات المنصة', href: '/platform/settings', icon: Settings },
   { title: 'قاعدة البيانات', href: '/platform/database', icon: Database },
   { title: 'البيانات العالمية', href: '/platform/global-data', icon: Globe },
@@ -36,10 +39,13 @@ interface Props {
 
 const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) => {
   const location = useLocation();
-  const isActive = (href: string) => 
-    href === '/platform' 
-      ? location.pathname === '/platform' 
+  const { isPlatformOwner } = usePlatformAdmin();
+  const visibleItems = navItems.filter(i => !i.ownerOnly || isPlatformOwner);
+  const isActive = (href: string) =>
+    href === '/platform'
+      ? location.pathname === '/platform'
       : location.pathname === href || location.pathname.startsWith(href + '/');
+
 
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-amber-950 via-amber-900 to-orange-950 text-amber-50">
@@ -61,7 +67,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-        {navItems.map(item => {
+        {visibleItems.map(item => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (

@@ -126,6 +126,7 @@ const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/Platform
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
 const PlatformEventBus = lazy(() => import("@/pages/platform-admin/PlatformEventBus"));
+const PlatformEventExplorer = lazy(() => import("@/pages/platform-admin/PlatformEventExplorer"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
 const PlatformAdminGlobalData = lazy(() => import("@/pages/platform-admin/PlatformAdminGlobalData"));
 
@@ -234,6 +235,7 @@ function App() {
                             <Route path="accounts" element={<PlatformAdminAccounts />} />
                             <Route path="audit" element={<PlatformAdminAudit />} />
                             <Route path="event-bus" element={<PlatformEventBus />} />
+                            <Route path="event-bus/:id" element={<PlatformEventExplorer />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="settings" element={<PlatformAdminSettings />} />
                             <Route path="database" element={<DatabaseManager />} />
