@@ -235,6 +235,7 @@ function App() {
                             <Route path="accounts" element={<PlatformAdminAccounts />} />
                             <Route path="audit" element={<PlatformAdminAudit />} />
                             <Route path="event-bus" element={<PlatformEventBus />} />
+                            <Route path="event-bus/:id" element={<PlatformEventExplorer />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="settings" element={<PlatformAdminSettings />} />
                             <Route path="database" element={<DatabaseManager />} />
