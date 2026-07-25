@@ -1,15 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  Shield, Building2, CreditCard, BanknoteIcon, Settings, 
+import {
+  Shield, Building2, CreditCard, BanknoteIcon, Settings,
   UserCog, ScrollText, Database, Activity, Package, ChevronLeft,
-  LayoutDashboard, TrendingUp, Globe
+  LayoutDashboard, TrendingUp, Globe, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  ownerOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -21,6 +23,7 @@ const navItems: NavItem[] = [
   { title: 'التحويلات البنكية', href: '/platform/transfers', icon: BanknoteIcon },
   { title: 'حسابات المنصة', href: '/platform/accounts', icon: UserCog },
   { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText },
+  { title: 'Event Bus', href: '/platform/event-bus', icon: Zap, ownerOnly: true },
   { title: 'إعدادات المنصة', href: '/platform/settings', icon: Settings },
   { title: 'قاعدة البيانات', href: '/platform/database', icon: Database },
   { title: 'البيانات العالمية', href: '/platform/global-data', icon: Globe },
