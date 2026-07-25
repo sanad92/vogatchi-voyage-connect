@@ -67,7 +67,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-        {navItems.map(item => {
+        {visibleItems.map(item => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
