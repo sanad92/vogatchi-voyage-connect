@@ -42,6 +42,8 @@ const navGroups: NavGroup[] = [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
       { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', badge: 'AI' },
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
     ],
   },
   {
@@ -69,6 +71,7 @@ const navGroups: NavGroup[] = [
     icon: BarChart3,
     items: [
       { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
+      { title: 'مؤشرات صحة الأعمال', href: '/reports/business-health', icon: BarChart3, requiredPermission: 'reports_view' },
     ],
   },
   {

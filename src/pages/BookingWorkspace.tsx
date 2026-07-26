@@ -16,6 +16,7 @@ import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
 import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
+import { WorkflowProgressBar } from '@/components/workflow/WorkflowProgressBar';
 import {
   derivePaymentStatus,
   deriveProfitHealth,
@@ -112,6 +113,7 @@ const BookingWorkspace = () => {
               stage={workspace.booking.workflow_stage}
               onChange={(next) => workspace.setStage(next)}
             />
+            <WorkflowProgressBar bookingId={id!} />
             <FinancialSummaryStrip bookingId={id!} />
             <SmartNextActionCard workspace={workspace} ctx={ctx} />
 

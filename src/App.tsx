@@ -167,6 +167,12 @@ const WhiteLabelPage = lazy(() => import("@/pages/organization/WhiteLabelPage"))
 const SecurityCenterPage = lazy(() => import("@/pages/organization/SecurityCenterPage"));
 const PlatformActAsPage = lazy(() => import("@/pages/platform-admin/PlatformActAsPage"));
 
+// Phase 9 - Workflow Engine & Ops Command Center
+const OperationsCommandCenter = lazy(() => import("@/pages/OperationsCommandCenter"));
+const OperationsQueue = lazy(() => import("@/pages/OperationsQueue"));
+const BusinessHealth = lazy(() => import("@/pages/BusinessHealth"));
+const PlatformWorkflowRules = lazy(() => import("@/pages/platform-admin/PlatformWorkflowRules"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
@@ -242,6 +248,7 @@ function App() {
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
                             <Route path="act-as" element={<PlatformActAsPage />} />
+                            <Route path="workflow-rules" element={<PlatformWorkflowRules />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
 
                           </Routes>
@@ -300,6 +307,9 @@ function App() {
                               <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
                               <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />
+                              <Route path="/operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsCommandCenter /></PermissionRouteGuard>} />
+                              <Route path="/operations/queue" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsQueue /></PermissionRouteGuard>} />
+                              <Route path="/reports/business-health" element={<PermissionRouteGuard requiredPermission="reports_view"><BusinessHealth /></PermissionRouteGuard>} />
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
