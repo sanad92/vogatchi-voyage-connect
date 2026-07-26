@@ -44,6 +44,7 @@ const navGroups: NavGroup[] = [
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'تقويم السفر', href: '/travel-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
     ],
   },
   {
