@@ -66,7 +66,13 @@ const PlatformWorkflowRules = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => setInspectId(r.id)}>سجل</Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => setInspectId(r.id)}>سجل</Button>
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(r)}><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm('حذف القاعدة؟')) del.mutate(r.id); }}>
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -85,6 +91,14 @@ const PlatformWorkflowRules = () => {
           {inspectId && <RuleRuns ruleId={inspectId} />}
         </DialogContent>
       </Dialog>
+
+      {(creating || editing) && (
+        <RuleBuilderDialog
+          open={creating || !!editing}
+          rule={editing}
+          onClose={() => { setCreating(false); setEditing(null); }}
+        />
+      )}
     </div>
   );
 };
