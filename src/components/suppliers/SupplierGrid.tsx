@@ -30,6 +30,7 @@ const SupplierGrid = ({
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
