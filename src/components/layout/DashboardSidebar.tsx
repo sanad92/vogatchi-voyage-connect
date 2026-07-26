@@ -10,6 +10,7 @@ import {
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
   CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
   ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles,
+  FolderOpen, Building, Megaphone,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
