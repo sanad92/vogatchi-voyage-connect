@@ -173,7 +173,13 @@ const OperationsQueue = lazy(() => import("@/pages/OperationsQueue"));
 const BusinessHealth = lazy(() => import("@/pages/BusinessHealth"));
 const PlatformWorkflowRules = lazy(() => import("@/pages/platform-admin/PlatformWorkflowRules"));
 
+// Phase 10 - Sprint 10.2
+const TemplateCenter = lazy(() => import("@/pages/TemplateCenter"));
+const TravelCalendar = lazy(() => import("@/pages/TravelCalendar"));
+const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
 
 
 // Query Client
