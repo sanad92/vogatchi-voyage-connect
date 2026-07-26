@@ -178,6 +178,10 @@ const TemplateCenter = lazy(() => import("@/pages/TemplateCenter"));
 const TravelCalendar = lazy(() => import("@/pages/TravelCalendar"));
 const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
 
+// Phase 10 - Sprint 10.3
+const DocumentCenter = lazy(() => import("@/pages/DocumentCenter"));
+const SupplierWorkspace = lazy(() => import("@/pages/SupplierWorkspace"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
