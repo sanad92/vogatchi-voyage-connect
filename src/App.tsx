@@ -307,6 +307,9 @@ function App() {
                               <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
                               <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />
+                              <Route path="/operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsCommandCenter /></PermissionRouteGuard>} />
+                              <Route path="/operations/queue" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsQueue /></PermissionRouteGuard>} />
+                              <Route path="/reports/business-health" element={<PermissionRouteGuard requiredPermission="reports_view"><BusinessHealth /></PermissionRouteGuard>} />
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
