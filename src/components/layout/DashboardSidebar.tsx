@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
     icon: BarChart3,
     items: [
       { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
+      { title: 'مؤشرات صحة الأعمال', href: '/reports/business-health', icon: BarChart3, requiredPermission: 'reports_view' },
     ],
   },
   {
