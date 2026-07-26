@@ -167,6 +167,12 @@ const WhiteLabelPage = lazy(() => import("@/pages/organization/WhiteLabelPage"))
 const SecurityCenterPage = lazy(() => import("@/pages/organization/SecurityCenterPage"));
 const PlatformActAsPage = lazy(() => import("@/pages/platform-admin/PlatformActAsPage"));
 
+// Phase 9 - Workflow Engine & Ops Command Center
+const OperationsCommandCenter = lazy(() => import("@/pages/OperationsCommandCenter"));
+const OperationsQueue = lazy(() => import("@/pages/OperationsQueue"));
+const BusinessHealth = lazy(() => import("@/pages/BusinessHealth"));
+const PlatformWorkflowRules = lazy(() => import("@/pages/platform-admin/PlatformWorkflowRules"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
