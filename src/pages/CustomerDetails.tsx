@@ -37,6 +37,7 @@ import CustomerCommunicationLog from "@/components/customers/CustomerCommunicati
 import CustomerQuickActions from "@/components/customers/CustomerQuickActions";
 import LoyaltyPointsDisplay from "@/components/customers/LoyaltyPointsDisplay";
 import CustomerWhatsAppChat from "@/components/customers/CustomerWhatsAppChat";
+import { DocumentsPanel as CustomerDocumentsPanel } from "@/components/documents/DocumentsPanel";
 
 const CustomerDetails = () => {
   const { customerId } = useParams();
