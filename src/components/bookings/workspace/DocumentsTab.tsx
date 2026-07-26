@@ -16,6 +16,7 @@ import {
   ExternalLink,
   FolderOpen,
 } from 'lucide-react';
+import { DocumentsPanel } from '@/components/documents/DocumentsPanel';
 import type { Workspace } from './types';
 
 interface Props {
