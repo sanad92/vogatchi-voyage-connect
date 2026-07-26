@@ -113,6 +113,7 @@ const BookingWorkspace = () => {
               stage={workspace.booking.workflow_stage}
               onChange={(next) => workspace.setStage(next)}
             />
+            <WorkflowProgressBar bookingId={id!} />
             <FinancialSummaryStrip bookingId={id!} />
             <SmartNextActionCard workspace={workspace} ctx={ctx} />
 
