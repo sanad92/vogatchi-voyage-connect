@@ -46,6 +46,21 @@ const navGroups: NavGroup[] = [
       { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'تقويم السفر', href: '/travel-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
+      { title: 'مركز المستندات', href: '/document-center', icon: FolderOpen, requiredPermission: 'documents_view' },
+    ],
+  },
+  {
+    label: 'الموردون',
+    icon: Building,
+    items: [
+      { title: 'قائمة الموردين', href: '/suppliers', icon: Building, requiredPermission: 'suppliers_view' },
+    ],
+  },
+  {
+    label: 'التسويق',
+    icon: Megaphone,
+    items: [
+      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'admin_settings' },
     ],
   },
   {
