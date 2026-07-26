@@ -301,6 +301,7 @@ function App() {
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
                               <Route path="/new-invoice" element={<PermissionRouteGuard requiredPermission="invoices_create"><NewInvoice /></PermissionRouteGuard>} />
                               <Route path="/suppliers" element={<PermissionRouteGuard requiredPermission="suppliers_view"><Suppliers /></PermissionRouteGuard>} />
+                              <Route path="/suppliers/:id/workspace" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierWorkspace /></PermissionRouteGuard>} />
                               <Route path="/supplier-rates" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierRatesPage /></PermissionRouteGuard>} />
                               <Route path="/supplier-allotments" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierAllotmentsPage /></PermissionRouteGuard>} />
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
