@@ -340,6 +340,7 @@ function App() {
                               <Route path="/monitoring" element={<PermissionRouteGuard requiredPermission="admin_settings"><MonitoringDashboard /></PermissionRouteGuard>} />
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
+                              <Route path="/document-center" element={<PermissionRouteGuard requiredPermission="documents_view"><DocumentCenter /></PermissionRouteGuard>} />
                               <Route path="/audit-log" element={<PermissionRouteGuard requiredPermission="audit_view"><AuditLog /></PermissionRouteGuard>} />
                               <Route path="/export-center" element={<PermissionRouteGuard requiredPermission="reports_view"><ExportCenter /></PermissionRouteGuard>} />
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />
