@@ -3,23 +3,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useWorkflowRules, useToggleWorkflowRule, useWorkflowRuleRuns, useRetryWorkflowRuleRun } from '@/hooks/useWorkflowRules';
+import { useWorkflowRules, useToggleWorkflowRule, useWorkflowRuleRuns, useRetryWorkflowRuleRun, useDeleteWorkflowRule, WorkflowRule } from '@/hooks/useWorkflowRules';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Plus, Pencil, Trash2 } from 'lucide-react';
+import RuleBuilderDialog from '@/components/workflow/RuleBuilderDialog';
 
 const PlatformWorkflowRules = () => {
   const { data, isLoading } = useWorkflowRules();
   const toggle = useToggleWorkflowRule();
+  const del = useDeleteWorkflowRule();
   const [inspectId, setInspectId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<WorkflowRule | null>(null);
+  const [creating, setCreating] = useState(false);
 
   return (
     <div className="p-6 space-y-4" dir="rtl">
-      <div>
-        <h1 className="text-2xl font-bold">قواعد سير العمل</h1>
-        <p className="text-sm text-muted-foreground">إدارة القواعد اللامتزامنة التي يستمع لها Event Bus</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">قواعد سير العمل</h1>
+          <p className="text-sm text-muted-foreground">منشئ مرئي للقواعد — بدون كتابة JSON</p>
+        </div>
+        <Button onClick={() => setCreating(true)}><Plus className="w-4 h-4 ml-2" /> قاعدة جديدة</Button>
       </div>
 
       <Card>
