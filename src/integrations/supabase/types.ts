@@ -1884,6 +1884,7 @@ export type Database = {
           employee_id: string | null
           end_date: string | null
           id: string
+          is_demo: boolean
           legacy_id: string | null
           legacy_table: string | null
           notes: string | null
@@ -1911,6 +1912,7 @@ export type Database = {
           employee_id?: string | null
           end_date?: string | null
           id?: string
+          is_demo?: boolean
           legacy_id?: string | null
           legacy_table?: string | null
           notes?: string | null
@@ -1938,6 +1940,7 @@ export type Database = {
           employee_id?: string | null
           end_date?: string | null
           id?: string
+          is_demo?: boolean
           legacy_id?: string | null
           legacy_table?: string | null
           notes?: string | null
@@ -3132,6 +3135,7 @@ export type Database = {
           exchange_rate: number
           id: string
           invoice_id: string | null
+          is_demo: boolean
           notes: string | null
           organization_id: string
           payment_date: string
@@ -3153,6 +3157,7 @@ export type Database = {
           exchange_rate?: number
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           notes?: string | null
           organization_id: string
           payment_date?: string
@@ -3174,6 +3179,7 @@ export type Database = {
           exchange_rate?: number
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           notes?: string | null
           organization_id?: string
           payment_date?: string
@@ -3364,6 +3370,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           id: string
+          is_demo: boolean
           last_booking_date: string | null
           last_follow_up_by: string | null
           last_follow_up_date: string | null
@@ -3386,6 +3393,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           last_booking_date?: string | null
           last_follow_up_by?: string | null
           last_follow_up_date?: string | null
@@ -3408,6 +3416,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           last_booking_date?: string | null
           last_follow_up_by?: string | null
           last_follow_up_date?: string | null
@@ -5435,6 +5444,7 @@ export type Database = {
           final_amount: number | null
           id: string
           invoice_number: string
+          is_demo: boolean
           issued_date: string | null
           notes: string | null
           organization_id: string | null
@@ -5462,6 +5472,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           invoice_number?: string
+          is_demo?: boolean
           issued_date?: string | null
           notes?: string | null
           organization_id?: string | null
@@ -5489,6 +5500,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           invoice_number?: string
+          is_demo?: boolean
           issued_date?: string | null
           notes?: string | null
           organization_id?: string | null
@@ -6707,6 +6719,7 @@ export type Database = {
           destination: string | null
           discount_amount: number | null
           id: string
+          is_demo: boolean
           notes: string | null
           number_of_travelers: number | null
           organization_id: string | null
@@ -6732,6 +6745,7 @@ export type Database = {
           destination?: string | null
           discount_amount?: number | null
           id?: string
+          is_demo?: boolean
           notes?: string | null
           number_of_travelers?: number | null
           organization_id?: string | null
@@ -6757,6 +6771,7 @@ export type Database = {
           destination?: string | null
           discount_amount?: number | null
           id?: string
+          is_demo?: boolean
           notes?: string | null
           number_of_travelers?: number | null
           organization_id?: string | null
@@ -8070,6 +8085,7 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean | null
+          is_demo: boolean
           name: string
           notes: string | null
           organization_id: string | null
@@ -8093,6 +8109,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          is_demo?: boolean
           name: string
           notes?: string | null
           organization_id?: string | null
@@ -8116,6 +8133,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          is_demo?: boolean
           name?: string
           notes?: string | null
           organization_id?: string | null
@@ -10818,6 +10836,7 @@ export type Database = {
       }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       replay_event: { Args: { p_event_id: string }; Returns: number }
+      reset_demo_data: { Args: { _org_id: string }; Returns: Json }
       retry_booking_automation_step: {
         Args: { p_step_id: string }
         Returns: string
