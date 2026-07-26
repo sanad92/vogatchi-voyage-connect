@@ -37,6 +37,7 @@ import CustomerCommunicationLog from "@/components/customers/CustomerCommunicati
 import CustomerQuickActions from "@/components/customers/CustomerQuickActions";
 import LoyaltyPointsDisplay from "@/components/customers/LoyaltyPointsDisplay";
 import CustomerWhatsAppChat from "@/components/customers/CustomerWhatsAppChat";
+import { DocumentsPanel as CustomerDocumentsPanel } from "@/components/documents/DocumentsPanel";
 
 const CustomerDetails = () => {
   const { customerId } = useParams();
@@ -206,7 +207,7 @@ const CustomerDetails = () => {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             نظرة عامة
@@ -218,6 +219,10 @@ const CustomerDetails = () => {
           <TabsTrigger value="invoices" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             الفواتير
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            المستندات
           </TabsTrigger>
           <TabsTrigger value="communication" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -392,6 +397,10 @@ const CustomerDetails = () => {
 
         <TabsContent value="invoices">
           <CustomerInvoiceHistory customerId={customerId} />
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <CustomerDocumentsPanel customerId={customerId} />
         </TabsContent>
 
         <TabsContent value="communication" className="space-y-6">

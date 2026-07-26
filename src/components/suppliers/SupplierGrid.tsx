@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import EditSupplierDialog from './EditSupplierDialog';
 import { Supplier } from '@/types/supplier';
@@ -29,6 +30,7 @@ const SupplierGrid = ({
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
@@ -224,11 +226,17 @@ const SupplierGrid = ({
                     onClick={e => e.stopPropagation()}
                   >
                     <button
+                      title="فتح مساحة العمل"
+                      className="bg-primary/10 text-primary p-1 rounded hover:bg-primary/20 transition"
+                      onClick={() => navigate(`/suppliers/${supplier.id}/workspace`)}>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                    <button
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
-                      onClick={() => { 
-                        setSelectedSupplier(supplier); 
-                        setShowEdit(true); 
+                      onClick={() => {
+                        setSelectedSupplier(supplier);
+                        setShowEdit(true);
                       }}>
                       <Edit className="w-4 h-4" />
                     </button>

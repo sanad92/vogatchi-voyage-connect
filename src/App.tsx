@@ -178,6 +178,10 @@ const TemplateCenter = lazy(() => import("@/pages/TemplateCenter"));
 const TravelCalendar = lazy(() => import("@/pages/TravelCalendar"));
 const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
 
+// Phase 10 - Sprint 10.3
+const DocumentCenter = lazy(() => import("@/pages/DocumentCenter"));
+const SupplierWorkspace = lazy(() => import("@/pages/SupplierWorkspace"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
@@ -297,6 +301,7 @@ function App() {
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
                               <Route path="/new-invoice" element={<PermissionRouteGuard requiredPermission="invoices_create"><NewInvoice /></PermissionRouteGuard>} />
                               <Route path="/suppliers" element={<PermissionRouteGuard requiredPermission="suppliers_view"><Suppliers /></PermissionRouteGuard>} />
+                              <Route path="/suppliers/:id/workspace" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierWorkspace /></PermissionRouteGuard>} />
                               <Route path="/supplier-rates" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierRatesPage /></PermissionRouteGuard>} />
                               <Route path="/supplier-allotments" element={<PermissionRouteGuard requiredPermission="suppliers_view"><SupplierAllotmentsPage /></PermissionRouteGuard>} />
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
@@ -335,6 +340,7 @@ function App() {
                               <Route path="/monitoring" element={<PermissionRouteGuard requiredPermission="admin_settings"><MonitoringDashboard /></PermissionRouteGuard>} />
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
+                              <Route path="/document-center" element={<PermissionRouteGuard requiredPermission="documents_view"><DocumentCenter /></PermissionRouteGuard>} />
                               <Route path="/audit-log" element={<PermissionRouteGuard requiredPermission="audit_view"><AuditLog /></PermissionRouteGuard>} />
                               <Route path="/export-center" element={<PermissionRouteGuard requiredPermission="reports_view"><ExportCenter /></PermissionRouteGuard>} />
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />
