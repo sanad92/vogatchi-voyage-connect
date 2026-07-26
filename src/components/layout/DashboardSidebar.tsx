@@ -44,6 +44,7 @@ const navGroups: NavGroup[] = [
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'تقويم السفر', href: '/travel-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
     ],
   },
   {
@@ -79,6 +80,8 @@ const navGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },
+      { title: 'مركز القوالب', href: '/templates', icon: FileText, requiredPermission: 'admin_settings' },
+      { title: 'وضع العرض التوضيحي', href: '/organization/demo-mode', icon: Sparkles, requiredPermission: 'admin_settings' },
     ],
   },
 ];

@@ -173,7 +173,13 @@ const OperationsQueue = lazy(() => import("@/pages/OperationsQueue"));
 const BusinessHealth = lazy(() => import("@/pages/BusinessHealth"));
 const PlatformWorkflowRules = lazy(() => import("@/pages/platform-admin/PlatformWorkflowRules"));
 
+// Phase 10 - Sprint 10.2
+const TemplateCenter = lazy(() => import("@/pages/TemplateCenter"));
+const TravelCalendar = lazy(() => import("@/pages/TravelCalendar"));
+const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
 
 
 // Query Client
@@ -310,6 +316,9 @@ function App() {
                               <Route path="/operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsCommandCenter /></PermissionRouteGuard>} />
                               <Route path="/operations/queue" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsQueue /></PermissionRouteGuard>} />
                               <Route path="/reports/business-health" element={<PermissionRouteGuard requiredPermission="reports_view"><BusinessHealth /></PermissionRouteGuard>} />
+                              <Route path="/templates" element={<PermissionRouteGuard requiredPermission="admin_settings"><TemplateCenter /></PermissionRouteGuard>} />
+                              <Route path="/travel-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><TravelCalendar /></PermissionRouteGuard>} />
+                              <Route path="/organization/demo-mode" element={<PermissionRouteGuard requiredPermission="admin_settings"><DemoModePage /></PermissionRouteGuard>} />
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
                               <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />

@@ -96,3 +96,49 @@ export function useRetryWorkflowRuleRun() {
     onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
   });
 }
+
+export function useUpsertWorkflowRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rule: Partial<WorkflowRule> & { id?: string }) => {
+      const payload: any = {
+        name: rule.name,
+        description: rule.description ?? null,
+        event_type: rule.event_type,
+        condition: rule.condition ?? {},
+        action: rule.action ?? {},
+        priority: rule.priority ?? 100,
+        is_active: rule.is_active ?? true,
+        organization_id: rule.organization_id ?? null,
+        updated_at: new Date().toISOString(),
+      };
+      if (rule.id) {
+        const { error } = await (supabase as any).from('workflow_rules').update(payload).eq('id', rule.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('workflow_rules').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('تم الحفظ');
+      qc.invalidateQueries({ queryKey: ['workflow-rules'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+export function useDeleteWorkflowRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('workflow_rules').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم الحذف');
+      qc.invalidateQueries({ queryKey: ['workflow-rules'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
