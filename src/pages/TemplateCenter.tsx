@@ -265,7 +265,7 @@ const PreviewDialog = ({ template, onClose }: { template: UnifiedTemplate | null
     let out = template.body;
     for (const v of template.variables) {
       const val = vals[v] || `{{${v}}}`;
-      out = out.replaceAll(`{{${v}}}`, val).replaceAll(`{{ ${v} }}`, val);
+      out = out.split(`{{${v}}}`).join(val).split(`{{ ${v} }}`).join(val);
     }
     return out;
   }, [template, vals]);
