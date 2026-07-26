@@ -34,6 +34,7 @@ const PageLoader = () => (
 
 // Public pages
 const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
+const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -222,6 +223,8 @@ function App() {
                 {/* Public */}
                 <Route path="/" element={<SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/booking-request" element={<BookingRequest />} />
+                <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
