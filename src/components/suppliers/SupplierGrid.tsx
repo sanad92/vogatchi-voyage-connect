@@ -226,11 +226,17 @@ const SupplierGrid = ({
                     onClick={e => e.stopPropagation()}
                   >
                     <button
+                      title="فتح مساحة العمل"
+                      className="bg-primary/10 text-primary p-1 rounded hover:bg-primary/20 transition"
+                      onClick={() => navigate(`/suppliers/${supplier.id}/workspace`)}>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                    <button
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
-                      onClick={() => { 
-                        setSelectedSupplier(supplier); 
-                        setShowEdit(true); 
+                      onClick={() => {
+                        setSelectedSupplier(supplier);
+                        setShowEdit(true);
                       }}>
                       <Edit className="w-4 h-4" />
                     </button>
