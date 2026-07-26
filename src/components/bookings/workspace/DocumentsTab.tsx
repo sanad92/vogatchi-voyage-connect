@@ -199,6 +199,13 @@ export const DocumentsTab = ({ workspace }: Props) => {
           );
         })}
       </div>
+
+      {/* Sprint 10.3 — Unified upload/manage for this booking */}
+      <DocumentsPanel
+        title="مستندات محمّلة"
+        bookingId={bookingId}
+        defaultCategory="voucher"
+      />
     </div>
   );
 };
