@@ -248,6 +248,7 @@ function App() {
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
                             <Route path="act-as" element={<PlatformActAsPage />} />
+                            <Route path="workflow-rules" element={<PlatformWorkflowRules />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />
 
                           </Routes>
