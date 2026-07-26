@@ -182,6 +182,11 @@ const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
 const DocumentCenter = lazy(() => import("@/pages/DocumentCenter"));
 const SupplierWorkspace = lazy(() => import("@/pages/SupplierWorkspace"));
 
+// Phase 10 - Sprint 10.4
+const MarketingJourneys = lazy(() => import("@/pages/MarketingJourneys"));
+const JourneyEditor = lazy(() => import("@/pages/JourneyEditor"));
+
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
@@ -341,6 +346,8 @@ function App() {
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
                               <Route path="/document-center" element={<PermissionRouteGuard requiredPermission="documents_view"><DocumentCenter /></PermissionRouteGuard>} />
+                              <Route path="/marketing/journeys" element={<PermissionRouteGuard requiredPermission="admin_settings"><MarketingJourneys /></PermissionRouteGuard>} />
+                              <Route path="/marketing/journeys/:id" element={<PermissionRouteGuard requiredPermission="admin_settings"><JourneyEditor /></PermissionRouteGuard>} />
                               <Route path="/audit-log" element={<PermissionRouteGuard requiredPermission="audit_view"><AuditLog /></PermissionRouteGuard>} />
                               <Route path="/export-center" element={<PermissionRouteGuard requiredPermission="reports_view"><ExportCenter /></PermissionRouteGuard>} />
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />

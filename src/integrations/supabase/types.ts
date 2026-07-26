@@ -3602,6 +3602,9 @@ export type Database = {
       document_templates: {
         Row: {
           accent_color: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           bank_details: string | null
           created_at: string | null
           document_type: string
@@ -3619,6 +3622,9 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           bank_details?: string | null
           created_at?: string | null
           document_type: string
@@ -3636,6 +3642,9 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           bank_details?: string | null
           created_at?: string | null
           document_type?: string
@@ -5805,6 +5814,155 @@ export type Database = {
           },
         ]
       }
+      journey_enrollments: {
+        Row: {
+          booking_id: string | null
+          context: Json
+          created_at: string
+          current_step_id: string | null
+          customer_id: string | null
+          exit_reason: string | null
+          id: string
+          journey_id: string
+          next_run_at: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          context?: Json
+          created_at?: string
+          current_step_id?: string | null
+          customer_id?: string | null
+          exit_reason?: string | null
+          id?: string
+          journey_id: string
+          next_run_at?: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          context?: Json
+          created_at?: string
+          current_step_id?: string | null
+          customer_id?: string | null
+          exit_reason?: string | null
+          id?: string
+          journey_id?: string
+          next_run_at?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_enrollments_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_enrollments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_step_runs: {
+        Row: {
+          enrollment_id: string
+          error: string | null
+          id: string
+          output: Json | null
+          ran_at: string
+          status: string
+          step_id: string | null
+        }
+        Insert: {
+          enrollment_id: string
+          error?: string | null
+          id?: string
+          output?: Json | null
+          ran_at?: string
+          status: string
+          step_id?: string | null
+        }
+        Update: {
+          enrollment_id?: string
+          error?: string | null
+          id?: string
+          output?: Json | null
+          ran_at?: string
+          status?: string
+          step_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_step_runs_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "journey_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_step_runs_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "journey_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_steps: {
+        Row: {
+          branch_no_step_id: string | null
+          branch_yes_step_id: string | null
+          config: Json
+          created_at: string
+          delay_minutes: number
+          id: string
+          journey_id: string
+          step_order: number
+          step_type: string
+        }
+        Insert: {
+          branch_no_step_id?: string | null
+          branch_yes_step_id?: string | null
+          config?: Json
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          journey_id: string
+          step_order?: number
+          step_type: string
+        }
+        Update: {
+          branch_no_step_id?: string | null
+          branch_yes_step_id?: string | null
+          config?: Json
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          journey_id?: string
+          step_order?: number
+          step_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_steps_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points: {
         Row: {
           booking_id: string | null
@@ -5965,6 +6123,65 @@ export type Database = {
             columns: ["target_segment_id"]
             isOneToOne: false
             referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_journeys: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enrollment_condition: Json
+          goal_event: string | null
+          id: string
+          is_active: boolean
+          is_template: boolean
+          name: string
+          organization_id: string | null
+          stats: Json
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enrollment_condition?: Json
+          goal_event?: string | null
+          id?: string
+          is_active?: boolean
+          is_template?: boolean
+          name: string
+          organization_id?: string | null
+          stats?: Json
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enrollment_condition?: Json
+          goal_event?: string | null
+          id?: string
+          is_active?: boolean
+          is_template?: boolean
+          name?: string
+          organization_id?: string | null
+          stats?: Json
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_journeys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -8426,6 +8643,42 @@ export type Database = {
         }
         Relationships: []
       }
+      template_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string | null
+          snapshot: Json
+          template_id: string
+          template_kind: string
+          version_no: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          snapshot: Json
+          template_id: string
+          template_kind: string
+          version_no: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          snapshot?: Json
+          template_id?: string
+          template_kind?: string
+          version_no?: number
+        }
+        Relationships: []
+      }
       transport_bookings: {
         Row: {
           additional_costs: number | null
@@ -9833,6 +10086,8 @@ export type Database = {
       whatsapp_templates: {
         Row: {
           approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           body_text: string
           buttons: Json | null
           category: string | null
@@ -9844,6 +10099,7 @@ export type Database = {
           header_type: string | null
           id: string
           is_library_seed: boolean
+          is_org_default: boolean
           language: string | null
           last_used_at: string | null
           library_source_key: string | null
@@ -9868,6 +10124,8 @@ export type Database = {
         }
         Insert: {
           approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           body_text: string
           buttons?: Json | null
           category?: string | null
@@ -9879,6 +10137,7 @@ export type Database = {
           header_type?: string | null
           id?: string
           is_library_seed?: boolean
+          is_org_default?: boolean
           language?: string | null
           last_used_at?: string | null
           library_source_key?: string | null
@@ -9903,6 +10162,8 @@ export type Database = {
         }
         Update: {
           approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           body_text?: string
           buttons?: Json | null
           category?: string | null
@@ -9914,6 +10175,7 @@ export type Database = {
           header_type?: string | null
           id?: string
           is_library_seed?: boolean
+          is_org_default?: boolean
           language?: string | null
           last_used_at?: string | null
           library_source_key?: string | null
@@ -10551,6 +10813,10 @@ export type Database = {
     Functions: {
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
       _next_entry_number: { Args: { _org: string }; Returns: string }
+      _render_template: {
+        Args: { _text: string; _vars: Json }
+        Returns: string
+      }
       _resolve_account: {
         Args: { _code: string; _org: string }
         Returns: string
@@ -10666,6 +10932,10 @@ export type Database = {
       enrich_event_payload: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: Json
+      }
+      enroll_in_journey: {
+        Args: { p_context?: Json; p_customer_id: string; p_journey_id: string }
+        Returns: string
       }
       ensure_employee_for_user: {
         Args: { _org_id: string; _user_id: string }
@@ -11048,6 +11318,10 @@ export type Database = {
           }
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
       process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
+      process_journey_enrollments: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       record_customer_payment: {
         Args: {
