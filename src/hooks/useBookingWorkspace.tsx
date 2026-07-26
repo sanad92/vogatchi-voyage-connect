@@ -263,15 +263,22 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   const setStage = useMutation({
     mutationFn: async (stage: WorkflowStage) => {
       if (!bookingId) throw new Error('No booking');
-      const { error } = await anyClient
-        .from('bookings')
-        .update({ workflow_stage: stage })
-        .eq('id', bookingId);
+      // Route through advance_workflow RPC so the event bus emits
+      // `booking.stage_changed`, which fans out to timeline + automation handlers.
+      const { error } = await anyClient.rpc('advance_workflow', {
+        p_booking_id: bookingId,
+        p_to_stage: stage,
+        p_reason: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('تم تحديث مرحلة الحجز');
       qc.invalidateQueries({ queryKey: ['workspace-booking', bookingId] });
+      qc.invalidateQueries({ queryKey: ['booking-workspace', bookingId] });
+      qc.invalidateQueries({ queryKey: ['workflow-progress'] });
+      qc.invalidateQueries({ queryKey: ['booking-automation-run', bookingId] });
+      qc.invalidateQueries({ queryKey: ['booking-automation-steps', bookingId] });
     },
     onError: (e: any) => toast.error(e?.message || 'تعذر تحديث المرحلة'),
   });
