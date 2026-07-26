@@ -161,11 +161,11 @@ const SiteFooter = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-muted-foreground">
             <p>© 2024 فوجاتشي للتسويق السياحي. جميع الحقوق محفوظة.</p>
             <div className="flex gap-4 mt-2 sm:mt-0">
-              <Link to="/contact" className="hover:text-primary transition-colors">
-                شروط الاستخدام
-              </Link>
-              <Link to="/contact" className="hover:text-primary transition-colors">
+              <Link to="/privacy" className="hover:text-primary transition-colors">
                 سياسة الخصوصية
+              </Link>
+              <Link to="/data-deletion" className="hover:text-primary transition-colors">
+                حذف البيانات
               </Link>
             </div>
           </div>
