@@ -80,6 +80,8 @@ const navGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },
+      { title: 'مركز القوالب', href: '/templates', icon: FileText, requiredPermission: 'admin_settings' },
+      { title: 'وضع العرض التوضيحي', href: '/organization/demo-mode', icon: Sparkles, requiredPermission: 'admin_settings' },
     ],
   },
 ];
