@@ -6465,6 +6465,7 @@ export type Database = {
           id: string
           is_read: boolean | null
           message: string
+          metadata: Json
           organization_id: string | null
           priority: string | null
           title: string
@@ -6478,6 +6479,7 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message: string
+          metadata?: Json
           organization_id?: string | null
           priority?: string | null
           title: string
@@ -6491,6 +6493,7 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message?: string
+          metadata?: Json
           organization_id?: string | null
           priority?: string | null
           title?: string
