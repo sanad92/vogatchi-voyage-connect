@@ -42,6 +42,8 @@ const navGroups: NavGroup[] = [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
       { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', badge: 'AI' },
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
+      { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
     ],
   },
   {
