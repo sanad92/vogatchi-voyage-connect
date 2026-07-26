@@ -398,6 +398,10 @@ const CustomerDetails = () => {
           <CustomerInvoiceHistory customerId={customerId} />
         </TabsContent>
 
+        <TabsContent value="documents">
+          <CustomerDocumentsPanel customerId={customerId} />
+        </TabsContent>
+
         <TabsContent value="communication" className="space-y-6">
           <CustomerWhatsAppChat
             customerId={customerId}
