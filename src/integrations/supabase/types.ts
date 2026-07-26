@@ -9752,6 +9752,181 @@ export type Database = {
           },
         ]
       }
+      workflow_definitions: {
+        Row: {
+          aggregate_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+        }
+        Insert: {
+          aggregate_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+        }
+        Update: {
+          aggregate_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      workflow_rule_runs: {
+        Row: {
+          duration_ms: number | null
+          error: string | null
+          event_id: string | null
+          id: string
+          organization_id: string | null
+          ran_at: string
+          rule_id: string
+          status: string
+        }
+        Insert: {
+          duration_ms?: number | null
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          organization_id?: string | null
+          ran_at?: string
+          rule_id: string
+          status: string
+        }
+        Update: {
+          duration_ms?: number | null
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          organization_id?: string | null
+          ran_at?: string
+          rule_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_rule_runs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_rule_runs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_rules: {
+        Row: {
+          action: Json
+          condition: Json
+          created_at: string
+          description: string | null
+          event_type: string
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_duration_ms: number | null
+          last_run_at: string | null
+          name: string
+          organization_id: string | null
+          priority: number
+          success_count: number
+          updated_at: string
+        }
+        Insert: {
+          action?: Json
+          condition?: Json
+          created_at?: string
+          description?: string | null
+          event_type: string
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_duration_ms?: number | null
+          last_run_at?: string | null
+          name: string
+          organization_id?: string | null
+          priority?: number
+          success_count?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: Json
+          condition?: Json
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_duration_ms?: number | null
+          last_run_at?: string | null
+          name?: string
+          organization_id?: string | null
+          priority?: number
+          success_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_stages: {
+        Row: {
+          category: string | null
+          definition_id: string
+          id: string
+          key: string
+          label: string
+          order_index: number
+          required_fields: Json
+        }
+        Insert: {
+          category?: string | null
+          definition_id: string
+          id?: string
+          key: string
+          label: string
+          order_index: number
+          required_fields?: Json
+        }
+        Update: {
+          category?: string | null
+          definition_id?: string
+          id?: string
+          key?: string
+          label?: string
+          order_index?: number
+          required_fields?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_stages_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zatca_invoice_data: {
         Row: {
           created_at: string
@@ -10130,6 +10305,10 @@ export type Database = {
         Returns: string
       }
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      advance_workflow: {
+        Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
+        Returns: Json
+      }
       approve_refund_request: {
         Args: { _approve?: boolean; _reason?: string; _refund_id: string }
         Returns: undefined
@@ -10315,6 +10494,10 @@ export type Database = {
             }[]
           }
       get_booking_status_id: { Args: { _name: string }; Returns: string }
+      get_business_health_kpis: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: Json
+      }
       get_cash_flow:
         | {
             Args: { _from?: string; _org: string; _to?: string }
@@ -10434,6 +10617,7 @@ export type Database = {
         }[]
       }
       get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
+      get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
         Returns: {
@@ -10492,6 +10676,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      get_workflow_progress: {
+        Args: { p_aggregate_id: string; p_aggregate_type: string }
+        Returns: Json
+      }
       handler_ai_summary_refresh: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
@@ -10525,6 +10713,10 @@ export type Database = {
         Returns: undefined
       }
       handler_timeline_append: {
+        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
+        Returns: undefined
+      }
+      handler_workflow_rules: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
       }
@@ -10632,6 +10824,10 @@ export type Database = {
       }
       retry_event_delivery: {
         Args: { p_delivery_id: string }
+        Returns: undefined
+      }
+      retry_workflow_rule_run: {
+        Args: { p_event_id: string; p_rule_id: string }
         Returns: undefined
       }
       run_booking_automation: {
