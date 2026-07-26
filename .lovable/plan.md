@@ -1,74 +1,86 @@
-## Phase 9 — Workflow Engine + Operations Command Center
+# Phase 10 – Product Readiness
 
-Additive layer over existing Booking Workspace, Event Bus, Automation and Finance engines. No redesign of shipped modules.
+Phase 10 is a launch-readiness milestone spanning marketing, onboarding, no-code tooling, ops surfaces, marketing automation and a final quality pass. To keep quality high and each shipment reviewable, I'll deliver it in **4 sequential sprints**, each ending with a runnable checkpoint. I will not touch working engines (Workflow, Event Bus, Finance, Automation) unless a specific gap surfaces.
 
-### 1. Database (single migration)
+Confirm the sprint order below (or reshuffle) and I start Sprint 10.1 immediately.
 
-**Workflow definition tables**
-- `workflow_definitions` (key, name, aggregate_type, active) — seed one row `booking_lifecycle`.
-- `workflow_stages` (definition_id, key, label, order_index, category, required_fields jsonb, entry_events text[], exit_events text[]).
-- `workflow_transitions` (definition_id, from_stage, to_stage, condition jsonb, auto boolean).
-- `workflow_rules` (id, name, event_type, condition jsonb, action jsonb, priority, active, org_id nullable for platform defaults, last_run_at, last_duration_ms, failure_count).
-- `workflow_rule_runs` (rule_id, event_id, status, duration_ms, error, ran_at) — observability.
-- `ops_queue_items` view (union of overdue tasks, pending payments, pending POs, failed events, WhatsApp failures, approvals) scoped by org.
+---
 
-**RPCs**
-- `get_workflow_progress(aggregate_type, aggregate_id)` → `{current, previous, next, progress_pct, blockers[], missing[]}`.
-- `advance_workflow(aggregate_id, to_stage, reason)` → validates, updates `bookings.workflow_stage`, emits `workflow.stage_changed`.
-- `run_workflow_rules(event_id)` → handler wired into event bus; iterates active rules matching event_type, records `workflow_rule_runs`, updates rule stats.
-- `get_ops_command_center(org_id, date)` → aggregated counts + top items.
-- `get_business_health_kpis(org_id, from, to)` → conversion, gross margin %, avg response min, receivables, payables, backlog, revenue, profit, top consultant, top destination.
+## Sprint 10.1 – Growth Surface (public + first-run)
+Goal: everything a prospect or brand-new org touches.
 
-**Event bus wiring**
-- Insert subscription `workflow_rules_engine` bound to `*` event types via new handler `handler_workflow_rules` — reuses existing `process_event_deliveries`.
-- Emit `workflow.stage_changed` on `bookings.workflow_stage` UPDATE via new trigger.
+1. **Premium Marketing Landing Page** (`/`)
+   - Reuse existing `LandingHero`, `ServicesSection`, `IndustriesSection`; add:
+     - `PricingSection` (3 tiers pulled from `subscription_plans`, monthly/yearly toggle)
+     - `FeatureComparisonTable` (Starter / Pro / Enterprise)
+     - `SecurityTrustSection` (RLS, encryption, audit, RBAC, MFA, GDPR-ready qualifier)
+     - `TestimonialsCarousel` (placeholder data, ready for real logos)
+     - `FinalCTASection` with WhatsApp + signup
+   - AR/EN via existing dir="rtl" pattern; add `useLanguage` toggle wired to `i18n` skeleton (no full translation, but scaffold ready).
+2. **Interactive Onboarding Wizard** (`/onboarding`)
+   - Multi-step: Company → Branches → Invite Users → WhatsApp Connect → Finance (currency + first bank account) → Branding (logo/color) → Templates (pick starter set).
+   - Progress persisted in `organization_settings.onboarding_state` (jsonb).
+   - Replace the current `RegisterOrganization` skip flow entrypoint.
+3. **Demo Mode with Safe Reset**
+   - Toggle in Organization Center → "Load demo data".
+   - Edge function `seed-demo-data` reuses `generate-demo-data` and tags rows with `is_demo=true` (new column on customers, bookings, invoices, payments, suppliers).
+   - "Reset demo" button deletes only `is_demo=true` rows for that org, transactional.
 
-Idempotency: rule runs keyed by `(rule_id, event_id)` unique.
+---
 
-### 2. Hooks (`src/hooks/`)
+## Sprint 10.2 – Content & Ops surfaces
+Goal: tools consultants live in daily.
 
-- `useWorkflowProgress(aggregateType, aggregateId)` → progress card data.
-- `useAdvanceWorkflow()` → mutation.
-- `useOpsCommandCenter(date?)` → dashboard payload.
-- `useOpsQueue(filter)` → assigned/today/overdue/waiting/completed.
-- `useBusinessHealthKpis(range)`.
-- `useWorkflowRules()` + `useToggleWorkflowRule()` + `useRetryWorkflowRule()`.
+4. **Visual Workflow Rule Builder** (`/platform/workflow-rules`)
+   - Replace JSON editor with:
+     - Trigger picker (event catalog dropdown)
+     - Conditions builder (field / operator / value rows, AND/OR)
+     - Actions builder (send WhatsApp / email / create task / update stage / notify)
+   - Serializes to the same `workflow_rules.condition_json` + `action_json` — backend untouched.
+   - "Test rule" runs against last 10 matching events without emitting.
+5. **Unified Template Center** (`/templates`)
+   - Extends existing `TemplateCenter` (WhatsApp) to also cover Email, Voucher, Quote, Invoice, Marketing.
+   - Categories tabs; variable palette with autocomplete from `whatsappVariables.ts`.
+   - Preview panel per channel.
+6. **Travel Calendar** (`/calendar`)
+   - Month/week/day; overlays: arrivals, departures, visa deadlines, payment due, ops tasks.
+   - Uses existing `bookings`, `booking_tasks`, `hotel_bookings`, `flight_bookings`, `customer_payments`.
+   - Click event → deep link to Booking Workspace.
 
-### 3. UI (new pages, existing sidebars)
+---
 
-- `/operations` — **Operations Command Center**: 4 KPI rows (Today, Money, Ops, Health) + panels: arrivals/departures, pending customer/supplier payments, check-ins/outs, visa/ticket tasks, late follow-ups, WhatsApp failures, failed events (link to event explorer), approvals, org health.
-- `/operations/queue` — **Daily Operations Queue**: tabs assigned-to-me / today / overdue / waiting-customer / waiting-supplier / waiting-payment / completed-today. Each row: one-click actions (mark done, snooze, open booking, open WhatsApp) + context strip.
-- `/reports/business-health` — KPI dashboard with sparklines (reuse Recharts).
-- `/platform/workflow-rules` — Platform Owner only: table (name, event, priority, active toggle, last run, duration, failures, retry). Uses `PlatformSidebar` gate.
-- **Booking Workspace** — add `WorkflowProgressBar` above stepper (previous/current/next + %). Extend `SmartNextActionCard` to consume workflow blockers/missing from RPC (dynamic beyond current rule set).
-- **Customer & Quote lists** — add small `WorkflowBadge` component (stage + progress %).
-- **Unified Business Timeline** — new `<BusinessTimeline aggregateId>` reading `domain_events` filtered by aggregate + related refs; drop into Workspace timeline tab (keeps existing timeline as fallback).
+## Sprint 10.3 – Supplier & Document 360
+7. **Supplier Workspace + Supplier 360** (`/suppliers/:id/workspace`)
+   - Header: name, category, rating, currency, balance.
+   - Tabs: Overview, Bookings, Purchase Orders, Payments, Invoices, Documents, Notes, Timeline.
+   - Reuses `useSupplierLedger`, `supplier_payment_orders`, `supplier_invoices`.
+8. **Unified Document Center** (`/documents`)
+   - New table `documents` (org_id, entity_type, entity_id, category, url, expiry, uploaded_by).
+   - Filters by entity (booking / customer / supplier), category (passport/visa/ticket/voucher/invoice/contract), expiring soon.
+   - Embed on Booking / Customer / Supplier workspaces via `<DocumentsPanel entity="booking" id=... />`.
 
-### 4. Smart Next Action expansion
+---
 
-Extend `src/lib/bookingWorkflow.ts` `recommendNextAction` to accept blockers/missing from RPC and prefer them over static heuristics. No breaking change to callers.
+## Sprint 10.4 – Automation, Quality, Launch report
+9. **Marketing Automation Journeys**
+   - New tables `journeys`, `journey_steps`, `journey_enrollments`.
+   - Prebuilt journeys: Welcome, Follow-up (no reply 48h), Abandoned Quote (7d), Pre-Travel (T-7/T-1), Post-Travel (T+2), Loyalty (repeat customer).
+   - Executed by existing event bus + worker; steps use Template Center.
+10. **Final Quality Pass**
+    - Perf: route-level `React.lazy` for heavy pages, image `loading="lazy"`, Vite build report.
+    - Responsive audit: run Playwright at 375 / 768 / 1440 across top 15 routes, capture screenshots.
+    - A11y audit: token contrast sweep, `aria-label` on all icon-only buttons, single `<main>`, keyboard nav on wizard/builder.
+    - Playwright regression: Lead → Completed happy path + Onboarding wizard + Rule Builder save.
+    - Deliver `LAUNCH_READINESS.md` v2 with **remaining blockers only**.
 
-### 5. Sidebar entries
+---
 
-- Dashboard sidebar: "العمليات" group → Operations Command Center, Daily Queue, Business Health.
-- Platform sidebar (owner only): "Workflow Rules".
+## Technical notes
 
-### 6. Validation
+- New migrations expected: `is_demo` columns, `documents` table + policies + GRANTs, `journeys*` tables + policies, `organization_settings.onboarding_state`.
+- All new tables follow the four-step public-schema pattern (CREATE → GRANT → ENABLE RLS → POLICIES) with org scoping via `has_role`/membership.
+- No changes to `domain_events`, `workflow_rules` schema, or Event Bus dispatch — Rule Builder only writes JSON the existing handler already understands.
+- i18n stays scaffolded (keys ready) — a full translation pass is out of scope; call it out in the readiness report.
+- Estimated total: ~40 new files, 4 migrations, 3 edge functions. Each sprint ends with a typecheck + preview screenshot.
 
-- `tsgo` typecheck.
-- Playwright E2E script under `/tmp/browser/phase9/` using restored Supabase session: walk one booking Lead→Completed via advance_workflow RPC, assert `domain_events` count matches expected, no duplicates by `idempotency_key`, no rows leaked across org via `organization_id` filter, screenshot Ops Center + Queue + Workflow Rules + Business Health.
-
-### 7. Deliverables
-
-- Migration file with all tables, RPCs, trigger, subscription seed, GRANTs, RLS.
-- ~10 new files (hooks, pages, components); 3-4 edited files (App.tsx, sidebars, BookingWorkspace, bookingWorkflow.ts).
-- Final report: what shipped, migration summary, routes added, Playwright results, Workflow Gap Report, Production Readiness score (0-100 with sub-scores: data model, automation coverage, observability, security, UX completeness, test coverage).
-
-### Non-goals (explicit)
-
-- No redesign of Booking Workspace, WhatsApp cockpit, Finance pages, Event Bus explorer.
-- No new accounting posting logic (Phase 6 remains authoritative).
-- No new notification channels (uses existing Notification Engine from Phase 8 hardening).
-- Rule condition/action DSL kept minimal (JSON with `{when, emit|task|notify|advance_stage}`); full visual builder deferred.
-
-Approve to proceed with the migration first, then frontend in one batch.
+Reply with **"go"** to start Sprint 10.1, or tell me which sprint to prioritize first.
