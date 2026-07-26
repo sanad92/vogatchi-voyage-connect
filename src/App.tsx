@@ -182,6 +182,11 @@ const DemoModePage = lazy(() => import("@/pages/organization/DemoModePage"));
 const DocumentCenter = lazy(() => import("@/pages/DocumentCenter"));
 const SupplierWorkspace = lazy(() => import("@/pages/SupplierWorkspace"));
 
+// Phase 10 - Sprint 10.4
+const MarketingJourneys = lazy(() => import("@/pages/MarketingJourneys"));
+const JourneyEditor = lazy(() => import("@/pages/JourneyEditor"));
+
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 
