@@ -1,113 +1,74 @@
-# Phase 8 – Workflow Orchestrator & Integration Layer
+## Phase 9 — Workflow Engine + Operations Command Center
 
-Connect all existing engines (Bookings, Automation, Finance, GL, WhatsApp, Notifications, AI, Audit) through a centralized, idempotent, event-driven bus. No UI redesign. No rebuild of existing modules.
+Additive layer over existing Booking Workspace, Event Bus, Automation and Finance engines. No redesign of shipped modules.
 
-## What already exists (reuse, do not touch)
-- `automation_rules` / `automation_actions` / `automation_logs` + `useAutomationEngine`
-- `booking_automation_runs` / `_steps` + `run_booking_automation` RPC
-- `booking_timeline_events` (already the per-booking timeline)
-- `finance_transactions` (append-only) + Phase 6 GL auto-post trigger on `customer_payments`
-- `notifications` table + `useNotifications`
-- `email_queue` + `process-email-queue`
-- WhatsApp send functions + templates
-- `admin_audit_log` (immutable) + `ai_assistant_*` tables
+### 1. Database (single migration)
 
-## What Phase 8 adds (net-new only)
+**Workflow definition tables**
+- `workflow_definitions` (key, name, aggregate_type, active) — seed one row `booking_lifecycle`.
+- `workflow_stages` (definition_id, key, label, order_index, category, required_fields jsonb, entry_events text[], exit_events text[]).
+- `workflow_transitions` (definition_id, from_stage, to_stage, condition jsonb, auto boolean).
+- `workflow_rules` (id, name, event_type, condition jsonb, action jsonb, priority, active, org_id nullable for platform defaults, last_run_at, last_duration_ms, failure_count).
+- `workflow_rule_runs` (rule_id, event_id, status, duration_ms, error, ran_at) — observability.
+- `ops_queue_items` view (union of overdue tasks, pending payments, pending POs, failed events, WhatsApp failures, approvals) scoped by org.
 
-### 1. Database — the Event Bus
-- `domain_events` table (append-only)
-  - `id uuid pk`, `organization_id uuid`, `event_type text`, `aggregate_type text`,
-    `aggregate_id uuid`, `payload jsonb`, `idempotency_key text unique`,
-    `occurred_at timestamptz`, `emitted_by uuid`, `correlation_id uuid`
-- `event_subscriptions` table — routes an `event_type` to a `handler_key` with config
-- `event_deliveries` table — one row per (event × handler); status pending/succeeded/failed/skipped, attempts, last_error, next_retry_at
-- Indexes: `(event_type, occurred_at)`, `(aggregate_type, aggregate_id)`, unique `idempotency_key`
-- RLS: org-scoped read; writes only via SECURITY DEFINER RPCs
+**RPCs**
+- `get_workflow_progress(aggregate_type, aggregate_id)` → `{current, previous, next, progress_pct, blockers[], missing[]}`.
+- `advance_workflow(aggregate_id, to_stage, reason)` → validates, updates `bookings.workflow_stage`, emits `workflow.stage_changed`.
+- `run_workflow_rules(event_id)` → handler wired into event bus; iterates active rules matching event_type, records `workflow_rule_runs`, updates rule stats.
+- `get_ops_command_center(org_id, date)` → aggregated counts + top items.
+- `get_business_health_kpis(org_id, from, to)` → conversion, gross margin %, avg response min, receivables, payables, backlog, revenue, profit, top consultant, top destination.
 
-### 2. Core RPCs
-- `emit_event(p_type, p_aggregate_type, p_aggregate_id, p_payload, p_idempotency_key)`
-  - Inserts into `domain_events` (dedup on idempotency_key → no-op if exists)
-  - Fan-out inserts one `event_deliveries` row per matching active subscription
-- `process_event_deliveries(p_limit)` — SECURITY DEFINER worker RPC
-  - Picks pending deliveries, dispatches to in-DB handlers, updates status, exponential backoff on failure (max 5 attempts, then dead-letter)
-- `dead_letter_event_deliveries` view for the Ops UI
+**Event bus wiring**
+- Insert subscription `workflow_rules_engine` bound to `*` event types via new handler `handler_workflow_rules` — reuses existing `process_event_deliveries`.
+- Emit `workflow.stage_changed` on `bookings.workflow_stage` UPDATE via new trigger.
 
-### 3. In-DB Handlers (all idempotent, all take `payload jsonb`)
-- `handler_timeline_append` — insert into `booking_timeline_events` (dedup on `(booking_id, event_type, source_event_id)`)
-- `handler_run_booking_automation` — call existing `run_booking_automation`
-- `handler_finance_post` — thin wrapper that reads booking/invoice/payment and ensures GL entries exist (delegates to existing Phase 6 logic; unique key = source event id)
-- `handler_notify_in_app` — insert into `notifications`
-- `handler_enqueue_email` — insert into `email_queue`
-- `handler_enqueue_whatsapp_suggestion` — insert into `messaging_suggestions`
-- `handler_audit_write` — insert into `admin_audit_log`
-- `handler_ai_summary_refresh` — mark AI thread stale (queue only; real refresh is client)
+Idempotency: rule runs keyed by `(rule_id, event_id)` unique.
 
-### 4. Producers — one trigger per source table, emits standardized events
-- `bookings` → `booking.created`, `booking.stage_changed`, `booking.completed`
-- `quotes` → `quote.created`, `quote.accepted`, `quote.rejected`
-- `invoices` → `invoice.created`, `invoice.paid`
-- `customer_payments` → `customer.payment.recorded`
-- `supplier_payment_orders` → `supplier.po.created`, `supplier.po.approved`
-- `supplier_payments` → `supplier.payment.recorded`
-- `booking_vouchers` → `voucher.generated`
-- `refund_requests` → `refund.requested`, `refund.approved`, `refund.paid`
-- All triggers build a deterministic `idempotency_key` = `event_type || ':' || row.id || ':' || coalesce(status,'')`, so retries and re-saves never duplicate.
+### 2. Hooks (`src/hooks/`)
 
-### 5. Default subscriptions (seeded)
-| event_type | handlers |
-|---|---|
-| booking.created | timeline, automation, notify, audit |
-| booking.stage_changed | timeline, automation, notify, ai_summary |
-| booking.completed | timeline, notify, email, whatsapp, audit |
-| quote.accepted | timeline, automation (creates booking flow), notify |
-| invoice.created | timeline, finance, notify |
-| invoice.paid | timeline, finance, notify, whatsapp |
-| customer.payment.recorded | timeline, finance (GL already exists — handler is no-op safe), notify |
-| supplier.po.approved | timeline, notify, audit |
-| supplier.payment.recorded | timeline, finance, audit |
-| voucher.generated | timeline, email, whatsapp |
-| refund.approved | timeline, finance, notify, audit |
+- `useWorkflowProgress(aggregateType, aggregateId)` → progress card data.
+- `useAdvanceWorkflow()` → mutation.
+- `useOpsCommandCenter(date?)` → dashboard payload.
+- `useOpsQueue(filter)` → assigned/today/overdue/waiting/completed.
+- `useBusinessHealthKpis(range)`.
+- `useWorkflowRules()` + `useToggleWorkflowRule()` + `useRetryWorkflowRule()`.
 
-### 6. Scheduler
-- `pg_cron` job every minute → `select process_event_deliveries(200)`
-- Second job every 5 min → retry `failed` deliveries whose `next_retry_at <= now()`
+### 3. UI (new pages, existing sidebars)
 
-### 7. Notification Engine (thin, reuses existing tables)
-- `dispatch_notification(user_ids[], channel, template_key, payload)` RPC that routes to `notifications` / `email_queue` / WhatsApp suggestion. Called only from handlers — no direct callers in app code required.
+- `/operations` — **Operations Command Center**: 4 KPI rows (Today, Money, Ops, Health) + panels: arrivals/departures, pending customer/supplier payments, check-ins/outs, visa/ticket tasks, late follow-ups, WhatsApp failures, failed events (link to event explorer), approvals, org health.
+- `/operations/queue` — **Daily Operations Queue**: tabs assigned-to-me / today / overdue / waiting-customer / waiting-supplier / waiting-payment / completed-today. Each row: one-click actions (mark done, snooze, open booking, open WhatsApp) + context strip.
+- `/reports/business-health` — KPI dashboard with sparklines (reuse Recharts).
+- `/platform/workflow-rules` — Platform Owner only: table (name, event, priority, active toggle, last run, duration, failures, retry). Uses `PlatformSidebar` gate.
+- **Booking Workspace** — add `WorkflowProgressBar` above stepper (previous/current/next + %). Extend `SmartNextActionCard` to consume workflow blockers/missing from RPC (dynamic beyond current rule set).
+- **Customer & Quote lists** — add small `WorkflowBadge` component (stage + progress %).
+- **Unified Business Timeline** — new `<BusinessTimeline aggregateId>` reading `domain_events` filtered by aggregate + related refs; drop into Workspace timeline tab (keeps existing timeline as fallback).
 
-### 8. Report sync
-- Reports already read live from `finance_transactions` / GL. Add materialized helper `refresh_finance_report_cache()` triggered from `handler_finance_post` (debounced via advisory lock so many events in a burst = one refresh).
+### 4. Smart Next Action expansion
 
-### 9. Frontend (minimal — no redesign)
-- `useDomainEvents(aggregate_id)` hook — powers existing Timeline tab if we want richer data (opt-in, existing timeline still works).
-- **Ops page only:** `/platform-admin/event-bus` — list recent events, deliveries, dead-letter, "retry" button. Reuses existing table styles. No new design system.
-- No changes to Booking Workspace, WhatsApp, Finance, or Sidebar beyond adding one Platform Admin link.
+Extend `src/lib/bookingWorkflow.ts` `recommendNextAction` to accept blockers/missing from RPC and prefer them over static heuristics. No breaking change to callers.
 
-### 10. Backward compatibility
-- Existing direct calls (e.g. `useAutomationEngine.executeTrigger`, direct `notifications` inserts, direct `email_queue` inserts) keep working.
-- New triggers only *add* events; they never modify existing rows or block writes.
-- If `process_event_deliveries` fails, business writes still succeed — the bus is best-effort with retries.
+### 5. Sidebar entries
 
-### 11. Idempotency guarantees
-- `domain_events.idempotency_key` is UNIQUE → producer retries are safe.
-- Each handler computes its own dedup key from `(handler_key, source_event_id)` before writing.
-- `event_deliveries` has UNIQUE `(event_id, handler_key)`.
+- Dashboard sidebar: "العمليات" group → Operations Command Center, Daily Queue, Business Health.
+- Platform sidebar (owner only): "Workflow Rules".
 
-### 12. Validation
-- Playwright script `/tmp/browser/phase8/`:
-  1. Create booking → assert `booking.created` event + timeline row + automation run + notification.
-  2. Record customer payment → assert `customer.payment.recorded` + GL entry + timeline + notification, and that re-saving the same payment does NOT duplicate.
-  3. Approve supplier PO → assert audit + timeline.
-  4. Open `/platform-admin/event-bus`, verify deliveries all `succeeded`, dead-letter empty.
-- Screenshots + a text report of counts before/after.
+### 6. Validation
 
-### 13. Deliverables
-- Migration list, files changed, routes added (`/platform-admin/event-bus` only), Playwright results, remaining integration gaps (e.g. handlers we intentionally left as no-op for future phases).
+- `tsgo` typecheck.
+- Playwright E2E script under `/tmp/browser/phase9/` using restored Supabase session: walk one booking Lead→Completed via advance_workflow RPC, assert `domain_events` count matches expected, no duplicates by `idempotency_key`, no rows leaked across org via `organization_id` filter, screenshot Ops Center + Queue + Workflow Rules + Business Health.
 
-## Confirm before I execute
-1. **Scheduler**: OK to enable `pg_cron` + `pg_net`? (needed for the 1-min worker; already used elsewhere in project)
-2. **Producer coverage**: the 9 source tables above — add/remove any?
-3. **Ops UI scope**: single `/platform-admin/event-bus` page is enough, or do you also want per-booking "events" drawer in the Workspace? Default: platform page only, no Workspace changes.
-4. **Dead-letter policy**: 5 attempts then park in dead-letter with manual retry — OK?
+### 7. Deliverables
 
-Reply "defaults OK" or with changes and I'll execute end-to-end in one pass.
+- Migration file with all tables, RPCs, trigger, subscription seed, GRANTs, RLS.
+- ~10 new files (hooks, pages, components); 3-4 edited files (App.tsx, sidebars, BookingWorkspace, bookingWorkflow.ts).
+- Final report: what shipped, migration summary, routes added, Playwright results, Workflow Gap Report, Production Readiness score (0-100 with sub-scores: data model, automation coverage, observability, security, UX completeness, test coverage).
+
+### Non-goals (explicit)
+
+- No redesign of Booking Workspace, WhatsApp cockpit, Finance pages, Event Bus explorer.
+- No new accounting posting logic (Phase 6 remains authoritative).
+- No new notification channels (uses existing Notification Engine from Phase 8 hardening).
+- Rule condition/action DSL kept minimal (JSON with `{when, emit|task|notify|advance_stage}`); full visual builder deferred.
+
+Approve to proceed with the migration first, then frontend in one batch.
