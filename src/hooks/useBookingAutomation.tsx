@@ -67,6 +67,10 @@ export function useBookingAutomation(bookingId?: string) {
     qc.invalidateQueries({ queryKey: ['booking-automation-run', bookingId] });
     qc.invalidateQueries({ queryKey: ['booking-automation-steps', bookingId] });
     qc.invalidateQueries({ queryKey: ['booking-workspace', bookingId] });
+    qc.invalidateQueries({ queryKey: ['workspace-booking', bookingId] });
+    qc.invalidateQueries({ queryKey: ['workflow-progress'] });
+    qc.invalidateQueries({ queryKey: ['financial-summary', bookingId] });
+    qc.invalidateQueries({ queryKey: ['invoices'] });
   };
 
   const runAll = useMutation({
