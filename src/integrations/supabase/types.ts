@@ -3561,6 +3561,44 @@ export type Database = {
           },
         ]
       }
+      document_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          document_id: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_audit_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_templates: {
         Row: {
           accent_color: string | null
@@ -3619,6 +3657,93 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          booking_id: string | null
+          category: Database["public"]["Enums"]["document_category"]
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          expiry_date: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          is_confidential: boolean
+          metadata: Json
+          mime_type: string | null
+          organization_id: string
+          parent_document_id: string | null
+          supplier_id: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          booking_id?: string | null
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_confidential?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          organization_id: string
+          parent_document_id?: string | null
+          supplier_id?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Update: {
+          booking_id?: string | null
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_confidential?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          organization_id?: string
+          parent_document_id?: string | null
+          supplier_id?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -7462,6 +7587,66 @@ export type Database = {
           },
         ]
       }
+      supplier_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          role: string | null
+          supplier_id: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          role?: string | null
+          supplier_id: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          role?: string | null
+          supplier_id?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_contacts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_contracts: {
         Row: {
           contract_number: string
@@ -7672,6 +7857,54 @@ export type Database = {
           },
           {
             foreignKeyName: "supplier_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          organization_id: string
+          pinned: boolean
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          pinned?: boolean
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          pinned?: boolean
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_notes_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
@@ -10322,6 +10555,19 @@ export type Database = {
         Args: { _code: string; _org: string }
         Returns: string
       }
+      _workflow_check_condition: {
+        Args: { cond: Json; ctx: Json }
+        Returns: boolean
+      }
+      _workflow_get: { Args: { path: string; payload: Json }; Returns: Json }
+      _workflow_run_step: {
+        Args: {
+          p_event: Database["public"]["Tables"]["domain_events"]["Row"]
+          p_rule_id: string
+          step: Json
+        }
+        Returns: undefined
+      }
       accept_invitation: { Args: { _token: string }; Returns: Json }
       advance_workflow: {
         Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
@@ -10924,6 +11170,16 @@ export type Database = {
         | "completed"
         | "post_travel"
         | "cancelled"
+      document_category:
+        | "passport"
+        | "visa"
+        | "voucher"
+        | "invoice"
+        | "purchase_order"
+        | "ticket"
+        | "insurance"
+        | "contract"
+        | "other"
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
       platform_role: "platform_admin" | "platform_owner"
     }
@@ -11065,6 +11321,17 @@ export const Constants = {
         "completed",
         "post_travel",
         "cancelled",
+      ],
+      document_category: [
+        "passport",
+        "visa",
+        "voucher",
+        "invoice",
+        "purchase_order",
+        "ticket",
+        "insurance",
+        "contract",
+        "other",
       ],
       org_role: ["owner", "admin", "manager", "agent", "viewer"],
       platform_role: ["platform_admin", "platform_owner"],
