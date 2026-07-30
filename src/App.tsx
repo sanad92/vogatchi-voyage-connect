@@ -373,6 +373,7 @@ function App() {
                              <Route path="/trial-balance" element={<PermissionRouteGuard requiredPermission="financial_view"><TrialBalance /></PermissionRouteGuard>} />
                              <Route path="/income-statement" element={<PermissionRouteGuard requiredPermission="financial_view"><IncomeStatement /></PermissionRouteGuard>} />
                              <Route path="/balance-sheet" element={<PermissionRouteGuard requiredPermission="financial_view"><BalanceSheet /></PermissionRouteGuard>} />
+                             <Route path="/finance/historical-recovery" element={<PermissionRouteGuard requiredPermission="financial_view"><HistoricalRecoveryCenter /></PermissionRouteGuard>} />
                               <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-periods" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingPeriodsPage /></PermissionRouteGuard>} />
