@@ -158,6 +158,7 @@ const FinanceApprovals = lazy(() => import("@/pages/finance/FinanceApprovals"));
 const TrialBalance = lazy(() => import("@/pages/finance/TrialBalance"));
 const IncomeStatement = lazy(() => import("@/pages/finance/IncomeStatement"));
 const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
+const HistoricalRecoveryCenter = lazy(() => import("@/pages/finance/HistoricalRecoveryCenter"));
 
 // Phase 7 - SaaS Core & Enterprise
 const OrganizationCenter = lazy(() => import("@/pages/organization/OrganizationCenter"));
