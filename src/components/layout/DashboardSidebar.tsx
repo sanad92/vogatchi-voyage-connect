@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
       { title: 'الحجوزات', href: '/bookings', icon: ClipboardList, requiredPermission: 'bookings_view' },
       { title: 'الفواتير', href: '/invoices', icon: Receipt, requiredPermission: 'invoices_view' },
       { title: 'المدفوعات والبنوك', href: '/bank-accounts', icon: CreditCard, requiredPermission: 'financial_view' },
+      { title: 'الاسترداد التاريخي', href: '/finance/historical-recovery', icon: History, requiredPermission: 'financial_view' },
     ],
   },
   {
