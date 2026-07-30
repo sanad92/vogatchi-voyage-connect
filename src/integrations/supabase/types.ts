@@ -4581,6 +4581,74 @@ export type Database = {
           },
         ]
       }
+      fiscal_year_closures: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          fiscal_year: number
+          id: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          reconciled_at: string | null
+          reconciliation: Json
+          reopen_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          reconciled_at?: string | null
+          reconciliation?: Json
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          reconciled_at?: string | null
+          reconciliation?: Json
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_year_closures_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_bookings: {
         Row: {
           additional_costs: number | null
@@ -5064,6 +5132,115 @@ export type Database = {
           },
           {
             foreignKeyName: "generated_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historical_recovery_items: {
+        Row: {
+          action: string
+          booking_id: string | null
+          booking_number: string | null
+          created_at: string
+          detail: string | null
+          entity_id: string | null
+          entity_type: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          run_id: string
+        }
+        Insert: {
+          action: string
+          booking_id?: string | null
+          booking_number?: string | null
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_type: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          run_id: string
+        }
+        Update: {
+          action?: string
+          booking_id?: string | null
+          booking_number?: string | null
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_recovery_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "historical_recovery_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historical_recovery_runs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          fiscal_year: number | null
+          from_date: string
+          id: string
+          mode: string
+          organization_id: string
+          started_at: string
+          started_by: string | null
+          status: string
+          to_date: string
+          totals: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          fiscal_year?: number | null
+          from_date: string
+          id?: string
+          mode: string
+          organization_id: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          to_date: string
+          totals?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          fiscal_year?: number | null
+          from_date?: string
+          id?: string
+          mode?: string
+          organization_id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          to_date?: string
+          totals?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_recovery_runs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -10816,6 +10993,7 @@ export type Database = {
     Functions: {
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
       _next_entry_number: { Args: { _org: string }; Returns: string }
+      _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
       _render_template: {
         Args: { _text: string; _vars: Json }
         Returns: string
@@ -10850,6 +11028,48 @@ export type Database = {
         Args: { _approve?: boolean; _po_id: string; _reason?: string }
         Returns: undefined
       }
+      audit_historical_gaps: {
+        Args: { _from?: string; _org: string; _to?: string }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          cost_price: number
+          created_on: string
+          currency: string
+          customer_id: string
+          gap_count: number
+          missing_automation_run: boolean
+          missing_events: boolean
+          missing_gl: boolean
+          missing_invoice: boolean
+          missing_snapshot: boolean
+          missing_supplier_po: boolean
+          missing_timeline: boolean
+          missing_voucher: boolean
+          missing_workflow_history: boolean
+          negative_margin: boolean
+          no_customer: boolean
+          no_supplier: boolean
+          selling_price: number
+          supplier_id: string
+          workflow_stage: string
+          zero_price: boolean
+        }[]
+      }
+      audit_historical_summary: {
+        Args: { _from?: string; _log?: boolean; _org: string; _to?: string }
+        Returns: Json
+      }
+      backfill_historical_bookings: {
+        Args: {
+          _dry_run?: boolean
+          _from?: string
+          _limit?: number
+          _org: string
+          _to?: string
+        }
+        Returns: Json
+      }
       backfill_journals: {
         Args: { _org_id: string }
         Returns: {
@@ -10879,6 +11099,10 @@ export type Database = {
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      close_fiscal_year: {
+        Args: { _confirmation: string; _org: string; _year: number }
+        Returns: Json
+      }
       convert_quote_to_bookings: {
         Args: { p_quote_id: string }
         Returns: {
@@ -10974,6 +11198,10 @@ export type Database = {
           season_name: string
           selling_price: number
         }[]
+      }
+      fiscal_year_reconciliation: {
+        Args: { _org: string; _year: number }
+        Returns: Json
       }
       generate_booking_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
@@ -11358,7 +11586,15 @@ export type Database = {
         Returns: string
       }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      reopen_fiscal_year: {
+        Args: { _org: string; _reason: string; _year: number }
+        Returns: Json
+      }
       replay_event: { Args: { p_event_id: string }; Returns: number }
+      replay_gl_postings: {
+        Args: { _dry_run?: boolean; _from?: string; _org: string; _to?: string }
+        Returns: Json
+      }
       reset_demo_data: { Args: { _org_id: string }; Returns: Json }
       retry_booking_automation_step: {
         Args: { p_step_id: string }
