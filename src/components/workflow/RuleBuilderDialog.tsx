@@ -58,6 +58,19 @@ const ACTION_TYPES = [
   { value: 'emit_event', label: 'إطلاق حدث', params: ['event_type', 'payload_json'] },
 ];
 
+const WORKFLOW_STAGE_OPTIONS = [
+  { value: 'lead', label: 'عميل محتمل' },
+  { value: 'qualified', label: 'مؤهل' },
+  { value: 'quoted', label: 'تم عرض السعر' },
+  { value: 'confirmed', label: 'مؤكد' },
+  { value: 'paid', label: 'مدفوع' },
+  { value: 'operations', label: 'تشغيل' },
+  { value: 'traveling', label: 'مسافر' },
+  { value: 'completed', label: 'مكتمل' },
+  { value: 'post_travel', label: 'ما بعد السفر' },
+  { value: 'cancelled', label: 'ملغي' },
+];
+
 interface Condition { field: string; op: string; value: string; }
 interface Action { type: string; params: Record<string, string>; }
 
@@ -82,7 +95,15 @@ export const RuleBuilderDialog = ({ open, onClose, rule }: Props) => {
   })();
   const initialActions: Action[] = (() => {
     const a: any = rule?.action ?? {};
-    if (Array.isArray(a.steps)) return a.steps;
+    if (Array.isArray(a.steps)) {
+      return a.steps.map((step: any) => {
+        if (step.type === 'advance_stage') {
+          return { type: 'advance_workflow', params: { to_stage: step.to ?? '' } };
+        }
+        const { type, ...params } = step;
+        return { type, params };
+      });
+    }
     if (a.type) return [{ type: a.type, params: a.params ?? {} }];
     return [];
   })();
@@ -95,12 +116,28 @@ export const RuleBuilderDialog = ({ open, onClose, rule }: Props) => {
   const addAction = () => setActions([...actions, { type: 'add_timeline_event', params: {} }]);
 
   const handleSave = async (dryRun = false) => {
+    const invalidStageAction = actions.some(
+      (action) => action.type === 'advance_workflow' && !action.params.to_stage?.trim(),
+    );
+    if (invalidStageAction) {
+      setTestResult('اختر مرحلة صحيحة لكل إجراء من نوع "تقدم مرحلة سير العمل".');
+      return;
+    }
+
+    // Persist the action shape understood by the database workflow engine.
+    const normalizedActions = actions.map((action) => {
+      if (action.type === 'advance_workflow') {
+        return { type: 'advance_stage', to: action.params.to_stage.trim() };
+      }
+      return { type: action.type, ...action.params };
+    });
+
     const payload: Partial<WorkflowRule> = {
       id: rule?.id,
       name, description, event_type: eventType, priority,
       is_active: dryRun ? false : isActive,
       condition: { all: conditions },
-      action: { steps: actions },
+      action: { steps: normalizedActions },
     };
     if (dryRun) {
       setTestResult(JSON.stringify(payload, null, 2));
@@ -174,7 +211,24 @@ export const RuleBuilderDialog = ({ open, onClose, rule }: Props) => {
                       {meta.params.map((p) => (
                         <div key={p}>
                           <Label className="text-xs">{p}</Label>
-                          <Input value={a.params[p] || ''} onChange={(e) => { const n = [...actions]; n[i].params = { ...n[i].params, [p]: e.target.value }; setActions(n); }} />
+                          {p === 'to_stage' ? (
+                            <select
+                              className="w-full h-9 border rounded-md px-2 bg-background"
+                              value={a.params[p] || ''}
+                              onChange={(e) => {
+                                const n = [...actions];
+                                n[i].params = { ...n[i].params, [p]: e.target.value };
+                                setActions(n);
+                              }}
+                            >
+                              <option value="">اختر المرحلة</option>
+                              {WORKFLOW_STAGE_OPTIONS.map((stage) => (
+                                <option key={stage.value} value={stage.value}>{stage.label}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Input value={a.params[p] || ''} onChange={(e) => { const n = [...actions]; n[i].params = { ...n[i].params, [p]: e.target.value }; setActions(n); }} />
+                          )}
                         </div>
                       ))}
                     </div>

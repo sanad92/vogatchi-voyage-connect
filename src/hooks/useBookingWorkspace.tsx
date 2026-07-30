@@ -263,6 +263,9 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   const setStage = useMutation({
     mutationFn: async (stage: WorkflowStage) => {
       if (!bookingId) throw new Error('No booking');
+      if (!stage || ![...WORKFLOW_STAGES, 'cancelled'].includes(stage)) {
+        throw new Error('مرحلة الحجز غير صالحة');
+      }
       // Route through advance_workflow RPC so the event bus emits
       // `booking.stage_changed`, which fans out to timeline + automation handlers.
       const { error } = await anyClient.rpc('advance_workflow', {

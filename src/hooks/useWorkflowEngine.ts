@@ -2,6 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const BOOKING_WORKFLOW_STAGES = new Set([
+  'lead',
+  'qualified',
+  'quoted',
+  'confirmed',
+  'paid',
+  'operations',
+  'traveling',
+  'completed',
+  'post_travel',
+  'cancelled',
+]);
+
 export interface WorkflowProgress {
   current: string;
   previous: string | null;
@@ -35,9 +48,13 @@ export function useAdvanceWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { bookingId: string; to: string; reason?: string }) => {
+      const targetStage = input.to?.trim();
+      if (!targetStage || !BOOKING_WORKFLOW_STAGES.has(targetStage)) {
+        throw new Error('مرحلة الحجز غير صالحة');
+      }
       const { data, error } = await (supabase as any).rpc('advance_workflow', {
         p_booking_id: input.bookingId,
-        p_to_stage: input.to,
+        p_to_stage: targetStage,
         p_reason: input.reason ?? null,
       });
       if (error) throw error;
