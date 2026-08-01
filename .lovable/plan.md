@@ -1,60 +1,32 @@
-# Sprint 10.4 — Marketing Automation & Launch Readiness
+## Root cause (confirmed)
 
-Realistic scope for one sprint turn. I'll ship the backend + core UI now and flag anything deferred to v1.1 with rationale rather than half-building it.
+The database trigger function `public.trg_emit_booking`, which runs on every `bookings` UPDATE, compares the enum column against an empty text literal:
 
-## 1. Marketing Automation Engine
+```text
+IF coalesce(NEW.workflow_stage,'') IS DISTINCT FROM coalesce(OLD.workflow_stage,'') THEN
+  ...
+  'booking.stage_changed:'||NEW.id::text||':'||coalesce(NEW.workflow_stage,'')
+```
 
-**Database (single migration)**
-- `marketing_journeys` — org-scoped journey definitions (name, trigger_event, enrollment_condition jsonb, goal_event, is_active, stats)
-- `journey_steps` — ordered nodes (step_type: `send_whatsapp` | `send_email` | `wait` | `condition` | `tag` | `emit_event`, config jsonb, next_step_id, branch_yes_id, branch_no_id, delay_minutes)
-- `journey_enrollments` — one row per customer per journey (current_step_id, status: active/completed/exited/goal_hit, next_run_at, context jsonb)
-- `journey_step_runs` — audit trail per step execution
-- 9 seeded starter journeys (Welcome Lead, Follow-up, Abandoned Quote, Payment Reminder, Pre-Travel, Travel Day, Post-Travel Review, Loyalty, Win-back) as inactive templates
-- RPC `enroll_in_journey(journey_id, customer_id, context)` — idempotent
-- RPC `process_journey_enrollments()` — cron-driven step executor
-- Event Bus subscription: on domain events matching journey triggers → auto-enroll
+`coalesce(<booking_workflow_stage>, '')` forces the literal `''` to be coerced to `booking_workflow_stage`, which Postgres rejects with exactly:
+`invalid input value for enum booking_workflow_stage: ""`.
 
-**Workflow action wiring (real sends)**
-- `_workflow_run_step` `send_whatsapp` → invoke `send-whatsapp-message` edge fn with rendered template
-- `_workflow_run_step` `send_email` → invoke `send-transactional-email` if infra present, else `email_queue` fallback
-- Shared plpgsql helper `_render_template(text, vars jsonb)` for `{{var}}` substitution
+So the failure happens inside the UPDATE issued by `advance_workflow`, after its own validation passes — which is why the message is the raw Postgres enum error and not the function's Arabic "invalid booking workflow stage" message. No frontend code writes `workflow_stage` directly; the UI path (`StageStepper` → `useBookingWorkspace.setStage` → `advance_workflow`) is already guarded.
 
-**Frontend**
-- `useMarketingJourneys` hook (list/upsert/toggle/enroll/analytics)
-- `/marketing/journeys` list page with stats (enrolled, completed, goal rate, conversion)
-- `/marketing/journeys/:id` editor — linear step list with drag-reorder, per-step config panel (no full canvas graph — deferred to v1.1)
-- Analytics tab: funnel by step, goal completion, exit reasons
+Secondary, currently latent: `handler_workflow_rules` and `_workflow_run_step` cast `action ->> 'to'` / `step ->> 'to'` to the enum without a null/empty guard, so a rule saved with a blank target stage would raise the same error inside the event bus. The only active rule today is a `log_only` rule, so this is not the current trigger of the bug but should be hardened in the same pass.
 
-## 2. Template Center hardening
+## Changes (single migration, no new features)
 
-- New `template_versions` table (template_id, version_no, content, subject, created_by, notes) — auto-snapshot on update via trigger
-- Add `is_org_default`, `approval_status` (draft/pending/approved/rejected), `approved_by`, `approved_at` to `whatsapp_templates` and `document_templates`
-- Variable validation: extract `{{vars}}` from body, compare against declared `variables` array — surface warnings in UI
-- Template Center UI additions: Version History dialog with diff/restore, Approve/Reject buttons for admins, "Set as org default" toggle
+1. Rewrite `public.trg_emit_booking`:
+   - stage comparison becomes `NEW.workflow_stage IS DISTINCT FROM OLD.workflow_stage` (no coalesce on the enum)
+   - idempotency key uses `coalesce(NEW.workflow_stage::text, '')`
+   - `status` handling stays unchanged (it is a text column, so its coalesce is safe)
+2. Harden `_workflow_run_step` and `handler_workflow_rules`: only run the `advance_stage` UPDATE when `nullif(btrim(step ->> 'to'), '')` is non-null and is a valid `booking_workflow_stage` label; otherwise log a skipped timeline/rule-run entry instead of raising.
 
-## 3. Navigation additions
+No frontend changes required.
 
-- Sidebar: Document Center under Operations, Supplier Workspace shortcut under Suppliers, Marketing Journeys under Marketing
+## Verification
 
-## 4. Storage policy audit
-
-Read current `documents` bucket policies via psql; confirm `{orgId}/uploads/...` prefix scoping; add explicit policy for the new upload paths if missing.
-
-## 5. Audits & Launch Readiness
-
-- Typecheck (tsgo)
-- Accessibility pass on new pages (aria-labels on icon buttons, semantic headings)
-- Responsive check via Playwright at 375/1280 widths on new routes
-- Full authenticated E2E: skipped unless `LOVABLE_BROWSER_AUTH_STATUS=injected` — will run and screenshot Lead→Voucher if session available
-- Launch Readiness Report with scored dimensions + v1.1 roadmap
-
-## Deferred to v1.1 (called out, not silently dropped)
-
-- Full node-graph visual journey canvas (React Flow) — using ordered step list for now
-- A/B testing on journey messages
-- Consent management (GDPR unsubscribe segmentation beyond existing `suppressed_emails`)
-- Approval workflow email notifications to admins
-
-## Deliverable
-
-Sprint 10.4 report + Launch Readiness Report + prioritized v1.1 roadmap.
+- Run a stage change on booking `e9133c6a-0c62-4999-9c6a-2a1474b212af` via the `advance_workflow` RPC and confirm it succeeds.
+- Confirm `bookings.workflow_stage` persisted, a `booking.stage_changed` row exists in `domain_events`, a `stage_changed` row exists in `booking_timeline_events`, and the related `event_deliveries` rows reach `succeeded` with no `last_error`.
+- Confirm a plain non-stage update to the same booking (e.g. `notes`) no longer errors.
