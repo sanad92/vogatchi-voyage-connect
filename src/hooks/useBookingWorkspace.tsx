@@ -161,17 +161,28 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     queryKey: ['workspace-payments', bookingId, customerId],
     enabled: !!bookingId,
     queryFn: async () => {
-      const q = anyClient
-        .from('payment_transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      const { data, error } = await q.or(
-        `booking_id.eq.${bookingId}${customerId ? `,customer_id.eq.${customerId}` : ''}`,
+      const [legacy, customerPays] = await Promise.all([
+        anyClient
+          .from('payment_transactions')
+          .select('*')
+          .or(`booking_id.eq.${bookingId}${customerId ? `,customer_id.eq.${customerId}` : ''}`)
+          .order('created_at', { ascending: false }),
+        anyClient
+          .from('customer_payments')
+          .select('*')
+          .eq('booking_id', bookingId)
+          .order('created_at', { ascending: false }),
+      ]);
+      const rows = [
+        ...((customerPays.data ?? []) as any[]).map((p) => ({ ...p, source: 'customer_payment' })),
+        ...((legacy.data ?? []) as any[]).map((p) => ({ ...p, source: 'payment_transaction' })),
+      ];
+      return rows.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-      if (error) return [];
-      return data ?? [];
     },
   });
+
 
   // 6. WhatsApp conversation (by customer)
   const conversationQ = useQuery({
