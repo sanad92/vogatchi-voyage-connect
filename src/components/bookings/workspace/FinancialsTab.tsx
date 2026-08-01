@@ -2,7 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import BookingFinancialWorkspace from '@/components/bookings/BookingFinancialWorkspace';
 import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
+import RecordPaymentDialog from './RecordPaymentDialog';
 import type { Workspace } from './types';
+
 
 interface Props {
   workspace: Workspace;
