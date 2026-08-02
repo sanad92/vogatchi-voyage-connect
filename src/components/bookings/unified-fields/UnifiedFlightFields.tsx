@@ -5,7 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { FieldError } from '@/components/wizard/StepWizard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Pencil, List } from 'lucide-react';
 
 interface UnifiedFlightFieldsProps {
   formData: Record<string, any>;
@@ -15,6 +17,15 @@ interface UnifiedFlightFieldsProps {
 }
 
 const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: UnifiedFlightFieldsProps) => {
+  const [manualAirline, setManualAirline] = useState(false);
+  const [manualDeparture, setManualDeparture] = useState(false);
+  const [manualArrival, setManualArrival] = useState(false);
+
+  const ToggleBtn = ({ manual, onClick }: { manual: boolean; onClick: () => void }) => (
+    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onClick}>
+      {manual ? <><List className="h-3 w-3 ml-1" />اختيار من القائمة</> : <><Pencil className="h-3 w-3 ml-1" />إدخال يدوي</>}
+    </Button>
+  );
   const { data: airports } = useQuery({
     queryKey: ['airports-active'],
     queryFn: async () => {
@@ -57,8 +68,11 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
       {/* شركة الطيران + رقم الرحلة + درجة السفر */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label>شركة الطيران *</Label>
-          {airlines && airlines.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>شركة الطيران *</Label>
+            <ToggleBtn manual={manualAirline} onClick={() => setManualAirline(!manualAirline)} />
+          </div>
+          {!manualAirline && airlines && airlines.length > 0 ? (
             <Select value={formData.airline || ''} onValueChange={v => {
               const al = airlines.find((a: any) => a.id === v);
               updateFields({ airline: v, airline_name: al?.name || '' });
@@ -71,10 +85,15 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.airline || ''} onChange={e => updateField('airline', e.target.value)} placeholder="شركة الطيران" />
+            <Input
+              value={formData.airline_name || ''}
+              onChange={e => updateFields({ airline_name: e.target.value, airline: e.target.value })}
+              placeholder="اكتب اسم شركة الطيران"
+            />
           )}
           <FieldError error={errors.airline} />
         </div>
+
         <div>
           <Label>رقم الرحلة</Label>
           <Input value={formData.flight_number || ''} onChange={e => updateField('flight_number', e.target.value)} placeholder="مثال: MS-123" />
@@ -106,8 +125,11 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
       {/* المطارات */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>مطار المغادرة *</Label>
-          {airports && airports.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>مطار المغادرة *</Label>
+            <ToggleBtn manual={manualDeparture} onClick={() => setManualDeparture(!manualDeparture)} />
+          </div>
+          {!manualDeparture && airports && airports.length > 0 ? (
             <Select value={formData.departure_airport || ''} onValueChange={v => updateField('departure_airport', v)}>
               <SelectTrigger><SelectValue placeholder="اختر مطار المغادرة" /></SelectTrigger>
               <SelectContent>
@@ -117,12 +139,15 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.departure_airport || ''} onChange={e => updateField('departure_airport', e.target.value)} placeholder="مطار المغادرة" />
+            <Input value={formData.departure_airport || ''} onChange={e => updateField('departure_airport', e.target.value)} placeholder="اكتب اسم أو كود مطار المغادرة" />
           )}
         </div>
         <div>
-          <Label>مطار الوصول *</Label>
-          {airports && airports.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>مطار الوصول *</Label>
+            <ToggleBtn manual={manualArrival} onClick={() => setManualArrival(!manualArrival)} />
+          </div>
+          {!manualArrival && airports && airports.length > 0 ? (
             <Select value={formData.arrival_airport || ''} onValueChange={v => updateField('arrival_airport', v)}>
               <SelectTrigger><SelectValue placeholder="اختر مطار الوصول" /></SelectTrigger>
               <SelectContent>
@@ -132,9 +157,10 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.arrival_airport || ''} onChange={e => updateField('arrival_airport', e.target.value)} placeholder="مطار الوصول" />
+            <Input value={formData.arrival_airport || ''} onChange={e => updateField('arrival_airport', e.target.value)} placeholder="اكتب اسم أو كود مطار الوصول" />
           )}
         </div>
+
       </div>
 
       {/* تواريخ وأوقات */}
