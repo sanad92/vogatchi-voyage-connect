@@ -34,6 +34,10 @@ const AirlineSelectionField = ({ value, onChange, airlines }: AirlineSelectionFi
   const [search, setSearch] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newAirlineData, setNewAirlineData] = useState({ name: '', iata_code: '' });
+  const [manualMode, setManualMode] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualCode, setManualCode] = useState('');
+
   const queryClient = useQueryClient();
 
   const selected = useMemo(
