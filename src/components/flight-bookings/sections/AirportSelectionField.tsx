@@ -271,7 +271,17 @@ const AirportSelectionField = ({
           </Dialog>
         )}
       </div>
+      <Button
+        type="button"
+        variant="link"
+        size="sm"
+        className="h-auto p-0 text-xs"
+        onClick={() => setManualMode(true)}
+      >
+        إدخال يدوي
+      </Button>
     </div>
+
   );
 };
 
