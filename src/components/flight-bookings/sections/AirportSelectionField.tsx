@@ -44,6 +44,11 @@ const AirportSelectionField = ({
     country: '',
     iata_code: '',
   });
+  const [manualMode, setManualMode] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualCity, setManualCity] = useState('');
+  const [manualCode, setManualCode] = useState('');
+
   const queryClient = useQueryClient();
 
   const selected = useMemo(
