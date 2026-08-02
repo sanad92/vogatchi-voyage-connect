@@ -104,6 +104,64 @@ const AirlineSelectionField = ({ value, onChange, airlines }: AirlineSelectionFi
     addAirlineMutation.mutate(newAirlineData);
   };
 
+  const handleManualSave = () => {
+    const name = manualName.trim();
+    if (!name) {
+      toast.error('اكتب اسم شركة الطيران');
+      return;
+    }
+    const existing = airlines.find(
+      (a) =>
+        (a.name ?? '').trim().toLowerCase() === name.toLowerCase() ||
+        (a.iata_code ?? '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (existing) {
+      onChange(existing.id);
+      setManualMode(false);
+      toast.success('تم اختيار شركة الطيران');
+      return;
+    }
+    addAirlineMutation.mutate({ name, iata_code: manualCode.trim().toUpperCase() || null });
+  };
+
+  if (manualMode) {
+    return (
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <Plane className="h-4 w-4" />
+          شركة الطيران (إدخال يدوي)
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            value={manualName}
+            onChange={(e) => setManualName(e.target.value)}
+            placeholder="اسم شركة الطيران"
+            className="flex-1"
+          />
+          <Input
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value)}
+            placeholder="IATA"
+            className="w-20"
+            maxLength={3}
+          />
+          <Button type="button" onClick={handleManualSave} disabled={addAirlineMutation.isPending}>
+            حفظ
+          </Button>
+        </div>
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs"
+          onClick={() => setManualMode(false)}
+        >
+          اختيار من القائمة
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
@@ -111,6 +169,7 @@ const AirlineSelectionField = ({ value, onChange, airlines }: AirlineSelectionFi
         شركة الطيران
       </Label>
       <div className="flex gap-2">
+
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
