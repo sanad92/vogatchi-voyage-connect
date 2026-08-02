@@ -92,9 +92,13 @@ const AirlineSelectionField = ({ value, onChange, airlines }: AirlineSelectionFi
       queryClient.invalidateQueries({ queryKey: ['airlines'] });
       setShowAddDialog(false);
       setNewAirlineData({ name: '', iata_code: '' });
+      setManualMode(false);
+      setManualName('');
+      setManualCode('');
       onChange(data.id);
       toast.success('تم إضافة شركة الطيران بنجاح');
     },
+
     onError: (e: any) => {
       toast.error(`فشل: ${e.message || 'خطأ غير معروف'}`);
     },
