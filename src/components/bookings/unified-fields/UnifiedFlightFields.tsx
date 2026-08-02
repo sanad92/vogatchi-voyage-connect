@@ -125,8 +125,11 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
       {/* المطارات */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>مطار المغادرة *</Label>
-          {airports && airports.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>مطار المغادرة *</Label>
+            <ToggleBtn manual={manualDeparture} onClick={() => setManualDeparture(!manualDeparture)} />
+          </div>
+          {!manualDeparture && airports && airports.length > 0 ? (
             <Select value={formData.departure_airport || ''} onValueChange={v => updateField('departure_airport', v)}>
               <SelectTrigger><SelectValue placeholder="اختر مطار المغادرة" /></SelectTrigger>
               <SelectContent>
@@ -136,12 +139,15 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.departure_airport || ''} onChange={e => updateField('departure_airport', e.target.value)} placeholder="مطار المغادرة" />
+            <Input value={formData.departure_airport || ''} onChange={e => updateField('departure_airport', e.target.value)} placeholder="اكتب اسم أو كود مطار المغادرة" />
           )}
         </div>
         <div>
-          <Label>مطار الوصول *</Label>
-          {airports && airports.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>مطار الوصول *</Label>
+            <ToggleBtn manual={manualArrival} onClick={() => setManualArrival(!manualArrival)} />
+          </div>
+          {!manualArrival && airports && airports.length > 0 ? (
             <Select value={formData.arrival_airport || ''} onValueChange={v => updateField('arrival_airport', v)}>
               <SelectTrigger><SelectValue placeholder="اختر مطار الوصول" /></SelectTrigger>
               <SelectContent>
@@ -151,9 +157,10 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.arrival_airport || ''} onChange={e => updateField('arrival_airport', e.target.value)} placeholder="مطار الوصول" />
+            <Input value={formData.arrival_airport || ''} onChange={e => updateField('arrival_airport', e.target.value)} placeholder="اكتب اسم أو كود مطار الوصول" />
           )}
         </div>
+
       </div>
 
       {/* تواريخ وأوقات */}
