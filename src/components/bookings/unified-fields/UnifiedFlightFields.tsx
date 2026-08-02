@@ -5,7 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { FieldError } from '@/components/wizard/StepWizard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Pencil, List } from 'lucide-react';
 
 interface UnifiedFlightFieldsProps {
   formData: Record<string, any>;
@@ -15,6 +17,15 @@ interface UnifiedFlightFieldsProps {
 }
 
 const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: UnifiedFlightFieldsProps) => {
+  const [manualAirline, setManualAirline] = useState(false);
+  const [manualDeparture, setManualDeparture] = useState(false);
+  const [manualArrival, setManualArrival] = useState(false);
+
+  const ToggleBtn = ({ manual, onClick }: { manual: boolean; onClick: () => void }) => (
+    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onClick}>
+      {manual ? <><List className="h-3 w-3 ml-1" />اختيار من القائمة</> : <><Pencil className="h-3 w-3 ml-1" />إدخال يدوي</>}
+    </Button>
+  );
   const { data: airports } = useQuery({
     queryKey: ['airports-active'],
     queryFn: async () => {
