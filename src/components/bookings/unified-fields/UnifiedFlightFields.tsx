@@ -68,8 +68,11 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
       {/* شركة الطيران + رقم الرحلة + درجة السفر */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label>شركة الطيران *</Label>
-          {airlines && airlines.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <Label>شركة الطيران *</Label>
+            <ToggleBtn manual={manualAirline} onClick={() => setManualAirline(!manualAirline)} />
+          </div>
+          {!manualAirline && airlines && airlines.length > 0 ? (
             <Select value={formData.airline || ''} onValueChange={v => {
               const al = airlines.find((a: any) => a.id === v);
               updateFields({ airline: v, airline_name: al?.name || '' });
@@ -82,10 +85,15 @@ const UnifiedFlightFields = ({ formData, updateField, updateFields, errors }: Un
               </SelectContent>
             </Select>
           ) : (
-            <Input value={formData.airline || ''} onChange={e => updateField('airline', e.target.value)} placeholder="شركة الطيران" />
+            <Input
+              value={formData.airline_name || ''}
+              onChange={e => updateFields({ airline_name: e.target.value, airline: e.target.value })}
+              placeholder="اكتب اسم شركة الطيران"
+            />
           )}
           <FieldError error={errors.airline} />
         </div>
+
         <div>
           <Label>رقم الرحلة</Label>
           <Input value={formData.flight_number || ''} onChange={e => updateField('flight_number', e.target.value)} placeholder="مثال: MS-123" />
