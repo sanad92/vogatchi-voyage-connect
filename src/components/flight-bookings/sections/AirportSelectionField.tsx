@@ -44,6 +44,11 @@ const AirportSelectionField = ({
     country: '',
     iata_code: '',
   });
+  const [manualMode, setManualMode] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualCity, setManualCity] = useState('');
+  const [manualCode, setManualCode] = useState('');
+
   const queryClient = useQueryClient();
 
   const selected = useMemo(
@@ -100,6 +105,9 @@ const AirportSelectionField = ({
       queryClient.invalidateQueries({ queryKey: ['airports'] });
       setShowAddDialog(false);
       setNewAirportData({ name: '', city: '', country: '', iata_code: '' });
+      setManualMode(false);
+      setManualName('');
+      setManualCode('');
       onChange(data.id);
       toast.success('تم إضافة المطار بنجاح');
     },
@@ -116,6 +124,76 @@ const AirportSelectionField = ({
     addAirportMutation.mutate(newAirportData);
   };
 
+  const handleManualSave = () => {
+    const name = manualName.trim();
+    if (!name) {
+      toast.error(`اكتب ${label}`);
+      return;
+    }
+    const existing = airports.find(
+      (a) =>
+        (a.name ?? '').trim().toLowerCase() === name.toLowerCase() ||
+        (a.iata_code ?? '').trim().toLowerCase() === name.toLowerCase() ||
+        (a.city ?? '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (existing) {
+      onChange(existing.id);
+      setManualMode(false);
+      toast.success('تم اختيار المطار');
+      return;
+    }
+    addAirportMutation.mutate({
+      name,
+      city: manualCity.trim() || name,
+      country: '',
+      iata_code: manualCode.trim().toUpperCase() || null,
+    });
+  };
+
+  if (manualMode) {
+    return (
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          {label} (إدخال يدوي)
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            value={manualName}
+            onChange={(e) => setManualName(e.target.value)}
+            placeholder="اسم المطار"
+            className="flex-1"
+          />
+          <Input
+            value={manualCity}
+            onChange={(e) => setManualCity(e.target.value)}
+            placeholder="المدينة"
+            className="w-28"
+          />
+          <Input
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value)}
+            placeholder="IATA"
+            className="w-20"
+            maxLength={3}
+          />
+          <Button type="button" onClick={handleManualSave} disabled={addAirportMutation.isPending}>
+            حفظ
+          </Button>
+        </div>
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs"
+          onClick={() => setManualMode(false)}
+        >
+          اختيار من القائمة
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
@@ -123,6 +201,7 @@ const AirportSelectionField = ({
         {label}
       </Label>
       <div className="flex gap-2">
+
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -271,7 +350,17 @@ const AirportSelectionField = ({
           </Dialog>
         )}
       </div>
+      <Button
+        type="button"
+        variant="link"
+        size="sm"
+        className="h-auto p-0 text-xs"
+        onClick={() => setManualMode(true)}
+      >
+        إدخال يدوي
+      </Button>
     </div>
+
   );
 };
 
