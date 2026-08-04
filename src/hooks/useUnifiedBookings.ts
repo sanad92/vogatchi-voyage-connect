@@ -109,13 +109,39 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
 
       const profit = (input.selling_price || 0) - (input.cost_price || 0);
 
+      // Ensure the booking is always linked to a customer record —
+      // the invoice automation requires customer_id.
+      let customerId = input.customer_id || null;
+      const typedName = (input.customer_name || '').trim();
+      if (!customerId && typedName && orgId) {
+        const { data: existing } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('organization_id', orgId)
+          .ilike('name', typedName)
+          .limit(1)
+          .maybeSingle();
+
+        if (existing?.id) {
+          customerId = existing.id;
+        } else {
+          const { data: created, error: custError } = await supabase
+            .from('customers')
+            .insert({ organization_id: orgId, name: typedName } as any)
+            .select('id')
+            .single();
+          if (custError) throw custError;
+          customerId = (created as any).id;
+        }
+      }
+
       const { data: booking, error } = await supabase
         .from('bookings')
         .insert({
           organization_id: orgId!,
           booking_number: bookingNumber,
           booking_type: input.booking_type,
-          customer_id: input.customer_id || null,
+          customer_id: customerId,
           customer_name: input.customer_name || null,
           employee_id: input.employee_id || null,
           supplier_id: input.supplier_id || null,
