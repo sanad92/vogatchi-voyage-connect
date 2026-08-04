@@ -146,23 +146,33 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       .from('documents')
       .createSignedUrl(filePath, 7 * 24 * 3600);
 
-    await anyClient.from('generated_documents').upsert(
-      {
-        organization_id: orgId,
-        booking_id: booking.id,
-        customer_id: booking?.customer_id ?? null,
-        customer_name: customer?.name || booking?.customer_name || null,
-        document_type: docType,
-        document_number: docNumber,
-        title: `${docType === 'voucher' ? 'فاوتشر' : 'فاتورة'} ${docNumber}`,
-        file_path: filePath,
-        file_url: urlData?.signedUrl ?? null,
-        total_amount: totalAmount,
-        currency,
-        ...extra,
-      },
-      { onConflict: 'organization_id,document_number' },
-    );
+    const payload = {
+      organization_id: orgId,
+      booking_id: booking.id,
+      customer_id: booking?.customer_id ?? null,
+      customer_name: customer?.name || booking?.customer_name || null,
+      document_type: docType,
+      document_number: docNumber,
+      title: `${docType === 'voucher' ? 'فاوتشر' : 'فاتورة'} ${docNumber}`,
+      file_path: filePath,
+      file_url: urlData?.signedUrl ?? null,
+      total_amount: totalAmount,
+      currency,
+      ...extra,
+    };
+
+    const { data: existingDoc } = await anyClient
+      .from('generated_documents')
+      .select('id')
+      .eq('organization_id', orgId)
+      .eq('document_number', docNumber)
+      .maybeSingle();
+
+    if (existingDoc?.id) {
+      await anyClient.from('generated_documents').update(payload).eq('id', existingDoc.id);
+    } else {
+      await anyClient.from('generated_documents').insert(payload);
+    }
     return urlData?.signedUrl ?? null;
   };
 
