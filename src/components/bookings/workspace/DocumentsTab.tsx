@@ -17,6 +17,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { DocumentsPanel } from '@/components/documents/DocumentsPanel';
+import { BookingDocumentActions } from './BookingDocumentActions';
 import type { Workspace } from './types';
 
 interface Props {
@@ -155,6 +156,8 @@ export const DocumentsTab = ({ workspace }: Props) => {
           </Button>
         </div>
       </div>
+
+      <BookingDocumentActions workspace={workspace} />
 
       <div className="grid gap-4 md:grid-cols-2">
         {(Object.keys(CATEGORY_META) as CategoryKey[]).map((key) => {
