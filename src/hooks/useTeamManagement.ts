@@ -38,6 +38,25 @@ export interface NewTeamMemberInput {
   };
 }
 
+export interface EmailCheckResult {
+  success: boolean;
+  exists: boolean;
+  in_org?: boolean;
+  user_id?: string;
+  full_name?: string | null;
+  role?: string;
+  membership_active?: boolean;
+}
+
+export interface ReassignSeatInput {
+  user_id: string;
+  full_name: string;
+  phone?: string;
+  password?: string;
+  org_role: 'admin' | 'manager' | 'agent' | 'viewer';
+  employee_data?: NewTeamMemberInput['employee_data'];
+}
+
 export const useTeamManagement = () => {
   const orgId = useOrgId();
   const queryClient = useQueryClient();
