@@ -161,6 +161,8 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
 
       <EditMemberDialog member={editing} onClose={() => setEditing(null)} />
 
+      <OffboardMemberDialog member={offboarding} onClose={() => setOffboarding(null)} />
+
       <AlertDialog open={!!confirmRemove} onOpenChange={() => setConfirmRemove(null)}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
