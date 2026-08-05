@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye } from 'lucide-react';
+import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye, LogOut } from 'lucide-react';
 import { useTeamManagement, TeamMember } from '@/hooks/useTeamManagement';
 import EditMemberDialog from './EditMemberDialog';
+import OffboardMemberDialog from './OffboardMemberDialog';
 
 const ROLE_META: Record<string, { label: string; icon: any; color: string }> = {
   owner: { label: 'مالك', icon: Crown, color: 'text-amber-600' },
