@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye } from 'lucide-react';
+import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye, LogOut } from 'lucide-react';
 import { useTeamManagement, TeamMember } from '@/hooks/useTeamManagement';
 import EditMemberDialog from './EditMemberDialog';
+import OffboardMemberDialog from './OffboardMemberDialog';
 
 const ROLE_META: Record<string, { label: string; icon: any; color: string }> = {
   owner: { label: 'مالك', icon: Crown, color: 'text-amber-600' },
@@ -25,6 +26,7 @@ interface Props {
 const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
   const [editing, setEditing] = useState<TeamMember | null>(null);
+  const [offboarding, setOffboarding] = useState<TeamMember | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
 
   if (isLoading) {
@@ -138,6 +140,11 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                             <Power className="w-4 h-4 ml-2" /> {m.is_active ? 'إيقاف' : 'تفعيل'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          {m.is_active && (
+                            <DropdownMenuItem onClick={() => setOffboarding(m)}>
+                              <LogOut className="w-4 h-4 ml-2" /> إنهاء خدمة وتحرير المقعد
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmRemove(m)}>
                             <UserMinus className="w-4 h-4 ml-2" /> إزالة من المؤسسة
                           </DropdownMenuItem>
@@ -153,6 +160,8 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
       </div>
 
       <EditMemberDialog member={editing} onClose={() => setEditing(null)} />
+
+      <OffboardMemberDialog member={offboarding} onClose={() => setOffboarding(null)} />
 
       <AlertDialog open={!!confirmRemove} onOpenChange={() => setConfirmRemove(null)}>
         <AlertDialogContent dir="rtl">

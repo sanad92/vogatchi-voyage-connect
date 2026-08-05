@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Check, Crown, Shield, Briefcase, UserCheck, Eye, Info } from 'lucide-react';
-import { useTeamManagement, NewTeamMemberInput } from '@/hooks/useTeamManagement';
+import { ArrowLeft, ArrowRight, Check, Crown, Shield, Briefcase, UserCheck, Eye, Info, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { useTeamManagement, NewTeamMemberInput, EmailCheckResult } from '@/hooks/useTeamManagement';
 
 interface Props {
   open: boolean;
@@ -24,8 +24,10 @@ const ROLES = [
 const STEPS = ['المعلومات الأساسية', 'الدور والصلاحيات', 'بيانات الموظف (اختياري)'];
 
 const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
-  const { addMember } = useTeamManagement();
+  const { addMember, checkEmail, reassignSeat } = useTeamManagement();
   const [step, setStep] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const [conflict, setConflict] = useState<EmailCheckResult | null>(null);
 
   const [form, setForm] = useState<NewTeamMemberInput>({
     email: '',
@@ -38,6 +40,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
 
   const reset = () => {
     setStep(0);
+    setConflict(null);
     setForm({
       email: '', password: '', full_name: '', phone: '',
       org_role: 'agent',
@@ -56,35 +59,73 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
     return null;
   };
 
-  const next = () => {
+  const next = async () => {
     const err = validateStep();
     if (err) { import('sonner').then(({ toast }) => toast.error(err)); return; }
+
+    if (step === 0) {
+      setChecking(true);
+      try {
+        const res = await checkEmail(form.email.trim());
+        if (res.exists) { setConflict(res); setChecking(false); return; }
+      } catch {
+        // Non-blocking: the server re-validates on submit
+      }
+      setChecking(false);
+    }
+
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const submit = async () => {
+  const buildEmployeeData = () => {
     const hasHR =
       !!form.employee_data?.position?.trim() ||
       !!form.employee_data?.department?.trim() ||
       Number(form.employee_data?.base_salary) > 0 ||
       !!form.employee_data?.hire_date;
 
-    const payload: NewTeamMemberInput = {
-      ...form,
-      employee_data: hasHR
-        ? {
-            position: form.employee_data?.position?.trim() || undefined,
-            department: form.employee_data?.department?.trim() || undefined,
-            base_salary: Number(form.employee_data?.base_salary) || 0,
-            hire_date: form.employee_data?.hire_date || undefined,
-          }
-        : undefined,
-    };
-    const res = await addMember.mutateAsync(payload);
+    return hasHR
+      ? {
+          position: form.employee_data?.position?.trim() || undefined,
+          department: form.employee_data?.department?.trim() || undefined,
+          base_salary: Number(form.employee_data?.base_salary) || 0,
+          hire_date: form.employee_data?.hire_date || undefined,
+        }
+      : undefined;
+  };
+
+  const submit = async () => {
+    const payload: NewTeamMemberInput = { ...form, employee_data: buildEmployeeData() };
+    try {
+      const res = await addMember.mutateAsync(payload);
+      if (res?.success) close();
+    } catch (e: any) {
+      if (e?.code === 'EMAIL_EXISTS') {
+        try {
+          const res = await checkEmail(form.email.trim());
+          setConflict(res);
+        } catch {
+          setConflict({ success: true, exists: true, in_org: false });
+        }
+      }
+    }
+  };
+
+  const doReassign = async () => {
+    if (!conflict?.user_id) return;
+    const res = await reassignSeat.mutateAsync({
+      user_id: conflict.user_id,
+      full_name: form.full_name.trim(),
+      phone: form.phone,
+      password: form.password || undefined,
+      org_role: form.org_role,
+      employee_data: buildEmployeeData(),
+    });
     if (res?.success) close();
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(v) : close())}>
@@ -113,7 +154,53 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
         </div>
 
         <div className="min-h-[280px] py-4">
-          {step === 0 && (
+          {conflict && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-2 p-3 rounded-lg border bg-amber-500/10 border-amber-500/30">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold">هذا البريد الإلكتروني مستخدم بالفعل</p>
+                  <p className="text-xs text-muted-foreground mt-1" dir="ltr">{form.email}</p>
+                </div>
+              </div>
+
+              {conflict.in_org ? (
+                <>
+                  <Card>
+                    <CardContent className="p-4 space-y-2 text-sm">
+                      <p>
+                        الحساب الحالي: <strong>{conflict.full_name || '—'}</strong>{' '}
+                        <span className="text-muted-foreground">
+                          ({conflict.membership_active ? 'نشط' : 'موقوف'})
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        يمكنك إعادة تعيين نفس الحساب للموظف الجديد: سيتم تحديث الاسم والهاتف، تعيين كلمة المرور
+                        الجديدة، تفعيل العضوية بالدور المختار، وإنشاء سجل موظف جديد مع الاحتفاظ بسجل الموظف السابق.
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex items-start gap-2 p-3 rounded-lg border bg-muted/40">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      كل الحجوزات والفواتير والقيود المحاسبية السابقة ستبقى كما هي بدون أي تغيير، لأن الحساب نفسه لم
+                      يُحذف. إذا كنت تريد فصل سجلات الموظف الجديد تماماً عن السابق، استخدم بريداً إلكترونياً مختلفاً.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="p-4 text-sm text-muted-foreground leading-relaxed">
+                    هذا البريد مسجل بحساب لا ينتمي لمؤسستك، لذلك لا يمكن إعادة استخدامه هنا. من فضلك استخدم بريداً
+                    إلكترونياً مختلفاً للموظف الجديد.
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {!conflict && step === 0 && (
             <div className="space-y-4">
               <div>
                 <Label>الاسم الكامل *</Label>
@@ -135,7 +222,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
             </div>
           )}
 
-          {step === 1 && (
+          {!conflict && step === 1 && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">اختر دور هذا العضو في المؤسسة:</p>
               {ROLES.map((r) => {
@@ -163,7 +250,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
             </div>
           )}
 
-          {step === 2 && (
+          {!conflict && step === 2 && (
             <div className="space-y-4">
               <div className="flex items-start gap-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
                 <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -215,18 +302,34 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
         </div>
 
         <div className="flex justify-between pt-2 border-t">
-          <Button variant="outline" onClick={step === 0 ? close : back} disabled={addMember.isPending}>
-            {step === 0 ? 'إلغاء' : (<><ArrowRight className="w-4 h-4 ml-1" /> رجوع</>)}
-          </Button>
-
-          {step < STEPS.length - 1 ? (
-            <Button onClick={next}>
-              التالي <ArrowLeft className="w-4 h-4 mr-1" />
-            </Button>
+          {conflict ? (
+            <>
+              <Button variant="outline" onClick={() => setConflict(null)} disabled={reassignSeat.isPending}>
+                <ArrowRight className="w-4 h-4 ml-1" /> تغيير البريد الإلكتروني
+              </Button>
+              {conflict.in_org && (
+                <Button onClick={doReassign} disabled={reassignSeat.isPending}>
+                  <RefreshCcw className="w-4 h-4 ml-1" />
+                  {reassignSeat.isPending ? 'جاري التنفيذ...' : 'إعادة تعيين الحساب للموظف الجديد'}
+                </Button>
+              )}
+            </>
           ) : (
-            <Button onClick={submit} disabled={addMember.isPending}>
-              {addMember.isPending ? 'جاري الحفظ...' : 'إضافة العضو'}
-            </Button>
+            <>
+              <Button variant="outline" onClick={step === 0 ? close : back} disabled={addMember.isPending || checking}>
+                {step === 0 ? 'إلغاء' : (<><ArrowRight className="w-4 h-4 ml-1" /> رجوع</>)}
+              </Button>
+
+              {step < STEPS.length - 1 ? (
+                <Button onClick={next} disabled={checking}>
+                  {checking ? 'جاري التحقق...' : (<>التالي <ArrowLeft className="w-4 h-4 mr-1" /></>)}
+                </Button>
+              ) : (
+                <Button onClick={submit} disabled={addMember.isPending}>
+                  {addMember.isPending ? 'جاري الحفظ...' : 'إضافة العضو'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </DialogContent>
