@@ -1,32 +1,34 @@
-## Root cause (confirmed)
+# إعادة استخدام مقعد الاشتراك عند تغيير الموظف (Offboarding & Seat Reuse)
 
-The database trigger function `public.trg_emit_booking`, which runs on every `bookings` UPDATE, compares the enum column against an empty text literal:
+## الوضع الحالي (متحقق منه في الكود)
+- عدد المستخدمين المحسوب على الاشتراك = أعضاء المؤسسة **النشطون فقط** (`organization_members.is_active = true`)، عبر `count_org_members` و trigger `enforce_user_limit`.
+- إيقاف عضو (`is_active = false`) **يحرّر المقعد فورًا** — لا حاجة لترقية الخطة.
+- إضافة عضو جديد تمر عبر edge function `admin-user-management` التي تنشئ حساب دخول جديد، ولذلك عند استخدام نفس الإيميل يظهر الخطأ: "A user with this email address has already been registered" — لأن الإيميل مربوط بحساب الموظف القديم.
 
-```text
-IF coalesce(NEW.workflow_stage,'') IS DISTINCT FROM coalesce(OLD.workflow_stage,'') THEN
-  ...
-  'booking.stage_changed:'||NEW.id::text||':'||coalesce(NEW.workflow_stage,'')
-```
+## الخلاصة العملية
+الإيميل مرتبط بحساب دخول واحد لا يمكن تكراره. لتشغيل موظف جديد على نفس الإيميل (مثل `sales@company.com`) بدون أي مساس بالحسابات المالية، الحل هو **إعادة تعيين نفس الحساب** لا إنشاء حساب جديد: نفس `user_id` يبقى كما هو، فكل القيود والحجوزات والفواتير القديمة تظل سليمة ومربوطة، ونغيّر فقط الاسم/الهاتف/كلمة المرور ونربطه بسجل موظف HR جديد.
 
-`coalesce(<booking_workflow_stage>, '')` forces the literal `''` to be coerced to `booking_workflow_stage`, which Postgres rejects with exactly:
-`invalid input value for enum booking_workflow_stage: ""`.
+## المطلوب بناؤه
 
-So the failure happens inside the UPDATE issued by `advance_workflow`, after its own validation passes — which is why the message is the raw Postgres enum error and not the function's Arabic "invalid booking workflow stage" message. No frontend code writes `workflow_stage` directly; the UI path (`StageStepper` → `useBookingWorkspace.setStage` → `advance_workflow`) is already guarded.
+### 1) نافذة "إنهاء خدمة موظف" (Offboarding)
+من صفحة إدارة الفريق، زر لكل عضو يفتح خطوات:
+- إيقاف العضوية (تحرير المقعد فورًا).
+- إنهاء سجل الموظف في HR (تعطيل + تاريخ انتهاء).
+- عرض ما هو مسند له (حجوزات/مهام مفتوحة) مع خيار نقلها لعضو آخر.
+- لا يتم حذف أي بيانات مالية أو تاريخية إطلاقًا.
 
-Secondary, currently latent: `handler_workflow_rules` and `_workflow_run_step` cast `action ->> 'to'` / `step ->> 'to'` to the enum without a null/empty guard, so a rule saved with a blank target stage would raise the same error inside the event bus. The only active rule today is a `log_only` rule, so this is not the current trigger of the bug but should be hardened in the same pass.
+### 2) إعادة تعيين المقعد على نفس الإيميل
+في مُعالج إضافة عضو: عند إدخال إيميل موجود بالفعل، بدل رسالة الخطأ يظهر خيار واضح:
+- **إعادة تعيين هذا الحساب لموظف جديد**: تحديث الاسم والهاتف، تعيين كلمة مرور جديدة، تفعيل العضوية بالدور المطلوب، وربطه بسجل موظف HR جديد مع الاحتفاظ بسجل الموظف القديم كما هو.
+- تنبيه واضح داخل النافذة: النشاط التاريخي السابق سيظل منسوبًا لنفس الحساب (وهذا مقصود للحفاظ على سلامة الحسابات).
+- بديل مقترح داخل النافذة لمن يريد فصل السجلات: استخدام إيميل مختلف للموظف الجديد.
 
-## Changes (single migration, no new features)
+### 3) شفافية المقاعد
+شريط في صفحة الفريق يوضح: المقاعد المستخدمة / حد الخطة / المقاعد المتاحة، مع تحديثه فور الإيقاف أو الإضافة.
 
-1. Rewrite `public.trg_emit_booking`:
-   - stage comparison becomes `NEW.workflow_stage IS DISTINCT FROM OLD.workflow_stage` (no coalesce on the enum)
-   - idempotency key uses `coalesce(NEW.workflow_stage::text, '')`
-   - `status` handling stays unchanged (it is a text column, so its coalesce is safe)
-2. Harden `_workflow_run_step` and `handler_workflow_rules`: only run the `advance_stage` UPDATE when `nullif(btrim(step ->> 'to'), '')` is non-null and is a valid `booking_workflow_stage` label; otherwise log a skipped timeline/rule-run entry instead of raising.
-
-No frontend changes required.
-
-## Verification
-
-- Run a stage change on booking `e9133c6a-0c62-4999-9c6a-2a1474b212af` via the `advance_workflow` RPC and confirm it succeeds.
-- Confirm `bookings.workflow_stage` persisted, a `booking.stage_changed` row exists in `domain_events`, a `stage_changed` row exists in `booking_timeline_events`, and the related `event_deliveries` rows reach `succeeded` with no `last_error`.
-- Confirm a plain non-stage update to the same booking (e.g. `notes`) no longer errors.
+## تفاصيل تقنية
+- توسيع edge function `admin-user-management` بإجراء `reassign_team_seat`: يتحقق من صلاحية owner/admin ومن انتماء الحساب لنفس المؤسسة، ثم يستخدم Admin API لتحديث كلمة المرور والبيانات، ويحدّث `profiles` و`organization_members` و`profiles.linked_employee_id`.
+- إجراء `offboard_member`: تعطيل العضوية + تعطيل `employees` + تسجيل الحدث في سجل التدقيق.
+- عند إنشاء عضو جديد: فحص وجود الإيميل مسبقًا وإرجاع كود `EMAIL_EXISTS` مع معلومة هل الحساب داخل نفس المؤسسة أم لا (لا يتم كشف بيانات حسابات خارج المؤسسة).
+- تحديث `useTeamManagement` بـ `reassignSeat` و`offboardMember`، وتحديث `AddTeamMemberWizard` و`TeamMembersTable`.
+- لا تغييرات على الجداول المالية أو منطق الاشتراك؛ عدّاد المقاعد يعمل بالفعل على الأعضاء النشطين.
