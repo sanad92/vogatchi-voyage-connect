@@ -308,7 +308,15 @@ Deno.serve(async (req) => {
         });
 
         if (createError || !newUser?.user) {
-          return new Response(JSON.stringify([{ success: false, message: createError?.message || "فشل إنشاء المستخدم" }]), {
+          const msg = createError?.message || "فشل إنشاء المستخدم";
+          const emailTaken = /already been registered|already registered|already exists/i.test(msg);
+          return new Response(JSON.stringify([{
+            success: false,
+            code: emailTaken ? 'EMAIL_EXISTS' : undefined,
+            message: emailTaken
+              ? "هذا البريد الإلكتروني مستخدم بالفعل في حساب موجود"
+              : msg,
+          }]), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
