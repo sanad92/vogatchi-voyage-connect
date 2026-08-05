@@ -302,18 +302,34 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
         </div>
 
         <div className="flex justify-between pt-2 border-t">
-          <Button variant="outline" onClick={step === 0 ? close : back} disabled={addMember.isPending}>
-            {step === 0 ? 'إلغاء' : (<><ArrowRight className="w-4 h-4 ml-1" /> رجوع</>)}
-          </Button>
-
-          {step < STEPS.length - 1 ? (
-            <Button onClick={next}>
-              التالي <ArrowLeft className="w-4 h-4 mr-1" />
-            </Button>
+          {conflict ? (
+            <>
+              <Button variant="outline" onClick={() => setConflict(null)} disabled={reassignSeat.isPending}>
+                <ArrowRight className="w-4 h-4 ml-1" /> تغيير البريد الإلكتروني
+              </Button>
+              {conflict.in_org && (
+                <Button onClick={doReassign} disabled={reassignSeat.isPending}>
+                  <RefreshCcw className="w-4 h-4 ml-1" />
+                  {reassignSeat.isPending ? 'جاري التنفيذ...' : 'إعادة تعيين الحساب للموظف الجديد'}
+                </Button>
+              )}
+            </>
           ) : (
-            <Button onClick={submit} disabled={addMember.isPending}>
-              {addMember.isPending ? 'جاري الحفظ...' : 'إضافة العضو'}
-            </Button>
+            <>
+              <Button variant="outline" onClick={step === 0 ? close : back} disabled={addMember.isPending || checking}>
+                {step === 0 ? 'إلغاء' : (<><ArrowRight className="w-4 h-4 ml-1" /> رجوع</>)}
+              </Button>
+
+              {step < STEPS.length - 1 ? (
+                <Button onClick={next} disabled={checking}>
+                  {checking ? 'جاري التحقق...' : (<>التالي <ArrowLeft className="w-4 h-4 mr-1" /></>)}
+                </Button>
+              ) : (
+                <Button onClick={submit} disabled={addMember.isPending}>
+                  {addMember.isPending ? 'جاري الحفظ...' : 'إضافة العضو'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </DialogContent>
