@@ -371,6 +371,280 @@ Deno.serve(async (req) => {
         });
       }
 
+      // ── Seat reuse: check whether an email already has an account ──────────
+      case "check_team_email": {
+        const { email, organization_id } = body;
+
+        if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+          return new Response(JSON.stringify([{ success: false, message: "بريد إلكتروني غير صالح" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!organization_id || typeof organization_id !== 'string') {
+          return new Response(JSON.stringify([{ success: false, message: "معرف المؤسسة مطلوب" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!(await callerCanManageOrg(supabase, user.id, organization_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, linked_employee_id')
+          .ilike('email', cleanEmail)
+          .maybeSingle();
+
+        if (!profile) {
+          return new Response(JSON.stringify([{ success: true, exists: false }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('id, role, is_active')
+          .eq('organization_id', organization_id)
+          .eq('user_id', profile.id)
+          .maybeSingle();
+
+        if (!membership) {
+          // Account exists but belongs to another organization — do not leak details.
+          return new Response(JSON.stringify([{ success: true, exists: true, in_org: false }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify([{
+          success: true,
+          exists: true,
+          in_org: true,
+          user_id: profile.id,
+          full_name: profile.full_name,
+          role: membership.role,
+          membership_active: membership.is_active,
+        }]), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // ── Seat reuse: reassign an existing account to a new employee ─────────
+      case "reassign_team_seat": {
+        const { organization_id, user_id, full_name, phone, password, org_role, employee_data } = body;
+
+        if (!organization_id || typeof organization_id !== 'string' || !user_id || typeof user_id !== 'string') {
+          return new Response(JSON.stringify([{ success: false, message: "بيانات غير مكتملة" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!full_name || typeof full_name !== 'string' || !full_name.trim() || full_name.length > 200) {
+          return new Response(JSON.stringify([{ success: false, message: "الاسم الكامل مطلوب" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!org_role || !VALID_ORG_ROLES.includes(org_role) || org_role === 'owner') {
+          return new Response(JSON.stringify([{ success: false, message: "الدور غير صالح" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (password !== undefined && password !== null && password !== '' &&
+            (typeof password !== 'string' || password.length < 8 || password.length > 128)) {
+          return new Response(JSON.stringify([{ success: false, message: "كلمة المرور يجب أن تكون بين 8 و 128 حرف" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!(await callerCanManageOrg(supabase, user.id, organization_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح: لا تملك صلاحيات إدارية على هذه المؤسسة" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // The target account must already belong to this organization.
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('id, role, is_active')
+          .eq('organization_id', organization_id)
+          .eq('user_id', user_id)
+          .maybeSingle();
+
+        if (!membership) {
+          return new Response(JSON.stringify([{ success: false, message: "هذا الحساب لا ينتمي لمؤسستك" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (membership.role === 'owner') {
+          return new Response(JSON.stringify([{ success: false, message: "لا يمكن إعادة تعيين حساب المالك" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: oldProfile } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, linked_employee_id')
+          .eq('id', user_id)
+          .maybeSingle();
+
+        // Update auth account (name/phone metadata + optional new password)
+        const authUpdates: Record<string, any> = {
+          user_metadata: { full_name: full_name.trim(), phone: phone?.trim() || null },
+        };
+        if (password) authUpdates.password = password;
+        const { error: authErr } = await supabase.auth.admin.updateUserById(user_id, authUpdates);
+        if (authErr) {
+          return new Response(JSON.stringify([{ success: false, message: authErr.message }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Retire the previous HR record (kept for history, just deactivated)
+        if (oldProfile?.linked_employee_id) {
+          await supabase
+            .from('employees')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('id', oldProfile.linked_employee_id)
+            .eq('organization_id', organization_id);
+        }
+
+        // Create the new HR record for the incoming employee
+        let employeeId: string | null = null;
+        if (employee_data && typeof employee_data === 'object') {
+          const empCode = employee_data.employee_code?.trim() || `EMP-${Date.now().toString().slice(-6)}`;
+          const { data: emp } = await supabase.from('employees').insert({
+            organization_id,
+            employee_code: empCode,
+            full_name: full_name.trim(),
+            email: oldProfile?.email || null,
+            phone: phone?.trim() || null,
+            position: employee_data.position?.trim() || null,
+            department: employee_data.department?.trim() || null,
+            hire_date: employee_data.hire_date || new Date().toISOString().split('T')[0],
+            base_salary: Number(employee_data.base_salary) || 0,
+            is_active: true,
+          }).select('id').single();
+          employeeId = emp?.id ?? null;
+        }
+
+        await supabase.from('profiles').update({
+          full_name: full_name.trim(),
+          phone: phone?.trim() || null,
+          linked_employee_id: employeeId,
+          updated_at: new Date().toISOString(),
+        }).eq('id', user_id);
+
+        await supabase.from('organization_members').update({
+          role: org_role,
+          is_active: true,
+        }).eq('id', membership.id);
+
+        await supabase.from('admin_audit_log').insert({
+          organization_id,
+          user_id: user.id,
+          user_email: user.email ?? null,
+          action: 'reassign_team_seat',
+          target_table: 'organization_members',
+          target_id: membership.id,
+          entity_name: full_name.trim(),
+          old_values: {
+            full_name: oldProfile?.full_name ?? null,
+            linked_employee_id: oldProfile?.linked_employee_id ?? null,
+            role: membership.role,
+            is_active: membership.is_active,
+          },
+          new_values: { full_name: full_name.trim(), linked_employee_id: employeeId, role: org_role, is_active: true },
+        });
+
+        return new Response(JSON.stringify([{
+          success: true,
+          user_id,
+          employee_id: employeeId,
+          message: "تمت إعادة تعيين الحساب للموظف الجديد بنجاح",
+        }]), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // ── Offboarding: free the seat and close the HR record ─────────────────
+      case "offboard_member": {
+        const { organization_id, user_id, termination_date, note } = body;
+
+        if (!organization_id || typeof organization_id !== 'string' || !user_id || typeof user_id !== 'string') {
+          return new Response(JSON.stringify([{ success: false, message: "بيانات غير مكتملة" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!(await callerCanManageOrg(supabase, user.id, organization_id))) {
+          return new Response(JSON.stringify([{ success: false, message: "غير مسموح" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('id, role, is_active')
+          .eq('organization_id', organization_id)
+          .eq('user_id', user_id)
+          .maybeSingle();
+
+        if (!membership) {
+          return new Response(JSON.stringify([{ success: false, message: "العضو غير موجود في هذه المؤسسة" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (membership.role === 'owner') {
+          return new Response(JSON.stringify([{ success: false, message: "لا يمكن إنهاء خدمة مالك المؤسسة" }]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        await supabase.from('organization_members')
+          .update({ is_active: false })
+          .eq('id', membership.id);
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, linked_employee_id')
+          .eq('id', user_id)
+          .maybeSingle();
+
+        if (profile?.linked_employee_id) {
+          await supabase.from('employees')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('id', profile.linked_employee_id)
+            .eq('organization_id', organization_id);
+        }
+
+        await supabase.from('admin_audit_log').insert({
+          organization_id,
+          user_id: user.id,
+          user_email: user.email ?? null,
+          action: 'offboard_member',
+          target_table: 'organization_members',
+          target_id: membership.id,
+          entity_name: profile?.full_name ?? profile?.email ?? null,
+          details: {
+            termination_date: termination_date || new Date().toISOString().split('T')[0],
+            note: typeof note === 'string' ? note.slice(0, 500) : null,
+            employee_id: profile?.linked_employee_id ?? null,
+          },
+        });
+
+        return new Response(JSON.stringify([{
+          success: true,
+          message: "تم إنهاء خدمة الموظف وتحرير المقعد",
+          email: profile?.email ?? null,
+        }]), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
