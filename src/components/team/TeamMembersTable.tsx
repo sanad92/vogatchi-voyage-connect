@@ -140,6 +140,11 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                             <Power className="w-4 h-4 ml-2" /> {m.is_active ? 'إيقاف' : 'تفعيل'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          {m.is_active && (
+                            <DropdownMenuItem onClick={() => setOffboarding(m)}>
+                              <LogOut className="w-4 h-4 ml-2" /> إنهاء خدمة وتحرير المقعد
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmRemove(m)}>
                             <UserMinus className="w-4 h-4 ml-2" /> إزالة من المؤسسة
                           </DropdownMenuItem>
