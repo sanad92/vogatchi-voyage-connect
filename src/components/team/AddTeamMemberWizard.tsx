@@ -24,8 +24,10 @@ const ROLES = [
 const STEPS = ['المعلومات الأساسية', 'الدور والصلاحيات', 'بيانات الموظف (اختياري)'];
 
 const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
-  const { addMember } = useTeamManagement();
+  const { addMember, checkEmail, reassignSeat } = useTeamManagement();
   const [step, setStep] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const [conflict, setConflict] = useState<EmailCheckResult | null>(null);
 
   const [form, setForm] = useState<NewTeamMemberInput>({
     email: '',
@@ -38,6 +40,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
 
   const reset = () => {
     setStep(0);
+    setConflict(null);
     setForm({
       email: '', password: '', full_name: '', phone: '',
       org_role: 'agent',
@@ -56,35 +59,73 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
     return null;
   };
 
-  const next = () => {
+  const next = async () => {
     const err = validateStep();
     if (err) { import('sonner').then(({ toast }) => toast.error(err)); return; }
+
+    if (step === 0) {
+      setChecking(true);
+      try {
+        const res = await checkEmail(form.email.trim());
+        if (res.exists) { setConflict(res); setChecking(false); return; }
+      } catch {
+        // Non-blocking: the server re-validates on submit
+      }
+      setChecking(false);
+    }
+
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const submit = async () => {
+  const buildEmployeeData = () => {
     const hasHR =
       !!form.employee_data?.position?.trim() ||
       !!form.employee_data?.department?.trim() ||
       Number(form.employee_data?.base_salary) > 0 ||
       !!form.employee_data?.hire_date;
 
-    const payload: NewTeamMemberInput = {
-      ...form,
-      employee_data: hasHR
-        ? {
-            position: form.employee_data?.position?.trim() || undefined,
-            department: form.employee_data?.department?.trim() || undefined,
-            base_salary: Number(form.employee_data?.base_salary) || 0,
-            hire_date: form.employee_data?.hire_date || undefined,
-          }
-        : undefined,
-    };
-    const res = await addMember.mutateAsync(payload);
+    return hasHR
+      ? {
+          position: form.employee_data?.position?.trim() || undefined,
+          department: form.employee_data?.department?.trim() || undefined,
+          base_salary: Number(form.employee_data?.base_salary) || 0,
+          hire_date: form.employee_data?.hire_date || undefined,
+        }
+      : undefined;
+  };
+
+  const submit = async () => {
+    const payload: NewTeamMemberInput = { ...form, employee_data: buildEmployeeData() };
+    try {
+      const res = await addMember.mutateAsync(payload);
+      if (res?.success) close();
+    } catch (e: any) {
+      if (e?.code === 'EMAIL_EXISTS') {
+        try {
+          const res = await checkEmail(form.email.trim());
+          setConflict(res);
+        } catch {
+          setConflict({ success: true, exists: true, in_org: false });
+        }
+      }
+    }
+  };
+
+  const doReassign = async () => {
+    if (!conflict?.user_id) return;
+    const res = await reassignSeat.mutateAsync({
+      user_id: conflict.user_id,
+      full_name: form.full_name.trim(),
+      phone: form.phone,
+      password: form.password || undefined,
+      org_role: form.org_role,
+      employee_data: buildEmployeeData(),
+    });
     if (res?.success) close();
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(v) : close())}>
