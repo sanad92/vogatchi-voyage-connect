@@ -45,6 +45,8 @@ const TeamManagement = () => {
         </div>
       </div>
 
+      {canManage && <SeatUsageBar />}
+
       <Tabs defaultValue="members">
         <TabsList>
           <TabsTrigger value="members">
