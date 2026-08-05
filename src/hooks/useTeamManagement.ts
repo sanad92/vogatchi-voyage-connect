@@ -117,15 +117,78 @@ export const useTeamManagement = () => {
       });
       if (error) throw error;
       const result = Array.isArray(data) ? data[0] : data;
-      if (!result?.success) throw new Error(result?.message || 'فشل إضافة العضو');
+      if (!result?.success) {
+        const err: any = new Error(result?.message || 'فشل إضافة العضو');
+        err.code = result?.code;
+        throw err;
+      }
       return result;
     },
     onSuccess: () => {
       invalidate();
       toast.success('تم إضافة عضو جديد بنجاح');
     },
+    onError: (e: any) => {
+      // EMAIL_EXISTS is handled inline by the wizard (seat reuse flow)
+      if (e?.code === 'EMAIL_EXISTS') return;
+      toast.error(e?.message || 'حدث خطأ');
+    },
+  });
+
+  const checkEmail = async (email: string): Promise<EmailCheckResult> => {
+    if (!orgId) throw new Error('لا توجد مؤسسة محددة');
+    const { data, error } = await supabase.functions.invoke('admin-user-management', {
+      body: { action: 'check_team_email', organization_id: orgId, email },
+    });
+    if (error) throw error;
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result?.success) throw new Error(result?.message || 'تعذر التحقق من البريد الإلكتروني');
+    return result as EmailCheckResult;
+  };
+
+  const reassignSeat = useMutation({
+    mutationFn: async (input: ReassignSeatInput) => {
+      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
+      const { data, error } = await supabase.functions.invoke('admin-user-management', {
+        body: { action: 'reassign_team_seat', organization_id: orgId, ...input },
+      });
+      if (error) throw error;
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result?.success) throw new Error(result?.message || 'فشل إعادة تعيين الحساب');
+      return result;
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success('تمت إعادة تعيين الحساب للموظف الجديد');
+    },
     onError: (e: any) => toast.error(e?.message || 'حدث خطأ'),
   });
+
+  const offboardMember = useMutation({
+    mutationFn: async (input: { userId: string; terminationDate?: string; note?: string }) => {
+      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
+      const { data, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          action: 'offboard_member',
+          organization_id: orgId,
+          user_id: input.userId,
+          termination_date: input.terminationDate,
+          note: input.note,
+        },
+      });
+      if (error) throw error;
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result?.success) throw new Error(result?.message || 'فشل إنهاء الخدمة');
+      return result;
+    },
+    onSuccess: () => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      toast.success('تم إنهاء الخدمة وتحرير المقعد');
+    },
+    onError: (e: any) => toast.error(e?.message || 'حدث خطأ'),
+  });
+
 
   const updateRole = useMutation({
     mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: string }) => {
