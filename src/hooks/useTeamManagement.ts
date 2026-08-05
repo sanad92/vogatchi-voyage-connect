@@ -285,5 +285,8 @@ export const useTeamManagement = () => {
     removeMember,
     resetPassword,
     updateEmployeeData,
+    checkEmail,
+    reassignSeat,
+    offboardMember,
   };
 };
