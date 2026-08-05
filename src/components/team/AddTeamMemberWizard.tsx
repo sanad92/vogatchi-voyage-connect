@@ -154,7 +154,53 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
         </div>
 
         <div className="min-h-[280px] py-4">
-          {step === 0 && (
+          {conflict && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-2 p-3 rounded-lg border bg-amber-500/10 border-amber-500/30">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold">هذا البريد الإلكتروني مستخدم بالفعل</p>
+                  <p className="text-xs text-muted-foreground mt-1" dir="ltr">{form.email}</p>
+                </div>
+              </div>
+
+              {conflict.in_org ? (
+                <>
+                  <Card>
+                    <CardContent className="p-4 space-y-2 text-sm">
+                      <p>
+                        الحساب الحالي: <strong>{conflict.full_name || '—'}</strong>{' '}
+                        <span className="text-muted-foreground">
+                          ({conflict.membership_active ? 'نشط' : 'موقوف'})
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        يمكنك إعادة تعيين نفس الحساب للموظف الجديد: سيتم تحديث الاسم والهاتف، تعيين كلمة المرور
+                        الجديدة، تفعيل العضوية بالدور المختار، وإنشاء سجل موظف جديد مع الاحتفاظ بسجل الموظف السابق.
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex items-start gap-2 p-3 rounded-lg border bg-muted/40">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      كل الحجوزات والفواتير والقيود المحاسبية السابقة ستبقى كما هي بدون أي تغيير، لأن الحساب نفسه لم
+                      يُحذف. إذا كنت تريد فصل سجلات الموظف الجديد تماماً عن السابق، استخدم بريداً إلكترونياً مختلفاً.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="p-4 text-sm text-muted-foreground leading-relaxed">
+                    هذا البريد مسجل بحساب لا ينتمي لمؤسستك، لذلك لا يمكن إعادة استخدامه هنا. من فضلك استخدم بريداً
+                    إلكترونياً مختلفاً للموظف الجديد.
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {!conflict && step === 0 && (
             <div className="space-y-4">
               <div>
                 <Label>الاسم الكامل *</Label>
