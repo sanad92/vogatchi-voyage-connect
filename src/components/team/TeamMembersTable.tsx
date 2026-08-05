@@ -26,6 +26,7 @@ interface Props {
 const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
   const [editing, setEditing] = useState<TeamMember | null>(null);
+  const [offboarding, setOffboarding] = useState<TeamMember | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
 
   if (isLoading) {
