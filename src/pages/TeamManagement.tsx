@@ -10,6 +10,7 @@ import { UserPlus, Users, Mail, Settings2 } from 'lucide-react';
 import TeamMembersTable from '@/components/team/TeamMembersTable';
 import AddTeamMemberWizard from '@/components/team/AddTeamMemberWizard';
 import InvitationManager from '@/components/invitations/InvitationManager';
+import SeatUsageBar from '@/components/team/SeatUsageBar';
 import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 
 const TeamManagement = () => {
