@@ -222,7 +222,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
             </div>
           )}
 
-          {step === 1 && (
+          {!conflict && step === 1 && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">اختر دور هذا العضو في المؤسسة:</p>
               {ROLES.map((r) => {
