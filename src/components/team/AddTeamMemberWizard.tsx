@@ -250,7 +250,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
             </div>
           )}
 
-          {step === 2 && (
+          {!conflict && step === 2 && (
             <div className="space-y-4">
               <div className="flex items-start gap-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
                 <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
