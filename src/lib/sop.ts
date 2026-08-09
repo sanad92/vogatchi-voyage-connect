@@ -200,6 +200,9 @@ export const VIOLATION_LABELS: Record<string, string> = {
   assignee_required: 'يجب اختيار مندوب المبيعات',
   assignee_not_available_sales: 'المستخدم ليس ضمن فريق المبيعات المتاح',
   assignee_unchanged: 'نفس المندوب الحالي',
+  user_not_in_organization: 'المستخدم ليس عضوًا في المؤسسة',
+  user_not_in_department: 'المستخدم غير معين لأي قسم',
+  no_organization: 'لا توجد مؤسسة نشطة',
 };
 
 export const labelMissing = (k: string) => MISSING_FIELD_LABELS[k] ?? k;

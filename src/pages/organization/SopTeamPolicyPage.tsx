@@ -8,12 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Users, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertTriangle, Users, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
 import {
   useSopDepartmentMembers,
-  useUpsertDepartmentMember,
-  useRemoveDepartmentMember,
+  useSetSopDepartment,
+  useSetSopAvailability,
   useSopPolicy,
   useSaveSopPolicy,
 } from '@/hooks/useSop';
@@ -21,31 +21,31 @@ import { DEPARTMENT_LABELS } from '@/lib/sop';
 import type { SopDepartment } from '@/lib/sop';
 
 const DEPARTMENTS: SopDepartment[] = ['customer_service', 'sales', 'reservations', 'operations', 'management'];
+const UNMAPPED = '__unmapped__';
 
 const deptLabel = (d: SopDepartment) => (DEPARTMENT_LABELS as any)?.[d] ?? d;
 
 export default function SopTeamPolicyPage() {
   const { members = [] } = useOrgMembers() as any;
   const { data: deptMembers = [], isLoading } = useSopDepartmentMembers();
-  const upsert = useUpsertDepartmentMember();
-  const remove = useRemoveDepartmentMember();
+  const setDepartment = useSetSopDepartment();
+  const setAvailability = useSetSopAvailability();
   const { data: policy } = useSopPolicy();
   const savePolicy = useSaveSopPolicy();
 
-  const [addUser, setAddUser] = useState<string>('');
-  const [addDept, setAddDept] = useState<SopDepartment>('sales');
+  const rowOf = (userId: string) => deptMembers.find((d) => d.user_id === userId);
 
-  const nameOf = (userId: string) => {
-    const m = members.find((x: any) => x.user_id === userId);
-    return m?.profile?.full_name || m?.profile?.email || userId.slice(0, 8);
-  };
-  const emailOf = (userId: string) => members.find((x: any) => x.user_id === userId)?.profile?.email || '';
-
-  const unmapped = useMemo(
-    () => members.filter((m: any) => !deptMembers.some((d) => d.user_id === m.user_id)),
-    [members, deptMembers],
-  );
   const salesAvailable = deptMembers.filter((d) => d.department === 'sales' && d.is_available).length;
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, any[]>();
+    [...DEPARTMENTS, UNMAPPED].forEach((k) => map.set(k, []));
+    members.forEach((m: any) => {
+      const row = deptMembers.find((d) => d.user_id === m.user_id);
+      map.get(row?.department ?? UNMAPPED)!.push({ member: m, row });
+    });
+    return map;
+  }, [members, deptMembers]);
 
   return (
     <div className="p-6 space-y-6" dir="rtl">
@@ -54,7 +54,7 @@ export default function SopTeamPolicyPage() {
         <p className="text-muted-foreground text-sm mt-1">توزيع الموظفين على الأقسام وضبط سياسات دليل العمل</p>
       </div>
 
-      {salesAvailable === 0 && (
+      {salesAvailable === 0 ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>لا يوجد عضو مبيعات متاح</AlertTitle>
@@ -62,109 +62,93 @@ export default function SopTeamPolicyPage() {
             التوزيع التلقائي (Round Robin) لن يعمل حتى يتم تعيين موظف واحد على الأقل لقسم المبيعات وتحديده كمتاح.
           </AlertDescription>
         </Alert>
+      ) : (
+        <Alert>
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle>التوزيع التلقائي جاهز</AlertTitle>
+          <AlertDescription>عدد أعضاء المبيعات المتاحين للتوزيع العادل: {salesAvailable}</AlertDescription>
+        </Alert>
       )}
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> توزيع الأقسام</CardTitle>
-          <CardDescription>حدد قسم كل موظف وحالة التوفر المستخدمة في التوزيع العادل</CardDescription>
+          <CardDescription>
+            غيّر قسم أي موظف مباشرة من القائمة. تغيير القسم لا يغيّر صلاحيات الحساب (المالك/المدير/الموظف) ويُسجَّل في سجل التدقيق.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <Label>الموظف</Label>
-              <Select value={addUser} onValueChange={setAddUser}>
-                <SelectTrigger className="w-64"><SelectValue placeholder="اختر موظف" /></SelectTrigger>
-                <SelectContent>
-                  {members.map((m: any) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>
-                      {m.profile?.full_name || m.profile?.email} — {m.role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>القسم</Label>
-              <Select value={addDept} onValueChange={(v) => setAddDept(v as SopDepartment)}>
-                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{deptLabel(d)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              disabled={!addUser || upsert.isPending}
-              onClick={() => upsert.mutate({ user_id: addUser, department: addDept, is_available: true })}
-            >
-              إضافة / تحديث
-            </Button>
-          </div>
-
-          <Separator />
-
+        <CardContent className="space-y-6">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">جارٍ التحميل...</p>
           ) : (
-            <div className="space-y-4">
-              {DEPARTMENTS.map((d) => {
-                const rows = deptMembers.filter((m) => m.department === d);
-                return (
-                  <div key={d} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm">{deptLabel(d)}</h3>
-                      <Badge variant="outline">{rows.length}</Badge>
-                    </div>
-                    {rows.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">لا يوجد أعضاء</p>
-                    ) : (
-                      rows.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
-                          <div>
-                            <div className="text-sm font-medium">{nameOf(r.user_id)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {emailOf(r.user_id)} • الحمل الحالي: {r.active_load}
-                              {r.last_assigned_at ? ` • آخر إسناد: ${new Date(r.last_assigned_at).toLocaleString('ar-EG')}` : ' • لم يُسند بعد'}
-                            </div>
+            [...DEPARTMENTS, UNMAPPED].map((key) => {
+              const rows = grouped.get(key) || [];
+              return (
+                <div key={key} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm">
+                      {key === UNMAPPED ? 'غير موزعين على أقسام' : deptLabel(key as SopDepartment)}
+                    </h3>
+                    <Badge variant="outline">{rows.length}</Badge>
+                  </div>
+                  {rows.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">لا يوجد أعضاء</p>
+                  ) : (
+                    rows.map(({ member, row }: any) => (
+                      <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                        <div className="min-w-48">
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            {member.profile?.full_name || member.profile?.email}
+                            <Badge variant="secondary" className="text-[10px]">صلاحية الحساب: {member.role}</Badge>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs">متاح</Label>
-                              <Switch
-                                checked={r.is_available}
-                                onCheckedChange={(v) =>
-                                  upsert.mutate({ user_id: r.user_id, department: r.department, is_available: v })
-                                }
-                              />
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => remove.mutate({ user_id: r.user_id, department: r.department })}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                          <div className="text-xs text-muted-foreground">
+                            {member.profile?.email}
+                            {row ? ` • الحمل الحالي: ${row.active_load}` : ''}
+                            {row?.last_assigned_at
+                              ? ` • آخر إسناد: ${new Date(row.last_assigned_at).toLocaleString('ar-EG')}`
+                              : row ? ' • لم يُسند بعد' : ''}
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {unmapped.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm">غير موزعين على أقسام</h3>
-                {unmapped.map((m: any) => (
-                  <div key={m.user_id} className="text-xs text-muted-foreground">
-                    {m.profile?.full_name || '—'} • {m.profile?.email} • {m.role}
-                  </div>
-                ))}
-              </div>
-            </>
+                        <div className="flex items-center gap-4">
+                          <div className="space-y-1">
+                            <Label className="text-xs">قسم دليل العمل</Label>
+                            <Select
+                              value={row?.department ?? UNMAPPED}
+                              onValueChange={(v) =>
+                                setDepartment.mutate({
+                                  user_id: member.user_id,
+                                  department: v === UNMAPPED ? null : (v as SopDepartment),
+                                  is_available: row?.is_available ?? true,
+                                })
+                              }
+                            >
+                              <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{deptLabel(d)}</SelectItem>)}
+                                <SelectItem value={UNMAPPED}>غير موزع</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-2 pt-5">
+                            <Label className="text-xs">متاح</Label>
+                            <Switch
+                              disabled={!row}
+                              checked={!!row?.is_available}
+                              onCheckedChange={(v) => setAvailability.mutate({ user_id: member.user_id, is_available: v })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <Separator />
+                </div>
+              );
+            })
           )}
         </CardContent>
       </Card>
+
 
       <SopPolicyCard policy={policy} onSave={(v) => savePolicy.mutate(v)} saving={savePolicy.isPending} />
     </div>

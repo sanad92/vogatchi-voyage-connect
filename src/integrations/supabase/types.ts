@@ -12653,6 +12653,19 @@ export type Database = {
         Args: { _lead: string; _notes?: string }
         Returns: Json
       }
+      sop_set_availability: {
+        Args: { _is_available: boolean; _reason?: string; _user_id: string }
+        Returns: Json
+      }
+      sop_set_department: {
+        Args: {
+          _department?: Database["public"]["Enums"]["sop_department"]
+          _is_available?: boolean
+          _reason?: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       sop_stage_to_booking_stage: {
         Args: { _s: Database["public"]["Enums"]["sop_lead_stage"] }
         Returns: string

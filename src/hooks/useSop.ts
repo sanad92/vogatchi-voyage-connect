@@ -306,6 +306,51 @@ export function useRemoveDepartmentMember() {
   });
 }
 
+/** Admin-only department transfer (audited, resets round-robin fairness on move). */
+export function useSetSopDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { user_id: string; department: SopDepartment | null; is_available?: boolean; reason?: string }) => {
+      const { data, error } = await db.rpc('sop_set_department' as any, {
+        _user_id: input.user_id,
+        _department: input.department,
+        _is_available: input.is_available ?? true,
+        _reason: input.reason ?? null,
+      } as any);
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => {
+      if (!reportGate(res, 'تم تحديث قسم الموظف')) return;
+      qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+      qc.invalidateQueries({ queryKey: ['sop-my-departments'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Admin-only availability toggle (audited). */
+export function useSetSopAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { user_id: string; is_available: boolean; reason?: string }) => {
+      const { data, error } = await db.rpc('sop_set_availability' as any, {
+        _user_id: input.user_id,
+        _is_available: input.is_available,
+        _reason: input.reason ?? null,
+      } as any);
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => {
+      if (!reportGate(res, 'تم تحديث حالة التوفر')) return;
+      qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+      qc.invalidateQueries({ queryKey: ['sop-my-departments'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
 /* ------------------------------------------------------------------ leads */
 
 interface LeadFilters {
