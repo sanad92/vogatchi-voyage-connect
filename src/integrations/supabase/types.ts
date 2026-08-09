@@ -1881,6 +1881,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           data_quality_status: string | null
+          deposit_percent: number | null
           employee_id: string | null
           end_date: string | null
           id: string
@@ -1889,6 +1890,7 @@ export type Database = {
           legacy_table: string | null
           notes: string | null
           organization_id: string
+          payment_policy: string
           profit: number | null
           quote_id: string | null
           selling_price: number | null
@@ -1909,6 +1911,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           data_quality_status?: string | null
+          deposit_percent?: number | null
           employee_id?: string | null
           end_date?: string | null
           id?: string
@@ -1917,6 +1920,7 @@ export type Database = {
           legacy_table?: string | null
           notes?: string | null
           organization_id: string
+          payment_policy?: string
           profit?: number | null
           quote_id?: string | null
           selling_price?: number | null
@@ -1937,6 +1941,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           data_quality_status?: string | null
+          deposit_percent?: number | null
           employee_id?: string | null
           end_date?: string | null
           id?: string
@@ -1945,6 +1950,7 @@ export type Database = {
           legacy_table?: string | null
           notes?: string | null
           organization_id?: string
+          payment_policy?: string
           profit?: number | null
           quote_id?: string | null
           selling_price?: number | null
@@ -3860,6 +3866,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          recipient_email: string
+          status: string
+          template_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email: string
+          status: string
+          template_name: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string
+          status?: string
+          template_name?: string
+        }
+        Relationships: []
+      }
+      email_send_state: {
+        Row: {
+          auth_email_ttl_minutes: number
+          batch_size: number
+          id: number
+          retry_after_until: string | null
+          send_delay_ms: number
+          transactional_email_ttl_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
       }
       employee_commission_periods: {
         Row: {
@@ -7759,6 +7852,784 @@ export type Database = {
         }
         Relationships: []
       }
+      sop_approvals: {
+        Row: {
+          amount: number | null
+          approval_type: Database["public"]["Enums"]["sop_approval_type"]
+          booking_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          lead_id: string | null
+          organization_id: string
+          quote_id: string | null
+          reason: string | null
+          requested_by: string | null
+          status: Database["public"]["Enums"]["sop_approval_status"]
+          supplier_payment_order_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          approval_type: Database["public"]["Enums"]["sop_approval_type"]
+          booking_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id: string
+          quote_id?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["sop_approval_status"]
+          supplier_payment_order_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          approval_type?: Database["public"]["Enums"]["sop_approval_type"]
+          booking_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id?: string
+          quote_id?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["sop_approval_status"]
+          supplier_payment_order_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_approvals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_department_members: {
+        Row: {
+          active_load: number
+          created_at: string
+          department: Database["public"]["Enums"]["sop_department"]
+          id: string
+          is_available: boolean
+          last_assigned_at: string | null
+          organization_id: string
+          specializations: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_load?: number
+          created_at?: string
+          department: Database["public"]["Enums"]["sop_department"]
+          id?: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          organization_id: string
+          specializations?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_load?: number
+          created_at?: string
+          department?: Database["public"]["Enums"]["sop_department"]
+          id?: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          organization_id?: string
+          specializations?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sop_handovers: {
+        Row: {
+          accepted_at: string | null
+          booking_id: string | null
+          checklist: Json
+          created_at: string
+          from_department: Database["public"]["Enums"]["sop_department"] | null
+          from_user_id: string | null
+          handover_type: Database["public"]["Enums"]["sop_handover_type"]
+          id: string
+          is_complete: boolean
+          lead_id: string | null
+          missing_items: string[]
+          notes: string | null
+          organization_id: string
+          to_department: Database["public"]["Enums"]["sop_department"] | null
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          booking_id?: string | null
+          checklist?: Json
+          created_at?: string
+          from_department?: Database["public"]["Enums"]["sop_department"] | null
+          from_user_id?: string | null
+          handover_type: Database["public"]["Enums"]["sop_handover_type"]
+          id?: string
+          is_complete?: boolean
+          lead_id?: string | null
+          missing_items?: string[]
+          notes?: string | null
+          organization_id: string
+          to_department?: Database["public"]["Enums"]["sop_department"] | null
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          booking_id?: string | null
+          checklist?: Json
+          created_at?: string
+          from_department?: Database["public"]["Enums"]["sop_department"] | null
+          from_user_id?: string | null
+          handover_type?: Database["public"]["Enums"]["sop_handover_type"]
+          id?: string
+          is_complete?: boolean
+          lead_id?: string | null
+          missing_items?: string[]
+          notes?: string | null
+          organization_id?: string
+          to_department?: Database["public"]["Enums"]["sop_department"] | null
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_handovers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_incidents: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          escalated_to: Database["public"]["Enums"]["sop_department"] | null
+          escalation_level: number
+          id: string
+          lead_id: string | null
+          next_update_at: string | null
+          organization_id: string
+          owner_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          escalated_to?: Database["public"]["Enums"]["sop_department"] | null
+          escalation_level?: number
+          id?: string
+          lead_id?: string | null
+          next_update_at?: string | null
+          organization_id: string
+          owner_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          escalated_to?: Database["public"]["Enums"]["sop_department"] | null
+          escalation_level?: number
+          id?: string
+          lead_id?: string | null
+          next_update_at?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_incidents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_lead_assignments: {
+        Row: {
+          ack_deadline_at: string | null
+          acknowledged_at: string | null
+          assigned_by: string | null
+          assignee_id: string
+          created_at: string
+          exception_reason: string | null
+          id: string
+          is_current: boolean
+          lead_id: string
+          method: string
+          organization_id: string
+          previous_assignee_id: string | null
+          reassignment_reason: string | null
+          released_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          ack_deadline_at?: string | null
+          acknowledged_at?: string | null
+          assigned_by?: string | null
+          assignee_id: string
+          created_at?: string
+          exception_reason?: string | null
+          id?: string
+          is_current?: boolean
+          lead_id: string
+          method?: string
+          organization_id: string
+          previous_assignee_id?: string | null
+          reassignment_reason?: string | null
+          released_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ack_deadline_at?: string | null
+          acknowledged_at?: string | null
+          assigned_by?: string | null
+          assignee_id?: string
+          created_at?: string
+          exception_reason?: string | null
+          id?: string
+          is_current?: boolean
+          lead_id?: string
+          method?: string
+          organization_id?: string
+          previous_assignee_id?: string | null
+          reassignment_reason?: string | null
+          released_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_lead_assignments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_leads: {
+        Row: {
+          adults: number | null
+          approx_dates: string | null
+          arrived_at: string
+          booking_id: string | null
+          budget_amount: number | null
+          budget_level: string | null
+          campaign: string | null
+          check_in: string | null
+          check_out: string | null
+          children_ages: Json
+          children_count: number
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          conversation_id: string | null
+          created_at: string
+          created_by: string | null
+          current_owner_id: string | null
+          customer_id: string | null
+          deposit_percent: number | null
+          destination: string | null
+          first_response_at: string | null
+          id: string
+          intake_completed_at: string | null
+          is_legacy: boolean
+          lead_number: string | null
+          lead_source: string | null
+          lost_reason: string | null
+          market: string | null
+          migration_source: string | null
+          nationality: string | null
+          occupancy: string | null
+          organization_id: string
+          owner_department: Database["public"]["Enums"]["sop_department"]
+          payment_policy: string
+          priorities: string | null
+          quote_id: string | null
+          reference_hotel: string | null
+          reference_screenshot_url: string | null
+          requote_required: boolean
+          rooms: number | null
+          service_type: string | null
+          special_requests: string | null
+          stage: Database["public"]["Enums"]["sop_lead_stage"]
+          updated_at: string
+        }
+        Insert: {
+          adults?: number | null
+          approx_dates?: string | null
+          arrived_at?: string
+          booking_id?: string | null
+          budget_amount?: number | null
+          budget_level?: string | null
+          campaign?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          children_ages?: Json
+          children_count?: number
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_owner_id?: string | null
+          customer_id?: string | null
+          deposit_percent?: number | null
+          destination?: string | null
+          first_response_at?: string | null
+          id?: string
+          intake_completed_at?: string | null
+          is_legacy?: boolean
+          lead_number?: string | null
+          lead_source?: string | null
+          lost_reason?: string | null
+          market?: string | null
+          migration_source?: string | null
+          nationality?: string | null
+          occupancy?: string | null
+          organization_id: string
+          owner_department?: Database["public"]["Enums"]["sop_department"]
+          payment_policy?: string
+          priorities?: string | null
+          quote_id?: string | null
+          reference_hotel?: string | null
+          reference_screenshot_url?: string | null
+          requote_required?: boolean
+          rooms?: number | null
+          service_type?: string | null
+          special_requests?: string | null
+          stage?: Database["public"]["Enums"]["sop_lead_stage"]
+          updated_at?: string
+        }
+        Update: {
+          adults?: number | null
+          approx_dates?: string | null
+          arrived_at?: string
+          booking_id?: string | null
+          budget_amount?: number | null
+          budget_level?: string | null
+          campaign?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          children_ages?: Json
+          children_count?: number
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_owner_id?: string | null
+          customer_id?: string | null
+          deposit_percent?: number | null
+          destination?: string | null
+          first_response_at?: string | null
+          id?: string
+          intake_completed_at?: string | null
+          is_legacy?: boolean
+          lead_number?: string | null
+          lead_source?: string | null
+          lost_reason?: string | null
+          market?: string | null
+          migration_source?: string | null
+          nationality?: string | null
+          occupancy?: string | null
+          organization_id?: string
+          owner_department?: Database["public"]["Enums"]["sop_department"]
+          payment_policy?: string
+          priorities?: string | null
+          quote_id?: string | null
+          reference_hotel?: string | null
+          reference_screenshot_url?: string | null
+          requote_required?: boolean
+          rooms?: number | null
+          service_type?: string | null
+          special_requests?: string | null
+          stage?: Database["public"]["Enums"]["sop_lead_stage"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sop_operational_deadlines: {
+        Row: {
+          alerted_at: string | null
+          booking_id: string | null
+          completed_at: string | null
+          created_at: string
+          deadline_type: Database["public"]["Enums"]["sop_deadline_type"]
+          due_at: string
+          id: string
+          is_legacy: boolean
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          owner_id: string | null
+          pricing_request_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alerted_at?: string | null
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline_type: Database["public"]["Enums"]["sop_deadline_type"]
+          due_at: string
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          owner_id?: string | null
+          pricing_request_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alerted_at?: string | null
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline_type?: Database["public"]["Enums"]["sop_deadline_type"]
+          due_at?: string
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          pricing_request_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_operational_deadlines_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_org_policies: {
+        Row: {
+          assignment_ack_sla_minutes: number
+          created_at: string
+          default_collection_policy: string
+          default_deposit_percent: number
+          first_response_sla_minutes: number
+          incident_update_sla_minutes: number
+          organization_id: string
+          post_trip_days: number
+          pre_arrival_days: number
+          quotation_turnaround_sla_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          assignment_ack_sla_minutes?: number
+          created_at?: string
+          default_collection_policy?: string
+          default_deposit_percent?: number
+          first_response_sla_minutes?: number
+          incident_update_sla_minutes?: number
+          organization_id: string
+          post_trip_days?: number
+          pre_arrival_days?: number
+          quotation_turnaround_sla_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          assignment_ack_sla_minutes?: number
+          created_at?: string
+          default_collection_policy?: string
+          default_deposit_percent?: number
+          first_response_sla_minutes?: number
+          incident_update_sla_minutes?: number
+          organization_id?: string
+          post_trip_days?: number
+          pre_arrival_days?: number
+          quotation_turnaround_sla_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sop_post_trip_actions: {
+        Row: {
+          action_type: string
+          booking_id: string | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string | null
+          due_at: string | null
+          feedback: string | null
+          id: string
+          is_legacy: boolean
+          lead_id: string | null
+          organization_id: string
+          owner_id: string | null
+          rating: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_at?: string | null
+          feedback?: string | null
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          organization_id: string
+          owner_id?: string | null
+          rating?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_at?: string | null
+          feedback?: string | null
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          rating?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_post_trip_actions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_pricing_options: {
+        Row: {
+          cancellation_deadline: string | null
+          cancellation_policy: string | null
+          created_at: string
+          currency: string
+          id: string
+          is_recommended: boolean
+          is_selected: boolean
+          markup_type: string
+          markup_value: number
+          net_cost: number
+          notes: string | null
+          option_index: number
+          organization_id: string
+          payment_deadline: string | null
+          pricing_request_id: string
+          product_name: string | null
+          release_deadline: string | null
+          selling_price: number
+          supplier_id: string | null
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancellation_deadline?: string | null
+          cancellation_policy?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_recommended?: boolean
+          is_selected?: boolean
+          markup_type?: string
+          markup_value?: number
+          net_cost?: number
+          notes?: string | null
+          option_index?: number
+          organization_id: string
+          payment_deadline?: string | null
+          pricing_request_id: string
+          product_name?: string | null
+          release_deadline?: string | null
+          selling_price?: number
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancellation_deadline?: string | null
+          cancellation_policy?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_recommended?: boolean
+          is_selected?: boolean
+          markup_type?: string
+          markup_value?: number
+          net_cost?: number
+          notes?: string | null
+          option_index?: number
+          organization_id?: string
+          payment_deadline?: string | null
+          pricing_request_id?: string
+          product_name?: string | null
+          release_deadline?: string | null
+          selling_price?: number
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_pricing_options_pricing_request_id_fkey"
+            columns: ["pricing_request_id"]
+            isOneToOne: false
+            referencedRelation: "sop_pricing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_pricing_requests: {
+        Row: {
+          assigned_to: string | null
+          booking_id: string | null
+          brief: Json
+          created_at: string
+          customer_id: string | null
+          id: string
+          is_legacy: boolean
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          price_valid_until: string | null
+          quote_id: string | null
+          quoted_at: string | null
+          recheck_changed: boolean | null
+          recheck_completed_at: string | null
+          recheck_notes: string | null
+          recheck_requested_at: string | null
+          recommendation: string | null
+          requested_at: string
+          requested_by: string | null
+          status: Database["public"]["Enums"]["sop_pricing_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          booking_id?: string | null
+          brief?: Json
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          price_valid_until?: string | null
+          quote_id?: string | null
+          quoted_at?: string | null
+          recheck_changed?: boolean | null
+          recheck_completed_at?: string | null
+          recheck_notes?: string | null
+          recheck_requested_at?: string | null
+          recommendation?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["sop_pricing_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          booking_id?: string | null
+          brief?: Json
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_legacy?: boolean
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          price_valid_until?: string | null
+          quote_id?: string | null
+          quoted_at?: string | null
+          recheck_changed?: boolean | null
+          recheck_completed_at?: string | null
+          recheck_notes?: string | null
+          recheck_requested_at?: string | null
+          recommendation?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["sop_pricing_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_pricing_requests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       special_request_types: {
         Row: {
           category: string | null
@@ -8786,6 +9657,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppressed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          metadata: Json | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json | null
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string
+        }
+        Relationships: []
       }
       system_settings: {
         Row: {
@@ -11144,6 +12039,11 @@ export type Database = {
         }
         Returns: string
       }
+      delete_email: {
+        Args: { message_id: number; queue_name: string }
+        Returns: boolean
+      }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       emit_event: {
         Args: {
           p_aggregate_id: string
@@ -11156,6 +12056,10 @@ export type Database = {
         Returns: string
       }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
+      enqueue_email: {
+        Args: { payload: Json; queue_name: string }
+        Returns: number
+      }
       enrich_event_payload: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: Json
@@ -11504,6 +12408,15 @@ export type Database = {
         Args: { _keep_id: string; _merge_ids: string[]; _org_id: string }
         Returns: Json
       }
+      move_to_dlq: {
+        Args: {
+          dlq_name: string
+          message_id: number
+          payload: Json
+          source_queue: string
+        }
+        Returns: number
+      }
       normalize_phone_digits: { Args: { _phone: string }; Returns: string }
       org_has_active_subscription: {
         Args: { _org_id: string }
@@ -11552,6 +12465,14 @@ export type Database = {
       process_journey_enrollments: {
         Args: { p_limit?: number }
         Returns: number
+      }
+      read_email_batch: {
+        Args: { batch_size: number; queue_name: string; vt: number }
+        Returns: {
+          message: Json
+          msg_id: number
+          read_ct: number
+        }[]
       }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       record_customer_payment: {
@@ -11622,6 +12543,121 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sop_acknowledge_assignment: { Args: { _lead: string }; Returns: Json }
+      sop_advance_lead: {
+        Args: {
+          _lead: string
+          _reason?: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
+      sop_allowed_next: {
+        Args: { _s: Database["public"]["Enums"]["sop_lead_stage"] }
+        Returns: Database["public"]["Enums"]["sop_lead_stage"][]
+      }
+      sop_assign_lead: {
+        Args: { _assignee?: string; _exception_reason?: string; _lead: string }
+        Returns: Json
+      }
+      sop_brief_missing: {
+        Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
+        Returns: string[]
+      }
+      sop_collection_status: { Args: { _lead: string }; Returns: Json }
+      sop_complete_handover: {
+        Args: {
+          _checklist: Json
+          _lead: string
+          _notes?: string
+          _to_user?: string
+          _type: Database["public"]["Enums"]["sop_handover_type"]
+        }
+        Returns: Json
+      }
+      sop_complete_recheck: {
+        Args: { _changed: boolean; _notes?: string; _request: string }
+        Returns: Json
+      }
+      sop_compliance_report: { Args: { p_org: string }; Returns: Json }
+      sop_create_pricing_request: {
+        Args: { _lead: string; _notes?: string }
+        Returns: Json
+      }
+      sop_decide_approval: {
+        Args: { _approval: string; _approve: boolean; _note?: string }
+        Returns: Json
+      }
+      sop_department_kpis: {
+        Args: { p_from?: string; p_org: string; p_to?: string }
+        Returns: Json
+      }
+      sop_handover_checklist_keys: {
+        Args: { _t: Database["public"]["Enums"]["sop_handover_type"] }
+        Returns: string[]
+      }
+      sop_handover_status: {
+        Args: {
+          _lead: string
+          _t: Database["public"]["Enums"]["sop_handover_type"]
+        }
+        Returns: Json
+      }
+      sop_has_department: {
+        Args: {
+          _dept: Database["public"]["Enums"]["sop_department"]
+          _org: string
+          _user: string
+        }
+        Returns: boolean
+      }
+      sop_intake_missing: {
+        Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
+        Returns: string[]
+      }
+      sop_is_manager: {
+        Args: { _org: string; _user: string }
+        Returns: boolean
+      }
+      sop_on_booking_confirmed: { Args: { _lead: string }; Returns: Json }
+      sop_publish_pricing: {
+        Args: {
+          _recommendation?: string
+          _request: string
+          _valid_until?: string
+        }
+        Returns: Json
+      }
+      sop_reassign_lead: {
+        Args: { _assignee: string; _lead: string; _reason: string }
+        Returns: Json
+      }
+      sop_request_approval: {
+        Args: {
+          _amount?: number
+          _booking?: string
+          _lead?: string
+          _reason?: string
+          _supplier_payment_order?: string
+          _type: Database["public"]["Enums"]["sop_approval_type"]
+        }
+        Returns: Json
+      }
+      sop_request_recheck: {
+        Args: { _lead: string; _notes?: string }
+        Returns: Json
+      }
+      sop_stage_to_booking_stage: {
+        Args: { _s: Database["public"]["Enums"]["sop_lead_stage"] }
+        Returns: string
+      }
+      sop_validate_transition: {
+        Args: {
+          _lead: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
       start_impersonation: {
         Args: {
           _mfa_verified: boolean
@@ -11695,6 +12731,51 @@ export type Database = {
         | "other"
       org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
       platform_role: "platform_admin" | "platform_owner"
+      sop_approval_status: "pending" | "approved" | "rejected"
+      sop_approval_type:
+        | "discount"
+        | "free_service"
+        | "booking_confirmation"
+        | "supplier_payment"
+        | "refund_compensation"
+      sop_deadline_type:
+        | "payment"
+        | "cancellation"
+        | "release"
+        | "pre_arrival"
+        | "reconfirmation"
+      sop_department:
+        | "customer_service"
+        | "sales"
+        | "reservations"
+        | "operations"
+        | "management"
+      sop_handover_type:
+        | "cs_to_sales"
+        | "sales_to_reservations"
+        | "reservations_to_sales"
+        | "reservations_to_cs"
+      sop_lead_stage:
+        | "new"
+        | "qualified"
+        | "assigned"
+        | "pricing_requested"
+        | "quoted"
+        | "follow_up"
+        | "accepted_pending_recheck"
+        | "rechecked"
+        | "payment_pending"
+        | "won"
+        | "lost"
+        | "cancelled"
+      sop_pricing_status:
+        | "requested"
+        | "in_progress"
+        | "quoted"
+        | "requoted"
+        | "recheck"
+        | "closed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -11848,6 +12929,57 @@ export const Constants = {
       ],
       org_role: ["owner", "admin", "manager", "agent", "viewer"],
       platform_role: ["platform_admin", "platform_owner"],
+      sop_approval_status: ["pending", "approved", "rejected"],
+      sop_approval_type: [
+        "discount",
+        "free_service",
+        "booking_confirmation",
+        "supplier_payment",
+        "refund_compensation",
+      ],
+      sop_deadline_type: [
+        "payment",
+        "cancellation",
+        "release",
+        "pre_arrival",
+        "reconfirmation",
+      ],
+      sop_department: [
+        "customer_service",
+        "sales",
+        "reservations",
+        "operations",
+        "management",
+      ],
+      sop_handover_type: [
+        "cs_to_sales",
+        "sales_to_reservations",
+        "reservations_to_sales",
+        "reservations_to_cs",
+      ],
+      sop_lead_stage: [
+        "new",
+        "qualified",
+        "assigned",
+        "pricing_requested",
+        "quoted",
+        "follow_up",
+        "accepted_pending_recheck",
+        "rechecked",
+        "payment_pending",
+        "won",
+        "lost",
+        "cancelled",
+      ],
+      sop_pricing_status: [
+        "requested",
+        "in_progress",
+        "quoted",
+        "requoted",
+        "recheck",
+        "closed",
+        "cancelled",
+      ],
     },
   },
 } as const
