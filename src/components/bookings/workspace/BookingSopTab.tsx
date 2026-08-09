@@ -64,7 +64,7 @@ export const BookingSopTab = ({ bookingId }: Props) => {
                       <CheckCircle2 className="h-3 w-3" /> مكتمل
                     </Badge>
                   ) : (
-                    <Button size="sm" variant="ghost" onClick={() => completeDeadline.mutate({ id: d.id })}>
+                    <Button size="sm" variant="ghost" onClick={() => completeDeadline.mutate(d.id)}>
                       تم التنفيذ
                     </Button>
                   )}
@@ -152,7 +152,7 @@ export const BookingSopTab = ({ bookingId }: Props) => {
               {p.completed_at ? (
                 <Badge variant="outline">تم</Badge>
               ) : (
-                <Button size="sm" variant="ghost" onClick={() => updatePostTrip.mutate({ id: p.id, completed: true })}>
+                <Button size="sm" variant="ghost" onClick={() => updatePostTrip.mutate({ id: p.id, status: 'completed' })}>
                   تنفيذ
                 </Button>
               )}
