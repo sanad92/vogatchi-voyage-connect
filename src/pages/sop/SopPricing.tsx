@@ -68,7 +68,7 @@ const SopPricing = () => {
   };
 
   return (
-    <DepartmentGate department="reservations" allowManagement>
+    <DepartmentGate department="reservations">
       <div className="p-6 space-y-4" dir="rtl">
         <header>
           <h1 className="text-2xl font-bold">مساحة عمل الحجوزات</h1>
