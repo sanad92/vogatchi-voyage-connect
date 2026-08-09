@@ -160,8 +160,9 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
 
       {/* Tabs */}
       <Tabs defaultValue="ai" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid grid-cols-9 mx-3 mt-3">
+        <TabsList className="grid grid-cols-10 mx-3 mt-3">
           <TabsTrigger value="ai"><Sparkles className="h-4 w-4" /></TabsTrigger>
+          <TabsTrigger value="sop" title="دليل العمل"><ShieldCheck className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="actions"><Zap className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="customer"><User className="h-4 w-4" /></TabsTrigger>
           <TabsTrigger value="crm"><Briefcase className="h-4 w-4" /></TabsTrigger>
@@ -172,9 +173,14 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
           <TabsTrigger value="history"><HistoryIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
 
+        <TabsContent value="sop" className="flex-1 overflow-y-auto mt-0">
+          <WhatsAppSOPPanel conversationId={conversationId} conversation={conversation} />
+        </TabsContent>
+
         <TabsContent value="actions" className="flex-1 overflow-y-auto mt-0">
           <ConversationActionsPanel conversation={conversation} />
         </TabsContent>
+
 
         <TabsContent value="followups" className="flex-1 overflow-y-auto p-3 mt-0">
           <FollowupsPanel conversationId={conversationId} />
