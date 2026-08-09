@@ -284,6 +284,28 @@ export function useUpsertDepartmentMember() {
   });
 }
 
+export function useRemoveDepartmentMember() {
+  const qc = useQueryClient();
+  const orgId = useOrgId();
+  return useMutation({
+    mutationFn: async (input: { user_id: string; department: SopDepartment }) => {
+      const { error } = await db
+        .from('sop_department_members')
+        .delete()
+        .eq('organization_id', orgId)
+        .eq('user_id', input.user_id)
+        .eq('department', input.department);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم إزالة العضو من القسم');
+      qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+      qc.invalidateQueries({ queryKey: ['sop-my-departments'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
 /* ------------------------------------------------------------------ leads */
 
 interface LeadFilters {
