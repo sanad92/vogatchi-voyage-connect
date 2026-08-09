@@ -69,6 +69,12 @@ const NewUnifiedBooking = lazy(() => import("@/pages/NewUnifiedBooking"));
 const UnifiedBookingDetails = lazy(() => import("@/pages/UnifiedBookingDetails"));
 const BookingWorkspace = lazy(() => import("@/pages/BookingWorkspace"));
 
+// Departmental SOP (CS → Sales → Reservations)
+const SopIntake = lazy(() => import("@/pages/sop/SopIntake"));
+const SopPipeline = lazy(() => import("@/pages/sop/SopPipeline"));
+const SopPricing = lazy(() => import("@/pages/sop/SopPricing"));
+const SopCompliance = lazy(() => import("@/pages/sop/SopCompliance"));
+
 // Quotes
 const Quotes = lazy(() => import("@/pages/Quotes"));
 const NewQuote = lazy(() => import("@/pages/NewQuote"));
@@ -359,6 +365,10 @@ function App() {
                               <Route path="/bookings/new" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewUnifiedBooking /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id/workspace" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
+                              <Route path="/sop/intake" element={<PermissionRouteGuard requiredPermission="crm_view"><SopIntake /></PermissionRouteGuard>} />
+                              <Route path="/sop/pipeline" element={<PermissionRouteGuard requiredPermission="crm_view"><SopPipeline /></PermissionRouteGuard>} />
+                              <Route path="/sop/pricing" element={<PermissionRouteGuard requiredPermission="quotes_view"><SopPricing /></PermissionRouteGuard>} />
+                              <Route path="/sop/compliance" element={<PermissionRouteGuard requiredPermission="reports_view"><SopCompliance /></PermissionRouteGuard>} />
                               <Route path="/erp-dashboard" element={<Navigate to="/cfo-dashboard" replace />} />
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />

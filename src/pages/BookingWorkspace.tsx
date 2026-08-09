@@ -16,6 +16,7 @@ import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
 import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
+import { BookingSopTab } from '@/components/bookings/workspace/BookingSopTab';
 import { WorkflowProgressBar } from '@/components/workflow/WorkflowProgressBar';
 import {
   derivePaymentStatus,
@@ -23,7 +24,7 @@ import {
   type WorkflowContext,
 } from '@/lib/bookingWorkflow';
 
-const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation'] as const;
+const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation', 'sop'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TAB_LABELS: Record<TabKey, string> = {
@@ -35,6 +36,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   tasks: 'المهام والملاحظات',
   timeline: 'السجل الزمني',
   automation: 'الأتمتة',
+  sop: 'دليل العمل',
 };
 
 const BookingWorkspace = () => {
@@ -167,6 +169,9 @@ const BookingWorkspace = () => {
         </TabsContent>
         <TabsContent value="automation" className="mt-4">
           {id && <AutomationCenter bookingId={id} />}
+        </TabsContent>
+        <TabsContent value="sop" className="mt-4">
+          {id && <BookingSopTab bookingId={id} />}
         </TabsContent>
       </Tabs>
     </div>
