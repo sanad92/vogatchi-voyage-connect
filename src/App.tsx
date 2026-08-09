@@ -69,6 +69,12 @@ const NewUnifiedBooking = lazy(() => import("@/pages/NewUnifiedBooking"));
 const UnifiedBookingDetails = lazy(() => import("@/pages/UnifiedBookingDetails"));
 const BookingWorkspace = lazy(() => import("@/pages/BookingWorkspace"));
 
+// Departmental SOP (CS → Sales → Reservations)
+const SopIntake = lazy(() => import("@/pages/sop/SopIntake"));
+const SopPipeline = lazy(() => import("@/pages/sop/SopPipeline"));
+const SopPricing = lazy(() => import("@/pages/sop/SopPricing"));
+const SopCompliance = lazy(() => import("@/pages/sop/SopCompliance"));
+
 // Quotes
 const Quotes = lazy(() => import("@/pages/Quotes"));
 const NewQuote = lazy(() => import("@/pages/NewQuote"));
