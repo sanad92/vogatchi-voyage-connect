@@ -170,6 +170,9 @@ const BookingWorkspace = () => {
         <TabsContent value="automation" className="mt-4">
           {id && <AutomationCenter bookingId={id} />}
         </TabsContent>
+        <TabsContent value="sop" className="mt-4">
+          {id && <BookingSopTab bookingId={id} />}
+        </TabsContent>
       </Tabs>
     </div>
   );
