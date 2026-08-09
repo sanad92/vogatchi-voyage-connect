@@ -23,11 +23,12 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap,
+  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap, ShieldCheck,
 } from 'lucide-react';
 import { ConversationActionsPanel } from './ConversationActionsPanel';
 import { Customer360Panel } from './Customer360Panel';
 import { WhatsAppCRMPanel } from './WhatsAppCRMPanel';
+import { WhatsAppSOPPanel } from './WhatsAppSOPPanel';
 import { AIAssistantPanel } from './AIAssistantPanel';
 import { FollowupsPanel } from './FollowupsPanel';
 import { formatDistanceToNow } from 'date-fns';
