@@ -194,6 +194,12 @@ export const VIOLATION_LABELS: Record<string, string> = {
   options_missing_net_cost_or_policy: 'خيارات بدون صافي التكلفة أو السياسة',
   no_recommended_option: 'لا يوجد خيار موصى به',
   no_booking: 'لا يوجد حجز مرتبط',
+  price_validity_required: 'صلاحية السعر مطلوبة',
+  price_validity_expired: 'صلاحية السعر منتهية',
+  voucher_not_issued: 'لم يتم إصدار الفاوتشر بعد',
+  assignee_required: 'يجب اختيار مندوب المبيعات',
+  assignee_not_available_sales: 'المستخدم ليس ضمن فريق المبيعات المتاح',
+  assignee_unchanged: 'نفس المندوب الحالي',
 };
 
 export const labelMissing = (k: string) => MISSING_FIELD_LABELS[k] ?? k;
