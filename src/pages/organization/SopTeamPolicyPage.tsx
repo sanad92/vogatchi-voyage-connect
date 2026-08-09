@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Users, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Users, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
 import {
   useSopDepartmentMembers,
