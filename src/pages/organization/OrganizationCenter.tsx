@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key } from 'lucide-react';
+import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key, ClipboardCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBranches, useDepartments } from '@/hooks/useBranchesDepartments';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
@@ -10,6 +10,7 @@ const sections = [
   { to: '/team', title: 'المستخدمون', icon: Users, desc: 'إدارة أعضاء الفريق' },
   { to: '/organization/feature-flags', title: 'الميزات', icon: Flag, desc: 'تفعيل/تعطيل الميزات' },
   { to: '/organization/white-label', title: 'الهوية البصرية', icon: Palette, desc: 'شعار وألوان المؤسسة' },
+  { to: '/organization/sop-team', title: 'فريق وسياسات SOP', icon: ClipboardCheck, desc: 'توزيع الأقسام وسياسات دليل العمل' },
   { to: '/organization/security', title: 'مركز الأمان', icon: Shield, desc: 'MFA، PIN، سياسات كلمات المرور' },
   { to: '/audit-log', title: 'سجل التدقيق', icon: ScrollText, desc: 'كل العمليات الحساسة' },
   { to: '/admin-settings', title: 'الإعدادات العامة', icon: Key, desc: 'إعدادات المؤسسة الأساسية' },
