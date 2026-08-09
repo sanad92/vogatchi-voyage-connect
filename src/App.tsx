@@ -172,6 +172,7 @@ const BranchesPage = lazy(() => import("@/pages/organization/BranchesPage"));
 const DepartmentsPage = lazy(() => import("@/pages/organization/DepartmentsPage"));
 const FeatureFlagsPage = lazy(() => import("@/pages/organization/FeatureFlagsPage"));
 const WhiteLabelPage = lazy(() => import("@/pages/organization/WhiteLabelPage"));
+const SopTeamPolicyPage = lazy(() => import("@/pages/organization/SopTeamPolicyPage"));
 const SecurityCenterPage = lazy(() => import("@/pages/organization/SecurityCenterPage"));
 const PlatformActAsPage = lazy(() => import("@/pages/platform-admin/PlatformActAsPage"));
 
@@ -398,6 +399,7 @@ function App() {
                               <Route path="/organization/departments" element={<PermissionRouteGuard requiredPermission="admin_settings"><DepartmentsPage /></PermissionRouteGuard>} />
                               <Route path="/organization/feature-flags" element={<PermissionRouteGuard requiredPermission="admin_settings"><FeatureFlagsPage /></PermissionRouteGuard>} />
                               <Route path="/organization/white-label" element={<PermissionRouteGuard requiredPermission="admin_settings"><WhiteLabelPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/sop-team" element={<PermissionRouteGuard requiredPermission="admin_settings"><SopTeamPolicyPage /></PermissionRouteGuard>} />
                               <Route path="/organization/security" element={<PermissionRouteGuard requiredPermission="admin_settings"><SecurityCenterPage /></PermissionRouteGuard>} />
                               {/* /platform-admin/* routes moved to /platform/* (with backward-compat redirects above) */}
 
