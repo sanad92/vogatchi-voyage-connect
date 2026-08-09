@@ -8365,6 +8365,7 @@ export type Database = {
       }
       sop_org_policies: {
         Row: {
+          approval_required_above_amount: number | null
           assignment_ack_sla_minutes: number
           created_at: string
           default_collection_policy: string
@@ -8375,9 +8376,11 @@ export type Database = {
           post_trip_days: number
           pre_arrival_days: number
           quotation_turnaround_sla_minutes: number
+          require_management_approval: boolean
           updated_at: string
         }
         Insert: {
+          approval_required_above_amount?: number | null
           assignment_ack_sla_minutes?: number
           created_at?: string
           default_collection_policy?: string
@@ -8388,9 +8391,11 @@ export type Database = {
           post_trip_days?: number
           pre_arrival_days?: number
           quotation_turnaround_sla_minutes?: number
+          require_management_approval?: boolean
           updated_at?: string
         }
         Update: {
+          approval_required_above_amount?: number | null
           assignment_ack_sla_minutes?: number
           created_at?: string
           default_collection_policy?: string
@@ -8401,6 +8406,7 @@ export type Database = {
           post_trip_days?: number
           pre_arrival_days?: number
           quotation_turnaround_sla_minutes?: number
+          require_management_approval?: boolean
           updated_at?: string
         }
         Relationships: []
