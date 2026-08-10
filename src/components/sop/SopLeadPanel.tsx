@@ -95,18 +95,30 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           {lead.is_legacy && <Badge variant="outline">سجل تاريخي</Badge>}
         </div>
 
-        <div className="text-xs text-muted-foreground">
-          الإجراء المطلوب: <span className="text-foreground">{nextRequiredAction(lead.stage)}</span>
+        <div className="rounded-md border bg-muted/40 p-2 text-xs">
+          <span className="text-muted-foreground">الخطوة التالية: </span>
+          <span className="font-medium">{nextRequiredAction(lead.stage)}</span>
         </div>
 
         {current && !current.acknowledged_at && (
-          <div className="flex items-center justify-between rounded-md border p-2 text-xs">
-            <span>بانتظار استلام الإسناد قبل {new Date(current.ack_deadline_at).toLocaleString('ar-EG')}</span>
-            <Button size="sm" variant="outline" onClick={() => ack.mutate(leadId)}>استلام</Button>
+          <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+            <span>بانتظار استلامك قبل {new Date(current.ack_deadline_at).toLocaleString('ar-EG')}</span>
+            <Button size="sm" onClick={() => ack.mutate(leadId)}>استلام</Button>
           </div>
         )}
 
-        {nextStage && <SopGateAlert gate={gate} okLabel={`جاهز للانتقال إلى: ${LEAD_STAGE_LABELS[nextStage]}`} compact />}
+        {nextStage && (
+          <SopGateAlert
+            gate={gate}
+            okLabel={`جاهز للانتقال إلى: ${LEAD_STAGE_LABELS[nextStage]}`}
+            compact
+            action={
+              !gate?.allowed && handoverType
+                ? { label: 'افتح نافذة التسليم', onClick: () => setHandoverOpen(handoverType) }
+                : null
+            }
+          />
+        )}
 
         {collection && (lead.stage === 'payment_pending' || lead.stage === 'rechecked') && (
           <div className="rounded-md border p-2 text-xs space-y-1">
@@ -117,45 +129,32 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
         <Separator />
 
-        <div className="flex flex-wrap gap-2">
-          {handoverType && (
-            <Button size="sm" variant="outline" onClick={() => setHandoverOpen(handoverType)}>
-              <ArrowLeftRight className="h-3.5 w-3.5 ml-1" /> تسليم
+        {/* Primary action first, everything else tucked away */}
+        <div className="flex flex-wrap items-center gap-2">
+          {primary && (
+            <Button size="sm" onClick={primary.onClick} disabled={primary.disabled}>
+              {primary.icon} {primary.label}
             </Button>
           )}
-          {lead.stage === 'qualified' && (
-            <Button size="sm" variant="outline" onClick={() => assign.mutate({ leadId })}>
-              <UserPlus className="h-3.5 w-3.5 ml-1" /> إسناد بالتناوب
-            </Button>
-          )}
-          {(lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') && (
-            <Button size="sm" variant="outline" onClick={() => pricing.mutate({ leadId })}>
-              <Send className="h-3.5 w-3.5 ml-1" /> طلب تسعير
-            </Button>
-          )}
-          {lead.stage === 'accepted_pending_recheck' && (
-            <Button size="sm" variant="outline" onClick={() => recheck.mutate({ leadId })}>
-              <RefreshCcw className="h-3.5 w-3.5 ml-1" /> طلب إعادة تأكد
-            </Button>
-          )}
-          {(lead.stage === 'rechecked' || lead.stage === 'payment_pending') && (
-            <Button
-              size="sm" variant="outline"
-              onClick={() => approval.mutate({ type: 'booking_confirmation', leadId, reason: 'تأكيد الحجز' })}
-            >
-              <ShieldCheck className="h-3.5 w-3.5 ml-1" /> طلب موافقة الإدارة
-            </Button>
-          )}
-          {nextStage && (
-            <Button
-              size="sm"
-              disabled={advance.isPending || !gate?.allowed}
-              onClick={() => advance.mutate({ leadId, to: nextStage })}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5 ml-1" /> {LEAD_STAGE_LABELS[nextStage]}
-            </Button>
+
+          {others.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  إجراءات أخرى <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {others.map((a) => (
+                  <DropdownMenuItem key={a.label} onClick={a.onClick} disabled={a.disabled}>
+                    {a.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
+
 
         {!compact && lead.stage !== 'lost' && lead.stage !== 'won' && (
           <Button
