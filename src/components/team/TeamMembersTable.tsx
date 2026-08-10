@@ -7,6 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye, LogOut } from 'lucide-react';
 import { useTeamManagement, TeamMember } from '@/hooks/useTeamManagement';
+import { useSopDepartmentMembers, useSetSopDepartment } from '@/hooks/useSop';
+import { DEPARTMENT_LABELS, SopDepartment } from '@/lib/sop';
 import EditMemberDialog from './EditMemberDialog';
 import OffboardMemberDialog from './OffboardMemberDialog';
 
@@ -25,6 +27,9 @@ interface Props {
 
 const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
+  const { data: deptMembers = [] } = useSopDepartmentMembers();
+  const setDepartment = useSetSopDepartment();
+  const deptByUser = new Map(deptMembers.map((d) => [d.user_id, d.department]));
   const [editing, setEditing] = useState<TeamMember | null>(null);
   const [offboarding, setOffboarding] = useState<TeamMember | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
@@ -108,14 +113,39 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                   </TableCell>
 
                   <TableCell className="hidden md:table-cell">
-                    {m.employee ? (
-                      <div className="text-sm">
-                        <p className="font-medium">{m.employee.position || '—'}</p>
-                        <p className="text-xs text-muted-foreground">{m.employee.department || ''}</p>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">لا يوجد</span>
-                    )}
+                    <div className="space-y-1">
+                      {canManage ? (
+                        <Select
+                          value={deptByUser.get(m.user_id) ?? 'none'}
+                          onValueChange={(v) =>
+                            setDepartment.mutate({
+                              user_id: m.user_id,
+                              department: v === 'none' ? null : (v as SopDepartment),
+                              is_available: true,
+                              reason: 'تغيير القسم من صفحة فريق العمل',
+                            })
+                          }
+                          disabled={setDepartment.isPending}
+                        >
+                          <SelectTrigger className="w-40 h-8">
+                            <SelectValue placeholder="غير موزع" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">غير موزع</SelectItem>
+                            {(Object.keys(DEPARTMENT_LABELS) as SopDepartment[]).map((d) => (
+                              <SelectItem key={d} value={d}>{DEPARTMENT_LABELS[d]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          {deptByUser.has(m.user_id) ? DEPARTMENT_LABELS[deptByUser.get(m.user_id)!] : 'غير موزع'}
+                        </Badge>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {m.employee?.position || 'بدون منصب'}
+                      </p>
+                    </div>
                   </TableCell>
 
                   <TableCell>
