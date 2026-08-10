@@ -135,6 +135,18 @@ const SopPricing = () => {
                         key={o.id}
                         option={o}
                         onSave={(v) => saveOption.mutate({ ...v, id: o.id, pricing_request_id: selected.id } as any)}
+                        onRecommend={() => {
+                          (options || []).forEach((other) => {
+                            const shouldBe = other.id === o.id;
+                            if (!!other.is_recommended !== shouldBe) {
+                              saveOption.mutate({
+                                id: other.id,
+                                pricing_request_id: selected.id,
+                                is_recommended: shouldBe,
+                              } as any);
+                            }
+                          });
+                        }}
                         onDelete={() => deleteOption.mutate(o.id)}
                       />
                     ))}
