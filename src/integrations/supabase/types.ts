@@ -8478,72 +8478,147 @@ export type Database = {
       }
       sop_pricing_options: {
         Row: {
+          cancellation_charge_model: string | null
+          cancellation_charge_value: number | null
           cancellation_deadline: string | null
+          cancellation_notes: string | null
           cancellation_policy: string | null
+          cancellation_type: string | null
+          check_in: string | null
+          check_out: string | null
           created_at: string
           currency: string
+          destination: string | null
+          free_cancellation_until: string | null
+          hotel_direct_price: number | null
+          hotel_name: string | null
           id: string
+          internal_notes: string | null
           is_recommended: boolean
           is_selected: boolean
           markup_type: string
           markup_value: number
+          meal_plan: string | null
           net_cost: number
           notes: string | null
           option_index: number
           organization_id: string
+          ota_price: number | null
+          ota_source: string | null
           payment_deadline: string | null
+          price_valid_until: string | null
           pricing_request_id: string
           product_name: string | null
+          recommendation_note: string | null
+          recommendation_reason: string | null
           release_deadline: string | null
+          room_type: string | null
+          room_view: string | null
+          rooms_count: number | null
           selling_price: number
           supplier_id: string | null
           supplier_name: string | null
+          transfer_net_cost: number | null
+          transfer_notes: string | null
+          transfer_selling_price: number | null
+          transfer_status: string
+          transfer_type: string | null
           updated_at: string
         }
         Insert: {
+          cancellation_charge_model?: string | null
+          cancellation_charge_value?: number | null
           cancellation_deadline?: string | null
+          cancellation_notes?: string | null
           cancellation_policy?: string | null
+          cancellation_type?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
           currency?: string
+          destination?: string | null
+          free_cancellation_until?: string | null
+          hotel_direct_price?: number | null
+          hotel_name?: string | null
           id?: string
+          internal_notes?: string | null
           is_recommended?: boolean
           is_selected?: boolean
           markup_type?: string
           markup_value?: number
+          meal_plan?: string | null
           net_cost?: number
           notes?: string | null
           option_index?: number
           organization_id: string
+          ota_price?: number | null
+          ota_source?: string | null
           payment_deadline?: string | null
+          price_valid_until?: string | null
           pricing_request_id: string
           product_name?: string | null
+          recommendation_note?: string | null
+          recommendation_reason?: string | null
           release_deadline?: string | null
+          room_type?: string | null
+          room_view?: string | null
+          rooms_count?: number | null
           selling_price?: number
           supplier_id?: string | null
           supplier_name?: string | null
+          transfer_net_cost?: number | null
+          transfer_notes?: string | null
+          transfer_selling_price?: number | null
+          transfer_status?: string
+          transfer_type?: string | null
           updated_at?: string
         }
         Update: {
+          cancellation_charge_model?: string | null
+          cancellation_charge_value?: number | null
           cancellation_deadline?: string | null
+          cancellation_notes?: string | null
           cancellation_policy?: string | null
+          cancellation_type?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
           currency?: string
+          destination?: string | null
+          free_cancellation_until?: string | null
+          hotel_direct_price?: number | null
+          hotel_name?: string | null
           id?: string
+          internal_notes?: string | null
           is_recommended?: boolean
           is_selected?: boolean
           markup_type?: string
           markup_value?: number
+          meal_plan?: string | null
           net_cost?: number
           notes?: string | null
           option_index?: number
           organization_id?: string
+          ota_price?: number | null
+          ota_source?: string | null
           payment_deadline?: string | null
+          price_valid_until?: string | null
           pricing_request_id?: string
           product_name?: string | null
+          recommendation_note?: string | null
+          recommendation_reason?: string | null
           release_deadline?: string | null
+          room_type?: string | null
+          room_view?: string | null
+          rooms_count?: number | null
           selling_price?: number
           supplier_id?: string | null
           supplier_name?: string | null
+          transfer_net_cost?: number | null
+          transfer_notes?: string | null
+          transfer_selling_price?: number | null
+          transfer_status?: string
+          transfer_type?: string | null
           updated_at?: string
         }
         Relationships: [
