@@ -224,7 +224,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           )}
         </div>
 
-
+        <SopStageActions leadId={leadId} stage={lead.stage} />
 
       </CardContent>
 
