@@ -165,6 +165,7 @@ interface PolicyForm {
   pre_arrival_days: number;
   post_trip_days: number;
   require_management_approval: boolean;
+  auto_assign_enabled: boolean;
   approval_required_above_amount: string;
 }
 
