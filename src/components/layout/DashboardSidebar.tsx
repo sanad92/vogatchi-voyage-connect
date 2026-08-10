@@ -9,7 +9,7 @@ import {
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
   CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
-  ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles,
+  ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles, ArrowLeftRight,
   FolderOpen, Building, Megaphone, History,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
