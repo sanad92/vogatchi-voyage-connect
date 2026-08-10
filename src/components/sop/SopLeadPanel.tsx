@@ -24,6 +24,8 @@ import {
 import { useOrgMembers } from '@/hooks/useOrgMembers';
 import HandoverDialog from './HandoverDialog';
 import SopGateAlert from './SopGateAlert';
+import SopLeadBrief from './SopLeadBrief';
+import SopPricingResult from './SopPricingResult';
 import {
   DEPARTMENT_LABELS,
   LEAD_STAGE_LABELS,
@@ -144,6 +146,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const others = actions.filter((a) => a !== primary);
 
   return (
+    <div className="space-y-3">
     <Card dir="rtl">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
@@ -229,6 +232,10 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
         <HandoverDialog open onClose={() => setHandoverOpen(null)} leadId={leadId} type={handoverOpen} />
       )}
     </Card>
+
+    <SopLeadBrief lead={lead} />
+    <SopPricingResult leadId={leadId} />
+    </div>
   );
 };
 
