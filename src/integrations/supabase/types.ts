@@ -12574,6 +12574,8 @@ export type Database = {
         Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
         Returns: string[]
       }
+      sop_claim_lead: { Args: { _lead: string }; Returns: Json }
+      sop_claim_pricing_request: { Args: { _request: string }; Returns: Json }
       sop_collection_status: { Args: { _lead: string }; Returns: Json }
       sop_complete_handover: {
         Args: {
@@ -12600,6 +12602,10 @@ export type Database = {
       }
       sop_department_kpis: {
         Args: { p_from?: string; p_org: string; p_to?: string }
+        Returns: Json
+      }
+      sop_disqualify: {
+        Args: { _lead: string; _note?: string; _reason: string }
         Returns: Json
       }
       sop_handover_checklist_keys: {
@@ -12629,6 +12635,14 @@ export type Database = {
         Args: { _org: string; _user: string }
         Returns: boolean
       }
+      sop_move_back: {
+        Args: {
+          _lead: string
+          _reason: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
       sop_on_booking_confirmed: { Args: { _lead: string }; Returns: Json }
       sop_publish_pricing: {
         Args: {
@@ -12642,6 +12656,7 @@ export type Database = {
         Args: { _assignee: string; _lead: string; _reason: string }
         Returns: Json
       }
+      sop_reopen_lead: { Args: { _lead: string }; Returns: Json }
       sop_request_approval: {
         Args: {
           _amount?: number
@@ -12657,6 +12672,7 @@ export type Database = {
         Args: { _lead: string; _notes?: string }
         Returns: Json
       }
+      sop_return_to_sales: { Args: { _request: string }; Returns: Json }
       sop_set_availability: {
         Args: { _is_available: boolean; _reason?: string; _user_id: string }
         Returns: Json
