@@ -52,6 +52,9 @@ const SopPricing = () => {
   const returnToSales = useReturnToSales();
   const { user } = useOptimizedAuth();
 
+  const unclaimed = (requests || []).filter((r) => !r.assigned_to && r.status !== 'closed' && r.status !== 'cancelled');
+  const claimed = (requests || []).filter((r) => !!r.assigned_to);
+
   const [validUntil, setValidUntil] = useState('');
   const [recommendation, setRecommendation] = useState('');
 
@@ -231,20 +234,24 @@ const SopPricing = () => {
 
                     <Button
                       size="sm"
-                      onClick={() => publish.mutate({
-                        requestId: selected.id,
-                        validUntil: validUntil || null,
-                        recommendation,
-                      })}
+                      onClick={() => publish.mutate(
+                        { requestId: selected.id, validUntil: validUntil || null, recommendation },
+                        {
+                          onSuccess: (res: any) => {
+                            // Publishing hands ownership straight back to the Sales requester.
+                            if (res?.allowed !== false) returnToSales.mutate(selected.id);
+                          },
+                        },
+                      )}
                       disabled={publish.isPending || blockers.length > 0}
                     >
-                      نشر التسعير وإنشاء عرض السعر
+                      اعتماد التسعير وإرساله للمبيعات
                     </Button>
 
                     {(selected.status === 'quoted' || selected.status === 'requoted') && (
                       <div className="rounded-md border p-2 space-y-2">
                         <p className="text-xs text-muted-foreground">
-                          خلصت التسعير؟ ابعته للمبيعات وهيرجع تلقائيًا لموظف المبيعات صاحب الملف.
+                          تم الاعتماد. لو محتاج تعيد الإرسال لموظف المبيعات صاحب الطلب اضغط هنا.
                         </p>
                         <Button
                           size="sm"
@@ -252,7 +259,7 @@ const SopPricing = () => {
                           disabled={returnToSales.isPending}
                           onClick={() => returnToSales.mutate(selected.id)}
                         >
-                          إرسال للمبيعات
+                          إعادة الإرسال للمبيعات
                         </Button>
                       </div>
                     )}
@@ -267,7 +274,7 @@ const SopPricing = () => {
                               size="sm" variant="outline"
                               onClick={() => completeRecheck.mutate({ requestId: selected.id, changed: false })}
                             >
-                              مؤكد بدون تغيير
+                              السعر والتوافر ثابت
                             </Button>
                             <Button
                               size="sm" variant="destructive"
@@ -276,7 +283,7 @@ const SopPricing = () => {
                                 completeRecheck.mutate({ requestId: selected.id, changed: true, notes });
                               }}
                             >
-                              تغيّر السعر / الإتاحة
+                              تغير السعر / التوافر
                             </Button>
                           </div>
                         </div>
