@@ -368,6 +368,8 @@ function App() {
                               <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id/workspace" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
                               <Route path="/sop/intake" element={<PermissionRouteGuard requiredPermission="crm_view"><SopIntake /></PermissionRouteGuard>} />
+                              <Route path="/sop/handovers" element={<PermissionRouteGuard requiredPermission="crm_view"><SopHandovers /></PermissionRouteGuard>} />
+
                               <Route path="/sop/pipeline" element={<PermissionRouteGuard requiredPermission="crm_view"><SopPipeline /></PermissionRouteGuard>} />
                               <Route path="/sop/pricing" element={<PermissionRouteGuard requiredPermission="quotes_view"><SopPricing /></PermissionRouteGuard>} />
                               <Route path="/sop/compliance" element={<PermissionRouteGuard requiredPermission="reports_view"><SopCompliance /></PermissionRouteGuard>} />
