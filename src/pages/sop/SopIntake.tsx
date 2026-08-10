@@ -60,6 +60,8 @@ const SopIntake = () => {
                     <TableHead>الوجهة</TableHead>
                     <TableHead>المرحلة</TableHead>
                     <TableHead>القسم المالك</TableHead>
+                    <TableHead>المسؤول</TableHead>
+
                     <TableHead>المصدر</TableHead>
                     <TableHead />
                   </TableRow>
