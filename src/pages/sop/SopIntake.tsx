@@ -11,6 +11,7 @@ import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import { useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
 import { DEPARTMENT_LABELS, LEAD_STAGE_LABELS } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 
 const SopIntake = () => {
   usePageTitle('استقبال العملاء — خدمة العملاء');
