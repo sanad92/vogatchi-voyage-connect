@@ -77,6 +77,15 @@ const SopIntake = () => {
                       <TableCell>{l.destination || l.city || '—'}</TableCell>
                       <TableCell><Badge variant="secondary">{LEAD_STAGE_LABELS[l.stage]}</Badge></TableCell>
                       <TableCell className="text-xs">{DEPARTMENT_LABELS[l.owner_department]}</TableCell>
+                      <TableCell className="text-xs">
+                        {l.current_owner_id ? (
+                          members.find((m) => m.user_id === l.current_owner_id)?.profile?.full_name
+                            || l.current_owner_id.slice(0, 8)
+                        ) : (
+                          <span className="text-muted-foreground">بانتظار التوزيع</span>
+                        )}
+                      </TableCell>
+
                       <TableCell className="text-xs">{l.lead_source || '—'}</TableCell>
                       <TableCell>
                         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(l); }}>
