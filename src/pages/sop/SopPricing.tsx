@@ -211,10 +211,21 @@ interface OptionEditorProps {
   onDelete: () => void;
 }
 
+const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label className="text-xs text-muted-foreground">
+      {label}{required && <span className="text-destructive"> *</span>}
+    </Label>
+    {children}
+  </div>
+);
+
 const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   useEffect(() => setV(option), [option]);
   const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
+  const margin = `${((Number(v.selling_price) || 0) - (Number(v.net_cost) || 0)).toLocaleString('en-US')} ${v.currency || 'EGP'}`;
+
 
   return (
     <div className="border rounded-lg p-3 space-y-3">
