@@ -68,6 +68,7 @@ const navGroups: NavGroup[] = [
     icon: ClipboardList,
     items: [
       { title: 'استقبال العملاء', href: '/sop/intake', icon: Users, requiredPermission: 'crm_view' },
+      { title: 'التسليم والاستلام', href: '/sop/handovers', icon: ArrowLeftRight, requiredPermission: 'crm_view' },
       { title: 'خط أنابيب المبيعات', href: '/sop/pipeline', icon: ClipboardList, requiredPermission: 'crm_view' },
       { title: 'طلبات التسعير', href: '/sop/pricing', icon: FileCheck, requiredPermission: 'quotes_view' },
       { title: 'الالتزام والمؤشرات', href: '/sop/compliance', icon: BarChart3, requiredPermission: 'reports_view' },
