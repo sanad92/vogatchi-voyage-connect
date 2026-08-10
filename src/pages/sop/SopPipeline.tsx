@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
-import { useAdvanceLead, useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
+import { useReopenLead, useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
 import { LEAD_STAGE_LABELS, PIPELINE_STAGES, type SopLeadStage } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
@@ -13,7 +13,7 @@ const SopPipeline = () => {
   const { data: leads } = useSopLeads({
     stages: [...PIPELINE_STAGES, 'assigned', 'lost'] as SopLeadStage[],
   });
-  const advance = useAdvanceLead();
+  const reopen = useReopenLead();
   const [selected, setSelected] = useState<string | null>(null);
 
   const columns = useMemo(() => {
@@ -74,12 +74,21 @@ const SopPipeline = () => {
 
           {lost.length > 0 && (
             <Card className="mt-4">
-              <CardHeader className="pb-2"><CardTitle className="text-sm">مفقود ({lost.length})</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">غير مؤهل / مفقود ({lost.length})</CardTitle></CardHeader>
               <CardContent className="space-y-1">
                 {lost.slice(0, 10).map((l) => (
-                  <div key={l.id} className="flex items-center justify-between text-xs border rounded p-2">
+                  <div key={l.id} className="flex items-center justify-between gap-2 text-xs border rounded p-2">
                     <span>{l.contact_name || '—'}</span>
-                    <span className="text-muted-foreground">{l.lost_reason || 'بدون سبب مسجل'}</span>
+                    <span className="text-muted-foreground flex-1 truncate">{l.lost_reason || 'بدون سبب مسجل'}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      disabled={reopen.isPending}
+                      onClick={() => reopen.mutate(l.id)}
+                    >
+                      إعادة فتح
+                    </Button>
                   </div>
                 ))}
               </CardContent>
@@ -94,18 +103,6 @@ const SopPipeline = () => {
             <Card><CardContent className="p-6 text-sm text-muted-foreground">
               اختر ملفاً لعرض الإجراء المطلوب والقيود.
             </CardContent></Card>
-          )}
-          {selected && (
-            <Button
-              variant="ghost"
-              className="w-full mt-2 text-destructive"
-              onClick={() => {
-                const reason = window.prompt('سبب الفقد (إلزامي)');
-                if (reason) advance.mutate({ leadId: selected, to: 'lost', reason });
-              }}
-            >
-              تسجيل كمفقود مع السبب
-            </Button>
           )}
         </div>
       </div>
