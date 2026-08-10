@@ -146,6 +146,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const others = actions.filter((a) => a !== primary);
 
   return (
+    <div className="space-y-3">
     <Card dir="rtl">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
