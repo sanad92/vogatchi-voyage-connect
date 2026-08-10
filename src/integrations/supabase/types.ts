@@ -3391,6 +3391,8 @@ export type Database = {
           total_bookings: number | null
           total_spent: number | null
           updated_at: string | null
+          whatsapp_opt_out: boolean
+          whatsapp_opt_out_at: string | null
         }
         Insert: {
           address?: string | null
@@ -3414,6 +3416,8 @@ export type Database = {
           total_bookings?: number | null
           total_spent?: number | null
           updated_at?: string | null
+          whatsapp_opt_out?: boolean
+          whatsapp_opt_out_at?: string | null
         }
         Update: {
           address?: string | null
@@ -3437,6 +3441,8 @@ export type Database = {
           total_bookings?: number | null
           total_spent?: number | null
           updated_at?: string | null
+          whatsapp_opt_out?: boolean
+          whatsapp_opt_out_at?: string | null
         }
         Relationships: [
           {
@@ -10430,15 +10436,19 @@ export type Database = {
           description: string | null
           failed_count: number
           id: string
+          last_error: string | null
+          locked_at: string | null
           message_body: string | null
           name: string
           organization_id: string
           read_count: number
           scheduled_at: string | null
           sent_count: number
+          skipped_count: number
           started_at: string | null
           status: string
           template_id: string | null
+          template_variables: Json
           total_recipients: number
           updated_at: string
           whatsapp_settings_id: string | null
@@ -10453,15 +10463,19 @@ export type Database = {
           description?: string | null
           failed_count?: number
           id?: string
+          last_error?: string | null
+          locked_at?: string | null
           message_body?: string | null
           name: string
           organization_id: string
           read_count?: number
           scheduled_at?: string | null
           sent_count?: number
+          skipped_count?: number
           started_at?: string | null
           status?: string
           template_id?: string | null
+          template_variables?: Json
           total_recipients?: number
           updated_at?: string
           whatsapp_settings_id?: string | null
@@ -10476,15 +10490,19 @@ export type Database = {
           description?: string | null
           failed_count?: number
           id?: string
+          last_error?: string | null
+          locked_at?: string | null
           message_body?: string | null
           name?: string
           organization_id?: string
           read_count?: number
           scheduled_at?: string | null
           sent_count?: number
+          skipped_count?: number
           started_at?: string | null
           status?: string
           template_id?: string | null
+          template_variables?: Json
           total_recipients?: number
           updated_at?: string
           whatsapp_settings_id?: string | null
@@ -10828,46 +10846,73 @@ export type Database = {
       whatsapp_followups: {
         Row: {
           assigned_to: string | null
+          attempt_count: number
           completed_at: string | null
           completed_by: string | null
           conversation_id: string
           created_at: string
           created_by: string
           id: string
+          last_error: string | null
+          locked_at: string | null
+          message_body: string | null
+          mode: string
           note: string | null
           organization_id: string
           remind_at: string
+          sent_at: string | null
+          sent_message_id: string | null
           status: string
+          template_id: string | null
+          template_variables: Json
           updated_at: string
           whatsapp_settings_id: string | null
         }
         Insert: {
           assigned_to?: string | null
+          attempt_count?: number
           completed_at?: string | null
           completed_by?: string | null
           conversation_id: string
           created_at?: string
           created_by: string
           id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          message_body?: string | null
+          mode?: string
           note?: string | null
           organization_id: string
           remind_at: string
+          sent_at?: string | null
+          sent_message_id?: string | null
           status?: string
+          template_id?: string | null
+          template_variables?: Json
           updated_at?: string
           whatsapp_settings_id?: string | null
         }
         Update: {
           assigned_to?: string | null
+          attempt_count?: number
           completed_at?: string | null
           completed_by?: string | null
           conversation_id?: string
           created_at?: string
           created_by?: string
           id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          message_body?: string | null
+          mode?: string
           note?: string | null
           organization_id?: string
           remind_at?: string
+          sent_at?: string | null
+          sent_message_id?: string | null
           status?: string
+          template_id?: string | null
+          template_variables?: Json
           updated_at?: string
           whatsapp_settings_id?: string | null
         }
@@ -10877,6 +10922,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_followups_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
             referencedColumns: ["id"]
           },
           {
@@ -10890,14 +10942,18 @@ export type Database = {
       }
       whatsapp_messages: {
         Row: {
+          broadcast_id: string | null
           content: string | null
           conversation_id: string | null
           created_at: string | null
           delivered_at: string | null
           direction: string
           error_code: string | null
+          error_details: Json | null
           error_message: string | null
+          followup_id: string | null
           id: string
+          idempotency_key: string | null
           media_caption: string | null
           media_download_attempts: number | null
           media_download_error: string | null
@@ -10922,14 +10978,18 @@ export type Database = {
           whatsapp_settings_id: string | null
         }
         Insert: {
+          broadcast_id?: string | null
           content?: string | null
           conversation_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           direction?: string
           error_code?: string | null
+          error_details?: Json | null
           error_message?: string | null
+          followup_id?: string | null
           id?: string
+          idempotency_key?: string | null
           media_caption?: string | null
           media_download_attempts?: number | null
           media_download_error?: string | null
@@ -10954,14 +11014,18 @@ export type Database = {
           whatsapp_settings_id?: string | null
         }
         Update: {
+          broadcast_id?: string | null
           content?: string | null
           conversation_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           direction?: string
           error_code?: string | null
+          error_details?: Json | null
           error_message?: string | null
+          followup_id?: string | null
           id?: string
+          idempotency_key?: string | null
           media_caption?: string | null
           media_download_attempts?: number | null
           media_download_error?: string | null
@@ -11248,14 +11312,18 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           body_text: string
+          body_variable_count: number
           buttons: Json | null
           category: string | null
           category_key: string | null
+          components: Json | null
           created_at: string | null
           description: string | null
           footer_text: string | null
+          header_format: string | null
           header_text: string | null
           header_type: string | null
+          header_variable_count: number
           id: string
           is_library_seed: boolean
           is_org_default: boolean
@@ -11286,14 +11354,18 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           body_text: string
+          body_variable_count?: number
           buttons?: Json | null
           category?: string | null
           category_key?: string | null
+          components?: Json | null
           created_at?: string | null
           description?: string | null
           footer_text?: string | null
+          header_format?: string | null
           header_text?: string | null
           header_type?: string | null
+          header_variable_count?: number
           id?: string
           is_library_seed?: boolean
           is_org_default?: boolean
@@ -11324,14 +11396,18 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           body_text?: string
+          body_variable_count?: number
           buttons?: Json | null
           category?: string | null
           category_key?: string | null
+          components?: Json | null
           created_at?: string | null
           description?: string | null
           footer_text?: string | null
+          header_format?: string | null
           header_text?: string | null
           header_type?: string | null
+          header_variable_count?: number
           id?: string
           is_library_seed?: boolean
           is_org_default?: boolean
@@ -12819,6 +12895,10 @@ export type Database = {
         Returns: boolean
       }
       user_has_any_org: { Args: never; Returns: boolean }
+      whatsapp_window_open: {
+        Args: { _conversation_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
