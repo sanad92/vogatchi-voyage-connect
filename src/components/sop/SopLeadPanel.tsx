@@ -26,6 +26,7 @@ import HandoverDialog from './HandoverDialog';
 import SopGateAlert from './SopGateAlert';
 import SopLeadBrief from './SopLeadBrief';
 import SopPricingResult from './SopPricingResult';
+import SopStageActions from './SopStageActions';
 import {
   DEPARTMENT_LABELS,
   LEAD_STAGE_LABELS,
