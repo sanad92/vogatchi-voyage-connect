@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus } from 'lucide-react';
+import { HandCoins, Plus } from 'lucide-react';
 import LeadIntakeForm from '@/components/sop/LeadIntakeForm';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
-import { useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
+import { useClaimLead, useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
 import { DEPARTMENT_LABELS, LEAD_STAGE_LABELS } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
@@ -17,6 +17,7 @@ const SopIntake = () => {
   usePageTitle('استقبال العملاء — خدمة العملاء');
   useSopRealtime();
   const { members } = useOrgMembers();
+  const claim = useClaimLead();
   const [search, setSearch] = useState('');
   const { data: leads, isLoading } = useSopLeads({
     stages: ['new', 'qualified', 'assigned'],
@@ -32,7 +33,7 @@ const SopIntake = () => {
         <div>
           <h1 className="text-2xl font-bold">استقبال العملاء</h1>
           <p className="text-sm text-muted-foreground">
-            خدمة العملاء تملك الملف من أول تواصل حتى الإسناد للمبيعات
+            خدمة العملاء تستقبل الملف — وموظف المبيعات يستلمه بنفسه من هنا
           </p>
         </div>
         <div className="flex items-center gap-2">
