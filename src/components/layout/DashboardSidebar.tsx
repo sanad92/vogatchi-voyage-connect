@@ -355,9 +355,9 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                               active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-foreground"
                             )} />
                             {!collapsed && <span className="truncate">{item.title}</span>}
-                            {!collapsed && item.badge && (
+                            {!collapsed && (item.badge || (item.href === '/sop/handovers' && pendingHandovers > 0)) && (
                               <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
-                                {item.badge}
+                                {item.href === '/sop/handovers' && pendingHandovers > 0 ? pendingHandovers : item.badge}
                               </span>
                             )}
                             {!collapsed && (
