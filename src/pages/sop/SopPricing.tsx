@@ -233,7 +233,7 @@ const Field = ({ label, required, children }: { label: string; required?: boolea
   </div>
 );
 
-const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
+const OptionEditor = ({ option, onSave, onRecommend, onDelete }: OptionEditorProps) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   useEffect(() => setV(option), [option]);
   const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
@@ -241,13 +241,16 @@ const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
 
 
   return (
-    <div className="border rounded-lg p-3 space-y-3">
+    <div className={`border rounded-lg p-3 space-y-3 ${option.is_recommended ? 'ring-1 ring-primary' : ''}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium">خيار {option.option_index}</span>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs">
-            <Switch checked={!!v.is_recommended} onCheckedChange={(c) => set('is_recommended', c)} />
-            موصى به
+            <Switch
+              checked={!!option.is_recommended}
+              onCheckedChange={(c) => { set('is_recommended', c); if (c) onRecommend(); else onSave({ ...v, is_recommended: false }); }}
+            />
+            موصى به {option.is_recommended && <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>}
           </label>
           <Button size="icon" variant="ghost" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-destructive" />
