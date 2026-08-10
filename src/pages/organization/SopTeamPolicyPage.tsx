@@ -179,6 +179,7 @@ const DEFAULTS: PolicyForm = {
   pre_arrival_days: 3,
   post_trip_days: 2,
   require_management_approval: true,
+  auto_assign_enabled: true,
   approval_required_above_amount: '',
 };
 
