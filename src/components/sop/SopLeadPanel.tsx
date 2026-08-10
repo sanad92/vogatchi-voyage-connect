@@ -222,17 +222,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
         </div>
 
 
-        {!compact && lead.stage !== 'lost' && lead.stage !== 'won' && (
-          <Button
-            size="sm" variant="ghost" className="text-destructive"
-            onClick={() => {
-              const reason = window.prompt('سبب الفقد (إلزامي)');
-              if (reason) advance.mutate({ leadId, to: 'lost', reason });
-            }}
-          >
-            تسجيل كمفقود
-          </Button>
-        )}
+
       </CardContent>
 
       {handoverOpen && (
