@@ -54,6 +54,13 @@ const SopPricing = () => {
     setRecommendation(selected?.recommendation || '');
   }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
 
+  const blockers: string[] = [];
+  if (!(options || []).length) blockers.push('أضف خياراً واحداً على الأقل.');
+  if ((options || []).length && !(options || []).some((o) => o.is_recommended)) {
+    blockers.push('فعّل مفتاح «موصى به» على أحد الخيارات (يُحفظ تلقائياً).');
+  }
+  if (!validUntil) blockers.push('حدد تاريخ «صلاحية السعر حتى».');
+
   const addOption = () => {
     if (!selectedId) return;
     saveOption.mutate({
