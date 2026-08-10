@@ -2,10 +2,8 @@ import { useState } from 'react';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import HandoverInbox from '@/components/sop/HandoverInbox';
 import { useSopRealtime } from '@/hooks/useSop';
-import { usePageTitle } from '@/hooks/usePageTitle';
 
 const SopHandovers = () => {
-  usePageTitle('التسليم والاستلام');
   useSopRealtime();
   const [selected, setSelected] = useState<string | null>(null);
 
