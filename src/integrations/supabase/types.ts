@@ -12153,6 +12153,39 @@ export type Database = {
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
+      claim_due_whatsapp_followups: {
+        Args: { _limit?: number }
+        Returns: {
+          assigned_to: string | null
+          attempt_count: number
+          completed_at: string | null
+          completed_by: string | null
+          conversation_id: string
+          created_at: string
+          created_by: string
+          id: string
+          last_error: string | null
+          locked_at: string | null
+          message_body: string | null
+          mode: string
+          note: string | null
+          organization_id: string
+          remind_at: string
+          sent_at: string | null
+          sent_message_id: string | null
+          status: string
+          template_id: string | null
+          template_variables: Json
+          updated_at: string
+          whatsapp_settings_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "whatsapp_followups"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
       close_fiscal_year: {
         Args: { _confirmation: string; _org: string; _year: number }
@@ -12633,6 +12666,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      recompute_broadcast_counters: {
+        Args: { _broadcast_id: string }
+        Returns: undefined
       }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
       record_customer_payment: {
