@@ -24,6 +24,8 @@ import {
 import { useOrgMembers } from '@/hooks/useOrgMembers';
 import HandoverDialog from './HandoverDialog';
 import SopGateAlert from './SopGateAlert';
+import SopLeadBrief from './SopLeadBrief';
+import SopPricingResult from './SopPricingResult';
 import {
   DEPARTMENT_LABELS,
   LEAD_STAGE_LABELS,
