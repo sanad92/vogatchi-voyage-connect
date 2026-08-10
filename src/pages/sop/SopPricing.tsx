@@ -231,20 +231,42 @@ const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
-        <Input placeholder="المورد" value={v.supplier_name || ''} onChange={(e) => set('supplier_name', e.target.value)} />
-        <Input placeholder="المنتج / الفندق" value={v.product_name || ''} onChange={(e) => set('product_name', e.target.value)} />
-        <Input placeholder="العملة" value={v.currency || 'EGP'} onChange={(e) => set('currency', e.target.value)} />
-        <Input type="number" placeholder="صافي التكلفة" value={v.net_cost ?? ''} onChange={(e) => set('net_cost', Number(e.target.value))} />
-        <Input type="number" placeholder="سعر البيع" value={v.selling_price ?? ''} onChange={(e) => set('selling_price', Number(e.target.value))} />
-        <Input type="date" title="موعد السداد للمورد" value={v.payment_deadline?.slice(0, 10) || ''} onChange={(e) => set('payment_deadline', e.target.value || null)} />
-        <Input type="date" title="موعد الإلغاء" value={v.cancellation_deadline?.slice(0, 10) || ''} onChange={(e) => set('cancellation_deadline', e.target.value || null)} />
-        <Input type="date" title="موعد الإفراج" value={v.release_deadline?.slice(0, 10) || ''} onChange={(e) => set('release_deadline', e.target.value || null)} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="المورد" required>
+          <Input placeholder="مثال: فندق ماريوت" value={v.supplier_name || ''} onChange={(e) => set('supplier_name', e.target.value)} />
+        </Field>
+        <Field label="المنتج / الفندق" required>
+          <Input placeholder="اسم المنتج أو الفندق" value={v.product_name || ''} onChange={(e) => set('product_name', e.target.value)} />
+        </Field>
+        <Field label="العملة" required>
+          <Input placeholder="EGP" value={v.currency || 'EGP'} onChange={(e) => set('currency', e.target.value)} />
+        </Field>
+        <Field label="صافي التكلفة" required>
+          <Input type="number" inputMode="decimal" placeholder="0.00" value={v.net_cost ?? ''} onChange={(e) => set('net_cost', Number(e.target.value))} />
+        </Field>
+        <Field label="سعر البيع" required>
+          <Input type="number" inputMode="decimal" placeholder="0.00" value={v.selling_price ?? ''} onChange={(e) => set('selling_price', Number(e.target.value))} />
+        </Field>
+        <Field label="هامش الربح">
+          <Input readOnly disabled value={margin} />
+        </Field>
+        <Field label="موعد السداد للمورد">
+          <Input type="date" value={v.payment_deadline?.slice(0, 10) || ''} onChange={(e) => set('payment_deadline', e.target.value || null)} />
+        </Field>
+        <Field label="آخر موعد للإلغاء">
+          <Input type="date" value={v.cancellation_deadline?.slice(0, 10) || ''} onChange={(e) => set('cancellation_deadline', e.target.value || null)} />
+        </Field>
+        <Field label="موعد الإفراج (Release)">
+          <Input type="date" value={v.release_deadline?.slice(0, 10) || ''} onChange={(e) => set('release_deadline', e.target.value || null)} />
+        </Field>
       </div>
-      <Textarea
-        rows={2} placeholder="سياسة الإلغاء (إلزامية)"
-        value={v.cancellation_policy || ''} onChange={(e) => set('cancellation_policy', e.target.value)}
-      />
+      <Field label="سياسة الإلغاء" required>
+        <Textarea
+          rows={2} placeholder="اكتب سياسة الإلغاء كما وردت من المورد"
+          value={v.cancellation_policy || ''} onChange={(e) => set('cancellation_policy', e.target.value)}
+        />
+      </Field>
+
       <div className="flex justify-end">
         <Button size="sm" variant="outline" onClick={() => onSave(v)}>حفظ الخيار</Button>
       </div>
