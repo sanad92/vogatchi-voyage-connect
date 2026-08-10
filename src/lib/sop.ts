@@ -120,7 +120,13 @@ export const VIOLATION_GUIDANCE: Record<string, string> = {
   price_validity_expired: 'صلاحية السعر انتهت — اطلب إعادة تسعير.',
   intake_incomplete: 'أكمل بيانات الاستقبال الناقصة.',
   brief_incomplete: 'أكمل بيانات الـ Brief الناقصة.',
+  already_claimed: 'تم استلام هذا الملف بواسطة زميل قبلك.',
+  lead_already_in_pipeline: 'الملف بالفعل داخل خط الأنابيب.',
+  not_available_sales_member: 'الاستلام متاح لموظفي المبيعات المتاحين فقط.',
+  not_available_reservations_member: 'الاستلام متاح لموظفي الحجوزات المتاحين فقط.',
+  pricing_not_published: 'انشر التسعير أولًا قبل الإرسال للمبيعات.',
 };
+
 
 export const HANDOVER_CHECKLISTS: Record<SopHandoverType, { key: string; label: string }[]> = {
   cs_to_sales: [
