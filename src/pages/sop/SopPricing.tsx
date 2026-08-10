@@ -54,6 +54,13 @@ const SopPricing = () => {
     setRecommendation(selected?.recommendation || '');
   }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
 
+  const blockers: string[] = [];
+  if (!(options || []).length) blockers.push('أضف خياراً واحداً على الأقل.');
+  if ((options || []).length && !(options || []).some((o) => o.is_recommended)) {
+    blockers.push('فعّل مفتاح «موصى به» على أحد الخيارات (يُحفظ تلقائياً).');
+  }
+  if (!validUntil) blockers.push('حدد تاريخ «صلاحية السعر حتى».');
+
   const addOption = () => {
     if (!selectedId) return;
     saveOption.mutate({
@@ -135,6 +142,18 @@ const SopPricing = () => {
                         key={o.id}
                         option={o}
                         onSave={(v) => saveOption.mutate({ ...v, id: o.id, pricing_request_id: selected.id } as any)}
+                        onRecommend={() => {
+                          (options || []).forEach((other) => {
+                            const shouldBe = other.id === o.id;
+                            if (!!other.is_recommended !== shouldBe) {
+                              saveOption.mutate({
+                                id: other.id,
+                                pricing_request_id: selected.id,
+                                is_recommended: shouldBe,
+                              } as any);
+                            }
+                          });
+                        }}
                         onDelete={() => deleteOption.mutate(o.id)}
                       />
                     ))}
@@ -147,7 +166,7 @@ const SopPricing = () => {
                   <CardContent className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-xs">صلاحية السعر حتى</Label>
+                        <Label className="text-xs">صلاحية السعر حتى <span className="text-destructive">*</span></Label>
                         <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
@@ -155,6 +174,13 @@ const SopPricing = () => {
                         <Input value={recommendation} onChange={(e) => setRecommendation(e.target.value)} />
                       </div>
                     </div>
+
+                    {blockers.length > 0 && (
+                      <ul className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
+                        {blockers.map((b) => <li key={b}>• {b}</li>)}
+                      </ul>
+                    )}
+
                     <Button
                       size="sm"
                       onClick={() => publish.mutate({
@@ -162,7 +188,7 @@ const SopPricing = () => {
                         validUntil: validUntil || null,
                         recommendation,
                       })}
-                      disabled={publish.isPending}
+                      disabled={publish.isPending || blockers.length > 0}
                     >
                       نشر التسعير وإنشاء عرض السعر
                     </Button>
@@ -208,6 +234,7 @@ const SopPricing = () => {
 interface OptionEditorProps {
   option: SopPricingOption;
   onSave: (values: Partial<SopPricingOption>) => void;
+  onRecommend: () => void;
   onDelete: () => void;
 }
 
@@ -220,7 +247,7 @@ const Field = ({ label, required, children }: { label: string; required?: boolea
   </div>
 );
 
-const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
+const OptionEditor = ({ option, onSave, onRecommend, onDelete }: OptionEditorProps) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   useEffect(() => setV(option), [option]);
   const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
@@ -228,13 +255,16 @@ const OptionEditor = ({ option, onSave, onDelete }: OptionEditorProps) => {
 
 
   return (
-    <div className="border rounded-lg p-3 space-y-3">
+    <div className={`border rounded-lg p-3 space-y-3 ${option.is_recommended ? 'ring-1 ring-primary' : ''}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium">خيار {option.option_index}</span>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs">
-            <Switch checked={!!v.is_recommended} onCheckedChange={(c) => set('is_recommended', c)} />
-            موصى به
+            <Switch
+              checked={!!option.is_recommended}
+              onCheckedChange={(c) => { set('is_recommended', c); if (c) onRecommend(); else onSave({ ...v, is_recommended: false }); }}
+            />
+            موصى به {option.is_recommended && <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>}
           </label>
           <Button size="icon" variant="ghost" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-destructive" />
