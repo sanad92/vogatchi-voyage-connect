@@ -286,7 +286,9 @@ Deno.serve(async (req) => {
       .eq('id', conversationId);
 
     if (tplRow?.id) {
-      await admin.rpc('increment_template_usage', { _template_id: tplRow.id }).catch?.(() => {});
+      await admin.from('whatsapp_templates')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', tplRow.id);
     }
 
     return json({ success: true, conversationId, message: saved, providerMessageId: result.providerMessageId });
