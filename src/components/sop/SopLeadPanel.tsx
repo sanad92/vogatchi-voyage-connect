@@ -82,6 +82,67 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const ownerName = members.find((m) => m.user_id === lead.current_owner_id)?.profile?.full_name;
   const handoverType = HANDOVER_FOR_STAGE[lead.stage];
 
+  type Action = { label: string; icon?: JSX.Element; onClick: () => void; disabled?: boolean };
+  const actions: Action[] = [];
+
+  if (handoverType) {
+    actions.push({
+      label: 'تسليم للزميل',
+      icon: <ArrowLeftRight className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => setHandoverOpen(handoverType),
+    });
+  }
+  if (lead.stage === 'qualified') {
+    actions.push({
+      label: 'إسناد بالتناوب',
+      icon: <UserPlus className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => assign.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
+    actions.push({
+      label: 'طلب تسعير',
+      icon: <Send className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => pricing.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'accepted_pending_recheck') {
+    actions.push({
+      label: 'طلب إعادة تأكد',
+      icon: <RefreshCcw className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => recheck.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'rechecked' || lead.stage === 'payment_pending') {
+    actions.push({
+      label: 'طلب موافقة الإدارة',
+      icon: <ShieldCheck className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => approval.mutate({ type: 'booking_confirmation', leadId, reason: 'تأكيد الحجز' }),
+    });
+  }
+  if (nextStage) {
+    actions.push({
+      label: `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
+      icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => advance.mutate({ leadId, to: nextStage }),
+      disabled: advance.isPending || !gate?.allowed,
+    });
+  }
+  if (!compact && lead.stage !== 'lost' && lead.stage !== 'won') {
+    actions.push({
+      label: 'تسجيل كمفقود',
+      onClick: () => {
+        const reason = window.prompt('سبب الفقد (إلزامي)');
+        if (reason) advance.mutate({ leadId, to: 'lost', reason });
+      },
+    });
+  }
+
+  // The gate decides what the user should do right now.
+  const advanceAction = nextStage ? actions.find((a) => a.label.startsWith('تأكيد:')) : undefined;
+  const primary = gate?.allowed && advanceAction ? advanceAction : actions[0];
+  const others = actions.filter((a) => a !== primary);
+
   return (
     <Card dir="rtl">
       <CardHeader className="pb-3">
