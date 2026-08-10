@@ -159,7 +159,7 @@ const SopPricing = () => {
                   <CardContent className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-xs">صلاحية السعر حتى</Label>
+                        <Label className="text-xs">صلاحية السعر حتى <span className="text-destructive">*</span></Label>
                         <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
@@ -167,6 +167,13 @@ const SopPricing = () => {
                         <Input value={recommendation} onChange={(e) => setRecommendation(e.target.value)} />
                       </div>
                     </div>
+
+                    {blockers.length > 0 && (
+                      <ul className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
+                        {blockers.map((b) => <li key={b}>• {b}</li>)}
+                      </ul>
+                    )}
+
                     <Button
                       size="sm"
                       onClick={() => publish.mutate({
@@ -174,7 +181,7 @@ const SopPricing = () => {
                         validUntil: validUntil || null,
                         recommendation,
                       })}
-                      disabled={publish.isPending}
+                      disabled={publish.isPending || blockers.length > 0}
                     >
                       نشر التسعير وإنشاء عرض السعر
                     </Button>
