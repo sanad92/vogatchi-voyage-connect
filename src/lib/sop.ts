@@ -95,6 +95,33 @@ export const HANDOVER_LABELS: Record<SopHandoverType, string> = {
   reservations_to_cs: 'تسليم الحجوزات ← خدمة العملاء (ما بعد البيع)',
 };
 
+/** Which departments a handover moves the file between. */
+export const HANDOVER_FLOW: Record<SopHandoverType, { from: SopDepartment; to: SopDepartment }> = {
+  cs_to_sales: { from: 'customer_service', to: 'sales' },
+  sales_to_reservations: { from: 'sales', to: 'reservations' },
+  reservations_to_sales: { from: 'reservations', to: 'sales' },
+  reservations_to_cs: { from: 'reservations', to: 'customer_service' },
+};
+
+/** Plain-language next step for each blocking violation. */
+export const VIOLATION_GUIDANCE: Record<string, string> = {
+  no_sales_assignment: 'اعمل إسناد بالتناوب لمندوب مبيعات.',
+  handover_cs_to_sales_incomplete: 'أكمل تسليم خدمة العملاء ← المبيعات أولًا.',
+  handover_sales_to_reservations_incomplete: 'أكمل تسليم المبيعات ← الحجوزات أولًا.',
+  handover_reservations_to_sales_incomplete: 'أكمل تسليم الحجوزات ← المبيعات أولًا.',
+  no_pricing_request: 'أرسل طلب تسعير لقسم الحجوزات.',
+  pricing_not_completed: 'قسم الحجوزات لازم ينشر التسعير.',
+  no_pricing_options: 'أضف خيار تسعير واحد على الأقل.',
+  more_than_three_options: 'قلل الخيارات إلى 3 كحد أقصى.',
+  recheck_not_completed: 'اطلب إعادة تأكد من الحجوزات.',
+  requote_required: 'مطلوب إعادة تسعير قبل التحصيل.',
+  management_booking_approval_missing: 'اطلب موافقة الإدارة على الحجز.',
+  collection_condition_not_met: 'سجّل الدفعة المطلوبة حسب سياسة الدفع.',
+  price_validity_expired: 'صلاحية السعر انتهت — اطلب إعادة تسعير.',
+  intake_incomplete: 'أكمل بيانات الاستقبال الناقصة.',
+  brief_incomplete: 'أكمل بيانات الـ Brief الناقصة.',
+};
+
 export const HANDOVER_CHECKLISTS: Record<SopHandoverType, { key: string; label: string }[]> = {
   cs_to_sales: [
     { key: 'intake_complete', label: 'بيانات الاستقبال مكتملة' },
