@@ -98,7 +98,7 @@ const SopIntake = () => {
                   ))}
                   {!leads?.length && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         لا توجد ملفات مفتوحة.
                       </TableCell>
                     </TableRow>
