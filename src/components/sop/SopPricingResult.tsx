@@ -11,6 +11,7 @@ import {
   type SopPricingOption,
   type SopPricingRequest,
 } from '@/hooks/useSop';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 
 const STATUS_LABELS: Record<string, string> = {
   requested: 'بانتظار التسعير',
@@ -64,6 +65,10 @@ const OptionCard = ({ o, onSelect }: { o: SopPricingOption; onSelect: () => void
 const RequestBlock = ({ req, latest }: { req: SopPricingRequest; latest: boolean }) => {
   const { data: options } = usePricingOptions(req.id);
   const save = useSavePricingOption();
+  const { members } = useOrgMembers();
+  const ownerName = req.assigned_to
+    ? members.find((m) => m.user_id === req.assigned_to)?.profile?.full_name || req.assigned_to.slice(0, 8)
+    : 'غير مستلم';
 
   return (
     <div className="space-y-2">
@@ -72,6 +77,10 @@ const RequestBlock = ({ req, latest }: { req: SopPricingRequest; latest: boolean
         <span className="text-muted-foreground">
           طُلب: {new Date(req.requested_at).toLocaleDateString('ar-EG')}
         </span>
+        <span className="text-muted-foreground">مسؤول التسعير: {ownerName}</span>
+        {(req.status === 'requoted' || req.recheck_changed) && (
+          <Badge variant="destructive" className="text-[10px]">تمت إعادة تسعير</Badge>
+        )}
         {req.price_valid_until && (
           <span className="text-muted-foreground">
             صلاحية السعر حتى {new Date(req.price_valid_until).toLocaleDateString('ar-EG')}
