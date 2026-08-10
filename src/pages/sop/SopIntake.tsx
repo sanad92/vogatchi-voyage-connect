@@ -90,9 +90,20 @@ const SopIntake = () => {
 
                       <TableCell className="text-xs">{l.lead_source || '—'}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(l); }}>
-                          تعديل
-                        </Button>
+                        <div className="flex items-center gap-1 justify-end">
+                          {l.stage !== 'assigned' && (
+                            <Button
+                              size="sm"
+                              disabled={claim.isPending}
+                              onClick={(e) => { e.stopPropagation(); setSelected(l.id); claim.mutate(l.id); }}
+                            >
+                              <HandCoins className="h-3.5 w-3.5 ml-1" /> استلم العميل
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(l); }}>
+                            تعديل
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
