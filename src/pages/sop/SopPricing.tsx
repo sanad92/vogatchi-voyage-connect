@@ -13,7 +13,9 @@ import {
   useDeletePricingOption,
   usePricingOptions,
   usePricingRequests,
+  useClaimPricingRequest,
   usePublishPricing,
+  useReturnToSales,
   useSavePricingOption,
   useSopLead,
   useSopRealtime,
@@ -22,6 +24,7 @@ import {
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import DepartmentGate from '@/components/sop/DepartmentGate';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 const STATUS_LABELS: Record<string, string> = {
   requested: 'مطلوب',
@@ -45,6 +48,9 @@ const SopPricing = () => {
   const deleteOption = useDeletePricingOption();
   const publish = usePublishPricing();
   const completeRecheck = useCompleteRecheck();
+  const claimRequest = useClaimPricingRequest();
+  const returnToSales = useReturnToSales();
+  const { user } = useOptimizedAuth();
 
   const [validUntil, setValidUntil] = useState('');
   const [recommendation, setRecommendation] = useState('');
@@ -89,10 +95,10 @@ const SopPricing = () => {
             <CardHeader className="pb-2"><CardTitle className="text-sm">الطلبات</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {(requests || []).map((r) => (
-                <button
+                <div
                   key={r.id}
                   onClick={() => setSelectedId(r.id)}
-                  className={`w-full text-right border rounded-md p-2 text-xs transition ${
+                  className={`w-full text-right border rounded-md p-2 text-xs transition cursor-pointer ${
                     selectedId === r.id ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
                   }`}
                 >
@@ -103,7 +109,21 @@ const SopPricing = () => {
                   <div className="text-muted-foreground mt-1">
                     {(r.brief as any)?.destination || '—'} · {new Date(r.requested_at).toLocaleDateString('ar-EG')}
                   </div>
-                </button>
+                  {!r.assigned_to ? (
+                    <Button
+                      size="sm"
+                      className="h-7 text-[11px] mt-2 w-full"
+                      disabled={claimRequest.isPending}
+                      onClick={(e) => { e.stopPropagation(); setSelectedId(r.id); claimRequest.mutate(r.id); }}
+                    >
+                      استلم الطلب
+                    </Button>
+                  ) : (
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      {r.assigned_to === user?.id ? 'مستلم بواسطتك' : 'مستلم بواسطة زميل'}
+                    </div>
+                  )}
+                </div>
               ))}
               {!requests?.length && <p className="text-xs text-muted-foreground">لا توجد طلبات تسعير.</p>}
             </CardContent>
@@ -192,6 +212,22 @@ const SopPricing = () => {
                     >
                       نشر التسعير وإنشاء عرض السعر
                     </Button>
+
+                    {(selected.status === 'quoted' || selected.status === 'requoted') && (
+                      <div className="rounded-md border p-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          خلصت التسعير؟ ابعته للمبيعات وهيرجع تلقائيًا لموظف المبيعات صاحب الملف.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={returnToSales.isPending}
+                          onClick={() => returnToSales.mutate(selected.id)}
+                        >
+                          إرسال للمبيعات
+                        </Button>
+                      </div>
+                    )}
 
                     {selected.status === 'recheck_requested' && (
                       <>
