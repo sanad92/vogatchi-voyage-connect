@@ -15,6 +15,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 const SopIntake = () => {
   usePageTitle('استقبال العملاء — خدمة العملاء');
   useSopRealtime();
+  const { members } = useOrgMembers();
   const [search, setSearch] = useState('');
   const { data: leads, isLoading } = useSopLeads({
     stages: ['new', 'qualified', 'assigned'],
