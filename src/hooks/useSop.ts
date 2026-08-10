@@ -199,7 +199,8 @@ export const reportGate = (res: GateResult | null | undefined, okMessage?: strin
 const invalidateSop = (qc: ReturnType<typeof useQueryClient>) => {
   ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-handovers',
    'sop-approvals', 'sop-deadlines', 'sop-incidents', 'sop-post-trip', 'sop-compliance',
-   'sop-kpis', 'sop-assignments', 'workflow-progress', 'booking-workspace']
+   'sop-kpis', 'sop-assignments', 'sop-handover-inbox', 'sop-my-assignments',
+   'workflow-progress', 'booking-workspace']
     .forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 };
 
@@ -964,5 +965,84 @@ export function useSaveSopPolicy() {
     },
     onSuccess: () => { toast.success('تم حفظ السياسات'); qc.invalidateQueries({ queryKey: ['sop-policy'] }); },
     onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/* ------------------------------------------------------------------ handover inbox */
+
+export interface HandoverInboxItem extends SopHandover {
+  organization_id: string;
+  from_department: SopDepartment | null;
+  to_department: SopDepartment | null;
+  lead?: { id: string; contact_name: string | null; destination: string | null; stage: SopLeadStage } | null;
+}
+
+/** Handovers waiting for me + handovers I sent that are still unaccepted. */
+export function useHandoverInbox() {
+  const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  const userId = user?.id;
+  return useQuery({
+    queryKey: ['sop-handover-inbox', orgId, userId],
+    enabled: !!orgId && !!userId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('sop_handovers')
+        .select('*, lead:sop_leads(id, contact_name, destination, stage)')
+        .eq('organization_id', orgId)
+        .is('accepted_at', null)
+        .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const rows = (data || []) as HandoverInboxItem[];
+      return {
+        incoming: rows.filter((r) => r.to_user_id === userId),
+        outgoing: rows.filter((r) => r.from_user_id === userId && r.to_user_id !== userId),
+      };
+    },
+  });
+}
+
+/** Pending assignment acknowledgements for the current user. */
+export function useMyPendingAssignments() {
+  const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  const userId = user?.id;
+  return useQuery({
+    queryKey: ['sop-my-assignments', orgId, userId],
+    enabled: !!orgId && !!userId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('sop_lead_assignments')
+        .select('*, lead:sop_leads(id, contact_name, destination, stage)')
+        .eq('organization_id', orgId)
+        .eq('assignee_id', userId)
+        .eq('is_current', true)
+        .is('acknowledged_at', null)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
+
+/** Receiving side of a handover: mark it accepted. */
+export function useAcceptHandover() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (handoverId: string) => {
+      const { error } = await db.from('sop_handovers')
+        .update({ accepted_at: new Date().toISOString() })
+        .eq('id', handoverId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم الاستلام');
+      invalidateSop(qc);
+      qc.invalidateQueries({ queryKey: ['sop-handover-inbox'] });
+    },
+    onError: (e: any) => toast.error('فشل الاستلام: ' + (e?.message || 'خطأ')),
   });
 }

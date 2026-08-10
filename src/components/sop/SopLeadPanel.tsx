@@ -3,7 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeftRight, CheckCircle2, RefreshCcw, Send, ShieldCheck, UserPlus } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  ArrowLeftRight, CheckCircle2, ChevronDown, RefreshCcw, Send, ShieldCheck, UserPlus,
+} from 'lucide-react';
 import {
   useAcknowledgeAssignment,
   useAdvanceLead,
@@ -77,6 +82,67 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const ownerName = members.find((m) => m.user_id === lead.current_owner_id)?.profile?.full_name;
   const handoverType = HANDOVER_FOR_STAGE[lead.stage];
 
+  type Action = { label: string; icon?: JSX.Element; onClick: () => void; disabled?: boolean };
+  const actions: Action[] = [];
+
+  if (handoverType) {
+    actions.push({
+      label: 'تسليم للزميل',
+      icon: <ArrowLeftRight className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => setHandoverOpen(handoverType),
+    });
+  }
+  if (lead.stage === 'qualified') {
+    actions.push({
+      label: 'إسناد بالتناوب',
+      icon: <UserPlus className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => assign.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
+    actions.push({
+      label: 'طلب تسعير',
+      icon: <Send className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => pricing.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'accepted_pending_recheck') {
+    actions.push({
+      label: 'طلب إعادة تأكد',
+      icon: <RefreshCcw className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => recheck.mutate({ leadId }),
+    });
+  }
+  if (lead.stage === 'rechecked' || lead.stage === 'payment_pending') {
+    actions.push({
+      label: 'طلب موافقة الإدارة',
+      icon: <ShieldCheck className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => approval.mutate({ type: 'booking_confirmation', leadId, reason: 'تأكيد الحجز' }),
+    });
+  }
+  if (nextStage) {
+    actions.push({
+      label: `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
+      icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => advance.mutate({ leadId, to: nextStage }),
+      disabled: advance.isPending || !gate?.allowed,
+    });
+  }
+  if (!compact && lead.stage !== 'lost' && lead.stage !== 'won') {
+    actions.push({
+      label: 'تسجيل كمفقود',
+      onClick: () => {
+        const reason = window.prompt('سبب الفقد (إلزامي)');
+        if (reason) advance.mutate({ leadId, to: 'lost', reason });
+      },
+    });
+  }
+
+  // The gate decides what the user should do right now.
+  const advanceAction = nextStage ? actions.find((a) => a.label.startsWith('تأكيد:')) : undefined;
+  const primary = gate?.allowed && advanceAction ? advanceAction : actions[0];
+  const others = actions.filter((a) => a !== primary);
+
   return (
     <Card dir="rtl">
       <CardHeader className="pb-3">
@@ -95,18 +161,30 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           {lead.is_legacy && <Badge variant="outline">سجل تاريخي</Badge>}
         </div>
 
-        <div className="text-xs text-muted-foreground">
-          الإجراء المطلوب: <span className="text-foreground">{nextRequiredAction(lead.stage)}</span>
+        <div className="rounded-md border bg-muted/40 p-2 text-xs">
+          <span className="text-muted-foreground">الخطوة التالية: </span>
+          <span className="font-medium">{nextRequiredAction(lead.stage)}</span>
         </div>
 
         {current && !current.acknowledged_at && (
-          <div className="flex items-center justify-between rounded-md border p-2 text-xs">
-            <span>بانتظار استلام الإسناد قبل {new Date(current.ack_deadline_at).toLocaleString('ar-EG')}</span>
-            <Button size="sm" variant="outline" onClick={() => ack.mutate(leadId)}>استلام</Button>
+          <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+            <span>بانتظار استلامك قبل {new Date(current.ack_deadline_at).toLocaleString('ar-EG')}</span>
+            <Button size="sm" onClick={() => ack.mutate(leadId)}>استلام</Button>
           </div>
         )}
 
-        {nextStage && <SopGateAlert gate={gate} okLabel={`جاهز للانتقال إلى: ${LEAD_STAGE_LABELS[nextStage]}`} compact />}
+        {nextStage && (
+          <SopGateAlert
+            gate={gate}
+            okLabel={`جاهز للانتقال إلى: ${LEAD_STAGE_LABELS[nextStage]}`}
+            compact
+            action={
+              !gate?.allowed && handoverType
+                ? { label: 'افتح نافذة التسليم', onClick: () => setHandoverOpen(handoverType) }
+                : null
+            }
+          />
+        )}
 
         {collection && (lead.stage === 'payment_pending' || lead.stage === 'rechecked') && (
           <div className="rounded-md border p-2 text-xs space-y-1">
@@ -117,57 +195,34 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
         <Separator />
 
-        <div className="flex flex-wrap gap-2">
-          {handoverType && (
-            <Button size="sm" variant="outline" onClick={() => setHandoverOpen(handoverType)}>
-              <ArrowLeftRight className="h-3.5 w-3.5 ml-1" /> تسليم
+        {/* Primary action first, everything else tucked away */}
+        <div className="flex flex-wrap items-center gap-2">
+          {primary && (
+            <Button size="sm" onClick={primary.onClick} disabled={primary.disabled}>
+              {primary.icon} {primary.label}
             </Button>
           )}
-          {lead.stage === 'qualified' && (
-            <Button size="sm" variant="outline" onClick={() => assign.mutate({ leadId })}>
-              <UserPlus className="h-3.5 w-3.5 ml-1" /> إسناد بالتناوب
-            </Button>
-          )}
-          {(lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') && (
-            <Button size="sm" variant="outline" onClick={() => pricing.mutate({ leadId })}>
-              <Send className="h-3.5 w-3.5 ml-1" /> طلب تسعير
-            </Button>
-          )}
-          {lead.stage === 'accepted_pending_recheck' && (
-            <Button size="sm" variant="outline" onClick={() => recheck.mutate({ leadId })}>
-              <RefreshCcw className="h-3.5 w-3.5 ml-1" /> طلب إعادة تأكد
-            </Button>
-          )}
-          {(lead.stage === 'rechecked' || lead.stage === 'payment_pending') && (
-            <Button
-              size="sm" variant="outline"
-              onClick={() => approval.mutate({ type: 'booking_confirmation', leadId, reason: 'تأكيد الحجز' })}
-            >
-              <ShieldCheck className="h-3.5 w-3.5 ml-1" /> طلب موافقة الإدارة
-            </Button>
-          )}
-          {nextStage && (
-            <Button
-              size="sm"
-              disabled={advance.isPending || !gate?.allowed}
-              onClick={() => advance.mutate({ leadId, to: nextStage })}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5 ml-1" /> {LEAD_STAGE_LABELS[nextStage]}
-            </Button>
+
+          {others.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  إجراءات أخرى <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {others.map((a) => (
+                  <DropdownMenuItem key={a.label} onClick={a.onClick} disabled={a.disabled}>
+                    {a.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
-        {!compact && lead.stage !== 'lost' && lead.stage !== 'won' && (
-          <Button
-            size="sm" variant="ghost" className="text-destructive"
-            onClick={() => {
-              const reason = window.prompt('سبب الفقد (إلزامي)');
-              if (reason) advance.mutate({ leadId, to: 'lost', reason });
-            }}
-          >
-            تسجيل كمفقود
-          </Button>
-        )}
+
+
       </CardContent>
 
       {handoverOpen && (

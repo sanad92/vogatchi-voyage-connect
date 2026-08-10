@@ -71,6 +71,7 @@ const BookingWorkspace = lazy(() => import("@/pages/BookingWorkspace"));
 
 // Departmental SOP (CS → Sales → Reservations)
 const SopIntake = lazy(() => import("@/pages/sop/SopIntake"));
+const SopHandovers = lazy(() => import("@/pages/sop/SopHandovers"));
 const SopPipeline = lazy(() => import("@/pages/sop/SopPipeline"));
 const SopPricing = lazy(() => import("@/pages/sop/SopPricing"));
 const SopCompliance = lazy(() => import("@/pages/sop/SopCompliance"));
@@ -367,6 +368,8 @@ function App() {
                               <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id/workspace" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
                               <Route path="/sop/intake" element={<PermissionRouteGuard requiredPermission="crm_view"><SopIntake /></PermissionRouteGuard>} />
+                              <Route path="/sop/handovers" element={<PermissionRouteGuard requiredPermission="crm_view"><SopHandovers /></PermissionRouteGuard>} />
+
                               <Route path="/sop/pipeline" element={<PermissionRouteGuard requiredPermission="crm_view"><SopPipeline /></PermissionRouteGuard>} />
                               <Route path="/sop/pricing" element={<PermissionRouteGuard requiredPermission="quotes_view"><SopPricing /></PermissionRouteGuard>} />
                               <Route path="/sop/compliance" element={<PermissionRouteGuard requiredPermission="reports_view"><SopCompliance /></PermissionRouteGuard>} />

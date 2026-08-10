@@ -3,13 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useHandoverInbox, useMyPendingAssignments } from '@/hooks/useSop';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
   FileText, Building2, Calculator, TrendingUp, Calendar,
   MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
   CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
-  ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles,
+  ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles, ArrowLeftRight,
   FolderOpen, Building, Megaphone, History,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -68,6 +69,7 @@ const navGroups: NavGroup[] = [
     icon: ClipboardList,
     items: [
       { title: 'استقبال العملاء', href: '/sop/intake', icon: Users, requiredPermission: 'crm_view' },
+      { title: 'التسليم والاستلام', href: '/sop/handovers', icon: ArrowLeftRight, requiredPermission: 'crm_view' },
       { title: 'خط أنابيب المبيعات', href: '/sop/pipeline', icon: ClipboardList, requiredPermission: 'crm_view' },
       { title: 'طلبات التسعير', href: '/sop/pricing', icon: FileCheck, requiredPermission: 'quotes_view' },
       { title: 'الالتزام والمؤشرات', href: '/sop/compliance', icon: BarChart3, requiredPermission: 'reports_view' },
@@ -125,6 +127,9 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   const { user, profile, isSuperAdmin } = useOptimizedAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { hasPermission } = useSupabasePermissions();
+  const { data: handoverInbox } = useHandoverInbox();
+  const { data: pendingAssignments } = useMyPendingAssignments();
+  const pendingHandovers = (handoverInbox?.incoming?.length || 0) + (pendingAssignments?.length || 0);
 
   // Platform admin section removed from org sidebar — they have a dedicated /platform layout
   const allGroups = useMemo(() => navGroups, []);
@@ -350,9 +355,9 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                               active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-foreground"
                             )} />
                             {!collapsed && <span className="truncate">{item.title}</span>}
-                            {!collapsed && item.badge && (
+                            {!collapsed && (item.badge || (item.href === '/sop/handovers' && pendingHandovers > 0)) && (
                               <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
-                                {item.badge}
+                                {item.href === '/sop/handovers' && pendingHandovers > 0 ? pendingHandovers : item.badge}
                               </span>
                             )}
                             {!collapsed && (

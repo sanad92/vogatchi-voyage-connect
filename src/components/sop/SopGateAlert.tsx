@@ -1,19 +1,22 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { labelMissing, labelViolation, type GateResult } from '@/lib/sop';
+import { labelMissing, labelViolation, VIOLATION_GUIDANCE, type GateResult } from '@/lib/sop';
 
 interface Props {
   gate?: GateResult | null;
   okLabel?: string;
   compact?: boolean;
+  /** Optional one-click shortcut to resolve the block (e.g. open handover). */
+  action?: { label: string; onClick: () => void } | null;
 }
 
 /**
- * Renders the exact missing fields and rule violations returned by the
- * database gate, so blocked transitions always say why.
+ * Renders the blocking reason as a plain-language next step, with the exact
+ * missing fields underneath so nothing is hidden.
  */
-export const SopGateAlert = ({ gate, okLabel = 'كل الشروط مستوفاة', compact }: Props) => {
+export const SopGateAlert = ({ gate, okLabel = 'كل الشروط مستوفاة', compact, action }: Props) => {
   if (!gate) return null;
 
   if (gate.allowed) {
@@ -27,13 +30,16 @@ export const SopGateAlert = ({ gate, okLabel = 'كل الشروط مستوفاة
 
   const missing = gate.missing_fields || [];
   const violations = gate.violations || [];
+  const guidance = violations.map((v) => VIOLATION_GUIDANCE[v]).filter(Boolean)[0]
+    || (missing.length ? `أكمل البيانات الناقصة: ${missing.map(labelMissing).join('، ')}` : '');
 
   return (
     <Alert variant="destructive">
       <AlertTriangle className="h-4 w-4" />
-      {!compact && <AlertTitle>لا يمكن المتابعة</AlertTitle>}
+      {!compact && <AlertTitle>الخطوة اللي لازم تتعمل الأول</AlertTitle>}
       <AlertDescription>
-        <div className="flex flex-wrap gap-1.5 mt-1">
+        {guidance && <p className="text-sm font-medium">{guidance}</p>}
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
           {violations.map((v) => (
             <Badge key={v} variant="destructive" className="font-normal">{labelViolation(v)}</Badge>
           ))}
@@ -46,6 +52,11 @@ export const SopGateAlert = ({ gate, okLabel = 'كل الشروط مستوفاة
             سياسة الدفع: {gate.collection.policy} — المطلوب {Number(gate.collection.required).toLocaleString()} /
             المحصّل {Number(gate.collection.paid).toLocaleString()}
           </div>
+        )}
+        {action && (
+          <Button size="sm" variant="outline" className="mt-2" onClick={action.onClick}>
+            {action.label}
+          </Button>
         )}
       </AlertDescription>
     </Alert>
