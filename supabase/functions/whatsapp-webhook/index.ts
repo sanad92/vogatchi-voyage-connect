@@ -284,7 +284,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         await supabase
           .from('whatsapp_conversations')
-          .update({ last_message_at: nowIso })
+          .update({ last_message_at: nowIso, last_activity_at: nowIso })
           .eq('id', conversationId);
 
         // Fire-and-forget automation engine triggers
@@ -330,10 +330,18 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           ? new Date(parseInt(status.timestamp) * 1000).toISOString()
           : new Date().toISOString();
 
-        // 1) Update conversation message row (existing behavior)
+        // 1) Update conversation message row (incl. failure reason from Meta)
         const msgPatch: Record<string, unknown> = { status: status.status };
         if (status.status === 'delivered') msgPatch.delivered_at = tsIso;
         if (status.status === 'read') msgPatch.read_at = tsIso;
+        if (status.status === 'failed') {
+          const e = Array.isArray(status.errors) && status.errors.length ? status.errors[0] : null;
+          if (e) {
+            msgPatch.error_code = e.code != null ? String(e.code) : null;
+            msgPatch.error_message = e.error_data?.details || e.message || e.title || 'Delivery failed';
+            msgPatch.error_details = e;
+          }
+        }
         await supabase
           .from('whatsapp_messages')
           .update(msgPatch)

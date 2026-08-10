@@ -43,16 +43,31 @@ const bucketFor = (t: any) => CATEGORY_BUCKETS.find((b) => b.match(t))?.key || '
 const bucketLabel = (key: string) =>
   CATEGORY_BUCKETS.find((b) => b.key === key)?.label || 'أخرى';
 
+// Positional fallback order for numeric placeholders ({{1}}, {{2}}, ...)
+const POSITIONAL_ORDER: Array<keyof VariableContext> = [
+  'customer_name',
+  'booking_reference',
+  'booking_destination',
+  'booking_check_in',
+  'booking_check_out',
+  'invoice_number',
+  'invoice_total',
+  'agent_name',
+  'organization_name',
+];
+
 // Extract ordered {{1}} {{2}} … or {{var_name}} placeholders and resolve values from context.
-const extractParameters = (body: string, interpolated: string, ctx: VariableContext): string[] => {
+// Meta rejects empty parameters (error 132000/132012), so unresolved slots fall back to "-".
+const extractParameters = (body: string, ctx: VariableContext): string[] => {
   const matches = Array.from(body.matchAll(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi));
   return matches.map((m) => {
     const key = m[1].toLowerCase();
-    // numeric placeholder → try same-index positional variable, else leave placeholder text
-    const val = (ctx as any)[key];
-    if (val != null && val !== '') return String(val);
-    // Fallback: use interpolated text token if identical, else empty string
-    return '';
+    let val: any = (ctx as any)[key];
+    if ((val == null || val === '') && /^\d+$/.test(key)) {
+      const posKey = POSITIONAL_ORDER[parseInt(key, 10) - 1];
+      val = posKey ? (ctx as any)[posKey] : null;
+    }
+    return val != null && String(val).trim() !== '' ? String(val) : '-';
   });
 };
 
@@ -109,7 +124,7 @@ export const TemplatesPicker: React.FC<Props> = ({
     const body = t.body_text || t.content || '';
     const preview = interpolateVariables(body, variables);
     if (onSendDirect) {
-      const params = extractParameters(body, preview, variables);
+      const params = extractParameters(body, variables);
       await onSendDirect({
         templateName: t.name,
         templateLanguage: t.language || 'ar',

@@ -1,205 +1,235 @@
+// Bulk WhatsApp sender. Marketing/proactive sends MUST use an approved template
+// with the correct number of variables — free-form bulk text is rejected by Meta
+// outside the 24h service window (error 131047) and is never attempted here.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import {
+  WA_CORS as corsHeaders,
+  buildTemplateComponents,
+  graphSend,
+  normalizePhone,
+  resolveSettings,
+  isWindowOpen,
+} from '../_shared/whatsapp.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const json = (b: unknown, s = 200) =>
+  new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-async function computeAppSecretProof(token: string, appSecret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(appSecret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(token));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function normalizePhone(p: string): string {
-  return (p || '').replace(/[^\d]/g, '');
-}
+const STALE_LOCK_MS = 10 * 60 * 1000;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
   try {
-    const { broadcastId } = await req.json();
-    if (!broadcastId) {
-      return new Response(JSON.stringify({ error: 'broadcastId required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const { broadcastId, internal } = await req.json();
+    if (!broadcastId) return json({ error: 'broadcastId required' }, 400);
+
+    const { data: broadcast } = await admin
+      .from('whatsapp_broadcasts').select('*').eq('id', broadcastId).maybeSingle();
+    if (!broadcast) return json({ error: 'broadcast not found' }, 404);
+
+    // Caller authorization (skipped for the internal scheduler which uses the service key)
+    if (!internal) {
+      const authHeader = req.headers.get('Authorization') ?? '';
+      const authClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: { user } } = await authClient.auth.getUser();
+      if (!user) return json({ error: 'Unauthorized' }, 401);
+      const { data: member } = await admin.from('organization_members').select('id')
+        .eq('organization_id', broadcast.organization_id).eq('user_id', user.id).maybeSingle();
+      if (!member) return json({ error: 'Forbidden' }, 403);
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-
-    const { data: broadcast, error: bErr } = await supabase
-      .from('whatsapp_broadcasts').select('*').eq('id', broadcastId).single();
-    if (bErr || !broadcast) throw new Error(bErr?.message || 'broadcast not found');
-
-    if (broadcast.status === 'sending' || broadcast.status === 'completed') {
-      return new Response(JSON.stringify({ error: 'already processed' }), {
-        status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Lock: prevents concurrent runs from double-sending
+    const lockedRecently = broadcast.locked_at && Date.now() - new Date(broadcast.locked_at).getTime() < STALE_LOCK_MS;
+    if (broadcast.status === 'completed' || broadcast.status === 'cancelled' || lockedRecently) {
+      return json({ error: 'already processed or currently sending', status: broadcast.status }, 409);
     }
 
-    // Load active WhatsApp settings for the org
-    const { data: settings, error: sErr } = await supabase
-      .from('whatsapp_settings')
-      .select('phone_number_id, access_token, api_version')
-      .eq('organization_id', broadcast.organization_id)
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (sErr || !settings?.phone_number_id || !settings?.access_token) {
-      await supabase.from('whatsapp_broadcasts').update({
-        status: 'failed', completed_at: new Date().toISOString(),
+    let settings;
+    try {
+      settings = await resolveSettings(admin, broadcast.organization_id, broadcast.whatsapp_settings_id);
+    } catch (e) {
+      await admin.from('whatsapp_broadcasts').update({
+        status: 'failed', completed_at: new Date().toISOString(), last_error: String((e as Error).message),
       }).eq('id', broadcastId);
-      return new Response(JSON.stringify({ error: 'WhatsApp settings not configured for this organization' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ error: String((e as Error).message) }, 400);
     }
 
-    const apiVersion = settings.api_version || 'v20.0';
-    const appSecret = Deno.env.get('META_APP_SECRET') || '';
-    const appsecret_proof = appSecret
-      ? await computeAppSecretProof(settings.access_token, appSecret)
-      : null;
-
-    // Optional template info
-    let templateName: string | null = null;
-    let templateLang = 'ar';
+    // Template is mandatory for bulk sends
+    let tpl: any = null;
     if (broadcast.template_id) {
-      const { data: tpl } = await supabase
-        .from('whatsapp_templates')
-        .select('name, language')
-        .eq('id', broadcast.template_id)
-        .maybeSingle();
-      if (tpl?.name) {
-        templateName = tpl.name;
-        templateLang = tpl.language || 'ar';
-      }
+      const { data } = await admin.from('whatsapp_templates')
+        .select('id,name,language,status,meta_status,components,body_text,header_text,header_format,body_variable_count,header_variable_count')
+        .eq('id', broadcast.template_id).eq('organization_id', broadcast.organization_id).maybeSingle();
+      tpl = data;
+    }
+    if (!tpl) {
+      const msg = 'يجب اختيار قالب معتمد لإرسال حملة | An approved template is required for a broadcast';
+      await admin.from('whatsapp_broadcasts').update({ status: 'failed', last_error: msg, completed_at: new Date().toISOString() }).eq('id', broadcastId);
+      return json({ error: msg }, 400);
+    }
+    if (String(tpl.meta_status || tpl.status || '').toLowerCase() !== 'approved') {
+      const msg = `القالب "${tpl.name}" غير معتمد من Meta | Template is not approved`;
+      await admin.from('whatsapp_broadcasts').update({ status: 'failed', last_error: msg, completed_at: new Date().toISOString() }).eq('id', broadcastId);
+      return json({ error: msg }, 400);
     }
 
-    await supabase.from('whatsapp_broadcasts').update({
-      status: 'sending', started_at: new Date().toISOString(),
+    await admin.from('whatsapp_broadcasts').update({
+      status: 'sending', started_at: broadcast.started_at ?? new Date().toISOString(),
+      locked_at: new Date().toISOString(), last_error: null,
     }).eq('id', broadcastId);
 
-    const { data: recipients } = await supabase
+    const { data: recipients } = await admin
       .from('whatsapp_broadcast_recipients')
       .select('*')
       .eq('broadcast_id', broadcastId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .limit(2000);
 
-    let sent = 0, failed = 0;
-    const url = `https://graph.facebook.com/${apiVersion}/${settings.phone_number_id}/messages`;
+    let sent = 0, failed = 0, skipped = 0;
+    const defaults = (broadcast.template_variables || {}) as Record<string, any>;
 
-    for (const r of recipients || []) {
-      try {
-        let message = broadcast.message_body || '';
-        const p = (r.personalization || {}) as Record<string, string>;
-        message = message
-          .replace(/\{\{customer_name\}\}/g, r.customer_name || p.customer_name || '')
-          .replace(/\{\{phone\}\}/g, r.phone_number || '');
-        for (const [k, v] of Object.entries(p)) {
-          message = message.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v ?? ''));
-        }
+    for (const r of recipients ?? []) {
+      const to = normalizePhone(r.phone_number);
+      if (!to) {
+        await markRecipient(admin, r.id, 'skipped', { error_code: 'INVALID_PHONE', error_message: 'رقم غير صالح | Invalid phone number' });
+        skipped++;
+        continue;
+      }
 
-        const to = normalizePhone(r.phone_number);
-        if (!to) throw new Error('invalid phone');
-
-        const payload: any = templateName
-          ? {
-              messaging_product: 'whatsapp',
-              to,
-              type: 'template',
-              template: { name: templateName, language: { code: templateLang } },
-            }
-          : {
-              messaging_product: 'whatsapp',
-              to,
-              type: 'text',
-              text: { body: message, preview_url: false },
-            };
-
-        const fetchUrl = appsecret_proof ? `${url}?appsecret_proof=${appsecret_proof}` : url;
-        const resp = await fetch(fetchUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${settings.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-        const text = await resp.text();
-        if (!resp.ok) {
-          let msg = text;
-          let code: string | null = null;
-          let details: any = null;
-          try {
-            const parsed = JSON.parse(text);
-            msg = parsed?.error?.message || text;
-            code = parsed?.error?.code != null ? String(parsed.error.code) : null;
-            details = parsed?.error ?? null;
-          } catch {}
-          await supabase.from('whatsapp_broadcast_recipients').update({
-            status: 'failed',
-            failed_at: new Date().toISOString(),
-            error_message: msg,
-            error_code: code,
-            error_details: details,
-          }).eq('id', r.id);
-          failed++;
-          throw new Error(`Meta ${resp.status}: ${msg}`);
-        }
-
-        let providerMsgId: string | null = null;
-        try { providerMsgId = JSON.parse(text)?.messages?.[0]?.id ?? null; } catch {}
-
-        await supabase.from('whatsapp_broadcast_recipients').update({
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-          provider_message_id: providerMsgId,
-          error_message: null,
-          error_code: null,
-          error_details: null,
-        }).eq('id', r.id);
-        sent++;
-      } catch (e: any) {
-        // Failure already persisted above for HTTP errors; only insert here for
-        // unexpected exceptions (network, invalid phone, etc.).
-        if (!/^Meta \d+:/.test(String(e?.message || ''))) {
-          await supabase.from('whatsapp_broadcast_recipients').update({
-            status: 'failed',
-            failed_at: new Date().toISOString(),
-            error_message: String(e?.message || e),
-          }).eq('id', r.id);
-          failed++;
+      // Respect opt-out
+      if (r.customer_id) {
+        const { data: cust } = await admin.from('customers').select('whatsapp_opt_out').eq('id', r.customer_id).maybeSingle();
+        if (cust?.whatsapp_opt_out) {
+          await markRecipient(admin, r.id, 'skipped', { error_code: 'OPTED_OUT', error_message: 'العميل ألغى الاشتراك | Customer opted out' });
+          skipped++;
+          continue;
         }
       }
 
-      await new Promise((res) => setTimeout(res, 250));
+      const p = (r.personalization || {}) as Record<string, any>;
+      const vars = {
+        body: (Array.isArray(p.body) ? p.body : Array.isArray(defaults.body) ? defaults.body : []).map((v: any) =>
+          String(v ?? '').replace(/\{\{customer_name\}\}/g, r.customer_name || '')),
+        header: (Array.isArray(p.header) ? p.header : Array.isArray(defaults.header) ? defaults.header : []).map((v: any) =>
+          String(v ?? '').replace(/\{\{customer_name\}\}/g, r.customer_name || '')),
+      };
+
+      let components;
+      try {
+        components = buildTemplateComponents(tpl, vars);
+      } catch (e) {
+        await markRecipient(admin, r.id, 'failed', {
+          error_code: 'TEMPLATE_PARAM_MISMATCH', error_message: String((e as Error).message),
+          failed_at: new Date().toISOString(),
+        });
+        failed++;
+        continue;
+      }
+
+      const result = await graphSend(settings, {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: tpl.name,
+          language: { code: tpl.language || 'ar' },
+          ...(components.length ? { components } : {}),
+        },
+      });
+
+      if (!result.ok) {
+        await markRecipient(admin, r.id, 'failed', {
+          failed_at: new Date().toISOString(),
+          error_code: result.errorCode,
+          error_message: result.errorMessage,
+          error_details: result.errorDetails,
+        });
+        failed++;
+      } else {
+        await markRecipient(admin, r.id, 'sent', {
+          sent_at: new Date().toISOString(),
+          provider_message_id: result.providerMessageId,
+          error_code: null, error_message: null, error_details: null,
+        });
+        await mirrorToConversation(admin, broadcast, settings, r, to, tpl, vars, result.providerMessageId);
+        sent++;
+      }
+
+      await new Promise((res) => setTimeout(res, 200));
     }
 
-    await supabase.from('whatsapp_broadcasts').update({
-      status: failed > 0 && sent === 0 ? 'failed' : 'completed',
-      completed_at: new Date().toISOString(),
-      sent_count: sent,
-      failed_count: failed,
+    const { count: stillPending } = await admin
+      .from('whatsapp_broadcast_recipients')
+      .select('id', { count: 'exact', head: true })
+      .eq('broadcast_id', broadcastId).eq('status', 'pending');
+
+    await admin.from('whatsapp_broadcasts').update({
+      status: stillPending ? 'sending' : (sent === 0 && failed > 0 ? 'failed' : 'completed'),
+      completed_at: stillPending ? null : new Date().toISOString(),
+      locked_at: null,
     }).eq('id', broadcastId);
 
-    return new Response(JSON.stringify({ ok: true, sent, failed }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    await admin.rpc('recompute_broadcast_counters', { _broadcast_id: broadcastId });
+
+    return json({ ok: true, sent, failed, skipped });
+  } catch (e) {
+    return json({ error: String((e as Error)?.message || e) }, 500);
   }
 });
+
+async function markRecipient(admin: any, id: string, status: string, patch: Record<string, unknown>) {
+  await admin.from('whatsapp_broadcast_recipients').update({ status, ...patch }).eq('id', id);
+}
+
+/**
+ * Mirror the broadcast send into the conversation thread so staff see the whole
+ * customer history in one place and status webhooks can resolve it.
+ */
+async function mirrorToConversation(
+  admin: any, broadcast: any, settings: any, recipient: any, to: string,
+  tpl: any, vars: any, providerMessageId: string | null,
+) {
+  try {
+    let convId: string | null = null;
+    const { data: conv } = await admin.from('whatsapp_conversations')
+      .select('id').eq('organization_id', broadcast.organization_id).eq('phone_number', to).maybeSingle();
+    if (conv) convId = conv.id;
+    else {
+      const { data: created } = await admin.from('whatsapp_conversations').insert({
+        organization_id: broadcast.organization_id,
+        whatsapp_settings_id: settings.id,
+        phone_number: to,
+        customer_id: recipient.customer_id ?? null,
+        status: 'active',
+        priority: 'normal',
+        last_message_at: new Date().toISOString(),
+      }).select('id').maybeSingle();
+      convId = created?.id ?? null;
+    }
+    if (!convId) return;
+
+    await admin.from('whatsapp_messages').insert({
+      organization_id: broadcast.organization_id,
+      whatsapp_settings_id: settings.id,
+      conversation_id: convId,
+      message_id: providerMessageId,
+      direction: 'outbound',
+      message_type: 'template',
+      content: tpl.body_text ?? null,
+      template_name: tpl.name,
+      template_language: tpl.language,
+      template_parameters: vars,
+      broadcast_id: broadcast.id,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+    });
+    await admin.from('whatsapp_conversations')
+      .update({ last_message_at: new Date().toISOString() }).eq('id', convId);
+  } catch (e) {
+    console.error('[broadcast] mirror failed', e);
+  }
+}
