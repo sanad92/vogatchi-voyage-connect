@@ -165,6 +165,7 @@ interface PolicyForm {
   pre_arrival_days: number;
   post_trip_days: number;
   require_management_approval: boolean;
+  auto_assign_enabled: boolean;
   approval_required_above_amount: string;
 }
 
@@ -178,6 +179,7 @@ const DEFAULTS: PolicyForm = {
   pre_arrival_days: 3,
   post_trip_days: 2,
   require_management_approval: true,
+  auto_assign_enabled: true,
   approval_required_above_amount: '',
 };
 
@@ -232,6 +234,7 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
       pre_arrival_days: Number(form.pre_arrival_days),
       post_trip_days: Number(form.post_trip_days),
       require_management_approval: form.require_management_approval,
+      auto_assign_enabled: form.auto_assign_enabled,
       approval_required_above_amount:
         form.approval_required_above_amount === '' ? null : Number(form.approval_required_above_amount),
     });
@@ -276,6 +279,18 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
         <div className="flex flex-wrap items-end gap-6">
           <div className="flex items-center gap-2">
             <Switch
+              checked={form.auto_assign_enabled}
+              onCheckedChange={(v) => set('auto_assign_enabled', v)}
+            />
+            <div>
+              <Label>توزيع تلقائي للعملاء المحتملين</Label>
+              <p className="text-xs text-muted-foreground">
+                عند تأهيل الملف يُسند تلقائيًا لمندوب مبيعات متاح بالتناوب العادل.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
               checked={form.require_management_approval}
               onCheckedChange={(v) => set('require_management_approval', v)}
             />
@@ -283,6 +298,7 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
           </div>
           <div className="space-y-1">
             <Label>اعتماد الإدارة فوق مبلغ (اختياري)</Label>
+
             <Input
               type="number"
               placeholder="بدون حد"

@@ -217,6 +217,11 @@ export function useSopRealtime() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_pricing_requests' }, () => invalidateSop(qc))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_handovers' }, () => invalidateSop(qc))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_approvals' }, () => invalidateSop(qc))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_lead_assignments' }, () => invalidateSop(qc))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_department_members' }, () => {
+        invalidateSop(qc);
+        qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+      })
       .subscribe();
     return () => { db.removeChannel(channel); };
   }, [orgId, qc]);

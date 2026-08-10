@@ -8367,6 +8367,7 @@ export type Database = {
         Row: {
           approval_required_above_amount: number | null
           assignment_ack_sla_minutes: number
+          auto_assign_enabled: boolean
           created_at: string
           default_collection_policy: string
           default_deposit_percent: number
@@ -8382,6 +8383,7 @@ export type Database = {
         Insert: {
           approval_required_above_amount?: number | null
           assignment_ack_sla_minutes?: number
+          auto_assign_enabled?: boolean
           created_at?: string
           default_collection_policy?: string
           default_deposit_percent?: number
@@ -8397,6 +8399,7 @@ export type Database = {
         Update: {
           approval_required_above_amount?: number | null
           assignment_ack_sla_minutes?: number
+          auto_assign_enabled?: boolean
           created_at?: string
           default_collection_policy?: string
           default_deposit_percent?: number
@@ -12566,6 +12569,7 @@ export type Database = {
         Args: { _assignee?: string; _exception_reason?: string; _lead: string }
         Returns: Json
       }
+      sop_auto_assign: { Args: { _lead: string }; Returns: string }
       sop_brief_missing: {
         Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
         Returns: string[]

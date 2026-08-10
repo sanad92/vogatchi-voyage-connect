@@ -11,10 +11,12 @@ import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import { useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
 import { DEPARTMENT_LABELS, LEAD_STAGE_LABELS } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 
 const SopIntake = () => {
   usePageTitle('استقبال العملاء — خدمة العملاء');
   useSopRealtime();
+  const { members } = useOrgMembers();
   const [search, setSearch] = useState('');
   const { data: leads, isLoading } = useSopLeads({
     stages: ['new', 'qualified', 'assigned'],
@@ -60,6 +62,8 @@ const SopIntake = () => {
                     <TableHead>الوجهة</TableHead>
                     <TableHead>المرحلة</TableHead>
                     <TableHead>القسم المالك</TableHead>
+                    <TableHead>المسؤول</TableHead>
+
                     <TableHead>المصدر</TableHead>
                     <TableHead />
                   </TableRow>
@@ -75,6 +79,15 @@ const SopIntake = () => {
                       <TableCell>{l.destination || l.city || '—'}</TableCell>
                       <TableCell><Badge variant="secondary">{LEAD_STAGE_LABELS[l.stage]}</Badge></TableCell>
                       <TableCell className="text-xs">{DEPARTMENT_LABELS[l.owner_department]}</TableCell>
+                      <TableCell className="text-xs">
+                        {l.current_owner_id ? (
+                          members.find((m) => m.user_id === l.current_owner_id)?.profile?.full_name
+                            || l.current_owner_id.slice(0, 8)
+                        ) : (
+                          <span className="text-muted-foreground">بانتظار التوزيع</span>
+                        )}
+                      </TableCell>
+
                       <TableCell className="text-xs">{l.lead_source || '—'}</TableCell>
                       <TableCell>
                         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(l); }}>
@@ -85,7 +98,7 @@ const SopIntake = () => {
                   ))}
                   {!leads?.length && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         لا توجد ملفات مفتوحة.
                       </TableCell>
                     </TableRow>
