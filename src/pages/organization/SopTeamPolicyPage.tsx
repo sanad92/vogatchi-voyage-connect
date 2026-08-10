@@ -279,6 +279,18 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
         <div className="flex flex-wrap items-end gap-6">
           <div className="flex items-center gap-2">
             <Switch
+              checked={form.auto_assign_enabled}
+              onCheckedChange={(v) => set('auto_assign_enabled', v)}
+            />
+            <div>
+              <Label>توزيع تلقائي للعملاء المحتملين</Label>
+              <p className="text-xs text-muted-foreground">
+                عند تأهيل الملف يُسند تلقائيًا لمندوب مبيعات متاح بالتناوب العادل.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
               checked={form.require_management_approval}
               onCheckedChange={(v) => set('require_management_approval', v)}
             />
@@ -286,6 +298,7 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
           </div>
           <div className="space-y-1">
             <Label>اعتماد الإدارة فوق مبلغ (اختياري)</Label>
+
             <Input
               type="number"
               placeholder="بدون حد"
