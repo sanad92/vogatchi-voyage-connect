@@ -98,6 +98,38 @@ export interface SopPricingOption {
   is_recommended: boolean;
   is_selected: boolean;
   notes: string | null;
+  // Stay details (additive — existing rows may be null)
+  hotel_name: string | null;
+  destination: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  room_type: string | null;
+  room_view: string | null;
+  meal_plan: string | null;
+  rooms_count: number | null;
+  // Benchmarks
+  ota_price: number | null;
+  ota_source: string | null;
+  hotel_direct_price: number | null;
+  // Structured cancellation
+  cancellation_type: string | null;
+  free_cancellation_until: string | null;
+  cancellation_charge_model: string | null;
+  cancellation_charge_value: number | null;
+  cancellation_notes: string | null;
+  // Rate validity (per offer)
+  price_valid_until: string | null;
+  // Transfer
+  transfer_status: string | null;
+  transfer_type: string | null;
+  transfer_net_cost: number | null;
+  transfer_selling_price: number | null;
+  transfer_notes: string | null;
+  // Recommendation
+  recommendation_reason: string | null;
+  recommendation_note: string | null;
+  // Reservations + Management only
+  internal_notes: string | null;
 }
 
 export interface SopHandover {
