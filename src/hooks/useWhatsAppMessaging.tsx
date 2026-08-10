@@ -54,7 +54,7 @@ export const useWhatsAppMessaging = () => {
           content: data.content,
         },
       });
-      if (error) throw error;
+      if (error) await throwEdgeError(error);
       if (result?.error) throw new Error(result.error);
       return result;
     },
@@ -96,7 +96,7 @@ export const useWhatsAppMessaging = () => {
           mediaCaption: data.caption || null,
         },
       });
-      if (error) throw error;
+      if (error) await throwEdgeError(error);
       if (result?.error) throw new Error(result.error);
       return result;
     },
@@ -126,7 +126,7 @@ export const useWhatsAppMessaging = () => {
           templateParameters: data.templateParameters || [],
         },
       });
-      if (error) throw error;
+      if (error) await throwEdgeError(error);
       if (result?.error) throw new Error(result.error);
       return result;
     },
