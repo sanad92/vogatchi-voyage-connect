@@ -232,6 +232,10 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
         <HandoverDialog open onClose={() => setHandoverOpen(null)} leadId={leadId} type={handoverOpen} />
       )}
     </Card>
+
+    <SopLeadBrief lead={lead} />
+    <SopPricingResult leadId={leadId} />
+    </div>
   );
 };
 
