@@ -11,7 +11,13 @@ export interface WhatsAppFollowup {
   conversation_id: string;
   remind_at: string;
   note: string | null;
-  status: 'pending' | 'done' | 'cancelled' | 'snoozed';
+  status: 'pending' | 'sending' | 'sent' | 'done' | 'cancelled' | 'snoozed' | 'failed';
+  mode: 'reminder' | 'auto_send';
+  template_id: string | null;
+  template_variables: Record<string, any>;
+  message_body: string | null;
+  last_error: string | null;
+  sent_at: string | null;
   assigned_to: string | null;
   created_by: string;
   completed_at: string | null;
@@ -56,7 +62,15 @@ export const useConversationFollowups = (conversationId?: string) => {
   }, [conversationId, orgId, qc]);
 
   const create = useMutation({
-    mutationFn: async (payload: { remind_at: string; note?: string; assigned_to?: string | null }) => {
+    mutationFn: async (payload: {
+      remind_at: string;
+      note?: string;
+      assigned_to?: string | null;
+      mode?: 'reminder' | 'auto_send';
+      template_id?: string | null;
+      template_variables?: Record<string, any>;
+      message_body?: string | null;
+    }) => {
       if (!orgId || !user?.id || !conversationId) throw new Error('السياق ناقص');
       const { data, error } = await (supabase.from('whatsapp_followups' as any).insert({
         organization_id: orgId,
@@ -64,6 +78,10 @@ export const useConversationFollowups = (conversationId?: string) => {
         remind_at: payload.remind_at,
         note: payload.note || null,
         assigned_to: payload.assigned_to || null,
+        mode: payload.mode || 'reminder',
+        template_id: payload.template_id || null,
+        template_variables: payload.template_variables || {},
+        message_body: payload.message_body || null,
         created_by: user.id,
       }).select().single() as any);
       if (error) throw error;
@@ -71,7 +89,7 @@ export const useConversationFollowups = (conversationId?: string) => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['whatsapp-followups'] });
-      toast.success('تم إنشاء التذكير');
+      toast.success('تم حفظ المتابعة');
     },
     onError: (e: any) => toast.error(e?.message || 'فشل إنشاء التذكير'),
   });
