@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   useCompleteRecheck,
   useDeletePricingOption,
@@ -19,21 +17,35 @@ import {
   useSavePricingOption,
   useSopLead,
   useSopRealtime,
-  type SopPricingOption,
 } from '@/hooks/useSop';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import DepartmentGate from '@/components/sop/DepartmentGate';
+import PricingOfferEditor from '@/components/sop/PricingOfferEditor';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useCanViewPricingCosts } from '@/hooks/usePricingVisibility';
+import { dateLabel, nightsBetween } from '@/lib/sopPricing';
 
 const STATUS_LABELS: Record<string, string> = {
   requested: 'مطلوب',
   in_progress: 'قيد التسعير',
   quoted: 'تم التسعير',
+  requoted: 'تمت إعادة التسعير',
+  recheck: 'مطلوب إعادة تأكد',
   recheck_requested: 'مطلوب إعادة تأكد',
   recheck_done: 'تمت إعادة التأكد',
   closed: 'مغلق',
+  cancelled: 'ملغي',
 };
+
+const ADD_LABELS = ['+ إضافة العرض الأول', '+ إضافة العرض الثاني', '+ إضافة العرض الثالث'];
+
+const HeaderItem = ({ label, value }: { label: string; value?: React.ReactNode }) => (
+  <div className="rounded-md border bg-muted/30 p-2">
+    <div className="text-[10px] text-muted-foreground">{label}</div>
+    <div className="text-xs font-medium">{value === undefined || value === null || value === '' ? '—' : value}</div>
+  </div>
+);
 
 const SopPricing = () => {
   usePageTitle('طلبات التسعير — الحجوزات');
@@ -43,6 +55,7 @@ const SopPricing = () => {
   const selected = (requests || []).find((r) => r.id === selectedId) || null;
   const { data: options } = usePricingOptions(selectedId);
   const { data: lead } = useSopLead(selected?.lead_id);
+  const canViewCosts = useCanViewPricingCosts();
 
   const saveOption = useSavePricingOption();
   const deleteOption = useDeletePricingOption();
@@ -63,25 +76,46 @@ const SopPricing = () => {
     setRecommendation(selected?.recommendation || '');
   }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
 
+  const brief = (selected?.brief as Record<string, any>) || {};
+  const defaults = useMemo(
+    () => ({
+      destination: lead?.destination || brief.destination || null,
+      check_in: lead?.check_in || brief.check_in || null,
+      check_out: lead?.check_out || brief.check_out || null,
+    }),
+    [lead?.destination, lead?.check_in, lead?.check_out, brief.destination, brief.check_in, brief.check_out],
+  );
+
+  const list = options || [];
   const blockers: string[] = [];
-  if (!(options || []).length) blockers.push('أضف خياراً واحداً على الأقل.');
-  if ((options || []).length && !(options || []).some((o) => o.is_recommended)) {
-    blockers.push('فعّل مفتاح «موصى به» على أحد الخيارات (يُحفظ تلقائياً).');
+  if (!list.length) blockers.push('أضف عرضاً واحداً على الأقل.');
+  if (list.length && !list.some((o) => o.is_recommended)) {
+    blockers.push('فعّل مفتاح «موصى به» على أحد العروض (يُحفظ تلقائياً).');
   }
-  if (!validUntil) blockers.push('حدد تاريخ «صلاحية السعر حتى».');
+  if (list.some((o) => !o.price_valid_until)) blockers.push('حدد «السعر صالح حتى» لكل عرض.');
+  if (list.some((o) => o.is_recommended && o.price_valid_until && new Date(o.price_valid_until) < new Date())) {
+    blockers.push('العرض الموصى به انتهت صلاحيته — حدّث السعر أو أعد التأكد.');
+  }
+  if (!validUntil) blockers.push('حدد تاريخ صلاحية التسعير العام.');
 
   const addOption = () => {
-    if (!selectedId) return;
+    if (!selectedId || list.length >= 3) return;
     saveOption.mutate({
       pricing_request_id: selectedId,
-      option_index: (options?.length || 0) + 1,
+      option_index: list.length + 1,
       net_cost: 0,
       selling_price: 0,
       currency: 'EGP',
       markup_type: 'percent',
       markup_value: 0,
+      destination: defaults.destination,
+      check_in: defaults.check_in,
+      check_out: defaults.check_out,
+      transfer_status: 'not_included',
     } as any);
   };
+
+  const nights = nightsBetween(defaults.check_in, defaults.check_out);
 
   return (
     <DepartmentGate department="reservations">
@@ -89,7 +123,7 @@ const SopPricing = () => {
         <header>
           <h1 className="text-2xl font-bold">مساحة عمل الحجوزات</h1>
           <p className="text-sm text-muted-foreground">
-            حد أقصى 3 خيارات لكل طلب، مع صافي التكلفة وسياسة الإلغاء وصلاحية السعر
+            حد أقصى 3 عروض لكل طلب، مع مقارنة أسعار للعميل وبيانات ربحية داخلية
           </p>
         </header>
 
@@ -159,7 +193,6 @@ const SopPricing = () => {
             </Card>
           </div>
 
-
           <div className="lg:col-span-2 space-y-4">
             {!selected && (
               <Card><CardContent className="p-6 text-sm text-muted-foreground">اختر طلب تسعير للبدء.</CardContent></Card>
@@ -167,48 +200,75 @@ const SopPricing = () => {
 
             {selected && (
               <>
+                {/* A) Read-only request header sourced from the lead */}
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm">ملخص الطلب (Brief)</CardTitle></CardHeader>
-                  <CardContent className="grid gap-2 sm:grid-cols-2 text-xs">
-                    {Object.entries((selected.brief as Record<string, unknown>) || {}).map(([k, v]) => (
-                      <div key={k} className="flex justify-between border-b py-1">
-                        <span className="text-muted-foreground">{k}</span>
-                        <span>{v === null || v === '' ? '—' : String(v)}</span>
-                      </div>
-                    ))}
-                    {selected.notes && <div className="sm:col-span-2">ملاحظات المبيعات: {selected.notes}</div>}
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">بيانات الطلب (للقراءة فقط)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
+                      <HeaderItem label="الوجهة" value={defaults.destination || lead?.city} />
+                      <HeaderItem label="تاريخ الوصول" value={defaults.check_in ? dateLabel(defaults.check_in) : lead?.approx_dates} />
+                      <HeaderItem label="تاريخ المغادرة" value={defaults.check_out ? dateLabel(defaults.check_out) : undefined} />
+                      <HeaderItem label="عدد الليالي" value={nights || undefined} />
+                      <HeaderItem label="البالغون" value={lead?.adults ?? brief.adults} />
+                      <HeaderItem
+                        label="الأطفال"
+                        value={
+                          (lead?.children_count ?? brief.children_count)
+                            ? `${lead?.children_count ?? brief.children_count} — أعمار: ${
+                                (lead?.children_ages || []).length ? (lead?.children_ages || []).join(', ') : 'غير محددة'
+                              }`
+                            : undefined
+                        }
+                      />
+                      <HeaderItem label="الغرف / التوزيع" value={[lead?.rooms, lead?.occupancy].filter(Boolean).join(' · ')} />
+                      <HeaderItem label="الجنسية" value={lead?.nationality ?? brief.nationality} />
+                      <HeaderItem
+                        label="الميزانية"
+                        value={[lead?.budget_level, lead?.budget_amount ? Number(lead.budget_amount).toLocaleString() : null]
+                          .filter(Boolean).join(' · ')}
+                      />
+                      <HeaderItem label="نوع الخدمة" value={lead?.service_type} />
+                      <HeaderItem label="الأولويات" value={lead?.priorities} />
+                      <HeaderItem label="طلبات خاصة" value={lead?.special_requests} />
+                    </div>
+                    {selected.notes && (
+                      <p className="text-xs text-muted-foreground">ملاحظات المبيعات: {selected.notes}</p>
+                    )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm">الخيارات ({options?.length || 0}/3)</CardTitle>
-                    <Button size="sm" variant="outline" onClick={addOption} disabled={(options?.length || 0) >= 3}>
-                      <Plus className="h-3.5 w-3.5 ml-1" /> خيار
-                    </Button>
+                    <CardTitle className="text-sm">العروض ({list.length}/3)</CardTitle>
+                    {list.length < 3 && (
+                      <Button size="sm" variant="outline" onClick={addOption} disabled={saveOption.isPending}>
+                        <Plus className="h-3.5 w-3.5 ml-1" /> {ADD_LABELS[list.length]}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {(options || []).map((o) => (
-                      <OptionEditor
+                    {list.map((o) => (
+                      <PricingOfferEditor
                         key={o.id}
                         option={o}
+                        defaults={defaults}
+                        canViewCosts={canViewCosts}
                         onSave={(v) => saveOption.mutate({ ...v, id: o.id, pricing_request_id: selected.id } as any)}
-                        onRecommend={() => {
-                          (options || []).forEach((other) => {
-                            const shouldBe = other.id === o.id;
-                            if (!!other.is_recommended !== shouldBe) {
-                              saveOption.mutate({
-                                id: other.id,
-                                pricing_request_id: selected.id,
-                                is_recommended: shouldBe,
-                              } as any);
-                            }
-                          });
-                        }}
+                        onRecommend={(recommended) =>
+                          saveOption.mutate({
+                            id: o.id,
+                            pricing_request_id: selected.id,
+                            is_recommended: recommended,
+                          } as any)
+                        }
                         onDelete={() => deleteOption.mutate(o.id)}
                       />
                     ))}
-                    {!options?.length && <p className="text-xs text-muted-foreground">أضف خياراً واحداً على الأقل.</p>}
+                    {!list.length && (
+                      <p className="text-xs text-muted-foreground">ابدأ بإضافة العرض الأول.</p>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -217,7 +277,7 @@ const SopPricing = () => {
                   <CardContent className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-xs">صلاحية السعر حتى <span className="text-destructive">*</span></Label>
+                        <Label className="text-xs">صلاحية التسعير حتى <span className="text-destructive">*</span></Label>
                         <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
@@ -238,7 +298,6 @@ const SopPricing = () => {
                         { requestId: selected.id, validUntil: validUntil || null, recommendation },
                         {
                           onSuccess: (res: any) => {
-                            // Publishing hands ownership straight back to the Sales requester.
                             if (res?.allowed !== false) returnToSales.mutate(selected.id);
                           },
                         },
@@ -264,7 +323,7 @@ const SopPricing = () => {
                       </div>
                     )}
 
-                    {selected.status === 'recheck_requested' && (
+                    {selected.status === 'recheck' && (
                       <>
                         <Separator />
                         <div className="space-y-2">
@@ -299,90 +358,6 @@ const SopPricing = () => {
         </div>
       </div>
     </DepartmentGate>
-  );
-};
-
-interface OptionEditorProps {
-  option: SopPricingOption;
-  onSave: (values: Partial<SopPricingOption>) => void;
-  onRecommend: () => void;
-  onDelete: () => void;
-}
-
-const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
-  <div className="space-y-1.5">
-    <Label className="text-xs text-muted-foreground">
-      {label}{required && <span className="text-destructive"> *</span>}
-    </Label>
-    {children}
-  </div>
-);
-
-const OptionEditor = ({ option, onSave, onRecommend, onDelete }: OptionEditorProps) => {
-  const [v, setV] = useState<Partial<SopPricingOption>>(option);
-  useEffect(() => setV(option), [option]);
-  const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
-  const margin = `${((Number(v.selling_price) || 0) - (Number(v.net_cost) || 0)).toLocaleString('en-US')} ${v.currency || 'EGP'}`;
-
-
-  return (
-    <div className={`border rounded-lg p-3 space-y-3 ${option.is_recommended ? 'ring-1 ring-primary' : ''}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium">خيار {option.option_index}</span>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs">
-            <Switch
-              checked={!!option.is_recommended}
-              onCheckedChange={(c) => { set('is_recommended', c); if (c) onRecommend(); else onSave({ ...v, is_recommended: false }); }}
-            />
-            موصى به {option.is_recommended && <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>}
-          </label>
-          <Button size="icon" variant="ghost" onClick={onDelete}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="المورد" required>
-          <Input placeholder="مثال: فندق ماريوت" value={v.supplier_name || ''} onChange={(e) => set('supplier_name', e.target.value)} />
-        </Field>
-        <Field label="المنتج / الفندق" required>
-          <Input placeholder="اسم المنتج أو الفندق" value={v.product_name || ''} onChange={(e) => set('product_name', e.target.value)} />
-        </Field>
-        <Field label="العملة" required>
-          <Input placeholder="EGP" value={v.currency || 'EGP'} onChange={(e) => set('currency', e.target.value)} />
-        </Field>
-        <Field label="صافي التكلفة" required>
-          <Input type="number" inputMode="decimal" placeholder="0.00" value={v.net_cost ?? ''} onChange={(e) => set('net_cost', Number(e.target.value))} />
-        </Field>
-        <Field label="سعر البيع" required>
-          <Input type="number" inputMode="decimal" placeholder="0.00" value={v.selling_price ?? ''} onChange={(e) => set('selling_price', Number(e.target.value))} />
-        </Field>
-        <Field label="هامش الربح">
-          <Input readOnly disabled value={margin} />
-        </Field>
-        <Field label="موعد السداد للمورد">
-          <Input type="date" value={v.payment_deadline?.slice(0, 10) || ''} onChange={(e) => set('payment_deadline', e.target.value || null)} />
-        </Field>
-        <Field label="آخر موعد للإلغاء">
-          <Input type="date" value={v.cancellation_deadline?.slice(0, 10) || ''} onChange={(e) => set('cancellation_deadline', e.target.value || null)} />
-        </Field>
-        <Field label="موعد الإفراج (Release)">
-          <Input type="date" value={v.release_deadline?.slice(0, 10) || ''} onChange={(e) => set('release_deadline', e.target.value || null)} />
-        </Field>
-      </div>
-      <Field label="سياسة الإلغاء" required>
-        <Textarea
-          rows={2} placeholder="اكتب سياسة الإلغاء كما وردت من المورد"
-          value={v.cancellation_policy || ''} onChange={(e) => set('cancellation_policy', e.target.value)}
-        />
-      </Field>
-
-      <div className="flex justify-end">
-        <Button size="sm" variant="outline" onClick={() => onSave(v)}>حفظ الخيار</Button>
-      </div>
-    </div>
   );
 };
 
