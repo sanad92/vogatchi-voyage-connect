@@ -52,6 +52,9 @@ const SopPricing = () => {
   const returnToSales = useReturnToSales();
   const { user } = useOptimizedAuth();
 
+  const unclaimed = (requests || []).filter((r) => !r.assigned_to && r.status !== 'closed' && r.status !== 'cancelled');
+  const claimed = (requests || []).filter((r) => !!r.assigned_to);
+
   const [validUntil, setValidUntil] = useState('');
   const [recommendation, setRecommendation] = useState('');
 
@@ -91,25 +94,27 @@ const SopPricing = () => {
         </header>
 
         <div className="grid gap-4 lg:grid-cols-4">
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">الطلبات</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {(requests || []).map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedId(r.id)}
-                  className={`w-full text-right border rounded-md p-2 text-xs transition cursor-pointer ${
-                    selectedId === r.id ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{(r.brief as any)?.contact_name || 'طلب تسعير'}</span>
-                    <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[r.status] || r.status}</Badge>
-                  </div>
-                  <div className="text-muted-foreground mt-1">
-                    {(r.brief as any)?.destination || '—'} · {new Date(r.requested_at).toLocaleDateString('ar-EG')}
-                  </div>
-                  {!r.assigned_to ? (
+          <div className="lg:col-span-1 space-y-4">
+            <Card className="border-primary/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">طلبات تسعير غير مستلمة ({unclaimed.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {unclaimed.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => setSelectedId(r.id)}
+                    className={`w-full text-right border rounded-md p-2 text-xs transition cursor-pointer ${
+                      selectedId === r.id ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{(r.brief as any)?.contact_name || 'طلب تسعير'}</span>
+                      <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[r.status] || r.status}</Badge>
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {(r.brief as any)?.destination || '—'} · {new Date(r.requested_at).toLocaleDateString('ar-EG')}
+                    </div>
                     <Button
                       size="sm"
                       className="h-7 text-[11px] mt-2 w-full"
@@ -118,16 +123,42 @@ const SopPricing = () => {
                     >
                       استلم الطلب
                     </Button>
-                  ) : (
+                  </div>
+                ))}
+                {!unclaimed.length && (
+                  <p className="text-xs text-muted-foreground">لا توجد طلبات بانتظار الاستلام.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">الطلبات المستلمة</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {claimed.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => setSelectedId(r.id)}
+                    className={`w-full text-right border rounded-md p-2 text-xs transition cursor-pointer ${
+                      selectedId === r.id ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{(r.brief as any)?.contact_name || 'طلب تسعير'}</span>
+                      <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[r.status] || r.status}</Badge>
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {(r.brief as any)?.destination || '—'} · {new Date(r.requested_at).toLocaleDateString('ar-EG')}
+                    </div>
                     <div className="mt-1 text-[10px] text-muted-foreground">
                       {r.assigned_to === user?.id ? 'مستلم بواسطتك' : 'مستلم بواسطة زميل'}
                     </div>
-                  )}
-                </div>
-              ))}
-              {!requests?.length && <p className="text-xs text-muted-foreground">لا توجد طلبات تسعير.</p>}
-            </CardContent>
-          </Card>
+                  </div>
+                ))}
+                {!claimed.length && <p className="text-xs text-muted-foreground">لا توجد طلبات مستلمة.</p>}
+              </CardContent>
+            </Card>
+          </div>
+
 
           <div className="lg:col-span-2 space-y-4">
             {!selected && (
@@ -203,20 +234,24 @@ const SopPricing = () => {
 
                     <Button
                       size="sm"
-                      onClick={() => publish.mutate({
-                        requestId: selected.id,
-                        validUntil: validUntil || null,
-                        recommendation,
-                      })}
+                      onClick={() => publish.mutate(
+                        { requestId: selected.id, validUntil: validUntil || null, recommendation },
+                        {
+                          onSuccess: (res: any) => {
+                            // Publishing hands ownership straight back to the Sales requester.
+                            if (res?.allowed !== false) returnToSales.mutate(selected.id);
+                          },
+                        },
+                      )}
                       disabled={publish.isPending || blockers.length > 0}
                     >
-                      نشر التسعير وإنشاء عرض السعر
+                      اعتماد التسعير وإرساله للمبيعات
                     </Button>
 
                     {(selected.status === 'quoted' || selected.status === 'requoted') && (
                       <div className="rounded-md border p-2 space-y-2">
                         <p className="text-xs text-muted-foreground">
-                          خلصت التسعير؟ ابعته للمبيعات وهيرجع تلقائيًا لموظف المبيعات صاحب الملف.
+                          تم الاعتماد. لو محتاج تعيد الإرسال لموظف المبيعات صاحب الطلب اضغط هنا.
                         </p>
                         <Button
                           size="sm"
@@ -224,7 +259,7 @@ const SopPricing = () => {
                           disabled={returnToSales.isPending}
                           onClick={() => returnToSales.mutate(selected.id)}
                         >
-                          إرسال للمبيعات
+                          إعادة الإرسال للمبيعات
                         </Button>
                       </div>
                     )}
@@ -239,7 +274,7 @@ const SopPricing = () => {
                               size="sm" variant="outline"
                               onClick={() => completeRecheck.mutate({ requestId: selected.id, changed: false })}
                             >
-                              مؤكد بدون تغيير
+                              السعر والتوافر ثابت
                             </Button>
                             <Button
                               size="sm" variant="destructive"
@@ -248,7 +283,7 @@ const SopPricing = () => {
                                 completeRecheck.mutate({ requestId: selected.id, changed: true, notes });
                               }}
                             >
-                              تغيّر السعر / الإتاحة
+                              تغير السعر / التوافر
                             </Button>
                           </div>
                         </div>

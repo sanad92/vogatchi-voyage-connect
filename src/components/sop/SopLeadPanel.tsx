@@ -7,12 +7,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  ArrowLeftRight, CheckCircle2, ChevronDown, RefreshCcw, Send, ShieldCheck, UserPlus,
+  ArrowLeftRight, CheckCircle2, ChevronDown, HandCoins, RefreshCcw, Send, ShieldCheck, UserPlus,
 } from 'lucide-react';
 import {
   useAcknowledgeAssignment,
   useAdvanceLead,
   useAssignLead,
+  useClaimLead,
   useCollectionStatus,
   useCreatePricingRequest,
   useLeadAssignments,
@@ -72,6 +73,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
   const advance = useAdvanceLead();
   const assign = useAssignLead();
+  const claim = useClaimLead();
   const ack = useAcknowledgeAssignment();
   const pricing = useCreatePricingRequest();
   const recheck = useRequestRecheck();
@@ -87,6 +89,17 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
   type Action = { label: string; icon?: JSX.Element; onClick: () => void; disabled?: boolean };
   const actions: Action[] = [];
+
+  // Self-claim is the normal path: an available Sales member takes the lead themselves.
+  const claimable = !lead.current_owner_id && ['new', 'qualified', 'assigned'].includes(lead.stage);
+  if (claimable) {
+    actions.push({
+      label: 'استلم العميل',
+      icon: <HandCoins className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => claim.mutate(leadId),
+      disabled: claim.isPending,
+    });
+  }
 
   if (handoverType) {
     actions.push({
@@ -124,10 +137,14 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
     });
   }
   if (nextStage) {
+    const acceptance = nextStage === 'accepted_pending_recheck';
     actions.push({
-      label: `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
+      label: acceptance ? 'العميل وافق' : `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
       icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
-      onClick: () => advance.mutate({ leadId, to: nextStage }),
+      onClick: () => advance.mutate({ leadId, to: nextStage }, {
+        // Acceptance immediately opens the recheck task for Reservations.
+        onSuccess: (res: any) => { if (acceptance && res?.allowed !== false) recheck.mutate({ leadId }); },
+      }),
       disabled: advance.isPending || !gate?.allowed,
     });
   }
@@ -142,8 +159,12 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   }
 
   // The gate decides what the user should do right now.
-  const advanceAction = nextStage ? actions.find((a) => a.label.startsWith('تأكيد:')) : undefined;
-  const primary = gate?.allowed && advanceAction ? advanceAction : actions[0];
+  const advanceAction = nextStage
+    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق')
+    : undefined;
+  const claimAction = actions.find((a) => a.label === 'استلم العميل');
+  const primary = claimAction
+    || (gate?.allowed && advanceAction ? advanceAction : actions.find((a) => a.label !== 'تسليم للزميل') || actions[0]);
   const others = actions.filter((a) => a !== primary);
 
   return (
