@@ -234,6 +234,7 @@ function SopPolicyCard({ policy, onSave, saving }: { policy: any; onSave: (v: Re
       pre_arrival_days: Number(form.pre_arrival_days),
       post_trip_days: Number(form.post_trip_days),
       require_management_approval: form.require_management_approval,
+      auto_assign_enabled: form.auto_assign_enabled,
       approval_required_above_amount:
         form.approval_required_above_amount === '' ? null : Number(form.approval_required_above_amount),
     });
