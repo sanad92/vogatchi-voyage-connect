@@ -1051,3 +1051,93 @@ export function useAcceptHandover() {
     onError: (e: any) => toast.error('فشل الاستلام: ' + (e?.message || 'خطأ')),
   });
 }
+
+/* ------------------------------------------------- backward moves & claiming */
+
+/** Move a lead back to an earlier stage with a mandatory reason (audited). */
+export function useMoveLeadBack() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { leadId: string; to: SopLeadStage; reason: string }) => {
+      const { data, error } = await db.rpc('sop_move_back', {
+        _lead: input.leadId, _to: input.to, _reason: input.reason,
+      });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم إرجاع الملف لمرحلة سابقة')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل الإرجاع: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Mark a lead as unqualified with a reason from the preset list. */
+export function useDisqualifyLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { leadId: string; reason: string; note?: string }) => {
+      const { data, error } = await db.rpc('sop_disqualify', {
+        _lead: input.leadId, _reason: input.reason, _note: input.note ?? null,
+      });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم تعليم العميل كغير مؤهل')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Reopen a lost/unqualified lead back into intake. */
+export function useReopenLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data, error } = await db.rpc('sop_reopen_lead', { _lead: leadId });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تمت إعادة فتح الملف')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Sales self-claims a lead from intake — no manual handover needed. */
+export function useClaimLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data, error } = await db.rpc('sop_claim_lead', { _lead: leadId });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'استلمت العميل — دخل خط أنابيب المبيعات')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل الاستلام: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Reservations self-claims a pricing request. */
+export function useClaimPricingRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await db.rpc('sop_claim_pricing_request', { _request: requestId });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'استلمت طلب التسعير')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل الاستلام: ' + (e?.message || 'خطأ')),
+  });
+}
+
+/** Reservations sends the published pricing back to Sales. */
+export function useReturnToSales() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await db.rpc('sop_return_to_sales', { _request: requestId });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم إرسال التسعير للمبيعات')) invalidateSop(qc); },
+    onError: (e: any) => toast.error('فشل الإرسال: ' + (e?.message || 'خطأ')),
+  });
+}
