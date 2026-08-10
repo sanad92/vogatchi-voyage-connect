@@ -126,6 +126,9 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   const { user, profile, isSuperAdmin } = useOptimizedAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { hasPermission } = useSupabasePermissions();
+  const { data: handoverInbox } = useHandoverInbox();
+  const { data: pendingAssignments } = useMyPendingAssignments();
+  const pendingHandovers = (handoverInbox?.incoming?.length || 0) + (pendingAssignments?.length || 0);
 
   // Platform admin section removed from org sidebar — they have a dedicated /platform layout
   const allGroups = useMemo(() => navGroups, []);
