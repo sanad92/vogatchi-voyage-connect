@@ -137,10 +137,14 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
     });
   }
   if (nextStage) {
+    const acceptance = nextStage === 'accepted_pending_recheck';
     actions.push({
-      label: `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
+      label: acceptance ? 'العميل وافق' : `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
       icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
-      onClick: () => advance.mutate({ leadId, to: nextStage }),
+      onClick: () => advance.mutate({ leadId, to: nextStage }, {
+        // Acceptance immediately opens the recheck task for Reservations.
+        onSuccess: (res: any) => { if (acceptance && res?.allowed !== false) recheck.mutate({ leadId }); },
+      }),
       disabled: advance.isPending || !gate?.allowed,
     });
   }
@@ -155,7 +159,9 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   }
 
   // The gate decides what the user should do right now.
-  const advanceAction = nextStage ? actions.find((a) => a.label.startsWith('تأكيد:')) : undefined;
+  const advanceAction = nextStage
+    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق')
+    : undefined;
   const claimAction = actions.find((a) => a.label === 'استلم العميل');
   const primary = claimAction
     || (gate?.allowed && advanceAction ? advanceAction : actions.find((a) => a.label !== 'تسليم للزميل') || actions[0]);
