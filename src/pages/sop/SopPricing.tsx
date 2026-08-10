@@ -220,6 +220,7 @@ const SopPricing = () => {
 interface OptionEditorProps {
   option: SopPricingOption;
   onSave: (values: Partial<SopPricingOption>) => void;
+  onRecommend: () => void;
   onDelete: () => void;
 }
 
