@@ -24,6 +24,19 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const correlationId = req.headers.get('x-correlation-id') || crypto.randomUUID();
+
+  /** Typed, admin-readable failure payload. Never contains tokens. */
+  const fail = (
+    code: string,
+    message: string,
+    status = 400,
+    extra: Record<string, unknown> = {},
+  ) => {
+    console.error(JSON.stringify({ tag: 'wa.send.error', correlationId, code, message, ...extra }));
+    return json({ success: false, error: message, code, correlationId, ...extra }, status);
+  };
+
   const admin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -32,33 +45,42 @@ Deno.serve(async (req) => {
   let messageRowId: string | null = null;
 
   try {
+    // ---------- environment sanity (fail loudly instead of a 500 later) ----------
+    const missingEnv = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ANON_KEY']
+      .filter((k) => !Deno.env.get(k));
+    if (missingEnv.length) {
+      return fail('MISSING_ENV', `إعدادات الخادم ناقصة | Server configuration missing: ${missingEnv.join(', ')}`, 500);
+    }
+
     // ---------- auth ----------
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+    if (!authHeader?.startsWith('Bearer ')) {
+      return fail('UNAUTHENTICATED', 'يجب تسجيل الدخول | Missing authentication token', 401);
+    }
 
     const authClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } },
     );
-    const { data: { user } } = await authClient.auth.getUser();
-    if (!user) return json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error: authErr } = await authClient.auth.getUser();
+    if (authErr || !user) {
+      return fail('UNAUTHENTICATED', 'انتهت الجلسة — سجّل الدخول مرة أخرى | Session invalid or expired', 401);
+    }
 
     const rl = rateLimit(`whatsapp:${user.id}`, 60, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
-    const body = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return fail('BAD_JSON', 'محتوى الطلب غير صالح | Request body is not valid JSON', 400);
+    }
+
     const {
       conversationId: rawConversationId,
       customerId,
-      phoneNumber,
-      messageType,
-      content,
-      mediaUrl,
-      mediaStoragePath,
-      mediaMimeType,
-      mediaFileName,
-      mediaCaption,
       templateId,
       templateName,
       templateLanguage,
@@ -66,11 +88,26 @@ Deno.serve(async (req) => {
       templateParameters,
       idempotencyKey,
       followupId,
+      mediaUrl,
+      mediaStoragePath,
+      mediaMimeType,
+      mediaFileName,
+      mediaCaption,
+      content,
     } = body ?? {};
 
+    // Legacy/alternate field names used by some callers (CRM template suggestions).
+    const messageType = body?.messageType ?? body?.type;
+    const phoneNumber = body?.phoneNumber ?? body?.to ?? body?.phone;
+
     if (!messageType || !VALID_MESSAGE_TYPES.includes(messageType)) {
-      return json({ error: `Invalid messageType. One of: ${VALID_MESSAGE_TYPES.join(', ')}` }, 400);
+      return fail(
+        'INVALID_MESSAGE_TYPE',
+        `نوع الرسالة غير صالح | Invalid messageType "${messageType ?? 'missing'}". One of: ${VALID_MESSAGE_TYPES.join(', ')}`,
+        400,
+      );
     }
+
 
     // ---------- resolve conversation (or create it from a customer/phone) ----------
     let conversationId: string | null =
