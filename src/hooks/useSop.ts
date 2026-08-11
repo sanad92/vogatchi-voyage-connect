@@ -220,13 +220,24 @@ export const reportGate = (res: GateResult | null | undefined, okMessage?: strin
     if (okMessage) toast.success(okMessage);
     return true;
   }
+  const violations = res.violations || [];
   const parts = [
-    ...(res.violations || []).map(labelViolation),
+    ...violations.map(labelViolation),
     ...(res.missing_fields || []).map((m) => `ناقص: ${labelMissing(m)}`),
   ];
-  toast.error(parts.length ? parts.join(' • ') : 'الإجراء غير مسموح');
+  const guidance = violations.map((v) => VIOLATION_GUIDANCE[v]).filter(Boolean);
+
+  const depts = Array.isArray(res.my_departments) ? (res.my_departments as SopDepartment[]) : [];
+  const context = depts.length
+    ? `قسمك الحالي: ${depts.map((d) => DEPARTMENT_LABELS[d] ?? d).join('، ')}`
+    : violations.some((v) => v.startsWith('not_')) ? 'حسابك غير مسجّل في أي قسم' : '';
+
+  toast.error(parts.length ? parts.join(' • ') : 'الإجراء غير مسموح', {
+    description: [context, ...guidance].filter(Boolean).join(' — ') || undefined,
+  });
   return false;
 };
+
 
 const invalidateSop = (qc: ReturnType<typeof useQueryClient>) => {
   ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-handovers',
