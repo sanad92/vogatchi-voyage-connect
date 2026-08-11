@@ -313,6 +313,61 @@ export function useMyDepartments() {
   };
 }
 
+export interface MySopMembership {
+  department: SopDepartment;
+  is_available: boolean;
+}
+
+/** Current user's SOP departments together with their availability flag. */
+export function useMySopMemberships() {
+  const orgId = useOrgId();
+  const { user, hasRole } = useOptimizedAuth();
+  const query = useQuery({
+    queryKey: ['sop-my-memberships', orgId, user?.id],
+    enabled: !!orgId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('sop_department_members')
+        .select('department, is_available')
+        .eq('organization_id', orgId)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+      return (data || []).map((d: any) => ({
+        department: d.department as SopDepartment,
+        is_available: d.is_available !== false,
+      })) as MySopMembership[];
+    },
+  });
+  const isManager = hasRole?.('owner') || hasRole?.('admin') || hasRole?.('manager') || false;
+  return { memberships: query.data || [], isManager, isLoading: query.isLoading };
+}
+
+/** Staff toggles their own availability inside a department they belong to. */
+export function useSetMyAvailability() {
+  const qc = useQueryClient();
+  const orgId = useOrgId();
+  return useMutation({
+    mutationFn: async (input: { department: SopDepartment; is_available: boolean }) => {
+      const { data, error } = await db.rpc('sop_set_my_availability', {
+        _org: orgId,
+        _department: input.department,
+        _available: input.is_available,
+      });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => {
+      if (!reportGate(res, 'تم تحديث حالتك')) return;
+      qc.invalidateQueries({ queryKey: ['sop-my-memberships'] });
+      qc.invalidateQueries({ queryKey: ['sop-my-departments'] });
+      qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+
+
 export function useUpsertDepartmentMember() {
   const qc = useQueryClient();
   const orgId = useOrgId();
