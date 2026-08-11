@@ -2,24 +2,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ticket, Download, Loader2, Receipt } from 'lucide-react';
+import { Ticket, Download, Loader2, Receipt, Eye } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
-import { generateDocumentPDF, type DocumentData, type DocumentItem } from '@/utils/pdfGenerator';
+import { buildInvoiceModel, buildVoucherModel } from '@/lib/travelDocuments';
+import { useBookingDocumentSources } from '@/hooks/useBookingDocumentSources';
+import { InvoiceDocument } from '@/components/documents/travel/InvoiceDocument';
+import { VoucherDocument } from '@/components/documents/travel/VoucherDocument';
+import { DocumentPreviewDialog } from '@/components/documents/travel/DocumentPreviewDialog';
 import type { Workspace } from './types';
 
 const anyClient = supabase as any;
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-};
 
 interface Props {
   workspace: Workspace;
@@ -29,7 +24,17 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
   const qc = useQueryClient();
   const booking: any = workspace.booking;
   const customer: any = workspace.customer;
-  const { data: org } = useCurrentOrganization();
+  const { getSource } = useBookingDocumentSources({
+    booking,
+    customer,
+    itinerary: (workspace as any).itinerary,
+  });
+  const [preview, setPreview] = useState<
+    | { type: 'voucher'; voucherNumber: string; issuedAt?: string | null }
+    | { type: 'invoice'; invoice: any }
+    | null
+  >(null);
+
   const [busy, setBusy] = useState<string | null>(null);
 
   const vouchersQ = useQuery({
@@ -45,87 +50,12 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     },
   });
 
-  const companyBlock = {
-    companyName: org?.name || 'Vogatchi Trips',
-    companyLogo: org?.logo_url || undefined,
-    companyPhone: org?.phone || undefined,
-    companyEmail: org?.email || undefined,
-    companyAddress: org?.address || undefined,
-  };
+  const invoiceModel = preview?.type === 'invoice' ? buildInvoiceModel(preview.invoice, getSource('invoice')) : null;
+  const voucherModel =
+    preview?.type === 'voucher'
+      ? buildVoucherModel(preview.voucherNumber, getSource('voucher'), preview.issuedAt)
+      : null;
 
-  const buildVoucherData = (voucherNumber: string): DocumentData => {
-    const items: DocumentItem[] = [
-      {
-        description:
-          booking?.title ||
-          booking?.description ||
-          `${booking?.booking_type || 'حجز'} - ${booking?.destination || ''}`.trim(),
-        quantity: 1,
-        unitPrice: Number(booking?.selling_price ?? 0),
-        total: Number(booking?.selling_price ?? 0),
-      },
-    ];
-    const total = Number(booking?.selling_price ?? 0);
-    return {
-      documentType: 'voucher',
-      documentNumber: voucherNumber,
-      date: new Date().toISOString().split('T')[0],
-      ...companyBlock,
-      customerName: customer?.name || booking?.customer_name || 'عميل',
-      customerEmail: customer?.email || undefined,
-      customerPhone: customer?.phone || undefined,
-      items,
-      subtotal: total,
-      totalAmount: total,
-      paidAmount: workspace.financials.paid,
-      remainingAmount: workspace.financials.outstanding,
-      currency: booking?.currency || workspace.financials.currency,
-      bookingReference: booking?.booking_number || booking?.id,
-      travelDate: booking?.start_date || booking?.travel_date || undefined,
-      returnDate: booking?.end_date || undefined,
-      destination: booking?.destination || undefined,
-    };
-  };
-
-  const buildInvoiceData = (inv: any): DocumentData => {
-    const lineItems: DocumentItem[] = (inv.invoice_items ?? []).map((it: any) => ({
-      description: it.description || it.item_name || 'بند',
-      quantity: Number(it.quantity ?? 1),
-      unitPrice: Number(it.unit_price ?? 0),
-      total: Number(it.total_price ?? it.total ?? Number(it.unit_price ?? 0) * Number(it.quantity ?? 1)),
-    }));
-    const total = Number(inv.final_amount ?? inv.total_amount ?? 0);
-    const items = lineItems.length
-      ? lineItems
-      : [
-          {
-            description: `حجز ${booking?.booking_number || ''}`.trim(),
-            quantity: 1,
-            unitPrice: total,
-            total,
-          },
-        ];
-    return {
-      documentType: 'invoice',
-      documentNumber: inv.invoice_number || String(inv.id).slice(0, 8),
-      date: (inv.issue_date || inv.created_at || new Date().toISOString()).split('T')[0],
-      dueDate: inv.due_date || undefined,
-      ...companyBlock,
-      customerName: customer?.name || inv.customer_name || booking?.customer_name || 'عميل',
-      customerEmail: customer?.email || undefined,
-      customerPhone: customer?.phone || undefined,
-      items,
-      subtotal: Number(inv.total_amount ?? total),
-      discount: Number(inv.discount_amount ?? 0) || undefined,
-      vat: Number(inv.tax_amount ?? 0) || undefined,
-      totalAmount: total,
-      paidAmount: Number(inv.paid_amount ?? 0),
-      remainingAmount: Math.max(0, total - Number(inv.paid_amount ?? 0)),
-      currency: inv.currency || workspace.financials.currency,
-      bookingReference: booking?.booking_number || undefined,
-      destination: booking?.destination || undefined,
-    };
-  };
 
   const persistDocument = async (
     blob: Blob,
@@ -176,6 +106,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     return urlData?.signedUrl ?? null;
   };
 
+  /** Ensures the voucher business record exists, then opens the premium preview. */
   const handleIssueVoucher = async () => {
     if (!booking?.id) return;
     setBusy('voucher');
@@ -185,35 +116,21 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
         existing?.voucher_number ||
         `VCH-${(booking.booking_number || booking.id.slice(0, 8)).replace(/^BK-/, '')}`;
 
-      const blob = await generateDocumentPDF(buildVoucherData(voucherNumber));
-      const url = await persistDocument(
-        blob,
-        'voucher',
-        voucherNumber,
-        Number(booking?.selling_price ?? 0),
-        booking?.currency || workspace.financials.currency,
-      );
-
-      if (existing) {
-        await anyClient.from('booking_vouchers').update({ pdf_url: url }).eq('id', existing.id);
-      } else {
+      if (!existing) {
         await anyClient.from('booking_vouchers').insert({
           organization_id: booking.organization_id,
           booking_id: booking.id,
           voucher_number: voucherNumber,
-          pdf_url: url,
           qr_payload: {
             booking_number: booking.booking_number,
             voucher_number: voucherNumber,
             customer: customer?.name || booking?.customer_name || null,
           },
         });
+        qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
       }
 
-      downloadBlob(blob, `${voucherNumber}.pdf`);
-      qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
-      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking.id] });
-      toast.success('تم إصدار الفاوتشر وتحميله');
+      setPreview({ type: 'voucher', voucherNumber, issuedAt: existing?.issued_at ?? null });
     } catch (e: any) {
       toast.error(e.message || 'تعذّر إصدار الفاوتشر');
     } finally {
@@ -221,27 +138,43 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     }
   };
 
-  const handleDownloadInvoice = async (inv: any) => {
-    setBusy(`inv-${inv.id}`);
+  /** Store the rendered PDF against the existing voucher/document records (no duplicates). */
+  const persistVoucherPdf = async (blob: Blob, voucherNumber: string) => {
     try {
-      const data = buildInvoiceData(inv);
-      const blob = await generateDocumentPDF(data);
-      try {
-        await persistDocument(blob, 'invoice', data.documentNumber, data.totalAmount, data.currency, {
-          invoice_id: inv.id,
-        });
-        qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
-      } catch {
-        /* download still works even if storage save fails */
+      const url = await persistDocument(
+        blob,
+        'voucher',
+        voucherNumber,
+        0,
+        booking?.currency || workspace.financials.currency,
+      );
+      const existing = (vouchersQ.data ?? []).find((v: any) => v.voucher_number === voucherNumber);
+      if (existing) {
+        await anyClient.from('booking_vouchers').update({ pdf_url: url }).eq('id', existing.id);
       }
-      downloadBlob(blob, `${data.documentNumber}.pdf`);
-      toast.success('تم تحميل الفاتورة');
-    } catch (e: any) {
-      toast.error(e.message || 'تعذّر تحميل الفاتورة');
-    } finally {
-      setBusy(null);
+      qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking?.id] });
+      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
+    } catch {
+      /* download still works even if storage save fails */
     }
   };
+
+  const persistInvoicePdf = async (blob: Blob, inv: any, docNumber: string) => {
+    try {
+      await persistDocument(
+        blob,
+        'invoice',
+        docNumber,
+        Number(inv.final_amount ?? inv.total_amount ?? 0),
+        inv.currency || workspace.financials.currency,
+        { invoice_id: inv.id },
+      );
+      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
+    } catch {
+      /* download still works even if storage save fails */
+    }
+  };
+
 
   const vouchers = vouchersQ.data ?? [];
   const invoices = (workspace.invoices ?? []) as any[];
@@ -283,7 +216,22 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                     {new Date(v.issued_at || v.created_at).toLocaleDateString('ar-EG')}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-[10px]">فاوتشر</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">فاوتشر</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setPreview({
+                        type: 'voucher',
+                        voucherNumber: v.voucher_number,
+                        issuedAt: v.issued_at ?? v.created_at,
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4 ml-1" /> معاينة
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -305,26 +253,41 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                     {inv.currency || workspace.financials.currency}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadInvoice(inv)}
-                  disabled={busy === `inv-${inv.id}`}
-                >
-                  {busy === `inv-${inv.id}` ? (
-                    <Loader2 className="h-4 w-4 ml-1 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 ml-1" />
-                  )}
-                  تحميل PDF
+                <Button size="sm" variant="outline" onClick={() => setPreview({ type: 'invoice', invoice: inv })}>
+                  <Eye className="h-4 w-4 ml-1" /> معاينة وتحميل
                 </Button>
               </div>
             ))
           )}
         </div>
       </CardContent>
+
+      {invoiceModel && preview?.type === 'invoice' && (
+        <DocumentPreviewDialog
+          open
+          onOpenChange={(o) => !o && setPreview(null)}
+          title={`فاتورة ${invoiceModel.documentNumber}`}
+          fileName={`${invoiceModel.documentNumber}.pdf`}
+          onGenerated={(blob) => persistInvoicePdf(blob, preview.invoice, invoiceModel.documentNumber)}
+        >
+          {(ref) => <InvoiceDocument ref={ref} model={invoiceModel} />}
+        </DocumentPreviewDialog>
+      )}
+
+      {voucherModel && preview?.type === 'voucher' && (
+        <DocumentPreviewDialog
+          open
+          onOpenChange={(o) => !o && setPreview(null)}
+          title={`فاوتشر ${voucherModel.voucherNumber}`}
+          fileName={`${voucherModel.voucherNumber}.pdf`}
+          onGenerated={(blob) => persistVoucherPdf(blob, voucherModel.voucherNumber)}
+        >
+          {(ref) => <VoucherDocument ref={ref} model={voucherModel} />}
+        </DocumentPreviewDialog>
+      )}
     </Card>
   );
 };
+
 
 export default BookingDocumentActions;
