@@ -81,7 +81,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setPreview(publicUrl);
       onChange(publicUrl);
 
-      // Save to media library
+      // Save to media library (scoped to the uploader and their organization)
+      const { data: authData } = await supabase.auth.getUser();
       await supabase.from('media_library').insert({
         filename: fileName,
         original_name: file.name,
@@ -90,7 +91,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         mime_type: file.type,
         category: bucket,
         alt_text: file.name.split('.')[0],
-      });
+        uploaded_by: authData.user?.id,
+        organization_id: organizationId ?? null,
+      } as any);
 
       toast({
         title: 'تم رفع الصورة بنجاح',
