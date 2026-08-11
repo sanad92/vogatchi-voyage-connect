@@ -1,6 +1,6 @@
 // Syncs approved/pending/rejected/paused templates from the connected WABA and
 // stores the raw Meta components + variable counts so sends can be validated.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { WA_CORS as cors, appSecretProof, countPlaceholders, resolveSettings } from '../_shared/whatsapp.ts';
 
 const json = (b: unknown, s = 200) =>
