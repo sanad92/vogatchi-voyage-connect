@@ -91,17 +91,19 @@ export const useWhatsAppMessaging = () => {
       templateName: string;
       templateLanguage?: string;
       templateParameters?: string[];
+      templateVariables?: { body?: string[]; header?: string[] };
     }) => {
       const { data: result, error } = await supabase.functions.invoke('send-whatsapp-message', {
         body: {
           conversationId: data.conversationId,
           messageType: 'template',
           templateName: data.templateName,
-          templateLanguage: data.templateLanguage || 'ar',
+          templateLanguage: data.templateLanguage || undefined,
           templateParameters: data.templateParameters || [],
+          ...(data.templateVariables ? { templateVariables: data.templateVariables } : {}),
         },
       });
-      if (error) await throwEdgeError(error);
+      if (error) await throwEdgeError(error, 'فشل إرسال القالب عبر WhatsApp');
       if (result?.error) throw new Error(result.error);
       return result;
     },
@@ -110,10 +112,19 @@ export const useWhatsAppMessaging = () => {
       toast.success('تم إرسال القالب');
     },
     onError: (error: any) => {
-      console.error('WhatsApp template send error:', error);
-      toast.error(error?.message || 'فشل إرسال القالب');
+      console.error('WhatsApp template send error:', {
+        message: error?.message,
+        code: error?.code,
+        provider: error?.provider,
+        correlationId: error?.correlationId,
+      });
+      toast.error(error?.message || 'فشل إرسال القالب', {
+        description: error?.provider?.errorDetails || error?.provider?.errorMessage || undefined,
+        duration: 10000,
+      });
     },
   });
+
 
   return {
     sendTextMessage: (conversationId: string, content: string) =>
