@@ -238,15 +238,15 @@ Deno.serve(async (req) => {
 
     if (messageType === 'text') {
       if (!content || typeof content !== 'string' || !content.trim()) {
-        return json({ error: 'Content is required for text messages' }, 400);
+        return fail('MISSING_CONTENT', 'نص الرسالة مطلوب | Content is required for text messages', 400);
       }
       if (content.length > MAX_CONTENT_LENGTH) {
-        return json({ error: `Content must be under ${MAX_CONTENT_LENGTH} characters` }, 400);
+        return fail('CONTENT_TOO_LONG', `الرسالة أطول من ${MAX_CONTENT_LENGTH} حرف | Content must be under ${MAX_CONTENT_LENGTH} characters`, 400);
       }
       payload.text = { body: content, preview_url: false };
     } else if (MEDIA_TYPES.has(messageType)) {
       if (!mediaUrl && !mediaStoragePath) {
-        return json({ error: 'mediaUrl or mediaStoragePath is required' }, 400);
+        return fail('MISSING_MEDIA', 'mediaUrl أو mediaStoragePath مطلوب | mediaUrl or mediaStoragePath is required', 400);
       }
       let mediaRef: any = { link: mediaUrl };
       if (mediaStoragePath) {
@@ -260,27 +260,33 @@ Deno.serve(async (req) => {
         payload.document = { ...mediaRef, filename: mediaFileName || undefined, caption: mediaCaption || undefined };
       }
     } else if (messageType === 'template') {
+      if (!templateId && !templateName) {
+        return fail('MISSING_TEMPLATE', 'اسم القالب مطلوب | templateId or templateName is required', 400);
+      }
       // Resolve the template row (by id preferred, else name+org)
       let q = admin.from('whatsapp_templates')
         .select('id, name, language, status, meta_status, components, body_text, header_text, header_format, body_variable_count, header_variable_count, category')
         .eq('organization_id', conversation.organization_id);
       q = templateId && UUID_RE.test(templateId) ? q.eq('id', templateId) : q.eq('name', templateName);
       const { data: tpls } = await q.limit(5);
-      tplRow = (tpls ?? [])[0] ?? null;
+      // Prefer an exact language match when the caller asked for one.
+      tplRow = (tpls ?? []).find((t: any) => !templateLanguage || t.language === templateLanguage)
+        ?? (tpls ?? [])[0] ?? null;
 
       if (!tplRow) {
-        throw new WaError('TEMPLATE_NOT_FOUND', 'القالب غير موجود — قم بمزامنة القوالب | Template not found — sync templates first');
+        throw new WaError('TEMPLATE_NOT_FOUND', `القالب "${templateName ?? templateId}" غير موجود — قم بمزامنة القوالب | Template not found — sync templates first`);
       }
       const st = String(tplRow.meta_status || tplRow.status || '').toLowerCase();
       if (st !== 'approved') {
-        throw new WaError('TEMPLATE_NOT_APPROVED', `القالب "${tplRow.name}" غير معتمد (${st || 'unknown'}) | Template is not approved`);
+        throw new WaError('TEMPLATE_NOT_APPROVED', `القالب "${tplRow.name}" غير معتمد (${st || 'unknown'}) | Template "${tplRow.name}" is not approved by Meta (${st || 'unknown'})`);
       }
 
       usedVars = normalizeVars(templateVariables, templateParameters);
       const components = buildTemplateComponents(tplRow, usedVars);
+      // Meta matches on the exact approved language code of the template row.
       payload.template = {
         name: tplRow.name,
-        language: { code: templateLanguage || tplRow.language || 'ar' },
+        language: { code: tplRow.language || templateLanguage || 'ar' },
         ...(components.length ? { components } : {}),
       };
     }
@@ -303,16 +309,20 @@ Deno.serve(async (req) => {
       template_parameters: usedVars ?? null,
       idempotency_key: idempotencyKey || null,
       followup_id: followupId || null,
+      correlation_id: correlationId,
       sent_by: user.id,
       status: 'sending',
       sent_at: new Date().toISOString(),
     };
 
-    const { data: pending } = await admin.from('whatsapp_messages').insert(baseRow).select('id').single();
+    const { data: pending, error: insErr } = await admin.from('whatsapp_messages').insert(baseRow).select('id').single();
+    if (insErr) {
+      return fail('MESSAGE_PERSIST_FAILED', `تعذر حفظ الرسالة | Could not persist message row: ${insErr.message}`, 500);
+    }
     messageRowId = pending?.id ?? null;
 
     // ---------- send ----------
-    const result = await graphSend(settings, payload);
+    const result = await graphSend(settings, payload, correlationId);
 
     if (!result.ok) {
       if (messageRowId) {
@@ -321,15 +331,34 @@ Deno.serve(async (req) => {
           error_code: result.errorCode,
           error_message: result.errorMessage,
           error_details: result.errorDetails as any,
+          provider_error_code: result.errorCode,
+          provider_error_message: (result.errorDetails as any)?.message ?? result.errorMessage,
+          provider_response: result.providerResponse as any,
           idempotency_key: null, // allow a clean retry
         }).eq('id', messageRowId);
       }
+      const raw: any = result.errorDetails ?? {};
       return json({
+        success: false,
         error: result.errorMessage || 'فشل الإرسال | Send failed',
-        code: result.errorCode,
+        code: 'PROVIDER_ERROR',
+        correlationId,
         messageId: messageRowId,
+        provider: {
+          errorCode: result.errorCode,
+          errorSubcode: raw?.error_subcode ?? null,
+          errorType: raw?.type ?? null,
+          errorMessage: raw?.message ?? result.errorMessage,
+          errorDetails: raw?.error_data?.details ?? null,
+          fbtraceId: raw?.fbtrace_id ?? null,
+          httpStatus: result.httpStatus,
+          apiVersion: result.apiVersion,
+        },
+        template: tplRow ? { name: tplRow.name, language: tplRow.language, status: tplRow.meta_status ?? tplRow.status } : null,
+        windowOpen,
       }, 400);
     }
+
 
     const { data: saved } = await admin.from('whatsapp_messages').update({
       status: 'sent',
