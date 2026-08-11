@@ -10945,6 +10945,7 @@ export type Database = {
           broadcast_id: string | null
           content: string | null
           conversation_id: string | null
+          correlation_id: string | null
           created_at: string | null
           delivered_at: string | null
           direction: string
@@ -10968,6 +10969,9 @@ export type Database = {
           message_id: string
           message_type: string | null
           organization_id: string | null
+          provider_error_code: string | null
+          provider_error_message: string | null
+          provider_response: Json | null
           read_at: string | null
           sent_at: string | null
           sent_by: string | null
@@ -10981,6 +10985,7 @@ export type Database = {
           broadcast_id?: string | null
           content?: string | null
           conversation_id?: string | null
+          correlation_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           direction?: string
@@ -11004,6 +11009,9 @@ export type Database = {
           message_id: string
           message_type?: string | null
           organization_id?: string | null
+          provider_error_code?: string | null
+          provider_error_message?: string | null
+          provider_response?: Json | null
           read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
@@ -11017,6 +11025,7 @@ export type Database = {
           broadcast_id?: string | null
           content?: string | null
           conversation_id?: string | null
+          correlation_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           direction?: string
@@ -11040,6 +11049,9 @@ export type Database = {
           message_id?: string
           message_type?: string | null
           organization_id?: string | null
+          provider_error_code?: string | null
+          provider_error_message?: string | null
+          provider_response?: Json | null
           read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
@@ -12932,6 +12944,7 @@ export type Database = {
         Returns: boolean
       }
       user_has_any_org: { Args: never; Returns: boolean }
+      wa_count_placeholders: { Args: { _text: string }; Returns: number }
       whatsapp_window_open: {
         Args: { _conversation_id: string }
         Returns: boolean
