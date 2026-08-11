@@ -12843,6 +12843,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sop_my_departments: { Args: { _org: string }; Returns: Json }
       sop_on_booking_confirmed: { Args: { _lead: string }; Returns: Json }
       sop_publish_pricing: {
         Args: {
@@ -12883,6 +12884,14 @@ export type Database = {
           _is_available?: boolean
           _reason?: string
           _user_id: string
+        }
+        Returns: Json
+      }
+      sop_set_my_availability: {
+        Args: {
+          _available: boolean
+          _department: Database["public"]["Enums"]["sop_department"]
+          _org: string
         }
         Returns: Json
       }
