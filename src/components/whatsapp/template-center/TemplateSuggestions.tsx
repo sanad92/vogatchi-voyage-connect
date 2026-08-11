@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWhatsAppTemplateCenter, suggestTemplatesForContext } from '@/hooks/useWhatsAppTemplateCenter';
 import { categoryMeta } from '@/data/travelTemplateCategories';
 import { interpolateVariables, type VariableContext } from '@/lib/whatsappVariables';
+import { throwEdgeError } from '@/lib/edgeError';
 import { toast } from 'sonner';
 
 interface Props {
