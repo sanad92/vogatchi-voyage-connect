@@ -58,10 +58,27 @@ const POSITIONAL_ORDER: Array<keyof VariableContext> = [
 
 // Extract ordered {{1}} {{2}} … or {{var_name}} placeholders and resolve values from context.
 // Meta rejects empty parameters (error 132000/132012), so unresolved slots fall back to "-".
+// Placeholders are de-duplicated (a repeated {{1}} is still ONE parameter) so the count
+// always matches what the edge function/Meta expect for the approved template.
 const extractParameters = (body: string, ctx: VariableContext): string[] => {
   const matches = Array.from(body.matchAll(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi));
-  return matches.map((m) => {
+  const positional: number[] = [];
+  const named: string[] = [];
+  for (const m of matches) {
     const key = m[1].toLowerCase();
+    if (/^\d+$/.test(key)) {
+      const n = parseInt(key, 10);
+      if (!positional.includes(n)) positional.push(n);
+    } else if (!named.includes(key)) {
+      named.push(key);
+    }
+  }
+  const maxPos = positional.length ? Math.max(...positional) : 0;
+  const keys = [
+    ...Array.from({ length: maxPos }, (_, i) => String(i + 1)),
+    ...named,
+  ];
+  return keys.map((key) => {
     let val: any = (ctx as any)[key];
     if ((val == null || val === '') && /^\d+$/.test(key)) {
       const posKey = POSITIONAL_ORDER[parseInt(key, 10) - 1];
@@ -70,6 +87,7 @@ const extractParameters = (body: string, ctx: VariableContext): string[] => {
     return val != null && String(val).trim() !== '' ? String(val) : '-';
   });
 };
+
 
 export const TemplatesPicker: React.FC<Props> = ({
   variables,
