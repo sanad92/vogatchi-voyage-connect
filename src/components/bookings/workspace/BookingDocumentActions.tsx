@@ -106,6 +106,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     return urlData?.signedUrl ?? null;
   };
 
+  /** Ensures the voucher business record exists, then opens the premium preview. */
   const handleIssueVoucher = async () => {
     if (!booking?.id) return;
     setBusy('voucher');
@@ -115,35 +116,21 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
         existing?.voucher_number ||
         `VCH-${(booking.booking_number || booking.id.slice(0, 8)).replace(/^BK-/, '')}`;
 
-      const blob = await generateDocumentPDF(buildVoucherData(voucherNumber));
-      const url = await persistDocument(
-        blob,
-        'voucher',
-        voucherNumber,
-        Number(booking?.selling_price ?? 0),
-        booking?.currency || workspace.financials.currency,
-      );
-
-      if (existing) {
-        await anyClient.from('booking_vouchers').update({ pdf_url: url }).eq('id', existing.id);
-      } else {
+      if (!existing) {
         await anyClient.from('booking_vouchers').insert({
           organization_id: booking.organization_id,
           booking_id: booking.id,
           voucher_number: voucherNumber,
-          pdf_url: url,
           qr_payload: {
             booking_number: booking.booking_number,
             voucher_number: voucherNumber,
             customer: customer?.name || booking?.customer_name || null,
           },
         });
+        qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
       }
 
-      downloadBlob(blob, `${voucherNumber}.pdf`);
-      qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
-      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking.id] });
-      toast.success('تم إصدار الفاوتشر وتحميله');
+      setPreview({ type: 'voucher', voucherNumber, issuedAt: existing?.issued_at ?? null });
     } catch (e: any) {
       toast.error(e.message || 'تعذّر إصدار الفاوتشر');
     } finally {
@@ -151,27 +138,43 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     }
   };
 
-  const handleDownloadInvoice = async (inv: any) => {
-    setBusy(`inv-${inv.id}`);
+  /** Store the rendered PDF against the existing voucher/document records (no duplicates). */
+  const persistVoucherPdf = async (blob: Blob, voucherNumber: string) => {
     try {
-      const data = buildInvoiceData(inv);
-      const blob = await generateDocumentPDF(data);
-      try {
-        await persistDocument(blob, 'invoice', data.documentNumber, data.totalAmount, data.currency, {
-          invoice_id: inv.id,
-        });
-        qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
-      } catch {
-        /* download still works even if storage save fails */
+      const url = await persistDocument(
+        blob,
+        'voucher',
+        voucherNumber,
+        0,
+        booking?.currency || workspace.financials.currency,
+      );
+      const existing = (vouchersQ.data ?? []).find((v: any) => v.voucher_number === voucherNumber);
+      if (existing) {
+        await anyClient.from('booking_vouchers').update({ pdf_url: url }).eq('id', existing.id);
       }
-      downloadBlob(blob, `${data.documentNumber}.pdf`);
-      toast.success('تم تحميل الفاتورة');
-    } catch (e: any) {
-      toast.error(e.message || 'تعذّر تحميل الفاتورة');
-    } finally {
-      setBusy(null);
+      qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking?.id] });
+      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
+    } catch {
+      /* download still works even if storage save fails */
     }
   };
+
+  const persistInvoicePdf = async (blob: Blob, inv: any, docNumber: string) => {
+    try {
+      await persistDocument(
+        blob,
+        'invoice',
+        docNumber,
+        Number(inv.final_amount ?? inv.total_amount ?? 0),
+        inv.currency || workspace.financials.currency,
+        { invoice_id: inv.id },
+      );
+      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
+    } catch {
+      /* download still works even if storage save fails */
+    }
+  };
+
 
   const vouchers = vouchersQ.data ?? [];
   const invoices = (workspace.invoices ?? []) as any[];
