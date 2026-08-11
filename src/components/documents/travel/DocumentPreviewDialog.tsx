@@ -96,7 +96,7 @@ export const DocumentPreviewDialog = ({
       {open &&
         createPortal(
           <div ref={printRef} className="doc-print-root hidden">
-            {children(useRefNoop)}
+            {children(PRINT_REF)}
           </div>,
           document.body,
         )}
@@ -104,5 +104,5 @@ export const DocumentPreviewDialog = ({
   );
 };
 
-// The print copy does not need a ref handle.
-const useRefNoop = { current: null } as React.RefObject<HTMLDivElement>;
+// The print copy does not need a live ref handle.
+const PRINT_REF = { current: null } as React.RefObject<HTMLDivElement>;
