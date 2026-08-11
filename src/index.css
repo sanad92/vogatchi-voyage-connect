@@ -291,8 +291,77 @@
   }
 }
 
+/* ============================================================
+ * Travel documents (Invoice / Voucher) — paper surface tokens.
+ * These are deliberately paper-fixed (documents must look identical
+ * on screen, in print and in the generated PDF, in any theme).
+ * ============================================================ */
+.doc-sheet {
+  --doc-paper: 0 0% 100%;
+  --doc-ink: 222 25% 14%;
+  --doc-muted: 222 12% 45%;
+  --doc-line: 222 15% 88%;
+  --doc-soft: 222 30% 97%;
+  --doc-brand: 245 70% 32%;
+  --doc-accent: 245 70% 58%;
+  --doc-gold: 38 72% 48%;
+
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 0;
+  background: hsl(var(--doc-paper));
+  color: hsl(var(--doc-ink));
+  font-feature-settings: 'ss01', 'kern';
+  box-shadow: 0 10px 40px -12px hsl(222 30% 20% / 0.28);
+}
+
+.doc-sheet .doc-band {
+  background: linear-gradient(115deg, hsl(var(--doc-brand)), hsl(var(--doc-accent)));
+  color: hsl(0 0% 100%);
+}
+.doc-sheet .doc-rule { border-color: hsl(var(--doc-line)); }
+.doc-sheet .doc-soft { background: hsl(var(--doc-soft)); }
+.doc-sheet .doc-muted { color: hsl(var(--doc-muted)); }
+.doc-sheet .doc-brandtext { color: hsl(var(--doc-brand)); }
+.doc-sheet .doc-goldline { background: hsl(var(--doc-gold)); }
+.doc-sheet .doc-section-title {
+  color: hsl(var(--doc-brand));
+  letter-spacing: 0.02em;
+}
+.doc-sheet .doc-chip {
+  background: hsl(var(--doc-soft));
+  border: 1px solid hsl(var(--doc-line));
+  color: hsl(var(--doc-ink));
+}
+.doc-sheet table th { background: hsl(var(--doc-soft)); color: hsl(var(--doc-brand)); }
+.doc-sheet table td, .doc-sheet table th { border-color: hsl(var(--doc-line)); }
+
+.doc-scroll { background: hsl(var(--muted)); }
+
 /* Print */
 @media print {
   .no-print { display: none !important; }
   .print-break-inside-avoid { break-inside: avoid; }
+
+  @page { size: A4; margin: 10mm; }
+
+  html, body { background: #fff !important; }
+
+  body.printing-document > * { display: none !important; }
+  body.printing-document .doc-print-root {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .doc-print-root .doc-sheet {
+    width: auto !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  .doc-print-root .doc-block { break-inside: avoid; page-break-inside: avoid; }
 }
+

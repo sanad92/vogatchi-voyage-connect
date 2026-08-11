@@ -2,24 +2,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ticket, Download, Loader2, Receipt } from 'lucide-react';
+import { Ticket, Download, Loader2, Receipt, Eye } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
-import { generateDocumentPDF, type DocumentData, type DocumentItem } from '@/utils/pdfGenerator';
+import { buildInvoiceModel, buildVoucherModel } from '@/lib/travelDocuments';
+import { useBookingDocumentSources } from '@/hooks/useBookingDocumentSources';
+import { InvoiceDocument } from '@/components/documents/travel/InvoiceDocument';
+import { VoucherDocument } from '@/components/documents/travel/VoucherDocument';
+import { DocumentPreviewDialog } from '@/components/documents/travel/DocumentPreviewDialog';
 import type { Workspace } from './types';
 
 const anyClient = supabase as any;
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-};
 
 interface Props {
   workspace: Workspace;
@@ -29,7 +24,17 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
   const qc = useQueryClient();
   const booking: any = workspace.booking;
   const customer: any = workspace.customer;
-  const { data: org } = useCurrentOrganization();
+  const { getSource } = useBookingDocumentSources({
+    booking,
+    customer,
+    itinerary: (workspace as any).itinerary,
+  });
+  const [preview, setPreview] = useState<
+    | { type: 'voucher'; voucherNumber: string; issuedAt?: string | null }
+    | { type: 'invoice'; invoice: any }
+    | null
+  >(null);
+
   const [busy, setBusy] = useState<string | null>(null);
 
   const vouchersQ = useQuery({
@@ -45,87 +50,12 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     },
   });
 
-  const companyBlock = {
-    companyName: org?.name || 'Vogatchi Trips',
-    companyLogo: org?.logo_url || undefined,
-    companyPhone: org?.phone || undefined,
-    companyEmail: org?.email || undefined,
-    companyAddress: org?.address || undefined,
-  };
+  const invoiceModel = preview?.type === 'invoice' ? buildInvoiceModel(preview.invoice, getSource('invoice')) : null;
+  const voucherModel =
+    preview?.type === 'voucher'
+      ? buildVoucherModel(preview.voucherNumber, getSource('voucher'), preview.issuedAt)
+      : null;
 
-  const buildVoucherData = (voucherNumber: string): DocumentData => {
-    const items: DocumentItem[] = [
-      {
-        description:
-          booking?.title ||
-          booking?.description ||
-          `${booking?.booking_type || 'حجز'} - ${booking?.destination || ''}`.trim(),
-        quantity: 1,
-        unitPrice: Number(booking?.selling_price ?? 0),
-        total: Number(booking?.selling_price ?? 0),
-      },
-    ];
-    const total = Number(booking?.selling_price ?? 0);
-    return {
-      documentType: 'voucher',
-      documentNumber: voucherNumber,
-      date: new Date().toISOString().split('T')[0],
-      ...companyBlock,
-      customerName: customer?.name || booking?.customer_name || 'عميل',
-      customerEmail: customer?.email || undefined,
-      customerPhone: customer?.phone || undefined,
-      items,
-      subtotal: total,
-      totalAmount: total,
-      paidAmount: workspace.financials.paid,
-      remainingAmount: workspace.financials.outstanding,
-      currency: booking?.currency || workspace.financials.currency,
-      bookingReference: booking?.booking_number || booking?.id,
-      travelDate: booking?.start_date || booking?.travel_date || undefined,
-      returnDate: booking?.end_date || undefined,
-      destination: booking?.destination || undefined,
-    };
-  };
-
-  const buildInvoiceData = (inv: any): DocumentData => {
-    const lineItems: DocumentItem[] = (inv.invoice_items ?? []).map((it: any) => ({
-      description: it.description || it.item_name || 'بند',
-      quantity: Number(it.quantity ?? 1),
-      unitPrice: Number(it.unit_price ?? 0),
-      total: Number(it.total_price ?? it.total ?? Number(it.unit_price ?? 0) * Number(it.quantity ?? 1)),
-    }));
-    const total = Number(inv.final_amount ?? inv.total_amount ?? 0);
-    const items = lineItems.length
-      ? lineItems
-      : [
-          {
-            description: `حجز ${booking?.booking_number || ''}`.trim(),
-            quantity: 1,
-            unitPrice: total,
-            total,
-          },
-        ];
-    return {
-      documentType: 'invoice',
-      documentNumber: inv.invoice_number || String(inv.id).slice(0, 8),
-      date: (inv.issue_date || inv.created_at || new Date().toISOString()).split('T')[0],
-      dueDate: inv.due_date || undefined,
-      ...companyBlock,
-      customerName: customer?.name || inv.customer_name || booking?.customer_name || 'عميل',
-      customerEmail: customer?.email || undefined,
-      customerPhone: customer?.phone || undefined,
-      items,
-      subtotal: Number(inv.total_amount ?? total),
-      discount: Number(inv.discount_amount ?? 0) || undefined,
-      vat: Number(inv.tax_amount ?? 0) || undefined,
-      totalAmount: total,
-      paidAmount: Number(inv.paid_amount ?? 0),
-      remainingAmount: Math.max(0, total - Number(inv.paid_amount ?? 0)),
-      currency: inv.currency || workspace.financials.currency,
-      bookingReference: booking?.booking_number || undefined,
-      destination: booking?.destination || undefined,
-    };
-  };
 
   const persistDocument = async (
     blob: Blob,
