@@ -127,6 +127,10 @@ const SopPricing = () => {
           </p>
         </header>
 
+        <MySopStatusBar department="reservations" />
+
+
+
         <div className="grid gap-4 lg:grid-cols-4">
           <div className="lg:col-span-1 space-y-4">
             <Card className="border-primary/40">
