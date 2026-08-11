@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useSop';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import DepartmentGate from '@/components/sop/DepartmentGate';
+import MySopStatusBar from '@/components/sop/MySopStatusBar';
 import PricingOfferEditor from '@/components/sop/PricingOfferEditor';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
