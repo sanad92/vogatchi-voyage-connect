@@ -193,9 +193,7 @@ export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput
 
   // Named parameters must be sent with `parameter_name`; positional must not.
   const param = (text: string, idx: number, names: string[]) =>
-    names.length === names.length && names[idx]
-      ? { type: 'text', parameter_name: names[idx], text }
-      : { type: 'text', text };
+    names[idx] ? { type: 'text', parameter_name: names[idx], text } : { type: 'text', text };
 
   const out: any[] = [];
   if (expectedHeader) {
