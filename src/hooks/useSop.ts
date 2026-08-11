@@ -11,7 +11,7 @@ import type {
   SopHandoverType,
   SopLeadStage,
 } from '@/lib/sop';
-import { labelMissing, labelViolation } from '@/lib/sop';
+import { labelMissing, labelViolation, VIOLATION_GUIDANCE, DEPARTMENT_LABELS } from '@/lib/sop';
 
 const db = supabase as any;
 
