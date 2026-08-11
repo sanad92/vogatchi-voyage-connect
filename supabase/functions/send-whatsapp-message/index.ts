@@ -121,25 +121,39 @@ Deno.serve(async (req) => {
         .eq('id', conversationId)
         .maybeSingle();
       conversation = data;
-      if (!conversation) return json({ error: 'Conversation not found' }, 404);
+      if (!conversation) return fail('CONVERSATION_NOT_FOUND', 'المحادثة غير موجودة | Conversation not found', 404);
     } else {
-      // Resolve target phone + org from the customer record
-      let orgId: string | null = null;
+      // Resolve target phone + org from the customer record, an explicit
+      // organizationId, or (last resort) the caller's own membership.
+      let orgId: string | null =
+        body?.organizationId && UUID_RE.test(body.organizationId) ? body.organizationId : null;
       let toPhone = normalizePhone(phoneNumber);
       if (customerId && UUID_RE.test(customerId)) {
         const { data: cust } = await admin
           .from('customers')
           .select('id, phone, organization_id, whatsapp_opt_out')
           .eq('id', customerId).maybeSingle();
-        if (!cust) return json({ error: 'Customer not found' }, 404);
+        if (!cust) return fail('CUSTOMER_NOT_FOUND', 'العميل غير موجود | Customer not found', 404);
         if (cust.whatsapp_opt_out) {
-          return json({ error: 'العميل ألغى الاشتراك في رسائل واتساب | Customer opted out of WhatsApp' }, 400);
+          return fail('OPTED_OUT', 'العميل ألغى الاشتراك في رسائل واتساب | Customer opted out of WhatsApp', 400);
         }
         orgId = cust.organization_id;
         toPhone = toPhone || normalizePhone(cust.phone);
       }
-      if (!toPhone) return json({ error: 'رقم واتساب غير صالح | Invalid WhatsApp number' }, 400);
-      if (!orgId) return json({ error: 'customerId or conversationId is required' }, 400);
+      if (!orgId) {
+        const { data: myOrg } = await admin
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(2);
+        if ((myOrg ?? []).length === 1) orgId = myOrg![0].organization_id;
+      }
+      if (!toPhone) {
+        return fail('INVALID_PHONE', `رقم واتساب غير صالح | Invalid WhatsApp number: "${phoneNumber ?? ''}"`, 400);
+      }
+      if (!orgId) {
+        return fail('MISSING_TARGET', 'مطلوب conversationId أو customerId أو organizationId | conversationId, customerId or organizationId is required', 400);
+      }
 
       const { data: existing } = await admin
         .from('whatsapp_conversations')
@@ -181,7 +195,9 @@ Deno.serve(async (req) => {
       .eq('organization_id', conversation.organization_id)
       .eq('user_id', user.id)
       .maybeSingle();
-    if (!membership) return json({ error: 'Forbidden' }, 403);
+    if (!membership) {
+      return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
+    }
 
     // ---------- idempotency ----------
     if (idempotencyKey) {
@@ -192,24 +208,28 @@ Deno.serve(async (req) => {
         .eq('idempotency_key', idempotencyKey)
         .maybeSingle();
       if (dupe && dupe.status !== 'failed') {
-        return json({ success: true, duplicate: true, message: dupe });
+        return json({ success: true, duplicate: true, message: dupe, correlationId });
       }
     }
 
     const to = normalizePhone(conversation.phone_number);
-    if (!to) return json({ error: 'رقم المحادثة غير صالح | Conversation phone number is invalid' }, 400);
+    if (!to) return fail('INVALID_PHONE', 'رقم المحادثة غير صالح | Conversation phone number is invalid', 400);
 
     const settings = await resolveSettings(admin, conversation.organization_id, conversation.whatsapp_settings_id);
 
     // ---------- 24h service window enforcement ----------
+    // Templates are ALWAYS allowed (that is how a closed window is reopened);
+    // every other type is blocked once the window has expired.
     const windowOpen = await isWindowOpen(admin, conversationId!);
     if (messageType !== 'template' && !windowOpen) {
-      return json({
-        error: 'انتهت نافذة الـ24 ساعة — اختر قالبًا معتمدًا للإرسال | The 24-hour window is closed — send an approved template instead',
-        code: 'WINDOW_CLOSED',
-        windowOpen: false,
-      }, 409);
+      return fail(
+        'WINDOW_CLOSED',
+        'انتهت نافذة الـ24 ساعة — اختر قالبًا معتمدًا للإرسال | The 24-hour window is closed — send an approved template instead',
+        409,
+        { windowOpen: false },
+      );
     }
+
 
     // ---------- build payload ----------
     let payload: Record<string, any> = { messaging_product: 'whatsapp', to, type: messageType };
