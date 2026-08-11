@@ -107,12 +107,17 @@ export const fmtMoney = (amount: number, currency: string): string =>
     maximumFractionDigits: 2,
   })} ${currency}`;
 
+/** Raw identifiers must never surface on a customer-facing document. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const fact = (label: string, value: unknown): DocFact | null => {
   if (value === null || value === undefined) return null;
   const v = String(value).trim();
   if (!v || v === '0' || v.toLowerCase() === 'null') return null;
+  if (UUID_RE.test(v)) return null;
   return { label, value: v };
 };
+
 
 const facts = (...rows: (DocFact | null)[]): DocFact[] => rows.filter(Boolean) as DocFact[];
 
