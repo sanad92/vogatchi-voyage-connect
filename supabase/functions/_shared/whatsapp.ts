@@ -94,12 +94,27 @@ export async function isWindowOpen(admin: any, conversationId: string): Promise<
   return (data ?? []).length > 0;
 }
 
-/** Number of distinct {{n}} placeholders in a string. */
+/**
+ * Placeholders in a template string. Meta supports positional `{{1}}` and
+ * named `{{customer_name}}` parameters — we must recognise both, otherwise we
+ * send zero parameters for a template that requires them (Meta error 132000).
+ */
+export function scanPlaceholders(text: string | null | undefined): { count: number; names: string[] } {
+  if (!text) return { count: 0, names: [] };
+  const positional = new Set<number>();
+  const names: string[] = [];
+  for (const m of text.matchAll(/\{\{\s*([^}\s]+)\s*\}\}/g)) {
+    const token = m[1];
+    if (/^\d+$/.test(token)) positional.add(Number(token));
+    else if (!names.includes(token)) names.push(token);
+  }
+  const positionalCount = positional.size ? Math.max(...positional) : 0;
+  return { count: positionalCount + names.length, names };
+}
+
+/** Backwards-compatible numeric helper. */
 export function countPlaceholders(text: string | null | undefined): number {
-  if (!text) return 0;
-  const found = new Set<number>();
-  for (const m of text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)) found.add(Number(m[1]));
-  return found.size ? Math.max(...found) : 0;
+  return scanPlaceholders(text).count;
 }
 
 export interface TemplateRow {
@@ -121,19 +136,39 @@ export interface TemplateVarInput {
 }
 
 /**
- * Builds Meta `components` for a template send and validates the parameter
- * count up-front — the #1 cause of Meta error 132000.
+ * Authoritative variable spec for a template.
+ * The stored `*_variable_count` columns drift (older sync runs wrote 0 and left
+ * `components` null), so the template text is the source of truth and the
+ * stored counters can only raise the expectation, never silence it.
  */
-export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput) {
+export function templateVarSpec(tpl: TemplateRow) {
   const comps: any[] = Array.isArray(tpl.components) ? tpl.components : [];
   const bodyComp = comps.find((c: any) => String(c?.type).toUpperCase() === 'BODY');
   const headerComp = comps.find((c: any) => String(c?.type).toUpperCase() === 'HEADER');
 
-  const expectedBody = tpl.body_variable_count ?? countPlaceholders(bodyComp?.text ?? tpl.body_text);
-  const headerIsText = String(headerComp?.format ?? tpl.header_format ?? 'TEXT').toUpperCase() === 'TEXT';
-  const expectedHeader = headerIsText
-    ? (tpl.header_variable_count ?? countPlaceholders(headerComp?.text ?? tpl.header_text))
-    : 0;
+  const bodyScan = scanPlaceholders(bodyComp?.text ?? tpl.body_text);
+  const headerFormat = String(headerComp?.format ?? tpl.header_format ?? 'TEXT').toUpperCase();
+  const headerIsText = headerFormat === 'TEXT';
+  const headerScan = headerIsText ? scanPlaceholders(headerComp?.text ?? tpl.header_text) : { count: 0, names: [] };
+
+  return {
+    bodyCount: Math.max(bodyScan.count, tpl.body_variable_count ?? 0),
+    headerCount: Math.max(headerScan.count, headerIsText ? (tpl.header_variable_count ?? 0) : 0),
+    bodyNames: bodyScan.names,
+    headerNames: headerScan.names,
+    headerIsText,
+    headerFormat,
+  };
+}
+
+/**
+ * Builds Meta `components` for a template send and validates the parameter
+ * count up-front — the #1 cause of Meta error 132000.
+ */
+export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput) {
+  const spec = templateVarSpec(tpl);
+  const expectedBody = spec.bodyCount;
+  const expectedHeader = spec.headerCount;
 
   const body = (vars.body ?? []).map((v) => (v ?? '').toString());
   const header = (vars.header ?? []).map((v) => (v ?? '').toString());
@@ -142,24 +177,32 @@ export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput
     throw new WaError(
       'TEMPLATE_PARAM_MISMATCH',
       `القالب يحتاج ${expectedBody} متغير في النص وتم إرسال ${body.length} | Template expects ${expectedBody} body variable(s), received ${body.length}`,
+      { expectedBody, receivedBody: body.length, bodyNames: spec.bodyNames },
     );
   }
   if (expectedHeader && header.length !== expectedHeader) {
     throw new WaError(
       'TEMPLATE_PARAM_MISMATCH',
       `القالب يحتاج ${expectedHeader} متغير في العنوان | Template expects ${expectedHeader} header variable(s), received ${header.length}`,
+      { expectedHeader, receivedHeader: header.length, headerNames: spec.headerNames },
     );
   }
   if (body.some((v) => !v.trim()) || header.some((v) => !v.trim())) {
     throw new WaError('TEMPLATE_PARAM_EMPTY', 'لا يمكن ترك متغيرات القالب فارغة | Template variables cannot be empty');
   }
 
+  // Named parameters must be sent with `parameter_name`; positional must not.
+  const param = (text: string, idx: number, names: string[]) =>
+    names.length === names.length && names[idx]
+      ? { type: 'text', parameter_name: names[idx], text }
+      : { type: 'text', text };
+
   const out: any[] = [];
   if (expectedHeader) {
-    out.push({ type: 'header', parameters: header.map((t) => ({ type: 'text', text: t })) });
+    out.push({ type: 'header', parameters: header.map((t, i) => param(t, i, spec.headerNames)) });
   }
   if (expectedBody) {
-    out.push({ type: 'body', parameters: body.map((t) => ({ type: 'text', text: t })) });
+    out.push({ type: 'body', parameters: body.map((t, i) => param(t, i, spec.bodyNames)) });
   }
   return out;
 }
