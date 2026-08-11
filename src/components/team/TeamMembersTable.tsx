@@ -28,8 +28,13 @@ interface Props {
 const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
   const { data: deptMembers = [] } = useSopDepartmentMembers();
-  const setDepartment = useSetSopDepartment();
-  const deptByUser = new Map(deptMembers.map((d) => [d.user_id, d.department]));
+  const addDepartment = useUpsertDepartmentMember();
+  const removeDepartment = useRemoveDepartmentMember();
+  const deptsByUser = deptMembers.reduce<Record<string, SopDepartment[]>>((acc, d) => {
+    (acc[d.user_id] ||= []).push(d.department);
+    return acc;
+  }, {});
+
   const [editing, setEditing] = useState<TeamMember | null>(null);
   const [offboarding, setOffboarding] = useState<TeamMember | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
