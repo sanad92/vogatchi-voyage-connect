@@ -6470,6 +6470,7 @@ export type Database = {
           file_type: string | null
           filename: string
           id: string
+          organization_id: string | null
           original_name: string | null
           uploaded_by: string | null
           url: string | null
@@ -6481,6 +6482,7 @@ export type Database = {
           file_type?: string | null
           filename: string
           id?: string
+          organization_id?: string | null
           original_name?: string | null
           uploaded_by?: string | null
           url?: string | null
@@ -6492,6 +6494,7 @@ export type Database = {
           file_type?: string | null
           filename?: string
           id?: string
+          organization_id?: string | null
           original_name?: string | null
           uploaded_by?: string | null
           url?: string | null
