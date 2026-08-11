@@ -119,39 +119,49 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
 
                   <TableCell className="hidden md:table-cell">
                     <div className="space-y-1">
-                      {canManage ? (
-                        <Select
-                          value={deptByUser.get(m.user_id) ?? 'none'}
-                          onValueChange={(v) =>
-                            setDepartment.mutate({
-                              user_id: m.user_id,
-                              department: v === 'none' ? null : (v as SopDepartment),
-                              is_available: true,
-                              reason: 'تغيير القسم من صفحة فريق العمل',
-                            })
-                          }
-                          disabled={setDepartment.isPending}
-                        >
-                          <SelectTrigger className="w-40 h-8">
-                            <SelectValue placeholder="غير موزع" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">غير موزع</SelectItem>
-                            {(Object.keys(DEPARTMENT_LABELS) as SopDepartment[]).map((d) => (
-                              <SelectItem key={d} value={d}>{DEPARTMENT_LABELS[d]}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="outline" className="text-xs">
-                          {deptByUser.has(m.user_id) ? DEPARTMENT_LABELS[deptByUser.get(m.user_id)!] : 'غير موزع'}
-                        </Badge>
-                      )}
+                      {(() => {
+                        const mine = deptsByUser[m.user_id] || [];
+                        const summary = mine.length
+                          ? mine.map((d) => DEPARTMENT_LABELS[d]).join('، ')
+                          : 'غير موزع';
+                        if (!canManage) {
+                          return <Badge variant="outline" className="text-xs">{summary}</Badge>;
+                        }
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 w-44 justify-between font-normal">
+                                <span className="truncate">{summary}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              {(Object.keys(DEPARTMENT_LABELS) as SopDepartment[]).map((d) => (
+                                <DropdownMenuCheckboxItem
+                                  key={d}
+                                  checked={mine.includes(d)}
+                                  disabled={addDepartment.isPending || removeDepartment.isPending}
+                                  onSelect={(e) => e.preventDefault()}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      addDepartment.mutate({ user_id: m.user_id, department: d, is_available: true });
+                                    } else {
+                                      removeDepartment.mutate({ user_id: m.user_id, department: d });
+                                    }
+                                  }}
+                                >
+                                  {DEPARTMENT_LABELS[d]}
+                                </DropdownMenuCheckboxItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
                       <p className="text-xs text-muted-foreground">
                         {m.employee?.position || 'بدون منصب'}
                       </p>
                     </div>
                   </TableCell>
+
 
                   <TableCell>
                     <Badge variant={m.is_active ? 'default' : 'secondary'} className="text-xs">
