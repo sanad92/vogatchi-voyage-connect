@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWhatsAppTemplateCenter, suggestTemplatesForContext } from '@/hooks/useWhatsAppTemplateCenter';
 import { categoryMeta } from '@/data/travelTemplateCategories';
 import { interpolateVariables, type VariableContext } from '@/lib/whatsappVariables';
+import { throwEdgeError } from '@/lib/edgeError';
 import { toast } from 'sonner';
 
 interface Props {
@@ -40,22 +41,32 @@ export const TemplateSuggestions: React.FC<Props> = ({ context, variables, phone
       return;
     }
     try {
-      const { error } = await supabase.functions.invoke('send-whatsapp-message', {
+      // Field names must match the edge function contract exactly.
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
         body: {
-          to: phone,
-          type: 'template',
-          templateName: t.name,
-          templateLanguage: t.language || t.locale || 'ar',
-          templateParameters: extractParams(t.body_text || '', variables),
+          messageType: 'template',
+          phoneNumber: phone,
           organizationId,
+          templateId: t.id,
+          templateName: t.name,
+          templateLanguage: t.language || t.locale || undefined,
+          templateVariables: { body: extractParams(t.body_text || '', variables), header: [] },
         },
       });
-      if (error) throw error;
+      if (error) await throwEdgeError(error, 'فشل إرسال القالب');
+      if (data?.error) throw new Error(data.error);
       toast.success('تم إرسال القالب');
     } catch (e: any) {
-      toast.error(e?.message || 'فشل الإرسال');
+      console.error('template suggestion send failed:', {
+        message: e?.message, code: e?.code, provider: e?.provider, correlationId: e?.correlationId,
+      });
+      toast.error(e?.message || 'فشل الإرسال', {
+        description: e?.provider?.errorDetails || e?.provider?.errorMessage || undefined,
+        duration: 10000,
+      });
     }
   };
+
 
   return (
     <Card>

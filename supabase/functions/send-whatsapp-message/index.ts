@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import {
   WA_CORS as corsHeaders,
@@ -24,6 +24,19 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const correlationId = req.headers.get('x-correlation-id') || crypto.randomUUID();
+
+  /** Typed, admin-readable failure payload. Never contains tokens. */
+  const fail = (
+    code: string,
+    message: string,
+    status = 400,
+    extra: Record<string, unknown> = {},
+  ) => {
+    console.error(JSON.stringify({ tag: 'wa.send.error', correlationId, code, message, ...extra }));
+    return json({ success: false, error: message, code, correlationId, ...extra }, status);
+  };
+
   const admin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -32,33 +45,42 @@ Deno.serve(async (req) => {
   let messageRowId: string | null = null;
 
   try {
+    // ---------- environment sanity (fail loudly instead of a 500 later) ----------
+    const missingEnv = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ANON_KEY']
+      .filter((k) => !Deno.env.get(k));
+    if (missingEnv.length) {
+      return fail('MISSING_ENV', `إعدادات الخادم ناقصة | Server configuration missing: ${missingEnv.join(', ')}`, 500);
+    }
+
     // ---------- auth ----------
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+    if (!authHeader?.startsWith('Bearer ')) {
+      return fail('UNAUTHENTICATED', 'يجب تسجيل الدخول | Missing authentication token', 401);
+    }
 
     const authClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } },
     );
-    const { data: { user } } = await authClient.auth.getUser();
-    if (!user) return json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error: authErr } = await authClient.auth.getUser();
+    if (authErr || !user) {
+      return fail('UNAUTHENTICATED', 'انتهت الجلسة — سجّل الدخول مرة أخرى | Session invalid or expired', 401);
+    }
 
     const rl = rateLimit(`whatsapp:${user.id}`, 60, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
-    const body = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return fail('BAD_JSON', 'محتوى الطلب غير صالح | Request body is not valid JSON', 400);
+    }
+
     const {
       conversationId: rawConversationId,
       customerId,
-      phoneNumber,
-      messageType,
-      content,
-      mediaUrl,
-      mediaStoragePath,
-      mediaMimeType,
-      mediaFileName,
-      mediaCaption,
       templateId,
       templateName,
       templateLanguage,
@@ -66,11 +88,26 @@ Deno.serve(async (req) => {
       templateParameters,
       idempotencyKey,
       followupId,
+      mediaUrl,
+      mediaStoragePath,
+      mediaMimeType,
+      mediaFileName,
+      mediaCaption,
+      content,
     } = body ?? {};
 
+    // Legacy/alternate field names used by some callers (CRM template suggestions).
+    const messageType = body?.messageType ?? body?.type;
+    const phoneNumber = body?.phoneNumber ?? body?.to ?? body?.phone;
+
     if (!messageType || !VALID_MESSAGE_TYPES.includes(messageType)) {
-      return json({ error: `Invalid messageType. One of: ${VALID_MESSAGE_TYPES.join(', ')}` }, 400);
+      return fail(
+        'INVALID_MESSAGE_TYPE',
+        `نوع الرسالة غير صالح | Invalid messageType "${messageType ?? 'missing'}". One of: ${VALID_MESSAGE_TYPES.join(', ')}`,
+        400,
+      );
     }
+
 
     // ---------- resolve conversation (or create it from a customer/phone) ----------
     let conversationId: string | null =
@@ -84,25 +121,39 @@ Deno.serve(async (req) => {
         .eq('id', conversationId)
         .maybeSingle();
       conversation = data;
-      if (!conversation) return json({ error: 'Conversation not found' }, 404);
+      if (!conversation) return fail('CONVERSATION_NOT_FOUND', 'المحادثة غير موجودة | Conversation not found', 404);
     } else {
-      // Resolve target phone + org from the customer record
-      let orgId: string | null = null;
+      // Resolve target phone + org from the customer record, an explicit
+      // organizationId, or (last resort) the caller's own membership.
+      let orgId: string | null =
+        body?.organizationId && UUID_RE.test(body.organizationId) ? body.organizationId : null;
       let toPhone = normalizePhone(phoneNumber);
       if (customerId && UUID_RE.test(customerId)) {
         const { data: cust } = await admin
           .from('customers')
           .select('id, phone, organization_id, whatsapp_opt_out')
           .eq('id', customerId).maybeSingle();
-        if (!cust) return json({ error: 'Customer not found' }, 404);
+        if (!cust) return fail('CUSTOMER_NOT_FOUND', 'العميل غير موجود | Customer not found', 404);
         if (cust.whatsapp_opt_out) {
-          return json({ error: 'العميل ألغى الاشتراك في رسائل واتساب | Customer opted out of WhatsApp' }, 400);
+          return fail('OPTED_OUT', 'العميل ألغى الاشتراك في رسائل واتساب | Customer opted out of WhatsApp', 400);
         }
         orgId = cust.organization_id;
         toPhone = toPhone || normalizePhone(cust.phone);
       }
-      if (!toPhone) return json({ error: 'رقم واتساب غير صالح | Invalid WhatsApp number' }, 400);
-      if (!orgId) return json({ error: 'customerId or conversationId is required' }, 400);
+      if (!orgId) {
+        const { data: myOrg } = await admin
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(2);
+        if ((myOrg ?? []).length === 1) orgId = myOrg![0].organization_id;
+      }
+      if (!toPhone) {
+        return fail('INVALID_PHONE', `رقم واتساب غير صالح | Invalid WhatsApp number: "${phoneNumber ?? ''}"`, 400);
+      }
+      if (!orgId) {
+        return fail('MISSING_TARGET', 'مطلوب conversationId أو customerId أو organizationId | conversationId, customerId or organizationId is required', 400);
+      }
 
       const { data: existing } = await admin
         .from('whatsapp_conversations')
@@ -144,7 +195,9 @@ Deno.serve(async (req) => {
       .eq('organization_id', conversation.organization_id)
       .eq('user_id', user.id)
       .maybeSingle();
-    if (!membership) return json({ error: 'Forbidden' }, 403);
+    if (!membership) {
+      return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
+    }
 
     // ---------- idempotency ----------
     if (idempotencyKey) {
@@ -155,24 +208,28 @@ Deno.serve(async (req) => {
         .eq('idempotency_key', idempotencyKey)
         .maybeSingle();
       if (dupe && dupe.status !== 'failed') {
-        return json({ success: true, duplicate: true, message: dupe });
+        return json({ success: true, duplicate: true, message: dupe, correlationId });
       }
     }
 
     const to = normalizePhone(conversation.phone_number);
-    if (!to) return json({ error: 'رقم المحادثة غير صالح | Conversation phone number is invalid' }, 400);
+    if (!to) return fail('INVALID_PHONE', 'رقم المحادثة غير صالح | Conversation phone number is invalid', 400);
 
     const settings = await resolveSettings(admin, conversation.organization_id, conversation.whatsapp_settings_id);
 
     // ---------- 24h service window enforcement ----------
+    // Templates are ALWAYS allowed (that is how a closed window is reopened);
+    // every other type is blocked once the window has expired.
     const windowOpen = await isWindowOpen(admin, conversationId!);
     if (messageType !== 'template' && !windowOpen) {
-      return json({
-        error: 'انتهت نافذة الـ24 ساعة — اختر قالبًا معتمدًا للإرسال | The 24-hour window is closed — send an approved template instead',
-        code: 'WINDOW_CLOSED',
-        windowOpen: false,
-      }, 409);
+      return fail(
+        'WINDOW_CLOSED',
+        'انتهت نافذة الـ24 ساعة — اختر قالبًا معتمدًا للإرسال | The 24-hour window is closed — send an approved template instead',
+        409,
+        { windowOpen: false },
+      );
     }
+
 
     // ---------- build payload ----------
     let payload: Record<string, any> = { messaging_product: 'whatsapp', to, type: messageType };
@@ -181,15 +238,15 @@ Deno.serve(async (req) => {
 
     if (messageType === 'text') {
       if (!content || typeof content !== 'string' || !content.trim()) {
-        return json({ error: 'Content is required for text messages' }, 400);
+        return fail('MISSING_CONTENT', 'نص الرسالة مطلوب | Content is required for text messages', 400);
       }
       if (content.length > MAX_CONTENT_LENGTH) {
-        return json({ error: `Content must be under ${MAX_CONTENT_LENGTH} characters` }, 400);
+        return fail('CONTENT_TOO_LONG', `الرسالة أطول من ${MAX_CONTENT_LENGTH} حرف | Content must be under ${MAX_CONTENT_LENGTH} characters`, 400);
       }
       payload.text = { body: content, preview_url: false };
     } else if (MEDIA_TYPES.has(messageType)) {
       if (!mediaUrl && !mediaStoragePath) {
-        return json({ error: 'mediaUrl or mediaStoragePath is required' }, 400);
+        return fail('MISSING_MEDIA', 'mediaUrl أو mediaStoragePath مطلوب | mediaUrl or mediaStoragePath is required', 400);
       }
       let mediaRef: any = { link: mediaUrl };
       if (mediaStoragePath) {
@@ -203,27 +260,33 @@ Deno.serve(async (req) => {
         payload.document = { ...mediaRef, filename: mediaFileName || undefined, caption: mediaCaption || undefined };
       }
     } else if (messageType === 'template') {
+      if (!templateId && !templateName) {
+        return fail('MISSING_TEMPLATE', 'اسم القالب مطلوب | templateId or templateName is required', 400);
+      }
       // Resolve the template row (by id preferred, else name+org)
       let q = admin.from('whatsapp_templates')
         .select('id, name, language, status, meta_status, components, body_text, header_text, header_format, body_variable_count, header_variable_count, category')
         .eq('organization_id', conversation.organization_id);
       q = templateId && UUID_RE.test(templateId) ? q.eq('id', templateId) : q.eq('name', templateName);
       const { data: tpls } = await q.limit(5);
-      tplRow = (tpls ?? [])[0] ?? null;
+      // Prefer an exact language match when the caller asked for one.
+      tplRow = (tpls ?? []).find((t: any) => !templateLanguage || t.language === templateLanguage)
+        ?? (tpls ?? [])[0] ?? null;
 
       if (!tplRow) {
-        throw new WaError('TEMPLATE_NOT_FOUND', 'القالب غير موجود — قم بمزامنة القوالب | Template not found — sync templates first');
+        throw new WaError('TEMPLATE_NOT_FOUND', `القالب "${templateName ?? templateId}" غير موجود — قم بمزامنة القوالب | Template not found — sync templates first`);
       }
       const st = String(tplRow.meta_status || tplRow.status || '').toLowerCase();
       if (st !== 'approved') {
-        throw new WaError('TEMPLATE_NOT_APPROVED', `القالب "${tplRow.name}" غير معتمد (${st || 'unknown'}) | Template is not approved`);
+        throw new WaError('TEMPLATE_NOT_APPROVED', `القالب "${tplRow.name}" غير معتمد (${st || 'unknown'}) | Template "${tplRow.name}" is not approved by Meta (${st || 'unknown'})`);
       }
 
       usedVars = normalizeVars(templateVariables, templateParameters);
       const components = buildTemplateComponents(tplRow, usedVars);
+      // Meta matches on the exact approved language code of the template row.
       payload.template = {
         name: tplRow.name,
-        language: { code: templateLanguage || tplRow.language || 'ar' },
+        language: { code: tplRow.language || templateLanguage || 'ar' },
         ...(components.length ? { components } : {}),
       };
     }
@@ -246,16 +309,20 @@ Deno.serve(async (req) => {
       template_parameters: usedVars ?? null,
       idempotency_key: idempotencyKey || null,
       followup_id: followupId || null,
+      correlation_id: correlationId,
       sent_by: user.id,
       status: 'sending',
       sent_at: new Date().toISOString(),
     };
 
-    const { data: pending } = await admin.from('whatsapp_messages').insert(baseRow).select('id').single();
+    const { data: pending, error: insErr } = await admin.from('whatsapp_messages').insert(baseRow).select('id').single();
+    if (insErr) {
+      return fail('MESSAGE_PERSIST_FAILED', `تعذر حفظ الرسالة | Could not persist message row: ${insErr.message}`, 500);
+    }
     messageRowId = pending?.id ?? null;
 
     // ---------- send ----------
-    const result = await graphSend(settings, payload);
+    const result = await graphSend(settings, payload, correlationId);
 
     if (!result.ok) {
       if (messageRowId) {
@@ -264,21 +331,43 @@ Deno.serve(async (req) => {
           error_code: result.errorCode,
           error_message: result.errorMessage,
           error_details: result.errorDetails as any,
+          provider_error_code: result.errorCode,
+          provider_error_message: (result.errorDetails as any)?.message ?? result.errorMessage,
+          provider_response: result.providerResponse as any,
           idempotency_key: null, // allow a clean retry
         }).eq('id', messageRowId);
       }
+      const raw: any = result.errorDetails ?? {};
       return json({
+        success: false,
         error: result.errorMessage || 'فشل الإرسال | Send failed',
-        code: result.errorCode,
+        code: 'PROVIDER_ERROR',
+        correlationId,
         messageId: messageRowId,
+        provider: {
+          errorCode: result.errorCode,
+          errorSubcode: raw?.error_subcode ?? null,
+          errorType: raw?.type ?? null,
+          errorMessage: raw?.message ?? result.errorMessage,
+          errorDetails: raw?.error_data?.details ?? null,
+          fbtraceId: raw?.fbtrace_id ?? null,
+          httpStatus: result.httpStatus,
+          apiVersion: result.apiVersion,
+        },
+        template: tplRow ? { name: tplRow.name, language: tplRow.language, status: tplRow.meta_status ?? tplRow.status } : null,
+        windowOpen,
       }, 400);
     }
+
 
     const { data: saved } = await admin.from('whatsapp_messages').update({
       status: 'sent',
       message_id: result.providerMessageId,
       error_code: null,
       error_message: null,
+      provider_error_code: null,
+      provider_error_message: null,
+      provider_response: result.providerResponse as any,
     }).eq('id', messageRowId!).select().single();
 
     await admin.from('whatsapp_conversations')
@@ -291,20 +380,33 @@ Deno.serve(async (req) => {
         .eq('id', tplRow.id);
     }
 
-    return json({ success: true, conversationId, message: saved, providerMessageId: result.providerMessageId });
+    return json({
+      success: true,
+      conversationId,
+      message: saved,
+      providerMessageId: result.providerMessageId,
+      correlationId,
+      windowOpen,
+    });
   } catch (error) {
     const isWa = error instanceof WaError;
     const msg = isWa ? error.message : (error as Error)?.message || 'Failed to send message';
-    console.error('[send-whatsapp-message]', msg, error);
+    const code = isWa ? (error as WaError).code : 'INTERNAL';
+    const details = isWa ? (error as WaError).details : null;
+    console.error(JSON.stringify({ tag: 'wa.send.exception', correlationId, code, message: msg, details }));
     if (messageRowId) {
       await admin.from('whatsapp_messages').update({
         status: 'failed',
-        error_code: isWa ? (error as WaError).code : 'INTERNAL',
+        error_code: code,
         error_message: msg,
+        error_details: (details ?? null) as any,
         idempotency_key: null,
       }).eq('id', messageRowId);
     }
-    return json({ error: msg, code: isWa ? (error as WaError).code : 'INTERNAL' }, isWa ? 400 : 500);
+    return json(
+      { success: false, error: msg, code, correlationId, messageId: messageRowId, details },
+      isWa ? ((error as WaError).status || 400) : 500,
+    );
   }
 });
 

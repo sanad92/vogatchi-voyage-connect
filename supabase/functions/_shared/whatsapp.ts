@@ -94,12 +94,27 @@ export async function isWindowOpen(admin: any, conversationId: string): Promise<
   return (data ?? []).length > 0;
 }
 
-/** Number of distinct {{n}} placeholders in a string. */
+/**
+ * Placeholders in a template string. Meta supports positional `{{1}}` and
+ * named `{{customer_name}}` parameters — we must recognise both, otherwise we
+ * send zero parameters for a template that requires them (Meta error 132000).
+ */
+export function scanPlaceholders(text: string | null | undefined): { count: number; names: string[] } {
+  if (!text) return { count: 0, names: [] };
+  const positional = new Set<number>();
+  const names: string[] = [];
+  for (const m of text.matchAll(/\{\{\s*([^}\s]+)\s*\}\}/g)) {
+    const token = m[1];
+    if (/^\d+$/.test(token)) positional.add(Number(token));
+    else if (!names.includes(token)) names.push(token);
+  }
+  const positionalCount = positional.size ? Math.max(...positional) : 0;
+  return { count: positionalCount + names.length, names };
+}
+
+/** Backwards-compatible numeric helper. */
 export function countPlaceholders(text: string | null | undefined): number {
-  if (!text) return 0;
-  const found = new Set<number>();
-  for (const m of text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)) found.add(Number(m[1]));
-  return found.size ? Math.max(...found) : 0;
+  return scanPlaceholders(text).count;
 }
 
 export interface TemplateRow {
@@ -121,19 +136,39 @@ export interface TemplateVarInput {
 }
 
 /**
- * Builds Meta `components` for a template send and validates the parameter
- * count up-front — the #1 cause of Meta error 132000.
+ * Authoritative variable spec for a template.
+ * The stored `*_variable_count` columns drift (older sync runs wrote 0 and left
+ * `components` null), so the template text is the source of truth and the
+ * stored counters can only raise the expectation, never silence it.
  */
-export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput) {
+export function templateVarSpec(tpl: TemplateRow) {
   const comps: any[] = Array.isArray(tpl.components) ? tpl.components : [];
   const bodyComp = comps.find((c: any) => String(c?.type).toUpperCase() === 'BODY');
   const headerComp = comps.find((c: any) => String(c?.type).toUpperCase() === 'HEADER');
 
-  const expectedBody = tpl.body_variable_count ?? countPlaceholders(bodyComp?.text ?? tpl.body_text);
-  const headerIsText = String(headerComp?.format ?? tpl.header_format ?? 'TEXT').toUpperCase() === 'TEXT';
-  const expectedHeader = headerIsText
-    ? (tpl.header_variable_count ?? countPlaceholders(headerComp?.text ?? tpl.header_text))
-    : 0;
+  const bodyScan = scanPlaceholders(bodyComp?.text ?? tpl.body_text);
+  const headerFormat = String(headerComp?.format ?? tpl.header_format ?? 'TEXT').toUpperCase();
+  const headerIsText = headerFormat === 'TEXT';
+  const headerScan = headerIsText ? scanPlaceholders(headerComp?.text ?? tpl.header_text) : { count: 0, names: [] };
+
+  return {
+    bodyCount: Math.max(bodyScan.count, tpl.body_variable_count ?? 0),
+    headerCount: Math.max(headerScan.count, headerIsText ? (tpl.header_variable_count ?? 0) : 0),
+    bodyNames: bodyScan.names,
+    headerNames: headerScan.names,
+    headerIsText,
+    headerFormat,
+  };
+}
+
+/**
+ * Builds Meta `components` for a template send and validates the parameter
+ * count up-front — the #1 cause of Meta error 132000.
+ */
+export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput) {
+  const spec = templateVarSpec(tpl);
+  const expectedBody = spec.bodyCount;
+  const expectedHeader = spec.headerCount;
 
   const body = (vars.body ?? []).map((v) => (v ?? '').toString());
   const header = (vars.header ?? []).map((v) => (v ?? '').toString());
@@ -142,24 +177,30 @@ export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput
     throw new WaError(
       'TEMPLATE_PARAM_MISMATCH',
       `القالب يحتاج ${expectedBody} متغير في النص وتم إرسال ${body.length} | Template expects ${expectedBody} body variable(s), received ${body.length}`,
+      { expectedBody, receivedBody: body.length, bodyNames: spec.bodyNames },
     );
   }
   if (expectedHeader && header.length !== expectedHeader) {
     throw new WaError(
       'TEMPLATE_PARAM_MISMATCH',
       `القالب يحتاج ${expectedHeader} متغير في العنوان | Template expects ${expectedHeader} header variable(s), received ${header.length}`,
+      { expectedHeader, receivedHeader: header.length, headerNames: spec.headerNames },
     );
   }
   if (body.some((v) => !v.trim()) || header.some((v) => !v.trim())) {
     throw new WaError('TEMPLATE_PARAM_EMPTY', 'لا يمكن ترك متغيرات القالب فارغة | Template variables cannot be empty');
   }
 
+  // Named parameters must be sent with `parameter_name`; positional must not.
+  const param = (text: string, idx: number, names: string[]) =>
+    names[idx] ? { type: 'text', parameter_name: names[idx], text } : { type: 'text', text };
+
   const out: any[] = [];
   if (expectedHeader) {
-    out.push({ type: 'header', parameters: header.map((t) => ({ type: 'text', text: t })) });
+    out.push({ type: 'header', parameters: header.map((t, i) => param(t, i, spec.headerNames)) });
   }
   if (expectedBody) {
-    out.push({ type: 'body', parameters: body.map((t) => ({ type: 'text', text: t })) });
+    out.push({ type: 'body', parameters: body.map((t, i) => param(t, i, spec.bodyNames)) });
   }
   return out;
 }
@@ -171,13 +212,49 @@ export interface SendResult {
   errorMessage: string | null;
   errorDetails: unknown;
   httpStatus: number;
+  /** Raw (token-free) Meta response body, safe to persist and show to admins. */
+  providerResponse: unknown;
+  correlationId: string;
+  apiVersion: string;
+}
+
+/** Never log or persist the access token — only its presence/length. */
+function safeSettingsMeta(settings: WaSettings, apiVersion: string) {
+  return {
+    settingsId: settings.id,
+    phoneNumberId: settings.phone_number_id,
+    wabaId: settings.waba_id,
+    apiVersion,
+    tokenPresent: Boolean(settings.access_token),
+    tokenLength: settings.access_token ? settings.access_token.length : 0,
+  };
 }
 
 /** Single place where we actually talk to Meta. Never throws on API errors. */
-export async function graphSend(settings: WaSettings, payload: Record<string, unknown>): Promise<SendResult> {
+export async function graphSend(
+  settings: WaSettings,
+  payload: Record<string, unknown>,
+  correlationId: string = crypto.randomUUID(),
+): Promise<SendResult> {
   const gv = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
   const proof = await appSecretProof(settings.access_token);
   const url = `https://graph.facebook.com/${gv}/${settings.phone_number_id}/messages${proof ? `?appsecret_proof=${proof}` : ''}`;
+  const meta = safeSettingsMeta(settings, gv);
+
+  if (!settings.access_token || !settings.phone_number_id) {
+    console.error(JSON.stringify({ tag: 'wa.send.config', correlationId, ...meta }));
+    return {
+      ok: false, providerMessageId: null, errorCode: 'WHATSAPP_NOT_CONNECTED',
+      errorMessage: 'إعدادات واتساب غير مكتملة | WhatsApp credentials are incomplete for this organization',
+      errorDetails: meta, httpStatus: 0, providerResponse: null, correlationId, apiVersion: gv,
+    };
+  }
+
+  console.log(JSON.stringify({
+    tag: 'wa.send.request', correlationId, ...meta,
+    type: payload.type, template: (payload as any)?.template?.name ?? null,
+    language: (payload as any)?.template?.language?.code ?? null,
+  }));
 
   let res: Response;
   try {
@@ -187,32 +264,48 @@ export async function graphSend(settings: WaSettings, payload: Record<string, un
       body: JSON.stringify(payload),
     });
   } catch (e) {
+    console.error(JSON.stringify({ tag: 'wa.send.network', correlationId, message: String((e as Error)?.message ?? e) }));
     return {
       ok: false, providerMessageId: null, errorCode: 'NETWORK',
-      errorMessage: String((e as Error)?.message ?? e), errorDetails: null, httpStatus: 0,
+      errorMessage: String((e as Error)?.message ?? e), errorDetails: null,
+      httpStatus: 0, providerResponse: null, correlationId, apiVersion: gv,
     };
   }
 
   const text = await res.text();
   let json: any = null;
   try { json = JSON.parse(text); } catch { /* non-JSON */ }
+  const providerResponse = json ?? text.slice(0, 2000);
 
   if (!res.ok) {
     const err = json?.error ?? null;
-    return {
+    const result: SendResult = {
       ok: false,
       providerMessageId: null,
       errorCode: err?.code != null ? String(err.code) : String(res.status),
       errorMessage: humanizeMetaError(err) || text.slice(0, 500),
       errorDetails: err ?? text.slice(0, 1000),
       httpStatus: res.status,
+      providerResponse,
+      correlationId,
+      apiVersion: gv,
     };
+    console.error(JSON.stringify({
+      tag: 'wa.send.failed', correlationId, ...meta, httpStatus: res.status,
+      metaCode: err?.code ?? null, metaSubcode: err?.error_subcode ?? null,
+      metaType: err?.type ?? null, metaMessage: err?.message ?? null,
+      metaDetails: err?.error_data?.details ?? null, fbtraceId: err?.fbtrace_id ?? null,
+    }));
+    return result;
   }
 
+  const providerMessageId = json?.messages?.[0]?.id ?? null;
+  console.log(JSON.stringify({ tag: 'wa.send.accepted', correlationId, providerMessageId, httpStatus: res.status }));
   return {
     ok: true,
-    providerMessageId: json?.messages?.[0]?.id ?? null,
-    errorCode: null, errorMessage: null, errorDetails: null, httpStatus: res.status,
+    providerMessageId,
+    errorCode: null, errorMessage: null, errorDetails: null,
+    httpStatus: res.status, providerResponse, correlationId, apiVersion: gv,
   };
 }
 

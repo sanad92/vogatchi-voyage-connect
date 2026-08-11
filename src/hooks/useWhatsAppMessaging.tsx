@@ -1,33 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import { throwEdgeError } from '@/lib/edgeError';
 import { toast } from 'sonner';
 
-/**
- * `functions.invoke` collapses every failure into "non-2xx status code".
- * This reads the real JSON body so staff see the actual Meta / policy reason.
- */
-const readEdgeError = async (error: unknown): Promise<{ message: string; code?: string }> => {
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const body = await error.context.json();
-      return { message: body?.error || body?.message || error.message, code: body?.code };
-    } catch {
-      try {
-        const text = await error.context.text();
-        if (text) return { message: text };
-      } catch { /* ignore */ }
-    }
-  }
-  return { message: (error as any)?.message || 'فشل إرسال الرسالة عبر WhatsApp' };
-};
-
-const throwEdgeError = async (error: unknown): Promise<never> => {
-  const { message, code } = await readEdgeError(error);
-  const err = new Error(message) as Error & { code?: string };
-  err.code = code;
-  throw err;
-};
 
 const mediaTypeFromMime = (mime: string): 'image' | 'audio' | 'video' | 'document' => {
   if (mime.startsWith('image/')) return 'image';
@@ -116,17 +91,19 @@ export const useWhatsAppMessaging = () => {
       templateName: string;
       templateLanguage?: string;
       templateParameters?: string[];
+      templateVariables?: { body?: string[]; header?: string[] };
     }) => {
       const { data: result, error } = await supabase.functions.invoke('send-whatsapp-message', {
         body: {
           conversationId: data.conversationId,
           messageType: 'template',
           templateName: data.templateName,
-          templateLanguage: data.templateLanguage || 'ar',
+          templateLanguage: data.templateLanguage || undefined,
           templateParameters: data.templateParameters || [],
+          ...(data.templateVariables ? { templateVariables: data.templateVariables } : {}),
         },
       });
-      if (error) await throwEdgeError(error);
+      if (error) await throwEdgeError(error, 'فشل إرسال القالب عبر WhatsApp');
       if (result?.error) throw new Error(result.error);
       return result;
     },
@@ -135,10 +112,19 @@ export const useWhatsAppMessaging = () => {
       toast.success('تم إرسال القالب');
     },
     onError: (error: any) => {
-      console.error('WhatsApp template send error:', error);
-      toast.error(error?.message || 'فشل إرسال القالب');
+      console.error('WhatsApp template send error:', {
+        message: error?.message,
+        code: error?.code,
+        provider: error?.provider,
+        correlationId: error?.correlationId,
+      });
+      toast.error(error?.message || 'فشل إرسال القالب', {
+        description: error?.provider?.errorDetails || error?.provider?.errorMessage || undefined,
+        duration: 10000,
+      });
     },
   });
+
 
   return {
     sendTextMessage: (conversationId: string, content: string) =>
