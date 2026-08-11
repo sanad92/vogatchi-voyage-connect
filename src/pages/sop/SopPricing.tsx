@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useSop';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import DepartmentGate from '@/components/sop/DepartmentGate';
+import MySopStatusBar from '@/components/sop/MySopStatusBar';
 import PricingOfferEditor from '@/components/sop/PricingOfferEditor';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -126,6 +127,10 @@ const SopPricing = () => {
             حد أقصى 3 عروض لكل طلب، مع مقارنة أسعار للعميل وبيانات ربحية داخلية
           </p>
         </header>
+
+        <MySopStatusBar department="reservations" />
+
+
 
         <div className="grid gap-4 lg:grid-cols-4">
           <div className="lg:col-span-1 space-y-4">

@@ -124,6 +124,12 @@ export const VIOLATION_GUIDANCE: Record<string, string> = {
   lead_already_in_pipeline: 'الملف بالفعل داخل خط الأنابيب.',
   not_available_sales_member: 'الاستلام متاح لموظفي المبيعات المتاحين فقط.',
   not_available_reservations_member: 'الاستلام متاح لموظفي الحجوزات المتاحين فقط.',
+  not_sales_member: 'اطلب من المدير إضافتك لقسم المبيعات من صفحة فريق العمل.',
+  sales_member_unavailable: 'فعّل حالة «متاح» عشان تقدر تستلم عملاء جدد.',
+  not_reservations_member: 'اطلب من المدير إضافتك لقسم الحجوزات من صفحة فريق العمل.',
+  reservations_member_unavailable: 'فعّل حالة «متاح» عشان تقدر تستلم طلبات التسعير.',
+  not_department_member: 'حسابك غير مسجّل في هذا القسم.',
+
   pricing_not_published: 'انشر التسعير أولًا قبل الإرسال للمبيعات.',
 };
 
@@ -236,6 +242,12 @@ export const VIOLATION_LABELS: Record<string, string> = {
   user_not_in_organization: 'المستخدم ليس عضوًا في المؤسسة',
   user_not_in_department: 'المستخدم غير معين لأي قسم',
   no_organization: 'لا توجد مؤسسة نشطة',
+  not_sales_member: 'حسابك غير مسجّل ضمن فريق المبيعات',
+  sales_member_unavailable: 'حالتك في المبيعات: غير متاح',
+  not_reservations_member: 'حسابك غير مسجّل ضمن فريق الحجوزات',
+  reservations_member_unavailable: 'حالتك في الحجوزات: غير متاح',
+  not_department_member: 'حسابك غير مسجّل في هذا القسم',
+
 };
 
 export const labelMissing = (k: string) => MISSING_FIELD_LABELS[k] ?? k;

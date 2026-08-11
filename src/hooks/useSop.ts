@@ -11,7 +11,7 @@ import type {
   SopHandoverType,
   SopLeadStage,
 } from '@/lib/sop';
-import { labelMissing, labelViolation } from '@/lib/sop';
+import { labelMissing, labelViolation, VIOLATION_GUIDANCE, DEPARTMENT_LABELS } from '@/lib/sop';
 
 const db = supabase as any;
 
@@ -220,13 +220,24 @@ export const reportGate = (res: GateResult | null | undefined, okMessage?: strin
     if (okMessage) toast.success(okMessage);
     return true;
   }
+  const violations = res.violations || [];
   const parts = [
-    ...(res.violations || []).map(labelViolation),
+    ...violations.map(labelViolation),
     ...(res.missing_fields || []).map((m) => `ناقص: ${labelMissing(m)}`),
   ];
-  toast.error(parts.length ? parts.join(' • ') : 'الإجراء غير مسموح');
+  const guidance = violations.map((v) => VIOLATION_GUIDANCE[v]).filter(Boolean);
+
+  const depts = Array.isArray(res.my_departments) ? (res.my_departments as SopDepartment[]) : [];
+  const context = depts.length
+    ? `قسمك الحالي: ${depts.map((d) => DEPARTMENT_LABELS[d] ?? d).join('، ')}`
+    : violations.some((v) => v.startsWith('not_')) ? 'حسابك غير مسجّل في أي قسم' : '';
+
+  toast.error(parts.length ? parts.join(' • ') : 'الإجراء غير مسموح', {
+    description: [context, ...guidance].filter(Boolean).join(' — ') || undefined,
+  });
   return false;
 };
+
 
 const invalidateSop = (qc: ReturnType<typeof useQueryClient>) => {
   ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-handovers',
@@ -301,6 +312,61 @@ export function useMyDepartments() {
     has: (d: SopDepartment) => isManager || departments.includes(d),
   };
 }
+
+export interface MySopMembership {
+  department: SopDepartment;
+  is_available: boolean;
+}
+
+/** Current user's SOP departments together with their availability flag. */
+export function useMySopMemberships() {
+  const orgId = useOrgId();
+  const { user, hasRole } = useOptimizedAuth();
+  const query = useQuery({
+    queryKey: ['sop-my-memberships', orgId, user?.id],
+    enabled: !!orgId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('sop_department_members')
+        .select('department, is_available')
+        .eq('organization_id', orgId)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+      return (data || []).map((d: any) => ({
+        department: d.department as SopDepartment,
+        is_available: d.is_available !== false,
+      })) as MySopMembership[];
+    },
+  });
+  const isManager = hasRole?.('owner') || hasRole?.('admin') || hasRole?.('manager') || false;
+  return { memberships: query.data || [], isManager, isLoading: query.isLoading };
+}
+
+/** Staff toggles their own availability inside a department they belong to. */
+export function useSetMyAvailability() {
+  const qc = useQueryClient();
+  const orgId = useOrgId();
+  return useMutation({
+    mutationFn: async (input: { department: SopDepartment; is_available: boolean }) => {
+      const { data, error } = await db.rpc('sop_set_my_availability', {
+        _org: orgId,
+        _department: input.department,
+        _available: input.is_available,
+      });
+      if (error) throw error;
+      return data as GateResult;
+    },
+    onSuccess: (res) => {
+      if (!reportGate(res, 'تم تحديث حالتك')) return;
+      qc.invalidateQueries({ queryKey: ['sop-my-memberships'] });
+      qc.invalidateQueries({ queryKey: ['sop-my-departments'] });
+      qc.invalidateQueries({ queryKey: ['sop-department-members'] });
+    },
+    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+  });
+}
+
+
 
 export function useUpsertDepartmentMember() {
   const qc = useQueryClient();

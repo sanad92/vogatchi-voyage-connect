@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { HandCoins, Plus } from 'lucide-react';
 import LeadIntakeForm from '@/components/sop/LeadIntakeForm';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
+import MySopStatusBar from '@/components/sop/MySopStatusBar';
 import { useClaimLead, useSopLeads, useSopRealtime, type SopLead } from '@/hooks/useSop';
 import { DEPARTMENT_LABELS, LEAD_STAGE_LABELS } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -48,6 +49,10 @@ const SopIntake = () => {
           </Button>
         </div>
       </header>
+
+      <MySopStatusBar department="sales" />
+
+
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
