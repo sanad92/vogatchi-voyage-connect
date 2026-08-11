@@ -365,6 +365,9 @@ Deno.serve(async (req) => {
       message_id: result.providerMessageId,
       error_code: null,
       error_message: null,
+      provider_error_code: null,
+      provider_error_message: null,
+      provider_response: result.providerResponse as any,
     }).eq('id', messageRowId!).select().single();
 
     await admin.from('whatsapp_conversations')
@@ -377,20 +380,33 @@ Deno.serve(async (req) => {
         .eq('id', tplRow.id);
     }
 
-    return json({ success: true, conversationId, message: saved, providerMessageId: result.providerMessageId });
+    return json({
+      success: true,
+      conversationId,
+      message: saved,
+      providerMessageId: result.providerMessageId,
+      correlationId,
+      windowOpen,
+    });
   } catch (error) {
     const isWa = error instanceof WaError;
     const msg = isWa ? error.message : (error as Error)?.message || 'Failed to send message';
-    console.error('[send-whatsapp-message]', msg, error);
+    const code = isWa ? (error as WaError).code : 'INTERNAL';
+    const details = isWa ? (error as WaError).details : null;
+    console.error(JSON.stringify({ tag: 'wa.send.exception', correlationId, code, message: msg, details }));
     if (messageRowId) {
       await admin.from('whatsapp_messages').update({
         status: 'failed',
-        error_code: isWa ? (error as WaError).code : 'INTERNAL',
+        error_code: code,
         error_message: msg,
+        error_details: (details ?? null) as any,
         idempotency_key: null,
       }).eq('id', messageRowId);
     }
-    return json({ error: msg, code: isWa ? (error as WaError).code : 'INTERNAL' }, isWa ? 400 : 500);
+    return json(
+      { success: false, error: msg, code, correlationId, messageId: messageRowId, details },
+      isWa ? ((error as WaError).status || 400) : 500,
+    );
   }
 });
 
