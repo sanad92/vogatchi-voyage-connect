@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
 
 interface ImageUploaderProps {
   value?: string;
@@ -29,6 +30,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
   const { toast } = useToast();
+  const organizationId = useOrgId();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -81,7 +83,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setPreview(publicUrl);
       onChange(publicUrl);
 
-      // Save to media library
+      // Save to media library (scoped to the uploader and their organization)
+      const { data: authData } = await supabase.auth.getUser();
       await supabase.from('media_library').insert({
         filename: fileName,
         original_name: file.name,
@@ -90,7 +93,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         mime_type: file.type,
         category: bucket,
         alt_text: file.name.split('.')[0],
-      });
+        uploaded_by: authData.user?.id,
+        organization_id: organizationId ?? null,
+      } as any);
 
       toast({
         title: 'تم رفع الصورة بنجاح',
