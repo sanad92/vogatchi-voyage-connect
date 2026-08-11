@@ -212,13 +212,49 @@ export interface SendResult {
   errorMessage: string | null;
   errorDetails: unknown;
   httpStatus: number;
+  /** Raw (token-free) Meta response body, safe to persist and show to admins. */
+  providerResponse: unknown;
+  correlationId: string;
+  apiVersion: string;
+}
+
+/** Never log or persist the access token — only its presence/length. */
+function safeSettingsMeta(settings: WaSettings, apiVersion: string) {
+  return {
+    settingsId: settings.id,
+    phoneNumberId: settings.phone_number_id,
+    wabaId: settings.waba_id,
+    apiVersion,
+    tokenPresent: Boolean(settings.access_token),
+    tokenLength: settings.access_token ? settings.access_token.length : 0,
+  };
 }
 
 /** Single place where we actually talk to Meta. Never throws on API errors. */
-export async function graphSend(settings: WaSettings, payload: Record<string, unknown>): Promise<SendResult> {
+export async function graphSend(
+  settings: WaSettings,
+  payload: Record<string, unknown>,
+  correlationId: string = crypto.randomUUID(),
+): Promise<SendResult> {
   const gv = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
   const proof = await appSecretProof(settings.access_token);
   const url = `https://graph.facebook.com/${gv}/${settings.phone_number_id}/messages${proof ? `?appsecret_proof=${proof}` : ''}`;
+  const meta = safeSettingsMeta(settings, gv);
+
+  if (!settings.access_token || !settings.phone_number_id) {
+    console.error(JSON.stringify({ tag: 'wa.send.config', correlationId, ...meta }));
+    return {
+      ok: false, providerMessageId: null, errorCode: 'WHATSAPP_NOT_CONNECTED',
+      errorMessage: 'إعدادات واتساب غير مكتملة | WhatsApp credentials are incomplete for this organization',
+      errorDetails: meta, httpStatus: 0, providerResponse: null, correlationId, apiVersion: gv,
+    };
+  }
+
+  console.log(JSON.stringify({
+    tag: 'wa.send.request', correlationId, ...meta,
+    type: payload.type, template: (payload as any)?.template?.name ?? null,
+    language: (payload as any)?.template?.language?.code ?? null,
+  }));
 
   let res: Response;
   try {
@@ -228,32 +264,48 @@ export async function graphSend(settings: WaSettings, payload: Record<string, un
       body: JSON.stringify(payload),
     });
   } catch (e) {
+    console.error(JSON.stringify({ tag: 'wa.send.network', correlationId, message: String((e as Error)?.message ?? e) }));
     return {
       ok: false, providerMessageId: null, errorCode: 'NETWORK',
-      errorMessage: String((e as Error)?.message ?? e), errorDetails: null, httpStatus: 0,
+      errorMessage: String((e as Error)?.message ?? e), errorDetails: null,
+      httpStatus: 0, providerResponse: null, correlationId, apiVersion: gv,
     };
   }
 
   const text = await res.text();
   let json: any = null;
   try { json = JSON.parse(text); } catch { /* non-JSON */ }
+  const providerResponse = json ?? text.slice(0, 2000);
 
   if (!res.ok) {
     const err = json?.error ?? null;
-    return {
+    const result: SendResult = {
       ok: false,
       providerMessageId: null,
       errorCode: err?.code != null ? String(err.code) : String(res.status),
       errorMessage: humanizeMetaError(err) || text.slice(0, 500),
       errorDetails: err ?? text.slice(0, 1000),
       httpStatus: res.status,
+      providerResponse,
+      correlationId,
+      apiVersion: gv,
     };
+    console.error(JSON.stringify({
+      tag: 'wa.send.failed', correlationId, ...meta, httpStatus: res.status,
+      metaCode: err?.code ?? null, metaSubcode: err?.error_subcode ?? null,
+      metaType: err?.type ?? null, metaMessage: err?.message ?? null,
+      metaDetails: err?.error_data?.details ?? null, fbtraceId: err?.fbtrace_id ?? null,
+    }));
+    return result;
   }
 
+  const providerMessageId = json?.messages?.[0]?.id ?? null;
+  console.log(JSON.stringify({ tag: 'wa.send.accepted', correlationId, providerMessageId, httpStatus: res.status }));
   return {
     ok: true,
-    providerMessageId: json?.messages?.[0]?.id ?? null,
-    errorCode: null, errorMessage: null, errorDetails: null, httpStatus: res.status,
+    providerMessageId,
+    errorCode: null, errorMessage: null, errorDetails: null,
+    httpStatus: res.status, providerResponse, correlationId, apiVersion: gv,
   };
 }
 
