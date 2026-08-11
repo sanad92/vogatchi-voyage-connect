@@ -59,7 +59,7 @@ export const DocHeader = ({
       {meta.map((m) => (
         <div key={m.label}>
           <p className="doc-muted text-[10px] uppercase tracking-wide">{m.label}</p>
-          <p className="text-[12px] font-semibold mt-0.5 break-words">{m.value}</p>
+          <p dir="auto" className="text-[12px] font-semibold mt-0.5 break-words">{m.value}</p>
         </div>
       ))}
     </div>
@@ -84,7 +84,7 @@ export const FactGrid = ({ facts, columns = 3 }: { facts: DocFact[]; columns?: n
       {facts.map((f) => (
         <div key={`${f.label}-${f.value}`} className="min-w-0">
           <p className="doc-muted text-[10px] uppercase tracking-wide">{f.label}</p>
-          <p className="text-[12.5px] font-medium mt-0.5 break-words leading-5">{f.value}</p>
+          <p dir="auto" className="text-[12.5px] font-medium mt-0.5 break-words leading-5">{f.value}</p>
         </div>
       ))}
     </div>

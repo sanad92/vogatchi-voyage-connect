@@ -63,7 +63,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, Props>(({ model }, ref
             <tbody>
               {model.lineItems.map((it, i) => (
                 <tr key={i}>
-                  <td className="px-4 py-2 border doc-rule">{it.description}</td>
+                  <td dir="auto" className="px-4 py-2 border doc-rule">{it.description}</td>
                   <td className="px-3 py-2 border doc-rule text-center">{it.quantity}</td>
                   <td className="px-3 py-2 border doc-rule text-center" dir="ltr">
                     {fmtMoney(it.unitPrice, totals.currency)}
