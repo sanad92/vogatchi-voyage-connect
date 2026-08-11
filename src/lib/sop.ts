@@ -242,6 +242,12 @@ export const VIOLATION_LABELS: Record<string, string> = {
   user_not_in_organization: 'المستخدم ليس عضوًا في المؤسسة',
   user_not_in_department: 'المستخدم غير معين لأي قسم',
   no_organization: 'لا توجد مؤسسة نشطة',
+  not_sales_member: 'حسابك غير مسجّل ضمن فريق المبيعات',
+  sales_member_unavailable: 'حالتك في المبيعات: غير متاح',
+  not_reservations_member: 'حسابك غير مسجّل ضمن فريق الحجوزات',
+  reservations_member_unavailable: 'حالتك في الحجوزات: غير متاح',
+  not_department_member: 'حسابك غير مسجّل في هذا القسم',
+
 };
 
 export const labelMissing = (k: string) => MISSING_FIELD_LABELS[k] ?? k;
