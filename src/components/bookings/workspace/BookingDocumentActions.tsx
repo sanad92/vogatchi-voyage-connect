@@ -216,7 +216,22 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                     {new Date(v.issued_at || v.created_at).toLocaleDateString('ar-EG')}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-[10px]">فاوتشر</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">فاوتشر</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setPreview({
+                        type: 'voucher',
+                        voucherNumber: v.voucher_number,
+                        issuedAt: v.issued_at ?? v.created_at,
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4 ml-1" /> معاينة
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -238,26 +253,41 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                     {inv.currency || workspace.financials.currency}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadInvoice(inv)}
-                  disabled={busy === `inv-${inv.id}`}
-                >
-                  {busy === `inv-${inv.id}` ? (
-                    <Loader2 className="h-4 w-4 ml-1 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 ml-1" />
-                  )}
-                  تحميل PDF
+                <Button size="sm" variant="outline" onClick={() => setPreview({ type: 'invoice', invoice: inv })}>
+                  <Eye className="h-4 w-4 ml-1" /> معاينة وتحميل
                 </Button>
               </div>
             ))
           )}
         </div>
       </CardContent>
+
+      {invoiceModel && preview?.type === 'invoice' && (
+        <DocumentPreviewDialog
+          open
+          onOpenChange={(o) => !o && setPreview(null)}
+          title={`فاتورة ${invoiceModel.documentNumber}`}
+          fileName={`${invoiceModel.documentNumber}.pdf`}
+          onGenerated={(blob) => persistInvoicePdf(blob, preview.invoice, invoiceModel.documentNumber)}
+        >
+          {(ref) => <InvoiceDocument ref={ref} model={invoiceModel} />}
+        </DocumentPreviewDialog>
+      )}
+
+      {voucherModel && preview?.type === 'voucher' && (
+        <DocumentPreviewDialog
+          open
+          onOpenChange={(o) => !o && setPreview(null)}
+          title={`فاوتشر ${voucherModel.voucherNumber}`}
+          fileName={`${voucherModel.voucherNumber}.pdf`}
+          onGenerated={(blob) => persistVoucherPdf(blob, voucherModel.voucherNumber)}
+        >
+          {(ref) => <VoucherDocument ref={ref} model={voucherModel} />}
+        </DocumentPreviewDialog>
+      )}
     </Card>
   );
 };
+
 
 export default BookingDocumentActions;
