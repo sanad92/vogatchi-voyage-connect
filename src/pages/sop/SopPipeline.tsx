@@ -56,10 +56,17 @@ const SopPipeline = () => {
                         <div className="text-sm font-medium">{l.contact_name || '—'}</div>
                         <div className="text-xs text-muted-foreground">{l.destination || l.city || '—'}</div>
                         <div className="flex flex-wrap gap-1">
+                          {l.stage === 'quoted' && (
+                            <Badge className="text-[10px]">تم التسعير</Badge>
+                          )}
+                          {l.stage === 'pricing_requested' && (
+                            <Badge variant="secondary" className="text-[10px]">بانتظار التسعير</Badge>
+                          )}
                           {l.requote_required && <Badge variant="destructive" className="text-[10px]">إعادة تسعير</Badge>}
                           {l.budget_level && <Badge variant="outline" className="text-[10px]">{l.budget_level}</Badge>}
                         </div>
                       </CardContent>
+
                     </Card>
                   ))}
                   {!columns[stage]?.length && (

@@ -22,8 +22,8 @@ import { ChevronDown, Lock, Trash2, TrendingUp } from 'lucide-react';
 import type { SopPricingOption } from '@/hooks/useSop';
 import {
   CANCELLATION_CHARGE_MODELS, CANCELLATION_TYPES, MEAL_PLANS, OTA_SOURCES,
-  RECOMMENDATION_REASONS, ROOM_TYPES, ROOM_VIEWS, TRANSFER_STATUSES,
-  computePricingMetrics, dateTimeLabel, effectiveValidUntil, fromLocalInput, money, pct, toLocalInput,
+  RECOMMENDATION_REASONS, ROOM_TYPES, TRANSFER_STATUSES,
+  computePricingMetrics, fromLocalInput, money, pct, toLocalInput,
 } from '@/lib/sopPricing';
 
 interface RequestDefaults {
@@ -170,7 +170,6 @@ export const PricingOfferEditor = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium">العرض {option.option_index}</span>
-          {m.isExpired && <Badge variant="destructive" className="text-[10px]">انتهت الصلاحية</Badge>}
           {dirty && (
             <Badge variant="destructive" className="text-[10px]">تعديلات غير محفوظة</Badge>
           )}
@@ -239,13 +238,6 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('destination', e.target.value || null)}
           />
         </Field>
-        <Field label="المورد">
-          <Input
-            placeholder="اسم المورد"
-            value={v.supplier_name || ''}
-            onChange={(e) => set('supplier_name', e.target.value)}
-          />
-        </Field>
 
         <Field label="تاريخ الوصول">
           <Input
@@ -273,14 +265,7 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('room_type', e.target.value || null)}
           />
         </Field>
-        <Field label="إطلالة الغرفة">
-          <Input
-            list={`roomviews-${option.id}`}
-            placeholder="Sea View ..."
-            value={v.room_view || ''}
-            onChange={(e) => set('room_view', e.target.value || null)}
-          />
-        </Field>
+
         <Field label="نظام الوجبات" required>
           <Select
             value={v.meal_plan || ''}
@@ -304,45 +289,12 @@ export const PricingOfferEditor = ({
         <Field label="العملة" required>
           <Input value={cur} onChange={(e) => set('currency', e.target.value)} />
         </Field>
-        <Field
-          label="السعر صالح حتى"
-          hint={
-            v.price_valid_until
-              ? 'هذا العرض يستخدم صلاحية خاصة به'
-              : `يرث الصلاحية العامة: ${dateTimeLabel(effectiveValidUntil(v, requestValidUntil))}`
-          }
-        >
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[11px]">
-              <Switch
-                checked={!!v.price_valid_until}
-                onCheckedChange={(c) =>
-                  set(
-                    'price_valid_until',
-                    c ? effectiveValidUntil(v, requestValidUntil) : null,
-                  )
-                }
-              />
-              صلاحية مختلفة لهذا العرض
-            </label>
-            {v.price_valid_until ? (
-              <Input
-                type="datetime-local"
-                value={toLocalInput(v.price_valid_until)}
-                onChange={(e) => set('price_valid_until', fromLocalInput(e.target.value))}
-              />
-            ) : (
-              <Input value={dateTimeLabel(effectiveValidUntil(v, requestValidUntil))} disabled />
-            )}
-          </div>
-        </Field>
+
+
 
         <datalist id={`hotels-${option.id}`} />
         <datalist id={`roomtypes-${option.id}`}>
           {ROOM_TYPES.map((r) => <option key={r} value={r} />)}
-        </datalist>
-        <datalist id={`roomviews-${option.id}`}>
-          {ROOM_VIEWS.map((r) => <option key={r} value={r} />)}
         </datalist>
       </div>
 
