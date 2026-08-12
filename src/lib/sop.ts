@@ -308,10 +308,10 @@ export const stageOwnerDepartment = (stage: SopLeadStage): SopDepartment => {
 export const nextRequiredAction = (stage: SopLeadStage): string => {
   switch (stage) {
     case 'new':
-      return 'استكمال بيانات الاستقبال ثم التأهيل';
-    case 'qualified':
-      return 'تسليم خدمة العملاء ← المبيعات ثم الإسناد بالتناوب';
+      return 'خدمة العملاء: استكمال بيانات الاستقبال — ثم يستلمه موظف المبيعات';
     case 'assigned':
+      return 'المبيعات: مراجعة الملف واتخاذ قرار التأهيل (مؤهل / غير مؤهل)';
+    case 'qualified':
       return 'مراجعة الـ Brief وإرسال طلب تسعير للحجوزات';
     case 'pricing_requested':
       return 'الحجوزات: إضافة الخيارات ونشر التسعير';
