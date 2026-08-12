@@ -691,6 +691,9 @@ export function usePricingOptions(requestId?: string | null) {
   return useQuery({
     queryKey: ['sop-pricing-options', requestId],
     enabled: !!requestId,
+    // The editor holds unsaved user input — never refetch under the user's hands.
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const { data, error } = await db.from('sop_pricing_options').select('*')
         .eq('pricing_request_id', requestId).order('option_index');
@@ -715,26 +718,59 @@ export function useCreatePricingRequest() {
   });
 }
 
+/** Exact DB error text — code, message, details and hint — instead of a generic toast. */
+const dbErrorText = (e: any) =>
+  [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null]
+    .filter(Boolean).join(' — ') || 'خطأ غير معروف';
+
+/** Columns the pricing editor is allowed to write. Anything else is dropped. */
+export const PRICING_OPTION_COLUMNS = [
+  'option_index', 'supplier_id', 'supplier_name', 'product_name', 'net_cost', 'currency',
+  'markup_type', 'markup_value', 'selling_price', 'cancellation_policy', 'payment_deadline',
+  'cancellation_deadline', 'release_deadline', 'is_recommended', 'is_selected', 'notes',
+  'hotel_name', 'destination', 'check_in', 'check_out', 'room_type', 'room_view', 'meal_plan',
+  'rooms_count', 'ota_price', 'ota_source', 'hotel_direct_price', 'cancellation_type',
+  'free_cancellation_until', 'cancellation_charge_model', 'cancellation_charge_value',
+  'cancellation_notes', 'price_valid_until', 'transfer_status', 'transfer_type',
+  'transfer_net_cost', 'transfer_selling_price', 'transfer_notes', 'recommendation_reason',
+  'recommendation_note', 'internal_notes',
+] as const;
+
+const pickOptionColumns = (values: Record<string, unknown>) => {
+  const out: Record<string, unknown> = {};
+  for (const k of PRICING_OPTION_COLUMNS) if (k in values) out[k] = values[k];
+  return out;
+};
+
 export function useSavePricingOption() {
   const qc = useQueryClient();
   const orgId = useOrgId();
   return useMutation({
     mutationFn: async (input: Partial<SopPricingOption> & { pricing_request_id: string }) => {
-      const { id, ...values } = input as any;
+      const { id, pricing_request_id, ...rest } = input as any;
+      const values = pickOptionColumns(rest);
       if (id) {
-        const { error } = await db.from('sop_pricing_options').update(values).eq('id', id);
+        // return=representation proves the row really changed (an RLS-blocked
+        // update returns zero rows instead of raising).
+        const { data, error } = await db.from('sop_pricing_options')
+          .update(values).eq('id', id).select('*');
         if (error) throw error;
-      } else {
-        const { error } = await db.from('sop_pricing_options')
-          .insert({ ...values, organization_id: orgId });
-        if (error) throw error;
+        if (!data || !data.length) {
+          throw new Error('لم يتم حفظ أي صف — صلاحيات التعديل غير كافية على هذا العرض');
+        }
+        return data[0] as SopPricingOption;
       }
+      const { data, error } = await db.from('sop_pricing_options')
+        .insert({ ...values, pricing_request_id, organization_id: orgId })
+        .select('*');
+      if (error) throw error;
+      return (data?.[0] || null) as SopPricingOption | null;
     },
     onSuccess: () => {
-      toast.success('تم حفظ الخيار');
+      toast.success('تم حفظ العرض');
       qc.invalidateQueries({ queryKey: ['sop-pricing-options'] });
     },
-    onError: (e: any) => toast.error('فشل الحفظ: ' + (e?.message || 'خطأ')),
+    onError: (e: any) => toast.error('فشل الحفظ: ' + dbErrorText(e)),
   });
 }
 
@@ -742,16 +778,18 @@ export function useDeletePricingOption() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await db.from('sop_pricing_options').delete().eq('id', id);
+      const { data, error } = await db.from('sop_pricing_options').delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data || !data.length) throw new Error('لم يتم الحذف — الحذف متاح لقسم الحجوزات فقط');
     },
     onSuccess: () => {
       toast.success('تم الحذف');
       qc.invalidateQueries({ queryKey: ['sop-pricing-options'] });
     },
-    onError: (e: any) => toast.error('فشل الحذف: ' + (e?.message || 'خطأ')),
+    onError: (e: any) => toast.error('فشل الحذف: ' + dbErrorText(e)),
   });
 }
+
 
 export function usePublishPricing() {
   const qc = useQueryClient();
