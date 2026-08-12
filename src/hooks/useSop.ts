@@ -780,7 +780,7 @@ export function useDeletePricingOption() {
     mutationFn: async (id: string) => {
       const { data, error } = await db.from('sop_pricing_options').delete().eq('id', id).select('id');
       if (error) throw error;
-      if (!data || !data.length) throw new Error('لم يتم الحذف — الحذف متاح لقسم الحجوزات فقط');
+      if (!data || !data.length) throw new Error('لم يتم الحذف — الحذف متاح لقسم الحجوزات أو الإدارة، وغير متاح بعد اعتماد التسعير');
     },
     onSuccess: () => {
       toast.success('تم الحذف');
