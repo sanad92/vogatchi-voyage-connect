@@ -123,21 +123,33 @@ export const PricingOfferEditor = ({
   return (
     <div
       dir="rtl"
-      className={`border rounded-lg p-3 space-y-4 ${option.is_recommended ? 'ring-1 ring-primary' : ''}`}
+      className={`border rounded-lg p-3 space-y-4 ${v.is_recommended ? 'ring-1 ring-primary' : ''}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium">العرض {option.option_index}</span>
           {m.isExpired && <Badge variant="destructive" className="text-[10px]">انتهت الصلاحية</Badge>}
+          {dirty && (
+            <Badge variant="destructive" className="text-[10px]">تعديلات غير محفوظة</Badge>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs">
             <Switch
-              checked={!!option.is_recommended}
-              onCheckedChange={(c) => { set('is_recommended', c); onRecommend(c); }}
+              checked={!!v.is_recommended}
+              disabled={saving}
+              onCheckedChange={(c) => {
+                const next = { ...v, is_recommended: c };
+                setV(next);
+                onRecommend(c);
+                void save(next);
+              }}
             />
-            موصى به {option.is_recommended && <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>}
+            موصى به {option.is_recommended && !dirty && (
+              <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>
+            )}
           </label>
+
           <Button size="icon" variant="ghost" onClick={onDelete} aria-label="حذف العرض">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
