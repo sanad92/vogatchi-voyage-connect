@@ -23,7 +23,7 @@ import type { SopPricingOption } from '@/hooks/useSop';
 import {
   CANCELLATION_CHARGE_MODELS, CANCELLATION_TYPES, MEAL_PLANS, OTA_SOURCES,
   RECOMMENDATION_REASONS, ROOM_TYPES, ROOM_VIEWS, TRANSFER_STATUSES,
-  computePricingMetrics, fromLocalInput, money, pct, toLocalInput,
+  computePricingMetrics, dateTimeLabel, effectiveValidUntil, fromLocalInput, money, pct, toLocalInput,
 } from '@/lib/sopPricing';
 
 interface RequestDefaults {
@@ -40,6 +40,8 @@ interface Props {
   onRecommend: (recommended: boolean) => void;
   onDelete: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  /** Global request-level validity used when this offer has no override. */
+  requestValidUntil?: string | null;
   /** Published pricing is locked — the offer list must match what Sales sent. */
   canDelete?: boolean;
   deleteBlockedReason?: string;
@@ -69,7 +71,7 @@ const Stat = ({ label, value, strong }: { label: string; value: string; strong?:
 /** Fast, uncluttered editor for one pricing offer (max 3 per request). */
 export const PricingOfferEditor = ({
   option, defaults, canViewCosts, onSave, onRecommend, onDelete, onDirtyChange,
-  canDelete = true, deleteBlockedReason,
+  requestValidUntil, canDelete = true, deleteBlockedReason,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   const [touched, setTouched] = useState(false);
@@ -302,12 +304,37 @@ export const PricingOfferEditor = ({
         <Field label="العملة" required>
           <Input value={cur} onChange={(e) => set('currency', e.target.value)} />
         </Field>
-        <Field label="السعر صالح حتى" hint="اختياري لكل عرض — الإلزامي هو تاريخ صلاحية التسعير العام">
-          <Input
-            type="datetime-local"
-            value={toLocalInput(v.price_valid_until)}
-            onChange={(e) => set('price_valid_until', fromLocalInput(e.target.value))}
-          />
+        <Field
+          label="السعر صالح حتى"
+          hint={
+            v.price_valid_until
+              ? 'هذا العرض يستخدم صلاحية خاصة به'
+              : `يرث الصلاحية العامة: ${dateTimeLabel(effectiveValidUntil(v, requestValidUntil))}`
+          }
+        >
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-[11px]">
+              <Switch
+                checked={!!v.price_valid_until}
+                onCheckedChange={(c) =>
+                  set(
+                    'price_valid_until',
+                    c ? effectiveValidUntil(v, requestValidUntil) : null,
+                  )
+                }
+              />
+              صلاحية مختلفة لهذا العرض
+            </label>
+            {v.price_valid_until ? (
+              <Input
+                type="datetime-local"
+                value={toLocalInput(v.price_valid_until)}
+                onChange={(e) => set('price_valid_until', fromLocalInput(e.target.value))}
+              />
+            ) : (
+              <Input value={dateTimeLabel(effectiveValidUntil(v, requestValidUntil))} disabled />
+            )}
+          </div>
         </Field>
 
         <datalist id={`hotels-${option.id}`} />

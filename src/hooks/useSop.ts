@@ -774,6 +774,24 @@ export function useSavePricingOption() {
   });
 }
 
+/** Persists the request-level (global) pricing validity date. */
+export function useSaveRequestValidity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { requestId: string; validUntil: string | null }) => {
+      const { data, error } = await db.from('sop_pricing_requests')
+        .update({ price_valid_until: input.validUntil })
+        .eq('id', input.requestId)
+        .select('id, price_valid_until');
+      if (error) throw error;
+      if (!data || !data.length) throw new Error('لم يتم حفظ صلاحية التسعير — صلاحيات غير كافية');
+      return data[0];
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sop-pricing-requests'] }),
+    onError: (e: any) => toast.error('فشل حفظ صلاحية التسعير: ' + dbErrorText(e)),
+  });
+}
+
 export function useDeletePricingOption() {
   const qc = useQueryClient();
   return useMutation({
