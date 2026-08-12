@@ -50,11 +50,14 @@ export const DEPARTMENT_LABELS: Record<SopDepartment, string> = {
 };
 
 export const LEAD_STAGE_LABELS: Record<SopLeadStage, string> = {
-  new: 'جديد',
-  qualified: 'مؤهل',
-  assigned: 'مُسند للمبيعات',
+  // Customer Service only completes intake — a complete file is "ready for Sales".
+  new: 'جاهز للمبيعات (بانتظار الاستلام)',
+  // Sales claimed the file and is running the qualification decision.
+  assigned: 'جاري التأهيل',
+  // Only the Sales owner can move a file to Qualified.
+  qualified: 'عميل مؤهل',
   pricing_requested: 'طلب تسعير',
-  quoted: 'تم عرض السعر',
+  quoted: 'تم التسعير',
   follow_up: 'متابعة / تفاوض',
   accepted_pending_recheck: 'موافقة بانتظار إعادة التأكد',
   rechecked: 'تمت إعادة التأكد',
@@ -65,6 +68,7 @@ export const LEAD_STAGE_LABELS: Record<SopLeadStage, string> = {
 };
 
 export const PIPELINE_STAGES: SopLeadStage[] = [
+  'assigned',
   'qualified',
   'pricing_requested',
   'quoted',
@@ -77,8 +81,8 @@ export const PIPELINE_STAGES: SopLeadStage[] = [
 
 export const LEAD_FLOW: SopLeadStage[] = [
   'new',
-  'qualified',
   'assigned',
+  'qualified',
   'pricing_requested',
   'quoted',
   'follow_up',
