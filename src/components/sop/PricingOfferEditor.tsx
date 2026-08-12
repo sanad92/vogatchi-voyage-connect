@@ -34,7 +34,11 @@ interface Props {
   onRecommend: (recommended: boolean) => void;
   onDelete: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  /** Published pricing is locked — the offer list must match what Sales sent. */
+  canDelete?: boolean;
+  deleteBlockedReason?: string;
 }
+
 
 
 const Field = ({
