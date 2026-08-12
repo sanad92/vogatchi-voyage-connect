@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,10 +30,12 @@ interface Props {
   option: SopPricingOption;
   defaults: RequestDefaults;
   canViewCosts: boolean;
-  onSave: (values: Partial<SopPricingOption>) => void;
+  onSave: (values: Partial<SopPricingOption>) => void | Promise<unknown>;
   onRecommend: (recommended: boolean) => void;
   onDelete: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
+
 
 const Field = ({
   label, required, hint, children,
@@ -56,16 +58,55 @@ const Stat = ({ label, value, strong }: { label: string; value: string; strong?:
 
 /** Fast, uncluttered editor for one pricing offer (max 3 per request). */
 export const PricingOfferEditor = ({
-  option, defaults, canViewCosts, onSave, onRecommend, onDelete,
+  option, defaults, canViewCosts, onSave, onRecommend, onDelete, onDirtyChange,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [transferOpen, setTransferOpen] = useState(
     !!option.transfer_status && option.transfer_status !== 'not_included',
   );
   const [policyOpen, setPolicyOpen] = useState(false);
 
-  useEffect(() => setV(option), [option]);
-  const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
+  const dirtyRef = useRef(false);
+  const markDirty = (next: boolean) => {
+    dirtyRef.current = next;
+    setDirty(next);
+    onDirtyChange?.(next);
+  };
+
+  // Only adopt server state when this row has no unsaved input, otherwise a
+  // background refetch would silently wipe what the user is typing.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    setV(option);
+  }, [option]);
+
+  // Switching to a different offer always resets the form.
+  useEffect(() => {
+    markDirty(false);
+    setV(option);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [option.id]);
+
+  useEffect(() => () => onDirtyChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = (k: keyof SopPricingOption, val: unknown) => {
+    markDirty(true);
+    setV((p) => ({ ...p, [k]: val }));
+  };
+
+  const save = async (values: Partial<SopPricingOption> = v) => {
+    setSaving(true);
+    try {
+      await onSave(values);
+      markDirty(false);
+      setV(values);
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const m = useMemo(() => computePricingMetrics(v, defaults), [v, defaults]);
   const cur = v.currency || 'EGP';
@@ -82,21 +123,33 @@ export const PricingOfferEditor = ({
   return (
     <div
       dir="rtl"
-      className={`border rounded-lg p-3 space-y-4 ${option.is_recommended ? 'ring-1 ring-primary' : ''}`}
+      className={`border rounded-lg p-3 space-y-4 ${v.is_recommended ? 'ring-1 ring-primary' : ''}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium">العرض {option.option_index}</span>
           {m.isExpired && <Badge variant="destructive" className="text-[10px]">انتهت الصلاحية</Badge>}
+          {dirty && (
+            <Badge variant="destructive" className="text-[10px]">تعديلات غير محفوظة</Badge>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs">
             <Switch
-              checked={!!option.is_recommended}
-              onCheckedChange={(c) => { set('is_recommended', c); onRecommend(c); }}
+              checked={!!v.is_recommended}
+              disabled={saving}
+              onCheckedChange={(c) => {
+                const next = { ...v, is_recommended: c };
+                setV(next);
+                onRecommend(c);
+                void save(next);
+              }}
             />
-            موصى به {option.is_recommended && <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>}
+            موصى به {option.is_recommended && !dirty && (
+              <Badge variant="secondary" className="text-[10px]">محفوظ</Badge>
+            )}
           </label>
+
           <Button size="icon" variant="ghost" onClick={onDelete} aria-label="حذف العرض">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
@@ -466,10 +519,14 @@ export const PricingOfferEditor = ({
 
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <TrendingUp className="h-3.5 w-3.5" /> الحسابات تتحدث فورياً أثناء الإدخال
+          <TrendingUp className="h-3.5 w-3.5" />
+          {dirty ? 'لديك تعديلات غير محفوظة — اضغط حفظ العرض' : 'كل التعديلات محفوظة'}
         </span>
-        <Button size="sm" variant="outline" onClick={() => onSave(v)}>حفظ العرض</Button>
+        <Button size="sm" variant={dirty ? 'default' : 'outline'} disabled={saving} onClick={() => void save()}>
+          {saving ? 'جارٍ الحفظ…' : 'حفظ العرض'}
+        </Button>
       </div>
+
     </div>
   );
 };

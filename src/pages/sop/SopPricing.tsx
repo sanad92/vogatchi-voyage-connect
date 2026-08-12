@@ -67,14 +67,22 @@ const SopPricing = () => {
   const { user } = useOptimizedAuth();
 
   const unclaimed = (requests || []).filter((r) => !r.assigned_to && r.status !== 'closed' && r.status !== 'cancelled');
-  const claimed = (requests || []).filter((r) => !!r.assigned_to);
+  const claimedAll = (requests || []).filter((r) => !!r.assigned_to);
+  const PUBLISHED = ['quoted', 'requoted', 'closed', 'cancelled'];
+  const claimed = claimedAll.filter((r) => !PUBLISHED.includes(r.status));
+  const published = claimedAll.filter((r) => PUBLISHED.includes(r.status));
 
   const [validUntil, setValidUntil] = useState('');
   const [recommendation, setRecommendation] = useState('');
+  // Offers with unsaved edits — publishing them would quote stale prices.
+  const [dirtyOffers, setDirtyOffers] = useState<Record<string, boolean>>({});
+  const setOfferDirty = (id: string, dirty: boolean) =>
+    setDirtyOffers((p) => (p[id] === dirty ? p : { ...p, [id]: dirty }));
 
   useEffect(() => {
     setValidUntil(selected?.price_valid_until?.slice(0, 10) || '');
     setRecommendation(selected?.recommendation || '');
+    setDirtyOffers({});
   }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
 
   const brief = (selected?.brief as Record<string, any>) || {};
@@ -88,10 +96,15 @@ const SopPricing = () => {
   );
 
   const list = options || [];
+  const hasUnsaved = list.some((o) => dirtyOffers[o.id]);
   const blockers: string[] = [];
   if (!list.length) blockers.push('أضف عرضاً واحداً على الأقل.');
+  if (hasUnsaved) blockers.push('لديك تعديلات غير محفوظة في أحد العروض — اضغط «حفظ العرض» أولاً.');
   if (list.length && !list.some((o) => o.is_recommended)) {
     blockers.push('فعّل مفتاح «موصى به» على أحد العروض (يُحفظ تلقائياً).');
+  }
+  if (list.some((o) => !(Number(o.net_cost) > 0) || !(Number(o.selling_price) > 0))) {
+    blockers.push('أدخل صافي التكلفة وسعر البيع لكل عرض ثم احفظه.');
   }
   if (list.some((o) => !o.price_valid_until)) blockers.push('حدد «السعر صالح حتى» لكل عرض.');
   if (list.some((o) => o.is_recommended && o.price_valid_until && new Date(o.price_valid_until) < new Date())) {
@@ -101,9 +114,10 @@ const SopPricing = () => {
 
   const addOption = () => {
     if (!selectedId || list.length >= 3) return;
+    const nextIndex = list.reduce((max, o) => Math.max(max, Number(o.option_index) || 0), 0) + 1;
     saveOption.mutate({
       pricing_request_id: selectedId,
-      option_index: list.length + 1,
+      option_index: nextIndex,
       net_cost: 0,
       selling_price: 0,
       currency: 'EGP',
@@ -115,6 +129,7 @@ const SopPricing = () => {
       transfer_status: 'not_included',
     } as any);
   };
+
 
   const nights = nightsBetween(defaults.check_in, defaults.check_out);
 
@@ -171,7 +186,9 @@ const SopPricing = () => {
             </Card>
 
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">الطلبات المستلمة</CardTitle></CardHeader>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">قيد التسعير ({claimed.length})</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-2">
                 {claimed.map((r) => (
                   <div
@@ -193,9 +210,36 @@ const SopPricing = () => {
                     </div>
                   </div>
                 ))}
-                {!claimed.length && <p className="text-xs text-muted-foreground">لا توجد طلبات مستلمة.</p>}
+                {!claimed.length && <p className="text-xs text-muted-foreground">لا توجد طلبات قيد التسعير.</p>}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">تم اعتمادها وإرسالها للمبيعات ({published.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {published.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => setSelectedId(r.id)}
+                    className={`w-full text-right border rounded-md p-2 text-xs transition cursor-pointer ${
+                      selectedId === r.id ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{(r.brief as any)?.contact_name || 'طلب تسعير'}</span>
+                      <Badge variant="secondary" className="text-[10px]">{STATUS_LABELS[r.status] || r.status}</Badge>
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {(r.brief as any)?.destination || '—'} · {new Date(r.requested_at).toLocaleDateString('ar-EG')}
+                    </div>
+                  </div>
+                ))}
+                {!published.length && <p className="text-xs text-muted-foreground">لا توجد طلبات معتمدة بعد.</p>}
+              </CardContent>
+            </Card>
+
           </div>
 
           <div className="lg:col-span-2 space-y-4">
@@ -260,7 +304,9 @@ const SopPricing = () => {
                         option={o}
                         defaults={defaults}
                         canViewCosts={canViewCosts}
-                        onSave={(v) => saveOption.mutate({ ...v, id: o.id, pricing_request_id: selected.id } as any)}
+                        onSave={(v) =>
+                          saveOption.mutateAsync({ ...v, id: o.id, pricing_request_id: selected.id } as any)
+                        }
                         onRecommend={(recommended) =>
                           saveOption.mutate({
                             id: o.id,
@@ -269,8 +315,10 @@ const SopPricing = () => {
                           } as any)
                         }
                         onDelete={() => deleteOption.mutate(o.id)}
+                        onDirtyChange={(d) => setOfferDirty(o.id, d)}
                       />
                     ))}
+
                     {!list.length && (
                       <p className="text-xs text-muted-foreground">ابدأ بإضافة العرض الأول.</p>
                     )}
@@ -299,18 +347,19 @@ const SopPricing = () => {
 
                     <Button
                       size="sm"
-                      onClick={() => publish.mutate(
-                        { requestId: selected.id, validUntil: validUntil || null, recommendation },
-                        {
-                          onSuccess: (res: any) => {
-                            if (res?.allowed !== false) returnToSales.mutate(selected.id);
-                          },
-                        },
-                      )}
+                      onClick={() => publish.mutate({
+                        requestId: selected.id,
+                        validUntil: validUntil || null,
+                        recommendation,
+                      })}
                       disabled={publish.isPending || blockers.length > 0}
                     >
-                      اعتماد التسعير وإرساله للمبيعات
+                      {publish.isPending ? 'جارٍ الاعتماد…' : 'اعتماد التسعير وإرساله للمبيعات'}
                     </Button>
+                    <p className="text-[11px] text-muted-foreground">
+                      الاعتماد ينشئ عرض السعر ويعيد الطلب تلقائياً لموظف المبيعات صاحب الطلب في خطوة واحدة.
+                    </p>
+
 
                     {(selected.status === 'quoted' || selected.status === 'requoted') && (
                       <div className="rounded-md border p-2 space-y-2">
