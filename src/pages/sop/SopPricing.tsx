@@ -347,18 +347,19 @@ const SopPricing = () => {
 
                     <Button
                       size="sm"
-                      onClick={() => publish.mutate(
-                        { requestId: selected.id, validUntil: validUntil || null, recommendation },
-                        {
-                          onSuccess: (res: any) => {
-                            if (res?.allowed !== false) returnToSales.mutate(selected.id);
-                          },
-                        },
-                      )}
+                      onClick={() => publish.mutate({
+                        requestId: selected.id,
+                        validUntil: validUntil || null,
+                        recommendation,
+                      })}
                       disabled={publish.isPending || blockers.length > 0}
                     >
-                      اعتماد التسعير وإرساله للمبيعات
+                      {publish.isPending ? 'جارٍ الاعتماد…' : 'اعتماد التسعير وإرساله للمبيعات'}
                     </Button>
+                    <p className="text-[11px] text-muted-foreground">
+                      الاعتماد ينشئ عرض السعر ويعيد الطلب تلقائياً لموظف المبيعات صاحب الطلب في خطوة واحدة.
+                    </p>
+
 
                     {(selected.status === 'quoted' || selected.status === 'requoted') && (
                       <div className="rounded-md border p-2 space-y-2">
