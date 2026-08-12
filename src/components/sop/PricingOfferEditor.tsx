@@ -58,16 +58,55 @@ const Stat = ({ label, value, strong }: { label: string; value: string; strong?:
 
 /** Fast, uncluttered editor for one pricing offer (max 3 per request). */
 export const PricingOfferEditor = ({
-  option, defaults, canViewCosts, onSave, onRecommend, onDelete,
+  option, defaults, canViewCosts, onSave, onRecommend, onDelete, onDirtyChange,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [transferOpen, setTransferOpen] = useState(
     !!option.transfer_status && option.transfer_status !== 'not_included',
   );
   const [policyOpen, setPolicyOpen] = useState(false);
 
-  useEffect(() => setV(option), [option]);
-  const set = (k: keyof SopPricingOption, val: unknown) => setV((p) => ({ ...p, [k]: val }));
+  const dirtyRef = useRef(false);
+  const markDirty = (next: boolean) => {
+    dirtyRef.current = next;
+    setDirty(next);
+    onDirtyChange?.(next);
+  };
+
+  // Only adopt server state when this row has no unsaved input, otherwise a
+  // background refetch would silently wipe what the user is typing.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    setV(option);
+  }, [option]);
+
+  // Switching to a different offer always resets the form.
+  useEffect(() => {
+    markDirty(false);
+    setV(option);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [option.id]);
+
+  useEffect(() => () => onDirtyChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = (k: keyof SopPricingOption, val: unknown) => {
+    markDirty(true);
+    setV((p) => ({ ...p, [k]: val }));
+  };
+
+  const save = async (values: Partial<SopPricingOption> = v) => {
+    setSaving(true);
+    try {
+      await onSave(values);
+      markDirty(false);
+      setV(values);
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const m = useMemo(() => computePricingMetrics(v, defaults), [v, defaults]);
   const cur = v.currency || 'EGP';
