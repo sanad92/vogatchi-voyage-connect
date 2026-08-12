@@ -304,38 +304,8 @@ export const PricingOfferEditor = ({
         <Field label="العملة" required>
           <Input value={cur} onChange={(e) => set('currency', e.target.value)} />
         </Field>
-        <Field
-          label="السعر صالح حتى"
-          hint={
-            v.price_valid_until
-              ? 'هذا العرض يستخدم صلاحية خاصة به'
-              : `يرث الصلاحية العامة: ${dateTimeLabel(effectiveValidUntil(v, requestValidUntil))}`
-          }
-        >
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[11px]">
-              <Switch
-                checked={!!v.price_valid_until}
-                onCheckedChange={(c) =>
-                  set(
-                    'price_valid_until',
-                    c ? effectiveValidUntil(v, requestValidUntil) : null,
-                  )
-                }
-              />
-              صلاحية مختلفة لهذا العرض
-            </label>
-            {v.price_valid_until ? (
-              <Input
-                type="datetime-local"
-                value={toLocalInput(v.price_valid_until)}
-                onChange={(e) => set('price_valid_until', fromLocalInput(e.target.value))}
-              />
-            ) : (
-              <Input value={dateTimeLabel(effectiveValidUntil(v, requestValidUntil))} disabled />
-            )}
-          </div>
-        </Field>
+
+
 
         <datalist id={`hotels-${option.id}`} />
         <datalist id={`roomtypes-${option.id}`}>
