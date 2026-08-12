@@ -133,6 +133,9 @@ export const VIOLATION_GUIDANCE: Record<string, string> = {
   not_reservations_member: 'اطلب من المدير إضافتك لقسم الحجوزات من صفحة فريق العمل.',
   reservations_member_unavailable: 'فعّل حالة «متاح» عشان تقدر تستلم طلبات التسعير.',
   not_department_member: 'حسابك غير مسجّل في هذا القسم.',
+  lead_not_claimed: 'لازم موظف مبيعات يستلم العميل قبل قرار التأهيل.',
+  only_sales_owner_can_qualify: 'قرار التأهيل من حق موظف المبيعات المسؤول عن الملف فقط.',
+  lead_not_qualified: 'حدد «عميل مؤهل» أولًا قبل طلب التسعير.',
 
   pricing_not_published: 'انشر التسعير أولًا قبل الإرسال للمبيعات.',
 };
