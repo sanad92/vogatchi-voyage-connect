@@ -15,6 +15,7 @@ import {
   usePublishPricing,
   useReturnToSales,
   useSavePricingOption,
+  useSaveRequestValidity,
   useSopLead,
   useSopRealtime,
 } from '@/hooks/useSop';
@@ -64,6 +65,7 @@ const SopPricing = () => {
   const completeRecheck = useCompleteRecheck();
   const claimRequest = useClaimPricingRequest();
   const returnToSales = useReturnToSales();
+  const saveValidity = useSaveRequestValidity();
   const { user } = useOptimizedAuth();
 
   const unclaimed = (requests || []).filter((r) => !r.assigned_to && r.status !== 'closed' && r.status !== 'cancelled');
@@ -323,6 +325,7 @@ const SopPricing = () => {
                         onDelete={() => deleteOption.mutate(o.id)}
                         canDelete={!isPublishedRequest}
                         deleteBlockedReason="لا يمكن الحذف بعد اعتماد التسعير"
+                        requestValidUntil={validUntil || selected.price_valid_until || null}
                         onDirtyChange={(d) => setOfferDirty(o.id, d)}
                       />
                     ))}
@@ -340,7 +343,20 @@ const SopPricing = () => {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label className="text-xs">صلاحية التسعير حتى <span className="text-destructive">*</span></Label>
-                        <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+                        <Input
+                          type="date"
+                          value={validUntil}
+                          onChange={(e) => setValidUntil(e.target.value)}
+                          onBlur={(e) => {
+                            const val = e.target.value || null;
+                            if (selected && val !== (selected.price_valid_until?.slice(0, 10) || null)) {
+                              saveValidity.mutate({ requestId: selected.id, validUntil: val });
+                            }
+                          }}
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          يسري تلقائياً على كل العروض ما لم يحدد العرض صلاحية مختلفة.
+                        </p>
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs">توصية الحجوزات</Label>
