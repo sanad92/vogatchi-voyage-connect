@@ -15,6 +15,7 @@ import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
+import BookingLeadAudit from '@/components/bookings/workspace/BookingLeadAudit';
 import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
 import { BookingSopTab } from '@/components/bookings/workspace/BookingSopTab';
 import { WorkflowProgressBar } from '@/components/workflow/WorkflowProgressBar';
@@ -164,9 +165,11 @@ const BookingWorkspace = () => {
         <TabsContent value="tasks" className="mt-4">
           <TasksTab workspace={workspace} />
         </TabsContent>
-        <TabsContent value="timeline" className="mt-4">
+        <TabsContent value="timeline" className="mt-4 space-y-4">
+          <BookingLeadAudit bookingId={id} />
           <TimelineTab workspace={workspace} />
         </TabsContent>
+
         <TabsContent value="automation" className="mt-4">
           {id && <AutomationCenter bookingId={id} />}
         </TabsContent>

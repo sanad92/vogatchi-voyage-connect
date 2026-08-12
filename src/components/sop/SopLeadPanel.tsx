@@ -28,6 +28,7 @@ import SopGateAlert from './SopGateAlert';
 import SopLeadBrief from './SopLeadBrief';
 import SopPricingResult from './SopPricingResult';
 import SopStageActions from './SopStageActions';
+import LeadAuditTimeline from './LeadAuditTimeline';
 import {
   DEPARTMENT_LABELS,
   LEAD_STAGE_LABELS,
@@ -257,6 +258,8 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
     <SopLeadBrief lead={lead} />
     <SopPricingResult leadId={leadId} />
+    <LeadAuditTimeline leadId={leadId} compact={compact} />
+
     </div>
   );
 };

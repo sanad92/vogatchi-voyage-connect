@@ -8163,6 +8163,77 @@ export type Database = {
           },
         ]
       }
+      sop_lead_stage_history: {
+        Row: {
+          action: string
+          actor_name: string | null
+          actor_user_id: string | null
+          booking_id: string | null
+          created_at: string
+          dedupe_key: string
+          from_stage: Database["public"]["Enums"]["sop_lead_stage"] | null
+          id: string
+          is_reconstructed: boolean
+          lead_id: string
+          metadata: Json
+          occurred_at: string
+          organization_id: string
+          pricing_request_id: string | null
+          quote_id: string | null
+          reason: string | null
+          source: string
+          to_stage: Database["public"]["Enums"]["sop_lead_stage"] | null
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          booking_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          from_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
+          id?: string
+          is_reconstructed?: boolean
+          lead_id: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id: string
+          pricing_request_id?: string | null
+          quote_id?: string | null
+          reason?: string | null
+          source?: string
+          to_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          booking_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          from_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
+          id?: string
+          is_reconstructed?: boolean
+          lead_id?: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id?: string
+          pricing_request_id?: string | null
+          quote_id?: string | null
+          reason?: string | null
+          source?: string
+          to_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_lead_stage_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sop_leads: {
         Row: {
           adults: number | null
@@ -12756,6 +12827,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       sop_acknowledge_assignment: { Args: { _lead: string }; Returns: Json }
+      sop_actor_name: { Args: { _user: string }; Returns: string }
       sop_advance_lead: {
         Args: {
           _lead: string
@@ -12773,6 +12845,7 @@ export type Database = {
         Returns: Json
       }
       sop_auto_assign: { Args: { _lead: string }; Returns: string }
+      sop_backfill_stage_history: { Args: { p_org?: string }; Returns: Json }
       sop_brief_missing: {
         Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
         Returns: string[]
@@ -12830,6 +12903,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      sop_history_write: {
+        Args: {
+          _action: string
+          _actor: string
+          _at: string
+          _booking: string
+          _from: Database["public"]["Enums"]["sop_lead_stage"]
+          _key: string
+          _lead: string
+          _meta: Json
+          _org: string
+          _pricing: string
+          _quote: string
+          _reason: string
+          _reconstructed: boolean
+          _source: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: undefined
+      }
       sop_intake_missing: {
         Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
         Returns: string[]
@@ -12838,6 +12931,21 @@ export type Database = {
         Args: { _org: string; _user: string }
         Returns: boolean
       }
+      sop_lead_cycle_report: {
+        Args: {
+          p_department?: Database["public"]["Enums"]["sop_department"]
+          p_employee?: string
+          p_from?: string
+          p_include_legacy?: boolean
+          p_org: string
+          p_outcome?: string
+          p_source?: string
+          p_stage?: Database["public"]["Enums"]["sop_lead_stage"]
+          p_to?: string
+        }
+        Returns: Json
+      }
+      sop_lead_timeline: { Args: { _lead: string }; Returns: Json }
       sop_move_back: {
         Args: {
           _lead: string
