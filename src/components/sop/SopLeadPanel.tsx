@@ -37,11 +37,14 @@ import {
   type SopLeadStage,
 } from '@/lib/sop';
 
-/** Maps the current stage to the transition the user is expected to take next. */
+/**
+ * Maps the current stage to the transition the user is expected to take next.
+ * `new` has no advance target on purpose: a Sales user must claim the lead first,
+ * and only the claiming owner then decides qualification.
+ */
 const NEXT_STAGE: Partial<Record<SopLeadStage, SopLeadStage>> = {
-  new: 'qualified',
-  qualified: 'assigned',
-  assigned: 'pricing_requested',
+  assigned: 'qualified',
+  qualified: 'pricing_requested',
   pricing_requested: 'quoted',
   quoted: 'accepted_pending_recheck',
   follow_up: 'accepted_pending_recheck',
@@ -52,8 +55,7 @@ const NEXT_STAGE: Partial<Record<SopLeadStage, SopLeadStage>> = {
 
 const HANDOVER_FOR_STAGE: Partial<Record<SopLeadStage, SopHandoverType>> = {
   new: 'cs_to_sales',
-  qualified: 'cs_to_sales',
-  assigned: 'sales_to_reservations',
+  qualified: 'sales_to_reservations',
   pricing_requested: 'reservations_to_sales',
   won: 'reservations_to_cs',
 };
@@ -92,7 +94,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const actions: Action[] = [];
 
   // Self-claim is the normal path: an available Sales member takes the lead themselves.
-  const claimable = !lead.current_owner_id && ['new', 'qualified', 'assigned'].includes(lead.stage);
+  const claimable = !lead.current_owner_id && ['new', 'assigned', 'qualified'].includes(lead.stage);
   if (claimable) {
     actions.push({
       label: 'استلم العميل',
@@ -109,14 +111,15 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
       onClick: () => setHandoverOpen(handoverType),
     });
   }
-  if (lead.stage === 'qualified') {
+  if (lead.stage === 'new') {
     actions.push({
       label: 'إسناد بالتناوب',
       icon: <UserPlus className="h-3.5 w-3.5 ml-1" />,
       onClick: () => assign.mutate({ leadId }),
     });
   }
-  if (lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
+  // Pricing is unlocked only after the Sales owner qualified the lead.
+  if (lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
     actions.push({
       label: 'طلب تسعير',
       icon: <Send className="h-3.5 w-3.5 ml-1" />,
@@ -139,8 +142,11 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   }
   if (nextStage) {
     const acceptance = nextStage === 'accepted_pending_recheck';
+    const qualification = nextStage === 'qualified';
     actions.push({
-      label: acceptance ? 'العميل وافق' : `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
+      label: acceptance ? 'العميل وافق'
+        : qualification ? 'عميل مؤهل'
+        : `تأكيد: ${LEAD_STAGE_LABELS[nextStage]}`,
       icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
       onClick: () => advance.mutate({ leadId, to: nextStage }, {
         // Acceptance immediately opens the recheck task for Reservations.
@@ -161,7 +167,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
   // The gate decides what the user should do right now.
   const advanceAction = nextStage
-    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق')
+    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق' || a.label === 'عميل مؤهل')
     : undefined;
   const claimAction = actions.find((a) => a.label === 'استلم العميل');
   const primary = claimAction

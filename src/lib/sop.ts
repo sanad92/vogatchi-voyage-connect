@@ -50,11 +50,14 @@ export const DEPARTMENT_LABELS: Record<SopDepartment, string> = {
 };
 
 export const LEAD_STAGE_LABELS: Record<SopLeadStage, string> = {
-  new: 'جديد',
-  qualified: 'مؤهل',
-  assigned: 'مُسند للمبيعات',
+  // Customer Service only completes intake — a complete file is "ready for Sales".
+  new: 'جاهز للمبيعات (بانتظار الاستلام)',
+  // Sales claimed the file and is running the qualification decision.
+  assigned: 'جاري التأهيل',
+  // Only the Sales owner can move a file to Qualified.
+  qualified: 'عميل مؤهل',
   pricing_requested: 'طلب تسعير',
-  quoted: 'تم عرض السعر',
+  quoted: 'تم التسعير',
   follow_up: 'متابعة / تفاوض',
   accepted_pending_recheck: 'موافقة بانتظار إعادة التأكد',
   rechecked: 'تمت إعادة التأكد',
@@ -65,6 +68,7 @@ export const LEAD_STAGE_LABELS: Record<SopLeadStage, string> = {
 };
 
 export const PIPELINE_STAGES: SopLeadStage[] = [
+  'assigned',
   'qualified',
   'pricing_requested',
   'quoted',
@@ -77,8 +81,8 @@ export const PIPELINE_STAGES: SopLeadStage[] = [
 
 export const LEAD_FLOW: SopLeadStage[] = [
   'new',
-  'qualified',
   'assigned',
+  'qualified',
   'pricing_requested',
   'quoted',
   'follow_up',
@@ -129,6 +133,9 @@ export const VIOLATION_GUIDANCE: Record<string, string> = {
   not_reservations_member: 'اطلب من المدير إضافتك لقسم الحجوزات من صفحة فريق العمل.',
   reservations_member_unavailable: 'فعّل حالة «متاح» عشان تقدر تستلم طلبات التسعير.',
   not_department_member: 'حسابك غير مسجّل في هذا القسم.',
+  lead_not_claimed: 'لازم موظف مبيعات يستلم العميل قبل قرار التأهيل.',
+  only_sales_owner_can_qualify: 'قرار التأهيل من حق موظف المبيعات المسؤول عن الملف فقط.',
+  lead_not_qualified: 'حدد «عميل مؤهل» أولًا قبل طلب التسعير.',
 
   pricing_not_published: 'انشر التسعير أولًا قبل الإرسال للمبيعات.',
 };
@@ -301,10 +308,10 @@ export const stageOwnerDepartment = (stage: SopLeadStage): SopDepartment => {
 export const nextRequiredAction = (stage: SopLeadStage): string => {
   switch (stage) {
     case 'new':
-      return 'استكمال بيانات الاستقبال ثم التأهيل';
-    case 'qualified':
-      return 'تسليم خدمة العملاء ← المبيعات ثم الإسناد بالتناوب';
+      return 'خدمة العملاء: استكمال بيانات الاستقبال — ثم يستلمه موظف المبيعات';
     case 'assigned':
+      return 'المبيعات: مراجعة الملف واتخاذ قرار التأهيل (مؤهل / غير مؤهل)';
+    case 'qualified':
       return 'مراجعة الـ Brief وإرسال طلب تسعير للحجوزات';
     case 'pricing_requested':
       return 'الحجوزات: إضافة الخيارات ونشر التسعير';

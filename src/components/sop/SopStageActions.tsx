@@ -14,7 +14,7 @@ import { LEAD_STAGE_LABELS, type SopLeadStage } from '@/lib/sop';
 
 /** Ordered forward path — anything before the current stage is a valid backward target. */
 const STAGE_ORDER: SopLeadStage[] = [
-  'new', 'qualified', 'assigned', 'pricing_requested', 'quoted', 'follow_up',
+  'new', 'assigned', 'qualified', 'pricing_requested', 'quoted', 'follow_up',
   'accepted_pending_recheck', 'rechecked', 'payment_pending', 'won',
 ];
 

@@ -11,14 +11,14 @@ const SopPipeline = () => {
   usePageTitle('خط أنابيب المبيعات');
   useSopRealtime();
   const { data: leads } = useSopLeads({
-    stages: [...PIPELINE_STAGES, 'assigned', 'lost'] as SopLeadStage[],
+    stages: [...PIPELINE_STAGES, 'lost'] as SopLeadStage[],
   });
   const reopen = useReopenLead();
   const [selected, setSelected] = useState<string | null>(null);
 
   const columns = useMemo(() => {
     const map: Record<string, SopLead[]> = {};
-    ['assigned', ...PIPELINE_STAGES].forEach((s) => { map[s] = []; });
+    PIPELINE_STAGES.forEach((s) => { map[s] = []; });
     (leads || []).forEach((l) => {
       if (map[l.stage]) map[l.stage].push(l);
     });
@@ -39,7 +39,7 @@ const SopPipeline = () => {
       <div className="grid gap-4 lg:grid-cols-4">
         <div className="lg:col-span-3 overflow-x-auto">
           <div className="flex gap-3 min-w-max pb-2">
-            {['assigned', ...PIPELINE_STAGES].map((stage) => (
+            {PIPELINE_STAGES.map((stage) => (
               <div key={stage} className="w-64 shrink-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">{LEAD_STAGE_LABELS[stage as SopLeadStage]}</span>
