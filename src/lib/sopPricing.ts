@@ -205,6 +205,21 @@ const positive = (v: unknown) => Number.isFinite(Number(v)) && Number(v) > 0;
 const filled = (v: unknown) => typeof v === 'string' ? v.trim().length > 0 : v !== null && v !== undefined;
 
 /**
+ * Effective validity for one offer: its own override when present, otherwise
+ * the request-level (global) validity date. Never a parallel model.
+ */
+export const effectiveValidUntil = (
+  o: { price_valid_until?: string | null },
+  requestValidUntil?: string | null,
+): string | null => {
+  if (o?.price_valid_until) return o.price_valid_until;
+  if (requestValidUntil && String(requestValidUntil).trim()) {
+    return `${String(requestValidUntil).slice(0, 10)}T23:59:59`;
+  }
+  return null;
+};
+
+/**
  * Single source of truth for "can this pricing request be published?".
  * Mirrors exactly what `sop_publish_pricing` validates — never stricter.
  * Optional data (OTA/hotel-direct benchmarks, transfers, room view, notes) is
@@ -241,7 +256,8 @@ export const publishBlockers = (
       out.push({ code: 'cancellation', message: `${label(o)}: سياسة الإلغاء مطلوبة.` });
     }
     // Per-offer expiry is only a blocker for the recommended offer, exactly like the RPC.
-    if (o.is_recommended && o.price_valid_until && new Date(o.price_valid_until).getTime() < Date.now()) {
+    const eff = effectiveValidUntil(o, requestValidUntil);
+    if (o.is_recommended && eff && new Date(eff).getTime() < Date.now()) {
       out.push({ code: 'option_price_expired', message: `${label(o)}: السعر الموصى به انتهت صلاحيته — حدّثه.` });
     }
   }
@@ -254,12 +270,19 @@ export const publishBlockers = (
     out.push({ code: 'multiple_recommended', message: 'يجب أن يكون هناك عرض موصى به واحد فقط.' });
   }
 
-  // Validity: the request-level date is the requirement. A per-offer date is an
-  // acceptable substitute (it is copied into the request on publish).
-  const anyOfferValidity = options.some((o) => !!o.price_valid_until);
-  if (!filled(requestValidUntil) && !anyOfferValidity) {
+  // Validity: the request-level date is the default for every offer. An offer
+  // only needs its own date when it explicitly overrides the global one.
+  const missingValidity = options.filter((o) => !effectiveValidUntil(o, requestValidUntil));
+  if (missingValidity.length) {
+    out.push({
+      code: 'price_validity_required',
+      message: 'حدد تاريخ «صلاحية التسعير حتى» (يسري على كل العروض).',
+    });
+  }
+  if (!options.length && !filled(requestValidUntil)) {
     out.push({ code: 'price_validity_required', message: 'حدد تاريخ «صلاحية التسعير حتى».' });
-  } else if (filled(requestValidUntil) && new Date(`${requestValidUntil}T23:59:59`).getTime() < Date.now()) {
+  }
+  if (filled(requestValidUntil) && new Date(`${requestValidUntil}T23:59:59`).getTime() < Date.now()) {
     out.push({ code: 'price_validity_expired', message: 'تاريخ صلاحية التسعير في الماضي — اختر تاريخاً لاحقاً.' });
   }
 
