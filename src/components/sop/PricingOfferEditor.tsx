@@ -63,6 +63,7 @@ const Stat = ({ label, value, strong }: { label: string; value: string; strong?:
 /** Fast, uncluttered editor for one pricing offer (max 3 per request). */
 export const PricingOfferEditor = ({
   option, defaults, canViewCosts, onSave, onRecommend, onDelete, onDirtyChange,
+  canDelete = true, deleteBlockedReason,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   const [dirty, setDirty] = useState(false);
