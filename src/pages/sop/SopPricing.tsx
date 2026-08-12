@@ -291,10 +291,14 @@ const SopPricing = () => {
                 <Card>
                   <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-sm">العروض ({list.length}/3)</CardTitle>
-                    {list.length < 3 && (
+                    {list.length < 3 ? (
                       <Button size="sm" variant="outline" onClick={addOption} disabled={saveOption.isPending}>
                         <Plus className="h-3.5 w-3.5 ml-1" /> {ADD_LABELS[list.length]}
                       </Button>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">
+                        الحد الأقصى 3 عروض — احذف عرضاً لإضافة آخر
+                      </span>
                     )}
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -315,6 +319,8 @@ const SopPricing = () => {
                           } as any)
                         }
                         onDelete={() => deleteOption.mutate(o.id)}
+                        canDelete={!isPublishedRequest}
+                        deleteBlockedReason="لا يمكن الحذف بعد اعتماد التسعير"
                         onDirtyChange={(d) => setOfferDirty(o.id, d)}
                       />
                     ))}
@@ -324,6 +330,7 @@ const SopPricing = () => {
                     )}
                   </CardContent>
                 </Card>
+
 
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm">النشر للمبيعات</CardTitle></CardHeader>
