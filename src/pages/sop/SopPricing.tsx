@@ -348,11 +348,19 @@ const SopPricing = () => {
                       </div>
                     </div>
 
-                    {blockers.length > 0 && (
-                      <ul className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
-                        {blockers.map((b) => <li key={b}>• {b}</li>)}
-                      </ul>
+                    {blockers.length > 0 ? (
+                      <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
+                        <p className="font-medium">ناقص قبل الاعتماد ({blockers.length}):</p>
+                        <ul className="space-y-1">
+                          {blockers.map((b) => <li key={b.code + b.message}>• {b.message}</li>)}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+                        ✓ كل المتطلبات مكتملة — يمكنك اعتماد التسعير وإرساله للمبيعات.
+                      </p>
                     )}
+
 
                     <Button
                       size="sm"
