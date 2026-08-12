@@ -30,10 +30,12 @@ interface Props {
   option: SopPricingOption;
   defaults: RequestDefaults;
   canViewCosts: boolean;
-  onSave: (values: Partial<SopPricingOption>) => void;
+  onSave: (values: Partial<SopPricingOption>) => void | Promise<unknown>;
   onRecommend: (recommended: boolean) => void;
   onDelete: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
+
 
 const Field = ({
   label, required, hint, children,
