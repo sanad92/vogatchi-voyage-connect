@@ -803,7 +803,10 @@ export function usePublishPricing() {
       if (error) throw error;
       return data as GateResult;
     },
-    onSuccess: (res) => { if (reportGate(res, 'تم إنشاء عرض السعر وإرساله للمبيعات')) invalidateSop(qc); },
+    onSuccess: (res) => {
+      if (reportGate(res as any, 'تم إنشاء عرض السعر وإرجاع الطلب لمسؤول المبيعات')) invalidateSop(qc);
+    },
+
     onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
   });
 }
