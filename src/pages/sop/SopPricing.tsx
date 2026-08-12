@@ -67,14 +67,22 @@ const SopPricing = () => {
   const { user } = useOptimizedAuth();
 
   const unclaimed = (requests || []).filter((r) => !r.assigned_to && r.status !== 'closed' && r.status !== 'cancelled');
-  const claimed = (requests || []).filter((r) => !!r.assigned_to);
+  const claimedAll = (requests || []).filter((r) => !!r.assigned_to);
+  const PUBLISHED = ['quoted', 'requoted', 'closed', 'cancelled'];
+  const claimed = claimedAll.filter((r) => !PUBLISHED.includes(r.status));
+  const published = claimedAll.filter((r) => PUBLISHED.includes(r.status));
 
   const [validUntil, setValidUntil] = useState('');
   const [recommendation, setRecommendation] = useState('');
+  // Offers with unsaved edits — publishing them would quote stale prices.
+  const [dirtyOffers, setDirtyOffers] = useState<Record<string, boolean>>({});
+  const setOfferDirty = (id: string, dirty: boolean) =>
+    setDirtyOffers((p) => (p[id] === dirty ? p : { ...p, [id]: dirty }));
 
   useEffect(() => {
     setValidUntil(selected?.price_valid_until?.slice(0, 10) || '');
     setRecommendation(selected?.recommendation || '');
+    setDirtyOffers({});
   }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
 
   const brief = (selected?.brief as Record<string, any>) || {};
@@ -88,10 +96,15 @@ const SopPricing = () => {
   );
 
   const list = options || [];
+  const hasUnsaved = list.some((o) => dirtyOffers[o.id]);
   const blockers: string[] = [];
   if (!list.length) blockers.push('أضف عرضاً واحداً على الأقل.');
+  if (hasUnsaved) blockers.push('لديك تعديلات غير محفوظة في أحد العروض — اضغط «حفظ العرض» أولاً.');
   if (list.length && !list.some((o) => o.is_recommended)) {
     blockers.push('فعّل مفتاح «موصى به» على أحد العروض (يُحفظ تلقائياً).');
+  }
+  if (list.some((o) => !(Number(o.net_cost) > 0) || !(Number(o.selling_price) > 0))) {
+    blockers.push('أدخل صافي التكلفة وسعر البيع لكل عرض ثم احفظه.');
   }
   if (list.some((o) => !o.price_valid_until)) blockers.push('حدد «السعر صالح حتى» لكل عرض.');
   if (list.some((o) => o.is_recommended && o.price_valid_until && new Date(o.price_valid_until) < new Date())) {
@@ -101,9 +114,10 @@ const SopPricing = () => {
 
   const addOption = () => {
     if (!selectedId || list.length >= 3) return;
+    const nextIndex = list.reduce((max, o) => Math.max(max, Number(o.option_index) || 0), 0) + 1;
     saveOption.mutate({
       pricing_request_id: selectedId,
-      option_index: list.length + 1,
+      option_index: nextIndex,
       net_cost: 0,
       selling_price: 0,
       currency: 'EGP',
@@ -115,6 +129,7 @@ const SopPricing = () => {
       transfer_status: 'not_included',
     } as any);
   };
+
 
   const nights = nightsBetween(defaults.check_in, defaults.check_out);
 
