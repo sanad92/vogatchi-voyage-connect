@@ -96,7 +96,9 @@ const SopPricing = () => {
   );
 
   const list = options || [];
+  const isPublishedRequest = !!selected && ['quoted', 'closed'].includes(selected.status);
   const hasUnsaved = list.some((o) => dirtyOffers[o.id]);
+
   const blockers: string[] = [];
   if (!list.length) blockers.push('أضف عرضاً واحداً على الأقل.');
   if (hasUnsaved) blockers.push('لديك تعديلات غير محفوظة في أحد العروض — اضغط «حفظ العرض» أولاً.');
