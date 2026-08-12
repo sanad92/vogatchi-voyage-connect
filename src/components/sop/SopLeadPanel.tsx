@@ -94,7 +94,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const actions: Action[] = [];
 
   // Self-claim is the normal path: an available Sales member takes the lead themselves.
-  const claimable = !lead.current_owner_id && ['new', 'qualified', 'assigned'].includes(lead.stage);
+  const claimable = !lead.current_owner_id && ['new', 'assigned', 'qualified'].includes(lead.stage);
   if (claimable) {
     actions.push({
       label: 'استلم العميل',
@@ -111,14 +111,15 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
       onClick: () => setHandoverOpen(handoverType),
     });
   }
-  if (lead.stage === 'qualified') {
+  if (lead.stage === 'new') {
     actions.push({
       label: 'إسناد بالتناوب',
       icon: <UserPlus className="h-3.5 w-3.5 ml-1" />,
       onClick: () => assign.mutate({ leadId }),
     });
   }
-  if (lead.stage === 'assigned' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
+  // Pricing is unlocked only after the Sales owner qualified the lead.
+  if (lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
     actions.push({
       label: 'طلب تسعير',
       icon: <Send className="h-3.5 w-3.5 ml-1" />,
