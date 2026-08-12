@@ -12,6 +12,12 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 import { ChevronDown, Lock, Trash2, TrendingUp } from 'lucide-react';
 import type { SopPricingOption } from '@/hooks/useSop';
 import {
@@ -34,7 +40,11 @@ interface Props {
   onRecommend: (recommended: boolean) => void;
   onDelete: () => void;
   onDirtyChange?: (dirty: boolean) => void;
+  /** Published pricing is locked — the offer list must match what Sales sent. */
+  canDelete?: boolean;
+  deleteBlockedReason?: string;
 }
+
 
 
 const Field = ({
@@ -59,6 +69,7 @@ const Stat = ({ label, value, strong }: { label: string; value: string; strong?:
 /** Fast, uncluttered editor for one pricing offer (max 3 per request). */
 export const PricingOfferEditor = ({
   option, defaults, canViewCosts, onSave, onRecommend, onDelete, onDirtyChange,
+  canDelete = true, deleteBlockedReason,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
   const [dirty, setDirty] = useState(false);
@@ -150,9 +161,33 @@ export const PricingOfferEditor = ({
             )}
           </label>
 
-          <Button size="icon" variant="ghost" onClick={onDelete} aria-label="حذف العرض">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {canDelete ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="ghost" aria-label="حذف العرض">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>حذف العرض {option.option_index}؟</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {[v.hotel_name, v.room_type].filter(Boolean).join(' — ') || 'عرض بدون بيانات'} —
+                    سيتم حذف هذا العرض نهائياً ويمكنك إضافة عرض بديل بعدها.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>حذف العرض</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <span className="text-[10px] text-muted-foreground">
+              {deleteBlockedReason || 'الحذف غير متاح'}
+            </span>
+          )}
+
         </div>
       </div>
 
