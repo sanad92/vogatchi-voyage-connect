@@ -37,11 +37,14 @@ import {
   type SopLeadStage,
 } from '@/lib/sop';
 
-/** Maps the current stage to the transition the user is expected to take next. */
+/**
+ * Maps the current stage to the transition the user is expected to take next.
+ * `new` has no advance target on purpose: a Sales user must claim the lead first,
+ * and only the claiming owner then decides qualification.
+ */
 const NEXT_STAGE: Partial<Record<SopLeadStage, SopLeadStage>> = {
-  new: 'qualified',
-  qualified: 'assigned',
-  assigned: 'pricing_requested',
+  assigned: 'qualified',
+  qualified: 'pricing_requested',
   pricing_requested: 'quoted',
   quoted: 'accepted_pending_recheck',
   follow_up: 'accepted_pending_recheck',
@@ -52,8 +55,7 @@ const NEXT_STAGE: Partial<Record<SopLeadStage, SopLeadStage>> = {
 
 const HANDOVER_FOR_STAGE: Partial<Record<SopLeadStage, SopHandoverType>> = {
   new: 'cs_to_sales',
-  qualified: 'cs_to_sales',
-  assigned: 'sales_to_reservations',
+  qualified: 'sales_to_reservations',
   pricing_requested: 'reservations_to_sales',
   won: 'reservations_to_cs',
 };
