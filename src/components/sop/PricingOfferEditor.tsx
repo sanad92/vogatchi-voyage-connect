@@ -263,7 +263,7 @@ export const PricingOfferEditor = ({
           <Input readOnly disabled value={m.nights || '—'} />
         </Field>
 
-        <Field label="نوع الغرفة">
+        <Field label="نوع الغرفة" required>
           <Input
             list={`roomtypes-${option.id}`}
             placeholder="Double / Suite ..."
@@ -279,7 +279,7 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('room_view', e.target.value || null)}
           />
         </Field>
-        <Field label="نظام الوجبات">
+        <Field label="نظام الوجبات" required>
           <Select
             value={v.meal_plan || ''}
             onValueChange={(val) => set('meal_plan', val || null)}
@@ -296,13 +296,13 @@ export const PricingOfferEditor = ({
           <Input
             type="number" min={1} placeholder="1"
             value={v.rooms_count ?? ''}
-            onChange={(e) => set('rooms_count', e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => setNum('rooms_count', e.target.value)}
           />
         </Field>
         <Field label="العملة" required>
           <Input value={cur} onChange={(e) => set('currency', e.target.value)} />
         </Field>
-        <Field label="السعر صالح حتى" required>
+        <Field label="السعر صالح حتى" hint="اختياري لكل عرض — الإلزامي هو تاريخ صلاحية التسعير العام">
           <Input
             type="datetime-local"
             value={toLocalInput(v.price_valid_until)}
@@ -329,14 +329,14 @@ export const PricingOfferEditor = ({
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.selling_price ?? ''}
-              onChange={(e) => set('selling_price', Number(e.target.value))}
+              onChange={(e) => setNum('selling_price', e.target.value)}
             />
           </Field>
           <Field label="سعر المقارنة (OTA)">
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.ota_price ?? ''}
-              onChange={(e) => set('ota_price', e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setNum('ota_price', e.target.value)}
             />
           </Field>
           <Field label="مصدر المقارنة">
@@ -354,7 +354,7 @@ export const PricingOfferEditor = ({
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.hotel_direct_price ?? ''}
-              onChange={(e) => set('hotel_direct_price', e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setNum('hotel_direct_price', e.target.value)}
             />
           </Field>
         </div>
@@ -386,7 +386,7 @@ export const PricingOfferEditor = ({
               <Input
                 type="number" inputMode="decimal" placeholder="0.00"
                 value={v.net_cost ?? ''}
-                onChange={(e) => set('net_cost', Number(e.target.value))}
+                onChange={(e) => setNum('net_cost', e.target.value)}
               />
             </Field>
             <Field label="موعد السداد للمورد">
@@ -450,7 +450,7 @@ export const PricingOfferEditor = ({
                 <Input
                   type="number" inputMode="decimal"
                   value={v.cancellation_charge_value ?? ''}
-                  onChange={(e) => set('cancellation_charge_value', e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => setNum('cancellation_charge_value', e.target.value)}
                 />
               </Field>
             )}
@@ -529,7 +529,7 @@ export const PricingOfferEditor = ({
               <Input
                 type="number" inputMode="decimal"
                 value={v.transfer_selling_price ?? ''}
-                onChange={(e) => set('transfer_selling_price', e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setNum('transfer_selling_price', e.target.value)}
               />
             </Field>
             {canViewCosts && (
@@ -537,7 +537,7 @@ export const PricingOfferEditor = ({
                 <Input
                   type="number" inputMode="decimal"
                   value={v.transfer_net_cost ?? ''}
-                  onChange={(e) => set('transfer_net_cost', e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => setNum('transfer_net_cost', e.target.value)}
                 />
               </Field>
             )}
