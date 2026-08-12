@@ -519,10 +519,14 @@ export const PricingOfferEditor = ({
 
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <TrendingUp className="h-3.5 w-3.5" /> الحسابات تتحدث فورياً أثناء الإدخال
+          <TrendingUp className="h-3.5 w-3.5" />
+          {dirty ? 'لديك تعديلات غير محفوظة — اضغط حفظ العرض' : 'كل التعديلات محفوظة'}
         </span>
-        <Button size="sm" variant="outline" onClick={() => onSave(v)}>حفظ العرض</Button>
+        <Button size="sm" variant={dirty ? 'default' : 'outline'} disabled={saving} onClick={() => void save()}>
+          {saving ? 'جارٍ الحفظ…' : 'حفظ العرض'}
+        </Button>
       </div>
+
     </div>
   );
 };
