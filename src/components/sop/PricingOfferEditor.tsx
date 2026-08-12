@@ -239,13 +239,6 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('destination', e.target.value || null)}
           />
         </Field>
-        <Field label="المورد">
-          <Input
-            placeholder="اسم المورد"
-            value={v.supplier_name || ''}
-            onChange={(e) => set('supplier_name', e.target.value)}
-          />
-        </Field>
 
         <Field label="تاريخ الوصول">
           <Input
@@ -273,14 +266,7 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('room_type', e.target.value || null)}
           />
         </Field>
-        <Field label="إطلالة الغرفة">
-          <Input
-            list={`roomviews-${option.id}`}
-            placeholder="Sea View ..."
-            value={v.room_view || ''}
-            onChange={(e) => set('room_view', e.target.value || null)}
-          />
-        </Field>
+
         <Field label="نظام الوجبات" required>
           <Select
             value={v.meal_plan || ''}
