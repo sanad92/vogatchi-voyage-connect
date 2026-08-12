@@ -75,6 +75,7 @@ const SopHandovers = lazy(() => import("@/pages/sop/SopHandovers"));
 const SopPipeline = lazy(() => import("@/pages/sop/SopPipeline"));
 const SopPricing = lazy(() => import("@/pages/sop/SopPricing"));
 const SopCompliance = lazy(() => import("@/pages/sop/SopCompliance"));
+const LeadCycleTime = lazy(() => import("@/pages/reports/LeadCycleTime"));
 
 // Quotes
 const Quotes = lazy(() => import("@/pages/Quotes"));
@@ -372,6 +373,7 @@ function App() {
 
                               <Route path="/sop/pipeline" element={<PermissionRouteGuard requiredPermission="crm_view"><SopPipeline /></PermissionRouteGuard>} />
                               <Route path="/sop/pricing" element={<PermissionRouteGuard requiredPermission="quotes_view"><SopPricing /></PermissionRouteGuard>} />
+                              <Route path="/reports/lead-cycle-time" element={<PermissionRouteGuard requiredPermission="reports_view"><LeadCycleTime /></PermissionRouteGuard>} />
                               <Route path="/sop/compliance" element={<PermissionRouteGuard requiredPermission="reports_view"><SopCompliance /></PermissionRouteGuard>} />
                               <Route path="/erp-dashboard" element={<Navigate to="/cfo-dashboard" replace />} />
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
