@@ -167,7 +167,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
 
   // The gate decides what the user should do right now.
   const advanceAction = nextStage
-    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق')
+    ? actions.find((a) => a.label.startsWith('تأكيد:') || a.label === 'العميل وافق' || a.label === 'عميل مؤهل')
     : undefined;
   const claimAction = actions.find((a) => a.label === 'استلم العميل');
   const primary = claimAction

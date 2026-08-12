@@ -97,7 +97,7 @@ const SopIntake = () => {
                       <TableCell className="text-xs">{l.lead_source || '—'}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 justify-end">
-                          {l.stage !== 'assigned' && (
+                          {!l.current_owner_id && l.stage === 'new' && (
                             <Button
                               size="sm"
                               disabled={claim.isPending}
