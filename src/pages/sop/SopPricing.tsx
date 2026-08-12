@@ -25,7 +25,7 @@ import PricingOfferEditor from '@/components/sop/PricingOfferEditor';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useCanViewPricingCosts } from '@/hooks/usePricingVisibility';
-import { dateLabel, nightsBetween } from '@/lib/sopPricing';
+import { dateLabel, nightsBetween, publishBlockers, suggestedValidUntil } from '@/lib/sopPricing';
 
 const STATUS_LABELS: Record<string, string> = {
   requested: 'مطلوب',
@@ -80,10 +80,9 @@ const SopPricing = () => {
     setDirtyOffers((p) => (p[id] === dirty ? p : { ...p, [id]: dirty }));
 
   useEffect(() => {
-    setValidUntil(selected?.price_valid_until?.slice(0, 10) || '');
     setRecommendation(selected?.recommendation || '');
     setDirtyOffers({});
-  }, [selectedId, selected?.price_valid_until, selected?.recommendation]);
+  }, [selectedId, selected?.recommendation]);
 
   const brief = (selected?.brief as Record<string, any>) || {};
   const defaults = useMemo(
@@ -97,22 +96,23 @@ const SopPricing = () => {
 
   const list = options || [];
   const isPublishedRequest = !!selected && ['quoted', 'closed'].includes(selected.status);
-  const hasUnsaved = list.some((o) => dirtyOffers[o.id]);
 
-  const blockers: string[] = [];
-  if (!list.length) blockers.push('أضف عرضاً واحداً على الأقل.');
-  if (hasUnsaved) blockers.push('لديك تعديلات غير محفوظة في أحد العروض — اضغط «حفظ العرض» أولاً.');
-  if (list.length && !list.some((o) => o.is_recommended)) {
-    blockers.push('فعّل مفتاح «موصى به» على أحد العروض (يُحفظ تلقائياً).');
-  }
-  if (list.some((o) => !(Number(o.net_cost) > 0) || !(Number(o.selling_price) > 0))) {
-    blockers.push('أدخل صافي التكلفة وسعر البيع لكل عرض ثم احفظه.');
-  }
-  if (list.some((o) => !o.price_valid_until)) blockers.push('حدد «السعر صالح حتى» لكل عرض.');
-  if (list.some((o) => o.is_recommended && o.price_valid_until && new Date(o.price_valid_until) < new Date())) {
-    blockers.push('العرض الموصى به انتهت صلاحيته — حدّث السعر أو أعد التأكد.');
-  }
-  if (!validUntil) blockers.push('حدد تاريخ صلاحية التسعير العام.');
+  // Readiness is always derived from persisted DB values, never from local form state.
+  const unsavedOfferIndexes = list
+    .filter((o) => dirtyOffers[o.id])
+    .map((o) => Number(o.option_index) || 0);
+
+  // Reload persisted validity, falling back to the offers' own validity date.
+  useEffect(() => {
+    setValidUntil(selected?.price_valid_until?.slice(0, 10) || suggestedValidUntil(list as any) || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, selected?.price_valid_until, list.map((o) => o.price_valid_until || '').join('|')]);
+
+  const blockers = useMemo(
+    () => publishBlockers(list as any, validUntil, { unsavedOfferIndexes }),
+    [list, validUntil, unsavedOfferIndexes.join(',')], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
 
   const addOption = () => {
     if (!selectedId || list.length >= 3) return;
@@ -348,19 +348,28 @@ const SopPricing = () => {
                       </div>
                     </div>
 
-                    {blockers.length > 0 && (
-                      <ul className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
-                        {blockers.map((b) => <li key={b}>• {b}</li>)}
-                      </ul>
+                    {blockers.length > 0 ? (
+                      <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs space-y-1">
+                        <p className="font-medium">ناقص قبل الاعتماد ({blockers.length}):</p>
+                        <ul className="space-y-1">
+                          {blockers.map((b) => <li key={b.code + b.message}>• {b.message}</li>)}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+                        ✓ كل المتطلبات مكتملة — يمكنك اعتماد التسعير وإرساله للمبيعات.
+                      </p>
                     )}
+
 
                     <Button
                       size="sm"
                       onClick={() => publish.mutate({
                         requestId: selected.id,
-                        validUntil: validUntil || null,
+                        validUntil: validUntil || suggestedValidUntil(list as any) || null,
                         recommendation,
                       })}
+
                       disabled={publish.isPending || blockers.length > 0}
                     >
                       {publish.isPending ? 'جارٍ الاعتماد…' : 'اعتماد التسعير وإرساله للمبيعات'}

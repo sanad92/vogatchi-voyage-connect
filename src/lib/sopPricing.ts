@@ -179,3 +179,98 @@ export const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : nu
 
 /** Org feature flag that lets Sales see internal cost/margin data. Default false. */
 export const SALES_VIEW_COSTS_FLAG = 'sales_view_pricing_costs';
+
+/* ------------------------------------------------------------------ publish readiness */
+
+export interface PublishBlocker {
+  code: string;
+  message: string;
+}
+
+export interface PublishReadyOption {
+  id: string;
+  option_index?: number | null;
+  hotel_name?: string | null;
+  room_type?: string | null;
+  meal_plan?: string | null;
+  net_cost?: number | null;
+  selling_price?: number | null;
+  cancellation_type?: string | null;
+  cancellation_policy?: string | null;
+  price_valid_until?: string | null;
+  is_recommended?: boolean | null;
+}
+
+const positive = (v: unknown) => Number.isFinite(Number(v)) && Number(v) > 0;
+const filled = (v: unknown) => typeof v === 'string' ? v.trim().length > 0 : v !== null && v !== undefined;
+
+/**
+ * Single source of truth for "can this pricing request be published?".
+ * Mirrors exactly what `sop_publish_pricing` validates — never stricter.
+ * Optional data (OTA/hotel-direct benchmarks, transfers, room view, notes) is
+ * deliberately NOT required.
+ */
+export const publishBlockers = (
+  options: PublishReadyOption[],
+  requestValidUntil?: string | null,
+  opts: { unsavedOfferIndexes?: number[] } = {},
+): PublishBlocker[] => {
+  const out: PublishBlocker[] = [];
+  const label = (o: PublishReadyOption) => `العرض ${o.option_index ?? '؟'}`;
+
+  if (!options.length) {
+    out.push({ code: 'no_options', message: 'أضف عرضاً واحداً على الأقل.' });
+  }
+  if (options.length > 3) {
+    out.push({ code: 'more_than_three_options', message: 'الحد الأقصى 3 عروض — احذف عرضاً زائداً.' });
+  }
+  if (opts.unsavedOfferIndexes?.length) {
+    out.push({
+      code: 'unsaved',
+      message: `تعديلات غير محفوظة في ${opts.unsavedOfferIndexes.map((i) => `العرض ${i}`).join(' و')} — اضغط «حفظ العرض».`,
+    });
+  }
+
+  for (const o of options) {
+    if (!filled(o.hotel_name)) out.push({ code: 'hotel_name', message: `${label(o)}: اسم الفندق مطلوب.` });
+    if (!filled(o.room_type)) out.push({ code: 'room_type', message: `${label(o)}: نوع الغرفة مطلوب.` });
+    if (!filled(o.meal_plan)) out.push({ code: 'meal_plan', message: `${label(o)}: نظام الوجبات مطلوب.` });
+    if (!positive(o.net_cost)) out.push({ code: 'net_cost', message: `${label(o)}: صافي التكلفة مطلوب (أكبر من صفر).` });
+    if (!positive(o.selling_price)) out.push({ code: 'selling_price', message: `${label(o)}: سعر البيع مطلوب (أكبر من صفر).` });
+    if (!filled(o.cancellation_type) && !filled(o.cancellation_policy)) {
+      out.push({ code: 'cancellation', message: `${label(o)}: سياسة الإلغاء مطلوبة.` });
+    }
+    // Per-offer expiry is only a blocker for the recommended offer, exactly like the RPC.
+    if (o.is_recommended && o.price_valid_until && new Date(o.price_valid_until).getTime() < Date.now()) {
+      out.push({ code: 'option_price_expired', message: `${label(o)}: السعر الموصى به انتهت صلاحيته — حدّثه.` });
+    }
+  }
+
+  const recommended = options.filter((o) => !!o.is_recommended);
+  if (options.length && recommended.length === 0) {
+    out.push({ code: 'no_recommended_option', message: 'فعّل مفتاح «موصى به» على عرض واحد.' });
+  }
+  if (recommended.length > 1) {
+    out.push({ code: 'multiple_recommended', message: 'يجب أن يكون هناك عرض موصى به واحد فقط.' });
+  }
+
+  // Validity: the request-level date is the requirement. A per-offer date is an
+  // acceptable substitute (it is copied into the request on publish).
+  const anyOfferValidity = options.some((o) => !!o.price_valid_until);
+  if (!filled(requestValidUntil) && !anyOfferValidity) {
+    out.push({ code: 'price_validity_required', message: 'حدد تاريخ «صلاحية التسعير حتى».' });
+  } else if (filled(requestValidUntil) && new Date(`${requestValidUntil}T23:59:59`).getTime() < Date.now()) {
+    out.push({ code: 'price_validity_expired', message: 'تاريخ صلاحية التسعير في الماضي — اختر تاريخاً لاحقاً.' });
+  }
+
+  // De-duplicate identical messages.
+  return out.filter((b, i) => out.findIndex((x) => x.message === b.message) === i);
+};
+
+/** Latest per-offer validity date, used to prefill the request-level date. */
+export const suggestedValidUntil = (options: PublishReadyOption[]): string => {
+  const dates = options.map((o) => o.price_valid_until).filter(Boolean) as string[];
+  if (!dates.length) return '';
+  const max = dates.map((d) => new Date(d).getTime()).filter(Number.isFinite).sort((a, b) => b - a)[0];
+  return max ? new Date(max).toISOString().slice(0, 10) : '';
+};

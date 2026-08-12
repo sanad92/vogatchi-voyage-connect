@@ -72,30 +72,49 @@ export const PricingOfferEditor = ({
   canDelete = true, deleteBlockedReason,
 }: Props) => {
   const [v, setV] = useState<Partial<SopPricingOption>>(option);
-  const [dirty, setDirty] = useState(false);
+  const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transferOpen, setTransferOpen] = useState(
     !!option.transfer_status && option.transfer_status !== 'not_included',
   );
   const [policyOpen, setPolicyOpen] = useState(false);
 
-  const dirtyRef = useRef(false);
-  const markDirty = (next: boolean) => {
-    dirtyRef.current = next;
-    setDirty(next);
-    onDirtyChange?.(next);
+  // Compare against the persisted row so re-selecting the same value, or saving
+  // then re-rendering, never leaves a phantom "unsaved" state that blocks publish.
+  const normalize = (x: unknown) => {
+    if (x === null || x === undefined || x === '') return null;
+    if (typeof x === 'number') return Number.isFinite(x) ? x : null;
+    return x;
   };
+  const dirty = useMemo(() => {
+    const keys = new Set([...Object.keys(option || {}), ...Object.keys(v || {})]);
+    for (const k of keys) {
+      if (k === 'id' || k === 'created_at' || k === 'updated_at') continue;
+      const a = normalize((option as any)?.[k]);
+      const b = normalize((v as any)?.[k]);
+      if (typeof a === 'number' || typeof b === 'number') {
+        if (Number(a ?? 0) !== Number(b ?? 0)) return true;
+      } else if (String(a ?? '') !== String(b ?? '')) return true;
+    }
+    return false;
+  }, [option, v]);
+
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    dirtyRef.current = dirty;
+    onDirtyChange?.(dirty);
+  }, [dirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Only adopt server state when this row has no unsaved input, otherwise a
   // background refetch would silently wipe what the user is typing.
   useEffect(() => {
-    if (dirtyRef.current) return;
+    if (dirtyRef.current && touched) return;
     setV(option);
-  }, [option]);
+  }, [option]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switching to a different offer always resets the form.
   useEffect(() => {
-    markDirty(false);
+    setTouched(false);
     setV(option);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [option.id]);
@@ -103,15 +122,22 @@ export const PricingOfferEditor = ({
   useEffect(() => () => onDirtyChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: keyof SopPricingOption, val: unknown) => {
-    markDirty(true);
+    setTouched(true);
     setV((p) => ({ ...p, [k]: val }));
+  };
+
+  /** Empty input -> null, invalid input -> null; keeps 0 and decimals intact. */
+  const setNum = (k: keyof SopPricingOption, raw: string) => {
+    if (raw.trim() === '') return set(k, null);
+    const n = Number(raw);
+    set(k, Number.isFinite(n) ? n : null);
   };
 
   const save = async (values: Partial<SopPricingOption> = v) => {
     setSaving(true);
     try {
       await onSave(values);
-      markDirty(false);
+      setTouched(false);
       setV(values);
     } finally {
       setSaving(false);
@@ -122,12 +148,15 @@ export const PricingOfferEditor = ({
   const m = useMemo(() => computePricingMetrics(v, defaults), [v, defaults]);
   const cur = v.currency || 'EGP';
 
+  // Mirrors `publishBlockers` — required to publish, nothing optional.
   const errors: string[] = [];
   if (!(v.hotel_name || '').trim()) errors.push('اسم الفندق مطلوب');
+  if (!(v.room_type || '').trim()) errors.push('نوع الغرفة مطلوب');
+  if (!v.meal_plan) errors.push('نظام الوجبات مطلوب');
   if (!(Number(v.net_cost) > 0)) errors.push('صافي التكلفة مطلوب');
   if (!(Number(v.selling_price) > 0)) errors.push('سعر البيع مطلوب');
   if (!v.cancellation_type && !(v.cancellation_policy || '').trim()) errors.push('سياسة الإلغاء مطلوبة');
-  if (!v.price_valid_until) errors.push('«السعر صالح حتى» مطلوب');
+
 
   const showTransferDetails = v.transfer_status === 'included' || v.transfer_status === 'optional';
 
@@ -234,7 +263,7 @@ export const PricingOfferEditor = ({
           <Input readOnly disabled value={m.nights || '—'} />
         </Field>
 
-        <Field label="نوع الغرفة">
+        <Field label="نوع الغرفة" required>
           <Input
             list={`roomtypes-${option.id}`}
             placeholder="Double / Suite ..."
@@ -250,7 +279,7 @@ export const PricingOfferEditor = ({
             onChange={(e) => set('room_view', e.target.value || null)}
           />
         </Field>
-        <Field label="نظام الوجبات">
+        <Field label="نظام الوجبات" required>
           <Select
             value={v.meal_plan || ''}
             onValueChange={(val) => set('meal_plan', val || null)}
@@ -267,13 +296,13 @@ export const PricingOfferEditor = ({
           <Input
             type="number" min={1} placeholder="1"
             value={v.rooms_count ?? ''}
-            onChange={(e) => set('rooms_count', e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => setNum('rooms_count', e.target.value)}
           />
         </Field>
         <Field label="العملة" required>
           <Input value={cur} onChange={(e) => set('currency', e.target.value)} />
         </Field>
-        <Field label="السعر صالح حتى" required>
+        <Field label="السعر صالح حتى" hint="اختياري لكل عرض — الإلزامي هو تاريخ صلاحية التسعير العام">
           <Input
             type="datetime-local"
             value={toLocalInput(v.price_valid_until)}
@@ -300,14 +329,14 @@ export const PricingOfferEditor = ({
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.selling_price ?? ''}
-              onChange={(e) => set('selling_price', Number(e.target.value))}
+              onChange={(e) => setNum('selling_price', e.target.value)}
             />
           </Field>
           <Field label="سعر المقارنة (OTA)">
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.ota_price ?? ''}
-              onChange={(e) => set('ota_price', e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setNum('ota_price', e.target.value)}
             />
           </Field>
           <Field label="مصدر المقارنة">
@@ -325,7 +354,7 @@ export const PricingOfferEditor = ({
             <Input
               type="number" inputMode="decimal" placeholder="0.00"
               value={v.hotel_direct_price ?? ''}
-              onChange={(e) => set('hotel_direct_price', e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setNum('hotel_direct_price', e.target.value)}
             />
           </Field>
         </div>
@@ -357,7 +386,7 @@ export const PricingOfferEditor = ({
               <Input
                 type="number" inputMode="decimal" placeholder="0.00"
                 value={v.net_cost ?? ''}
-                onChange={(e) => set('net_cost', Number(e.target.value))}
+                onChange={(e) => setNum('net_cost', e.target.value)}
               />
             </Field>
             <Field label="موعد السداد للمورد">
@@ -421,7 +450,7 @@ export const PricingOfferEditor = ({
                 <Input
                   type="number" inputMode="decimal"
                   value={v.cancellation_charge_value ?? ''}
-                  onChange={(e) => set('cancellation_charge_value', e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => setNum('cancellation_charge_value', e.target.value)}
                 />
               </Field>
             )}
@@ -500,7 +529,7 @@ export const PricingOfferEditor = ({
               <Input
                 type="number" inputMode="decimal"
                 value={v.transfer_selling_price ?? ''}
-                onChange={(e) => set('transfer_selling_price', e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setNum('transfer_selling_price', e.target.value)}
               />
             </Field>
             {canViewCosts && (
@@ -508,7 +537,7 @@ export const PricingOfferEditor = ({
                 <Input
                   type="number" inputMode="decimal"
                   value={v.transfer_net_cost ?? ''}
-                  onChange={(e) => set('transfer_net_cost', e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => setNum('transfer_net_cost', e.target.value)}
                 />
               </Field>
             )}
