@@ -22,8 +22,8 @@ import { ChevronDown, Lock, Trash2, TrendingUp } from 'lucide-react';
 import type { SopPricingOption } from '@/hooks/useSop';
 import {
   CANCELLATION_CHARGE_MODELS, CANCELLATION_TYPES, MEAL_PLANS, OTA_SOURCES,
-  RECOMMENDATION_REASONS, ROOM_TYPES, ROOM_VIEWS, TRANSFER_STATUSES,
-  computePricingMetrics, dateTimeLabel, effectiveValidUntil, fromLocalInput, money, pct, toLocalInput,
+  RECOMMENDATION_REASONS, ROOM_TYPES, TRANSFER_STATUSES,
+  computePricingMetrics, fromLocalInput, money, pct, toLocalInput,
 } from '@/lib/sopPricing';
 
 interface RequestDefaults {
@@ -170,7 +170,6 @@ export const PricingOfferEditor = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium">العرض {option.option_index}</span>
-          {m.isExpired && <Badge variant="destructive" className="text-[10px]">انتهت الصلاحية</Badge>}
           {dirty && (
             <Badge variant="destructive" className="text-[10px]">تعديلات غير محفوظة</Badge>
           )}
@@ -296,9 +295,6 @@ export const PricingOfferEditor = ({
         <datalist id={`hotels-${option.id}`} />
         <datalist id={`roomtypes-${option.id}`}>
           {ROOM_TYPES.map((r) => <option key={r} value={r} />)}
-        </datalist>
-        <datalist id={`roomviews-${option.id}`}>
-          {ROOM_VIEWS.map((r) => <option key={r} value={r} />)}
         </datalist>
       </div>
 
