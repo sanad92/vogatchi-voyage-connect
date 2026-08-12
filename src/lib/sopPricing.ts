@@ -255,11 +255,6 @@ export const publishBlockers = (
     if (!filled(o.cancellation_type) && !filled(o.cancellation_policy)) {
       out.push({ code: 'cancellation', message: `${label(o)}: سياسة الإلغاء مطلوبة.` });
     }
-    // Per-offer expiry is only a blocker for the recommended offer, exactly like the RPC.
-    const eff = effectiveValidUntil(o, requestValidUntil);
-    if (o.is_recommended && eff && new Date(eff).getTime() < Date.now()) {
-      out.push({ code: 'option_price_expired', message: `${label(o)}: السعر الموصى به انتهت صلاحيته — حدّثه.` });
-    }
   }
 
   const recommended = options.filter((o) => !!o.is_recommended);
@@ -270,25 +265,14 @@ export const publishBlockers = (
     out.push({ code: 'multiple_recommended', message: 'يجب أن يكون هناك عرض موصى به واحد فقط.' });
   }
 
-  // Validity: the request-level date is the default for every offer. An offer
-  // only needs its own date when it explicitly overrides the global one.
-  const missingValidity = options.filter((o) => !effectiveValidUntil(o, requestValidUntil));
-  if (missingValidity.length) {
-    out.push({
-      code: 'price_validity_required',
-      message: 'حدد تاريخ «صلاحية التسعير حتى» (يسري على كل العروض).',
-    });
-  }
-  if (!options.length && !filled(requestValidUntil)) {
-    out.push({ code: 'price_validity_required', message: 'حدد تاريخ «صلاحية التسعير حتى».' });
-  }
-  if (filled(requestValidUntil) && new Date(`${requestValidUntil}T23:59:59`).getTime() < Date.now()) {
-    out.push({ code: 'price_validity_expired', message: 'تاريخ صلاحية التسعير في الماضي — اختر تاريخاً لاحقاً.' });
-  }
+  // V1: rate validity is optional and never blocks publishing. `requestValidUntil`
+  // is still accepted so callers can pass the stored date to the RPC.
+  void requestValidUntil;
 
   // De-duplicate identical messages.
   return out.filter((b, i) => out.findIndex((x) => x.message === b.message) === i);
 };
+
 
 /** Latest per-offer validity date, used to prefill the request-level date. */
 export const suggestedValidUntil = (options: PublishReadyOption[]): string => {
