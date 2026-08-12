@@ -12850,6 +12850,10 @@ export type Database = {
         Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
         Returns: string[]
       }
+      sop_can_manage_pricing: {
+        Args: { _org: string; _user: string }
+        Returns: boolean
+      }
       sop_claim_lead: { Args: { _lead: string }; Returns: Json }
       sop_claim_pricing_request: { Args: { _request: string }; Returns: Json }
       sop_collection_status: { Args: { _lead: string }; Returns: Json }
