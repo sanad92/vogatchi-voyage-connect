@@ -366,9 +366,10 @@ const SopPricing = () => {
                       size="sm"
                       onClick={() => publish.mutate({
                         requestId: selected.id,
-                        validUntil: validUntil || null,
+                        validUntil: validUntil || suggestedValidUntil(list as any) || null,
                         recommendation,
                       })}
+
                       disabled={publish.isPending || blockers.length > 0}
                     >
                       {publish.isPending ? 'جارٍ الاعتماد…' : 'اعتماد التسعير وإرساله للمبيعات'}
