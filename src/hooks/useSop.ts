@@ -240,7 +240,7 @@ export const reportGate = (res: GateResult | null | undefined, okMessage?: strin
 
 
 const invalidateSop = (qc: ReturnType<typeof useQueryClient>) => {
-  ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-handovers',
+  ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-pricing-options', 'sop-handovers',
    'sop-approvals', 'sop-deadlines', 'sop-incidents', 'sop-post-trip', 'sop-compliance',
    'sop-kpis', 'sop-assignments', 'sop-handover-inbox', 'sop-my-assignments',
    'workflow-progress', 'booking-workspace']
