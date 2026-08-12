@@ -304,7 +304,9 @@ const SopPricing = () => {
                         option={o}
                         defaults={defaults}
                         canViewCosts={canViewCosts}
-                        onSave={(v) => saveOption.mutate({ ...v, id: o.id, pricing_request_id: selected.id } as any)}
+                        onSave={(v) =>
+                          saveOption.mutateAsync({ ...v, id: o.id, pricing_request_id: selected.id } as any)
+                        }
                         onRecommend={(recommended) =>
                           saveOption.mutate({
                             id: o.id,
@@ -313,8 +315,10 @@ const SopPricing = () => {
                           } as any)
                         }
                         onDelete={() => deleteOption.mutate(o.id)}
+                        onDirtyChange={(d) => setOfferDirty(o.id, d)}
                       />
                     ))}
+
                     {!list.length && (
                       <p className="text-xs text-muted-foreground">ابدأ بإضافة العرض الأول.</p>
                     )}
