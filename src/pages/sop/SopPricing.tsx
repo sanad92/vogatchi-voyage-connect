@@ -342,7 +342,7 @@ const SopPricing = () => {
                   <CardContent className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label className="text-xs">صلاحية التسعير حتى <span className="text-destructive">*</span></Label>
+                        <Label className="text-xs">صلاحية التسعير حتى (اختياري)</Label>
                         <Input
                           type="date"
                           value={validUntil}
@@ -355,9 +355,10 @@ const SopPricing = () => {
                           }}
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          يسري تلقائياً على كل العروض ما لم يحدد العرض صلاحية مختلفة.
+                          اتركه فارغاً لو مش محتاجه — لن يمنع الاعتماد.
                         </p>
                       </div>
+
                       <div className="space-y-1.5">
                         <Label className="text-xs">توصية الحجوزات</Label>
                         <Input value={recommendation} onChange={(e) => setRecommendation(e.target.value)} />
