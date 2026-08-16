@@ -44,7 +44,12 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     audience_type: 'all' as WhatsAppBroadcast['audience_type'],
     scheduled_at: '',
   });
+  const [audiencePreset, setAudiencePreset] = useState<'all' | 'upcoming' | 'manual'>('all');
+  const [upcomingDays, setUpcomingDays] = useState(30);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
+
+  const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
+    useUpcomingBookingCustomers(upcomingDays);
 
   const eligibleCustomers = useMemo(
     () => (customers || []).filter((c: any) => !!c.phone),
@@ -52,27 +57,37 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   );
 
   const recipients = useMemo(() => {
-    if (form.audience_type === 'all') {
+    if (audiencePreset === 'all') {
       return eligibleCustomers.map((c: any) => ({
         phone_number: c.phone, customer_id: c.id, customer_name: c.name,
         personalization: { customer_name: c.name },
       }));
     }
-    if (form.audience_type === 'manual') {
-      return eligibleCustomers
-        .filter((c: any) => selectedCustomerIds.has(c.id))
-        .map((c: any) => ({
-          phone_number: c.phone, customer_id: c.id, customer_name: c.name,
-          personalization: { customer_name: c.name },
-        }));
+    if (audiencePreset === 'upcoming') {
+      return upcomingCustomers.map((c) => ({
+        phone_number: c.phone, customer_id: c.customer_id, customer_name: c.name,
+        personalization: {
+          customer_name: c.name,
+          travel_date: c.next_start_date,
+          booking_number: c.booking_number,
+        },
+      }));
     }
-    return [];
-  }, [form.audience_type, eligibleCustomers, selectedCustomerIds]);
+    return eligibleCustomers
+      .filter((c: any) => selectedCustomerIds.has(c.id))
+      .map((c: any) => ({
+        phone_number: c.phone, customer_id: c.id, customer_name: c.name,
+        personalization: { customer_name: c.name },
+      }));
+  }, [audiencePreset, eligibleCustomers, upcomingCustomers, selectedCustomerIds]);
 
   const resetForm = () => {
     setForm({ name: '', description: '', message_body: '', template_id: 'none', audience_type: 'all', scheduled_at: '' });
+    setAudiencePreset('all');
+    setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
   };
+
 
   const handleCreate = async (sendNow: boolean) => {
     if (!form.name || !form.message_body) return;
