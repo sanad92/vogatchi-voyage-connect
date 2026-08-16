@@ -97,7 +97,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
       description: form.description,
       message_body: form.message_body,
       template_id: form.template_id !== 'none' ? form.template_id : null,
-      audience_type: form.audience_type,
+      audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
       scheduled_at: form.scheduled_at || null,
       recipients,
     });
