@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from '@/hooks/useWhatsAppBroadcasts';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,7 +45,12 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     audience_type: 'all' as WhatsAppBroadcast['audience_type'],
     scheduled_at: '',
   });
+  const [audiencePreset, setAudiencePreset] = useState<'all' | 'upcoming' | 'manual'>('all');
+  const [upcomingDays, setUpcomingDays] = useState(30);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
+
+  const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
+    useUpcomingBookingCustomers(upcomingDays);
 
   const eligibleCustomers = useMemo(
     () => (customers || []).filter((c: any) => !!c.phone),
@@ -52,27 +58,37 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   );
 
   const recipients = useMemo(() => {
-    if (form.audience_type === 'all') {
+    if (audiencePreset === 'all') {
       return eligibleCustomers.map((c: any) => ({
         phone_number: c.phone, customer_id: c.id, customer_name: c.name,
         personalization: { customer_name: c.name },
       }));
     }
-    if (form.audience_type === 'manual') {
-      return eligibleCustomers
-        .filter((c: any) => selectedCustomerIds.has(c.id))
-        .map((c: any) => ({
-          phone_number: c.phone, customer_id: c.id, customer_name: c.name,
-          personalization: { customer_name: c.name },
-        }));
+    if (audiencePreset === 'upcoming') {
+      return upcomingCustomers.map((c) => ({
+        phone_number: c.phone, customer_id: c.customer_id, customer_name: c.name,
+        personalization: {
+          customer_name: c.name,
+          travel_date: c.next_start_date,
+          booking_number: c.booking_number,
+        },
+      }));
     }
-    return [];
-  }, [form.audience_type, eligibleCustomers, selectedCustomerIds]);
+    return eligibleCustomers
+      .filter((c: any) => selectedCustomerIds.has(c.id))
+      .map((c: any) => ({
+        phone_number: c.phone, customer_id: c.id, customer_name: c.name,
+        personalization: { customer_name: c.name },
+      }));
+  }, [audiencePreset, eligibleCustomers, upcomingCustomers, selectedCustomerIds]);
 
   const resetForm = () => {
     setForm({ name: '', description: '', message_body: '', template_id: 'none', audience_type: 'all', scheduled_at: '' });
+    setAudiencePreset('all');
+    setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
   };
+
 
   const handleCreate = async (sendNow: boolean) => {
     if (!form.name || !form.message_body) return;
@@ -81,7 +97,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
       description: form.description,
       message_body: form.message_body,
       template_id: form.template_id !== 'none' ? form.template_id : null,
-      audience_type: form.audience_type,
+      audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
       scheduled_at: form.scheduled_at || null,
       recipients,
     });
@@ -135,13 +151,17 @@ export const WhatsAppBroadcastManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>الجمهور</Label>
-                  <Select value={form.audience_type} onValueChange={(v: any) => setForm({ ...form, audience_type: v })}>
+                  <Select value={audiencePreset} onValueChange={(v: any) => setAudiencePreset(v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">كل العملاء ({eligibleCustomers.length})</SelectItem>
+                      <SelectItem value="upcoming">
+                        عملاء لديهم حجوزات قادمة ({upcomingLoading ? '...' : upcomingCustomers.length})
+                      </SelectItem>
                       <SelectItem value="manual">اختيار يدوي</SelectItem>
                     </SelectContent>
                   </Select>
+
                 </div>
                 <div>
                   <Label>القالب (اختياري)</Label>
@@ -174,7 +194,46 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                 </Alert>
               )}
 
-              {form.audience_type === 'manual' && (
+              {audiencePreset === 'upcoming' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Label className="whitespace-nowrap">الحجوزات خلال</Label>
+                    <Select value={String(upcomingDays)} onValueChange={(v) => setUpcomingDays(Number(v))}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">٧ أيام</SelectItem>
+                        <SelectItem value="14">١٤ يوم</SelectItem>
+                        <SelectItem value="30">٣٠ يوم</SelectItem>
+                        <SelectItem value="60">٦٠ يوم</SelectItem>
+                        <SelectItem value="90">٩٠ يوم</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
+                    {upcomingLoading ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">جارٍ تحميل العملاء…</p>
+                    ) : upcomingCustomers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا يوجد عملاء لديهم حجوزات في هذه الفترة
+                      </p>
+                    ) : (
+                      upcomingCustomers.map((c) => (
+                        <div key={c.customer_id} className="flex items-center gap-2 p-1 text-sm">
+                          <span className="flex-1">{c.name}</span>
+                          <span className="text-xs text-muted-foreground">{c.phone}</span>
+                          <Badge variant="outline" className="text-xs">سفر: {c.next_start_date}</Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    يتم استبعاد الحجوزات الملغاة والعملاء الذين ألغوا الاشتراك في رسائل واتساب.
+                  </p>
+                </div>
+              )}
+
+              {audiencePreset === 'manual' && (
+
                 <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
                   {eligibleCustomers.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">لا يوجد عملاء بأرقام هواتف</p>
