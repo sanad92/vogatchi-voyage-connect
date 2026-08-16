@@ -151,13 +151,17 @@ export const WhatsAppBroadcastManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>الجمهور</Label>
-                  <Select value={form.audience_type} onValueChange={(v: any) => setForm({ ...form, audience_type: v })}>
+                  <Select value={audiencePreset} onValueChange={(v: any) => setAudiencePreset(v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">كل العملاء ({eligibleCustomers.length})</SelectItem>
+                      <SelectItem value="upcoming">
+                        عملاء لديهم حجوزات قادمة ({upcomingLoading ? '...' : upcomingCustomers.length})
+                      </SelectItem>
                       <SelectItem value="manual">اختيار يدوي</SelectItem>
                     </SelectContent>
                   </Select>
+
                 </div>
                 <div>
                   <Label>القالب (اختياري)</Label>
