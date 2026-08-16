@@ -194,7 +194,46 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                 </Alert>
               )}
 
-              {form.audience_type === 'manual' && (
+              {audiencePreset === 'upcoming' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Label className="whitespace-nowrap">الحجوزات خلال</Label>
+                    <Select value={String(upcomingDays)} onValueChange={(v) => setUpcomingDays(Number(v))}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">٧ أيام</SelectItem>
+                        <SelectItem value="14">١٤ يوم</SelectItem>
+                        <SelectItem value="30">٣٠ يوم</SelectItem>
+                        <SelectItem value="60">٦٠ يوم</SelectItem>
+                        <SelectItem value="90">٩٠ يوم</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
+                    {upcomingLoading ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">جارٍ تحميل العملاء…</p>
+                    ) : upcomingCustomers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا يوجد عملاء لديهم حجوزات في هذه الفترة
+                      </p>
+                    ) : (
+                      upcomingCustomers.map((c) => (
+                        <div key={c.customer_id} className="flex items-center gap-2 p-1 text-sm">
+                          <span className="flex-1">{c.name}</span>
+                          <span className="text-xs text-muted-foreground">{c.phone}</span>
+                          <Badge variant="outline" className="text-xs">سفر: {c.next_start_date}</Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    يتم استبعاد الحجوزات الملغاة والعملاء الذين ألغوا الاشتراك في رسائل واتساب.
+                  </p>
+                </div>
+              )}
+
+              {audiencePreset === 'manual' && (
+
                 <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
                   {eligibleCustomers.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">لا يوجد عملاء بأرقام هواتف</p>
