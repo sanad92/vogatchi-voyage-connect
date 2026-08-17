@@ -43,9 +43,43 @@ serve(async (req) => {
 
     const { amount, currency = 'egp', bookingId, invoiceId, description } = await req.json();
 
+    if (typeof amount !== 'number' || !isFinite(amount) || amount <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid amount' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // AuthZ: the referenced invoice/booking must belong to the caller's organization
+    try {
+      if (invoiceId) {
+        const { data: inv } = await supabase
+          .from('invoices').select('organization_id').eq('id', invoiceId).maybeSingle();
+        if (!inv) throw new AuthError('Invoice not found', 404);
+        await requireOrgMembership(supabase, userId, inv.organization_id);
+      }
+      if (bookingId) {
+        const { data: bk } = await supabase
+          .from('hotel_bookings').select('organization_id').eq('id', bookingId).maybeSingle();
+        if (!bk) throw new AuthError('Booking not found', 404);
+        await requireOrgMembership(supabase, userId, bk.organization_id);
+      }
+    } catch (e) {
+      const res = authErrorResponse(e, corsHeaders);
+      if (res) return res;
+      throw e;
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
+
 
     // إنشاء PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
