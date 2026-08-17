@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { HandCoins, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { HandCoins, Plus, CalendarClock } from 'lucide-react';
 import LeadIntakeForm from '@/components/sop/LeadIntakeForm';
 import SopLeadPanel from '@/components/sop/SopLeadPanel';
 import MySopStatusBar from '@/components/sop/MySopStatusBar';
@@ -13,6 +14,38 @@ import { useClaimLead, useSopLeads, useSopRealtime, type SopLead } from '@/hooks
 import { DEPARTMENT_LABELS, LEAD_STAGE_LABELS } from '@/lib/sop';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
+import { formatDate } from '@/lib/utils';
+
+const daysUntil = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+};
+
+const ArrivalBadge = ({ lead }: { lead: SopLead }) => {
+  const diff = daysUntil(lead.check_in);
+  if (diff === null) {
+    return lead.approx_dates ? (
+      <span className="text-xs text-muted-foreground">{lead.approx_dates}</span>
+    ) : (
+      <span className="text-xs text-muted-foreground">—</span>
+    );
+  }
+  if (diff < 0) {
+    return <Badge variant="outline">انتهى</Badge>;
+  }
+  if (diff <= 7) {
+    return <Badge variant="destructive">عاجل ({diff} يوم)</Badge>;
+  }
+  if (diff <= 30) {
+    return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">قريب ({diff} يوم)</Badge>;
+  }
+  return <Badge variant="secondary">{formatDate(lead.check_in!)}</Badge>;
+};
 
 const SopIntake = () => {
   usePageTitle('استقبال العملاء — خدمة العملاء');
@@ -20,9 +53,11 @@ const SopIntake = () => {
   const { members } = useOrgMembers();
   const claim = useClaimLead();
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'arrival_asc' | 'arrival_desc' | 'updated_at'>('arrival_asc');
   const { data: leads, isLoading } = useSopLeads({
     stages: ['new', 'qualified', 'assigned'],
     search: search || undefined,
+    sortBy,
   });
   const [editing, setEditing] = useState<SopLead | null>(null);
   const [creating, setCreating] = useState(false);
@@ -44,6 +79,20 @@ const SopIntake = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-64"
           />
+          <Select
+            value={sortBy}
+            onValueChange={(v) => setSortBy(v as typeof sortBy)}
+          >
+            <SelectTrigger className="w-44">
+              <CalendarClock className="h-4 w-4 ml-2 text-muted-foreground" />
+              <SelectValue placeholder="الترتيب" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="arrival_asc">الأقرب أولاً</SelectItem>
+              <SelectItem value="arrival_desc">الأحدث أولاً</SelectItem>
+              <SelectItem value="updated_at">آخر تحديث</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4 ml-2" /> عميل محتمل جديد
           </Button>
@@ -66,10 +115,10 @@ const SopIntake = () => {
                   <TableRow>
                     <TableHead>العميل</TableHead>
                     <TableHead>الوجهة</TableHead>
+                    <TableHead>تاريخ الوصول</TableHead>
                     <TableHead>المرحلة</TableHead>
                     <TableHead>القسم المالك</TableHead>
                     <TableHead>المسؤول</TableHead>
-
                     <TableHead>المصدر</TableHead>
                     <TableHead />
                   </TableRow>
@@ -83,6 +132,9 @@ const SopIntake = () => {
                     >
                       <TableCell className="font-medium">{l.contact_name || '—'}</TableCell>
                       <TableCell>{l.destination || l.city || '—'}</TableCell>
+                      <TableCell>
+                        <ArrivalBadge lead={l} />
+                      </TableCell>
                       <TableCell><Badge variant="secondary">{LEAD_STAGE_LABELS[l.stage]}</Badge></TableCell>
                       <TableCell className="text-xs">{DEPARTMENT_LABELS[l.owner_department]}</TableCell>
                       <TableCell className="text-xs">
@@ -93,7 +145,6 @@ const SopIntake = () => {
                           <span className="text-muted-foreground">بانتظار التوزيع</span>
                         )}
                       </TableCell>
-
                       <TableCell className="text-xs">{l.lead_source || '—'}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 justify-end">
@@ -115,7 +166,7 @@ const SopIntake = () => {
                   ))}
                   {!leads?.length && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
                         لا توجد ملفات مفتوحة.
                       </TableCell>
                     </TableRow>
