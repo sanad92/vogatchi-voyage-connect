@@ -97,11 +97,7 @@ serve(async (req) => {
     });
 
     // حفظ بيانات الدفع في قاعدة البيانات
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+
 
     await supabase.from('payment_intents').insert({
       stripe_payment_intent_id: paymentIntent.id,
