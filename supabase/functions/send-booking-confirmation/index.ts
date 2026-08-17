@@ -58,6 +58,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404, headers: corsHeaders });
     }
 
+    // AuthZ: the booking must belong to an organization the caller is a member of
+    try {
+      await requireOrgMembership(supabase, user.id, booking.organization_id);
+    } catch (_e) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+    }
+
+
     const customer = booking.customer;
     const bookingRef = booking.booking_reference || booking.rental_reference || bookingId.slice(0, 8);
     const customerName = booking.customer_name || customer?.name || 'عميل';
