@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { requireInternalCaller, authErrorResponse } from '../_shared/auth.ts';
 
 interface Condition {
   field: string; // e.g. 'message.content', 'conversation.status', 'customer.tag'
@@ -141,6 +142,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // Internal-only endpoint: invoked by whatsapp-webhook / schedulers with the service role key
+    requireInternalCaller(req);
+
     const { trigger_type, organization_id, conversation_id, message_id, extra } = await req.json();
     if (!trigger_type || !organization_id) {
       return new Response(JSON.stringify({ error: 'missing params' }), {
@@ -230,6 +234,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
+    const authRes = authErrorResponse(e, corsHeaders as Record<string, string>);
+    if (authRes) return authRes;
     return new Response(JSON.stringify({ error: String(e?.message || e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
