@@ -462,17 +462,24 @@ interface LeadFilters {
   ownerId?: string;
   includeLegacy?: boolean;
   search?: string;
+  sortBy?: 'arrival_asc' | 'arrival_desc' | 'updated_at';
 }
 
 export function useSopLeads(filters: LeadFilters = {}) {
   const orgId = useOrgId();
-  const { stages, ownerId, includeLegacy = false, search } = filters;
+  const { stages, ownerId, includeLegacy = false, search, sortBy = 'arrival_asc' } = filters;
   return useQuery({
-    queryKey: ['sop-leads', orgId, stages, ownerId, includeLegacy, search],
+    queryKey: ['sop-leads', orgId, stages, ownerId, includeLegacy, search, sortBy],
     enabled: !!orgId,
     queryFn: async () => {
-      let q = db.from('sop_leads').select('*').eq('organization_id', orgId)
-        .order('updated_at', { ascending: false }).limit(500);
+      let q = db.from('sop_leads').select('*').eq('organization_id', orgId).limit(500);
+      if (sortBy === 'arrival_asc') {
+        q = q.order('check_in', { ascending: true, nullsFirst: false });
+      } else if (sortBy === 'arrival_desc') {
+        q = q.order('check_in', { ascending: false, nullsFirst: true });
+      } else {
+        q = q.order('updated_at', { ascending: false });
+      }
       if (!includeLegacy) q = q.eq('is_legacy', false);
       if (stages?.length) q = q.in('stage', stages);
       if (ownerId) q = q.eq('current_owner_id', ownerId);
