@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
+import { requireOrgMembership, AuthError, authErrorResponse } from '../_shared/auth.ts';
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,9 +45,43 @@ serve(async (req) => {
 
     const { amount, currency = 'egp', bookingId, invoiceId, description } = await req.json();
 
+    if (typeof amount !== 'number' || !isFinite(amount) || amount <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid amount' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // AuthZ: the referenced invoice/booking must belong to the caller's organization
+    try {
+      if (invoiceId) {
+        const { data: inv } = await supabase
+          .from('invoices').select('organization_id').eq('id', invoiceId).maybeSingle();
+        if (!inv) throw new AuthError('Invoice not found', 404);
+        await requireOrgMembership(supabase, userId, inv.organization_id);
+      }
+      if (bookingId) {
+        const { data: bk } = await supabase
+          .from('hotel_bookings').select('organization_id').eq('id', bookingId).maybeSingle();
+        if (!bk) throw new AuthError('Booking not found', 404);
+        await requireOrgMembership(supabase, userId, bk.organization_id);
+      }
+    } catch (e) {
+      const res = authErrorResponse(e, corsHeaders);
+      if (res) return res;
+      throw e;
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
+
 
     // إنشاء PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -63,11 +99,7 @@ serve(async (req) => {
     });
 
     // حفظ بيانات الدفع في قاعدة البيانات
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+
 
     await supabase.from('payment_intents').insert({
       stripe_payment_intent_id: paymentIntent.id,

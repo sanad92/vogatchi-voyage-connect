@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { callLovableAI, corsHeaders, ChatMessage } from '../_shared/ai-gateway.ts';
+import { requireInternalCaller, authErrorResponse } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -11,6 +12,9 @@ Deno.serve(async (req) => {
 
   const started = Date.now();
   try {
+    // Internal-only endpoint: invoked by whatsapp-webhook with the service role key
+    requireInternalCaller(req);
+
     const { organization_id, conversation_id, message_id, user_message } = await req.json();
     if (!organization_id || !conversation_id || !user_message) {
       return new Response(JSON.stringify({ error: 'missing params' }), {
@@ -153,6 +157,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
+    const authRes = authErrorResponse(e, corsHeaders as Record<string, string>);
+    if (authRes) return authRes;
     return new Response(JSON.stringify({ error: String(e?.message || e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

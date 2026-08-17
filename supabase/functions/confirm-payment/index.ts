@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
+import { requireOrgMembership, AuthError, authErrorResponse } from '../_shared/auth.ts';
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +44,12 @@ serve(async (req) => {
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
     const { paymentIntentId } = await req.json();
+    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid paymentIntentId' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -55,6 +63,29 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
+
+    // AuthZ: the invoice/booking referenced by this intent must belong to the caller's organization
+    const metaInvoiceId = paymentIntent.metadata?.invoiceId || null;
+    const metaBookingId = paymentIntent.metadata?.bookingId || null;
+    try {
+      if (metaInvoiceId) {
+        const { data: inv } = await supabase
+          .from('invoices').select('organization_id').eq('id', metaInvoiceId).maybeSingle();
+        if (!inv) throw new AuthError('Invoice not found', 404);
+        await requireOrgMembership(supabase, userId, inv.organization_id);
+      }
+      if (metaBookingId) {
+        const { data: bk } = await supabase
+          .from('hotel_bookings').select('organization_id').eq('id', metaBookingId).maybeSingle();
+        if (!bk) throw new AuthError('Booking not found', 404);
+        await requireOrgMembership(supabase, userId, bk.organization_id);
+      }
+    } catch (e) {
+      const res = authErrorResponse(e, corsHeaders);
+      if (res) return res;
+      throw e;
+    }
+
 
     if (paymentIntent.status === 'succeeded') {
       // تحديث حالة الدفع في قاعدة البيانات
