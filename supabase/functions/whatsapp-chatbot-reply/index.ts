@@ -157,6 +157,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
+    const authRes = authErrorResponse(e, corsHeaders as Record<string, string>);
+    if (authRes) return authRes;
     return new Response(JSON.stringify({ error: String(e?.message || e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
