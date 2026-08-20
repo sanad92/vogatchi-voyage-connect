@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
+import { throwEdgeError } from '@/lib/edgeError';
 import { TRAVEL_TEMPLATE_LIBRARY, type LibraryTemplate } from '@/data/travelTemplateLibrary';
 import type { TemplateCategoryKey } from '@/data/travelTemplateCategories';
 
@@ -208,6 +209,7 @@ export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
     saveTemplate,
     deleteTemplate,
     syncMeta,
+    submitToMeta,
     generateWithAI,
   };
 };
