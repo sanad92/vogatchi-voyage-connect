@@ -42,19 +42,40 @@ function positionalize(text: string | null | undefined, previews: Record<string,
   return { text: out, examples };
 }
 
+/** Meta rejects templates whose text starts or ends with a variable. */
+function textIssues(label: string, text: string): string[] {
+  const issues: string[] = [];
+  const t = text.trim();
+  if (/^\{\{\s*[^}]+\s*\}\}/.test(t)) issues.push(`${label}: لا يمكن أن يبدأ النص بمتغير — أضف كلمة قبله`);
+  if (/\{\{\s*[^}]+\s*\}\}$/.test(t)) issues.push(`${label}: لا يمكن أن ينتهي النص بمتغير — أضف كلمة أو علامة بعده`);
+  if (/\}\}\s*\{\{/.test(t)) issues.push(`${label}: لا يمكن وضع متغيرين متتاليين بدون نص بينهما`);
+  return issues;
+}
+
+function validateRow(row: any): string[] {
+  const issues: string[] = [];
+  if (!String(row.body_text || '').trim()) issues.push('نص الرسالة مطلوب');
+  else issues.push(...textIssues('نص الرسالة', String(row.body_text)));
+  if (row.header_text && String(row.header_format || row.header_type || 'TEXT').toUpperCase() === 'TEXT') {
+    issues.push(...textIssues('العنوان', String(row.header_text)));
+  }
+  if (row.footer_text && /\{\{/.test(String(row.footer_text))) issues.push('التذييل لا يدعم المتغيرات');
+  return issues;
+}
+
 function buildComponents(row: any) {
   const previews = (row.preview_variables || {}) as Record<string, any>;
   const components: any[] = [];
 
   const headerFormat = String(row.header_format || row.header_type || 'TEXT').toUpperCase();
   if (row.header_text && headerFormat === 'TEXT') {
-    const h = positionalize(row.header_text, previews);
+    const h = positionalize(String(row.header_text || '').trim(), previews);
     const comp: any = { type: 'HEADER', format: 'TEXT', text: h.text };
     if (h.examples.length) comp.example = { header_text: h.examples };
     components.push(comp);
   }
 
-  const b = positionalize(row.body_text, previews);
+  const b = positionalize(String(row.body_text || '').trim(), previews);
   const body: any = { type: 'BODY', text: b.text };
   if (b.examples.length) body.example = { body_text: [b.examples] };
   components.push(body);
@@ -112,6 +133,18 @@ Deno.serve(async (req) => {
         results.push({ id: row.id, name: row.name, ok: true, skipped: 'already_on_meta' });
         continue;
       }
+      const issues = validateRow(row);
+      if (issues.length) {
+        failed++;
+        const msg = issues.join(' • ');
+        await admin.from('whatsapp_templates').update({
+          meta_rejection_reason: msg,
+          meta_synced_at: new Date().toISOString(),
+        }).eq('id', row.id);
+        results.push({ id: row.id, name: row.name, ok: false, error: msg, code: 'local_validation' });
+        continue;
+      }
+
       const name = String(row.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 512);
       const payload = {
         name,
