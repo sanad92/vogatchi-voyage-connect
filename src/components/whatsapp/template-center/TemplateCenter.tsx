@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, RefreshCw, FileText, Pencil, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, RefreshCw, FileText, Pencil, Trash2, Eye, Send, AlertTriangle } from 'lucide-react';
 import { TEMPLATE_CATEGORIES, categoryMeta, type TemplateCategoryKey } from '@/data/travelTemplateCategories';
 import { useWhatsAppTemplateCenter, type TemplateFilters } from '@/hooks/useWhatsAppTemplateCenter';
 import { TemplateLibraryDialog } from './TemplateLibraryDialog';
@@ -31,7 +31,11 @@ export const TemplateCenter: React.FC = () => {
   const [editing, setEditing] = useState<any | null>(null);
   const [previewing, setPreviewing] = useState<any | null>(null);
 
-  const { templates, isLoading, syncMeta, deleteTemplate } = useWhatsAppTemplateCenter(filters);
+  const { templates, isLoading, syncMeta, submitToMeta, deleteTemplate } = useWhatsAppTemplateCenter(filters);
+
+  const pendingDrafts = templates.filter(
+    (t: any) => !t.meta_template_id && ['draft', 'rejected'].includes((t.status || 'draft').toLowerCase()),
+  );
 
   const openNew = () => {
     setEditing(null);
@@ -59,6 +63,14 @@ export const TemplateCenter: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={() => submitToMeta.mutate({ allDrafts: true })}
+            disabled={submitToMeta.isPending || pendingDrafts.length === 0}
+            variant="secondary"
+          >
+            <Send className={`w-4 h-4 ml-1 ${submitToMeta.isPending ? 'animate-pulse' : ''}`} />
+            إرسال المسودات للاعتماد ({pendingDrafts.length})
+          </Button>
           <Button variant="outline" onClick={() => syncMeta.mutate()} disabled={syncMeta.isPending}>
             <RefreshCw className={`w-4 h-4 ml-1 ${syncMeta.isPending ? 'animate-spin' : ''}`} />
             مزامنة مع Meta
@@ -208,7 +220,26 @@ export const TemplateCenter: React.FC = () => {
                     )}
                   </div>
 
+                  {t.meta_rejection_reason && (
+                    <p className="text-[11px] text-red-600 flex items-start gap-1">
+                      <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span className="line-clamp-2">{t.meta_rejection_reason}</span>
+                    </p>
+                  )}
+
                   <div className="flex items-center gap-1 pt-1">
+                    {!t.meta_template_id && ['draft', 'rejected'].includes(status) && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 text-[11px]"
+                        disabled={submitToMeta.isPending}
+                        onClick={() => submitToMeta.mutate({ templateIds: [t.id] })}
+                      >
+                        <Send className="w-3 h-3 ml-1" />
+                        إرسال للاعتماد
+                      </Button>
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => setPreviewing(t)}>
                       <Eye className="w-3.5 h-3.5" />
                     </Button>
