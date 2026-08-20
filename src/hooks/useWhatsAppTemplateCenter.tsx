@@ -152,6 +152,35 @@ export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
     onError: (e: any) => toast.error(e?.message || 'فشلت المزامنة'),
   });
 
+  /** Sends drafts to Meta for approval (single, selection, or all pending drafts). */
+  const submitToMeta = useMutation({
+    mutationFn: async (input: { templateIds?: string[]; allDrafts?: boolean }) => {
+      if (!orgId) throw new Error('No organization');
+      const { data, error } = await supabase.functions.invoke('whatsapp-submit-template', {
+        body: { organizationId: orgId, ...input },
+      });
+      if (error) await throwEdgeError(error, 'فشل إرسال القالب إلى Meta');
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data as { submitted: number; failed: number; results: any[] };
+    },
+    onSuccess: (d) => {
+      const failedItems = (d?.results || []).filter((r: any) => !r.ok);
+      if (d?.submitted) toast.success(`تم إرسال ${d.submitted} قالب إلى Meta للمراجعة`);
+      if (failedItems.length) {
+        toast.error(
+          `فشل ${failedItems.length} قالب: ` +
+            failedItems.slice(0, 3).map((r: any) => `${r.name}: ${r.error}`).join(' | '),
+          { duration: 12000 },
+        );
+      }
+      if (!d?.submitted && !failedItems.length) toast.info('لا توجد مسودات جاهزة للإرسال');
+      qc.invalidateQueries({ queryKey: ['whatsapp-templates-center'] });
+      qc.invalidateQueries({ queryKey: ['whatsapp-templates'] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'فشل الإرسال إلى Meta'),
+  });
+
+
   const generateWithAI = useMutation({
     mutationFn: async (payload: {
       brief: string;
