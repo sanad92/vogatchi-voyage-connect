@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { WhatsAppMessage } from '@/types/whatsapp';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { explainMetaError } from '@/lib/whatsappErrors';
 
 interface MessagesListProps {
   messages: WhatsAppMessage[];
