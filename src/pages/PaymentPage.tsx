@@ -14,6 +14,17 @@ import {
   Loader2, AlertTriangle, Sparkles
 } from 'lucide-react';
 
+interface PreparedSubscriptionCheckout {
+  checkout_session_id: string;
+  organization_id: string;
+  plan_id: string;
+  billing_cycle: 'monthly' | 'yearly';
+  amount_cents: number;
+  currency: 'EGP';
+  merchant_order_id: string;
+  expires_at: string;
+}
+
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
   const planId = searchParams.get('plan');
@@ -81,11 +92,48 @@ const PaymentPage = () => {
 
     setIsProcessing(true);
     try {
+      const { data: preparedData, error: prepareError } = await supabase.rpc(
+        'prepare_subscription_checkout',
+        {
+          _organization_id: orgId,
+          _plan_id: planId,
+          _billing_cycle: billing,
+        },
+      );
+      if (prepareError) throw prepareError;
+      const prepared = preparedData as unknown as PreparedSubscriptionCheckout;
+      if (!prepared?.checkout_session_id || !prepared?.merchant_order_id || prepared.amount_cents<=0) {
+        throw new Error('تعذر تجهيز جلسة دفع آمنة');
+      }
+
+      const fullName = String(user.user_metadata?.full_name || user.email?.split('@')[0] || 'User');
+      const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || 'N/A';
+      const lastName = nameParts.slice(1).join(' ') || 'N/A';
+      const itemName = `خطة ${plan.name_ar || plan.name} - ${durationLabel}`;
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           organization_id: orgId,
           plan_id: planId,
           billing_cycle: billing,
+          checkout_session_id: prepared.checkout_session_id,
+          amount_cents: prepared.amount_cents,
+          currency: prepared.currency,
+          merchant_order_id: prepared.merchant_order_id,
+          billing_data: {
+            first_name: firstName,
+            last_name: lastName,
+            email: user.email || 'no-email@example.com',
+            phone_number: String(user.user_metadata?.phone || '01000000000'),
+            city: 'Cairo',
+            country: 'EG',
+          },
+          items: [{
+            name: itemName,
+            amount_cents: prepared.amount_cents,
+            quantity: 1,
+            description: itemName,
+          }],
         },
       });
 

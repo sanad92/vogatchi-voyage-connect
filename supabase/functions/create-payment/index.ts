@@ -14,6 +14,7 @@ interface CheckoutRequest {
   organization_id: string;
   plan_id: string;
   billing_cycle: "monthly" | "yearly";
+  checkout_session_id?: string;
 }
 
 interface BillingData {
@@ -138,6 +139,7 @@ Deno.serve(async (request) => {
     if (
       !body || !UUID_RE.test(body.organization_id || "") ||
       !UUID_RE.test(body.plan_id || "") ||
+      (body.checkout_session_id !== undefined && !UUID_RE.test(body.checkout_session_id)) ||
       !["monthly", "yearly"].includes(body.billing_cycle)
     ) {
       return new Response(JSON.stringify({ error: "بيانات الاشتراك غير صالحة" }), {
@@ -211,26 +213,57 @@ Deno.serve(async (request) => {
       country: "EG",
     };
 
+    const { data: preparedCheckout } = body.checkout_session_id
+      ? await admin
+        .from("payment_checkout_sessions")
+        .select("*")
+        .eq("id", body.checkout_session_id)
+        .eq("organization_id", body.organization_id)
+        .eq("plan_id", plan.id)
+        .eq("billing_cycle", body.billing_cycle)
+        .eq("status", "pending")
+        .gte("expires_at", new Date().toISOString())
+        .maybeSingle()
+      : { data: null };
+    if (body.checkout_session_id && !preparedCheckout) {
+      return new Response(JSON.stringify({ error: "جلسة الدفع غير صالحة أو منتهية" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (preparedCheckout && Number(preparedCheckout.amount_cents)!==amountCents) {
+      throw new Error("Prepared checkout amount no longer matches plan price");
+    }
+
     const attempt = crypto.randomUUID().slice(0, 8);
-    const merchantOrderId = `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${attempt}`;
+    const merchantOrderId = preparedCheckout?.merchant_order_id ||
+      `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${attempt}`;
     const itemName = `Vogantra ${plan.name_ar || plan.name} - ${body.billing_cycle === "yearly" ? "yearly" : "monthly"}`;
 
     const authToken = await getAuthToken(apiKey);
     const orderId = await createOrder(authToken, amountCents, merchantOrderId, itemName);
-    const { data: checkout, error: checkoutError } = await admin
-      .from("payment_checkout_sessions")
-      .insert({
-        organization_id: body.organization_id,
-        plan_id: plan.id,
-        billing_cycle: body.billing_cycle,
-        amount_cents: amountCents,
-        currency: "EGP",
-        merchant_order_id: merchantOrderId,
-        paymob_order_id: String(orderId),
-        created_by: user.id,
-      })
-      .select("id")
-      .single();
+    const checkoutResult = preparedCheckout
+      ? await admin
+        .from("payment_checkout_sessions")
+        .update({ paymob_order_id: String(orderId), updated_at: new Date().toISOString() })
+        .eq("id", preparedCheckout.id)
+        .select("id")
+        .single()
+      : await admin
+        .from("payment_checkout_sessions")
+        .insert({
+          organization_id: body.organization_id,
+          plan_id: plan.id,
+          billing_cycle: body.billing_cycle,
+          amount_cents: amountCents,
+          currency: "EGP",
+          merchant_order_id: merchantOrderId,
+          paymob_order_id: String(orderId),
+          created_by: user.id,
+        })
+        .select("id")
+        .single();
+    const { data: checkout, error: checkoutError } = checkoutResult;
     if (checkoutError || !checkout) throw new Error("Checkout session could not be saved");
 
     const paymentKey = await getPaymentKey(authToken, orderId, amountCents, integrationId, billingData);
