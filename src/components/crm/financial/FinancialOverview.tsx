@@ -76,7 +76,7 @@ const FinancialOverview = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">{fmt(totalRevenue)}</div>
-                    <p className="text-xs text-muted-foreground">من الفواتير والحجوزات</p>
+                    <p className="text-xs text-muted-foreground">صافي الفواتير قبل الضريبة</p>
                   </CardContent>
                 </Card>
 

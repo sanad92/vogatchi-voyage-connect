@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,18 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   CreditCard, ArrowRight, Shield, Clock, CheckCircle2, 
-  Loader2, AlertTriangle, Sparkles, BanknoteIcon
+  Loader2, AlertTriangle, Sparkles
 } from 'lucide-react';
-import BankTransferForm from '@/components/payment/BankTransferForm';
 
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
   const planId = searchParams.get('plan');
-  const billing = searchParams.get('billing') || 'monthly'; // monthly | yearly
+  const billing = searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly';
   const { user } = useOptimizedAuth();
   const orgId = useOrgId();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,21 +57,6 @@ const PaymentPage = () => {
     enabled: !!orgId,
   });
 
-  // Fetch user profile for billing data
-  const { data: profile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
   const price = plan 
     ? (billing === 'yearly' ? plan.price_yearly : plan.price_monthly) 
     : 0;
@@ -98,29 +81,11 @@ const PaymentPage = () => {
 
     setIsProcessing(true);
     try {
-      const nameParts = (profile?.full_name || user.email?.split('@')[0] || 'User').split(' ');
-      const firstName = nameParts[0] || 'N/A';
-      const lastName = nameParts.slice(1).join(' ') || 'N/A';
-
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
-          amount_cents: price * 100,
-          currency: 'EGP',
-          merchant_order_id: `org_${orgId}_plan_${planId}_${billing}`,
-          billing_data: {
-            first_name: firstName,
-            last_name: lastName,
-            email: user.email || 'no-email@example.com',
-            phone_number: profile?.phone || '01000000000',
-            city: 'Cairo',
-            country: 'EG',
-          },
-          items: [{
-            name: `خطة ${plan.name_ar || plan.name} - ${durationLabel}`,
-            amount_cents: price * 100,
-            quantity: 1,
-            description: `اشتراك ${durationLabel} في خطة ${plan.name}`,
-          }],
+          organization_id: orgId,
+          plan_id: planId,
+          billing_cycle: billing,
         },
       });
 
@@ -291,29 +256,17 @@ const PaymentPage = () => {
             </Card>
           )}
 
-          {/* Payment Methods */}
-          <Tabs defaultValue="bank_transfer" dir="rtl">
-            <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="bank_transfer" className="gap-2">
-                <BanknoteIcon className="h-4 w-4" />
-                تحويل بنكي
-              </TabsTrigger>
-              <TabsTrigger value="online" className="gap-2">
-                <CreditCard className="h-4 w-4" />
-                دفع إلكتروني
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="bank_transfer" className="mt-4">
-              <BankTransferForm
-                planId={planId!}
-                planName={plan?.name_ar || plan?.name || ''}
-                amount={price}
-                billing={billing as 'monthly' | 'yearly'}
-              />
-            </TabsContent>
-
-            <TabsContent value="online" className="mt-4 space-y-4">
+          {/* Online payment. Bank transfer stays disabled until verified company
+              bank details are configured; placeholder account data must never
+              be presented to customers. */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CreditCard className="h-5 w-5 text-primary" />
+                الدفع الإلكتروني الآمن
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Button 
                 className="w-full h-14 text-lg gap-3"
                 size="lg"
@@ -345,11 +298,11 @@ const PaymentPage = () => {
                 </div>
                 <div className="space-y-1">
                   <CreditCard className="h-6 w-6 mx-auto text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">بطاقات ائتمان وفوري</p>
+                  <p className="text-xs text-muted-foreground">وسائل Paymob المتاحة</p>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

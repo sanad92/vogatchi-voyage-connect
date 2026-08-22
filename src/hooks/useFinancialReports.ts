@@ -12,6 +12,7 @@ export interface TrialBalanceRow {
   total_debit: number;
   total_credit: number;
   balance: number;
+  currency: string;
 }
 
 export interface IncomeStatementRow {
@@ -29,6 +30,7 @@ export interface BalanceSheetRow {
   account_name: string;
   account_name_ar: string | null;
   balance: number;
+  currency: string;
 }
 
 export interface CashFlowRow {
@@ -36,6 +38,7 @@ export interface CashFlowRow {
   inflows: number;
   outflows: number;
   net_flow: number;
+  currency: string;
 }
 
 export interface CustomerAgingRow {
@@ -47,17 +50,19 @@ export interface CustomerAgingRow {
   days_60: number;
   days_90: number;
   days_over_90: number;
+  currency: string;
 }
 
-export const useTrialBalance = (endDate?: string) => {
+export const useTrialBalance = (endDate?: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['trial-balance', orgId, endDate],
+    queryKey: ['trial-balance', orgId, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await supabase.rpc('get_trial_balance', {
+      const { data, error } = await (supabase.rpc as any)('get_trial_balance', {
         _org_id: orgId,
         _end_date: endDate || null,
+        _currency: currency,
       });
       if (error) throw error;
       return (data || []) as TrialBalanceRow[];
@@ -66,17 +71,17 @@ export const useTrialBalance = (endDate?: string) => {
   });
 };
 
-export const useIncomeStatement = (startDate: string, endDate: string, currency?: string) => {
+export const useIncomeStatement = (startDate: string, endDate: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['income-statement', orgId, startDate, endDate, currency || 'all'],
+    queryKey: ['income-statement', orgId, startDate, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
       const { data, error } = await (supabase.rpc as any)('get_income_statement', {
         _org_id: orgId,
         _start_date: startDate,
         _end_date: endDate,
-        _currency: currency || null,
+        _currency: currency,
       });
       if (error) throw error;
       return (data || []) as IncomeStatementRow[];
@@ -85,15 +90,16 @@ export const useIncomeStatement = (startDate: string, endDate: string, currency?
   });
 };
 
-export const useBalanceSheet = (asOfDate?: string) => {
+export const useBalanceSheet = (asOfDate?: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['balance-sheet', orgId, asOfDate],
+    queryKey: ['balance-sheet', orgId, asOfDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
       const { data, error } = await (supabase.rpc as any)('get_balance_sheet', {
         _org_id: orgId,
         _as_of_date: asOfDate || null,
+        _currency: currency,
       });
       if (error) throw error;
       return (data || []) as BalanceSheetRow[];
@@ -102,16 +108,17 @@ export const useBalanceSheet = (asOfDate?: string) => {
   });
 };
 
-export const useCashFlow = (startDate: string, endDate: string) => {
+export const useCashFlow = (startDate: string, endDate: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['cash-flow', orgId, startDate, endDate],
+    queryKey: ['cash-flow', orgId, startDate, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
       const { data, error } = await (supabase.rpc as any)('get_cash_flow', {
         _org_id: orgId,
         _start_date: startDate,
         _end_date: endDate,
+        _currency: currency,
       });
       if (error) throw error;
       return (data || []) as CashFlowRow[];
@@ -120,14 +127,16 @@ export const useCashFlow = (startDate: string, endDate: string) => {
   });
 };
 
-export const useCustomerAging = () => {
+export const useCustomerAging = (asOfDate?: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['customer-aging', orgId],
+    queryKey: ['customer-aging', orgId, asOfDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_customer_aging', {
+      const { data, error } = await (supabase.rpc as any)('get_customer_aging_by_currency', {
         _org_id: orgId,
+        _as_of_date: asOfDate || null,
+        _currency: currency,
       });
       if (error) throw error;
       return (data || []) as CustomerAgingRow[];

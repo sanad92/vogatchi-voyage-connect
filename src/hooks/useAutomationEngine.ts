@@ -159,11 +159,16 @@ async function executeWhatsAppAction(config: Record<string, any>, context: Trigg
 }
 
 async function executeCreateInvoice(config: Record<string, any>, context: TriggerContext) {
+  const subtotal = Number(context.totalAmount || 0);
   const { error } = await supabase.from('invoices').insert({
     booking_id: context.bookingId,
     booking_type: context.bookingType,
+    customer_id: context.customerId || null,
     customer_name: context.customerName || 'عميل',
-    total_amount: context.totalAmount || 0,
+    currency: context.currency || 'EGP',
+    subtotal,
+    vat_rate: Number(config.vat_rate || 0),
+    discount_amount: Number(config.discount_amount || 0),
     status: 'draft',
     organization_id: context.organizationId || null,
   });

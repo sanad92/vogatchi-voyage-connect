@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { useCashFlow } from '@/hooks/finance/useFinanceRpcs';
+import { useCashFlow } from '@/hooks/useFinancialReports';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 export default function CashFlowDashboard() {
   usePageTitle('التدفقات النقدية');
@@ -14,12 +15,13 @@ export default function CashFlowDashboard() {
   const first = new Date(today.getFullYear(), today.getMonth(), 1);
   const [from, setFrom] = useState(first.toISOString().slice(0, 10));
   const [to, setTo] = useState(today.toISOString().slice(0, 10));
-  const { data = [], isLoading } = useCashFlow(from, to);
+  const [currency, setCurrency] = useState('EGP');
+  const { data = [], isLoading } = useCashFlow(from, to, currency);
 
   const totals = data.reduce((a, r) => ({
-    incoming: a.incoming + Number(r.incoming || 0),
-    outgoing: a.outgoing + Number(r.outgoing || 0),
-    net: a.net + Number(r.net || 0),
+    incoming: a.incoming + Number(r.inflows || 0),
+    outgoing: a.outgoing + Number(r.outflows || 0),
+    net: a.net + Number(r.net_flow || 0),
   }), { incoming: 0, outgoing: 0, net: 0 });
 
   return (
@@ -30,6 +32,7 @@ export default function CashFlowDashboard() {
         <CardContent className="pt-6 flex items-end gap-3 flex-wrap">
           <div><Label>من</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
           <div><Label>إلى</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
         </CardContent>
       </Card>
 
@@ -51,13 +54,13 @@ export default function CashFlowDashboard() {
               <ResponsiveContainer>
                 <LineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
+                  <XAxis dataKey="period_date" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="incoming" stroke="#10b981" name="وارد" />
-                  <Line type="monotone" dataKey="outgoing" stroke="#ef4444" name="صادر" />
-                  <Line type="monotone" dataKey="net" stroke="#3b82f6" name="صافي" />
+                  <Line type="monotone" dataKey="inflows" stroke="#10b981" name="وارد" />
+                  <Line type="monotone" dataKey="outflows" stroke="#ef4444" name="صادر" />
+                  <Line type="monotone" dataKey="net_flow" stroke="#3b82f6" name="صافي" />
                 </LineChart>
               </ResponsiveContainer>
             </div>}

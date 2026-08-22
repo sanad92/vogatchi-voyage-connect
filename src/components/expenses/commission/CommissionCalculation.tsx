@@ -13,14 +13,16 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
 
 const CommissionCalculation = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [bookingAmount, setBookingAmount] = useState('');
   const [customRate, setCustomRate] = useState('');
-  const [bookingType, setBookingType] = useState('hotel');
   const [bookingId, setBookingId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const orgId = useOrgId();
 
   const { 
     commissions, 
@@ -35,13 +37,32 @@ const CommissionCalculation = () => {
   
   const { employees } = useExpenses();
 
+  const { data: commissionableBookings = [] } = useQuery({
+    queryKey: ['commissionable-bookings', orgId, selectedEmployee],
+    enabled: !!orgId && !!selectedEmployee,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, booking_number, booking_type, customer_name, profit, currency, start_date')
+        .eq('organization_id', orgId!)
+        .eq('employee_id', selectedEmployee)
+        .in('status', ['confirmed', 'completed'])
+        .eq('is_demo', false)
+        .gt('profit', 0)
+        .order('start_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const selectedEmployeeData = employees?.find(emp => emp.id === selectedEmployee);
+  const selectedBooking = commissionableBookings.find((booking) => booking.id === bookingId);
   const employeeCommissions = commissions?.filter(comm => comm.employee_id === selectedEmployee) || [];
   const pendingCommissions = employeeCommissions.filter(comm => comm.payment_status === 'pending');
   const totalPending = pendingCommissions.reduce((sum, comm) => sum + comm.commission_amount, 0);
 
   const handleCalculateCommission = () => {
-    if (!selectedEmployee || !bookingAmount || !bookingId) {
+    if (!selectedEmployee || !bookingId || !selectedBooking) {
       toast({
         title: "بيانات ناقصة",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -50,17 +71,7 @@ const CommissionCalculation = () => {
       return;
     }
 
-    const amount = parseFloat(bookingAmount);
     const rate = customRate ? parseFloat(customRate) : undefined;
-
-    if (amount <= 0) {
-      toast({
-        title: "مبلغ غير صحيح",
-        description: "يجب أن يكون مبلغ الحجز أكبر من صفر",
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (rate !== undefined && (rate < 0 || rate > 100)) {
       toast({
@@ -73,14 +84,11 @@ const CommissionCalculation = () => {
 
     calculateCommission({
       employeeId: selectedEmployee,
-      bookingAmount: amount,
       bookingId,
-      bookingType,
       commissionRate: rate
     });
 
     // Reset form
-    setBookingAmount('');
     setBookingId('');
     setCustomRate('');
   };
@@ -153,7 +161,7 @@ const CommissionCalculation = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="employee">الموظف</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+              <Select value={selectedEmployee} onValueChange={(value) => { setSelectedEmployee(value); setBookingId(''); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر الموظف" />
                 </SelectTrigger>
@@ -168,41 +176,19 @@ const CommissionCalculation = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bookingType">نوع الحجز</Label>
-              <Select value={bookingType} onValueChange={setBookingType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر نوع الحجز" />
+              <Label htmlFor="bookingId">رقم الحجز</Label>
+              <Select value={bookingId} onValueChange={setBookingId} disabled={!selectedEmployee}>
+                <SelectTrigger id="bookingId">
+                  <SelectValue placeholder="اختر حجزاً مرتبطاً بالموظف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="hotel">حجز فندق</SelectItem>
-                  <SelectItem value="flight">حجز طيران</SelectItem>
-                  <SelectItem value="transport">حجز نقل</SelectItem>
-                  <SelectItem value="car_rental">تأجير سيارة</SelectItem>
+                  {commissionableBookings.map((booking) => (
+                    <SelectItem key={booking.id} value={booking.id}>
+                      {booking.booking_number} — ربح {Number(booking.profit).toFixed(2)} {booking.currency}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bookingId">رقم الحجز</Label>
-              <Input
-                id="bookingId"
-                value={bookingId}
-                onChange={(e) => setBookingId(e.target.value)}
-                placeholder="أدخل رقم الحجز"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bookingAmount">مبلغ الحجز (ج.م)</Label>
-              <Input
-                id="bookingAmount"
-                type="number"
-                value={bookingAmount}
-                onChange={(e) => setBookingAmount(e.target.value)}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
             </div>
 
             <div className="space-y-2">
@@ -225,10 +211,11 @@ const CommissionCalculation = () => {
               <User className="h-4 w-4" />
               <AlertDescription>
                 <strong>{selectedEmployeeData.full_name}</strong> - معدل العمولة الافتراضي: {selectedEmployeeData.commission_rate}%
-                {bookingAmount && (
+                {selectedBooking && (
                   <div className="mt-2">
-                    العمولة المحسوبة: <strong>
-                      {(parseFloat(bookingAmount) * (parseFloat(customRate) || selectedEmployeeData.commission_rate) / 100).toFixed(2)} ج.م
+                    صافي ربح الحجز: <strong>{Number(selectedBooking.profit).toFixed(2)} {selectedBooking.currency}</strong>
+                    <br />العمولة المحسوبة: <strong>
+                      {(Number(selectedBooking.profit) * (parseFloat(customRate) || selectedEmployeeData.commission_rate) / 100).toFixed(2)} {selectedBooking.currency}
                     </strong>
                   </div>
                 )}
@@ -239,7 +226,7 @@ const CommissionCalculation = () => {
           <div className="flex gap-2">
             <Button 
               onClick={handleCalculateCommission}
-              disabled={isCalculating || !selectedEmployee || !bookingAmount || !bookingId}
+              disabled={isCalculating || !selectedEmployee || !bookingId}
               className="flex items-center gap-2"
             >
               <Calculator className="h-4 w-4" />
@@ -311,7 +298,7 @@ const CommissionCalculation = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-green-600">
-                            {commission.commission_amount.toFixed(2)} ج.م
+                            {commission.commission_amount.toFixed(2)} {commission.currency}
                           </span>
                           {commission.payment_status === 'pending' && (
                             <Button
@@ -326,7 +313,7 @@ const CommissionCalculation = () => {
                         </div>
                       </div>
                       <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
-                        <div>مبلغ الحجز: {commission.booking_amount.toFixed(2)} ج.م</div>
+                        <div>صافي ربح الحجز: {commission.booking_amount.toFixed(2)} {commission.currency}</div>
                         <div>معدل العمولة: {commission.commission_rate}%</div>
                         <div>التاريخ: {format(new Date(commission.commission_date), 'dd/MM/yyyy', { locale: ar })}</div>
                         {commission.booking_id && (

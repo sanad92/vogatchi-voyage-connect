@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Landmark, Download } from 'lucide-react';
 import { useBalanceSheet } from '@/hooks/useFinancialReports';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
@@ -18,7 +19,8 @@ export default function BalanceSheet() {
   usePageTitle('الميزانية العمومية');
   const today = new Date().toISOString().slice(0, 10);
   const [asOf, setAsOf] = useState(today);
-  const { data: rows = [], isLoading } = useBalanceSheet(asOf);
+  const [currency, setCurrency] = useState('EGP');
+  const { data: rows = [], isLoading } = useBalanceSheet(asOf, currency);
 
   const { assets, liabilities, equity, totals } = useMemo(() => {
     const a = rows.filter(r => r.account_type === 'asset');
@@ -74,6 +76,7 @@ export default function BalanceSheet() {
       <Card>
         <CardContent className="pt-6 flex items-end gap-3 flex-wrap">
           <div><Label>كما في</Label><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></div>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 ml-2" />تصدير CSV</Button>
         </CardContent>
       </Card>

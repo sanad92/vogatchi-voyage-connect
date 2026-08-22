@@ -25,11 +25,13 @@ import { usePeriodCommissions } from '@/hooks/usePeriodCommissions';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import { useTreasuryAccounts } from '@/hooks/finance/useFinanceRpcs';
 
 const PeriodCommissionManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [employeeFilter, setEmployeeFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('');
+  const [payAccount, setPayAccount] = useState<Record<string, string>>({});
 
   const { employees } = useExpenses();
   const { 
@@ -41,6 +43,7 @@ const PeriodCommissionManagement = () => {
     isUpdatingStatus,
     isDeleting
   } = usePeriodCommissions();
+  const { data: treasuryAccounts = [] } = useTreasuryAccounts();
 
   // تصفية البيانات
   const filteredCommissions = commissionPeriods?.filter(commission => {
@@ -73,6 +76,7 @@ const PeriodCommissionManagement = () => {
     if (newStatus === 'paid') {
       updateData.paymentDate = new Date().toISOString().split('T')[0];
       updateData.paymentMethod = 'bank_transfer';
+      updateData.bankAccountId = payAccount[commissionPeriodId];
     }
 
     updatePeriodCommissionStatus(updateData);
@@ -167,8 +171,8 @@ const PeriodCommissionManagement = () => {
               <Button 
                 variant="outline" 
                 onClick={() => {
-                  setStatusFilter('');
-                  setEmployeeFilter('');
+                  setStatusFilter('all');
+                  setEmployeeFilter('all');
                   setSelectedPeriod('');
                 }}
                 className="w-full"
@@ -261,10 +265,23 @@ const PeriodCommissionManagement = () => {
                         <div className="flex items-center gap-2">
                           {commission.status === 'pending' && (
                             <>
+                              <Select
+                                value={payAccount[commission.id] || ''}
+                                onValueChange={(value) => setPayAccount((current) => ({ ...current, [commission.id]: value }))}
+                              >
+                                <SelectTrigger className="w-40 h-8"><SelectValue placeholder="اختر الخزينة" /></SelectTrigger>
+                                <SelectContent>
+                                  {treasuryAccounts
+                                    .filter((account: any) => account.currency === commission.currency)
+                                    .map((account: any) => (
+                                      <SelectItem key={account.id} value={account.id}>{account.account_name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
                               <Button
                                 size="sm"
                                 onClick={() => handleStatusUpdate(commission.id, 'paid')}
-                                disabled={isUpdatingStatus}
+                                disabled={isUpdatingStatus || !payAccount[commission.id]}
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 <CheckCircle className="h-3 w-3 mr-1" />

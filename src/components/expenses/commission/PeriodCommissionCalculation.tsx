@@ -14,18 +14,20 @@ import { usePeriodCommissions } from '@/hooks/usePeriodCommissions';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const PeriodCommissionCalculation = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [notes, setNotes] = useState('');
+  const [currency, setCurrency] = useState('EGP');
   const [previewData, setPreviewData] = useState(null);
 
   const { employees } = useExpenses();
   const { 
     generatePeriodCommission, 
-    getEmployeeBookingsProfit,
+    useEmployeeBookingsProfit,
     isGenerating 
   } = usePeriodCommissions();
 
@@ -36,10 +38,11 @@ const PeriodCommissionCalculation = () => {
     data: bookingsData, 
     isLoading: bookingsLoading,
     error: bookingsError 
-  } = getEmployeeBookingsProfit(
+  } = useEmployeeBookingsProfit(
     selectedEmployeeId, 
     periodStart, 
-    periodEnd
+    periodEnd,
+    currency,
   );
 
   const selectedEmployee = employees?.find(emp => emp.id === selectedEmployeeId);
@@ -51,7 +54,9 @@ const PeriodCommissionCalculation = () => {
     const totalBookingAmount = bookingsData.reduce((sum, booking) => sum + booking.booking_amount, 0);
     const totalSupplierCost = bookingsData.reduce((sum, booking) => sum + booking.supplier_cost, 0);
     const totalProfit = bookingsData.reduce((sum, booking) => sum + booking.profit, 0);
-    const commissionAmount = totalProfit * (selectedEmployee.commission_rate / 100);
+    const commissionAmount = Math.round(
+      Math.max(totalProfit, 0) * (selectedEmployee.commission_rate / 100) * 100,
+    ) / 100;
 
     return {
       bookingsCount: bookingsData.length,
@@ -83,7 +88,8 @@ const PeriodCommissionCalculation = () => {
       employeeId: selectedEmployeeId,
       periodStart,
       periodEnd,
-      notes
+      notes,
+      currency,
     });
 
     // إعادة تعيين النموذج
@@ -136,6 +142,8 @@ const PeriodCommissionCalculation = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <ReportCurrencySelect value={currency} onValueChange={setCurrency} className="space-y-2" />
 
             <div className="space-y-2">
               <Label>تاريخ البداية</Label>
@@ -236,7 +244,7 @@ const PeriodCommissionCalculation = () => {
                           <div className="text-2xl font-bold text-green-700">
                             <MultiCurrencyDisplay 
                               amount={previewCalculation.totalProfit} 
-                              currency="EGP" 
+                              currency={currency as 'EGP' | 'USD' | 'EUR'}
                               showInEGP={false} 
                             />
                           </div>
@@ -246,7 +254,7 @@ const PeriodCommissionCalculation = () => {
                           <div className="text-2xl font-bold text-purple-700">
                             <MultiCurrencyDisplay 
                               amount={previewCalculation.commissionAmount} 
-                              currency="EGP" 
+                              currency={currency as 'EGP' | 'USD' | 'EUR'}
                               showInEGP={false} 
                             />
                           </div>
@@ -281,21 +289,21 @@ const PeriodCommissionCalculation = () => {
                             <TableCell>
                               <MultiCurrencyDisplay 
                                 amount={booking.booking_amount} 
-                                currency="EGP" 
+                                currency={booking.currency as 'EGP' | 'USD' | 'EUR'}
                                 showInEGP={false} 
                               />
                             </TableCell>
                             <TableCell>
                               <MultiCurrencyDisplay 
                                 amount={booking.supplier_cost} 
-                                currency="EGP" 
+                                currency={booking.currency as 'EGP' | 'USD' | 'EUR'}
                                 showInEGP={false} 
                               />
                             </TableCell>
                             <TableCell className="font-semibold text-green-600">
                               <MultiCurrencyDisplay 
                                 amount={booking.profit} 
-                                currency="EGP" 
+                                currency={booking.currency as 'EGP' | 'USD' | 'EUR'}
                                 showInEGP={false} 
                               />
                             </TableCell>

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, AlertTriangle, Shield, Link } from 'lucide-react';
+import { Trash2, AlertTriangle, Link } from 'lucide-react';
 
 interface DeleteEmployeeDialogProps {
   isOpen: boolean;
@@ -37,7 +37,6 @@ const DeleteEmployeeDialog = ({
 }: DeleteEmployeeDialogProps) => {
   const [reason, setReason] = useState('');
   const [deletionCheck, setDeletionCheck] = useState<any>(null);
-  const [showForceDelete, setShowForceDelete] = useState(false);
   const [isCheckingDeletion, setIsCheckingDeletion] = useState(false);
 
   useEffect(() => {
@@ -60,20 +59,16 @@ const DeleteEmployeeDialog = ({
     }
   };
 
-  const handleConfirm = async (forceDelete = false) => {
-    await onConfirm(employee.id, forceDelete, reason.trim() || undefined);
+  const handleConfirm = async () => {
+    await onConfirm(employee.id, false, reason.trim() || undefined);
     setReason('');
-    setShowForceDelete(false);
     onOpenChange(false);
   };
 
   const getDependencyIcon = (type: string) => {
-    switch (type) {
-      case 'مرتبط بحساب مستخدم':
-        return <Link className="h-4 w-4" />;
-      default:
-        return <AlertTriangle className="h-4 w-4" />;
-    }
+    return type.startsWith('مرتبط بحساب مستخدم')
+      ? <Link className="h-4 w-4" />
+      : <AlertTriangle className="h-4 w-4" />;
   };
 
   return (
@@ -88,9 +83,7 @@ const DeleteEmployeeDialog = ({
             هل أنت متأكد من حذف الموظف{' '}
             <strong className="text-gray-900">{employee.full_name}</strong>؟
             <br />
-            <span className="text-red-600 font-medium">
-              هذا الإجراء لا يمكن التراجع عنه!
-            </span>
+            <span className="text-red-600 font-medium">الحذف النهائي متاح فقط للسجل غير المرتبط بأي بيانات تاريخية.</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -129,40 +122,19 @@ const DeleteEmployeeDialog = ({
                           </li>
                         ))}
                       </ul>
-                      <div className="mt-3 pt-2 border-t border-red-200">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowForceDelete(!showForceDelete)}
-                          className="text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                          <Shield className="h-4 w-4 mr-1" />
-                          {showForceDelete ? 'إخفاء' : 'إظهار'} خيار الحذف الإجباري
-                        </Button>
-                      </div>
+                      <p className="mt-3 pt-2 border-t border-red-200 text-sm">
+                        أوقف تفعيل الموظف من قائمة الإجراءات للحفاظ على الحجوزات والرواتب والعمولات التاريخية.
+                      </p>
                     </div>
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* خيار الحذف الإجباري */}
-              {showForceDelete && (
-                <Alert>
-                  <Shield className="h-4 w-4" />
-                  <AlertDescription>
-                    <p className="font-medium text-orange-800 mb-2">الحذف الإجباري</p>
-                    <p className="text-sm text-orange-700">
-                      سيؤدي الحذف الإجباري إلى إلغاء جميع الارتباطات وحذف الموظف نهائياً.
-                      استخدم هذا الخيار بحذر شديد.
-                    </p>
-                  </AlertDescription>
-                </Alert>
-              )}
             </>
           ) : null}
 
           {/* حقل السبب */}
-          <div className="space-y-2">
+          {deletionCheck?.can_delete_safely && <div className="space-y-2">
             <Label htmlFor="reason">سبب الحذف (مطلوب)</Label>
             <Textarea
               id="reason"
@@ -172,7 +144,7 @@ const DeleteEmployeeDialog = ({
               rows={3}
               required
             />
-          </div>
+          </div>}
         </div>
 
         <DialogFooter>
@@ -187,7 +159,7 @@ const DeleteEmployeeDialog = ({
           {/* زر الحذف العادي */}
           {deletionCheck?.can_delete_safely && (
             <Button
-              onClick={() => handleConfirm(false)}
+              onClick={handleConfirm}
               disabled={isLoading || !reason.trim()}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -195,16 +167,6 @@ const DeleteEmployeeDialog = ({
             </Button>
           )}
           
-          {/* زر الحذف الإجباري */}
-          {showForceDelete && (
-            <Button
-              onClick={() => handleConfirm(true)}
-              disabled={isLoading || !reason.trim()}
-              className="bg-red-800 hover:bg-red-900"
-            >
-              {isLoading ? 'جاري الحذف...' : 'حذف إجباري'}
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

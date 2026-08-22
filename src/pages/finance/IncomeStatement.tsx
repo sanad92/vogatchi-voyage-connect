@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Download } from 'lucide-react';
 import { useIncomeStatement } from '@/hooks/useFinancialReports';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
@@ -18,7 +19,8 @@ export default function IncomeStatement() {
   const first = new Date(today.getFullYear(), 0, 1);
   const [start, setStart] = useState(first.toISOString().slice(0, 10));
   const [end, setEnd] = useState(today.toISOString().slice(0, 10));
-  const { data: rows = [], isLoading } = useIncomeStatement(start, end);
+  const [currency, setCurrency] = useState('EGP');
+  const { data: rows = [], isLoading } = useIncomeStatement(start, end, currency);
 
   const { revenue, expenses, netIncome } = useMemo(() => {
     const rev = rows.filter(r => r.account_type === 'revenue');
@@ -53,12 +55,13 @@ export default function IncomeStatement() {
         <CardContent className="pt-6 flex items-end gap-3 flex-wrap">
           <div><Label>من</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
           <div><Label>إلى</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 ml-2" />تصدير CSV</Button>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardHeader className="pb-1"><CardTitle className="text-sm">الإيرادات</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-1"><CardTitle className="text-sm">الإيرادات ({currency})</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold font-mono text-emerald-600">{fmt(revTotal)}</p></CardContent></Card>
         <Card><CardHeader className="pb-1"><CardTitle className="text-sm">المصروفات</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold font-mono text-destructive">{fmt(expTotal)}</p></CardContent></Card>

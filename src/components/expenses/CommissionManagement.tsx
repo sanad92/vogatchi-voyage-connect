@@ -6,7 +6,6 @@ import { DollarSign, Users, Calendar, Calculator, CheckCircle, AlertCircle } fro
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CommissionReports from './commission/CommissionReports';
-import CommissionPayments from './commission/CommissionPayments';
 import EmployeeCommissionSettings from './commission/EmployeeCommissionSettings';
 import PeriodCommissionCalculation from './commission/PeriodCommissionCalculation';
 import PeriodCommissionManagement from './commission/PeriodCommissionManagement';
@@ -69,9 +68,9 @@ const CommissionManagement = () => {
                 <span className="text-sm font-medium text-yellow-600">معلقة الدفع</span>
               </div>
               <div className="text-2xl font-bold text-yellow-700">
-                {systemStats?.totalPendingAmount.toFixed(2) || '0.00'}
+                {systemStats?.amountsByCurrency.map((row) => `${row.pending.toFixed(2)} ${row.currency}`).join(' / ') || '0.00 EGP'}
               </div>
-              <div className="text-sm text-yellow-600">ج.م</div>
+              <div className="text-sm text-yellow-600">كل عملة مستقلة</div>
             </div>
 
             <div className="bg-green-50 p-4 rounded-lg">
@@ -80,9 +79,9 @@ const CommissionManagement = () => {
                 <span className="text-sm font-medium text-green-600">مدفوعة هذا الشهر</span>
               </div>
               <div className="text-2xl font-bold text-green-700">
-                {systemStats?.totalPaidThisMonth.toFixed(2) || '0.00'}
+                {systemStats?.amountsByCurrency.map((row) => `${row.paidThisMonth.toFixed(2)} ${row.currency}`).join(' / ') || '0.00 EGP'}
               </div>
-              <div className="text-sm text-green-600">ج.م</div>
+              <div className="text-sm text-green-600">كل عملة مستقلة</div>
             </div>
 
             <div className="bg-purple-50 p-4 rounded-lg">
@@ -96,7 +95,7 @@ const CommissionManagement = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="period-calculation" className="flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
                 حساب العمولات
@@ -104,10 +103,6 @@ const CommissionManagement = () => {
               <TabsTrigger value="period-management" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 إدارة العمولات
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                دفع العمولات
               </TabsTrigger>
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -125,10 +120,6 @@ const CommissionManagement = () => {
 
             <TabsContent value="period-management" className="space-y-4">
               <PeriodCommissionManagement />
-            </TabsContent>
-
-            <TabsContent value="payments" className="space-y-4">
-              <CommissionPayments />
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-4">

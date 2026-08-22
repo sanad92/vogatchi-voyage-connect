@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOrgId } from './useOrgId';
 
 // تعريف نوع فترة العمولة
 interface EmployeeCommissionPeriod {
@@ -38,6 +39,7 @@ interface BookingProfitDetail {
   supplier_cost: number;
   profit: number;
   booking_date: string;
+  currency: string;
 }
 
 // تعريف نوع استجابة الدالة
@@ -58,10 +60,11 @@ interface DatabaseFunctionResponse {
 
 export const usePeriodCommissions = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
   // جلب كل فترات العمولات
   const { data: commissionPeriods, isLoading: periodsLoading, error: periodsError } = useQuery({
-    queryKey: ['commission-periods'],
+    queryKey: ['commission-periods', orgId],
     queryFn: async () => {
       console.log('Fetching commission periods...');
       const { data, error } = await supabase
@@ -70,6 +73,7 @@ export const usePeriodCommissions = () => {
           *,
           employee:employees(full_name, employee_code)
         `)
+        .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -79,18 +83,20 @@ export const usePeriodCommissions = () => {
       console.log('Fetched commission periods:', data);
       return data as EmployeeCommissionPeriod[];
     },
+    enabled: !!orgId,
   });
 
   // جلب تفاصيل الحجوزات لموظف في فترة معينة
-  const getEmployeeBookingsProfit = (employeeId: string, periodStart: string, periodEnd: string) => {
+  const useEmployeeBookingsProfit = (employeeId: string, periodStart: string, periodEnd: string, currency = 'EGP') => {
     return useQuery({
-      queryKey: ['employee-bookings-profit', employeeId, periodStart, periodEnd],
+      queryKey: ['employee-bookings-profit', employeeId, periodStart, periodEnd, currency],
       queryFn: async () => {
         console.log('Fetching employee bookings profit:', { employeeId, periodStart, periodEnd });
         const { data, error } = await supabase.rpc('calculate_employee_bookings_profit' as any, {
           p_employee_id: employeeId,
           p_period_start: periodStart,
-          p_period_end: periodEnd
+          p_period_end: periodEnd,
+          p_currency: currency,
         });
 
         if (error) {
@@ -110,12 +116,14 @@ export const usePeriodCommissions = () => {
       employeeId,
       periodStart,
       periodEnd,
-      notes
+      notes,
+      currency,
     }: {
       employeeId: string;
       periodStart: string;
       periodEnd: string;
       notes?: string;
+      currency?: string;
     }) => {
       console.log('Generating period commission:', { employeeId, periodStart, periodEnd, notes });
       
@@ -127,7 +135,8 @@ export const usePeriodCommissions = () => {
         p_employee_id: employeeId,
         p_period_start: periodStart,
         p_period_end: periodEnd,
-        p_notes: notes
+        p_notes: notes,
+        p_currency: currency || 'EGP',
       });
 
       if (error) {
@@ -247,7 +256,8 @@ export const usePeriodCommissions = () => {
       const { error } = await supabase
         .from('employee_commission_periods')
         .delete()
-        .eq('id', commissionPeriodId);
+        .eq('id', commissionPeriodId)
+        .eq('organization_id', orgId!);
 
       if (error) {
         console.error('Error deleting period commission:', error);
@@ -272,23 +282,25 @@ export const usePeriodCommissions = () => {
 
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
+    const currencies = Array.from(new Set(commissionPeriods.map((period) => period.currency || 'EGP')));
 
     const stats = {
       totalPeriods: commissionPeriods.length,
       pendingPeriods: commissionPeriods.filter(p => p.status === 'pending').length,
       paidPeriods: commissionPeriods.filter(p => p.status === 'paid').length,
-      totalPendingAmount: commissionPeriods
-        .filter(p => p.status === 'pending')
-        .reduce((sum, p) => sum + p.commission_amount, 0),
-      totalPaidThisMonth: commissionPeriods
-        .filter(p => {
-          if (!p.payment_date) return false;
-          const paymentDate = new Date(p.payment_date);
-          return paymentDate.getMonth() === currentMonth && 
-                 paymentDate.getFullYear() === currentYear &&
-                 p.status === 'paid';
-        })
-        .reduce((sum, p) => sum + p.commission_amount, 0),
+      amountsByCurrency: currencies.map((currency) => ({
+        currency,
+        pending: commissionPeriods
+          .filter((p) => p.status === 'pending' && (p.currency || 'EGP') === currency)
+          .reduce((sum, p) => sum + p.commission_amount, 0),
+        paidThisMonth: commissionPeriods
+          .filter((p) => {
+            if (!p.payment_date || p.status !== 'paid' || (p.currency || 'EGP') !== currency) return false;
+            const paymentDate = new Date(p.payment_date);
+            return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+          })
+          .reduce((sum, p) => sum + p.commission_amount, 0),
+      })),
       averageCommissionRate: commissionPeriods.length > 0 
         ? commissionPeriods.reduce((sum, p) => sum + p.commission_rate, 0) / commissionPeriods.length
         : 0
@@ -302,6 +314,7 @@ export const usePeriodCommissions = () => {
     periodStart: string;
     periodEnd: string;
     notes?: string;
+    currency?: string;
   }) => {
     generatePeriodCommissionMutation.mutate(data);
   };
@@ -325,7 +338,7 @@ export const usePeriodCommissions = () => {
     commissionPeriods,
     periodsLoading,
     periodsError,
-    getEmployeeBookingsProfit,
+    useEmployeeBookingsProfit,
     generatePeriodCommission,
     updatePeriodCommissionStatus,
     deletePeriodCommission,

@@ -63,25 +63,6 @@ export const useEmployeeCommissions = () => {
     enabled: !!orgId,
   });
 
-  const getEmployeeCommissions = (employeeId: string) => {
-    return useQuery({
-      queryKey: ['employee-commissions', employeeId, orgId],
-      queryFn: async () => {
-        let query = supabase
-          .from('employee_commissions')
-          .select('*')
-          .eq('employee_id', employeeId)
-          .eq('payment_status', 'pending')
-          .order('commission_date', { ascending: false });
-        if (orgId) query = query.eq('organization_id', orgId);
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data as unknown) as EmployeeCommissionWithEmployee[];
-      },
-      enabled: !!employeeId && !!orgId,
-    });
-  };
-
   const validateEmployeeCommissionsMutation = useMutation({
     mutationFn: async (employeeId: string) => {
       const { data, error } = await supabase.rpc('validate_employee_commissions' as any, {
@@ -211,30 +192,13 @@ export const useEmployeeCommissions = () => {
   });
 
   const calculateCommissionMutation = useMutation({
-    mutationFn: async ({ employeeId, bookingAmount, bookingId, bookingType, commissionRate }: { employeeId: string; bookingAmount: number; bookingId: string; bookingType: string; commissionRate?: number; }) => {
-      const { data: commissionAmount, error } = await supabase.rpc('calculate_employee_commission' as any, {
-        p_employee_id: employeeId, p_booking_amount: bookingAmount, p_commission_rate: commissionRate
+    mutationFn: async ({ employeeId, bookingId, commissionRate }: { employeeId: string; bookingId: string; commissionRate?: number; }) => {
+      const { data, error } = await supabase.rpc('create_booking_commission' as any, {
+        p_employee_id: employeeId,
+        p_booking_id: bookingId,
+        p_commission_rate: commissionRate ?? null,
       });
       if (error) throw error;
-
-      const insertPayload: any = {
-        employee_id: employeeId,
-        booking_id: bookingId,
-        booking_type: bookingType,
-        booking_amount: bookingAmount,
-        commission_rate: commissionRate || 0,
-        commission_amount: commissionAmount,
-        currency: 'EGP',
-        notes: 'تم إضافتها يدوياً',
-        organization_id: orgId,
-      };
-
-      const { data, error: insertError } = await supabase
-        .from('employee_commissions')
-        .insert(insertPayload)
-        .select()
-        .single();
-      if (insertError) throw insertError;
       return data;
     },
     onSuccess: () => {
@@ -255,7 +219,7 @@ export const useEmployeeCommissions = () => {
   const markCommissionsAsPaid = (data: { employeeId: string; commissionIds: string[]; paymentDate: string }) =>
     markCommissionsAsPaidMutation.mutate(data);
   const cancelCommission = (data: { commissionId: string; reason?: string }) => cancelCommissionMutation.mutate(data);
-  const calculateCommission = (data: { employeeId: string; bookingAmount: number; bookingId: string; bookingType: string; commissionRate?: number; }) =>
+  const calculateCommission = (data: { employeeId: string; bookingId: string; commissionRate?: number; }) =>
     calculateCommissionMutation.mutate(data);
 
   return {
@@ -265,7 +229,6 @@ export const useEmployeeCommissions = () => {
     commissionPayments,
     paymentsLoading,
     paymentsError,
-    getEmployeeCommissions,
     validateEmployeeCommissions,
     updateEmployeeCommissionSettings,
     addCommissionPayment,

@@ -22,9 +22,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(n || 0);
+const fmt = (n: number, currency = 'EGP') =>
+  new Intl.NumberFormat('ar-EG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n || 0);
 
 const today = new Date();
 const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
@@ -33,15 +34,16 @@ const todayStr = today.toISOString().slice(0, 10);
 const CFODashboard = () => {
   const [start, setStart] = useState(firstOfMonth);
   const [end, setEnd] = useState(todayStr);
+  const [currency, setCurrency] = useState('EGP');
   const [backfilling, setBackfilling] = useState(false);
   const orgId = useOrgId();
   const qc = useQueryClient();
 
-  const income = useIncomeStatement(start, end);
-  const balance = useBalanceSheet(end);
-  const cash = useCashFlow(start, end);
-  const aging = useCustomerAging();
-  const trial = useTrialBalance(end);
+  const income = useIncomeStatement(start, end, currency);
+  const balance = useBalanceSheet(end, currency);
+  const cash = useCashFlow(start, end, currency);
+  const aging = useCustomerAging(end, currency);
+  const trial = useTrialBalance(end, currency);
 
   const runBackfill = async () => {
     if (!orgId) return;
@@ -111,7 +113,7 @@ const CFODashboard = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          الأرقام مستمدة من الجداول التشغيلية (فواتير، حجوزات، مدفوعات موردين، مصروفات، حسابات بنكية) عبر دوال RPC مخصّصة. جميع القيم بالجنيه المصري (EGP) ما لم يُذكر خلاف ذلك. للحصول على تفصيل لكل عملة، راجع <a href="/executive-finance" className="underline font-medium">اللوحة التنفيذية</a>.
+          الأرقام مستمدة من القيود المرحّلة، مع فصل كامل بين العملات. العملة الحالية: <strong>{currency}</strong>.
         </AlertDescription>
       </Alert>
 
@@ -121,6 +123,7 @@ const CFODashboard = () => {
             <Label>من تاريخ</Label>
             <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
           </div>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           <div className="space-y-1">
             <Label>إلى تاريخ</Label>
             <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
@@ -130,23 +133,23 @@ const CFODashboard = () => {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPI title="الإيرادات" value={fmt(kpis.revenue)} icon={<TrendingUp className="h-5 w-5" />} positive />
-        <KPI title="المصروفات" value={fmt(kpis.expense)} icon={<TrendingDown className="h-5 w-5" />} negative />
+        <KPI title="الإيرادات" value={fmt(kpis.revenue, currency)} icon={<TrendingUp className="h-5 w-5" />} positive />
+        <KPI title="المصروفات" value={fmt(kpis.expense, currency)} icon={<TrendingDown className="h-5 w-5" />} negative />
         <KPI
           title="صافي الربح"
-          value={fmt(kpis.net)}
+          value={fmt(kpis.net, currency)}
           subtitle={`هامش ${kpis.margin.toFixed(1)}%`}
           icon={<Wallet className="h-5 w-5" />}
           positive={kpis.net >= 0}
           negative={kpis.net < 0}
         />
-        <KPI title="صافي التدفق النقدي" value={fmt(kpis.netCash)} icon={<Activity className="h-5 w-5" />} positive={kpis.netCash >= 0} negative={kpis.netCash < 0} />
+        <KPI title="صافي التدفق النقدي" value={fmt(kpis.netCash, currency)} icon={<Activity className="h-5 w-5" />} positive={kpis.netCash >= 0} negative={kpis.netCash < 0} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KPI title="الأصول" value={fmt(kpis.assets)} icon={<Scale className="h-5 w-5" />} />
-        <KPI title="الخصوم" value={fmt(kpis.liabilities)} icon={<Scale className="h-5 w-5" />} />
-        <KPI title="حقوق الملكية" value={fmt(kpis.equity)} icon={<Scale className="h-5 w-5" />} />
+        <KPI title="الأصول" value={fmt(kpis.assets, currency)} icon={<Scale className="h-5 w-5" />} />
+        <KPI title="الخصوم" value={fmt(kpis.liabilities, currency)} icon={<Scale className="h-5 w-5" />} />
+        <KPI title="حقوق الملكية" value={fmt(kpis.equity, currency)} icon={<Scale className="h-5 w-5" />} />
       </div>
 
       {/* Cash flow chart */}
@@ -165,7 +168,7 @@ const CFODashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
-                <Tooltip formatter={(v: number) => fmt(v)} />
+                <Tooltip formatter={(v: number) => fmt(v, currency)} />
                 <Area type="monotone" dataKey="inflow" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.3)" name="داخل" />
                 <Area type="monotone" dataKey="outflow" stackId="2" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive) / 0.3)" name="خارج" />
               </AreaChart>
@@ -183,16 +186,16 @@ const CFODashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-            <AgingCell label="الإجمالي" value={kpis.totalDue} />
-            <AgingCell label="حالي" value={(aging.data || []).reduce((s, r) => s + Number(r.current_due), 0)} />
-            <AgingCell label="1-30 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_30), 0)} warn />
-            <AgingCell label="31-60 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_60), 0)} warn />
-            <AgingCell label="+60 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_90) + Number(r.days_over_90), 0)} danger />
+            <AgingCell label="الإجمالي" value={kpis.totalDue} currency={currency} />
+            <AgingCell label="حالي" value={(aging.data || []).reduce((s, r) => s + Number(r.current_due), 0)} currency={currency} />
+            <AgingCell label="1-30 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_30), 0)} currency={currency} warn />
+            <AgingCell label="31-60 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_60), 0)} currency={currency} warn />
+            <AgingCell label="+60 يوم" value={(aging.data || []).reduce((s, r) => s + Number(r.days_90) + Number(r.days_over_90), 0)} currency={currency} danger />
           </div>
           {kpis.overdue > 0 && (
             <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
               <AlertCircle className="h-4 w-4" />
-              متأخرات بقيمة {fmt(kpis.overdue)} تتطلب متابعة فورية
+              متأخرات بقيمة {fmt(kpis.overdue, currency)} تتطلب متابعة فورية
             </div>
           )}
         </CardContent>
@@ -220,9 +223,9 @@ const CFODashboard = () => {
                   <tr key={r.account_id} className="border-b">
                     <td className="py-2">{r.account_name_ar || r.account_name}</td>
                     <td><Badge variant="outline">{r.account_type}</Badge></td>
-                    <td className="text-left">{fmt(Number(r.total_debit))}</td>
-                    <td className="text-left">{fmt(Number(r.total_credit))}</td>
-                    <td className="text-left font-semibold">{fmt(Number(r.balance))}</td>
+                    <td className="text-left">{fmt(Number(r.total_debit), currency)}</td>
+                    <td className="text-left">{fmt(Number(r.total_credit), currency)}</td>
+                    <td className="text-left font-semibold">{fmt(Number(r.balance), currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -255,10 +258,10 @@ const KPI = ({
   </Card>
 );
 
-const AgingCell = ({ label, value, warn, danger }: { label: string; value: number; warn?: boolean; danger?: boolean }) => (
+const AgingCell = ({ label, value, currency, warn, danger }: { label: string; value: number; currency: string; warn?: boolean; danger?: boolean }) => (
   <div className={`p-3 rounded-md border ${danger ? 'border-destructive/30 bg-destructive/5' : warn ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-border'}`}>
     <p className="text-xs text-muted-foreground">{label}</p>
-    <p className={`text-lg font-bold mt-1 ${danger ? 'text-destructive' : ''}`}>{fmt(value)}</p>
+    <p className={`text-lg font-bold mt-1 ${danger ? 'text-destructive' : ''}`}>{fmt(value, currency)}</p>
   </div>
 );
 

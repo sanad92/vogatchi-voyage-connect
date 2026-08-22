@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const fmt = (n: number) => new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2 }).format(n);
 
@@ -23,12 +24,13 @@ export default function AccountingReportsPage() {
   const [startDate, setStartDate] = useState(monthStart);
   const [isEnd, setIsEnd] = useState(today);
   const [bsDate, setBsDate] = useState(today);
+  const [currency, setCurrency] = useState('EGP');
 
-  const { data: trial = [] } = useTrialBalance(isEnd);
-  const { data: income = [] } = useIncomeStatement(startDate, endDate);
-  const { data: balanceSheet = [] } = useBalanceSheet(bsDate);
-  const { data: cashFlow = [] } = useCashFlow(startDate, endDate);
-  const { data: aging = [] } = useCustomerAging();
+  const { data: trial = [] } = useTrialBalance(isEnd, currency);
+  const { data: income = [] } = useIncomeStatement(startDate, endDate, currency);
+  const { data: balanceSheet = [] } = useBalanceSheet(bsDate, currency);
+  const { data: cashFlow = [] } = useCashFlow(startDate, endDate, currency);
+  const { data: aging = [] } = useCustomerAging(endDate, currency);
 
   const bsTotals = useMemo(() => {
     const assets = balanceSheet.filter(r => r.account_type === 'asset').reduce((s, r) => s + Number(r.balance), 0);
@@ -63,8 +65,13 @@ export default function AccountingReportsPage() {
           <BarChart3 className="h-8 w-8 text-primary" />
           التقارير المحاسبية
         </h1>
-        <p className="text-muted-foreground mt-1">ميزان المراجعة وقائمة الدخل</p>
+        <p className="text-muted-foreground mt-1">تقارير دفتر الأستاذ — كل عملة مستقلة</p>
       </div>
+
+      <Card><CardContent className="pt-6">
+        <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
+        <p className="text-xs text-muted-foreground mt-2">لا يتم جمع عملات مختلفة رقمياً. كل الأرقام أدناه بعملة {currency}.</p>
+      </CardContent></Card>
 
       <Tabs defaultValue="income" className="space-y-4">
         <TabsList className="flex-wrap">
@@ -96,7 +103,7 @@ export default function AccountingReportsPage() {
                   <TrendingUp className="h-5 w-5" />
                   <span className="text-sm">إجمالي الإيرادات</span>
                 </div>
-                <div className="text-2xl font-bold mt-2">{fmt(incomeSummary.revenue)}</div>
+                <div className="text-2xl font-bold mt-2">{fmt(incomeSummary.revenue)} {currency}</div>
               </CardContent>
             </Card>
             <Card>
@@ -105,14 +112,14 @@ export default function AccountingReportsPage() {
                   <TrendingDown className="h-5 w-5" />
                   <span className="text-sm">إجمالي المصروفات</span>
                 </div>
-                <div className="text-2xl font-bold mt-2">{fmt(incomeSummary.expenses)}</div>
+                <div className="text-2xl font-bold mt-2">{fmt(incomeSummary.expenses)} {currency}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">صافي الربح</div>
                 <div className={`text-2xl font-bold mt-2 ${incomeSummary.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {fmt(incomeSummary.net)}
+                  {fmt(incomeSummary.net)} {currency}
                 </div>
               </CardContent>
             </Card>

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useTrialBalance } from '@/hooks/useFinancialReports';
 import { toast } from 'sonner';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
@@ -26,7 +27,8 @@ export default function TrialBalance() {
   const orgId = useOrgId();
   const today = new Date().toISOString().slice(0, 10);
   const [endDate, setEndDate] = useState(today);
-  const { data: rows = [], isLoading, refetch } = useTrialBalance(endDate);
+  const [currency, setCurrency] = useState('EGP');
+  const { data: rows = [], isLoading, refetch } = useTrialBalance(endDate, currency);
 
   const totals = useMemo(() => {
     const d = rows.reduce((s, r) => s + Number(r.total_debit || 0), 0);
@@ -65,6 +67,7 @@ export default function TrialBalance() {
       <Card>
         <CardContent className="pt-6 flex items-end gap-3 flex-wrap">
           <div><Label>حتى تاريخ</Label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           <Button variant="outline" onClick={() => backfill.mutate()} disabled={backfill.isPending}>
             <RefreshCw className={`h-4 w-4 ml-2 ${backfill.isPending ? 'animate-spin' : ''}`} />
             ترحيل السجلات القديمة إلى الأستاذ
@@ -74,7 +77,7 @@ export default function TrialBalance() {
       </Card>
 
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardHeader className="pb-1"><CardTitle className="text-sm">إجمالي المدين</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-1"><CardTitle className="text-sm">إجمالي المدين ({currency})</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold font-mono">{fmt(totals.d)}</p></CardContent></Card>
         <Card><CardHeader className="pb-1"><CardTitle className="text-sm">إجمالي الدائن</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold font-mono">{fmt(totals.c)}</p></CardContent></Card>

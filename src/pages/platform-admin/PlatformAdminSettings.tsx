@@ -7,13 +7,13 @@ import LandingPageCMS from '@/components/admin/LandingPageCMS';
 import BackupManagementTab from '@/components/admin/BackupManagementTab';
 import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
-import PermissionsManagement from '@/components/admin/PermissionsManagement';
+import PermissionsTab from '@/components/admin/PermissionsTab';
 
 const tabs = [
   { value: 'backup', label: 'النسخ الاحتياطي', icon: Database, description: 'إدارة النسخ الاحتياطية' },
   { value: 'security', label: 'الأمان', icon: Lock, description: 'إعدادات الأمان المتقدمة' },
   { value: 'system', label: 'إعدادات النظام', icon: Settings, description: 'إعدادات النظام العامة' },
-  { value: 'permissions', label: 'الصلاحيات', icon: KeyRound, description: 'إدارة صلاحيات المستخدمين' },
+  { value: 'permissions', label: 'الصلاحيات', icon: KeyRound, description: 'مرجع أدوار المؤسسة المعتمدة' },
   { value: 'landing', label: 'صفحة الهبوط', icon: Globe, description: 'إدارة محتوى صفحة الهبوط' },
 ];
 
@@ -83,7 +83,7 @@ const PlatformAdminSettings = () => {
           <TabsContent value="backup" className="mt-0"><BackupManagementTab /></TabsContent>
           <TabsContent value="security" className="mt-0"><SecurityManagementTab /></TabsContent>
           <TabsContent value="system" className="mt-0"><SystemSettingsTab /></TabsContent>
-          <TabsContent value="permissions" className="mt-0"><PermissionsManagement /></TabsContent>
+          <TabsContent value="permissions" className="mt-0"><PermissionsTab /></TabsContent>
           <TabsContent value="landing" className="mt-0"><LandingPageCMS /></TabsContent>
         </div>
       </Tabs>

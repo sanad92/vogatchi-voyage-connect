@@ -10,6 +10,7 @@ import { FileText, Download, TrendingUp } from 'lucide-react';
 import { useExpenses } from '@/hooks/useExpenses';
 import { usePeriodCommissions } from '@/hooks/usePeriodCommissions';
 import MultiCurrencyDisplay from '@/components/currency/MultiCurrencyDisplay';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 
 const CommissionReports = () => {
   const { employees } = useExpenses();
@@ -17,19 +18,20 @@ const CommissionReports = () => {
   const [reportType, setReportType] = useState('monthly');
   const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
+  const [currency, setCurrency] = useState('EGP');
 
   const filteredCommissions = commissionPeriods?.filter(commission => {
     const matchesEmployee = selectedEmployee === 'all' || commission.employee_id === selectedEmployee;
-    const commissionDate = new Date(commission.created_at);
+    const commissionDate = new Date(`${commission.period_start}T00:00:00`);
+    const selectedDate = new Date(`${selectedPeriod}-01T00:00:00`);
+    const sameYear = commissionDate.getFullYear() === selectedDate.getFullYear();
+    const matchesPeriod = reportType === 'monthly'
+      ? sameYear && commissionDate.getMonth() === selectedDate.getMonth()
+      : reportType === 'quarterly'
+        ? sameYear && Math.floor(commissionDate.getMonth() / 3) === Math.floor(selectedDate.getMonth() / 3)
+        : sameYear;
     
-    let matchesPeriod = true;
-    if (reportType === 'monthly') {
-      const periodMonth = selectedPeriod.slice(0, 7);
-      const commissionMonth = commissionDate.toISOString().slice(0, 7);
-      matchesPeriod = commissionMonth === periodMonth;
-    }
-    
-    return matchesEmployee && matchesPeriod;
+    return matchesEmployee && matchesPeriod && commission.currency === currency;
   });
 
   // تجميع العمولات حسب الموظف
@@ -52,6 +54,39 @@ const CommissionReports = () => {
   const totalAllCommissions = employeeCommissionSummary.reduce((sum, summary) => sum + summary.totalCommissions, 0);
   const totalPendingCommissions = employeeCommissionSummary.reduce((sum, summary) => sum + summary.pendingCommissions, 0);
   const totalPaidCommissions = employeeCommissionSummary.reduce((sum, summary) => sum + summary.paidCommissions, 0);
+
+  const exportReport = () => {
+    if (!filteredCommissions?.length) return;
+    const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const employeeById = new Map(employees?.map((employee) => [employee.id, employee]) || []);
+    const rows = filteredCommissions.map((commission) => {
+      const employee = employeeById.get(commission.employee_id);
+      return [
+        employee?.full_name || '',
+        employee?.employee_code || '',
+        commission.period_start,
+        commission.period_end,
+        commission.total_bookings_count,
+        commission.total_profit,
+        commission.commission_rate,
+        commission.commission_amount,
+        commission.currency,
+        commission.status,
+        commission.payment_date || '',
+      ].map(escapeCsv).join(',');
+    });
+    const header = [
+      'الموظف','الكود','بداية الفترة','نهاية الفترة','عدد الحجوزات','صافي الربح',
+      'نسبة العمولة','قيمة العمولة','العملة','الحالة','تاريخ الدفع',
+    ].map(escapeCsv).join(',');
+    const blob = new Blob([`\uFEFF${[header, ...rows].join('\n')}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `commission-report-${reportType}-${selectedPeriod}-${currency}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
@@ -78,6 +113,8 @@ const CommissionReports = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <ReportCurrencySelect value={currency} onValueChange={setCurrency} className="space-y-2" />
 
             <div className="space-y-2">
               <Label>الفترة</Label>
@@ -107,7 +144,7 @@ const CommissionReports = () => {
 
             <div className="space-y-2">
               <Label>&nbsp;</Label>
-              <Button className="w-full">
+              <Button className="w-full" onClick={exportReport} disabled={!filteredCommissions?.length}>
                 <Download className="h-4 w-4 mr-2" />
                 تصدير التقرير
               </Button>
@@ -123,7 +160,7 @@ const CommissionReports = () => {
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">إجمالي العمولات</h3>
               <p className="text-3xl font-bold text-blue-600 mt-2">
-                <MultiCurrencyDisplay amount={totalAllCommissions} currency="EGP" showInEGP={false} />
+                <MultiCurrencyDisplay amount={totalAllCommissions} currency={currency as 'EGP' | 'USD' | 'EUR'} showInEGP={false} />
               </p>
               <p className="text-sm text-gray-500 mt-1">جميع العمولات</p>
             </div>
@@ -135,7 +172,7 @@ const CommissionReports = () => {
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">العمولات المعلقة</h3>
               <p className="text-3xl font-bold text-orange-600 mt-2">
-                <MultiCurrencyDisplay amount={totalPendingCommissions} currency="EGP" showInEGP={false} />
+                <MultiCurrencyDisplay amount={totalPendingCommissions} currency={currency as 'EGP' | 'USD' | 'EUR'} showInEGP={false} />
               </p>
               <p className="text-sm text-gray-500 mt-1">لم يتم دفعها بعد</p>
             </div>
@@ -147,7 +184,7 @@ const CommissionReports = () => {
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900">العمولات المدفوعة</h3>
               <p className="text-3xl font-bold text-green-600 mt-2">
-                <MultiCurrencyDisplay amount={totalPaidCommissions} currency="EGP" showInEGP={false} />
+                <MultiCurrencyDisplay amount={totalPaidCommissions} currency={currency as 'EGP' | 'USD' | 'EUR'} showInEGP={false} />
               </p>
               <p className="text-sm text-gray-500 mt-1">تم دفعها</p>
             </div>
@@ -191,21 +228,21 @@ const CommissionReports = () => {
                   <TableCell className="font-semibold text-blue-600">
                     <MultiCurrencyDisplay 
                       amount={summary.totalCommissions} 
-                      currency="EGP" 
+                      currency={currency as 'EGP' | 'USD' | 'EUR'}
                       showInEGP={false} 
                     />
                   </TableCell>
                   <TableCell className="text-orange-600">
                     <MultiCurrencyDisplay 
                       amount={summary.pendingCommissions} 
-                      currency="EGP" 
+                      currency={currency as 'EGP' | 'USD' | 'EUR'}
                       showInEGP={false} 
                     />
                   </TableCell>
                   <TableCell className="text-green-600">
                     <MultiCurrencyDisplay 
                       amount={summary.paidCommissions} 
-                      currency="EGP" 
+                      currency={currency as 'EGP' | 'USD' | 'EUR'}
                       showInEGP={false} 
                     />
                   </TableCell>
