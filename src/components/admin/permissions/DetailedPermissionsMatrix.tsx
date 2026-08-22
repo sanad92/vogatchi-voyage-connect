@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Shield, Save, Plus, X } from 'lucide-react';
 import { useDetailedPermissions, DetailedUserPermissions } from '@/hooks/useDetailedPermissions';
 import { useUnifiedData } from '@/hooks/useUnifiedData';
-import { toast } from 'sonner';
 import MatrixSearchFilters from './matrix/MatrixSearchFilters';
 import { PERMISSION_CATEGORIES } from './matrix/PermissionCategories';
 
@@ -29,7 +28,7 @@ const DetailedPermissionsMatrix = () => {
 
   // الحصول على صلاحيات مستخدم معين
   const getUserPermissions = (userId: string) => {
-    return allUserPermissions?.find((perm: any) => perm.user_id === userId);
+    return allUserPermissions?.find((permission) => permission.user_id === userId);
   };
 
   // بدء تعديل صلاحيات مستخدم
@@ -71,7 +70,7 @@ const DetailedPermissionsMatrix = () => {
     const category = PERMISSION_CATEGORIES.find(cat => cat.key === categoryKey);
     if (!category) return;
 
-    const updates: any = {};
+    const updates: Record<string, boolean> = {};
     category.permissions.forEach(permission => {
       updates[permission.key] = enabled;
     });
@@ -85,7 +84,6 @@ const DetailedPermissionsMatrix = () => {
   // تطبيق قالب صلاحيات
   const handleApplyTemplate = async (userId: string, templateName: string) => {
     await applyPermissionTemplate(userId, templateName);
-    toast.success(`تم تطبيق قالب ${templateName} بنجاح`);
   };
 
   // الحصول على قيمة صلاحية
@@ -163,9 +161,13 @@ const DetailedPermissionsMatrix = () => {
                       <SelectValue placeholder="تطبيق قالب" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="customer_service">خدمة عملاء</SelectItem>
                       <SelectItem value="sales_agent">مندوب مبيعات</SelectItem>
+                      <SelectItem value="reservations_agent">موظف حجوزات</SelectItem>
                       <SelectItem value="accountant">محاسب</SelectItem>
+                      <SelectItem value="finance_manager">مدير مالي</SelectItem>
                       <SelectItem value="manager">مدير</SelectItem>
+                      <SelectItem value="auditor">مراجع</SelectItem>
                       <SelectItem value="viewer">مشاهد فقط</SelectItem>
                     </SelectContent>
                   </Select>

@@ -1,6 +1,7 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useSubscriptionEnforcement, SubscriptionStatus } from '@/hooks/useSubscriptionEnforcement';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { PlanFeature } from '@/lib/planFeatures';
 
 interface SubscriptionContextType {
   isReadOnly: boolean;
@@ -13,6 +14,7 @@ interface SubscriptionContextType {
   canWrite: boolean;
   canAddUser: boolean;
   canAddBooking: boolean;
+  hasFeature: (feature: PlanFeature) => boolean;
   getBlockMessage: () => string | null;
 }
 
@@ -28,6 +30,14 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const canWrite = isPlatformAdmin || enforcement.isActive;
   const isTrialing = !isPlatformAdmin && enforcement.isTrialing;
   const trialDaysRemaining = enforcement.trialDaysRemaining;
+  const planFeatures = enforcement.subscription?.features;
+
+  const hasFeature = (feature: PlanFeature): boolean => {
+    if (isPlatformAdmin) return true;
+    // Keep access permissive during a rolling deploy until the RPC migration is live.
+    if (!planFeatures) return true;
+    return planFeatures.includes('all_features') || planFeatures.includes(feature);
+  };
 
   const getBlockMessage = (): string | null => {
     if (isPlatformAdmin) return null;
@@ -51,6 +61,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         canWrite,
         canAddUser: isPlatformAdmin || enforcement.canAddUser,
         canAddBooking: isPlatformAdmin || enforcement.canAddBooking,
+        hasFeature,
         getBlockMessage,
       }}
     >

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -23,14 +24,16 @@ interface Plan {
   max_storage_mb: number;
   duration_days: number | null;
   is_active: boolean;
-  features: any;
+  features: string[];
 }
 
 const empty: Partial<Plan> = {
-  name: '', name_ar: '', price_monthly: 0, price_yearly: 0,
-  max_users: 5, max_bookings_per_month: 100, max_storage_mb: 500,
+  name: '', name_ar: '', price_monthly: 2490, price_yearly: 24900,
+  max_users: 5, max_bookings_per_month: 300, max_storage_mb: 5120,
   duration_days: 30, is_active: true, features: [],
 };
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'فشل الحفظ';
 
 const PlatformAdminPlans = () => {
   const qc = useQueryClient();
@@ -50,6 +53,9 @@ const PlatformAdminPlans = () => {
 
   const save = useMutation({
     mutationFn: async (p: Partial<Plan>) => {
+      if ((p.is_active ?? true) && ((p.price_monthly ?? 0) <= 0 || (p.price_yearly ?? 0) <= 0)) {
+        throw new Error('لا يمكن تفعيل خطة مجانية. أدخل سعرًا شهريًا وسنويًا أكبر من صفر.');
+      }
       const payload = {
         name: p.name!, name_ar: p.name_ar!,
         price_monthly: p.price_monthly ?? 0,
@@ -74,7 +80,7 @@ const PlatformAdminPlans = () => {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ['subscription-plans-admin'] });
     },
-    onError: (e: any) => toast.error(e?.message ?? 'فشل الحفظ'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error)),
   });
 
   return (
@@ -123,8 +129,8 @@ const PlatformAdminPlans = () => {
                       <div className="font-medium">{p.name_ar}</div>
                       <div className="text-xs text-muted-foreground">{p.name}</div>
                     </TableCell>
-                    <TableCell>{p.price_monthly} ر.س</TableCell>
-                    <TableCell>{p.price_yearly} ر.س</TableCell>
+                    <TableCell>{p.price_monthly.toLocaleString('ar-EG')} ج.م</TableCell>
+                    <TableCell>{p.price_yearly.toLocaleString('ar-EG')} ج.م</TableCell>
                     <TableCell>{p.max_users}</TableCell>
                     <TableCell>{p.max_bookings_per_month}</TableCell>
                     <TableCell>{p.duration_days ?? '—'} يوم</TableCell>
@@ -162,11 +168,11 @@ const PlatformAdminPlans = () => {
                 <Input value={editing.name_ar ?? ''} onChange={e => setEditing({ ...editing, name_ar: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>السعر الشهري (ر.س)</Label>
+                <Label>السعر الشهري (ج.م)</Label>
                 <Input type="number" value={editing.price_monthly ?? 0} onChange={e => setEditing({ ...editing, price_monthly: +e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>السعر السنوي (ر.س)</Label>
+                <Label>السعر السنوي (ج.م)</Label>
                 <Input type="number" value={editing.price_yearly ?? 0} onChange={e => setEditing({ ...editing, price_yearly: +e.target.value })} />
               </div>
               <div className="space-y-1.5">
@@ -184,6 +190,22 @@ const PlatformAdminPlans = () => {
               <div className="space-y-1.5">
                 <Label>المدة (أيام)</Label>
                 <Input type="number" value={editing.duration_days ?? 30} onChange={e => setEditing({ ...editing, duration_days: +e.target.value })} />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label>مفاتيح الموديولات</Label>
+                <Textarea
+                  dir="ltr"
+                  rows={4}
+                  value={Array.isArray(editing.features) ? editing.features.join(', ') : ''}
+                  onChange={e => setEditing({
+                    ...editing,
+                    features: e.target.value.split(',').map(value => value.trim()).filter(Boolean),
+                  })}
+                  placeholder="basic_crm, quotes, finance, whatsapp"
+                />
+                <p className="text-xs text-muted-foreground">
+                  استخدم all_features لخطة الأعمال، أو افصل المفاتيح بفاصلة. إيقاف الخطة يخفيها من صفحة الأسعار.
+                </p>
               </div>
               <div className="col-span-2 flex items-center gap-2 pt-2">
                 <Switch checked={editing.is_active ?? true} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />

@@ -25,7 +25,7 @@ const PaymentPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch plan details
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError } = useQuery({
     queryKey: ['payment-plan', planId],
     queryFn: async () => {
       if (!planId) return null;
@@ -33,6 +33,8 @@ const PaymentPage = () => {
         .from('subscription_plans')
         .select('*')
         .eq('id', planId)
+        .eq('is_active', true)
+        .gt('price_monthly', 0)
         .single();
       if (error) throw error;
       return data;
@@ -89,8 +91,8 @@ const PaymentPage = () => {
       return;
     }
 
-    if (price === 0) {
-      toast.info('هذه الخطة مجانية ولا تحتاج دفع');
+    if (price <= 0) {
+      toast.error('هذه الخطة غير متاحة للاشتراك');
       return;
     }
 
@@ -130,9 +132,9 @@ const PaymentPage = () => {
       } else {
         throw new Error('لم يتم استلام رابط الدفع');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Payment error:', err);
-      toast.error(err.message || 'فشل في بدء عملية الدفع');
+      toast.error(err instanceof Error ? err.message : 'فشل في بدء عملية الدفع');
     } finally {
       setIsProcessing(false);
     }
@@ -162,6 +164,23 @@ const PaymentPage = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError || !plan) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8 pb-8 space-y-4">
+            <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">الخطة غير متاحة</h2>
+            <p className="text-muted-foreground">اختر إحدى الخطط المدفوعة النشطة من صفحة الأسعار.</p>
+            <Link to="/pricing">
+              <Button className="mt-4">عرض الخطط</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -259,7 +278,7 @@ const PaymentPage = () => {
                   <div className="text-sm text-muted-foreground">
                     <p className="font-medium text-foreground mb-1">اشتراكك الحالي</p>
                     <p>
-                      خطة {(currentSub as any).subscription_plans?.name_ar || 'غير محدد'} — 
+                      خطة {currentSub.subscription_plans?.name_ar || 'غير محدد'} —
                       الحالة: {currentSub.status === 'active' ? 'نشط' : currentSub.status === 'trialing' ? 'تجريبي' : 'منتهي'}
                       {currentSub.expires_at && (
                         <> — ينتهي: {new Date(currentSub.expires_at).toLocaleDateString('ar-EG')}</>

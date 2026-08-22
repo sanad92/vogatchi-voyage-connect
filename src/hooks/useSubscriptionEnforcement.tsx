@@ -11,6 +11,7 @@ export interface SubscriptionStatus {
   trial_days_remaining: number | null;
   plan_name: string;
   plan_name_ar: string;
+  features?: string[];
   limits: {
     max_users: number;
     max_bookings: number;

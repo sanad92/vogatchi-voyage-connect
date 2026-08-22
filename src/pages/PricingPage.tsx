@@ -1,354 +1,367 @@
-import { useState } from 'react';
+import { useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { 
-  CheckCircle2, XCircle, ArrowLeft, Sparkles, 
-  Hotel, Plane, Car, Bus, FileText, BarChart3, 
-  Megaphone, Users, Headphones, Zap
+import {
+  ArrowLeft,
+  BarChart3,
+  Building2,
+  Check,
+  CheckCircle2,
+  FileCheck2,
+  FileText,
+  Headphones,
+  Hotel,
+  MessageSquareText,
+  Plane,
+  ReceiptText,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  WalletCards,
+  Workflow,
+  X,
+  Zap,
 } from 'lucide-react';
 
-// All possible features with labels
-const ALL_FEATURES = [
-  { key: 'basic_crm', label: 'إدارة العملاء (CRM)', icon: Users },
-  { key: 'hotel_bookings', label: 'حجوزات الفنادق', icon: Hotel },
-  { key: 'flight_bookings', label: 'حجوزات الطيران', icon: Plane },
-  { key: 'car_rentals', label: 'تأجير السيارات', icon: Car },
-  { key: 'transport', label: 'النقل السياحي', icon: Bus },
-  { key: 'invoices', label: 'الفواتير والمدفوعات', icon: FileText },
-  { key: 'reports', label: 'التقارير والتحليلات', icon: BarChart3 },
-  { key: 'marketing', label: 'التسويق والحملات', icon: Megaphone },
-  { key: 'commissions', label: 'العمولات والرواتب', icon: Zap },
-  { key: 'priority_support', label: 'دعم أولوية', icon: Headphones },
+import VogantraLogo from '@/components/brand/VogantraLogo';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+
+type PricingPlan = Database['public']['Tables']['subscription_plans']['Row'];
+
+interface FeatureDefinition {
+  label: string;
+  icon: ElementType;
+  keys: string[];
+  mode?: 'all' | 'any';
+}
+
+const FEATURES: FeatureDefinition[] = [
+  { label: 'CRM وإدارة دورة العميل', icon: Users, keys: ['basic_crm'] },
+  { label: 'SOP وتسليم المهام بين الأقسام', icon: Workflow, keys: ['sop_workflow'] },
+  { label: 'عروض الأسعار والتسعير', icon: FileCheck2, keys: ['quotes'] },
+  {
+    label: 'حجوزات فنادق وطيران وسيارات ونقل',
+    icon: Plane,
+    keys: ['hotel_bookings', 'flight_bookings', 'car_rentals', 'transport'],
+    mode: 'all',
+  },
+  { label: 'الموردون والأسعار والمستندات', icon: Hotel, keys: ['suppliers', 'documents'], mode: 'all' },
+  { label: 'الفواتير والتحصيل', icon: ReceiptText, keys: ['invoices'] },
+  { label: 'التقارير الأساسية', icon: BarChart3, keys: ['reports'] },
+  { label: 'المالية والمحاسبة والتدفقات النقدية', icon: WalletCards, keys: ['finance'] },
+  { label: 'تحليلات وتقارير متقدمة', icon: BarChart3, keys: ['advanced_reports'] },
+  { label: 'واتساب وصندوق المحادثات', icon: MessageSquareText, keys: ['whatsapp'] },
+  { label: 'الأتمتة ورحلات التسويق', icon: Zap, keys: ['automation', 'marketing'], mode: 'all' },
+  { label: 'الفروع والأقسام', icon: Building2, keys: ['multi_branch'] },
+  { label: 'سجل المراجعة والضوابط المتقدمة', icon: ShieldCheck, keys: ['audit_log', 'enterprise_controls'], mode: 'any' },
+  { label: 'هوية مخصصة White label', icon: Sparkles, keys: ['white_label'] },
 ];
+
+const PLAN_META: Record<string, { description: string; audience: string }> = {
+  Basic: {
+    description: 'كل ما يحتاجه فريق صغير لتوحيد المبيعات والحجوزات بدل الملفات المتفرقة.',
+    audience: 'للشركات الصغيرة وفرق التشغيل حتى 5 مستخدمين',
+  },
+  Pro: {
+    description: 'تشغيل كامل مع المالية، الأتمتة، واتساب والتقارير الإدارية المتقدمة.',
+    audience: 'للشركات النامية وفرق متعددة الأقسام',
+  },
+  Enterprise: {
+    description: 'تحكم مؤسسي، فروع وهوية مخصصة لعمليات أكبر وأكثر تعقيدًا.',
+    audience: 'للمجموعات والشركات متعددة الفروع',
+  },
+};
 
 const RECOMMENDED_PLAN = 'Pro';
 
-const PricingPage = () => {
-  const [isYearly, setIsYearly] = useState(false);
+const getFeatures = (plan: PricingPlan): string[] =>
+  Array.isArray(plan.features) ? plan.features.filter((feature): feature is string => typeof feature === 'string') : [];
 
-  const { data: plans, isLoading } = useQuery({
+const hasFeature = (planFeatures: string[], feature: FeatureDefinition) => {
+  if (planFeatures.includes('all_features')) return true;
+  const matches = feature.keys.map((key) => planFeatures.includes(key));
+  return feature.mode === 'any' ? matches.some(Boolean) : matches.every(Boolean);
+};
+
+const formatStorage = (storageMb: number) => {
+  if (storageMb >= 1024) return `${Math.round(storageMb / 1024)} GB`;
+  return `${storageMb} MB`;
+};
+
+const PricingPage = () => {
+  const [isYearly, setIsYearly] = useState(true);
+  const { user } = useOptimizedAuth();
+
+  const { data: plans = [], isLoading } = useQuery({
     queryKey: ['pricing-plans'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
         .eq('is_active', true)
+        .gt('price_monthly', 0)
         .order('price_monthly', { ascending: true });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
-  const hasFeature = (planFeatures: string[], featureKey: string) => {
-    if (planFeatures.includes('all_features')) return true;
-    return planFeatures.includes(featureKey);
-  };
-
-  const formatPrice = (plan: any) => {
-    const price = isYearly ? plan.price_yearly : plan.price_monthly;
-    if (price === 0) return 'مجاني';
-    if (plan.name === 'Enterprise') return 'تواصل معنا';
-    return `${price.toLocaleString('ar-EG')}`;
-  };
-
-  const yearlyDiscount = (plan: any) => {
-    if (plan.price_monthly === 0) return 0;
-    const monthlyTotal = plan.price_monthly * 12;
-    const yearly = plan.price_yearly;
-    if (monthlyTotal === 0 || yearly === 0) return 0;
+  const yearlyDiscount = (plan: PricingPlan) => {
+    const monthlyTotal = Number(plan.price_monthly) * 12;
+    const yearly = Number(plan.price_yearly);
+    if (!monthlyTotal || !yearly) return 0;
     return Math.round(((monthlyTotal - yearly) / monthlyTotal) * 100);
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
+    <div className="min-h-screen bg-[#f7f9fc] text-slate-950" dir="rtl">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center gap-3" aria-label="Vogantra">
+            <VogantraLogo variant="mark" className="h-9 w-9" />
+            <div className="text-left" dir="ltr">
+              <div className="text-base font-black tracking-[0.16em] text-[#07192f]">VOGANTRA</div>
+              <div className="text-[10px] font-semibold tracking-[0.11em] text-slate-500">TRAVEL OPERATING SYSTEM</div>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Vogantra
-            </span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link to="/login">
-              <Button variant="ghost" size="sm">تسجيل الدخول</Button>
+              <Button variant="ghost" size="sm" className="font-bold">تسجيل الدخول</Button>
             </Link>
             <Link to="/signup">
-              <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                ابدأ مجاناً
+              <Button size="sm" className="rounded-lg bg-blue-600 font-bold text-white hover:bg-blue-700">
+                ابدأ التجربة
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="pt-16 pb-8">
-        <div className="container mx-auto px-4 text-center">
-          <Badge variant="secondary" className="mb-4 px-4 py-1.5 text-sm">
-            <Sparkles className="w-4 h-4 ml-1 inline" />
-            14 يوم تجربة مجانية على جميع الخطط
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            خطط أسعار شفافة ومرنة
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            اختر الخطة المناسبة لحجم شركتك. جميع الخطط تتضمن فترة تجريبية مجانية لمدة 14 يوم.
-          </p>
-
-          {/* Toggle */}
-          <div className="flex items-center justify-center gap-3 mb-12">
-            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              شهري
-            </span>
-            <Switch checked={isYearly} onCheckedChange={setIsYearly} />
-            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              سنوي
-            </span>
-            {isYearly && (
-              <Badge className="bg-green-100 text-green-700 border-green-200">وفّر حتى 17%</Badge>
-            )}
+      <main>
+        <section className="relative overflow-hidden border-b border-slate-200 bg-[#07192f] py-20 text-white sm:py-24">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.28),transparent_32%),radial-gradient(circle_at_85%_30%,rgba(79,70,229,0.2),transparent_30%)]" />
+          <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+            <Badge className="border border-blue-400/30 bg-blue-500/15 px-4 py-1.5 text-blue-100 hover:bg-blue-500/15">
+              <Sparkles className="ml-1.5 h-4 w-4" />
+              14 يوم تجربة كاملة — وليست خطة مجانية دائمة
+            </Badge>
+            <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              سعر واضح على قد حجم شركتك.
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              كل باقة تشمل عدد مستخدمين كامل بسعر واحد؛ بدون تسعير مفاجئ لكل موظف وبدون رسوم على كل حجز.
+            </p>
+            <div className="mt-9 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2">
+              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${!isYearly ? 'bg-white text-slate-950' : 'text-slate-300'}`}>شهري</span>
+              <Switch checked={isYearly} onCheckedChange={setIsYearly} aria-label="التبديل بين الدفع الشهري والسنوي" />
+              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${isYearly ? 'bg-white text-slate-950' : 'text-slate-300'}`}>سنوي</span>
+              <Badge className="hidden bg-emerald-500 text-white hover:bg-emerald-500 sm:inline-flex">شهران هدية</Badge>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Plan Cards */}
-      <section className="pb-16">
-        <div className="container mx-auto px-4">
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           {isLoading ? (
-            <div className="text-center py-20 text-muted-foreground">جارٍ تحميل الخطط...</div>
+            <div className="py-24 text-center text-slate-500">جارٍ تحميل الخطط...</div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-              {plans?.map((plan) => {
-                const isRecommended = plan.name === RECOMMENDED_PLAN;
-                const discount = yearlyDiscount(plan);
-                const features = (plan.features as string[]) || [];
+            <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
+              {plans.map((plan) => {
+                const features = getFeatures(plan);
+                const included = FEATURES.filter((feature) => hasFeature(features, feature));
+                const recommended = plan.name === RECOMMENDED_PLAN;
+                const monthlyEquivalent = isYearly
+                  ? Math.round(Number(plan.price_yearly) / 12)
+                  : Number(plan.price_monthly);
+                const checkoutUrl = user
+                  ? `/payment?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`
+                  : `/signup?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`;
+                const meta = PLAN_META[plan.name] ?? {
+                  description: 'خطة مرنة لتشغيل شركتك على منصة واحدة.',
+                  audience: 'لفرق شركات السياحة',
+                };
 
                 return (
-                  <div
+                  <article
                     key={plan.id}
-                    className={`relative flex flex-col rounded-2xl border-2 bg-card transition-all duration-200 hover:shadow-xl ${
-                      isRecommended
-                        ? 'border-primary shadow-lg shadow-primary/10 scale-[1.02]'
-                        : 'border-border hover:border-muted-foreground/30'
+                    className={`relative flex flex-col overflow-hidden rounded-3xl border bg-white ${
+                      recommended
+                        ? 'border-blue-500 shadow-2xl shadow-blue-950/10 lg:-translate-y-3'
+                        : 'border-slate-200 shadow-lg shadow-slate-950/5'
                     }`}
                   >
-                    {isRecommended && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                        <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm shadow-md">
-                          <Sparkles className="w-3 h-3 ml-1" />
-                          الأكثر شعبية
-                        </Badge>
+                    {recommended && (
+                      <div className="bg-blue-600 py-2 text-center text-xs font-black tracking-wide text-white">
+                        الأكثر اختيارًا للشركات النامية
                       </div>
                     )}
+                    <div className="flex flex-1 flex-col p-6 sm:p-7">
+                      <div>
+                        <p className="text-sm font-bold text-blue-700">{meta.audience}</p>
+                        <h2 className="mt-2 text-3xl font-black text-[#07192f]">{plan.name_ar}</h2>
+                        <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600">{meta.description}</p>
+                      </div>
 
-                    <div className="p-6 pb-4">
-                      <h3 className="text-xl font-bold text-foreground">{plan.name_ar}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{plan.name}</p>
-
-                      <div className="mt-6 mb-2">
-                        <span className="text-4xl font-extrabold text-foreground">
-                          {formatPrice(plan)}
-                        </span>
-                        {plan.price_monthly > 0 && plan.name !== 'Enterprise' && (
-                          <span className="text-sm text-muted-foreground mr-1">
-                            ج.م/{isYearly ? 'سنوياً' : 'شهرياً'}
+                      <div className="mt-7 rounded-2xl bg-slate-50 p-5">
+                        <div className="flex items-end gap-2">
+                          <span className="text-4xl font-black tracking-tight text-[#07192f]">
+                            {monthlyEquivalent.toLocaleString('ar-EG')}
                           </span>
+                          <span className="pb-1 text-sm font-semibold text-slate-500">ج.م / شهر</span>
+                        </div>
+                        {isYearly ? (
+                          <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                            <span className="text-slate-500">يُدفع {Number(plan.price_yearly).toLocaleString('ar-EG')} ج.م سنويًا</span>
+                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">وفّر {yearlyDiscount(plan)}%</Badge>
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-xs text-slate-500">دفع شهري مرن</p>
                         )}
                       </div>
 
-                      {isYearly && discount > 0 && (
-                        <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
-                          وفّر {discount}%
-                        </Badge>
-                      )}
-                    </div>
+                      <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-xl border border-slate-200 p-3">
+                          <div className="text-lg font-black text-slate-950">{plan.max_users}</div>
+                          <div className="mt-1 text-[11px] text-slate-500">مستخدم</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 p-3">
+                          <div className="text-lg font-black text-slate-950">{Number(plan.max_bookings_per_month).toLocaleString('ar-EG')}</div>
+                          <div className="mt-1 text-[11px] text-slate-500">حجز/شهر</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 p-3">
+                          <div className="text-lg font-black text-slate-950">{formatStorage(plan.max_storage_mb)}</div>
+                          <div className="mt-1 text-[11px] text-slate-500">تخزين</div>
+                        </div>
+                      </div>
 
-                    {/* Limits */}
-                    <div className="px-6 py-4 border-t border-border space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">المستخدمون</span>
-                        <span className="font-semibold text-foreground">
-                          {plan.max_users >= 50 ? 'غير محدود' : `حتى ${plan.max_users}`}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">الحجوزات/شهر</span>
-                        <span className="font-semibold text-foreground">
-                          {plan.max_bookings_per_month >= 9999 ? 'غير محدود' : `حتى ${plan.max_bookings_per_month}`}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">التخزين</span>
-                        <span className="font-semibold text-foreground">{plan.max_storage_mb} MB</span>
-                      </div>
-                    </div>
-
-                    {/* Features */}
-                    <div className="px-6 py-4 border-t border-border flex-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        الميزات المتاحة
-                      </p>
-                      <ul className="space-y-2.5">
-                        {ALL_FEATURES.map((feat) => {
-                          const has = hasFeature(features, feat.key);
-                          return (
-                            <li key={feat.key} className="flex items-center gap-2 text-sm">
-                              {has ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                              ) : (
-                                <XCircle className="w-4 h-4 text-muted-foreground/30 shrink-0" />
-                              )}
-                              <span className={has ? 'text-foreground' : 'text-muted-foreground/50 line-through'}>
-                                {feat.label}
+                      <div className="mt-7 flex-1">
+                        <p className="text-sm font-black text-slate-950">أهم ما يشمله:</p>
+                        <ul className="mt-4 space-y-3">
+                          {included.slice(0, 8).map((feature) => (
+                            <li key={feature.label} className="flex items-start gap-2.5 text-sm leading-6 text-slate-700">
+                              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                                <Check className="h-3.5 w-3.5" />
                               </span>
+                              {feature.label}
                             </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
+                          ))}
+                        </ul>
+                        {included.length > 8 && (
+                          <p className="mt-3 text-xs font-bold text-blue-700">+ {included.length - 8} مميزات إضافية</p>
+                        )}
+                      </div>
 
-                    {/* CTA */}
-                    <div className="p-6 pt-4 border-t border-border">
-                      <Link to={plan.price_monthly === 0 ? '/signup' : `/payment?plan=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}`}>
+                      <Link to={checkoutUrl} className="mt-7">
                         <Button
-                          className={`w-full text-base ${
-                            isRecommended
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                              : ''
-                          }`}
-                          variant={isRecommended ? 'default' : 'outline'}
                           size="lg"
+                          className={`w-full rounded-xl font-black ${recommended ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                          variant={recommended ? 'default' : 'outline'}
                         >
-                          {plan.price_monthly === 0 ? 'ابدأ مجاناً' : 'اشترك الآن'}
-                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          {user ? 'اشترك الآن' : 'ابدأ تجربة 14 يومًا'}
+                          <ArrowLeft className="mr-2 h-4 w-4" />
                         </Button>
                       </Link>
-                      <p className="text-xs text-muted-foreground text-center mt-2">
-                        بدون بطاقة ائتمان • إلغاء في أي وقت
-                      </p>
+                      <p className="mt-3 text-center text-xs text-slate-500">بدون بطاقة للتجربة • لا تجديد تلقائي</p>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* Feature Comparison Table */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-12">مقارنة الميزات التفصيلية</h2>
-          <div className="max-w-5xl mx-auto overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-border">
-                  <th className="text-right py-4 px-4 text-sm font-semibold text-muted-foreground w-1/3">الميزة</th>
-                  {plans?.map((plan) => (
-                    <th key={plan.id} className="py-4 px-4 text-center">
-                      <div className={`text-sm font-bold ${plan.name === RECOMMENDED_PLAN ? 'text-primary' : 'text-foreground'}`}>
+        <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black text-blue-700">مقارنة الموديولات</p>
+              <h2 className="mt-3 text-3xl font-black text-[#07192f] sm:text-4xl">اعرف بالضبط ما الذي تدفع مقابله.</h2>
+            </div>
+            <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full min-w-[760px] border-collapse text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-5 py-4 text-right font-black text-slate-950">الموديول</th>
+                    {plans.map((plan) => (
+                      <th key={plan.id} className={`px-4 py-4 text-center font-black ${plan.name === RECOMMENDED_PLAN ? 'text-blue-700' : 'text-slate-950'}`}>
                         {plan.name_ar}
-                      </div>
-                      {plan.name === RECOMMENDED_PLAN && (
-                        <Badge variant="secondary" className="mt-1 text-xs">موصى به</Badge>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {/* Limits rows */}
-                <tr className="border-b border-border bg-muted/30">
-                  <td className="py-3 px-4 text-sm font-semibold text-foreground" colSpan={(plans?.length ?? 0) + 1}>
-                    الحدود
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-3 px-4 text-sm text-muted-foreground">عدد المستخدمين</td>
-                  {plans?.map((plan) => (
-                    <td key={plan.id} className="py-3 px-4 text-center text-sm font-medium text-foreground">
-                      {plan.max_users >= 50 ? '∞' : plan.max_users}
-                    </td>
-                  ))}
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-3 px-4 text-sm text-muted-foreground">الحجوزات الشهرية</td>
-                  {plans?.map((plan) => (
-                    <td key={plan.id} className="py-3 px-4 text-center text-sm font-medium text-foreground">
-                      {plan.max_bookings_per_month >= 9999 ? '∞' : plan.max_bookings_per_month}
-                    </td>
-                  ))}
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-3 px-4 text-sm text-muted-foreground">مساحة التخزين</td>
-                  {plans?.map((plan) => (
-                    <td key={plan.id} className="py-3 px-4 text-center text-sm font-medium text-foreground">
-                      {plan.max_storage_mb} MB
-                    </td>
-                  ))}
-                </tr>
-
-                {/* Features rows */}
-                <tr className="border-b border-border bg-muted/30">
-                  <td className="py-3 px-4 text-sm font-semibold text-foreground" colSpan={(plans?.length ?? 0) + 1}>
-                    الميزات
-                  </td>
-                </tr>
-                {ALL_FEATURES.map((feat) => (
-                  <tr key={feat.key} className="border-b border-border hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4 text-sm text-foreground flex items-center gap-2">
-                      <feat.icon className="w-4 h-4 text-muted-foreground" />
-                      {feat.label}
-                    </td>
-                    {plans?.map((plan) => {
-                      const features = (plan.features as string[]) || [];
-                      const has = hasFeature(features, feat.key);
-                      return (
-                        <td key={plan.id} className="py-3 px-4 text-center">
-                          {has ? (
-                            <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" />
-                          ) : (
-                            <XCircle className="w-5 h-5 text-muted-foreground/20 mx-auto" />
-                          )}
-                        </td>
-                      );
-                    })}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {FEATURES.map((feature) => {
+                    const Icon = feature.icon;
+                    return (
+                      <tr key={feature.label} className="border-t border-slate-200">
+                        <td className="px-5 py-4 text-slate-700">
+                          <div className="flex items-center gap-2.5">
+                            <Icon className="h-4 w-4 text-slate-500" />
+                            {feature.label}
+                          </div>
+                        </td>
+                        {plans.map((plan) => {
+                          const included = hasFeature(getFeatures(plan), feature);
+                          return (
+                            <td key={plan.id} className="px-4 py-4 text-center">
+                              {included ? (
+                                <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+                              ) : (
+                                <X className="mx-auto h-5 w-5 text-slate-300" />
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ / CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">لا تزال غير متأكد؟</h2>
-          <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-            جرّب أي خطة مجاناً لمدة 14 يوم. بدون بطاقة ائتمان، بدون التزامات.
-          </p>
-          <Link to="/signup">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8">
-              ابدأ التجربة المجانية الآن
-              <ArrowLeft className="w-5 h-5 mr-2" />
-            </Button>
-          </Link>
-        </div>
-      </section>
+        <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              {
+                question: 'هل توجد خطة مجانية؟',
+                answer: 'لا. يوجد Trial كامل لمدة 14 يومًا فقط، وبعده تختار إحدى الخطط المدفوعة للاستمرار.',
+              },
+              {
+                question: 'هل السعر لكل مستخدم؟',
+                answer: 'لا. كل خطة تشمل العدد المكتوب من المستخدمين بسعر واحد للشركة، وهو فرق مهم عن أغلب المنافسين العالميين.',
+              },
+              {
+                question: 'ماذا لو تجاوزنا 50 مستخدمًا؟',
+                answer: 'نجهّز عرضًا مخصصًا حسب عدد الفروع والمستخدمين وحجم التشغيل، مع خطة انتقال واضحة بدون فقد بيانات.',
+              },
+            ].map((item) => (
+              <div key={item.question} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <h3 className="mt-4 font-black text-slate-950">{item.question}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-slate-500">
+            <Headphones className="h-4 w-4 text-blue-600" />
+            التجهيز الأساسي ودعم بدء التشغيل مشمولان في كل الخطط.
+          </div>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="py-8 border-t border-border">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-slate-200 bg-white py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-sm text-slate-500 sm:flex-row sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} Vogantra. جميع الحقوق محفوظة.</p>
+          <div className="flex items-center gap-5">
+            <Link to="/" className="hover:text-blue-700">الرئيسية</Link>
+            <Link to="/privacy" className="hover:text-blue-700">الخصوصية</Link>
+            <Link to="/login" className="hover:text-blue-700">تسجيل الدخول</Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -20,6 +20,7 @@ import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
+import PlanAccessGuard from "@/components/subscription/PlanAccessGuard";
 import OnboardingGuard from "@/components/onboarding/OnboardingGuard";
 
 // Loading fallback
@@ -297,6 +298,7 @@ function App() {
                         <SubscriptionBanner />
                         <OptimizedErrorBoundary>
                           <SubscriptionRedirectGuard>
+                          <PlanAccessGuard>
                           <Suspense fallback={<PageLoader />}>
                           <Routes>
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
@@ -411,6 +413,7 @@ function App() {
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>
+                          </PlanAccessGuard>
                           </SubscriptionRedirectGuard>
                         </OptimizedErrorBoundary>
                     </DashboardLayout>

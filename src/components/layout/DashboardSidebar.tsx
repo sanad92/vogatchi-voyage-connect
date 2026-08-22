@@ -1,9 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
-import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useSupabasePermissions, type PermissionKey } from '@/hooks/useSupabasePermissions';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useHandoverInbox, useMyPendingAssignments } from '@/hooks/useSop';
+import { PLAN_FEATURES, PlanFeature } from '@/lib/planFeatures';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
@@ -23,7 +25,8 @@ interface NavItem {
   title: string;
   href: string;
   icon: React.ElementType;
-  requiredPermission?: string;
+  requiredPermission?: PermissionKey;
+  requiredFeature?: PlanFeature;
   badge?: string;
 }
 
@@ -31,7 +34,7 @@ interface NavGroup {
   label: string;
   icon: React.ElementType;
   items: NavItem[];
-  requiredPermission?: string;
+  requiredPermission?: PermissionKey;
 }
 
 // V1 Launch — Simplified sidebar. Only 10 core modules are exposed.
@@ -42,7 +45,7 @@ const navGroups: NavGroup[] = [
     icon: LayoutDashboard,
     items: [
       { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
-      { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', badge: 'AI' },
+      { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.AI_ASSISTANT, badge: 'AI' },
       { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
       { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
@@ -61,7 +64,7 @@ const navGroups: NavGroup[] = [
     label: 'التسويق',
     icon: Megaphone,
     items: [
-      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'admin_settings' },
+      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.MARKETING },
     ],
   },
   {
@@ -82,8 +85,8 @@ const navGroups: NavGroup[] = [
       { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, requiredPermission: 'quotes_view' },
       { title: 'الحجوزات', href: '/bookings', icon: ClipboardList, requiredPermission: 'bookings_view' },
       { title: 'الفواتير', href: '/invoices', icon: Receipt, requiredPermission: 'invoices_view' },
-      { title: 'المدفوعات والبنوك', href: '/bank-accounts', icon: CreditCard, requiredPermission: 'financial_view' },
-      { title: 'الاسترداد التاريخي', href: '/finance/historical-recovery', icon: History, requiredPermission: 'financial_view' },
+      { title: 'المدفوعات والبنوك', href: '/bank-accounts', icon: CreditCard, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE },
+      { title: 'الاسترداد التاريخي', href: '/finance/historical-recovery', icon: History, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE },
     ],
   },
   {
@@ -92,8 +95,8 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'العملاء', href: '/customers', icon: Users, requiredPermission: 'customers_view' },
       { title: 'CRM', href: '/crm', icon: UserCheck, requiredPermission: 'crm_view' },
-      { title: 'واتساب', href: '/whatsapp-inbox', icon: MessageSquare, requiredPermission: 'whatsapp_view' },
-      { title: 'إدارة واتساب', href: '/whatsapp-admin', icon: Settings, requiredPermission: 'whatsapp_admin' },
+      { title: 'واتساب', href: '/whatsapp-inbox', icon: MessageSquare, requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP },
+      { title: 'إدارة واتساب', href: '/whatsapp-admin', icon: Settings, requiredPermission: 'whatsapp_admin', requiredFeature: PLAN_FEATURES.WHATSAPP },
     ],
   },
   {
@@ -101,7 +104,7 @@ const navGroups: NavGroup[] = [
     icon: BarChart3,
     items: [
       { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
-      { title: 'مؤشرات صحة الأعمال', href: '/reports/business-health', icon: BarChart3, requiredPermission: 'reports_view' },
+      { title: 'مؤشرات صحة الأعمال', href: '/reports/business-health', icon: BarChart3, requiredPermission: 'reports_view', requiredFeature: PLAN_FEATURES.ADVANCED_REPORTS },
     ],
   },
   {
@@ -127,6 +130,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   const { user, profile, isSuperAdmin } = useOptimizedAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { hasPermission } = useSupabasePermissions();
+  const { hasFeature } = useSubscription();
   const { data: handoverInbox } = useHandoverInbox();
   const { data: pendingAssignments } = useMyPendingAssignments();
   const pendingHandovers = (handoverInbox?.incoming?.length || 0) + (pendingAssignments?.length || 0);
@@ -168,16 +172,17 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
 
-  const canAccessItem = (item: NavItem): boolean => {
+  const canAccessItem = useCallback((item: NavItem): boolean => {
     if (isSuperAdmin()) return true;
+    if (item.requiredFeature && !hasFeature(item.requiredFeature)) return false;
     if (!item.requiredPermission) return true;
-    return hasPermission(item.requiredPermission as any);
-  };
+    return hasPermission(item.requiredPermission);
+  }, [hasFeature, hasPermission, isSuperAdmin]);
 
-  const canAccessGroup = (group: NavGroup): boolean => {
+  const canAccessGroup = useCallback((group: NavGroup): boolean => {
     if (isSuperAdmin()) return true;
     return group.items.some(item => canAccessItem(item));
-  };
+  }, [canAccessItem, isSuperAdmin]);
 
   // Resolve favorite items by looking them up across all groups
   const favoriteItems = useMemo(() => {
@@ -185,7 +190,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     return favorites
       .map((href) => flat.find((it) => it.href === href))
       .filter((it): it is NavItem => !!it && canAccessItem(it));
-  }, [favorites, allGroups, isSuperAdmin, hasPermission]);
+  }, [favorites, allGroups, canAccessItem]);
 
   const sidebarContent = (
 

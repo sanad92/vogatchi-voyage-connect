@@ -27,7 +27,7 @@ type PermissionCategory =
 
 type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'advanced';
 
-type PermissionKey = `${PermissionCategory}_${PermissionAction}` 
+export type PermissionKey = `${PermissionCategory}_${PermissionAction}`
   | 'invoices_send' | 'invoices_payment' 
   | 'bookings_cancel' | 'bookings_confirm' 
   | 'suppliers_contracts' 

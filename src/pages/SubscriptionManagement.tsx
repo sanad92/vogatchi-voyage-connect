@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,6 +61,7 @@ const SubscriptionManagement = () => {
         .from('subscription_plans')
         .select('*')
         .eq('is_active', true)
+        .gt('price_monthly', 0)
         .order('price_monthly', { ascending: true });
       return data ?? [];
     },
@@ -97,14 +98,14 @@ const SubscriptionManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['my-subscription-full'] });
       refetchSub();
     },
-    onError: (err: any) => toast.error(err.message || 'فشل في إلغاء الاشتراك'),
+    onError: (error: unknown) => toast.error(error instanceof Error ? error.message : 'فشل في إلغاء الاشتراك'),
   });
 
-  const plan = (currentSub as any)?.subscription_plans;
+  const plan = currentSub?.subscription_plans;
   const status = currentSub?.status;
   const expiresAt = currentSub?.expires_at;
 
-  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any }> = {
+  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: ElementType }> = {
     active: { label: 'نشط', variant: 'default', icon: CheckCircle2 },
     trialing: { label: 'فترة تجريبية', variant: 'secondary', icon: Clock },
     expired: { label: 'منتهي', variant: 'destructive', icon: XCircle },
@@ -169,7 +170,7 @@ const SubscriptionManagement = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">السعر الشهري</span>
                   <span className="font-semibold text-foreground">
-                    {plan.price_monthly === 0 ? 'مجاني' : `${plan.price_monthly?.toLocaleString('ar-EG')} ج.م/شهر`}
+                    {plan.price_monthly === 0 ? 'خطة قديمة متوقفة' : `${plan.price_monthly?.toLocaleString('ar-EG')} ج.م/شهر`}
                   </span>
                 </div>
 
@@ -284,7 +285,7 @@ const SubscriptionManagement = () => {
           <CardContent>
             {transactions && transactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((tx: any) => (
+                {transactions.map((tx) => (
                   <div
                     key={tx.id}
                     className="flex items-center justify-between border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
