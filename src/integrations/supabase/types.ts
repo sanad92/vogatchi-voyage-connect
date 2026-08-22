@@ -4680,6 +4680,50 @@ export type Database = {
           },
         ]
       }
+      financial_repair_audit: {
+        Row: {
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: number
+          migration_key: string
+          organization_id: string | null
+          reason: string
+        }
+        Insert: {
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: number
+          migration_key: string
+          organization_id?: string | null
+          reason: string
+        }
+        Update: {
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: number
+          migration_key?: string
+          organization_id?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_repair_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_year_closures: {
         Row: {
           closed_at: string | null
@@ -7011,76 +7055,171 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_checkout_sessions: {
+        Row: {
+          amount_cents: number
+          billing_cycle: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          expires_at: string
+          id: string
+          merchant_order_id: string
+          organization_id: string
+          paymob_order_id: string | null
+          plan_id: string
+          provider_transaction_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          billing_cycle: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string
+          id?: string
+          merchant_order_id: string
+          organization_id: string
+          paymob_order_id?: string | null
+          plan_id: string
+          provider_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          billing_cycle?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string
+          id?: string
+          merchant_order_id?: string
+          organization_id?: string
+          paymob_order_id?: string | null
+          plan_id?: string
+          provider_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_checkout_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_checkout_sessions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_transactions: {
         Row: {
           amount_cents: number
+          billing_cycle: string | null
           billing_email: string | null
           billing_name: string | null
           billing_phone: string | null
           card_brand: string | null
           card_last_four: string | null
+          checkout_session_id: string | null
           created_at: string
           currency: string | null
           error_message: string | null
+          expected_amount_cents: number | null
           hmac_valid: boolean | null
           id: string
           organization_id: string | null
           payment_method: string | null
           paymob_order_id: string | null
           paymob_transaction_id: string | null
+          plan_id: string | null
           processed_at: string | null
           raw_payload: Json | null
           status: string
+          subscription_activated_at: string | null
           updated_at: string
         }
         Insert: {
           amount_cents: number
+          billing_cycle?: string | null
           billing_email?: string | null
           billing_name?: string | null
           billing_phone?: string | null
           card_brand?: string | null
           card_last_four?: string | null
+          checkout_session_id?: string | null
           created_at?: string
           currency?: string | null
           error_message?: string | null
+          expected_amount_cents?: number | null
           hmac_valid?: boolean | null
           id?: string
           organization_id?: string | null
           payment_method?: string | null
           paymob_order_id?: string | null
           paymob_transaction_id?: string | null
+          plan_id?: string | null
           processed_at?: string | null
           raw_payload?: Json | null
           status?: string
+          subscription_activated_at?: string | null
           updated_at?: string
         }
         Update: {
           amount_cents?: number
+          billing_cycle?: string | null
           billing_email?: string | null
           billing_name?: string | null
           billing_phone?: string | null
           card_brand?: string | null
           card_last_four?: string | null
+          checkout_session_id?: string | null
           created_at?: string
           currency?: string | null
           error_message?: string | null
+          expected_amount_cents?: number | null
           hmac_valid?: boolean | null
           id?: string
           organization_id?: string | null
           payment_method?: string | null
           paymob_order_id?: string | null
           paymob_transaction_id?: string | null
+          plan_id?: string | null
           processed_at?: string | null
           raw_payload?: Json | null
           status?: string
+          subscription_activated_at?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_transactions_checkout_session_id_fkey"
+            columns: ["checkout_session_id"]
+            isOneToOne: false
+            referencedRelation: "payment_checkout_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_transactions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -7438,6 +7577,7 @@ export type Database = {
       }
       refund_requests: {
         Row: {
+          advance_component: number
           amount: number
           amount_base: number
           approved_at: string | null
@@ -7454,12 +7594,14 @@ export type Database = {
           reason: string | null
           rejection_reason: string | null
           requested_by: string | null
+          sales_return_component: number
           source_payment_id: string | null
           status: string
           treasury_account_id: string | null
           updated_at: string
         }
         Insert: {
+          advance_component?: number
           amount: number
           amount_base: number
           approved_at?: string | null
@@ -7476,12 +7618,14 @@ export type Database = {
           reason?: string | null
           rejection_reason?: string | null
           requested_by?: string | null
+          sales_return_component?: number
           source_payment_id?: string | null
           status?: string
           treasury_account_id?: string | null
           updated_at?: string
         }
         Update: {
+          advance_component?: number
           amount?: number
           amount_base?: number
           approved_at?: string | null
@@ -7498,6 +7642,7 @@ export type Database = {
           reason?: string | null
           rejection_reason?: string | null
           requested_by?: string | null
+          sales_return_component?: number
           source_payment_id?: string | null
           status?: string
           treasury_account_id?: string | null
@@ -9542,6 +9687,7 @@ export type Database = {
           reference_number: string | null
           status: string | null
           supplier_id: string | null
+          treasury_account_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -9563,6 +9709,7 @@ export type Database = {
           reference_number?: string | null
           status?: string | null
           supplier_id?: string | null
+          treasury_account_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -9584,6 +9731,7 @@ export type Database = {
           reference_number?: string | null
           status?: string | null
           supplier_id?: string | null
+          treasury_account_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -9592,6 +9740,13 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_treasury_account_id_fkey"
+            columns: ["treasury_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -12132,6 +12287,7 @@ export type Database = {
       }
     }
     Functions: {
+      _can_manage_refunds: { Args: { _org_id: string }; Returns: boolean }
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
       _next_entry_number: { Args: { _org: string }; Returns: string }
       _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
@@ -12157,6 +12313,10 @@ export type Database = {
         Returns: undefined
       }
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      activate_subscription_from_paymob: {
+        Args: { _paymob_transaction_id: string }
+        Returns: boolean
+      }
       advance_workflow: {
         Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
         Returns: Json
@@ -12214,6 +12374,7 @@ export type Database = {
       backfill_journals: {
         Args: { _org_id: string }
         Returns: {
+          bookings_posted: number
           customer_payments_posted: number
           expenses_posted: number
           invoices_posted: number
@@ -12223,6 +12384,47 @@ export type Database = {
       booking_make_journal: {
         Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
         Returns: undefined
+      }
+      calculate_employee_bookings_profit:
+        | {
+            Args: {
+              p_employee_id: string
+              p_period_end: string
+              p_period_start: string
+            }
+            Returns: {
+              booking_amount: number
+              booking_date: string
+              booking_id: string
+              booking_type: string
+              profit: number
+              supplier_cost: number
+            }[]
+          }
+        | {
+            Args: {
+              p_currency?: string
+              p_employee_id: string
+              p_period_end: string
+              p_period_start: string
+            }
+            Returns: {
+              booking_amount: number
+              booking_date: string
+              booking_id: string
+              booking_type: string
+              currency: string
+              profit: number
+              supplier_cost: number
+            }[]
+          }
+      calculate_employee_commission: {
+        Args: {
+          p_booking_amount: number
+          p_commission_rate?: number
+          p_employee_id: string
+        }
+        Returns: number
       }
       calculate_monthly_salary: {
         Args: {
@@ -12235,12 +12437,20 @@ export type Database = {
         }
         Returns: Json
       }
+      can_manage_customers: { Args: never; Returns: boolean }
+      can_org_write: { Args: { _org_id: string }; Returns: boolean }
+      cancel_commission: {
+        Args: { p_commission_id: string; p_reason?: string }
+        Returns: boolean
+      }
       cancel_organization_invitation: {
         Args: { _invitation_id: string }
         Returns: Json
       }
-      can_manage_customers: { Args: never; Returns: boolean }
-      can_org_write: { Args: { _org_id: string }; Returns: boolean }
+      check_employee_deletion: {
+        Args: { p_employee_id: string }
+        Returns: Json
+      }
       check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
       check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
       claim_due_whatsapp_followups: {
@@ -12292,6 +12502,14 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      create_booking_commission: {
+        Args: {
+          p_booking_id: string
+          p_commission_rate?: number
+          p_employee_id: string
+        }
+        Returns: string
+      }
       create_manual_journal_entry: {
         Args: {
           _description: string
@@ -12404,6 +12622,16 @@ export type Database = {
         Args: { _org_id: string }
         Returns: string
       }
+      generate_period_commission: {
+        Args: {
+          p_currency?: string
+          p_employee_id: string
+          p_notes?: string
+          p_period_end: string
+          p_period_start: string
+        }
+        Returns: Json
+      }
       generate_quote_number: { Args: never; Returns: string }
       generate_zatca_qr: { Args: { _invoice_id: string }; Returns: Json }
       get_account_balance: {
@@ -12507,6 +12735,20 @@ export type Database = {
           total_due: number
         }[]
       }
+      get_customer_aging_by_currency: {
+        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
+        Returns: {
+          currency: string
+          current_due: number
+          customer_id: string
+          customer_name: string
+          days_30: number
+          days_60: number
+          days_90: number
+          days_over_90: number
+          total_due: number
+        }[]
+      }
       get_customer_ledger: {
         Args: { _customer_id: string; _from?: string; _to?: string }
         Returns: {
@@ -12533,6 +12775,7 @@ export type Database = {
         Args: { _from?: string; _org: string; _to?: string }
         Returns: Json
       }
+      get_financial_launch_health: { Args: { _org_id: string }; Returns: Json }
       get_general_ledger: {
         Args: {
           _account_id: string
@@ -12687,6 +12930,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      html_escape: { Args: { _value: string }; Returns: string }
       is_org_expired: { Args: { _org_id: string }; Returns: boolean }
       is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -12695,13 +12939,24 @@ export type Database = {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
       }
+      log_admin_action: {
+        Args: {
+          p_action_type: string
+          p_description?: string
+          p_new_values?: Json
+          p_old_values?: Json
+          p_target_id?: string
+          p_target_table?: string
+        }
+        Returns: undefined
+      }
       manage_organization_member: {
         Args: {
-          _is_active?: boolean | null
+          _is_active?: boolean
           _membership_id: string
-          _new_role?: Database["public"]["Enums"]["org_role"] | null
-          _note?: string | null
-          _termination_date?: string | null
+          _new_role?: Database["public"]["Enums"]["org_role"]
+          _note?: string
+          _termination_date?: string
         }
         Returns: Json
       }
@@ -12741,20 +12996,26 @@ export type Database = {
         }
         Returns: undefined
       }
-      prepare_subscription_checkout: {
-        Args: {
-          _billing_cycle: string
-          _organization_id: string
-          _plan_id: string
-        }
-        Returns: Json
+      post_booking_cost: { Args: { _booking_id: string }; Returns: string }
+      post_commission_period_accrual: {
+        Args: { _period_id: string }
+        Returns: string
+      }
+      post_commission_period_payment: {
+        Args: { _period_id: string }
+        Returns: string
       }
       post_customer_payment: { Args: { _payment_id: string }; Returns: string }
+      post_customer_refund: { Args: { _refund_id: string }; Returns: string }
       post_expense_transaction: {
         Args: { _expense_id: string }
         Returns: string
       }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
+      post_invoice_legacy_receipt: {
+        Args: { _invoice_id: string }
+        Returns: string
+      }
       post_journal_entry:
         | {
             Args: {
@@ -12780,9 +13041,21 @@ export type Database = {
             Returns: string
           }
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
+      prepare_subscription_checkout: {
+        Args: {
+          _billing_cycle: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
+      }
       process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
       process_journey_enrollments: {
         Args: { p_limit?: number }
+        Returns: number
+      }
+      queue_organization_invitation_email: {
+        Args: { _invitation_id: string }
         Returns: number
       }
       read_email_batch: {
@@ -12859,6 +13132,14 @@ export type Database = {
       run_booking_automation: {
         Args: { p_booking_id: string }
         Returns: string
+      }
+      safe_delete_employee: {
+        Args: {
+          p_employee_id: string
+          p_force_delete?: boolean
+          p_reason?: string
+        }
+        Returns: Json
       }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
@@ -13077,6 +13358,10 @@ export type Database = {
       }
       stop_impersonation: { Args: never; Returns: undefined }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
+      toggle_employee_status: {
+        Args: { p_employee_id: string; p_is_active: boolean; p_reason?: string }
+        Returns: Json
+      }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
       unpost_journal: {
         Args: { _source_id: string; _source_type: string }
@@ -13091,6 +13376,17 @@ export type Database = {
           p_status_id?: string
         }
         Returns: boolean
+      }
+      update_period_commission_status: {
+        Args: {
+          p_bank_account_id?: string
+          p_commission_period_id: string
+          p_notes?: string
+          p_payment_date?: string
+          p_payment_method?: string
+          p_status: string
+        }
+        Returns: Json
       }
       update_salary_status: {
         Args: {
@@ -13112,6 +13408,15 @@ export type Database = {
         Returns: boolean
       }
       user_has_any_org: { Args: never; Returns: boolean }
+      validate_employee_commissions: {
+        Args: { p_employee_id: string }
+        Returns: {
+          actual_amount: number
+          commission_id: string
+          expected_amount: number
+          issue: string
+        }[]
+      }
       wa_count_placeholders: { Args: { _text: string }; Returns: number }
       whatsapp_window_open: {
         Args: { _conversation_id: string }
@@ -13161,9 +13466,9 @@ export type Database = {
         | "sales"
         | "reservations"
         | "operations"
+        | "management"
         | "marketing"
         | "finance"
-        | "management"
       sop_handover_type:
         | "cs_to_sales"
         | "sales_to_reservations"
@@ -13363,9 +13668,9 @@ export const Constants = {
         "sales",
         "reservations",
         "operations",
+        "management",
         "marketing",
         "finance",
-        "management",
       ],
       sop_handover_type: [
         "cs_to_sales",
