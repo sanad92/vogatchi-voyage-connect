@@ -10,7 +10,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_ROLES = ['admin', 'manager', 'sales_agent', 'accountant', 'viewer', 'super_admin'] as const;
-const VALID_ORG_ROLES = ['owner', 'admin', 'manager', 'agent', 'viewer'] as const;
+const VALID_ORG_ROLES = ['admin', 'manager', 'agent', 'viewer'] as const;
 
 async function isPlatformAdmin(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase.rpc('is_platform_admin', { _user_id: userId });
@@ -107,6 +107,19 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // Team identities are never created or recycled by an administrator.
+    // Members join through the invitation flow and own their credentials.
+    if (action === 'create_team_member' || action === 'reassign_team_seat') {
+      return new Response(JSON.stringify([{
+        success: false,
+        code: 'INVITATION_REQUIRED',
+        message: 'إضافة أعضاء الفريق متاحة بالدعوة فقط',
+      }]), {
+        status: 410,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     switch (action) {
       case "create_user": {
         // Platform-level user creation is restricted to platform admins to prevent
@@ -168,7 +181,6 @@ Deno.serve(async (req) => {
               full_name: full_name.trim(),
               department: department?.trim() || null,
               phone: phone?.trim() || null,
-              role: role || 'viewer',
             })
             .eq('id', newUser.user.id);
         }
@@ -180,6 +192,13 @@ Deno.serve(async (req) => {
 
       case "reset_password": {
         const { user_id, new_password } = body;
+
+        if (!(await isPlatformAdmin(supabase, user.id))) {
+          return new Response(JSON.stringify([{ success: false, message: "استخدم مسار نسيت كلمة المرور؛ لا يمكن لمدير المؤسسة تعيين كلمة مرور مستخدم آخر" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         if (!user_id || typeof user_id !== 'string') {
           return new Response(JSON.stringify([{ success: false, message: "معرف المستخدم مطلوب" }]), {
@@ -217,6 +236,13 @@ Deno.serve(async (req) => {
 
       case "update_profile": {
         const { user_id, email: newEmail, full_name, department, phone, is_active } = body;
+
+        if (!(await isPlatformAdmin(supabase, user.id))) {
+          return new Response(JSON.stringify([{ success: false, message: "تعديل هوية المستخدم متاح لإدارة المنصة فقط" }]), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         if (!user_id || typeof user_id !== 'string') {
           return new Response(JSON.stringify([{ success: false, message: "معرف المستخدم مطلوب" }]), {

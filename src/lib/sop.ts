@@ -5,6 +5,8 @@ export type SopDepartment =
   | 'sales'
   | 'reservations'
   | 'operations'
+  | 'marketing'
+  | 'finance'
   | 'management';
 
 export type SopLeadStage =
@@ -46,6 +48,8 @@ export const DEPARTMENT_LABELS: Record<SopDepartment, string> = {
   sales: 'المبيعات',
   reservations: 'الحجوزات',
   operations: 'التشغيل',
+  marketing: 'التسويق',
+  finance: 'المالية',
   management: 'الإدارة',
 };
 

@@ -20,7 +20,7 @@ const OffboardMemberDialog = ({ member, onClose }: Props) => {
   const submit = async () => {
     if (!member) return;
     const res = await offboardMember.mutateAsync({
-      userId: member.user_id,
+      membershipId: member.membership_id,
       terminationDate: date,
       note: note.trim() || undefined,
     });

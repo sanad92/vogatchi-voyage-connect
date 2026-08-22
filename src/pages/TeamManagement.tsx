@@ -1,25 +1,24 @@
 import { useState } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useOrgMembers } from '@/hooks/useOrgMembers';
 import { useTeamManagement } from '@/hooks/useTeamManagement';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Users, Mail, Settings2 } from 'lucide-react';
+import { UserPlus, Users, Mail } from 'lucide-react';
 import TeamMembersTable from '@/components/team/TeamMembersTable';
-import AddTeamMemberWizard from '@/components/team/AddTeamMemberWizard';
 import InvitationManager from '@/components/invitations/InvitationManager';
 import SeatUsageBar from '@/components/team/SeatUsageBar';
-import UnifiedUserEmployeeManagement from '@/components/admin/UnifiedUserEmployeeManagement';
 
 const TeamManagement = () => {
-  const { user, hasRole } = useOptimizedAuth();
-  const { isOwner } = useOrgMembers();
+  const { user } = useOptimizedAuth();
   const { members } = useTeamManagement();
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const { canInviteMembers, canManageRoles } = useSupabasePermissions();
+  const [activeTab, setActiveTab] = useState('members');
 
-  const canManage = isOwner || hasRole('admin');
+  const canInvite = canInviteMembers();
+  const canManage = canManageRoles();
   const activeCount = members.filter((m) => m.is_active).length;
 
   return (
@@ -36,18 +35,18 @@ const TeamManagement = () => {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">{activeCount} / {members.length} عضو نشط</Badge>
-          {canManage && (
-            <Button onClick={() => setWizardOpen(true)}>
+          {canInvite && (
+            <Button onClick={() => setActiveTab('invitations')}>
               <UserPlus className="w-4 h-4 ml-2" />
-              إضافة عضو
+              دعوة عضو
             </Button>
           )}
         </div>
       </div>
 
-      {canManage && <SeatUsageBar />}
+      {canInvite && <SeatUsageBar />}
 
-      <Tabs defaultValue="members">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="members">
             <Users className="w-4 h-4 ml-1" /> الأعضاء
@@ -55,11 +54,6 @@ const TeamManagement = () => {
           <TabsTrigger value="invitations">
             <Mail className="w-4 h-4 ml-1" /> الدعوات
           </TabsTrigger>
-          {canManage && (
-            <TabsTrigger value="advanced">
-              <Settings2 className="w-4 h-4 ml-1" /> الإدارة المتقدمة
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="members" className="mt-4">
@@ -74,7 +68,7 @@ const TeamManagement = () => {
         </TabsContent>
 
         <TabsContent value="invitations" className="mt-4">
-          {canManage ? (
+          {canInvite ? (
             <InvitationManager />
           ) : (
             <Card>
@@ -85,27 +79,7 @@ const TeamManagement = () => {
           )}
         </TabsContent>
 
-        {canManage && (
-          <TabsContent value="advanced" className="mt-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-primary" />
-                  الإدارة المتقدمة للمستخدمين والموظفين
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ربط المستخدمين بسجلات الموظفين، تعديل بيانات HR، وإدارة الحسابات غير المرتبطة
-                </p>
-              </CardHeader>
-              <CardContent>
-                <UnifiedUserEmployeeManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
-
-      <AddTeamMemberWizard open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   );
 };

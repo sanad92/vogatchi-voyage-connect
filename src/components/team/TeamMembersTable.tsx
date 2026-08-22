@@ -5,14 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, KeyRound, UserMinus, Power, Edit, Crown, Shield, Briefcase, UserCheck, Eye, LogOut } from 'lucide-react';
+import { MoreHorizontal, UserMinus, Power, Crown, Shield, Briefcase, UserCheck, Eye, LogOut, type LucideIcon } from 'lucide-react';
 import { useTeamManagement, TeamMember } from '@/hooks/useTeamManagement';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import type { OrgRole } from '@/lib/accessControl';
 import { useSopDepartmentMembers, useUpsertDepartmentMember, useRemoveDepartmentMember } from '@/hooks/useSop';
 import { DEPARTMENT_LABELS, SopDepartment } from '@/lib/sop';
-import EditMemberDialog from './EditMemberDialog';
 import OffboardMemberDialog from './OffboardMemberDialog';
 
-const ROLE_META: Record<string, { label: string; icon: any; color: string }> = {
+const ROLE_META: Record<string, { label: string; icon: LucideIcon; color: string }> = {
   owner: { label: 'مالك', icon: Crown, color: 'text-amber-600' },
   admin: { label: 'مدير', icon: Shield, color: 'text-blue-600' },
   manager: { label: 'مشرف', icon: Briefcase, color: 'text-green-600' },
@@ -27,6 +28,7 @@ interface Props {
 
 const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
+  const { userRole } = useOptimizedAuth();
   const { data: deptMembers = [] } = useSopDepartmentMembers();
   const addDepartment = useUpsertDepartmentMember();
   const removeDepartment = useRemoveDepartmentMember();
@@ -35,7 +37,6 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
     return acc;
   }, {});
 
-  const [editing, setEditing] = useState<TeamMember | null>(null);
   const [offboarding, setOffboarding] = useState<TeamMember | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
 
@@ -71,7 +72,10 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
               const RoleIcon = meta.icon;
               const isMe = m.user_id === currentUserId;
               const isOwnerRow = m.role === 'owner';
-              const editable = canManage && !isMe && !isOwnerRow;
+              const editable = canManage
+                && !isMe
+                && !isOwnerRow
+                && (m.role !== 'admin' || userRole === 'owner');
 
               return (
                 <TableRow key={m.membership_id} className={!m.is_active ? 'opacity-60' : ''}>
@@ -95,7 +99,7 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                     {editable ? (
                       <Select
                         value={m.role}
-                        onValueChange={(v) => updateRole.mutate({ membershipId: m.membership_id, newRole: v })}
+                        onValueChange={(v) => updateRole.mutate({ membershipId: m.membership_id, newRole: v as OrgRole })}
                         disabled={updateRole.isPending}
                       >
                         <SelectTrigger className="w-28 h-8">
@@ -103,7 +107,7 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(ROLE_META)
-                            .filter(([k]) => k !== 'owner')
+                            .filter(([k]) => k !== 'owner' && (k !== 'admin' || userRole === 'owner'))
                             .map(([k, v]) => (
                               <SelectItem key={k} value={k}>{v.label}</SelectItem>
                             ))}
@@ -178,9 +182,6 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditing(m)}>
-                            <Edit className="w-4 h-4 ml-2" /> تعديل / كلمة المرور
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleActive.mutate({ membershipId: m.membership_id, isActive: !m.is_active })}>
                             <Power className="w-4 h-4 ml-2" /> {m.is_active ? 'إيقاف' : 'تفعيل'}
                           </DropdownMenuItem>
@@ -203,8 +204,6 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
           </TableBody>
         </Table>
       </div>
-
-      <EditMemberDialog member={editing} onClose={() => setEditing(null)} />
 
       <OffboardMemberDialog member={offboarding} onClose={() => setOffboarding(null)} />
 

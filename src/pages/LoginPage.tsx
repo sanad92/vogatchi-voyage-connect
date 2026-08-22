@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
+import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +20,8 @@ const LoginPage = () => {
   const { signIn, signOut, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
+  const [searchParams] = useSearchParams();
+  const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
 
   if (loading || orgLoading || platformLoading) {
     return (
@@ -32,6 +35,7 @@ const LoginPage = () => {
   }
 
   if (isLoggedIn()) {
+    if (requestedRedirect) return <Navigate to={requestedRedirect} replace />;
     // Pure platform admin (no org) → go straight to platform
     if (isPlatformAdmin && !hasOrganization) return <Navigate to="/platform" replace />;
     if (!hasOrganization) return <Navigate to="/create-organization" replace />;
@@ -151,7 +155,10 @@ const LoginPage = () => {
 
         <div className="text-center text-sm text-muted-foreground">
           ليس لديك حساب؟{' '}
-          <Link to="/signup" className="text-primary font-semibold hover:underline">
+          <Link
+            to={requestedRedirect ? `/signup?redirect=${encodeURIComponent(requestedRedirect)}` : '/signup'}
+            className="text-primary font-semibold hover:underline"
+          >
             أنشئ حساب جديد
           </Link>
         </div>

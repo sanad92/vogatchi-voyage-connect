@@ -34,8 +34,12 @@ const InvitationManager = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    await sendInvitation.mutateAsync({ email: email.trim(), role });
-    setEmail('');
+    try {
+      await sendInvitation.mutateAsync({ email: email.trim(), role });
+      setEmail('');
+    } catch {
+      // The mutation shows the server-safe error message.
+    }
   };
 
   const copyInviteLink = (token: string) => {
@@ -101,7 +105,7 @@ const InvitationManager = () => {
             <div className="text-center py-8 text-muted-foreground">لا توجد دعوات بعد</div>
           ) : (
             <div className="space-y-3">
-              {invitations.map((inv: any) => {
+              {invitations.map((inv) => {
                 const status = STATUS_CONFIG[inv.status] || STATUS_CONFIG.pending;
                 const isExpired = inv.status === 'pending' && new Date(inv.expires_at) < new Date();
                 const displayStatus = isExpired ? STATUS_CONFIG.expired : status;

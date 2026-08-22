@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import {
 import { Users, Plus, Loader2, Trash2 } from 'lucide-react';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import AddTeamMemberWizard from '@/components/team/AddTeamMemberWizard';
+import type { OrgRole } from '@/lib/accessControl';
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'مالك',
@@ -26,7 +27,7 @@ const CS_ROLES = ['agent', 'manager', 'admin', 'owner'];
 export const WhatsAppEmployeeManagement: React.FC = () => {
   const { members, isLoading, updateRole, removeMember, isOwner } = useOrgMembers();
   const { hasRole } = useOptimizedAuth();
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const navigate = useNavigate();
 
   const canManage = isOwner || hasRole('admin');
   const staff = members.filter((m) => CS_ROLES.includes(m.role));
@@ -45,9 +46,9 @@ export const WhatsAppEmployeeManagement: React.FC = () => {
         </div>
 
         {canManage && (
-          <Button className="flex items-center gap-2" onClick={() => setWizardOpen(true)}>
+          <Button className="flex items-center gap-2" onClick={() => navigate('/team')}>
             <Plus className="w-4 h-4" />
-            إضافة موظف
+            دعوة موظف
           </Button>
         )}
       </div>
@@ -71,8 +72,8 @@ export const WhatsAppEmployeeManagement: React.FC = () => {
                 ابدأ بإضافة موظفين لخدمة العملاء
               </p>
               {canManage && (
-                <Button onClick={() => setWizardOpen(true)}>
-                  إضافة موظف جديد
+                <Button onClick={() => navigate('/team')}>
+                  دعوة موظف جديد
                 </Button>
               )}
             </div>
@@ -100,7 +101,7 @@ export const WhatsAppEmployeeManagement: React.FC = () => {
                         <Select
                           value={m.role}
                           onValueChange={(v) =>
-                            updateRole.mutate({ memberId: m.id, newRole: v })
+                            updateRole.mutate({ memberId: m.id, newRole: v as OrgRole })
                           }
                         >
                           <SelectTrigger className="w-32">
@@ -138,8 +139,6 @@ export const WhatsAppEmployeeManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      <AddTeamMemberWizard open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   );
 };

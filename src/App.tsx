@@ -351,7 +351,7 @@ function App() {
                               
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
-                              <Route path="/team" element={<TeamManagement />} />
+                              <Route path="/team" element={<PermissionRouteGuard requiredPermission="team_view"><TeamManagement /></PermissionRouteGuard>} />
                              <Route path="/whatsapp" element={<Navigate to="/whatsapp-inbox" replace />} />
                              <Route path="/whatsapp-inbox" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppInbox /></PermissionRouteGuard>} />
                              <Route path="/whatsapp-inbox/:conversationId" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppConversationDetail /></PermissionRouteGuard>} />
@@ -362,8 +362,8 @@ function App() {
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
                               <Route path="/document-center" element={<PermissionRouteGuard requiredPermission="documents_view"><DocumentCenter /></PermissionRouteGuard>} />
-                              <Route path="/marketing/journeys" element={<PermissionRouteGuard requiredPermission="admin_settings"><MarketingJourneys /></PermissionRouteGuard>} />
-                              <Route path="/marketing/journeys/:id" element={<PermissionRouteGuard requiredPermission="admin_settings"><JourneyEditor /></PermissionRouteGuard>} />
+                              <Route path="/marketing/journeys" element={<PermissionRouteGuard requiredPermission="marketing_view"><MarketingJourneys /></PermissionRouteGuard>} />
+                              <Route path="/marketing/journeys/:id" element={<PermissionRouteGuard requiredPermission="marketing_edit"><JourneyEditor /></PermissionRouteGuard>} />
                               <Route path="/audit-log" element={<PermissionRouteGuard requiredPermission="audit_view"><AuditLog /></PermissionRouteGuard>} />
                               <Route path="/export-center" element={<PermissionRouteGuard requiredPermission="reports_view"><ExportCenter /></PermissionRouteGuard>} />
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />

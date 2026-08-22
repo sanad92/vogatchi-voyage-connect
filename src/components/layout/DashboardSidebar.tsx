@@ -64,7 +64,7 @@ const navGroups: NavGroup[] = [
     label: 'التسويق',
     icon: Megaphone,
     items: [
-      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.MARKETING },
+      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'marketing_view', requiredFeature: PLAN_FEATURES.MARKETING },
     ],
   },
   {
@@ -111,6 +111,7 @@ const navGroups: NavGroup[] = [
     label: 'الإعدادات',
     icon: Settings,
     items: [
+      { title: 'فريق العمل', href: '/team', icon: Users, requiredPermission: 'team_view' },
       { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },
       { title: 'مركز القوالب', href: '/templates', icon: FileText, requiredPermission: 'admin_settings' },
       { title: 'وضع العرض التوضيحي', href: '/organization/demo-mode', icon: Sparkles, requiredPermission: 'admin_settings' },

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
+import type { OrgRole } from '@/lib/accessControl';
 
 export interface OrgMember {
   id: string;
@@ -55,12 +56,14 @@ export const useOrgMembers = () => {
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ memberId, newRole }: { memberId: string; newRole: string }) => {
-      const { error } = await supabase
-        .from('organization_members')
-        .update({ role: newRole as any })
-        .eq('id', memberId)
-        .eq('organization_id', orgId);
+    mutationFn: async ({ memberId, newRole }: { memberId: string; newRole: OrgRole }) => {
+      const { error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: memberId,
+        _new_role: newRole,
+        _is_active: null,
+        _termination_date: null,
+        _note: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -74,11 +77,13 @@ export const useOrgMembers = () => {
 
   const removeMember = useMutation({
     mutationFn: async (memberId: string) => {
-      const { error } = await supabase
-        .from('organization_members')
-        .update({ is_active: false })
-        .eq('id', memberId)
-        .eq('organization_id', orgId);
+      const { error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: memberId,
+        _new_role: null,
+        _is_active: false,
+        _termination_date: null,
+        _note: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

@@ -20,8 +20,8 @@ export interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp?: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: unknown | null }>;
+  signUp: (email: string, password: string, fullName?: string, redirectTo?: string) => Promise<{ error: unknown | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   setOrgRole: (role: string | null) => void;

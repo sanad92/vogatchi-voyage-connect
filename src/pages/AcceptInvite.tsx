@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useAcceptInvitation } from '@/hooks/useInvitations';
+import { useAcceptInvitation, type AcceptInvitationResult } from '@/hooks/useInvitations';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,21 +10,22 @@ import { Check, X, Loader2, UserPlus } from 'lucide-react';
 const AcceptInvite = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useOptimizedAuth();
+  const { user, loading } = useOptimizedAuth();
   const token = searchParams.get('token');
-  const acceptMutation = useAcceptInvitation();
-  const [result, setResult] = useState<any>(null);
+  const { mutateAsync: acceptInvitation, isPending } = useAcceptInvitation();
+  const [result, setResult] = useState<AcceptInvitationResult | null>(null);
+  const redirectPath = token ? `/accept-invite?token=${encodeURIComponent(token)}` : '/accept-invite';
 
   useEffect(() => {
     if (!token) return;
-    if (!user) return;
+    if (!user || result || isPending) return;
     
-    acceptMutation.mutateAsync(token).then((data) => {
+    acceptInvitation(token).then((data) => {
       setResult(data);
-    }).catch((err) => {
-      setResult({ success: false, error: err.message });
+    }).catch((error: unknown) => {
+      setResult({ success: false, error: error instanceof Error ? error.message : 'تعذر قبول الدعوة' });
     });
-  }, [token, user]);
+  }, [token, user, result, isPending, acceptInvitation]);
 
   if (!token) {
     return (
@@ -41,6 +42,14 @@ const AcceptInvite = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
@@ -53,16 +62,21 @@ const AcceptInvite = () => {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-muted-foreground mb-4">يجب تسجيل الدخول أولاً لقبول الدعوة</p>
-            <Button onClick={() => navigate(`/login?redirect=/accept-invite?token=${token}`)}>
-              تسجيل الدخول
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-2">
+              <Button onClick={() => navigate(`/login?redirect=${encodeURIComponent(redirectPath)}`)}>
+                تسجيل الدخول
+              </Button>
+              <Button variant="outline" onClick={() => navigate(`/signup?redirect=${encodeURIComponent(redirectPath)}`)}>
+                إنشاء حساب جديد
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (acceptMutation.isPending || !result) {
+  if (isPending || !result) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
         <Card className="w-full max-w-md">

@@ -40,13 +40,13 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
       setError('يرجى إدخال جميع البيانات المطلوبة');
       return;
     }
-    if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (password.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
     const result = await signUp(email, password, fullName);
     if (result.error) {
-      const errorMsg = (result.error as any)?.message || (result.error as any)?.code || '';
+      const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
       if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
         setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
       } else {
@@ -127,7 +127,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
               <div className="space-y-2">
                 <Label htmlFor="signup-password">كلمة المرور</Label>
                 <div className="relative">
-                  <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required className="text-right pr-10" placeholder="6 أحرف على الأقل" disabled={loading} minLength={6} />
+                  <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required className="text-right pr-10" placeholder="8 أحرف على الأقل" disabled={loading} minLength={8} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
+import type { OrgRole } from '@/lib/accessControl';
 
 export interface TeamMember {
   membership_id: string;
@@ -125,23 +126,8 @@ export const useTeamManagement = () => {
   };
 
   const addMember = useMutation({
-    mutationFn: async (input: NewTeamMemberInput) => {
-      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          action: 'create_team_member',
-          organization_id: orgId,
-          ...input,
-        },
-      });
-      if (error) throw error;
-      const result = Array.isArray(data) ? data[0] : data;
-      if (!result?.success) {
-        const err: any = new Error(result?.message || 'فشل إضافة العضو');
-        err.code = result?.code;
-        throw err;
-      }
-      return result;
+    mutationFn: async (_input: NewTeamMemberInput) => {
+      throw new Error('إضافة الأعضاء متاحة بالدعوة فقط لحماية كلمة المرور وهوية الموظف');
     },
     onSuccess: () => {
       invalidate();
@@ -155,26 +141,13 @@ export const useTeamManagement = () => {
   });
 
   const checkEmail = async (email: string): Promise<EmailCheckResult> => {
-    if (!orgId) throw new Error('لا توجد مؤسسة محددة');
-    const { data, error } = await supabase.functions.invoke('admin-user-management', {
-      body: { action: 'check_team_email', organization_id: orgId, email },
-    });
-    if (error) throw error;
-    const result = Array.isArray(data) ? data[0] : data;
-    if (!result?.success) throw new Error(result?.message || 'تعذر التحقق من البريد الإلكتروني');
-    return result as EmailCheckResult;
+    void email;
+    throw new Error('التحقق وإضافة الأعضاء يتمان تلقائياً من خلال الدعوة');
   };
 
   const reassignSeat = useMutation({
-    mutationFn: async (input: ReassignSeatInput) => {
-      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: { action: 'reassign_team_seat', organization_id: orgId, ...input },
-      });
-      if (error) throw error;
-      const result = Array.isArray(data) ? data[0] : data;
-      if (!result?.success) throw new Error(result?.message || 'فشل إعادة تعيين الحساب');
-      return result;
+    mutationFn: async (_input: ReassignSeatInput) => {
+      throw new Error('لا يمكن إعادة استخدام هوية موظف سابق؛ أرسل دعوة بحساب مستقل');
     },
     onSuccess: () => {
       invalidate();
@@ -184,21 +157,17 @@ export const useTeamManagement = () => {
   });
 
   const offboardMember = useMutation({
-    mutationFn: async (input: { userId: string; terminationDate?: string; note?: string }) => {
+    mutationFn: async (input: { membershipId: string; terminationDate?: string; note?: string }) => {
       if (!orgId) throw new Error('لا توجد مؤسسة محددة');
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          action: 'offboard_member',
-          organization_id: orgId,
-          user_id: input.userId,
-          termination_date: input.terminationDate,
-          note: input.note,
-        },
+      const { data, error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: input.membershipId,
+        _new_role: null,
+        _is_active: false,
+        _termination_date: input.terminationDate || null,
+        _note: input.note || null,
       });
       if (error) throw error;
-      const result = Array.isArray(data) ? data[0] : data;
-      if (!result?.success) throw new Error(result?.message || 'فشل إنهاء الخدمة');
-      return result;
+      return data as unknown as { success?: boolean };
     },
     onSuccess: () => {
       invalidate();
@@ -210,12 +179,14 @@ export const useTeamManagement = () => {
 
 
   const updateRole = useMutation({
-    mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: string }) => {
-      const { error } = await supabase
-        .from('organization_members')
-        .update({ role: newRole as any })
-        .eq('id', membershipId)
-        .eq('organization_id', orgId);
+    mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: OrgRole }) => {
+      const { error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: membershipId,
+        _new_role: newRole,
+        _is_active: null,
+        _termination_date: null,
+        _note: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث الدور'); },
@@ -224,11 +195,13 @@ export const useTeamManagement = () => {
 
   const toggleActive = useMutation({
     mutationFn: async ({ membershipId, isActive }: { membershipId: string; isActive: boolean }) => {
-      const { error } = await supabase
-        .from('organization_members')
-        .update({ is_active: isActive })
-        .eq('id', membershipId)
-        .eq('organization_id', orgId);
+      const { error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: membershipId,
+        _new_role: null,
+        _is_active: isActive,
+        _termination_date: null,
+        _note: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث الحالة'); },
@@ -237,11 +210,13 @@ export const useTeamManagement = () => {
 
   const removeMember = useMutation({
     mutationFn: async (membershipId: string) => {
-      const { error } = await supabase
-        .from('organization_members')
-        .update({ is_active: false })
-        .eq('id', membershipId)
-        .eq('organization_id', orgId);
+      const { error } = await supabase.rpc('manage_organization_member', {
+        _membership_id: membershipId,
+        _new_role: null,
+        _is_active: false,
+        _termination_date: null,
+        _note: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم إزالة العضو'); },
@@ -249,13 +224,8 @@ export const useTeamManagement = () => {
   });
 
   const resetPassword = useMutation({
-    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: { action: 'reset_password', user_id: userId, new_password: password },
-      });
-      if (error) throw error;
-      const result = Array.isArray(data) ? data[0] : data;
-      if (!result?.success) throw new Error(result?.message || 'فشل إعادة التعيين');
+    mutationFn: async (_input: { userId: string; password: string }) => {
+      throw new Error('إعادة كلمة المرور تتم من رابط «نسيت كلمة المرور» بواسطة صاحب الحساب');
     },
     onSuccess: () => toast.success('تم إعادة تعيين كلمة المرور'),
     onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),

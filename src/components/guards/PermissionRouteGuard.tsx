@@ -1,11 +1,12 @@
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import type { PermissionKey } from '@/lib/accessControl';
 import { Navigate } from 'react-router-dom';
 
 interface PermissionRouteGuardProps {
   children: React.ReactNode;
-  requiredPermission?: string;
+  requiredPermission?: PermissionKey;
   requiredRoles?: string[];
 }
 
@@ -17,9 +18,9 @@ interface PermissionRouteGuardProps {
 const PermissionRouteGuard = ({ children, requiredPermission, requiredRoles }: PermissionRouteGuardProps) => {
   const { isSuperAdmin, loading } = useOptimizedAuth();
   const { orgRole, loading: orgLoading } = useOrganization();
-  const { hasPermission } = useSupabasePermissions();
+  const { hasPermission, loading: permissionsLoading } = useSupabasePermissions();
 
-  if (loading || orgLoading) {
+  if (loading || orgLoading || permissionsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -35,7 +36,7 @@ const PermissionRouteGuard = ({ children, requiredPermission, requiredRoles }: P
 
   // Check permission
   if (requiredPermission) {
-    if (hasPermission(requiredPermission as any)) return <>{children}</>;
+    if (hasPermission(requiredPermission)) return <>{children}</>;
   }
 
   // Check roles as fallback

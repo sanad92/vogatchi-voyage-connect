@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { cleanupAuthState } from '@/utils/authCleanup';
 import { errorManager } from '@/utils/errorManager';
 import { toast } from 'sonner';
+import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -202,14 +203,15 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, redirectTo?: string) => {
     try {
       setLoading(true);
+      const safeRedirect = getSafeInternalRedirect(redirectTo) || '/create-organization';
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/create-organization`,
+          emailRedirectTo: `${window.location.origin}${safeRedirect}`,
           data: { full_name: fullName || '' },
         },
       });
@@ -219,8 +221,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
       } else {
         toast.success('تم إنشاء الحساب بنجاح');
-        // Navigate to create-organization (not dashboard)
-        navigate('/create-organization');
+        navigate(safeRedirect);
       }
       return { error: null };
     } catch (error) {

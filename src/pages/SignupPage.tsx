@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
+import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +19,9 @@ const SignupPage = () => {
   const [error, setError] = useState('');
   const { signUp, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
+  const [searchParams] = useSearchParams();
+  const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
+  const isInvitation = requestedRedirect?.startsWith('/accept-invite') ?? false;
 
   if (loading || orgLoading) {
     return (
@@ -31,6 +35,7 @@ const SignupPage = () => {
   }
 
   if (isLoggedIn()) {
+    if (requestedRedirect) return <Navigate to={requestedRedirect} replace />;
     if (!hasOrganization) return <Navigate to="/register-organization" replace />;
     return <Navigate to="/dashboard" replace />;
   }
@@ -42,13 +47,13 @@ const SignupPage = () => {
       setError('يرجى إدخال جميع البيانات المطلوبة');
       return;
     }
-    if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (password.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
-    const result = await signUp(email, password, fullName);
+    const result = await signUp(email, password, fullName, requestedRedirect || undefined);
     if (result.error) {
-      const errorMsg = (result.error as any)?.message || (result.error as any)?.code || '';
+      const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
       if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
         setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
       } else {
@@ -70,7 +75,9 @@ const SignupPage = () => {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground">إنشاء حساب جديد</h2>
-          <p className="text-muted-foreground mt-1">سجّل شركتك وابدأ تجربتك المجانية لـ 14 يوم</p>
+          <p className="text-muted-foreground mt-1">
+            {isInvitation ? 'أنشئ حسابك ثم اقبل دعوة الانضمام إلى فريقك' : 'سجّل شركتك وابدأ تجربتك المجانية لـ 14 يوم'}
+          </p>
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-5">
@@ -121,9 +128,9 @@ const SignupPage = () => {
                 onChange={e => setPassword(e.target.value)}
                 required
                 className="text-right pr-10 h-12"
-                placeholder="6 أحرف على الأقل"
+                placeholder="8 أحرف على الأقل"
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -153,13 +160,18 @@ const SignupPage = () => {
 
         <div className="text-center text-sm text-muted-foreground">
           لديك حساب بالفعل؟{' '}
-          <Link to="/login" className="text-primary font-semibold hover:underline">
+          <Link
+            to={requestedRedirect ? `/login?redirect=${encodeURIComponent(requestedRedirect)}` : '/login'}
+            className="text-primary font-semibold hover:underline"
+          >
             سجّل دخول
           </Link>
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.
+          {isInvitation
+            ? 'بعد تأكيد البريد، ستعود تلقائياً لقبول دعوة المؤسسة.'
+            : 'بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.'}
         </p>
       </div>
     </AuthLayout>

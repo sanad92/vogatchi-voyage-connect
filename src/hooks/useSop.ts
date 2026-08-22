@@ -373,10 +373,14 @@ export function useUpsertDepartmentMember() {
   const orgId = useOrgId();
   return useMutation({
     mutationFn: async (input: { user_id: string; department: SopDepartment; is_available?: boolean; specializations?: string[] }) => {
-      const { error } = await db.from('sop_department_members').upsert(
-        { organization_id: orgId, ...input },
-        { onConflict: 'organization_id,user_id,department' },
-      );
+      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
+      const { error } = await db.rpc('manage_sop_department_member' as any, {
+        _organization_id: orgId,
+        _user_id: input.user_id,
+        _department: input.department,
+        _assign: true,
+        _is_available: input.is_available ?? true,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -393,12 +397,14 @@ export function useRemoveDepartmentMember() {
   const orgId = useOrgId();
   return useMutation({
     mutationFn: async (input: { user_id: string; department: SopDepartment }) => {
-      const { error } = await db
-        .from('sop_department_members')
-        .delete()
-        .eq('organization_id', orgId)
-        .eq('user_id', input.user_id)
-        .eq('department', input.department);
+      if (!orgId) throw new Error('لا توجد مؤسسة محددة');
+      const { error } = await db.rpc('manage_sop_department_member' as any, {
+        _organization_id: orgId,
+        _user_id: input.user_id,
+        _department: input.department,
+        _assign: false,
+        _is_available: true,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
