@@ -3,6 +3,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 import type { OrgRole } from '@/lib/accessControl';
+import type { Database } from '@/integrations/supabase/types';
+
+type OrganizationMembership = Pick<
+  Database['public']['Tables']['organization_members']['Row'],
+  'id' | 'user_id' | 'role' | 'is_active' | 'joined_at'
+>;
+
+type ProfileSummary = Pick<
+  Database['public']['Tables']['profiles']['Row'],
+  'id' | 'full_name' | 'email' | 'phone' | 'linked_employee_id'
+>;
+
+type EmployeeSummary = Pick<
+  Database['public']['Tables']['employees']['Row'],
+  'id' | 'employee_code' | 'position' | 'department' | 'base_salary' | 'hire_date'
+>;
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
+const hasErrorCode = (error: unknown, code: string) =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  error.code === code;
 
 export interface TeamMember {
   membership_id: string;
@@ -83,11 +119,14 @@ export const useTeamManagement = () => {
         .select('id, full_name, email, phone, linked_employee_id')
         .in('id', userIds);
 
-      const linkedEmpIds = (profiles || [])
-        .map((p: any) => p.linked_employee_id)
+      const profileRows: ProfileSummary[] = profiles || [];
+      const membershipRows: OrganizationMembership[] = memberships;
+
+      const linkedEmpIds = profileRows
+        .map((profile) => profile.linked_employee_id)
         .filter(Boolean) as string[];
 
-      let employees: any[] = [];
+      let employees: EmployeeSummary[] = [];
       if (linkedEmpIds.length) {
         const { data: emps } = await supabase
           .from('employees')
@@ -96,18 +135,22 @@ export const useTeamManagement = () => {
         employees = emps || [];
       }
 
-      const profMap = new Map((profiles || []).map((p: any) => [p.id, p]));
-      const empMap = new Map(employees.map((e: any) => [e.id, e]));
+      const profMap = new Map<string, ProfileSummary>(
+        profileRows.map((profile) => [profile.id, profile]),
+      );
+      const empMap = new Map<string, EmployeeSummary>(
+        employees.map((employee) => [employee.id, employee]),
+      );
 
-      return memberships.map((m: any) => {
-        const profile: any = profMap.get(m.user_id);
+      return membershipRows.map((membership) => {
+        const profile = profMap.get(membership.user_id);
         const emp = profile?.linked_employee_id ? empMap.get(profile.linked_employee_id) : null;
         return {
-          membership_id: m.id,
-          user_id: m.user_id,
-          role: m.role,
-          is_active: m.is_active,
-          joined_at: m.joined_at,
+          membership_id: membership.id,
+          user_id: membership.user_id,
+          role: membership.role,
+          is_active: membership.is_active,
+          joined_at: membership.joined_at,
           full_name: profile?.full_name ?? null,
           email: profile?.email ?? '',
           phone: profile?.phone ?? null,
@@ -133,10 +176,10 @@ export const useTeamManagement = () => {
       invalidate();
       toast.success('تم إضافة عضو جديد بنجاح');
     },
-    onError: (e: any) => {
+    onError: (error: unknown) => {
       // EMAIL_EXISTS is handled inline by the wizard (seat reuse flow)
-      if (e?.code === 'EMAIL_EXISTS') return;
-      toast.error(e?.message || 'حدث خطأ');
+      if (hasErrorCode(error, 'EMAIL_EXISTS')) return;
+      toast.error(getErrorMessage(error, 'حدث خطأ'));
     },
   });
 
@@ -153,7 +196,7 @@ export const useTeamManagement = () => {
       invalidate();
       toast.success('تمت إعادة تعيين الحساب للموظف الجديد');
     },
-    onError: (e: any) => toast.error(e?.message || 'حدث خطأ'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'حدث خطأ')),
   });
 
   const offboardMember = useMutation({
@@ -174,7 +217,7 @@ export const useTeamManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
       toast.success('تم إنهاء الخدمة وتحرير المقعد');
     },
-    onError: (e: any) => toast.error(e?.message || 'حدث خطأ'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'حدث خطأ')),
   });
 
 
@@ -190,7 +233,7 @@ export const useTeamManagement = () => {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث الدور'); },
-    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'فشل التحديث')),
   });
 
   const toggleActive = useMutation({
@@ -205,7 +248,7 @@ export const useTeamManagement = () => {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث الحالة'); },
-    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'فشل التحديث')),
   });
 
   const removeMember = useMutation({
@@ -220,7 +263,7 @@ export const useTeamManagement = () => {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم إزالة العضو'); },
-    onError: (e: any) => toast.error(e?.message || 'فشل الإزالة'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'فشل الإزالة')),
   });
 
   const resetPassword = useMutation({
@@ -228,7 +271,7 @@ export const useTeamManagement = () => {
       throw new Error('إعادة كلمة المرور تتم من رابط «نسيت كلمة المرور» بواسطة صاحب الحساب');
     },
     onSuccess: () => toast.success('تم إعادة تعيين كلمة المرور'),
-    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'فشل التحديث')),
   });
 
   const updateEmployeeData = useMutation({
@@ -243,7 +286,7 @@ export const useTeamManagement = () => {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث بيانات الموظف'); },
-    onError: (e: any) => toast.error(e?.message || 'فشل التحديث'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, 'فشل التحديث')),
   });
 
   return {
