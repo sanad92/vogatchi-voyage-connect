@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getAuthErrorMessage } from '@/lib/authErrorMessage';
 
 interface SupabaseAuthFormProps {
   defaultTab?: string;
@@ -29,7 +30,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
     }
     const result = await signIn(email, password);
     if (result.error) {
-      setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
+      setError(getAuthErrorMessage(result.error));
     }
   };
 

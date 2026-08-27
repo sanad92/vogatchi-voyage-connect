@@ -11,6 +11,7 @@ import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
+import { getAuthErrorMessage } from '@/lib/authErrorMessage';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -51,7 +52,7 @@ const LoginPage = () => {
     }
     const result = await signIn(email, password);
     if (result.error) {
-      setError('فشل في تسجيل الدخول. يرجى التحقق من البيانات.');
+      setError(getAuthErrorMessage(result.error));
     }
   };
 

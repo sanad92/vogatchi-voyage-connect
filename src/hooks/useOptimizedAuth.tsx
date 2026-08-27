@@ -7,6 +7,7 @@ import { cleanupAuthState } from '@/utils/authCleanup';
 import { errorManager } from '@/utils/errorManager';
 import { toast } from 'sonner';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
+import { getAuthErrorMessage } from '@/lib/authErrorMessage';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -183,21 +184,14 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         password,
       });
 
-      if (error) {
-        throw new Error(
-          error.message.includes('Invalid login credentials')
-            ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
-            : error.message
-        );
-      }
+      if (error) throw error;
 
       toast.success('تم تسجيل الدخول بنجاح');
       // Don't navigate here - let SupabaseProtectedRoute handle routing
       return { error: null };
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'فشل في تسجيل الدخول';
-      toast.error(msg);
-      return { error };
+      const message = getAuthErrorMessage(error);
+      return { error: new Error(message) };
     } finally {
       setLoading(false);
     }

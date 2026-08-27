@@ -15,6 +15,7 @@ const loadTypeScriptModule = async (path) => {
 
 const access = await loadTypeScriptModule(new URL('../src/lib/accessControl.ts', import.meta.url));
 const redirects = await loadTypeScriptModule(new URL('../src/lib/safeRedirect.ts', import.meta.url));
+const authErrors = await loadTypeScriptModule(new URL('../src/lib/authErrorMessage.ts', import.meta.url));
 
 const can = (role, departments, permission) =>
   access.hasPermissionForRole(role, departments, permission);
@@ -51,6 +52,37 @@ assert.equal(redirects.getSafeInternalRedirect('https://evil.example/path'), nul
 assert.equal(redirects.getSafeInternalRedirect('//evil.example/path'), null, 'scheme-relative redirects are rejected');
 assert.equal(redirects.getSafeInternalRedirect('/\\evil.example'), null, 'backslash redirects are rejected');
 
+assert.equal(
+  authErrors.getAuthErrorMessage({ code: 'invalid_credentials', message: 'Invalid login credentials' }),
+  'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+  'invalid credentials are explained precisely',
+);
+assert.match(
+  authErrors.getAuthErrorMessage({ code: 'email_not_confirmed', message: 'Email not confirmed' }),
+  /لم يتم تأكيده/,
+  'unconfirmed email is distinguishable from a wrong password',
+);
+assert.match(
+  authErrors.getAuthErrorMessage({ code: 'user_banned', message: 'User is banned' }),
+  /الحساب موقوف/,
+  'a banned account is reported as suspended',
+);
+assert.match(
+  authErrors.getAuthErrorMessage({ status: 429, message: 'Too many requests' }),
+  /تجاوز عدد محاولات/,
+  'rate limiting tells the user to wait',
+);
+assert.match(
+  authErrors.getAuthErrorMessage(new TypeError('Failed to fetch')),
+  /تعذر الاتصال/,
+  'network failures are not mislabeled as bad credentials',
+);
+assert.equal(
+  authErrors.getAuthErrorMessage({ message: 'Project is paused' }),
+  'تعذر تسجيل الدخول: Project is paused',
+  'unknown provider errors remain visible for diagnosis',
+);
+
 const migration = await readFile(
   new URL('../supabase/migrations/20260822160000_saas_core_hardening.sql', import.meta.url),
   'utf8',
@@ -63,5 +95,4 @@ assert.match(migration, /ALTER COLUMN plan SET DEFAULT 'trial'/, 'new organizati
 assert.match(migration, /vault\.decrypted_secrets/, 'email cron reads its service token from Vault');
 assert.doesNotMatch(migration, /Authorization[^\n]+Bearer [A-Za-z0-9_-]{20,}/, 'migration must not embed a bearer token');
 
-console.log('SaaS core checks passed: 29/29');
-
+console.log('SaaS core checks passed: 35/35');
