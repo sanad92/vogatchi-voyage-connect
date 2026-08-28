@@ -87,6 +87,14 @@ const migration = await readFile(
   new URL('../supabase/migrations/20260822160000_saas_core_hardening.sql', import.meta.url),
   'utf8',
 );
+const protectedRoute = await readFile(
+  new URL('../src/components/SupabaseProtectedRoute.tsx', import.meta.url),
+  'utf8',
+);
+const registerOrganization = await readFile(
+  new URL('../src/pages/RegisterOrganization.tsx', import.meta.url),
+  'utf8',
+);
 assert.match(migration, /AND m\.is_active = true/, 'membership helper must require active membership');
 assert.match(migration, /BEFORE INSERT OR UPDATE OF is_active/, 'seat limit must cover reactivation');
 assert.match(migration, /create_organization_invitation/, 'invitations use a server RPC');
@@ -94,5 +102,8 @@ assert.match(migration, /manage_organization_member/, 'member mutations use an a
 assert.match(migration, /ALTER COLUMN plan SET DEFAULT 'trial'/, 'new organizations never default to a free plan');
 assert.match(migration, /vault\.decrypted_secrets/, 'email cron reads its service token from Vault');
 assert.doesNotMatch(migration, /Authorization[^\n]+Bearer [A-Za-z0-9_-]{20,}/, 'migration must not embed a bearer token');
+assert.doesNotMatch(protectedRoute, /org_setup_skipped/, 'protected routes cannot bypass organization setup');
+assert.doesNotMatch(registerOrganization, /handleSkip/, 'organization creation has no skip action');
+assert.doesNotMatch(registerOrganization, /تخطي والدخول للوحة التحكم/, 'organization creation has no skip prompt');
 
-console.log('SaaS core checks passed: 35/35');
+console.log('SaaS core checks passed: 38/38');

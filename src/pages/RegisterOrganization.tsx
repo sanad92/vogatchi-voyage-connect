@@ -9,14 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Building2, ArrowLeft, SkipForward } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Building2, ArrowLeft } from 'lucide-react';
 
 const RegisterOrganization = () => {
   const { user } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   
   const [form, setForm] = useState({
     name: '',
@@ -29,11 +27,6 @@ const RegisterOrganization = () => {
   if (!orgLoading && hasOrganization) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  const handleSkip = () => {
-    localStorage.setItem('org_setup_skipped', 'true');
-    navigate('/dashboard');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +58,7 @@ const RegisterOrganization = () => {
       }
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
+      localStorage.removeItem('org_setup_skipped');
       await refetchOrganization();
       
       // Trigger welcome email (non-blocking)
@@ -77,9 +71,9 @@ const RegisterOrganization = () => {
         window.location.href = onboardingResult?.redirectTo || '/dashboard';
       }, 500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating organization:', error);
-      const message = String(error?.message || '').toLowerCase();
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
       if (message.includes('rls') || message.includes('permission')) {
         toast.error('لا توجد صلاحية كافية لإكمال إنشاء المؤسسة. يرجى إعادة تسجيل الدخول.');
       } else {
@@ -170,18 +164,6 @@ const RegisterOrganization = () => {
             )}
           </Button>
 
-          <div className="text-center mt-4">
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={loading}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mx-auto"
-            >
-              <SkipForward className="w-4 h-4" />
-              تخطي والدخول للوحة التحكم
-            </button>
-            <p className="text-xs text-muted-foreground mt-1">يمكنك استكمال بيانات المؤسسة لاحقاً من الإعدادات</p>
-          </div>
         </form>
       </div>
     </div>

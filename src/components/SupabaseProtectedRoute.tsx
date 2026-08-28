@@ -46,9 +46,7 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
     location.pathname === '/create-organization';
   const isOnOnboarding = location.pathname === '/onboarding';
   
-  const orgSetupSkipped = localStorage.getItem('org_setup_skipped') === 'true';
-  
-  if (!hasOrganization && !isSuperAdmin() && !isPlatformAdmin && !isOnRegisterOrg && !isOnOnboarding && !orgSetupSkipped) {
+  if (!hasOrganization && !isSuperAdmin() && !isPlatformAdmin && !isOnRegisterOrg && !isOnOnboarding) {
     return <Navigate to="/create-organization" replace />;
   }
 
