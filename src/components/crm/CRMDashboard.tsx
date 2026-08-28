@@ -44,7 +44,7 @@ export const CRMDashboard = () => {
         icon={Brain}
         actions={
           <>
-            <Select value={timeframe} onValueChange={(value: any) => setTimeframe(value)}>
+            <Select value={timeframe} onValueChange={(value: typeof timeframe) => setTimeframe(value)}>
               <SelectTrigger className="w-32 sm:w-40">
                 <SelectValue />
               </SelectTrigger>

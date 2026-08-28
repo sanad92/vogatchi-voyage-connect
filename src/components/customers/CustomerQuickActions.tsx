@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
+import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
 
 interface CustomerQuickActionsProps {
   customer: Customer;
@@ -158,7 +159,7 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
             </div>
             <div class="info-row">
               <span class="label">إجمالي الإنفاق:</span>
-              <span class="value">${(customer.total_spent || 0).toLocaleString()} ج.م</span>
+              <span class="value">${formatCurrencyTotals(getCustomerSpend(customer))}</span>
             </div>
             <div class="info-row">
               <span class="label">نقاط الولاء:</span>

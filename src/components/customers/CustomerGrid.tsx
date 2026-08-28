@@ -12,7 +12,7 @@ interface CustomerGridProps {
   error: any;
   activeTab: string;
   onCustomerSelect: (customerId: string) => void;
-  onAddNewCustomer: () => void;
+  onAddNewCustomer?: () => void;
 }
 
 const CustomerGrid = ({ 
@@ -92,10 +92,10 @@ const CustomerGrid = ({
         <p className="text-muted-foreground mb-6">
           {activeTab === 'all' ? 'ابدأ بإضافة عميلك الأول' : 'جرب البحث في فئة أخرى أو أضف عميل جديد'}
         </p>
-        <Button onClick={onAddNewCustomer}>
+        {onAddNewCustomer && <Button onClick={onAddNewCustomer}>
           <UserPlus className="h-4 w-4 mr-2" />
           إضافة عميل جديد
-        </Button>
+        </Button>}
       </div>
     );
   }

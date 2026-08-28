@@ -9,8 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useCustomers } from '@/hooks/useCustomers';
 
+export type CommunicationInput = {
+  customer_id: string;
+  communication_type: string;
+  direction: string;
+  content: string;
+  duration_minutes: number | null;
+  status: string;
+};
+
 interface InteractionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CommunicationInput) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -56,7 +65,7 @@ const InteractionForm = ({ onSubmit, onCancel }: InteractionFormProps) => {
                 <SelectValue placeholder="اختر العميل" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c: any) => (
+                {customers.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} {c.phone ? `— ${c.phone}` : ''}
                   </SelectItem>

@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test:core": "node scripts/verify-saas-core.mjs",
+    "test:crm": "node scripts/verify-crm-core.mjs",
     "test:finance": "node scripts/verify-financial-formulas.mjs",
     "preview": "vite preview"
   },

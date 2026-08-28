@@ -26,6 +26,7 @@ import {
 import { useCustomerData } from "@/hooks/useCustomerData";
 import { formatDate } from "@/lib/utils";
 import LoyaltyPointsDisplay from "./LoyaltyPointsDisplay";
+import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
 
 interface CustomerDetailsDialogProps {
   selectedCustomer: string | null;
@@ -122,7 +123,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       <span>إجمالي الإنفاق:</span>
                     </div>
                     <Badge variant="secondary">
-                      {customerData.total_spent || 0}
+                      {formatCurrencyTotals(getCustomerSpend(customerData))}
                     </Badge>
                   </div>
                   {customerData.segment && (

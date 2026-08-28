@@ -1,29 +1,22 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrencyTotals, getCustomerSpend, sumCurrencyTotals } from '@/lib/customerMetrics';
+import type { CustomerSegment } from '@/types/crm';
+import type { Customer } from '@/types/customer';
 
 interface SegmentAnalysisProps {
-  customerSegments: any[] | undefined;
-  customers: any[] | undefined;
+  customerSegments: CustomerSegment[] | undefined;
+  customers: Customer[] | undefined;
 }
 
 const SegmentAnalysis = ({ customerSegments, customers }: SegmentAnalysisProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // تحليل توزيع العملاء حسب القطاعات
   const segmentAnalysis = customerSegments?.map(segment => {
     const segmentCustomers = customers?.filter(c => c.segment_id === segment.id) || [];
     return {
       ...segment,
       customerCount: segmentCustomers.length,
-      totalRevenue: segmentCustomers.reduce((sum, c) => sum + (c.total_spent || 0), 0),
-      avgOrderValue: segmentCustomers.length > 0 ? 
-        segmentCustomers.reduce((sum, c) => sum + (c.total_spent || 0), 0) / segmentCustomers.length : 0
+      totalRevenue: sumCurrencyTotals(segmentCustomers.map(getCustomerSpend)),
     };
   }) || [];
 
@@ -31,9 +24,7 @@ const SegmentAnalysis = ({ customerSegments, customers }: SegmentAnalysisProps) 
     <Card>
       <CardHeader>
         <CardTitle>تحليل القطاعات</CardTitle>
-        <p className="text-xs text-amber-700 mt-1">
-          ℹ القيم بالجنيه المصري (تقريبي — تجمع عملات مختلفة)
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">القيم حسب الحجوزات المؤكدة، والعملات منفصلة.</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -51,10 +42,7 @@ const SegmentAnalysis = ({ customerSegments, customers }: SegmentAnalysisProps) 
               </div>
               
               <div className="text-right">
-                <div className="font-medium">{formatCurrency(segment.totalRevenue)}</div>
-                <div className="text-sm text-gray-600">
-                  متوسط: {formatCurrency(segment.avgOrderValue)}
-                </div>
+                <div className="font-medium">{formatCurrencyTotals(segment.totalRevenue)}</div>
               </div>
             </div>
           ))}

@@ -5,14 +5,14 @@ interface CustomerStatsProps {
   totalCustomers: number;
   activeCustomers: number;
   needsFollowUp: number;
-  noCommunication: number;
+  noBookings: number;
 }
 
 const CustomerStats = ({
   totalCustomers,
   activeCustomers,
   needsFollowUp,
-  noCommunication
+  noBookings
 }: CustomerStatsProps) => {
   const stats = [
     {
@@ -31,8 +31,8 @@ const CustomerStats = ({
       color: "yellow"
     },
     {
-      title: "بدون تواصل",
-      value: noCommunication,
+      title: "بدون حجوزات مؤكدة",
+      value: noBookings,
       color: "purple"
     }
   ];

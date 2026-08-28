@@ -8,6 +8,8 @@ import CustomerEditDialog from "./CustomerEditDialog";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 interface CustomerCardProps {
   customer: Customer;
@@ -18,14 +20,7 @@ interface CustomerCardProps {
 const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { canEditCustomers } = useSupabasePermissions();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
@@ -77,15 +72,18 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
               <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
             </div>
             <div className="flex gap-1">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={handleEditClick}
-                className="h-7 w-7 p-0"
-                disabled={isUpdating}
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
+              {canEditCustomers() && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEditClick}
+                  className="h-7 w-7 p-0"
+                  disabled={isUpdating}
+                  aria-label="تعديل العميل"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              )}
               <Button 
                 size="sm" 
                 variant="outline"
@@ -100,7 +98,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
           <div className="space-y-2 mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="h-3 w-3" />
-              <span>{customer.phone}</span>
+              <span>{customer.phone || 'غير متوفر'}</span>
             </div>
             
             {customer.email && (
@@ -155,7 +153,9 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
               <div className="text-gray-500">حجز</div>
             </div>
             <div>
-              <div className="font-medium text-green-600">{formatCurrency(customer.total_spent || 0)}</div>
+              <div className="font-medium text-green-600 text-[11px] leading-5">
+                {formatCurrencyTotals(getCustomerSpend(customer))}
+              </div>
               <div className="text-gray-500">إجمالي</div>
             </div>
           </div>

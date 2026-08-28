@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { CurrencyTotals } from '@/lib/customerMetrics';
 
 export const useCustomerData = (customerId: string) => {
   const { data: customerData, isLoading, refetch, error } = useQuery({
@@ -59,7 +60,7 @@ export const useCustomerData = (customerId: string) => {
       ] = await Promise.all([
         supabase
           .from('bookings')
-          .select('id, booking_number, booking_type, status, selling_price, cost_price, currency, start_date, end_date, supplier_name, notes, created_at')
+          .select('id, booking_number, booking_type, status, workflow_stage, selling_price, cost_price, currency, start_date, end_date, supplier_name, notes, created_at')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false }),
 
@@ -116,18 +117,29 @@ export const useCustomerData = (customerId: string) => {
         (byType[key] ?? byType.hotel).push(normalised);
       }
 
-      // Derived stats from unified bookings (fallback to stored columns)
-      const totalBookings = (unifiedBookings?.length ?? 0) || (basicData as any).total_bookings || 0;
-      const totalSpent =
-        (unifiedBookings ?? []).reduce((s: number, b: any) => s + (Number(b.selling_price) || 0), 0) ||
-        (basicData as any).total_spent || 0;
-      const lastBookingDate =
-        (unifiedBookings ?? [])[0]?.created_at ?? (basicData as any).last_booking_date ?? null;
+      const confirmedBookings = (unifiedBookings ?? []).filter((booking: any) =>
+        ['confirmed', 'completed', 'paid'].includes(String(booking.status || '').toLowerCase())
+        || ['paid', 'operations', 'traveling', 'completed', 'post_travel'].includes(String(booking.workflow_stage || '')),
+      );
+      const spendByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking: any) => {
+        const currency = String(booking.currency || 'EGP').trim().toUpperCase();
+        totals[currency] = (totals[currency] || 0) + Number(booking.selling_price || 0);
+        return totals;
+      }, {});
+      const bookingCountByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking: any) => {
+        const currency = String(booking.currency || 'EGP').trim().toUpperCase();
+        totals[currency] = (totals[currency] || 0) + 1;
+        return totals;
+      }, {});
+      const totalBookings = confirmedBookings.length;
+      const lastBookingDate = confirmedBookings[0]?.created_at ?? null;
 
       const combinedData = {
         ...(basicData as any),
         total_bookings: totalBookings,
-        total_spent: totalSpent,
+        total_spent: spendByCurrency.EGP || 0,
+        spend_by_currency: spendByCurrency,
+        booking_count_by_currency: bookingCountByCurrency,
         last_booking_date: lastBookingDate,
         hotel_bookings: byType.hotel,
         flight_bookings: byType.flight,

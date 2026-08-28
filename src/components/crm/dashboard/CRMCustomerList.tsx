@@ -9,10 +9,13 @@ import { Search, Eye, Phone, Mail, Package, DollarSign, Users } from 'lucide-rea
 import EmptyState from '@/components/ui/empty-state';
 import { useCustomers } from '@/hooks/useCustomers';
 import { formatDate } from '@/lib/utils';
+import { formatCurrencyTotals, getCustomerSpend } from '@/lib/customerMetrics';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 
 const CRMCustomerList = () => {
   const navigate = useNavigate();
   const { customers, isLoading } = useCustomers();
+  const { canCreateCustomers } = useSupabasePermissions();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = (customers || []).filter(c => {
@@ -37,8 +40,8 @@ const CRMCustomerList = () => {
         icon={Users}
         title="لا يوجد عملاء بعد"
         description="ابدأ بإضافة عملائك لإدارة علاقاتهم وتتبع حجوزاتهم وفواتيرهم"
-        actionLabel="إضافة أول عميل"
-        onAction={() => navigate('/new-customer')}
+        actionLabel={canCreateCustomers() ? 'إضافة أول عميل' : undefined}
+        onAction={canCreateCustomers() ? () => navigate('/new-customer') : undefined}
       />
     );
   }
@@ -125,7 +128,7 @@ const CRMCustomerList = () => {
                     <TableCell>
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                        {(customer.total_spent || 0).toLocaleString()} ج.م
+                        {formatCurrencyTotals(getCustomerSpend(customer))}
                       </span>
                     </TableCell>
                     <TableCell>

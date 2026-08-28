@@ -2,6 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, TrendingUp, Star, Send } from 'lucide-react';
 import { CustomerSegment, LoyaltyReward, MarketingCampaign } from '@/types/crm';
+import { useCustomers } from '@/hooks/useCustomers';
+import { customerGrowthRate } from '@/lib/customerMetrics';
 
 interface CRMOverviewProps {
   customerSegments?: CustomerSegment[];
@@ -10,6 +12,8 @@ interface CRMOverviewProps {
 }
 
 const CRMOverview = ({ customerSegments, loyaltyRewards, marketingCampaigns }: CRMOverviewProps) => {
+  const { customers } = useCustomers();
+  const growthRate = customerGrowthRate(customers || []);
   const stats = {
     totalSegments: customerSegments?.length || 0,
     activeRewards: loyaltyRewards?.filter(r => r.is_active).length || 0,
@@ -58,8 +62,12 @@ const CRMOverview = ({ customerSegments, loyaltyRewards, marketingCampaigns }: C
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">+12.5%</div>
-          <p className="text-xs text-muted-foreground">آخر 30 يوم</p>
+          <div className="text-2xl font-bold">
+            {growthRate === null ? '—' : `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}%`}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {growthRate === null ? 'لا توجد فترة سابقة كافية للمقارنة' : 'الـ30 يوم الحالية مقابل السابقة'}
+          </p>
         </CardContent>
       </Card>
     </div>

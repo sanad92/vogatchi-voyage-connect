@@ -38,6 +38,8 @@ import CustomerQuickActions from "@/components/customers/CustomerQuickActions";
 import LoyaltyPointsDisplay from "@/components/customers/LoyaltyPointsDisplay";
 import CustomerWhatsAppChat from "@/components/customers/CustomerWhatsAppChat";
 import { DocumentsPanel as CustomerDocumentsPanel } from "@/components/documents/DocumentsPanel";
+import { divideCurrencyTotals, formatCurrencyTotals, getCustomerSpend, parseCurrencyTotals } from "@/lib/customerMetrics";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 const CustomerDetails = () => {
   const { customerId } = useParams();
@@ -46,6 +48,7 @@ const CustomerDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const { customerData, isLoading, refetch, error } = useCustomerData(customerId || '');
+  const { canEditCustomers } = useSupabasePermissions();
 
   useEffect(() => {
     if (customerId) {
@@ -96,7 +99,11 @@ const CustomerDetails = () => {
 
   const customerStats = {
     totalBookings: customerData.total_bookings || 0,
-    totalSpent: customerData.total_spent || 0,
+    spendByCurrency: getCustomerSpend(customerData),
+    averageBookingValueByCurrency: divideCurrencyTotals(
+      getCustomerSpend(customerData),
+      parseCurrencyTotals(customerData.booking_count_by_currency),
+    ),
     loyaltyPoints: customerData.loyalty_points || 0,
     lastBookingDate: customerData.last_booking_date,
     registrationDate: customerData.created_at
@@ -133,10 +140,10 @@ const CustomerDetails = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+          {canEditCustomers() && <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
             <Edit className="h-4 w-4 mr-2" />
             تعديل البيانات
-          </Button>
+          </Button>}
           <CustomerQuickActions customer={customerData as any} />
         </div>
       </div>
@@ -165,7 +172,7 @@ const CustomerDetails = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي الإنفاق</p>
-                <p className="text-2xl font-bold">{customerStats.totalSpent.toLocaleString()} ج.م</p>
+                <p className="text-lg font-bold leading-7">{formatCurrencyTotals(customerStats.spendByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -312,10 +319,7 @@ const CustomerDetails = () => {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">متوسط قيمة الحجز</label>
                     <p className="text-lg font-semibold">
-                      {customerStats.totalBookings > 0 
-                        ? Math.round(customerStats.totalSpent / customerStats.totalBookings).toLocaleString()
-                        : 0
-                      } ج.م
+                      {formatCurrencyTotals(customerStats.averageBookingValueByCurrency)}
                     </p>
                   </div>
                   <div>

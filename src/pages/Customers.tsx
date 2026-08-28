@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Users, Star, Grid, Table, BarChart3, MessageCircle, TrendingUp, Brain, AlertTriangle } from "lucide-react";
+import { Plus, Users, Star, Grid, Table } from "lucide-react";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import PaginationControlsUI from "@/components/ui/pagination-controls";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
@@ -11,21 +11,12 @@ import CustomerFilters from "@/components/customers/CustomerFilters";
 import CustomerGrid from "@/components/customers/CustomerGrid";
 import CustomerTableView from "@/components/customers/CustomerTableView";
 import CustomerAdvancedSearch, { CustomerSearchFilters } from "@/components/customers/CustomerAdvancedSearch";
-import CustomerFollowUpManager from "@/components/customers/CustomerFollowUpManager";
 import CustomerDataExporter from "@/components/customers/CustomerDataExporter";
 import CustomerDetailsDialog from "@/components/customers/CustomerDetailsDialog";
 import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
-import CustomerPersonalDashboard from "@/components/customers/CustomerPersonalDashboard";
-import CustomerCommunicationHub from "@/components/customers/CustomerCommunicationHub";
-import CustomerSmartAnalytics from "@/components/customers/CustomerSmartAnalytics";
-import CustomerLoyaltyManager from "@/components/customers/CustomerLoyaltyManager";
-import AdvancedFollowUpAutomation from "@/components/customers/AdvancedFollowUpAutomation";
-import CustomerSatisfactionTracker from "@/components/customers/CustomerSatisfactionTracker";
-import SmartCustomerSegmentation from "@/components/customers/SmartCustomerSegmentation";
-import PredictiveAnalytics from "@/components/customers/PredictiveAnalytics";
-import ComplaintManagementSystem from "@/components/customers/ComplaintManagementSystem";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
@@ -50,6 +41,7 @@ const Customers = () => {
   });
   
   const { customers, isLoading: customersLoading, error: customersError } = useCustomers();
+  const { canCreateCustomers, hasPermission } = useSupabasePermissions();
 
   const handleCustomerAdded = (customer: any) => {
     console.log('Customer added:', customer);
@@ -169,18 +161,19 @@ const Customers = () => {
         return filtered.filter(customer => 
           customer.segment?.name === 'VIP' || customer.total_spent > 50000 || customer.total_bookings > 10
         );
-      case 'new':
+      case 'new': {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         return filtered.filter(customer => 
           new Date(customer.created_at) > thirtyDaysAgo
         );
-      case 'inactive':
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      }
+      case 'inactive': {
+        const inactiveCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
         return filtered.filter(customer => 
-          !customer.last_booking_date || new Date(customer.last_booking_date) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          !customer.last_booking_date || new Date(customer.last_booking_date) < inactiveCutoff
         );
+      }
       default:
         return filtered;
     }
@@ -198,7 +191,7 @@ const Customers = () => {
     needsFollowUp: customers?.filter(c => c.total_bookings > 0 && 
       (!c.last_booking_date || new Date(c.last_booking_date) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
     ).length || 0,
-    noCommunication: customers?.filter(c => c.total_bookings === 0).length || 0
+    noBookings: customers?.filter(c => c.total_bookings === 0).length || 0
   };
 
   const handleSearch = (filters: CustomerSearchFilters) => {
@@ -234,10 +227,10 @@ const Customers = () => {
           إدارة العملاء
         </h1>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <CustomerDataExporter 
+          {hasPermission('customers_export') && <CustomerDataExporter
             customers={filteredCustomers}
             selectedCustomers={selectedCustomers}
-          />
+          />}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
@@ -254,7 +247,7 @@ const Customers = () => {
               <Table className="h-4 w-4" />
             </Button>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          {canCreateCustomers() && <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="whitespace-nowrap">
                 <Plus className="h-4 w-4 mr-2" />
@@ -270,7 +263,7 @@ const Customers = () => {
                 onCancel={handleCancelAdd}
               />
             </DialogContent>
-          </Dialog>
+          </Dialog>}
         </div>
       </div>
 
@@ -279,7 +272,7 @@ const Customers = () => {
         totalCustomers={stats.totalCustomers}
         activeCustomers={stats.activeCustomers}
         needsFollowUp={stats.needsFollowUp}
-        noCommunication={stats.noCommunication}
+        noBookings={stats.noBookings}
       />
 
       {/* البحث المتقدم */}
@@ -303,65 +296,7 @@ const Customers = () => {
           </TabsTrigger>
           <TabsTrigger value="new" className="shrink-0">عملاء جدد</TabsTrigger>
           <TabsTrigger value="inactive" className="shrink-0">غير نشطين</TabsTrigger>
-          <TabsTrigger value="dashboard" className="flex items-center gap-2 shrink-0">
-            <TrendingUp className="h-4 w-4" />
-            لوحتي
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2 shrink-0">
-            <BarChart3 className="h-4 w-4" />
-            تحليلات
-          </TabsTrigger>
-          <TabsTrigger value="loyalty" className="flex items-center gap-2 shrink-0">
-            <Star className="h-4 w-4" />
-            الولاء
-          </TabsTrigger>
-          <TabsTrigger value="automation" className="flex items-center gap-2 shrink-0">
-            <MessageCircle className="h-4 w-4" />
-            الأتمتة
-          </TabsTrigger>
-          <TabsTrigger value="segmentation" className="flex items-center gap-2 shrink-0">
-            <Brain className="h-4 w-4" />
-            التقسيم الذكي
-          </TabsTrigger>
-          <TabsTrigger value="complaints" className="flex items-center gap-2 shrink-0">
-            <AlertTriangle className="h-4 w-4" />
-            الشكاوى
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="dashboard" className="space-y-4">
-          <CustomerPersonalDashboard customers={filteredCustomers} />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <CustomerSmartAnalytics customers={filteredCustomers} />
-        </TabsContent>
-
-        <TabsContent value="loyalty" className="space-y-4">
-          <div className="grid grid-cols-1 gap-6">
-            <CustomerLoyaltyManager
-              customers={filteredCustomers}
-              selectedCustomers={selectedCustomers}
-            />
-            <CustomerSatisfactionTracker
-              customers={filteredCustomers}
-              selectedCustomers={selectedCustomers}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="automation" className="space-y-4">
-          <AdvancedFollowUpAutomation customers={filteredCustomers} />
-        </TabsContent>
-
-        <TabsContent value="segmentation" className="space-y-4">
-          <SmartCustomerSegmentation customers={filteredCustomers} />
-          <PredictiveAnalytics customers={filteredCustomers} />
-        </TabsContent>
-
-        <TabsContent value="complaints" className="space-y-4">
-          <ComplaintManagementSystem customers={filteredCustomers} />
-        </TabsContent>
 
         <TabsContent value={activeTab} className="space-y-4" 
           style={{ display: ['all', 'vip', 'new', 'inactive'].includes(activeTab) ? 'block' : 'none' }}>
@@ -379,7 +314,7 @@ const Customers = () => {
               error={customersError}
               activeTab={activeTab}
               onCustomerSelect={setSelectedCustomer}
-              onAddNewCustomer={() => setIsAddDialogOpen(true)}
+              onAddNewCustomer={canCreateCustomers() ? () => setIsAddDialogOpen(true) : undefined}
             />
           ) : (
             <CustomerTableView
@@ -392,21 +327,6 @@ const Customers = () => {
 
           <PaginationControlsUI pagination={pagination} />
 
-          {/* مركز التواصل المتعدد */}
-          {viewMode === "table" && (
-            <>
-              <CustomerCommunicationHub
-                customers={filteredCustomers}
-                selectedCustomers={selectedCustomers}
-              />
-              
-              {/* إدارة المتابعات */}
-              <CustomerFollowUpManager
-                customers={filteredCustomers}
-                selectedCustomers={selectedCustomers}
-              />
-            </>
-          )}
         </TabsContent>
       </Tabs>
 

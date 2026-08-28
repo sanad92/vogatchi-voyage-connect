@@ -30,6 +30,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { Customer } from "@/types/customer";
+import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
 
 interface CustomerTableViewProps {
   customers: Customer[];
@@ -114,14 +115,6 @@ const CustomerTableView = ({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG');
   };
@@ -166,7 +159,7 @@ const CustomerTableView = ({
         return (
           <div className="flex items-center gap-2">
             <Phone className="h-3 w-3 text-gray-400" />
-            <span dir="ltr">{customer.phone}</span>
+            <span dir="ltr">{customer.phone || 'غير متوفر'}</span>
           </div>
         );
       
@@ -205,7 +198,7 @@ const CustomerTableView = ({
         return (
           <div className="flex items-center gap-2">
             <DollarSign className="h-3 w-3 text-gray-400" />
-            <span>{formatCurrency(customer.total_spent || 0)}</span>
+            <span>{formatCurrencyTotals(getCustomerSpend(customer))}</span>
           </div>
         );
       

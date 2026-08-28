@@ -10,11 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Users, Settings } from 'lucide-react';
 import { useCRM } from '@/hooks/useCRM';
 import { useCustomers } from '@/hooks/useCustomers';
-import { toast } from 'sonner';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { getCustomerSpendInCurrency } from '@/lib/customerMetrics';
 
 const CustomerSegments = () => {
-  const { customerSegments, createCampaign } = useCRM();
+  const { customerSegments, createSegment, isCreatingSegment } = useCRM();
   const { customers } = useCustomers();
+  const { canManageSegments } = useSupabasePermissions();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSegment, setNewSegment] = useState({
     name: '',
@@ -35,26 +37,23 @@ const CustomerSegments = () => {
       if (!segment) return false;
       
       const totalBookings = customer.total_bookings || 0;
-      const totalSpent = customer.total_spent || 0;
+      const totalSpent = getCustomerSpendInCurrency(customer, 'EGP');
       
       return totalBookings >= segment.minimum_bookings && 
              totalSpent >= segment.minimum_total_spent;
     });
   };
 
-  const handleCreateSegment = () => {
-    // هنا يمكن إضافة API call لإنشاء segment جديد
-    console.log('Creating segment:', newSegment);
-    toast.success('تم إنشاء الشريحة بنجاح');
-    setIsCreateDialogOpen(false);
-    setNewSegment({
-      name: '',
-      name_ar: '',
-      description: '',
-      color: '#3b82f6',
-      minimum_bookings: 0,
-      minimum_total_spent: 0
+  const handleCreateSegment = async () => {
+    if (!newSegment.name.trim() || !newSegment.name_ar.trim()) return;
+    await createSegment({
+      ...newSegment,
+      name: newSegment.name.trim(),
+      name_ar: newSegment.name_ar.trim(),
+      description: newSegment.description.trim(),
     });
+    setIsCreateDialogOpen(false);
+    setNewSegment({ name: '', name_ar: '', description: '', color: '#3b82f6', minimum_bookings: 0, minimum_total_spent: 0 });
   };
 
   return (
@@ -62,7 +61,7 @@ const CustomerSegments = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">شرائح العملاء</h2>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        {canManageSegments() && <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -141,13 +140,16 @@ const CustomerSegments = () => {
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   إلغاء
                 </Button>
-                <Button onClick={handleCreateSegment}>
+                <Button
+                  onClick={handleCreateSegment}
+                  disabled={isCreatingSegment || !newSegment.name.trim() || !newSegment.name_ar.trim()}
+                >
                   إنشاء الشريحة
                 </Button>
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -165,9 +167,11 @@ const CustomerSegments = () => {
                     />
                     {segment.name_ar}
                   </CardTitle>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
+                  {canManageSegments() && (
+                    <Button variant="ghost" size="sm" disabled title="تعديل الشرائح سيُضاف بعد اعتماد قواعدها">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               
@@ -189,9 +193,7 @@ const CustomerSegments = () => {
                   </div>
                 </div>
                 
-                <Button variant="outline" className="w-full">
-                  عرض العملاء
-                </Button>
+                <p className="text-xs text-muted-foreground">التصنيف يحسب الحد بالجنيه المصري فقط؛ حجوزات العملات الأخرى تبقى منفصلة.</p>
               </CardContent>
             </Card>
           );

@@ -15,6 +15,7 @@ import { Download, FileSpreadsheet, FileText, Database, Calendar } from "lucide-
 import { Customer } from "@/types/customer";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatCurrencyTotals, getCustomerSpend } from '@/lib/customerMetrics';
 
 interface CustomerDataExporterProps {
   customers: Customer[];
@@ -66,9 +67,7 @@ const CustomerDataExporter = ({ customers, selectedCustomers }: CustomerDataExpo
             ? new Date(dateValue).toLocaleDateString('ar-EG')
             : 'غير متوفر';
         } else if (field.key === 'total_spent') {
-          exportRow[field.label] = customer[field.key] 
-            ? `${customer[field.key]} ج.م`
-            : '0 ج.م';
+          exportRow[field.label] = formatCurrencyTotals(getCustomerSpend(customer));
         } else {
           exportRow[field.label] = customer[field.key] || 'غير متوفر';
         }

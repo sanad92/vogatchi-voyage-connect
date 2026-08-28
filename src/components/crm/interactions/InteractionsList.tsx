@@ -4,9 +4,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Phone, Mail, Calendar, User, Clock } from 'lucide-react';
 
+export type CustomerInteraction = {
+  id: string;
+  communication_type: string;
+  status: string | null;
+  content: string | null;
+  created_at: string | null;
+  direction: string;
+  duration_minutes?: number | null;
+  customer?: { name?: string | null } | null;
+  handled_by_profile?: { full_name?: string | null } | null;
+};
+
 interface InteractionsListProps {
-  interactions: any[];
-  onNewInteraction: () => void;
+  interactions: CustomerInteraction[];
+  onNewInteraction?: () => void;
 }
 
 const InteractionsList = ({ interactions, onNewInteraction }: InteractionsListProps) => {
@@ -44,9 +56,9 @@ const InteractionsList = ({ interactions, onNewInteraction }: InteractionsListPr
             <MessageSquare className="h-5 w-5" />
             سجل التفاعلات
           </CardTitle>
-          <Button onClick={onNewInteraction}>
+          {onNewInteraction && <Button onClick={onNewInteraction}>
             تسجيل تفاعل جديد
-          </Button>
+          </Button>}
         </div>
       </CardHeader>
       <CardContent>
@@ -92,7 +104,8 @@ const InteractionsList = ({ interactions, onNewInteraction }: InteractionsListPr
               
               <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
                 <User className="h-3 w-3" />
-                <span>بواسطة: {interaction.handled_by_profile?.full_name || 'غير محدد'}</span>
+                <span>العميل: {interaction.customer?.name || 'غير محدد'}</span>
+                <span>— بواسطة: {interaction.handled_by_profile?.full_name || 'غير محدد'}</span>
                 {interaction.direction === 'outbound' && (
                   <Badge variant="outline" className="text-xs">صادر</Badge>
                 )}

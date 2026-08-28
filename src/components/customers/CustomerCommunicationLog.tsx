@@ -16,6 +16,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 interface CustomerCommunicationLogProps {
   customerId: string;
@@ -33,6 +34,7 @@ interface Communication {
 }
 
 const CustomerCommunicationLog = ({ customerId }: CustomerCommunicationLogProps) => {
+  const { canEditCRM } = useSupabasePermissions();
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -213,14 +215,14 @@ const CustomerCommunicationLog = ({ customerId }: CustomerCommunicationLogProps)
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : canEditCRM() ? (
         <div className="flex justify-end">
           <Button onClick={() => setShowAddForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
             إضافة تواصل جديد
           </Button>
         </div>
-      )}
+      ) : null}
 
       {/* Communications List */}
       {communications.length === 0 ? (
@@ -228,9 +230,9 @@ const CustomerCommunicationLog = ({ customerId }: CustomerCommunicationLogProps)
           <CardContent className="p-6 text-center">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">لا يوجد سجل تواصل مع هذا العميل</p>
-            <Button variant="outline" className="mt-4" onClick={() => setShowAddForm(true)}>
+            {canEditCRM() && <Button variant="outline" className="mt-4" onClick={() => setShowAddForm(true)}>
               إضافة أول تواصل
-            </Button>
+            </Button>}
           </CardContent>
         </Card>
       ) : (

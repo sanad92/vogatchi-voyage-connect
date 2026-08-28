@@ -4,13 +4,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Dispatch, SetStateAction } from 'react';
+import type { CustomerSegment } from '@/types/crm';
+
+export type CampaignDraft = {
+  name: string;
+  description: string;
+  campaign_type: 'email' | 'whatsapp' | 'sms';
+  target_segment_id: string;
+  message_template: string;
+  start_date: string;
+  end_date: string;
+};
 
 interface CampaignFormProps {
-  newCampaign: any;
-  setNewCampaign: (campaign: any) => void;
-  customerSegments: any[] | undefined;
+  newCampaign: CampaignDraft;
+  setNewCampaign: Dispatch<SetStateAction<CampaignDraft>>;
+  customerSegments: CustomerSegment[] | undefined;
   onSubmit: () => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
 const CampaignForm = ({ 
@@ -18,7 +31,8 @@ const CampaignForm = ({
   setNewCampaign, 
   customerSegments, 
   onSubmit, 
-  onCancel 
+  onCancel,
+  isSubmitting = false,
 }: CampaignFormProps) => {
   return (
     <div className="space-y-4">
@@ -37,7 +51,7 @@ const CampaignForm = ({
           <Label htmlFor="campaign-type">نوع الحملة</Label>
           <Select 
             value={newCampaign.campaign_type} 
-            onValueChange={(value: any) => setNewCampaign(prev => ({ ...prev, campaign_type: value }))}
+            onValueChange={(value: CampaignDraft['campaign_type']) => setNewCampaign(prev => ({ ...prev, campaign_type: value }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -115,8 +129,8 @@ const CampaignForm = ({
       </div>
 
       <div className="flex gap-2 pt-4">
-        <Button onClick={onSubmit} className="flex-1">
-          إنشاء الحملة
+        <Button onClick={onSubmit} className="flex-1" disabled={isSubmitting}>
+          {isSubmitting ? 'جاري الحفظ...' : 'حفظ كمسودة'}
         </Button>
         <Button variant="outline" onClick={onCancel}>
           إلغاء

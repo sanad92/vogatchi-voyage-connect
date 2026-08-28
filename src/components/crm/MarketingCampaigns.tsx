@@ -10,10 +10,12 @@ import { toast } from 'sonner';
 import CampaignStats from './campaign/CampaignStats';
 import CampaignForm from './campaign/CampaignForm';
 import CampaignCard from './campaign/CampaignCard';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 
 const MarketingCampaigns = () => {
-  const { customerSegments, marketingCampaigns, createCampaign } = useCRM();
+  const { customerSegments, marketingCampaigns, createCampaign, isCreatingCampaign } = useCRM();
   const { customers } = useCustomers();
+  const { canManageCampaigns } = useSupabasePermissions();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const [newCampaign, setNewCampaign] = useState({
@@ -26,28 +28,23 @@ const MarketingCampaigns = () => {
     end_date: ''
   });
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
     if (!newCampaign.name || !newCampaign.message_template) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
-    createCampaign({
-      ...newCampaign,
-      status: 'draft'
-    });
+    try {
+      await createCampaign({ ...newCampaign, status: 'draft' });
 
-    setNewCampaign({
-      name: '',
-      description: '',
-      campaign_type: 'whatsapp',
-      target_segment_id: '',
-      message_template: '',
-      start_date: '',
-      end_date: ''
-    });
-    setIsCreateDialogOpen(false);
-    toast.success('تم إنشاء الحملة بنجاح');
+      setNewCampaign({
+        name: '', description: '', campaign_type: 'whatsapp', target_segment_id: '',
+        message_template: '', start_date: '', end_date: ''
+      });
+      setIsCreateDialogOpen(false);
+    } catch {
+      // The mutation displays the server error and keeps the form open.
+    }
   };
 
   return (
@@ -57,7 +54,7 @@ const MarketingCampaigns = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">الحملات التسويقية</h2>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        {canManageCampaigns() && <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -75,9 +72,10 @@ const MarketingCampaigns = () => {
               customerSegments={customerSegments}
               onSubmit={handleCreateCampaign}
               onCancel={() => setIsCreateDialogOpen(false)}
+              isSubmitting={isCreatingCampaign}
             />
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -98,10 +96,10 @@ const MarketingCampaigns = () => {
             <p className="text-gray-600 mb-4">
               ابدأ بإنشاء حملتك التسويقية الأولى للوصول إلى عملائك
             </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
+            {canManageCampaigns() && <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               إنشاء حملة جديدة
-            </Button>
+            </Button>}
           </CardContent>
         </Card>
       )}

@@ -14,12 +14,16 @@ export interface Customer {
   id: string;
   name: string;
   full_name?: string; // إضافة full_name كخاصية اختيارية للتوافق
-  phone: string;
-  email?: string;
+  phone?: string | null;
+  email?: string | null;
   nationality?: string;
   segment_id?: string;
   total_bookings?: number;
   total_spent?: number;
+  /** Currency-safe totals derived from confirmed unified bookings. */
+  spend_by_currency?: Record<string, number>;
+  /** Currency-safe confirmed booking counts used to calculate real averages. */
+  booking_count_by_currency?: Record<string, number>;
   loyalty_points?: number;
   last_booking_date?: string;
   segment?: CustomerSegment;

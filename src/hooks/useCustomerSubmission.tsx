@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useEnhancedCustomerValidation } from "./useEnhancedCustomerValidation";
 import { useOrgId } from './useOrgId';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 interface CustomerData {
   name: string; phone: string; email?: string; nationality?: string; address?: string; segment_id?: string;
@@ -27,7 +28,11 @@ export const useCustomerSubmission = ({ onCustomerAdded, onCustomerUpdated, isEd
 
   const submitCustomer = async (data: CustomerData) => {
     try {
-      const { data: permissionCheck, error: permissionError } = await supabase.rpc('can_manage_customers' as any);
+      if (!orgId) throw new Error('لم يتم تحديد المؤسسة');
+      const { data: permissionCheck, error: permissionError } = await callUntypedRpc<boolean>('has_org_permission', {
+        _org_id: orgId,
+        _permission: isEditMode ? 'customers_edit' : 'customers_create',
+      });
       if (permissionError) { toast.error('خطأ في التحقق من الصلاحيات'); throw permissionError; }
       if (!permissionCheck) { toast.error('ليس لديك صلاحية إدارة العملاء'); throw new Error('ليس لديك صلاحية'); }
 
@@ -44,7 +49,8 @@ export const useCustomerSubmission = ({ onCustomerAdded, onCustomerUpdated, isEd
       };
 
       if (isEditMode && customerId) {
-        const { data: updatedCustomer, error } = await supabase.from('customers').update(customerData).eq('id', customerId)
+        const { data: updatedCustomer, error } = await supabase.from('customers').update(customerData)
+          .eq('id', customerId).eq('organization_id', orgId)
           .select(`id, name, phone, email, nationality, address, segment_id, total_bookings, total_spent, loyalty_points, last_booking_date, created_at, updated_at`).single();
         if (error) { if (error.code === '42501') toast.error('ليس لديك صلاحية تحديث العملاء'); else toast.error(`خطأ: ${error.message}`); throw error; }
         if (!updatedCustomer) throw new Error('لم يتم العثور على العميل');

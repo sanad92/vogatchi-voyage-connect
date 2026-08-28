@@ -1,9 +1,10 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Phone, Mail, TrendingUp } from 'lucide-react';
+import type { CustomerInteraction } from './InteractionsList';
 
 interface InteractionStatsProps {
-  interactions: any[] | undefined;
+  interactions: CustomerInteraction[] | undefined;
 }
 
 const InteractionStats = ({ interactions }: InteractionStatsProps) => {
