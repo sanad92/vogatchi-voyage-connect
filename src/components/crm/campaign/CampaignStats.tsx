@@ -1,12 +1,20 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Target, Play, Eye, TrendingUp } from 'lucide-react';
+import type { CampaignSend, MarketingCampaign } from '@/types/crm';
+import { buildCampaignDeliveryMetrics } from '@/lib/campaignMetrics';
 
 interface CampaignStatsProps {
-  marketingCampaigns: any[] | undefined;
+  marketingCampaigns: MarketingCampaign[] | undefined;
+  campaignSends: CampaignSend[] | undefined;
 }
 
-const CampaignStats = ({ marketingCampaigns }: CampaignStatsProps) => {
+const CampaignStats = ({ marketingCampaigns, campaignSends }: CampaignStatsProps) => {
+  const deliveryMetrics = buildCampaignDeliveryMetrics(campaignSends);
+  const deliveryHint = deliveryMetrics.deliveredCount > 0
+    ? `من ${deliveryMetrics.deliveredCount} رسالة مسلمة`
+    : 'لا توجد بيانات إرسال';
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card>
@@ -39,8 +47,9 @@ const CampaignStats = ({ marketingCampaigns }: CampaignStatsProps) => {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">معدل الفتح</p>
-              <p className="text-2xl font-bold">45%</p>
+              <p className="text-sm font-medium text-gray-600">معدل القراءة</p>
+              <p className="text-2xl font-bold">{deliveryMetrics.readRate}%</p>
+              <p className="text-xs text-muted-foreground">{deliveryHint}</p>
             </div>
             <Eye className="h-8 w-8 text-purple-600" />
           </div>
@@ -52,7 +61,8 @@ const CampaignStats = ({ marketingCampaigns }: CampaignStatsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">معدل الاستجابة</p>
-              <p className="text-2xl font-bold">12%</p>
+              <p className="text-2xl font-bold">{deliveryMetrics.responseRate}%</p>
+              <p className="text-xs text-muted-foreground">{deliveryHint}</p>
             </div>
             <TrendingUp className="h-8 w-8 text-orange-600" />
           </div>

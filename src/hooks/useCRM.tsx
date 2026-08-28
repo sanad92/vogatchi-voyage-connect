@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { CustomerSegment, LoyaltyReward, MarketingCampaign } from '@/types/crm';
+import type { CampaignSend, CustomerSegment, LoyaltyReward, MarketingCampaign } from '@/types/crm';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
@@ -66,6 +66,26 @@ export const useCRM = () => {
         ...campaign,
         campaign_type: campaign.campaign_type as 'email' | 'whatsapp' | 'sms'
       })) as MarketingCampaign[];
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: campaignSends, isLoading: campaignSendsLoading } = useQuery({
+    queryKey: ['campaign-sends', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_sends')
+        .select('id, campaign_id, customer_id, sent_at, status, response, created_at')
+        .eq('organization_id', orgId!)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).filter((send): send is CampaignSend => (
+        Boolean(send.campaign_id)
+        && Boolean(send.customer_id)
+        && Boolean(send.created_at)
+        && ['sent', 'delivered', 'read', 'failed'].includes(send.status || '')
+      ));
     },
     enabled: !!orgId,
   });
@@ -151,6 +171,8 @@ export const useCRM = () => {
     rewardsLoading,
     marketingCampaigns,
     campaignsLoading,
+    campaignSends,
+    campaignSendsLoading,
     createSegment: createSegmentMutation.mutateAsync,
     createCampaign: createCampaignMutation.mutateAsync,
     redeemPoints: redeemPointsMutation.mutate,

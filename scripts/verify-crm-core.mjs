@@ -11,11 +11,14 @@ const loadTypeScriptModule = async (path) => {
 };
 
 const metrics = await loadTypeScriptModule(new URL('../src/lib/customerMetrics.ts', import.meta.url));
+const campaignMetrics = await loadTypeScriptModule(new URL('../src/lib/campaignMetrics.ts', import.meta.url));
 const migration = await readFile(new URL('../supabase/migrations/20260828085456_crm_core_hardening.sql', import.meta.url), 'utf8');
+const campaignMigration = await readFile(new URL('../supabase/migrations/20260828140000_campaign_delivery_hardening.sql', import.meta.url), 'utf8');
 const customersPage = await readFile(new URL('../src/pages/Customers.tsx', import.meta.url), 'utf8');
 const customerHook = await readFile(new URL('../src/hooks/useCustomers.tsx', import.meta.url), 'utf8');
 const customerService = await readFile(new URL('../src/hooks/useCustomerService.tsx', import.meta.url), 'utf8');
 const campaignCard = await readFile(new URL('../src/components/crm/campaign/CampaignCard.tsx', import.meta.url), 'utf8');
+const campaignStats = await readFile(new URL('../src/components/crm/campaign/CampaignStats.tsx', import.meta.url), 'utf8');
 
 assert.deepEqual(metrics.parseCurrencyTotals({ egp: '100.5', USD: 20, bad: 'x' }), { EGP: 100.5, USD: 20 });
 assert.deepEqual(metrics.sumCurrencyTotals([{ EGP: 100 }, { EGP: 25, USD: 10 }]), { EGP: 125, USD: 10 });
@@ -42,6 +45,15 @@ assert.equal(analytics.inactiveCustomers, 1);
 assert.equal(analytics.retentionRate, 50);
 assert.equal(analytics.churnRate, 50);
 
+const deliveryMetrics = campaignMetrics.buildCampaignDeliveryMetrics([
+  { status: 'delivered', response: null },
+  { status: 'read', response: 'interested' },
+  { status: 'failed', response: null },
+]);
+assert.equal(deliveryMetrics.deliveredCount, 2);
+assert.equal(deliveryMetrics.readRate, 50);
+assert.equal(deliveryMetrics.responseRate, 50);
+
 assert.match(migration, /CREATE OR REPLACE FUNCTION public\.has_org_permission/);
 assert.match(migration, /CREATE POLICY customers_update_by_permission/);
 assert.match(migration, /CREATE OR REPLACE FUNCTION public\.crm_customer_booking_metrics/);
@@ -52,10 +64,14 @@ assert.match(migration, /CREATE OR REPLACE FUNCTION public\.redeem_loyalty_rewar
 assert.match(migration, /FOR UPDATE;/, 'loyalty redemption locks the customer row');
 assert.match(migration, /protect_sop_lead_workflow_fields_trigger/);
 assert.doesNotMatch(migration, /Org members can manage/);
+assert.match(campaignMigration, /enforce_campaign_send_organization_trigger/);
+assert.match(campaignMigration, /CREATE POLICY campaign_sends_select_by_permission/);
+assert.match(campaignMigration, /has_org_permission\(organization_id, 'crm_campaigns'\)/);
 
 assert.match(customerHook, /crm_customer_booking_metrics/);
 assert.doesNotMatch(customerService, /booking_id:\s*followUpData\.customer_id/);
 assert.doesNotMatch(campaignCard, /Math\.floor\(/, 'campaign performance is never fabricated');
+assert.doesNotMatch(campaignStats, /45%|12%/, 'campaign rates are never hardcoded');
 assert.doesNotMatch(customersPage, /value="complaints"|value="automation"|value="loyalty"/);
 
-console.log('CRM core checks passed: 23/23');
+console.log('CRM core checks passed: 30/30');

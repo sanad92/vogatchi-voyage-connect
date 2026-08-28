@@ -13,7 +13,7 @@ import CampaignCard from './campaign/CampaignCard';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 
 const MarketingCampaigns = () => {
-  const { customerSegments, marketingCampaigns, createCampaign, isCreatingCampaign } = useCRM();
+  const { customerSegments, marketingCampaigns, campaignSends, createCampaign, isCreatingCampaign } = useCRM();
   const { customers } = useCustomers();
   const { canManageCampaigns } = useSupabasePermissions();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -49,7 +49,7 @@ const MarketingCampaigns = () => {
 
   return (
     <div className="space-y-6">
-      <CampaignStats marketingCampaigns={marketingCampaigns} />
+      <CampaignStats marketingCampaigns={marketingCampaigns} campaignSends={campaignSends} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">الحملات التسويقية</h2>
