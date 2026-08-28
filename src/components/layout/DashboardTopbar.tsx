@@ -8,7 +8,8 @@ import { Menu, LogOut, Settings, Search } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Link } from 'react-router-dom';
-import CommandPalette, { useCommandPalette } from '@/components/common/CommandPalette';
+import CommandPalette from '@/components/common/CommandPalette';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 
 interface DashboardTopbarProps {
   onMenuClick: () => void;
@@ -119,4 +120,3 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
 };
 
 export default DashboardTopbar;
-

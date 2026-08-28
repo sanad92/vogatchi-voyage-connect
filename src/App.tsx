@@ -50,6 +50,7 @@ const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
 
 // Dashboard & Core
 const OptimizedIndex = lazy(() => import("@/pages/OptimizedIndex"));
+const ModuleOverview = lazy(() => import("@/pages/ModuleOverview"));
 const Customers = lazy(() => import("@/pages/Customers"));
 const DuplicateCustomersPage = lazy(() => import("@/pages/DuplicateCustomers"));
 const DataQualityPage = lazy(() => import("@/pages/DataQuality"));
@@ -304,6 +305,7 @@ function App() {
                               <Route path="/subscription-expired" element={<SubscriptionExpiredPage />} />
                               <Route path="/subscription" element={<SubscriptionManagement />} />
                               <Route path="/dashboard" element={<OptimizedIndex />} />
+                              <Route path="/modules/:moduleId" element={<ModuleOverview />} />
                               <Route path="/customers" element={<PermissionRouteGuard requiredPermission="customers_view"><Customers /></PermissionRouteGuard>} />
                               <Route path="/duplicate-customers" element={<PermissionRouteGuard requiredPermission="customers_view"><DuplicateCustomersPage /></PermissionRouteGuard>} />
                               <Route path="/data-quality" element={<DataQualityPage />} />

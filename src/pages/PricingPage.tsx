@@ -1,4 +1,4 @@
-import { useState, type ElementType } from 'react';
+import { Fragment, useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -40,26 +40,110 @@ interface FeatureDefinition {
   mode?: 'all' | 'any';
 }
 
-const FEATURES: FeatureDefinition[] = [
-  { label: 'CRM وإدارة دورة العميل', icon: Users, keys: ['basic_crm'] },
-  { label: 'SOP وتسليم المهام بين الأقسام', icon: Workflow, keys: ['sop_workflow'] },
-  { label: 'عروض الأسعار والتسعير', icon: FileCheck2, keys: ['quotes'] },
+interface FeatureGroup {
+  label: string;
+  description: string;
+  icon: ElementType;
+  features: FeatureDefinition[];
+}
+
+interface PlanLimitDefinition {
+  label: string;
+  icon: ElementType;
+  getValue: (plan: PricingPlan) => string;
+}
+
+const FEATURE_GROUPS: FeatureGroup[] = [
   {
-    label: 'حجوزات فنادق وطيران وسيارات ونقل',
+    label: 'المبيعات وCRM',
+    description: 'من أول تواصل حتى اعتماد عرض السعر',
+    icon: Users,
+    features: [
+      { label: 'العملاء وCRM ودورة البيع', icon: Users, keys: ['basic_crm'] },
+      { label: 'استقبال الطلبات وتسليمها بين الأقسام', icon: Workflow, keys: ['sop_workflow'] },
+      { label: 'عروض الأسعار والمتابعة', icon: FileCheck2, keys: ['quotes'] },
+      { label: 'واتساب وصندوق المحادثات', icon: MessageSquareText, keys: ['whatsapp'] },
+    ],
+  },
+  {
+    label: 'الموردون والتسعير',
+    description: 'التكلفة والتوفر وشروط المورد',
+    icon: Hotel,
+    features: [
+      { label: 'ملفات الموردين والعقود', icon: Building2, keys: ['suppliers'] },
+      { label: 'أسعار الموردين والتخصيصات', icon: Hotel, keys: ['suppliers'] },
+    ],
+  },
+  {
+    label: 'الحجوزات والتشغيل',
+    description: 'الحجز والمهام والمستندات التشغيلية',
+    icon: Plane,
+    features: [
+      {
+        label: 'حجوزات فنادق وطيران وسيارات وانتقالات',
+        icon: Plane,
+        keys: ['hotel_bookings', 'flight_bookings', 'car_rentals', 'transport'],
+        mode: 'all',
+      },
+      { label: 'المهام وSOP وتقويم التشغيل', icon: Workflow, keys: ['sop_workflow'] },
+      { label: 'مركز المستندات والقسائم', icon: FileText, keys: ['documents'] },
+    ],
+  },
+  {
+    label: 'المالية والمحاسبة',
+    description: 'التحصيل والمستحقات والخزينة والقيود',
+    icon: WalletCards,
+    features: [
+      { label: 'الفواتير والتحصيلات', icon: ReceiptText, keys: ['invoices'] },
+      { label: 'مستحقات الموردين والمصروفات', icon: WalletCards, keys: ['finance'] },
+      { label: 'الخزينة والبنوك والتدفقات النقدية', icon: WalletCards, keys: ['finance'] },
+      { label: 'المحاسبة والقوائم المالية', icon: BarChart3, keys: ['finance'] },
+    ],
+  },
+  {
+    label: 'الإدارة والرقابة',
+    description: 'الفريق والتقارير والصلاحيات والحوكمة',
+    icon: ShieldCheck,
+    features: [
+      { label: 'التقارير الإدارية الأساسية', icon: BarChart3, keys: ['reports'] },
+      { label: 'التحليلات والتقارير المتقدمة', icon: BarChart3, keys: ['advanced_reports'] },
+      { label: 'الفروع والأقسام', icon: Building2, keys: ['multi_branch'] },
+      { label: 'عمولات الموظفين ومتابعة الاستحقاق', icon: WalletCards, keys: ['commissions'] },
+      { label: 'سجل المراجعة', icon: ShieldCheck, keys: ['audit_log'] },
+      { label: 'ضوابط المؤسسات المتقدمة', icon: ShieldCheck, keys: ['enterprise_controls'] },
+    ],
+  },
+  {
+    label: 'النمو والأتمتة',
+    description: 'التسويق والأتمتة والذكاء الاصطناعي',
+    icon: Zap,
+    features: [
+      { label: 'قواعد الأتمتة', icon: Zap, keys: ['automation'] },
+      { label: 'رحلات وحملات التسويق', icon: Zap, keys: ['marketing'] },
+      { label: 'المساعد الذكي', icon: Sparkles, keys: ['ai_assistant'] },
+      { label: 'هوية مخصصة White label', icon: Sparkles, keys: ['white_label'] },
+    ],
+  },
+];
+
+const PLAN_CARD_FEATURES: FeatureDefinition[] = [
+  { label: 'العملاء وCRM', icon: Users, keys: ['basic_crm'] },
+  { label: 'SOP وتسليم المهام', icon: Workflow, keys: ['sop_workflow'] },
+  { label: 'عروض الأسعار', icon: FileCheck2, keys: ['quotes'] },
+  {
+    label: 'كل أنواع الحجوزات',
     icon: Plane,
     keys: ['hotel_bookings', 'flight_bookings', 'car_rentals', 'transport'],
     mode: 'all',
   },
-  { label: 'الموردون والأسعار والمستندات', icon: Hotel, keys: ['suppliers', 'documents'], mode: 'all' },
-  { label: 'الفواتير والتحصيل', icon: ReceiptText, keys: ['invoices'] },
+  { label: 'الموردون والتسعير', icon: Hotel, keys: ['suppliers'] },
+  { label: 'الفواتير والمستندات', icon: ReceiptText, keys: ['invoices', 'documents'], mode: 'all' },
   { label: 'التقارير الأساسية', icon: BarChart3, keys: ['reports'] },
-  { label: 'المالية والمحاسبة والتدفقات النقدية', icon: WalletCards, keys: ['finance'] },
-  { label: 'تحليلات وتقارير متقدمة', icon: BarChart3, keys: ['advanced_reports'] },
-  { label: 'واتساب وصندوق المحادثات', icon: MessageSquareText, keys: ['whatsapp'] },
-  { label: 'الأتمتة ورحلات التسويق', icon: Zap, keys: ['automation', 'marketing'], mode: 'all' },
-  { label: 'الفروع والأقسام', icon: Building2, keys: ['multi_branch'] },
-  { label: 'سجل المراجعة والضوابط المتقدمة', icon: ShieldCheck, keys: ['audit_log', 'enterprise_controls'], mode: 'any' },
-  { label: 'هوية مخصصة White label', icon: Sparkles, keys: ['white_label'] },
+  { label: 'المالية والمحاسبة', icon: WalletCards, keys: ['finance'] },
+  { label: 'واتساب والأتمتة والتسويق', icon: Zap, keys: ['whatsapp', 'automation', 'marketing'], mode: 'all' },
+  { label: 'التقارير المتقدمة والمساعد الذكي', icon: Sparkles, keys: ['advanced_reports', 'ai_assistant'], mode: 'all' },
+  { label: 'الفروع والعمولات وسجل المراجعة', icon: ShieldCheck, keys: ['multi_branch', 'commissions', 'audit_log'], mode: 'all' },
+  { label: 'White label وضوابط المؤسسات', icon: Building2, keys: ['white_label', 'enterprise_controls'], mode: 'all' },
 ];
 
 const PLAN_META: Record<string, { description: string; audience: string }> = {
@@ -91,6 +175,30 @@ const hasFeature = (planFeatures: string[], feature: FeatureDefinition) => {
 const formatStorage = (storageMb: number) => {
   if (storageMb >= 1024) return `${Math.round(storageMb / 1024)} GB`;
   return `${storageMb} MB`;
+};
+
+const PLAN_LIMITS: PlanLimitDefinition[] = [
+  {
+    label: 'المستخدمون المشمولون',
+    icon: Users,
+    getValue: (plan) => `${Number(plan.max_users).toLocaleString('ar-EG')} مستخدم`,
+  },
+  {
+    label: 'الحجوزات الشهرية',
+    icon: Plane,
+    getValue: (plan) => `${Number(plan.max_bookings_per_month).toLocaleString('ar-EG')} حجز / شهر`,
+  },
+  {
+    label: 'المساحة التخزينية',
+    icon: FileText,
+    getValue: (plan) => formatStorage(Number(plan.max_storage_mb)),
+  },
+];
+
+const PRIORITY_SUPPORT: FeatureDefinition = {
+  label: 'دعم بأولوية',
+  icon: Headphones,
+  keys: ['priority_support'],
 };
 
 const PricingPage = () => {
@@ -172,7 +280,7 @@ const PricingPage = () => {
             <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
               {plans.map((plan) => {
                 const features = getFeatures(plan);
-                const included = FEATURES.filter((feature) => hasFeature(features, feature));
+                const included = PLAN_CARD_FEATURES.filter((feature) => hasFeature(features, feature));
                 const recommended = plan.name === RECOMMENDED_PLAN;
                 const monthlyEquivalent = isYearly
                   ? Math.round(Number(plan.price_yearly) / 12)
@@ -277,14 +385,15 @@ const PricingPage = () => {
         <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-black text-blue-700">مقارنة الموديولات</p>
-              <h2 className="mt-3 text-3xl font-black text-[#07192f] sm:text-4xl">اعرف بالضبط ما الذي تدفع مقابله.</h2>
+              <p className="text-sm font-black text-blue-700">مقارنة الموديولات والشاشات</p>
+              <h2 className="mt-3 text-3xl font-black text-[#07192f] sm:text-4xl">كل وظيفة في مكانها، وكل خطة واضحة.</h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">المميزات مجمعة حسب دورة العمل داخل شركة السياحة، من المبيعات حتى الإدارة والربحية.</p>
             </div>
             <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200">
               <table className="w-full min-w-[760px] border-collapse text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-5 py-4 text-right font-black text-slate-950">الموديول</th>
+                    <th className="sticky right-0 z-20 bg-slate-50 px-5 py-4 text-right font-black text-slate-950">الشاشة أو الوظيفة</th>
                     {plans.map((plan) => (
                       <th key={plan.id} className={`px-4 py-4 text-center font-black ${plan.name === RECOMMENDED_PLAN ? 'text-blue-700' : 'text-slate-950'}`}>
                         {plan.name_ar}
@@ -293,31 +402,102 @@ const PricingPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {FEATURES.map((feature) => {
-                    const Icon = feature.icon;
+                  {FEATURE_GROUPS.map((group) => {
+                    const GroupIcon = group.icon;
                     return (
-                      <tr key={feature.label} className="border-t border-slate-200">
-                        <td className="px-5 py-4 text-slate-700">
-                          <div className="flex items-center gap-2.5">
-                            <Icon className="h-4 w-4 text-slate-500" />
-                            {feature.label}
-                          </div>
-                        </td>
-                        {plans.map((plan) => {
-                          const included = hasFeature(getFeatures(plan), feature);
+                      <Fragment key={group.label}>
+                        <tr className="border-t border-slate-200 bg-slate-100/80">
+                          <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+                                <GroupIcon className="h-4 w-4" />
+                              </span>
+                              <div>
+                                <div className="font-black text-[#07192f]">{group.label}</div>
+                                <div className="mt-0.5 text-xs font-medium text-slate-500">{group.description}</div>
+                              </div>
+                            </div>
+                          </th>
+                        </tr>
+                        {group.features.map((feature) => {
+                          const Icon = feature.icon;
                           return (
-                            <td key={plan.id} className="px-4 py-4 text-center">
-                              {included ? (
-                                <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
-                              ) : (
-                                <X className="mx-auto h-5 w-5 text-slate-300" />
-                              )}
-                            </td>
+                            <tr key={feature.label} className="border-t border-slate-200 bg-white">
+                              <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                                <div className="flex items-center gap-2.5">
+                                  <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                                  {feature.label}
+                                </div>
+                              </td>
+                              {plans.map((plan) => {
+                                const included = hasFeature(getFeatures(plan), feature);
+                                return (
+                                  <td key={plan.id} className="px-4 py-4 text-center">
+                                    {included ? (
+                                      <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+                                    ) : (
+                                      <X className="mx-auto h-5 w-5 text-slate-300" />
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
                           );
                         })}
+                      </Fragment>
+                    );
+                  })}
+                  <tr className="border-t border-slate-200 bg-slate-100/80">
+                    <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+                          <Users className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="font-black text-[#07192f]">حدود الخطة والدعم</div>
+                          <div className="mt-0.5 text-xs font-medium text-slate-500">أرقام واضحة لطاقتك التشغيلية داخل النظام</div>
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                  {PLAN_LIMITS.map((limit) => {
+                    const Icon = limit.icon;
+                    return (
+                      <tr key={limit.label} className="border-t border-slate-200 bg-white">
+                        <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                          <div className="flex items-center gap-2.5">
+                            <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                            {limit.label}
+                          </div>
+                        </td>
+                        {plans.map((plan) => (
+                          <td key={plan.id} className="px-4 py-4 text-center font-bold text-slate-700">
+                            {limit.getValue(plan)}
+                          </td>
+                        ))}
                       </tr>
                     );
                   })}
+                  <tr className="border-t border-slate-200 bg-white">
+                    <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                      <div className="flex items-center gap-2.5">
+                        <Headphones className="h-4 w-4 shrink-0 text-slate-500" />
+                        {PRIORITY_SUPPORT.label}
+                      </div>
+                    </td>
+                    {plans.map((plan) => {
+                      const included = hasFeature(getFeatures(plan), PRIORITY_SUPPORT);
+                      return (
+                        <td key={plan.id} className="px-4 py-4 text-center">
+                          {included ? (
+                            <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+                          ) : (
+                            <X className="mx-auto h-5 w-5 text-slate-300" />
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
                 </tbody>
               </table>
             </div>

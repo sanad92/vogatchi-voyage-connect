@@ -1,123 +1,25 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
-import { useSupabasePermissions, type PermissionKey } from '@/hooks/useSupabasePermissions';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useHandoverInbox, useMyPendingAssignments } from '@/hooks/useSop';
-import { PLAN_FEATURES, PlanFeature } from '@/lib/planFeatures';
+import { useNavigationAccess } from '@/hooks/useNavigationAccess';
+import {
+  NAVIGATION_GROUPS,
+  findModuleByPath,
+  pathMatchesScreen,
+  type NavigationGroup,
+  type NavigationScreen,
+} from '@/config/moduleNavigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard, Users, Hotel, Plane, Car, Truck, Receipt,
-  FileText, Building2, Calculator, TrendingUp, Calendar,
-  MessageSquare, Settings, ChevronDown, ChevronLeft, ChevronRight,
-  CreditCard, Briefcase, BarChart3, UserCheck, X, Shield, FileCheck, Zap,
-  ClipboardList, BanknoteIcon, AlertTriangle, Star, Sparkles, ArrowLeftRight,
-  FolderOpen, Building, Megaphone, History,
+  ChevronDown, ChevronLeft, ChevronRight, X, Shield, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
 
-
-interface NavItem {
-  title: string;
-  href: string;
-  icon: React.ElementType;
-  requiredPermission?: PermissionKey;
-  requiredFeature?: PlanFeature;
-  badge?: string;
-}
-
-interface NavGroup {
-  label: string;
-  icon: React.ElementType;
-  items: NavItem[];
-  requiredPermission?: PermissionKey;
-}
-
-// V1 Launch — Simplified sidebar. Only 10 core modules are exposed.
-// Non-core routes remain reachable via Command Palette (Cmd+K) and direct URLs.
-const navGroups: NavGroup[] = [
-  {
-    label: 'الرئيسية',
-    icon: LayoutDashboard,
-    items: [
-      { title: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
-      { title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.AI_ASSISTANT, badge: 'AI' },
-      { title: 'العمليات اليومية', href: '/daily-operations', icon: Briefcase, requiredPermission: 'bookings_view' },
-      { title: 'مركز قيادة العمليات', href: '/operations', icon: Briefcase, requiredPermission: 'bookings_view' },
-      { title: 'قائمة المهام اليومية', href: '/operations/queue', icon: Briefcase, requiredPermission: 'bookings_view' },
-      { title: 'تقويم السفر', href: '/travel-calendar', icon: Calendar, requiredPermission: 'bookings_view' },
-      { title: 'مركز المستندات', href: '/document-center', icon: FolderOpen, requiredPermission: 'documents_view' },
-    ],
-  },
-  {
-    label: 'الموردون',
-    icon: Building,
-    items: [
-      { title: 'قائمة الموردين', href: '/suppliers', icon: Building, requiredPermission: 'suppliers_view' },
-    ],
-  },
-  {
-    label: 'التسويق',
-    icon: Megaphone,
-    items: [
-      { title: 'رحلات الأتمتة', href: '/marketing/journeys', icon: Megaphone, requiredPermission: 'marketing_view', requiredFeature: PLAN_FEATURES.MARKETING },
-    ],
-  },
-  {
-    label: 'دليل العمل (SOP)',
-    icon: ClipboardList,
-    items: [
-      { title: 'استقبال العملاء', href: '/sop/intake', icon: Users, requiredPermission: 'crm_view' },
-      { title: 'التسليم والاستلام', href: '/sop/handovers', icon: ArrowLeftRight, requiredPermission: 'crm_view' },
-      { title: 'خط أنابيب المبيعات', href: '/sop/pipeline', icon: ClipboardList, requiredPermission: 'crm_view' },
-      { title: 'طلبات التسعير', href: '/sop/pricing', icon: FileCheck, requiredPermission: 'quotes_view' },
-      { title: 'الالتزام والمؤشرات', href: '/sop/compliance', icon: BarChart3, requiredPermission: 'reports_view' },
-    ],
-  },
-  {
-    label: 'المبيعات',
-    icon: ClipboardList,
-    items: [
-      { title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, requiredPermission: 'quotes_view' },
-      { title: 'الحجوزات', href: '/bookings', icon: ClipboardList, requiredPermission: 'bookings_view' },
-      { title: 'الفواتير', href: '/invoices', icon: Receipt, requiredPermission: 'invoices_view' },
-      { title: 'المدفوعات والبنوك', href: '/bank-accounts', icon: CreditCard, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE },
-      { title: 'الاسترداد التاريخي', href: '/finance/historical-recovery', icon: History, requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE },
-    ],
-  },
-  {
-    label: 'العملاء والتواصل',
-    icon: Users,
-    items: [
-      { title: 'العملاء', href: '/customers', icon: Users, requiredPermission: 'customers_view' },
-      { title: 'CRM', href: '/crm', icon: UserCheck, requiredPermission: 'crm_view' },
-      { title: 'واتساب', href: '/whatsapp-inbox', icon: MessageSquare, requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP },
-      { title: 'إدارة واتساب', href: '/whatsapp-admin', icon: Settings, requiredPermission: 'whatsapp_admin', requiredFeature: PLAN_FEATURES.WHATSAPP },
-    ],
-  },
-  {
-    label: 'تحليلات',
-    icon: BarChart3,
-    items: [
-      { title: 'التقارير', href: '/reports', icon: FileText, requiredPermission: 'reports_view' },
-      { title: 'مؤشرات صحة الأعمال', href: '/reports/business-health', icon: BarChart3, requiredPermission: 'reports_view', requiredFeature: PLAN_FEATURES.ADVANCED_REPORTS },
-    ],
-  },
-  {
-    label: 'الإعدادات',
-    icon: Settings,
-    items: [
-      { title: 'فريق العمل', href: '/team', icon: Users, requiredPermission: 'team_view' },
-      { title: 'الإعدادات', href: '/admin-settings', icon: Settings, requiredPermission: 'admin_settings' },
-      { title: 'مركز القوالب', href: '/templates', icon: FileText, requiredPermission: 'admin_settings' },
-      { title: 'وضع العرض التوضيحي', href: '/organization/demo-mode', icon: Sparkles, requiredPermission: 'admin_settings' },
-    ],
-  },
-];
 
 interface DashboardSidebarProps {
   collapsed: boolean;
@@ -128,22 +30,29 @@ interface DashboardSidebarProps {
 
 const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: DashboardSidebarProps) => {
   const location = useLocation();
-  const { user, profile, isSuperAdmin } = useOptimizedAuth();
+  const { user, profile } = useOptimizedAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
-  const { hasPermission } = useSupabasePermissions();
-  const { hasFeature } = useSubscription();
+  const { canAccessScreen } = useNavigationAccess();
   const { data: handoverInbox } = useHandoverInbox();
   const { data: pendingAssignments } = useMyPendingAssignments();
   const pendingHandovers = (handoverInbox?.incoming?.length || 0) + (pendingAssignments?.length || 0);
 
   // Platform admin section removed from org sidebar — they have a dedicated /platform layout
-  const allGroups = useMemo(() => navGroups, []);
+  const allGroups = useMemo(() => NAVIGATION_GROUPS, []);
+  const activeModule = useMemo(() => findModuleByPath(location.pathname), [location.pathname]);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    allGroups.forEach(g => { initial[g.label] = true; });
+    allGroups.forEach((group) => {
+      initial[group.label] = group.label === 'الرئيسية' || group.moduleId === activeModule?.id;
+    });
     return initial;
   });
+
+  useEffect(() => {
+    if (!activeModule) return;
+    setOpenGroups((current) => ({ ...current, [activeModule.label]: true }));
+  }, [activeModule]);
 
   // Client-side favorites (per-browser). No schema change.
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -171,27 +80,25 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
+  const activeHref = useMemo(() =>
+    allGroups
+      .flatMap((group) => group.items)
+      .filter((item) => canAccessScreen(item) && pathMatchesScreen(location.pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href,
+  [allGroups, canAccessScreen, location.pathname]);
 
-  const canAccessItem = useCallback((item: NavItem): boolean => {
-    if (isSuperAdmin()) return true;
-    if (item.requiredFeature && !hasFeature(item.requiredFeature)) return false;
-    if (!item.requiredPermission) return true;
-    return hasPermission(item.requiredPermission);
-  }, [hasFeature, hasPermission, isSuperAdmin]);
+  const isActive = (href: string) => href === activeHref;
 
-  const canAccessGroup = useCallback((group: NavGroup): boolean => {
-    if (isSuperAdmin()) return true;
-    return group.items.some(item => canAccessItem(item));
-  }, [canAccessItem, isSuperAdmin]);
+  const canAccessGroup = (group: NavigationGroup): boolean =>
+    group.items.some((item) => !item.isOverview && canAccessScreen(item));
 
   // Resolve favorite items by looking them up across all groups
   const favoriteItems = useMemo(() => {
-    const flat: NavItem[] = allGroups.flatMap((g) => g.items);
+    const flat: NavigationScreen[] = allGroups.flatMap((g) => g.items);
     return favorites
       .map((href) => flat.find((it) => it.href === href))
-      .filter((it): it is NavItem => !!it && canAccessItem(it));
-  }, [favorites, allGroups, canAccessItem]);
+      .filter((it): it is NavigationScreen => !!it && canAccessScreen(it));
+  }, [favorites, allGroups, canAccessScreen]);
 
   const sidebarContent = (
 
@@ -296,26 +203,22 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
               if (!canAccessGroup(group)) return null;
 
-              const isPlatformSection = group.label === 'إدارة المنصة';
-              const visibleItems = group.items.filter(canAccessItem);
+              const visibleItems = group.items.filter((item) => item.isOverview || canAccessScreen(item));
               if (visibleItems.length === 0) return null;
               const GroupIcon = group.icon;
-              const hasActiveItem = visibleItems.some(i => isActive(i.href));
+              const hasActiveItem = group.moduleId
+                ? activeModule?.id === group.moduleId
+                : visibleItems.some((item) => isActive(item.href));
 
               return (
-                <div key={group.label} className={cn(
-                  "mb-0.5",
-                  isPlatformSection && "mt-3 pt-3 border-t border-sidebar-border"
-                )}>
+                <div key={group.label} className="mb-0.5">
                   {!collapsed ? (
                     <button
                       onClick={() => toggleGroup(group.label)}
                       className={cn(
                         "flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors rounded-lg",
                         hasActiveItem ? "text-sidebar-primary" : "",
-                        isPlatformSection
-                          ? "text-warning hover:text-warning/80"
-                          : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
                       <span className="flex items-center gap-2">
@@ -328,10 +231,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       )} />
                     </button>
                   ) : (
-                    <div className={cn(
-                      "h-px my-2 mx-1",
-                      isPlatformSection ? "bg-warning/30" : "bg-sidebar-border"
-                    )} />
+                    <div className="h-px my-2 mx-1 bg-sidebar-border" />
                   )}
 
                   {(collapsed || openGroups[group.label]) && (

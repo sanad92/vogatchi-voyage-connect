@@ -11,6 +11,7 @@
     "test:core": "node scripts/verify-saas-core.mjs",
     "test:crm": "node scripts/verify-crm-core.mjs",
     "test:finance": "node scripts/verify-financial-formulas.mjs",
+    "test:navigation": "node scripts/verify-module-navigation.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

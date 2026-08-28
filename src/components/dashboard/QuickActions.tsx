@@ -1,22 +1,19 @@
-import { Hotel, Plane, Users, Receipt, FileCheck, Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const actions = [
-  { title: 'حجز فندق', icon: Hotel, href: '/new-hotel-booking' },
-  { title: 'حجز طيران', icon: Plane, href: '/new-flight-booking' },
-  { title: 'تأجير سيارة', icon: Car, href: '/car-rentals' },
-  { title: 'عميل جديد', icon: Users, href: '/new-customer' },
-  { title: 'فاتورة', icon: Receipt, href: '/new-invoice' },
-  { title: 'عرض سعر', icon: FileCheck, href: '/quotes/new' },
-];
+import { QUICK_ACTIONS } from '@/config/moduleNavigation';
+import { useNavigationAccess } from '@/hooks/useNavigationAccess';
 
 const QuickActions = () => {
+  const { canAccessScreen } = useNavigationAccess();
+  const actions = QUICK_ACTIONS.filter(canAccessScreen);
+
+  if (actions.length === 0) return null;
+
   return (
     <div className="bg-card rounded-2xl border border-border/60 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-foreground">إجراءات سريعة</h3>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
