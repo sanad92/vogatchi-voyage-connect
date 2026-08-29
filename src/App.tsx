@@ -39,6 +39,7 @@ const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
 const SignupPage = lazy(() => import("@/pages/SignupPage"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -238,6 +239,7 @@ function App() {
                 <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/auth" element={<Navigate to="/login" replace />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
