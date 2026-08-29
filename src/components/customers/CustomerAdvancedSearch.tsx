@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, X, Calendar, DollarSign, Phone, Mail } from "lucide-react";
+import { Search, Filter, X, Mail, MessageCircle } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +105,7 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <div className="flex gap-2 md:ml-2">
@@ -260,6 +260,7 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
                 <label className="text-sm font-medium mb-2 block">البريد الإلكتروني</label>
                 <div className="flex gap-2">
                   <Button
+                    type="button"
                     variant={hasEmail === true ? "default" : "outline"}
                     size="sm"
                     onClick={() => setHasEmail(hasEmail === true ? null : true)}
@@ -268,11 +269,35 @@ const CustomerAdvancedSearch = ({ onSearch, onClear }: CustomerAdvancedSearchPro
                     متوفر
                   </Button>
                   <Button
+                    type="button"
                     variant={hasEmail === false ? "default" : "outline"}
                     size="sm"
                     onClick={() => setHasEmail(hasEmail === false ? null : false)}
                   >
                     غير متوفر
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">واتساب</label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={hasWhatsapp === true ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setHasWhatsapp(hasWhatsapp === true ? null : true)}
+                  >
+                    <MessageCircle className="h-3 w-3 mr-1" />
+                    متاح
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={hasWhatsapp === false ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setHasWhatsapp(hasWhatsapp === false ? null : false)}
+                  >
+                    غير متاح
                   </Button>
                 </div>
               </div>

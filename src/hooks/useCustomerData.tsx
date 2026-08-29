@@ -2,6 +2,43 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CurrencyTotals } from '@/lib/customerMetrics';
+import type { Database } from '@/integrations/supabase/types';
+
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type CustomerBookingRow = Pick<BookingRow,
+  | 'id'
+  | 'booking_number'
+  | 'booking_type'
+  | 'status'
+  | 'workflow_stage'
+  | 'selling_price'
+  | 'cost_price'
+  | 'currency'
+  | 'start_date'
+  | 'end_date'
+  | 'supplier_name'
+  | 'notes'
+  | 'created_at'
+>;
+type BookingGroupKey = 'hotel' | 'flight' | 'transport' | 'car_rental';
+type CustomerBookingSummary = CustomerBookingRow & {
+  internal_booking_number: string;
+  booking_reference: string;
+  hotel_name: string | null;
+  check_in_date: string | null;
+  check_out_date: string | null;
+  departure_date: string | null;
+  rental_start_date: string | null;
+  rental_end_date: string | null;
+  total_cost_customer: number | null;
+  total_cost: number | null;
+  total_rental_cost: number | null;
+  status: { name_ar: string; name: string; color: string };
+};
+
+const isBookingGroupKey = (value: string): value is BookingGroupKey => (
+  ['hotel', 'flight', 'transport', 'car_rental'] as const
+).includes(value as BookingGroupKey);
 
 export const useCustomerData = (customerId: string) => {
   const { data: customerData, isLoading, refetch, error } = useQuery({
@@ -10,8 +47,6 @@ export const useCustomerData = (customerId: string) => {
       if (!customerId) {
         throw new Error('Customer ID is required');
       }
-
-      console.log('🔍 جاري تحميل بيانات العميل:', customerId);
 
       // First, load basic customer data with segment and creator info
       const { data: basicData, error: basicError } = await supabase
@@ -41,12 +76,10 @@ export const useCustomerData = (customerId: string) => {
         .single();
 
       if (basicError) {
-        console.error('❌ خطأ في تحميل بيانات العميل الأساسية:', basicError);
         throw basicError;
       }
 
       if (!basicData) {
-        console.error('❌ لم يتم العثور على العميل');
         throw new Error('لم يتم العثور على العميل');
       }
 
@@ -96,8 +129,13 @@ export const useCustomerData = (customerId: string) => {
 
       // Group unified bookings by booking_type and normalise fields
       // used by CustomerDetails (hotel_name, check_in_date, status.name_ar…).
-      const byType = { hotel: [] as any[], flight: [] as any[], transport: [] as any[], car_rental: [] as any[] };
-      for (const b of (unifiedBookings ?? []) as any[]) {
+      const byType: Record<BookingGroupKey, CustomerBookingSummary[]> = {
+        hotel: [],
+        flight: [],
+        transport: [],
+        car_rental: [],
+      };
+      for (const b of (unifiedBookings ?? []) as CustomerBookingRow[]) {
         const normalised = {
           ...b,
           internal_booking_number: b.booking_number,
@@ -113,20 +151,20 @@ export const useCustomerData = (customerId: string) => {
           total_rental_cost: b.selling_price,
           status: { name_ar: b.status, name: b.status, color: '#64748b' },
         };
-        const key = (b.booking_type as keyof typeof byType) || 'hotel';
-        (byType[key] ?? byType.hotel).push(normalised);
+        const key = isBookingGroupKey(b.booking_type) ? b.booking_type : 'hotel';
+        byType[key].push(normalised);
       }
 
-      const confirmedBookings = (unifiedBookings ?? []).filter((booking: any) =>
+      const confirmedBookings = ((unifiedBookings ?? []) as CustomerBookingRow[]).filter((booking) =>
         ['confirmed', 'completed', 'paid'].includes(String(booking.status || '').toLowerCase())
         || ['paid', 'operations', 'traveling', 'completed', 'post_travel'].includes(String(booking.workflow_stage || '')),
       );
-      const spendByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking: any) => {
+      const spendByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking) => {
         const currency = String(booking.currency || 'EGP').trim().toUpperCase();
         totals[currency] = (totals[currency] || 0) + Number(booking.selling_price || 0);
         return totals;
       }, {});
-      const bookingCountByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking: any) => {
+      const bookingCountByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking) => {
         const currency = String(booking.currency || 'EGP').trim().toUpperCase();
         totals[currency] = (totals[currency] || 0) + 1;
         return totals;
@@ -135,7 +173,7 @@ export const useCustomerData = (customerId: string) => {
       const lastBookingDate = confirmedBookings[0]?.created_at ?? null;
 
       const combinedData = {
-        ...(basicData as any),
+        ...basicData,
         total_bookings: totalBookings,
         total_spent: spendByCurrency.EGP || 0,
         spend_by_currency: spendByCurrency,
@@ -151,7 +189,6 @@ export const useCustomerData = (customerId: string) => {
         follow_ups: followUpsData || []
       };
 
-      console.log('✅ تم تحميل بيانات العميل بنجاح:', combinedData);
       return combinedData;
     },
     enabled: !!customerId,

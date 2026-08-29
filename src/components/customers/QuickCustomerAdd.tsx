@@ -1,6 +1,5 @@
 
-import { useState } from "react";
-import { Customer, CustomerData } from "@/types/customer";
+import { Customer } from "@/types/customer";
 import EnhancedCustomerForm from "./EnhancedCustomerForm";
 
 interface QuickCustomerAddProps {

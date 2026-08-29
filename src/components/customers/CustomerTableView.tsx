@@ -27,15 +27,19 @@ import {
   User,
   Flag,
   Star,
-  MessageCircle
+  MessageCircle,
+  Archive,
+  RotateCcw,
 } from "lucide-react";
 import { Customer } from "@/types/customer";
 import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
+import { hasCustomerWhatsapp } from '@/lib/customerFilters';
 
 interface CustomerTableViewProps {
   customers: Customer[];
   onCustomerSelect: (customerId: string) => void;
   onCustomerEdit?: (customer: Customer) => void;
+  onCustomerArchive?: (customer: Customer) => void;
   selectedCustomers: string[];
   onSelectionChange: (customerIds: string[]) => void;
 }
@@ -51,6 +55,7 @@ const CustomerTableView = ({
   customers, 
   onCustomerSelect, 
   onCustomerEdit,
+  onCustomerArchive,
   selectedCustomers,
   onSelectionChange 
 }: CustomerTableViewProps) => {
@@ -119,7 +124,7 @@ const CustomerTableView = ({
     return new Date(dateString).toLocaleDateString('ar-EG');
   };
 
-  const getSegmentBadge = (segment?: any) => {
+  const getSegmentBadge = (segment?: Customer['segment']) => {
     if (!segment) return null;
     
     return (
@@ -152,6 +157,9 @@ const CustomerTableView = ({
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-gray-400" />
             <span className="font-medium">{customer.name}</span>
+            {customer.archived_at && (
+              <Badge variant="outline" className="border-amber-300 text-amber-700">مؤرشف</Badge>
+            )}
           </div>
         );
       
@@ -232,7 +240,7 @@ const CustomerTableView = ({
             >
               <Eye className="h-3 w-3" />
             </Button>
-            {onCustomerEdit && (
+            {onCustomerEdit && !customer.archived_at && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -244,14 +252,28 @@ const CustomerTableView = ({
             <Button
               variant="ghost"
               size="sm"
+              disabled={!hasCustomerWhatsapp(customer)}
+              aria-label="فتح محادثة واتساب"
               onClick={() => {
-                if (customer.phone) {
-                  window.open(`https://wa.me/${customer.phone}`, '_blank');
+                if (hasCustomerWhatsapp(customer) && customer.phone) {
+                  window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}`, '_blank', 'noopener,noreferrer');
                 }
               }}
             >
               <MessageCircle className="h-3 w-3" />
             </Button>
+            {onCustomerArchive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCustomerArchive(customer)}
+                aria-label={customer.archived_at ? 'استعادة العميل' : 'أرشفة العميل'}
+              >
+                {customer.archived_at
+                  ? <RotateCcw className="h-3 w-3" />
+                  : <Archive className="h-3 w-3" />}
+              </Button>
+            )}
           </div>
         );
       
@@ -263,7 +285,7 @@ const CustomerTableView = ({
   return (
     <div className="space-y-4">
       {/* شريط أدوات الجدول */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {selectedCustomers.length > 0 && (
             <Badge variant="secondary">
@@ -294,7 +316,7 @@ const CustomerTableView = ({
       </div>
 
       {/* الجدول */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">

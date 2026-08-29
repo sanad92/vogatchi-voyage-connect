@@ -3,23 +3,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, User, Phone, Mail, Users, Eye } from "lucide-react";
+import type { DuplicateContactResult } from '@/types/customer';
 
 interface DuplicateCustomerAlertProps {
-  duplicateResult: {
-    hasDuplication: boolean;
-    phoneResult: {
-      isDuplicate: boolean;
-      existingCustomer?: any;
-      message?: string;
-      duplicateCount?: number;
-      allDuplicates?: any[];
-    };
-    emailResult: {
-      isDuplicate: boolean;
-      existingCustomer?: any;
-      message?: string;
-    };
-  };
+  duplicateResult: DuplicateContactResult;
   onViewCustomer?: (customerId: string) => void;
   onContinueAnyway?: () => void;
   showContinueOption?: boolean;
@@ -50,6 +37,11 @@ const DuplicateCustomerAlert = ({
               <div className="flex-1">
                 <div className="text-sm font-medium text-red-800">تكرار في رقم الهاتف:</div>
                 <div className="text-sm text-red-700">{phoneResult.message}</div>
+                {phoneResult.existingCustomer?.archived_at && (
+                  <Badge variant="outline" className="mt-2 border-amber-300 text-amber-700">
+                    العميل الموجود مؤرشف ويمكن استعادته
+                  </Badge>
+                )}
                 {phoneResult.duplicateCount && phoneResult.duplicateCount > 1 && (
                   <div className="flex items-center gap-2 mt-2">
                     <Users className="h-3 w-3 text-orange-600" />
@@ -68,7 +60,7 @@ const DuplicateCustomerAlert = ({
                   جميع العملاء ذوي نفس الرقم:
                 </div>
                 <div className="space-y-1">
-                  {phoneResult.allDuplicates.slice(0, 3).map((customer, index) => (
+                  {phoneResult.allDuplicates.slice(0, 3).map((customer) => (
                     <div key={customer.id} className="flex items-center justify-between text-sm">
                       <div>
                         <span className="font-medium text-orange-700">{customer.name}</span>
@@ -118,21 +110,6 @@ const DuplicateCustomerAlert = ({
             >
               <User className="h-4 w-4 mr-1" />
               عرض العميل الموجود
-            </Button>
-          )}
-          
-          {phoneResult.allDuplicates && phoneResult.allDuplicates.length > 1 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-blue-700 border-blue-300 hover:bg-blue-100"
-              onClick={() => {
-                // يمكن إضافة نافذة لعرض جميع العملاء المكررين
-                console.log('عرض جميع المكررين:', phoneResult.allDuplicates);
-              }}
-            >
-              <Users className="h-4 w-4 mr-1" />
-              عرض الكل ({phoneResult.allDuplicates.length})
             </Button>
           )}
           

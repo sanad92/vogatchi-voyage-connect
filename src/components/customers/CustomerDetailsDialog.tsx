@@ -49,6 +49,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             تفاصيل العميل
+            {customerData?.archived_at && (
+              <Badge variant="outline" className="border-amber-300 text-amber-700">مؤرشف</Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -75,7 +78,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-gray-500" />
-                    <span>{customerData.phone}</span>
+                    <span>{customerData.phone || 'غير متوفر'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-500" />
@@ -155,7 +158,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {customerData.hotel_bookings.map((booking: any) => (
+                      {customerData.hotel_bookings.map((booking) => (
                         <div key={booking.id} className="flex items-center justify-between">
                           <span>{booking.hotel_name}</span>
                           <Badge>{booking?.status?.name_ar}</Badge>
@@ -175,12 +178,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {customerData.flight_bookings.map((booking: any) => (
+                      {customerData.flight_bookings.map((booking) => (
                         <div key={booking.id} className="flex items-center justify-between">
-                          <span>
-                            {booking.departure_airport?.iata_code} -{' '}
-                            {booking.arrival_airport?.iata_code}
-                          </span>
+                          <span>{booking.supplier_name || booking.booking_number}</span>
                           <Badge>{booking?.status?.name_ar}</Badge>
                         </div>
                       ))}
@@ -198,9 +198,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {customerData.transport_bookings.map((booking: any) => (
+                      {customerData.transport_bookings.map((booking) => (
                         <div key={booking.id} className="flex items-center justify-between">
-                          <span>{booking.route?.route_name_ar}</span>
+                          <span>{booking.supplier_name || booking.booking_number}</span>
                           <Badge>{booking?.status?.name_ar}</Badge>
                         </div>
                       ))}
@@ -218,9 +218,9 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {customerData.car_rentals.map((booking: any) => (
+                      {customerData.car_rentals.map((booking) => (
                         <div key={booking.id} className="flex items-center justify-between">
-                          <span>{booking.vehicle_type?.name_ar}</span>
+                          <span>{booking.supplier_name || booking.booking_number}</span>
                           <Badge>{booking?.status?.name_ar}</Badge>
                         </div>
                       ))}
@@ -241,7 +241,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {customerData.communications && customerData.communications.length > 0 ? (
-                    customerData.communications.map((communication: any) => (
+                    customerData.communications.map((communication) => (
                       <div key={communication.id} className="flex items-center justify-between">
                         <span>{communication.communication_type}</span>
                         <span>{communication.created_at}</span>
@@ -262,7 +262,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {customerData.notes && customerData.notes.length > 0 ? (
-                    customerData.notes.map((note: any) => (
+                    customerData.notes.map((note) => (
                       <div key={note.id} className="space-y-1">
                         <p className="text-sm">{note.content}</p>
                         <div className="text-xs text-gray-500">

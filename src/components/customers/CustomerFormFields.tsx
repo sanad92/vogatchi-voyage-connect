@@ -43,7 +43,12 @@ const CustomerFormFields = ({ register, errors, control, step }: CustomerFormFie
                 pattern: {
                   value: /^[+]?[0-9\s-()]+$/,
                   message: 'رقم الهاتف غير صحيح'
-                }
+                },
+                validate: (value) => {
+                  const digits = value.replace(/\D/g, '');
+                  return (digits.length >= 10 && digits.length <= 15)
+                    || 'رقم الهاتف يجب أن يحتوي على 10 إلى 15 رقمًا';
+                },
               })}
               placeholder="+20 1XXXXXXXXX"
               className="bg-white"
@@ -88,6 +93,16 @@ const CustomerFormFields = ({ register, errors, control, step }: CustomerFormFie
               id="address"
               {...register('address')}
               placeholder="العنوان التفصيلي"
+              className="bg-white"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="passport_number">رقم جواز السفر</Label>
+            <Input
+              id="passport_number"
+              {...register('passport_number')}
+              placeholder="رقم جواز السفر"
               className="bg-white"
             />
           </div>

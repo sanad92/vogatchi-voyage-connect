@@ -7,6 +7,12 @@ import { useOrgId } from './useOrgId';
 import { parseCurrencyTotals, type CustomerBookingMetricRow } from '@/lib/customerMetrics';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 
+interface CustomerArchiveResult {
+  id: string;
+  archived_at: string | null;
+  archived_by: string | null;
+}
+
 export const useCustomers = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
@@ -53,30 +59,35 @@ export const useCustomers = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const addCustomerMutation = useMutation({
-    mutationFn: async (customer: any) => {
-      const { data, error } = await supabase
-        .from('customers')
-        .insert({ ...customer, organization_id: orgId })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+  const archiveCustomerMutation = useMutation({
+    mutationFn: async ({ customerId, archived }: { customerId: string; archived: boolean }) => {
+      if (!orgId) throw new Error('لم يتم تحديد المؤسسة');
+      const { data: result, error: archiveError } = await callUntypedRpc<CustomerArchiveResult>(
+        'set_customer_archived',
+        { _org_id: orgId, _customer_id: customerId, _archived: archived },
+      );
+      if (archiveError) throw new Error(archiveError.message);
+      if (!result) throw new Error('لم يتم تحديث حالة العميل');
+      return { result, archived };
     },
-    onSuccess: () => {
+    onSuccess: ({ archived }) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast({ title: "تم الحفظ بنجاح", description: "تم إضافة العميل بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-customers'] });
+      toast({
+        title: archived ? 'تمت أرشفة العميل' : 'تمت استعادة العميل',
+        description: archived
+          ? 'يمكن استعادته لاحقًا من تبويب المؤرشفين.'
+          : 'عاد العميل إلى قائمة العملاء النشطين.',
+      });
     },
     onError: (error) => {
-      console.error('Error adding customer:', error);
-      toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء إضافة العميل", variant: "destructive" });
+      toast({
+        title: 'تعذر تحديث حالة العميل',
+        description: error instanceof Error ? error.message : 'حاول مرة أخرى.',
+        variant: 'destructive',
+      });
     },
   });
-
-  const addCustomer = (customer: any) => {
-    addCustomerMutation.mutate(customer);
-  };
 
   return {
     customers: data?.customers,
@@ -86,7 +97,7 @@ export const useCustomers = () => {
     error,
     customersError: error,
     refetch,
-    addCustomer,
-    isAddingCustomer: addCustomerMutation.isPending,
+    setCustomerArchived: archiveCustomerMutation.mutateAsync,
+    isArchivingCustomer: archiveCustomerMutation.isPending,
   };
 };

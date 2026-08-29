@@ -12,10 +12,14 @@ const loadTypeScriptModule = async (path) => {
 
 const metrics = await loadTypeScriptModule(new URL('../src/lib/customerMetrics.ts', import.meta.url));
 const campaignMetrics = await loadTypeScriptModule(new URL('../src/lib/campaignMetrics.ts', import.meta.url));
+const customerFilters = await loadTypeScriptModule(new URL('../src/lib/customerFilters.ts', import.meta.url));
 const migration = await readFile(new URL('../supabase/migrations/20260828085456_crm_core_hardening.sql', import.meta.url), 'utf8');
 const campaignMigration = await readFile(new URL('../supabase/migrations/20260828140000_campaign_delivery_hardening.sql', import.meta.url), 'utf8');
+const lifecycleMigration = await readFile(new URL('../supabase/migrations/20260828233912_customer_lifecycle_hardening.sql', import.meta.url), 'utf8');
 const customersPage = await readFile(new URL('../src/pages/Customers.tsx', import.meta.url), 'utf8');
 const customerHook = await readFile(new URL('../src/hooks/useCustomers.tsx', import.meta.url), 'utf8');
+const customerDataHook = await readFile(new URL('../src/hooks/useCustomerData.tsx', import.meta.url), 'utf8');
+const customerEditDialog = await readFile(new URL('../src/components/customers/CustomerEditDialog.tsx', import.meta.url), 'utf8');
 const customerService = await readFile(new URL('../src/hooks/useCustomerService.tsx', import.meta.url), 'utf8');
 const campaignCard = await readFile(new URL('../src/components/crm/campaign/CampaignCard.tsx', import.meta.url), 'utf8');
 const campaignStats = await readFile(new URL('../src/components/crm/campaign/CampaignStats.tsx', import.meta.url), 'utf8');
@@ -45,6 +49,17 @@ assert.equal(analytics.inactiveCustomers, 1);
 assert.equal(analytics.retentionRate, 50);
 assert.equal(analytics.churnRate, 50);
 
+assert.equal(customerFilters.hasCustomerWhatsapp({ phone: '+201000000000' }), true);
+assert.equal(customerFilters.hasCustomerWhatsapp({ phone: '+201000000000', whatsapp_opt_out: true }), false);
+assert.equal(customerFilters.hasCustomerCommunicationPreference({ communication_preferences: { email: true } }, 'email'), true);
+assert.equal(customerFilters.isVipCustomer({ total_bookings: 11 }), true);
+assert.equal(customerFilters.isVipCustomer({ total_spent: 49_999, total_bookings: 1 }), false);
+const selectedDay = new Date(2026, 7, 28);
+assert.equal(customerFilters.matchesInclusiveDateRange(
+  new Date(2026, 7, 28, 23, 59, 59).toISOString(),
+  { from: selectedDay, to: selectedDay },
+), true, 'the selected end date includes the entire day');
+
 const deliveryMetrics = campaignMetrics.buildCampaignDeliveryMetrics([
   { status: 'delivered', response: null },
   { status: 'read', response: 'interested' },
@@ -67,11 +82,27 @@ assert.doesNotMatch(migration, /Org members can manage/);
 assert.match(campaignMigration, /enforce_campaign_send_organization_trigger/);
 assert.match(campaignMigration, /CREATE POLICY campaign_sends_select_by_permission/);
 assert.match(campaignMigration, /has_org_permission\(organization_id, 'crm_campaigns'\)/);
+assert.match(lifecycleMigration, /ADD COLUMN IF NOT EXISTS archived_at timestamptz/);
+assert.match(lifecycleMigration, /CREATE OR REPLACE FUNCTION public\.set_customer_archived/);
+assert.match(lifecycleMigration, /has_org_permission\(_org_id, 'customers_delete'\)/);
+assert.match(lifecycleMigration, /stamp_customer_archive_actor_trigger/);
+assert.match(lifecycleMigration, /prevent_duplicate_customer_email_trigger/);
+assert.match(lifecycleMigration, /CREATE OR REPLACE FUNCTION public\.check_customer_duplicate_contact/);
+assert.match(lifecycleMigration, /REVOKE TRUNCATE, REFERENCES, TRIGGER/);
 
 assert.match(customerHook, /crm_customer_booking_metrics/);
+assert.match(customerHook, /set_customer_archived/);
+assert.doesNotMatch(customerHook, /\.from\('customers'\)\s*\.insert/, 'customer creation has one canonical path');
+assert.match(customerEditDialog, /EnhancedCustomerForm/);
+assert.doesNotMatch(customerEditDialog, /\.from\('customers'\)/, 'editing uses the canonical customer form');
+assert.doesNotMatch(customerDataHook, /console\.log/, 'customer details never log personal data');
+assert.doesNotMatch(customerDataHook, /\bany\b/, 'customer details use typed booking and activity data');
 assert.doesNotMatch(customerService, /booking_id:\s*followUpData\.customer_id/);
 assert.doesNotMatch(campaignCard, /Math\.floor\(/, 'campaign performance is never fabricated');
 assert.doesNotMatch(campaignStats, /45%|12%/, 'campaign rates are never hardcoded');
 assert.doesNotMatch(customersPage, /value="complaints"|value="automation"|value="loyalty"/);
+assert.match(customersPage, /hasCustomerCommunicationPreference/);
+assert.match(customersPage, /hasCustomerWhatsapp/);
+assert.match(customersPage, /value="archived"/);
 
-console.log('CRM core checks passed: 30/30');
+console.log('CRM core checks passed: 52/52');

@@ -1,18 +1,20 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import CustomerCard from "./CustomerCard";
 import { Button } from "@/components/ui/button";
 import { UserPlus, RefreshCw } from "lucide-react";
-import { useCustomers } from "@/hooks/useCustomers";
 import { Customer } from "@/types/customer";
 
 interface CustomerGridProps {
   customers: Customer[];
   isLoading: boolean;
-  error: any;
+  error: Error | null;
   activeTab: string;
   onCustomerSelect: (customerId: string) => void;
   onAddNewCustomer?: () => void;
+  onRefresh: () => Promise<unknown>;
+  onCustomerUpdated: () => void;
+  onCustomerArchive?: (customer: Customer) => void;
 }
 
 const CustomerGrid = ({ 
@@ -20,36 +22,22 @@ const CustomerGrid = ({
   isLoading, 
   error, 
   activeTab, 
-  onCustomerSelect, 
-  onAddNewCustomer 
+  onCustomerSelect,
+  onAddNewCustomer,
+  onRefresh,
+  onCustomerUpdated,
+  onCustomerArchive,
 }: CustomerGridProps) => {
-  const { refetch } = useCustomers();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [localCustomers, setLocalCustomers] = useState<Customer[]>(customers);
 
-  // تحديث البيانات المحلية عند تغيير البيانات الواردة
-  React.useEffect(() => {
-    setLocalCustomers(customers);
-  }, [customers]);
-
-  const handleCustomerUpdated = (updatedCustomer: Customer) => {
-    // تحديث البيانات المحلية فوراً
-    setLocalCustomers(prevCustomers => 
-      prevCustomers.map(customer => 
-        customer.id === updatedCustomer.id ? updatedCustomer : customer
-      )
-    );
-    
-    // إعادة تحميل البيانات من الخادم للتأكد من التحديث
-    handleRefresh();
-  };
+  const handleCustomerUpdated = () => onCustomerUpdated();
 
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      await refetch();
-    } catch (error) {
-      console.error('خطأ في إعادة تحميل البيانات:', error);
+      await onRefresh();
+    } catch {
+      // The query error state renders the retry message.
     } finally {
       setIsRefreshing(false);
     }
@@ -82,15 +70,19 @@ const CustomerGrid = ({
     );
   }
 
-  if (!localCustomers || localCustomers.length === 0) {
+  if (!customers || customers.length === 0) {
     return (
       <div className="text-center py-12">
         <UserPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-medium text-foreground mb-2">
-          {activeTab === 'all' ? 'لا توجد عملاء بعد' : `لا توجد عملاء في فئة "${activeTab}"`}
+          {activeTab === 'all'
+            ? 'لا يوجد عملاء بعد'
+            : activeTab === 'archived'
+              ? 'لا يوجد عملاء مؤرشفون'
+              : 'لا يوجد عملاء في هذه الفئة'}
         </h3>
         <p className="text-muted-foreground mb-6">
-          {activeTab === 'all' ? 'ابدأ بإضافة عميلك الأول' : 'جرب البحث في فئة أخرى أو أضف عميل جديد'}
+          {activeTab === 'all' ? 'ابدأ بإضافة عميلك الأول' : 'جرّب البحث في فئة أخرى.'}
         </p>
         {onAddNewCustomer && <Button onClick={onAddNewCustomer}>
           <UserPlus className="h-4 w-4 mr-2" />
@@ -104,7 +96,7 @@ const CustomerGrid = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
-          {localCustomers.length} عميل
+          {customers.length} عميل
         </p>
         <Button 
           onClick={handleRefresh} 
@@ -118,12 +110,13 @@ const CustomerGrid = ({
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-        {localCustomers.map((customer) => (
+        {customers.map((customer) => (
           <CustomerCard
             key={customer.id}
             customer={customer}
             onSelect={() => onCustomerSelect(customer.id)}
             onCustomerUpdated={handleCustomerUpdated}
+            onArchive={onCustomerArchive}
           />
         ))}
       </div>

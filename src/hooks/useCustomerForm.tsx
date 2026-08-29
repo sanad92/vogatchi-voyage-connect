@@ -22,6 +22,7 @@ export const useCustomerForm = ({
       email: initialData?.email || "",
       nationality: initialData?.nationality || "",
       address: initialData?.address || "",
+      passport_number: initialData?.passport_number || "",
       segment_id: initialData?.segment_id || "",
     }
   });
@@ -36,12 +37,7 @@ export const useCustomerForm = ({
   const { executeTrigger } = useAutomationEngine();
 
   const onSubmit = async (data: CustomerData) => {
-    if (isSubmitting) {
-      console.log('⚠️ العملية قيد التنفيذ بالفعل');
-      return;
-    }
-
-    console.log('📝 بدء معالجة النموذج:', data);
+    if (isSubmitting) return;
     setIsSubmitting(true);
     
     try {
@@ -63,15 +59,12 @@ export const useCustomerForm = ({
         email: data.email?.trim() || '',
         nationality: data.nationality?.trim() || '',
         address: data.address?.trim() || '',
+        passport_number: data.passport_number?.trim() || '',
         segment_id: data.segment_id || '',
       };
 
-      console.log('✨ البيانات بعد التنظيف:', cleanedData);
-
       // إرسال البيانات
       const result = await submitCustomer(cleanedData);
-      
-      console.log('✅ تم حفظ البيانات بنجاح:', result);
 
       // Fire automation trigger for new customers
       if (!isEditMode && result?.id) {
@@ -89,13 +82,9 @@ export const useCustomerForm = ({
       }
 
     } catch (error) {
-      console.error('❌ خطأ في معالجة النموذج:', error);
-      
-      // رسالة خطأ عامة في حالة عدم وجود رسالة محددة
-      if (error instanceof Error) {
-        if (!error.message.includes('صلاحية') && !error.message.includes('مكرر')) {
-          toast.error('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى');
-        }
+      const message = error instanceof Error ? error.message : '';
+      if (!message.includes('صلاحية') && !message.includes('مسجل بالفعل')) {
+        toast.error('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى');
       }
     } finally {
       setIsSubmitting(false);

@@ -7,7 +7,7 @@ import { useCustomerForm } from "@/hooks/useCustomerForm";
 import { useEnhancedCustomerValidation } from "@/hooks/useEnhancedCustomerValidation";
 import CustomerFormFields from "./CustomerFormFields";
 import DuplicateCustomerAlert from "./DuplicateCustomerAlert";
-import { Customer, CustomerData } from "@/types/customer";
+import { Customer, CustomerData, DuplicateContactResult } from "@/types/customer";
 import WizardStepIndicator from "@/components/wizard/WizardStepIndicator";
 
 interface EnhancedCustomerFormProps {
@@ -34,9 +34,10 @@ const EnhancedCustomerForm = ({
   isEditMode = false,
   customerId 
 }: EnhancedCustomerFormProps) => {
-  const [duplicateResult, setDuplicateResult] = useState<any>(null);
+  const [duplicateResult, setDuplicateResult] = useState<DuplicateContactResult | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [allowSubmission, setAllowSubmission] = useState(false);
+  const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [step1Errors, setStep1Errors] = useState<string[]>([]);
 
@@ -58,9 +59,12 @@ const EnhancedCustomerForm = ({
     const checkForDuplicates = async () => {
       if (!watchedPhone || watchedPhone.length < 10) {
         setDuplicateResult(null);
+        setDuplicateCheckError(null);
         return;
       }
 
+      setAllowSubmission(false);
+      setDuplicateCheckError(null);
       setIsCheckingDuplicate(true);
       try {
         const result = await checkCustomerDuplication({
@@ -71,7 +75,10 @@ const EnhancedCustomerForm = ({
         setDuplicateResult(result);
         setAllowSubmission(!result.hasDuplication);
       } catch (error) {
-        console.error('خطأ في فحص التكرار:', error);
+        setDuplicateResult(null);
+        setDuplicateCheckError(
+          error instanceof Error ? error.message : 'تعذر التحقق من تكرار بيانات العميل',
+        );
       } finally {
         setIsCheckingDuplicate(false);
       }
@@ -79,7 +86,7 @@ const EnhancedCustomerForm = ({
 
     const timeoutId = setTimeout(checkForDuplicates, 500);
     return () => clearTimeout(timeoutId);
-  }, [watchedPhone, watchedEmail, watchedName, customerId]);
+  }, [watchedPhone, watchedEmail, watchedName, customerId, checkCustomerDuplication]);
 
   const handleGoToStep2 = async () => {
     const valid = await trigger(['name', 'phone', 'email']);
@@ -96,7 +103,7 @@ const EnhancedCustomerForm = ({
   };
 
   const handleFormSubmit = async (data: CustomerData) => {
-    if (!allowSubmission && duplicateResult?.hasDuplication) return;
+    if (duplicateCheckError || (!allowSubmission && duplicateResult?.hasDuplication)) return;
 
     const formattedData = {
       ...data,
@@ -129,6 +136,12 @@ const EnhancedCustomerForm = ({
         {isCheckingDuplicate && (
           <div className="text-center py-2">
             <div className="text-sm text-muted-foreground">جاري فحص تكرار البيانات...</div>
+          </div>
+        )}
+
+        {duplicateCheckError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            تعذر فحص التكرار بأمان: {duplicateCheckError}. أعد المحاولة قبل الحفظ.
           </div>
         )}
 
@@ -178,7 +191,7 @@ const EnhancedCustomerForm = ({
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting || isCheckingDuplicate || (!allowSubmission && duplicateResult?.hasDuplication)} 
+                  disabled={isSubmitting || isCheckingDuplicate || !!duplicateCheckError || (!allowSubmission && duplicateResult?.hasDuplication)}
                   className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
                 >
                   <Save className="h-4 w-4 mr-2" />

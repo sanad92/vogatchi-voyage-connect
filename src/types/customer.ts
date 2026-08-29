@@ -7,6 +7,7 @@ export interface CustomerData {
   email?: string;
   nationality?: string;
   address?: string;
+  passport_number?: string;
   segment_id?: string;
 }
 
@@ -30,9 +31,13 @@ export interface Customer {
   created_at?: string;
   updated_at?: string;
   address?: string;
-  passport_number?: string;
-  preferences?: any;
-  communication_preferences?: any;
+  passport_number?: string | null;
+  preferences?: Record<string, unknown> | null;
+  communication_preferences?: Partial<Record<'whatsapp' | 'email' | 'sms', boolean>> | null;
+  whatsapp_opt_out?: boolean;
+  whatsapp_opt_out_at?: string | null;
+  archived_at?: string | null;
+  archived_by?: string | null;
   
   // الحقول الجديدة لنظام المتابعة
   created_by?: string;
@@ -47,6 +52,31 @@ export interface Customer {
     id: string;
     full_name?: string;
     email?: string;
+  };
+}
+
+export interface DuplicateCustomerSummary {
+  id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  archived_at?: string | null;
+}
+
+export interface DuplicateContactResult {
+  hasDuplication: boolean;
+  normalizedPhone?: string | null;
+  phoneResult: {
+    isDuplicate: boolean;
+    existingCustomer?: DuplicateCustomerSummary | null;
+    message?: string | null;
+    duplicateCount?: number;
+    allDuplicates?: DuplicateCustomerSummary[];
+  };
+  emailResult: {
+    isDuplicate: boolean;
+    existingCustomer?: DuplicateCustomerSummary | null;
+    message?: string | null;
   };
 }
 

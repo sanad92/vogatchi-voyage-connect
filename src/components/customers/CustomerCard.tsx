@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, Phone, Mail, MapPin, Flag, Edit, Eye, Star } from "lucide-react";
+import { User, Phone, Mail, MapPin, Flag, Edit, Eye, Star, Archive, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import CustomerEditDialog from "./CustomerEditDialog";
 import { Customer } from "@/types/customer";
@@ -15,12 +15,13 @@ interface CustomerCardProps {
   customer: Customer;
   onSelect: () => void;
   onCustomerUpdated: (customer: Customer) => void;
+  onArchive?: (customer: Customer) => void;
 }
 
-const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardProps) => {
+const CustomerCard = ({ customer, onSelect, onCustomerUpdated, onArchive }: CustomerCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { canEditCustomers } = useSupabasePermissions();
+  const { canEditCustomers, canDeleteCustomers } = useSupabasePermissions();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
@@ -52,7 +53,6 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
       if (error) throw error;
 
       onCustomerUpdated(data as Customer);
-      toast.success('تم تحديث بيانات العميل بنجاح');
     } catch (error) {
       console.error('خطأ في تحديث بيانات العميل:', error);
       toast.error('حدث خطأ أثناء حفظ التحديثات');
@@ -64,7 +64,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
 
   return (
     <>
-      <Card className={`hover:shadow-md transition-shadow cursor-pointer border border-gray-200 ${isUpdating ? 'opacity-75' : ''}`}>
+      <Card className={`hover:shadow-md transition-shadow border ${customer.archived_at ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'} ${isUpdating ? 'opacity-75' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
               <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
             </div>
             <div className="flex gap-1">
-              {canEditCustomers() && (
+              {canEditCustomers() && !customer.archived_at && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -92,8 +92,30 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
               >
                 <Eye className="h-3 w-3" />
               </Button>
+              {canDeleteCustomers() && onArchive && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onArchive(customer);
+                  }}
+                  className="h-7 w-7 p-0"
+                  aria-label={customer.archived_at ? 'استعادة العميل' : 'أرشفة العميل'}
+                >
+                  {customer.archived_at
+                    ? <RotateCcw className="h-3 w-3" />
+                    : <Archive className="h-3 w-3" />}
+                </Button>
+              )}
             </div>
           </div>
+
+          {customer.archived_at && (
+            <Badge variant="outline" className="mb-3 border-amber-300 text-amber-700">
+              مؤرشف
+            </Badge>
+          )}
 
           <div className="space-y-2 mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -104,7 +126,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated }: CustomerCardPro
             {customer.email && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Mail className="h-3 w-3" />
-                <span>{customer.email}</span>
+                <span className="truncate" dir="ltr">{customer.email}</span>
               </div>
             )}
             
