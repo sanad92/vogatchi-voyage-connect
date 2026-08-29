@@ -7,7 +7,7 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.28.0";
 
 // src/lib/mcp/tools/search-customers.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z } from "npm:zod@^3.23.8";
+import { z } from "npm:zod@^4";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
@@ -96,7 +96,7 @@ var search_customers_default = defineTool({
 
 // src/lib/mcp/tools/list-bookings.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z2 } from "npm:zod@^3.23.8";
+import { z as z2 } from "npm:zod@^4";
 var list_bookings_default = defineTool2({
   name: "list_bookings",
   title: "List bookings",
@@ -126,7 +126,7 @@ var list_bookings_default = defineTool2({
 
 // src/lib/mcp/tools/get-booking.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z3 } from "npm:zod@^3.23.8";
+import { z as z3 } from "npm:zod@^4";
 var get_booking_default = defineTool3({
   name: "get_booking",
   title: "Get booking",
@@ -153,7 +153,7 @@ var get_booking_default = defineTool3({
 
 // src/lib/mcp/tools/list-leads.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z4 } from "npm:zod@^3.23.8";
+import { z as z4 } from "npm:zod@^4";
 var list_leads_default = defineTool4({
   name: "list_leads",
   title: "List sales leads",
@@ -181,7 +181,7 @@ var list_leads_default = defineTool4({
 
 // src/lib/mcp/tools/list-quotes.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z5 } from "npm:zod@^3.23.8";
+import { z as z5 } from "npm:zod@^4";
 var list_quotes_default = defineTool5({
   name: "list_quotes",
   title: "List quotes",
