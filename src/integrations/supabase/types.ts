@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -2056,34 +2056,34 @@ export type Database = {
       }
       campaign_sends: {
         Row: {
-          campaign_id: string | null
+          campaign_id: string
           created_at: string | null
-          customer_id: string | null
+          customer_id: string
           id: string
-          organization_id: string | null
+          organization_id: string
           response: string | null
           sent_at: string | null
-          status: string | null
+          status: string
         }
         Insert: {
-          campaign_id?: string | null
+          campaign_id: string
           created_at?: string | null
-          customer_id?: string | null
+          customer_id: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           response?: string | null
           sent_at?: string | null
-          status?: string | null
+          status?: string
         }
         Update: {
-          campaign_id?: string | null
+          campaign_id?: string
           created_at?: string | null
-          customer_id?: string | null
+          customer_id?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           response?: string | null
           sent_at?: string | null
-          status?: string | null
+          status?: string
         }
         Relationships: [
           {
@@ -2877,13 +2877,13 @@ export type Database = {
           completed_at: string | null
           content: string | null
           created_at: string | null
-          customer_id: string | null
+          customer_id: string
           direction: string
           duration_minutes: number | null
           follow_up_id: string | null
           handled_by: string | null
           id: string
-          organization_id: string | null
+          organization_id: string
           scheduled_at: string | null
           status: string | null
         }
@@ -2893,13 +2893,13 @@ export type Database = {
           completed_at?: string | null
           content?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id: string
           direction: string
           duration_minutes?: number | null
           follow_up_id?: string | null
           handled_by?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id: string
           scheduled_at?: string | null
           status?: string | null
         }
@@ -2909,13 +2909,13 @@ export type Database = {
           completed_at?: string | null
           content?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id?: string
           direction?: string
           duration_minutes?: number | null
           follow_up_id?: string | null
           handled_by?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           scheduled_at?: string | null
           status?: string | null
         }
@@ -2949,13 +2949,13 @@ export type Database = {
           booking_id: string | null
           completed_at: string | null
           created_at: string | null
-          customer_id: string | null
+          customer_id: string
           customer_value: string | null
           follow_up_type: string
           id: string
           last_contact_date: string | null
           notes: string | null
-          organization_id: string | null
+          organization_id: string
           priority: string | null
           scheduled_date: string
           status: string | null
@@ -2966,13 +2966,13 @@ export type Database = {
           booking_id?: string | null
           completed_at?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id: string
           customer_value?: string | null
           follow_up_type: string
           id?: string
           last_contact_date?: string | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id: string
           priority?: string | null
           scheduled_date: string
           status?: string | null
@@ -2983,13 +2983,13 @@ export type Database = {
           booking_id?: string | null
           completed_at?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id?: string
           customer_value?: string | null
           follow_up_type?: string
           id?: string
           last_contact_date?: string | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id?: string
           priority?: string | null
           scheduled_date?: string
           status?: string | null
@@ -3025,11 +3025,11 @@ export type Database = {
           content: string
           created_at: string | null
           created_by: string | null
-          customer_id: string | null
+          customer_id: string
           id: string
           is_private: boolean | null
           note_type: string | null
-          organization_id: string | null
+          organization_id: string
           priority: string | null
           updated_at: string | null
         }
@@ -3038,11 +3038,11 @@ export type Database = {
           content: string
           created_at?: string | null
           created_by?: string | null
-          customer_id?: string | null
+          customer_id: string
           id?: string
           is_private?: boolean | null
           note_type?: string | null
-          organization_id?: string | null
+          organization_id: string
           priority?: string | null
           updated_at?: string | null
         }
@@ -3051,11 +3051,11 @@ export type Database = {
           content?: string
           created_at?: string | null
           created_by?: string | null
-          customer_id?: string | null
+          customer_id?: string
           id?: string
           is_private?: boolean | null
           note_type?: string | null
-          organization_id?: string | null
+          organization_id?: string
           priority?: string | null
           updated_at?: string | null
         }
@@ -3267,10 +3267,10 @@ export type Database = {
           communication_rating: number | null
           completed_at: string | null
           created_at: string | null
-          customer_id: string | null
+          customer_id: string
           feedback: string | null
           id: string
-          organization_id: string | null
+          organization_id: string
           overall_rating: number | null
           service_rating: number | null
           survey_sent_at: string | null
@@ -3280,10 +3280,10 @@ export type Database = {
           communication_rating?: number | null
           completed_at?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id: string
           feedback?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id: string
           overall_rating?: number | null
           service_rating?: number | null
           survey_sent_at?: string | null
@@ -3293,10 +3293,10 @@ export type Database = {
           communication_rating?: number | null
           completed_at?: string | null
           created_at?: string | null
-          customer_id?: string | null
+          customer_id?: string
           feedback?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           overall_rating?: number | null
           service_rating?: number | null
           survey_sent_at?: string | null
@@ -3329,7 +3329,7 @@ export type Database = {
           minimum_total_spent: number | null
           name: string
           name_ar: string
-          organization_id: string | null
+          organization_id: string
           updated_at: string | null
         }
         Insert: {
@@ -3342,7 +3342,7 @@ export type Database = {
           minimum_total_spent?: number | null
           name: string
           name_ar: string
-          organization_id?: string | null
+          organization_id: string
           updated_at?: string | null
         }
         Update: {
@@ -3355,7 +3355,7 @@ export type Database = {
           minimum_total_spent?: number | null
           name?: string
           name_ar?: string
-          organization_id?: string | null
+          organization_id?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -3371,6 +3371,8 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          archived_at: string | null
+          archived_by: string | null
           communication_preferences: Json | null
           created_at: string | null
           created_by: string | null
@@ -3383,7 +3385,7 @@ export type Database = {
           loyalty_points: number | null
           name: string
           nationality: string | null
-          organization_id: string | null
+          organization_id: string
           passport_number: string | null
           phone: string | null
           preferences: Json | null
@@ -3396,6 +3398,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           communication_preferences?: Json | null
           created_at?: string | null
           created_by?: string | null
@@ -3408,7 +3412,7 @@ export type Database = {
           loyalty_points?: number | null
           name: string
           nationality?: string | null
-          organization_id?: string | null
+          organization_id: string
           passport_number?: string | null
           phone?: string | null
           preferences?: Json | null
@@ -3421,6 +3425,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           communication_preferences?: Json | null
           created_at?: string | null
           created_by?: string | null
@@ -3433,7 +3439,7 @@ export type Database = {
           loyalty_points?: number | null
           name?: string
           nationality?: string | null
-          organization_id?: string | null
+          organization_id?: string
           passport_number?: string | null
           phone?: string | null
           preferences?: Json | null
@@ -3445,6 +3451,13 @@ export type Database = {
           whatsapp_opt_out_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_created_by_fkey"
             columns: ["created_by"]
@@ -6288,10 +6301,10 @@ export type Database = {
           booking_id: string | null
           created_at: string | null
           current_balance: number | null
-          customer_id: string | null
+          customer_id: string
           description: string | null
           id: string
-          organization_id: string | null
+          organization_id: string
           points_earned: number | null
           points_used: number | null
           transaction_type: string | null
@@ -6300,10 +6313,10 @@ export type Database = {
           booking_id?: string | null
           created_at?: string | null
           current_balance?: number | null
-          customer_id?: string | null
+          customer_id: string
           description?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id: string
           points_earned?: number | null
           points_used?: number | null
           transaction_type?: string | null
@@ -6312,10 +6325,10 @@ export type Database = {
           booking_id?: string | null
           created_at?: string | null
           current_balance?: number | null
-          customer_id?: string | null
+          customer_id?: string
           description?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           points_earned?: number | null
           points_used?: number | null
           transaction_type?: string | null
@@ -6345,7 +6358,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           name_ar: string | null
-          organization_id: string | null
+          organization_id: string
           points_required: number | null
           reward_type: string | null
           reward_value: number | null
@@ -6357,7 +6370,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           name_ar?: string | null
-          organization_id?: string | null
+          organization_id: string
           points_required?: number | null
           reward_type?: string | null
           reward_value?: number | null
@@ -6369,7 +6382,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           name_ar?: string | null
-          organization_id?: string | null
+          organization_id?: string
           points_required?: number | null
           reward_type?: string | null
           reward_value?: number | null
@@ -6394,7 +6407,7 @@ export type Database = {
           id: string
           message_template: string | null
           name: string
-          organization_id: string | null
+          organization_id: string
           start_date: string | null
           status: string | null
           target_segment_id: string | null
@@ -6409,7 +6422,7 @@ export type Database = {
           id?: string
           message_template?: string | null
           name: string
-          organization_id?: string | null
+          organization_id: string
           start_date?: string | null
           status?: string | null
           target_segment_id?: string | null
@@ -6424,7 +6437,7 @@ export type Database = {
           id?: string
           message_template?: string | null
           name?: string
-          organization_id?: string | null
+          organization_id?: string
           start_date?: string | null
           status?: string | null
           target_segment_id?: string | null
@@ -8246,6 +8259,93 @@ export type Database = {
           },
         ]
       }
+      sop_lead_activities: {
+        Row: {
+          activity_type: string
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          organization_id: string
+          outcome: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          organization_id: string
+          outcome?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          organization_id?: string
+          outcome?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_lead_activities_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_lead_activities_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_lead_activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sop_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_lead_activities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sop_lead_assignments: {
         Row: {
           ack_deadline_at: string | null
@@ -8386,6 +8486,7 @@ export type Database = {
           arrived_at: string
           booking_id: string | null
           budget_amount: number | null
+          budget_currency: string | null
           budget_level: string | null
           campaign: string | null
           check_in: string | null
@@ -8397,6 +8498,8 @@ export type Database = {
           contact_name: string | null
           contact_phone: string | null
           conversation_id: string | null
+          converted_at: string | null
+          converted_by: string | null
           created_at: string
           created_by: string | null
           current_owner_id: string | null
@@ -8407,12 +8510,14 @@ export type Database = {
           id: string
           intake_completed_at: string | null
           is_legacy: boolean
+          last_contact_at: string | null
           lead_number: string | null
           lead_source: string | null
           lost_reason: string | null
           market: string | null
           migration_source: string | null
           nationality: string | null
+          next_follow_up_at: string | null
           occupancy: string | null
           organization_id: string
           owner_department: Database["public"]["Enums"]["sop_department"]
@@ -8434,6 +8539,7 @@ export type Database = {
           arrived_at?: string
           booking_id?: string | null
           budget_amount?: number | null
+          budget_currency?: string | null
           budget_level?: string | null
           campaign?: string | null
           check_in?: string | null
@@ -8445,6 +8551,8 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           conversation_id?: string | null
+          converted_at?: string | null
+          converted_by?: string | null
           created_at?: string
           created_by?: string | null
           current_owner_id?: string | null
@@ -8455,12 +8563,14 @@ export type Database = {
           id?: string
           intake_completed_at?: string | null
           is_legacy?: boolean
+          last_contact_at?: string | null
           lead_number?: string | null
           lead_source?: string | null
           lost_reason?: string | null
           market?: string | null
           migration_source?: string | null
           nationality?: string | null
+          next_follow_up_at?: string | null
           occupancy?: string | null
           organization_id: string
           owner_department?: Database["public"]["Enums"]["sop_department"]
@@ -8482,6 +8592,7 @@ export type Database = {
           arrived_at?: string
           booking_id?: string | null
           budget_amount?: number | null
+          budget_currency?: string | null
           budget_level?: string | null
           campaign?: string | null
           check_in?: string | null
@@ -8493,6 +8604,8 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           conversation_id?: string | null
+          converted_at?: string | null
+          converted_by?: string | null
           created_at?: string
           created_by?: string | null
           current_owner_id?: string | null
@@ -8503,12 +8616,14 @@ export type Database = {
           id?: string
           intake_completed_at?: string | null
           is_legacy?: boolean
+          last_contact_at?: string | null
           lead_number?: string | null
           lead_source?: string | null
           lost_reason?: string | null
           market?: string | null
           migration_source?: string | null
           nationality?: string | null
+          next_follow_up_at?: string | null
           occupancy?: string | null
           organization_id?: string
           owner_department?: Database["public"]["Enums"]["sop_department"]
@@ -8524,7 +8639,15 @@ export type Database = {
           stage?: Database["public"]["Enums"]["sop_lead_stage"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sop_leads_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sop_operational_deadlines: {
         Row: {
@@ -12447,6 +12570,15 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: Json
       }
+      check_customer_duplicate_contact: {
+        Args: {
+          _email?: string
+          _exclude_id?: string
+          _org_id: string
+          _phone: string
+        }
+        Returns: Json
+      }
       check_employee_deletion: {
         Args: { p_employee_id: string }
         Returns: Json
@@ -12547,6 +12679,16 @@ export type Database = {
           _source_payment_id?: string
         }
         Returns: string
+      }
+      crm_customer_booking_metrics: {
+        Args: { _org_id: string }
+        Returns: {
+          booking_count_by_currency: Json
+          customer_id: string
+          last_booking_date: string
+          spend_by_currency: Json
+          total_bookings: number
+        }[]
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -12923,6 +13065,10 @@ export type Database = {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
       }
+      has_org_permission: {
+        Args: { _org_id: string; _permission: string }
+        Returns: boolean
+      }
       has_platform_role: {
         Args: {
           _role: Database["public"]["Enums"]["platform_role"]
@@ -12983,6 +13129,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_email_address: { Args: { _email: string }; Returns: string }
       normalize_phone_digits: { Args: { _phone: string }; Returns: string }
       org_has_active_subscription: {
         Args: { _org_id: string }
@@ -13102,6 +13249,14 @@ export type Database = {
         }
         Returns: string
       }
+      redeem_loyalty_reward: {
+        Args: { _customer_id: string; _reward_id: string }
+        Returns: Json
+      }
+      refresh_customer_booking_summary: {
+        Args: { _customer_id: string; _org_id: string }
+        Returns: undefined
+      }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       reopen_fiscal_year: {
         Args: { _org: string; _reason: string; _year: number }
@@ -13145,6 +13300,10 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      set_customer_archived: {
+        Args: { _archived: boolean; _customer_id: string; _org_id: string }
+        Returns: Json
+      }
       set_org_pin: {
         Args: { _org_id: string; _pin: string }
         Returns: undefined
@@ -13152,8 +13311,32 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       sop_acknowledge_assignment: { Args: { _lead: string }; Returns: Json }
+      sop_acknowledge_assignment_unsafe_impl: {
+        Args: { _lead: string }
+        Returns: Json
+      }
       sop_actor_name: { Args: { _user: string }; Returns: string }
+      sop_add_lead_activity: {
+        Args: {
+          _activity_type: string
+          _assigned_to?: string
+          _completed?: boolean
+          _due_at?: string
+          _lead: string
+          _notes?: string
+          _outcome?: string
+        }
+        Returns: Json
+      }
       sop_advance_lead: {
+        Args: {
+          _lead: string
+          _reason?: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
+      sop_advance_lead_unsafe_impl: {
         Args: {
           _lead: string
           _reason?: string
@@ -13169,6 +13352,10 @@ export type Database = {
         Args: { _assignee?: string; _exception_reason?: string; _lead: string }
         Returns: Json
       }
+      sop_assign_lead_unsafe_impl: {
+        Args: { _assignee?: string; _exception_reason?: string; _lead: string }
+        Returns: Json
+      }
       sop_auto_assign: { Args: { _lead: string }; Returns: string }
       sop_backfill_stage_history: { Args: { p_org?: string }; Returns: Json }
       sop_brief_missing: {
@@ -13179,7 +13366,12 @@ export type Database = {
         Args: { _org: string; _user: string }
         Returns: boolean
       }
+      sop_cancel_lead_activity: {
+        Args: { _activity: string; _reason?: string }
+        Returns: Json
+      }
       sop_claim_lead: { Args: { _lead: string }; Returns: Json }
+      sop_claim_lead_unsafe_impl: { Args: { _lead: string }; Returns: Json }
       sop_claim_pricing_request: { Args: { _request: string }; Returns: Json }
       sop_collection_status: { Args: { _lead: string }; Returns: Json }
       sop_complete_handover: {
@@ -13192,12 +13384,25 @@ export type Database = {
         }
         Returns: Json
       }
+      sop_complete_lead_activity: {
+        Args: { _activity: string; _notes?: string; _outcome?: string }
+        Returns: Json
+      }
       sop_complete_recheck: {
         Args: { _changed: boolean; _notes?: string; _request: string }
         Returns: Json
       }
+      sop_complete_recheck_unsafe_impl: {
+        Args: { _changed: boolean; _notes?: string; _request: string }
+        Returns: Json
+      }
       sop_compliance_report: { Args: { p_org: string }; Returns: Json }
+      sop_convert_lead_to_customer: { Args: { _lead: string }; Returns: Json }
       sop_create_pricing_request: {
+        Args: { _lead: string; _notes?: string }
+        Returns: Json
+      }
+      sop_create_pricing_request_unsafe_impl: {
         Args: { _lead: string; _notes?: string }
         Returns: Json
       }
@@ -13210,6 +13415,10 @@ export type Database = {
         Returns: Json
       }
       sop_disqualify: {
+        Args: { _lead: string; _note?: string; _reason: string }
+        Returns: Json
+      }
+      sop_disqualify_unsafe_impl: {
         Args: { _lead: string; _note?: string; _reason: string }
         Returns: Json
       }
@@ -13283,6 +13492,14 @@ export type Database = {
         }
         Returns: Json
       }
+      sop_move_back_unsafe_impl: {
+        Args: {
+          _lead: string
+          _reason: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
       sop_my_departments: { Args: { _org: string }; Returns: Json }
       sop_on_booking_confirmed: { Args: { _lead: string }; Returns: Json }
       sop_publish_pricing: {
@@ -13297,7 +13514,12 @@ export type Database = {
         Args: { _assignee: string; _lead: string; _reason: string }
         Returns: Json
       }
+      sop_reassign_lead_unsafe_impl: {
+        Args: { _assignee: string; _lead: string; _reason: string }
+        Returns: Json
+      }
       sop_reopen_lead: { Args: { _lead: string }; Returns: Json }
+      sop_reopen_lead_unsafe_impl: { Args: { _lead: string }; Returns: Json }
       sop_request_approval: {
         Args: {
           _amount?: number
@@ -13313,7 +13535,91 @@ export type Database = {
         Args: { _lead: string; _notes?: string }
         Returns: Json
       }
+      sop_request_recheck_unsafe_impl: {
+        Args: { _lead: string; _notes?: string }
+        Returns: Json
+      }
       sop_return_to_sales: { Args: { _request: string }; Returns: Json }
+      sop_return_to_sales_unsafe_impl: {
+        Args: { _request: string }
+        Returns: Json
+      }
+      sop_save_lead: {
+        Args: { _lead?: string; _org: string; _payload?: Json }
+        Returns: Json
+      }
+      sop_search_leads: {
+        Args: {
+          _follow_up?: string
+          _include_legacy?: boolean
+          _limit?: number
+          _org: string
+          _owner?: string
+          _search?: string
+          _sort?: string
+          _source?: string
+          _stages?: Database["public"]["Enums"]["sop_lead_stage"][]
+        }
+        Returns: {
+          adults: number | null
+          approx_dates: string | null
+          arrived_at: string
+          booking_id: string | null
+          budget_amount: number | null
+          budget_currency: string | null
+          budget_level: string | null
+          campaign: string | null
+          check_in: string | null
+          check_out: string | null
+          children_ages: Json
+          children_count: number
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          conversation_id: string | null
+          converted_at: string | null
+          converted_by: string | null
+          created_at: string
+          created_by: string | null
+          current_owner_id: string | null
+          customer_id: string | null
+          deposit_percent: number | null
+          destination: string | null
+          first_response_at: string | null
+          id: string
+          intake_completed_at: string | null
+          is_legacy: boolean
+          last_contact_at: string | null
+          lead_number: string | null
+          lead_source: string | null
+          lost_reason: string | null
+          market: string | null
+          migration_source: string | null
+          nationality: string | null
+          next_follow_up_at: string | null
+          occupancy: string | null
+          organization_id: string
+          owner_department: Database["public"]["Enums"]["sop_department"]
+          payment_policy: string
+          priorities: string | null
+          quote_id: string | null
+          reference_hotel: string | null
+          reference_screenshot_url: string | null
+          requote_required: boolean
+          rooms: number | null
+          service_type: string | null
+          special_requests: string | null
+          stage: Database["public"]["Enums"]["sop_lead_stage"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sop_leads"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       sop_set_availability: {
         Args: { _is_available: boolean; _reason?: string; _user_id: string }
         Returns: Json
@@ -13340,6 +13646,13 @@ export type Database = {
         Returns: string
       }
       sop_validate_transition: {
+        Args: {
+          _lead: string
+          _to: Database["public"]["Enums"]["sop_lead_stage"]
+        }
+        Returns: Json
+      }
+      sop_validate_transition_unsafe_impl: {
         Args: {
           _lead: string
           _to: Database["public"]["Enums"]["sop_lead_stage"]
