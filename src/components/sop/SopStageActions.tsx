@@ -30,10 +30,12 @@ export const DISQUALIFY_REASONS = [
 interface Props {
   leadId: string;
   stage: SopLeadStage;
+  canManage: boolean;
+  canMoveBack: boolean;
 }
 
 /** Backward moves and disqualification — both require an explicit reason. */
-export const SopStageActions = ({ leadId, stage }: Props) => {
+export const SopStageActions = ({ leadId, stage, canManage, canMoveBack }: Props) => {
   const moveBack = useMoveLeadBack();
   const disqualify = useDisqualifyLead();
 
@@ -52,12 +54,12 @@ export const SopStageActions = ({ leadId, stage }: Props) => {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {backTargets.length > 0 && (
+        {canMoveBack && backTargets.length > 0 && (
           <Button size="sm" variant="outline" onClick={() => setBackOpen(true)}>
             <RotateCcw className="h-3.5 w-3.5 ml-1" /> إرجاع لمرحلة سابقة
           </Button>
         )}
-        {!closed && (
+        {canManage && !closed && (
           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDqOpen(true)}>
             <UserX className="h-3.5 w-3.5 ml-1" /> غير مؤهل
           </Button>

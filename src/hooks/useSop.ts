@@ -18,6 +18,7 @@ const db = supabase as any;
 export interface SopLead {
   id: string;
   organization_id: string;
+  lead_number: string | null;
   stage: SopLeadStage;
   owner_department: SopDepartment;
   current_owner_id: string | null;
@@ -43,6 +44,7 @@ export interface SopLead {
   market: string | null;
   budget_level: string | null;
   budget_amount: number | null;
+  budget_currency: string | null;
   priorities: string | null;
   reference_hotel: string | null;
   reference_screenshot_url: string | null;
@@ -51,6 +53,11 @@ export interface SopLead {
   campaign: string | null;
   arrived_at: string;
   first_response_at: string | null;
+  intake_completed_at: string | null;
+  next_follow_up_at: string | null;
+  last_contact_at: string | null;
+  converted_at: string | null;
+  converted_by: string | null;
   payment_policy: string;
   deposit_percent: number | null;
   lost_reason: string | null;
@@ -58,6 +65,37 @@ export interface SopLead {
   is_legacy: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface SopLeadActivity {
+  id: string;
+  organization_id: string;
+  lead_id: string;
+  activity_type: 'call' | 'whatsapp' | 'email' | 'meeting' | 'note' | 'task';
+  status: 'planned' | 'completed' | 'cancelled';
+  due_at: string | null;
+  completed_at: string | null;
+  outcome: string | null;
+  notes: string | null;
+  assigned_to: string | null;
+  created_by: string | null;
+  completed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SopLeadAssignment {
+  id: string;
+  organization_id: string;
+  lead_id: string;
+  assignee_id: string;
+  assigned_by: string | null;
+  assigned_department: SopDepartment | null;
+  is_current: boolean;
+  acknowledged_at: string | null;
+  ack_deadline_at: string | null;
+  released_at: string | null;
+  created_at: string;
 }
 
 export interface SopPricingRequest {
@@ -240,7 +278,7 @@ export const reportGate = (res: GateResult | null | undefined, okMessage?: strin
 
 
 const invalidateSop = (qc: ReturnType<typeof useQueryClient>) => {
-  ['sop-leads', 'sop-lead', 'sop-pricing-requests', 'sop-pricing-request', 'sop-pricing-options', 'sop-handovers',
+  ['sop-leads', 'sop-lead', 'sop-lead-activities', 'sop-pricing-requests', 'sop-pricing-request', 'sop-pricing-options', 'sop-handovers',
    'sop-approvals', 'sop-deadlines', 'sop-incidents', 'sop-post-trip', 'sop-compliance',
    'sop-kpis', 'sop-assignments', 'sop-handover-inbox', 'sop-my-assignments',
    'workflow-progress', 'booking-workspace']
@@ -261,6 +299,7 @@ export function useSopRealtime() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_handovers' }, () => invalidateSop(qc))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_approvals' }, () => invalidateSop(qc))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_lead_assignments' }, () => invalidateSop(qc))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_lead_activities' }, () => invalidateSop(qc))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_department_members' }, () => {
         invalidateSop(qc);
         qc.invalidateQueries({ queryKey: ['sop-department-members'] });
@@ -463,34 +502,34 @@ export function useSetSopAvailability() {
 
 /* ------------------------------------------------------------------ leads */
 
-interface LeadFilters {
+export interface LeadFilters {
   stages?: SopLeadStage[];
   ownerId?: string;
+  source?: string;
+  followUp?: 'overdue' | 'today' | 'upcoming' | 'none';
   includeLegacy?: boolean;
   search?: string;
-  sortBy?: 'arrival_asc' | 'arrival_desc' | 'updated_at';
+  sortBy?: 'arrival_asc' | 'arrival_desc' | 'updated_at' | 'follow_up';
 }
 
 export function useSopLeads(filters: LeadFilters = {}) {
   const orgId = useOrgId();
-  const { stages, ownerId, includeLegacy = false, search, sortBy = 'arrival_asc' } = filters;
+  const { stages, ownerId, source, followUp, includeLegacy = false, search, sortBy = 'updated_at' } = filters;
   return useQuery({
-    queryKey: ['sop-leads', orgId, stages, ownerId, includeLegacy, search, sortBy],
+    queryKey: ['sop-leads', orgId, stages, ownerId, source, followUp, includeLegacy, search, sortBy],
     enabled: !!orgId,
     queryFn: async () => {
-      let q = db.from('sop_leads').select('*').eq('organization_id', orgId).limit(500);
-      if (sortBy === 'arrival_asc') {
-        q = q.order('check_in', { ascending: true, nullsFirst: false });
-      } else if (sortBy === 'arrival_desc') {
-        q = q.order('check_in', { ascending: false, nullsFirst: true });
-      } else {
-        q = q.order('updated_at', { ascending: false });
-      }
-      if (!includeLegacy) q = q.eq('is_legacy', false);
-      if (stages?.length) q = q.in('stage', stages);
-      if (ownerId) q = q.eq('current_owner_id', ownerId);
-      if (search) q = q.or(`contact_name.ilike.%${search}%,contact_phone.ilike.%${search}%,destination.ilike.%${search}%`);
-      const { data, error } = await q;
+      const { data, error } = await db.rpc('sop_search_leads', {
+        _org: orgId,
+        _stages: stages?.length ? stages : null,
+        _owner: ownerId || null,
+        _source: source || null,
+        _search: search?.trim() || null,
+        _follow_up: followUp || null,
+        _include_legacy: includeLegacy,
+        _sort: sortBy,
+        _limit: 500,
+      });
       if (error) throw error;
       return (data || []) as SopLead[];
     },
@@ -542,19 +581,126 @@ export function useSaveSopLead() {
   return useMutation({
     mutationFn: async (input: Partial<SopLead> & { id?: string }) => {
       const { id, ...values } = input;
-      if (id) {
-        const { data, error } = await db.from('sop_leads').update(values).eq('id', id).select().maybeSingle();
-        if (error) throw error;
-        return data as SopLead;
-      }
-      const { data, error } = await db.from('sop_leads')
-        .insert({ ...values, organization_id: orgId, created_by: user?.id ?? null })
-        .select().maybeSingle();
+      if (!orgId || !user?.id) throw new Error('لا توجد مؤسسة أو جلسة مستخدم نشطة');
+
+      const editableFields: (keyof SopLead)[] = [
+        'contact_name', 'contact_phone', 'contact_email', 'destination', 'city',
+        'check_in', 'check_out', 'approx_dates', 'adults', 'children_count',
+        'children_ages', 'rooms', 'occupancy', 'service_type', 'nationality',
+        'market', 'budget_level', 'budget_amount', 'budget_currency', 'priorities',
+        'reference_hotel', 'reference_screenshot_url', 'special_requests',
+        'lead_source', 'campaign', 'payment_policy', 'deposit_percent',
+      ];
+      const payload = Object.fromEntries(
+        editableFields.map((field) => [field, values[field] ?? null]),
+      );
+
+      const { data, error } = await db.rpc('sop_save_lead', {
+        _org: orgId,
+        _lead: id || null,
+        _payload: payload,
+      });
       if (error) throw error;
-      return data as SopLead;
+      if (!data?.allowed || !data?.lead) throw new Error('تعذر حفظ العميل المحتمل');
+      return data.lead as SopLead;
     },
     onSuccess: () => { toast.success('تم الحفظ'); invalidateSop(qc); },
-    onError: (e: any) => toast.error('فشل الحفظ: ' + (e?.message || 'خطأ')),
+    onError: (error: unknown) => toast.error(`فشل الحفظ: ${error instanceof Error ? error.message : 'خطأ'}`),
+  });
+}
+
+export function useLeadActivities(leadId?: string | null) {
+  return useQuery({
+    queryKey: ['sop-lead-activities', leadId],
+    enabled: !!leadId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('sop_lead_activities')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as SopLeadActivity[];
+    },
+  });
+}
+
+export function useAddLeadActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      leadId: string;
+      activityType: SopLeadActivity['activity_type'];
+      dueAt?: string | null;
+      notes?: string;
+      assignedTo?: string | null;
+      outcome?: string;
+      completed?: boolean;
+    }) => {
+      const { data, error } = await db.rpc('sop_add_lead_activity', {
+        _lead: input.leadId,
+        _activity_type: input.activityType,
+        _due_at: input.dueAt ?? null,
+        _notes: input.notes?.trim() || null,
+        _assigned_to: input.assignedTo ?? null,
+        _outcome: input.outcome?.trim() || null,
+        _completed: input.completed ?? false,
+      });
+      if (error) throw error;
+      return data as GateResult & { activity?: SopLeadActivity };
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم تسجيل نشاط المتابعة')) invalidateSop(qc); },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'تعذر تسجيل المتابعة'),
+  });
+}
+
+export function useCompleteLeadActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { activityId: string; outcome?: string; notes?: string }) => {
+      const { data, error } = await db.rpc('sop_complete_lead_activity', {
+        _activity: input.activityId,
+        _outcome: input.outcome?.trim() || null,
+        _notes: input.notes?.trim() || null,
+      });
+      if (error) throw error;
+      return data as GateResult & { activity?: SopLeadActivity };
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم إكمال المتابعة')) invalidateSop(qc); },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'تعذر إكمال المتابعة'),
+  });
+}
+
+export function useCancelLeadActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { activityId: string; reason?: string }) => {
+      const { data, error } = await db.rpc('sop_cancel_lead_activity', {
+        _activity: input.activityId,
+        _reason: input.reason?.trim() || null,
+      });
+      if (error) throw error;
+      return data as GateResult & { activity?: SopLeadActivity };
+    },
+    onSuccess: (res) => { if (reportGate(res, 'تم إلغاء المتابعة')) invalidateSop(qc); },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'تعذر إلغاء المتابعة'),
+  });
+}
+
+export function useConvertLeadToCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data, error } = await db.rpc('sop_convert_lead_to_customer', { _lead: leadId });
+      if (error) throw error;
+      return data as GateResult & { customer_id?: string; created?: boolean };
+    },
+    onSuccess: (res) => {
+      if (!reportGate(res, res.created ? 'تم إنشاء العميل وربطه بالطلب' : 'تم ربط الطلب بسجل العميل')) return;
+      invalidateSop(qc);
+      qc.invalidateQueries({ queryKey: ['customers'] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'تعذر تحويل العميل المحتمل'),
   });
 }
 
@@ -597,7 +743,7 @@ export function useLeadAssignments(leadId?: string | null) {
       const { data, error } = await db.from('sop_lead_assignments').select('*')
         .eq('lead_id', leadId).order('created_at', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []) as SopLeadAssignment[];
     },
   });
 }

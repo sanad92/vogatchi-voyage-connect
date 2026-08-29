@@ -13,9 +13,11 @@ const loadTypeScriptModule = async (path) => {
 const metrics = await loadTypeScriptModule(new URL('../src/lib/customerMetrics.ts', import.meta.url));
 const campaignMetrics = await loadTypeScriptModule(new URL('../src/lib/campaignMetrics.ts', import.meta.url));
 const customerFilters = await loadTypeScriptModule(new URL('../src/lib/customerFilters.ts', import.meta.url));
+const leadPipeline = await loadTypeScriptModule(new URL('../src/lib/leadPipeline.ts', import.meta.url));
 const migration = await readFile(new URL('../supabase/migrations/20260828085456_crm_core_hardening.sql', import.meta.url), 'utf8');
 const campaignMigration = await readFile(new URL('../supabase/migrations/20260828140000_campaign_delivery_hardening.sql', import.meta.url), 'utf8');
 const lifecycleMigration = await readFile(new URL('../supabase/migrations/20260828233912_customer_lifecycle_hardening.sql', import.meta.url), 'utf8');
+const leadMigration = await readFile(new URL('../supabase/migrations/20260829044022_lead_sales_pipeline_hardening.sql', import.meta.url), 'utf8');
 const customersPage = await readFile(new URL('../src/pages/Customers.tsx', import.meta.url), 'utf8');
 const customerHook = await readFile(new URL('../src/hooks/useCustomers.tsx', import.meta.url), 'utf8');
 const customerDataHook = await readFile(new URL('../src/hooks/useCustomerData.tsx', import.meta.url), 'utf8');
@@ -23,6 +25,9 @@ const customerEditDialog = await readFile(new URL('../src/components/customers/C
 const customerService = await readFile(new URL('../src/hooks/useCustomerService.tsx', import.meta.url), 'utf8');
 const campaignCard = await readFile(new URL('../src/components/crm/campaign/CampaignCard.tsx', import.meta.url), 'utf8');
 const campaignStats = await readFile(new URL('../src/components/crm/campaign/CampaignStats.tsx', import.meta.url), 'utf8');
+const sopHook = await readFile(new URL('../src/hooks/useSop.ts', import.meta.url), 'utf8');
+const leadPanel = await readFile(new URL('../src/components/sop/SopLeadPanel.tsx', import.meta.url), 'utf8');
+const leadWorkspace = await readFile(new URL('../src/pages/sop/SopPipeline.tsx', import.meta.url), 'utf8');
 
 assert.deepEqual(metrics.parseCurrencyTotals({ egp: '100.5', USD: 20, bad: 'x' }), { EGP: 100.5, USD: 20 });
 assert.deepEqual(metrics.sumCurrencyTotals([{ EGP: 100 }, { EGP: 25, USD: 10 }]), { EGP: 125, USD: 10 });
@@ -69,6 +74,24 @@ assert.equal(deliveryMetrics.deliveredCount, 2);
 assert.equal(deliveryMetrics.readRate, 50);
 assert.equal(deliveryMetrics.responseRate, 50);
 
+const leadNow = new Date('2026-08-29T12:00:00Z');
+const leadStats = leadPipeline.buildLeadPipelineStats([
+  { stage: 'new', next_follow_up_at: null },
+  { stage: 'quoted', next_follow_up_at: '2026-08-29T10:00:00Z' },
+  { stage: 'won', next_follow_up_at: null },
+  { stage: 'lost', next_follow_up_at: null },
+], leadNow);
+assert.equal(leadStats.total, 4);
+assert.equal(leadStats.newLeads, 1);
+assert.equal(leadStats.active, 1);
+assert.equal(leadStats.quoted, 1);
+assert.equal(leadStats.overdue, 1);
+assert.equal(leadStats.conversionRate, 50);
+assert.equal(leadPipeline.isFollowUpToday(
+  { next_follow_up_at: '2026-08-29T20:00:00Z' },
+  leadNow,
+), true);
+
 assert.match(migration, /CREATE OR REPLACE FUNCTION public\.has_org_permission/);
 assert.match(migration, /CREATE POLICY customers_update_by_permission/);
 assert.match(migration, /CREATE OR REPLACE FUNCTION public\.crm_customer_booking_metrics/);
@@ -89,6 +112,16 @@ assert.match(lifecycleMigration, /stamp_customer_archive_actor_trigger/);
 assert.match(lifecycleMigration, /prevent_duplicate_customer_email_trigger/);
 assert.match(lifecycleMigration, /CREATE OR REPLACE FUNCTION public\.check_customer_duplicate_contact/);
 assert.match(lifecycleMigration, /REVOKE TRUNCATE, REFERENCES, TRIGGER/);
+assert.match(leadMigration, /CREATE TABLE IF NOT EXISTS public\.sop_lead_activities/);
+assert.match(leadMigration, /CREATE OR REPLACE FUNCTION public\.sop_search_leads/);
+assert.match(leadMigration, /CREATE OR REPLACE FUNCTION public\.sop_save_lead/);
+assert.match(leadMigration, /CREATE OR REPLACE FUNCTION public\.sop_add_lead_activity/);
+assert.match(leadMigration, /CREATE OR REPLACE FUNCTION public\.sop_convert_lead_to_customer/);
+assert.match(leadMigration, /sop_lead_assignments_one_current_idx/);
+assert.match(leadMigration, /RENAME TO sop_validate_transition_unsafe_impl/);
+assert.match(leadMigration, /REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER\s+ON public\.sop_leads/);
+assert.match(leadMigration, /has_org_permission\(_org, CASE WHEN _lead IS NULL THEN 'crm_create' ELSE 'crm_edit' END\)/);
+assert.match(leadMigration, /sop_is_manager\(lead_row\.organization_id, auth\.uid\(\)\)/);
 
 assert.match(customerHook, /crm_customer_booking_metrics/);
 assert.match(customerHook, /set_customer_archived/);
@@ -104,5 +137,15 @@ assert.doesNotMatch(customersPage, /value="complaints"|value="automation"|value=
 assert.match(customersPage, /hasCustomerCommunicationPreference/);
 assert.match(customersPage, /hasCustomerWhatsapp/);
 assert.match(customersPage, /value="archived"/);
+assert.match(sopHook, /rpc\('sop_search_leads'/);
+assert.match(sopHook, /rpc\('sop_save_lead'/);
+assert.match(sopHook, /rpc\('sop_add_lead_activity'/);
+assert.match(sopHook, /rpc\('sop_convert_lead_to_customer'/);
+assert.doesNotMatch(sopHook, /from\('sop_leads'\)[\s\S]{0,100}\.(insert|update)\(/, 'lead writes use guarded RPCs');
+assert.match(leadPanel, /current\.assignee_id === user\?\.id/);
+assert.match(leadPanel, /canMoveBack=\{isManager\}/);
+assert.match(leadPanel, /LeadActivityPanel/);
+assert.match(leadWorkspace, /'inbox' \| 'pipeline' \| 'followups' \| 'closed'/);
+assert.match(leadWorkspace, /sop\/pipeline\?view=inbox|مسار المبيعات/);
 
-console.log('CRM core checks passed: 52/52');
+console.log('CRM core and lead pipeline checks passed.');

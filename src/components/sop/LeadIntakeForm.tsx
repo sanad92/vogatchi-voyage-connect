@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useSaveSopLead, type SopLead } from '@/hooks/useSop';
+import { toast } from 'sonner';
 
 interface Props {
   lead?: SopLead | null;
@@ -26,6 +27,7 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
     children_ages: [],
     service_type: 'hotel',
     payment_policy: 'full',
+    budget_currency: 'EGP',
     ...defaults,
   });
 
@@ -49,9 +51,13 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
   const pct = Math.round((doneCount / REQUIRED.length) * 100);
 
   const submit = () => {
+    if (form.check_in && form.check_out && form.check_out < form.check_in) {
+      toast.error('تاريخ المغادرة يجب ألا يسبق تاريخ الوصول');
+      return;
+    }
     const ages = Array.isArray(form.children_ages) ? form.children_ages : [];
     save.mutate(
-      { ...form, children_ages: ages } as any,
+      { ...form, children_ages: ages },
       { onSuccess: (l) => onSaved?.(l) },
     );
   };
@@ -71,10 +77,10 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           <Input value={form.contact_name || ''} onChange={(e) => set('contact_name', e.target.value)} />
         </Field>
         <Field label="رقم الهاتف *">
-          <Input value={form.contact_phone || ''} onChange={(e) => set('contact_phone', e.target.value)} />
+          <Input type="tel" dir="ltr" value={form.contact_phone || ''} onChange={(e) => set('contact_phone', e.target.value)} />
         </Field>
         <Field label="البريد الإلكتروني">
-          <Input type="email" value={form.contact_email || ''} onChange={(e) => set('contact_email', e.target.value)} />
+          <Input type="email" dir="ltr" value={form.contact_email || ''} onChange={(e) => set('contact_email', e.target.value)} />
         </Field>
         <Field label="نوع الخدمة">
           <Select value={form.service_type || 'hotel'} onValueChange={(v) => set('service_type', v)}>
@@ -133,7 +139,7 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           </div>
         </Field>
         <Field label="عدد الغرف">
-          <Input type="number" min={0} value={form.rooms ?? ''} onChange={(e) => set('rooms', Number(e.target.value) || null)} />
+          <Input type="number" min={1} value={form.rooms ?? ''} onChange={(e) => set('rooms', Number(e.target.value) || null)} />
         </Field>
         <Field label="التوزيع (Occupancy)">
           <Input value={form.occupancy || ''} onChange={(e) => set('occupancy', e.target.value)} placeholder="2 بالغ + طفل" />
@@ -150,7 +156,25 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           </Select>
         </Field>
         <Field label="الميزانية التقريبية">
-          <Input type="number" value={form.budget_amount ?? ''} onChange={(e) => set('budget_amount', Number(e.target.value) || null)} />
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              min={0}
+              className="flex-1"
+              value={form.budget_amount ?? ''}
+              onChange={(e) => set('budget_amount', Number(e.target.value) || null)}
+            />
+            <Select value={form.budget_currency || 'EGP'} onValueChange={(v) => set('budget_currency', v)}>
+              <SelectTrigger className="w-24" dir="ltr"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EGP">EGP</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="SAR">SAR</SelectItem>
+                <SelectItem value="AED">AED</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </Field>
         <Field label="الجنسية">
           <Input value={form.nationality || ''} onChange={(e) => set('nationality', e.target.value)} />
@@ -169,6 +193,8 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
               <SelectItem value="referral">ترشيح</SelectItem>
               <SelectItem value="walk_in">زيارة مباشرة</SelectItem>
               <SelectItem value="repeat">عميل متكرر</SelectItem>
+              <SelectItem value="phone">مكالمة</SelectItem>
+              <SelectItem value="other">أخرى</SelectItem>
             </SelectContent>
           </Select>
         </Field>
@@ -194,7 +220,7 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
         </Field>
         {form.payment_policy === 'deposit' && (
           <Field label="نسبة الدفعة المقدمة %">
-            <Input type="number" value={form.deposit_percent ?? ''} onChange={(e) => set('deposit_percent', Number(e.target.value) || null)} />
+            <Input type="number" min={1} max={100} value={form.deposit_percent ?? ''} onChange={(e) => set('deposit_percent', Number(e.target.value) || null)} />
           </Field>
         )}
       </div>
@@ -208,7 +234,9 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
       </Field>
 
       <div className="flex justify-end">
-        <Button onClick={submit} disabled={save.isPending}>حفظ بيانات الاستقبال</Button>
+        <Button onClick={submit} disabled={save.isPending}>
+          {pct === 100 ? 'حفظ وإكمال الاستقبال' : 'حفظ كمسودة'}
+        </Button>
       </div>
     </div>
   );

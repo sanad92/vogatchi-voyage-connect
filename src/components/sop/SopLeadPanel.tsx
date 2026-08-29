@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  ArrowLeftRight, CheckCircle2, ChevronDown, HandCoins, RefreshCcw, Send, ShieldCheck, UserPlus,
+  ArrowLeftRight, CheckCircle2, ChevronDown, ExternalLink, HandCoins, RefreshCcw,
+  Send, ShieldCheck, UserPlus, UserRoundCheck,
 } from 'lucide-react';
 import {
   useAcknowledgeAssignment,
@@ -16,14 +18,18 @@ import {
   useClaimLead,
   useCollectionStatus,
   useCreatePricingRequest,
+  useConvertLeadToCustomer,
   useLeadAssignments,
+  useMyDepartments,
   useRequestApproval,
   useRequestRecheck,
   useSopLead,
   useTransitionCheck,
 } from '@/hooks/useSop';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import HandoverDialog from './HandoverDialog';
+import LeadActivityPanel from './LeadActivityPanel';
 import SopGateAlert from './SopGateAlert';
 import SopLeadBrief from './SopLeadBrief';
 import SopPricingResult from './SopPricingResult';
@@ -67,6 +73,9 @@ interface Props {
 
 /** Shared SOP cockpit: owner, stage, missing data, next required action. */
 export const SopLeadPanel = ({ leadId, compact }: Props) => {
+  const navigate = useNavigate();
+  const { user } = useOptimizedAuth();
+  const { has, isManager } = useMyDepartments();
   const { data: lead } = useSopLead(leadId);
   const { data: assignments } = useLeadAssignments(leadId);
   const { members } = useOrgMembers();
@@ -81,21 +90,32 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
   const pricing = useCreatePricingRequest();
   const recheck = useRequestRecheck();
   const approval = useRequestApproval();
+  const convert = useConvertLeadToCustomer();
 
   const [handoverOpen, setHandoverOpen] = useState<SopHandoverType | null>(null);
 
   if (!lead) return null;
 
-  const current = (assignments || []).find((a: any) => a.is_current);
+  const current = (assignments || []).find((assignment) => assignment.is_current);
   const ownerName = members.find((m) => m.user_id === lead.current_owner_id)?.profile?.full_name;
   const handoverType = HANDOVER_FOR_STAGE[lead.stage];
+  const canManage = isManager || lead.current_owner_id === user?.id;
+  const canAssign = has('customer_service');
+  const canClaim = has('sales');
+  const canConvert = canManage || has('customer_service');
+  const handoverDepartment = handoverType === 'cs_to_sales'
+    ? 'customer_service'
+    : handoverType === 'sales_to_reservations'
+      ? 'sales'
+      : 'reservations';
+  const canHandover = !!handoverType && has(handoverDepartment);
 
   type Action = { label: string; icon?: JSX.Element; onClick: () => void; disabled?: boolean };
   const actions: Action[] = [];
 
   // Self-claim is the normal path: an available Sales member takes the lead themselves.
   const claimable = !lead.current_owner_id && ['new', 'assigned', 'qualified'].includes(lead.stage);
-  if (claimable) {
+  if (claimable && canClaim) {
     actions.push({
       label: 'استلم العميل',
       icon: <HandCoins className="h-3.5 w-3.5 ml-1" />,
@@ -104,14 +124,14 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
     });
   }
 
-  if (handoverType) {
+  if (handoverType && canHandover) {
     actions.push({
       label: 'تسليم للزميل',
       icon: <ArrowLeftRight className="h-3.5 w-3.5 ml-1" />,
       onClick: () => setHandoverOpen(handoverType),
     });
   }
-  if (lead.stage === 'new') {
+  if (lead.stage === 'new' && canAssign) {
     actions.push({
       label: 'إسناد بالتناوب',
       icon: <UserPlus className="h-3.5 w-3.5 ml-1" />,
@@ -119,28 +139,28 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
     });
   }
   // Pricing is unlocked only after the Sales owner qualified the lead.
-  if (lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'follow_up') {
+  if (canManage && (lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'follow_up')) {
     actions.push({
       label: 'طلب تسعير',
       icon: <Send className="h-3.5 w-3.5 ml-1" />,
       onClick: () => pricing.mutate({ leadId }),
     });
   }
-  if (lead.stage === 'accepted_pending_recheck') {
+  if (canManage && lead.stage === 'accepted_pending_recheck') {
     actions.push({
       label: 'طلب إعادة تأكد',
       icon: <RefreshCcw className="h-3.5 w-3.5 ml-1" />,
       onClick: () => recheck.mutate({ leadId }),
     });
   }
-  if (lead.stage === 'rechecked' || lead.stage === 'payment_pending') {
+  if (canManage && (lead.stage === 'rechecked' || lead.stage === 'payment_pending')) {
     actions.push({
       label: 'طلب موافقة الإدارة',
       icon: <ShieldCheck className="h-3.5 w-3.5 ml-1" />,
       onClick: () => approval.mutate({ type: 'booking_confirmation', leadId, reason: 'تأكيد الحجز' }),
     });
   }
-  if (nextStage) {
+  if (nextStage && canManage) {
     const acceptance = nextStage === 'accepted_pending_recheck';
     const qualification = nextStage === 'qualified';
     actions.push({
@@ -150,18 +170,17 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
       icon: <CheckCircle2 className="h-3.5 w-3.5 ml-1" />,
       onClick: () => advance.mutate({ leadId, to: nextStage }, {
         // Acceptance immediately opens the recheck task for Reservations.
-        onSuccess: (res: any) => { if (acceptance && res?.allowed !== false) recheck.mutate({ leadId }); },
+        onSuccess: (result) => { if (acceptance && result?.allowed !== false) recheck.mutate({ leadId }); },
       }),
       disabled: advance.isPending || !gate?.allowed,
     });
   }
-  if (!compact && lead.stage !== 'lost' && lead.stage !== 'won') {
+  if (!lead.customer_id && canConvert) {
     actions.push({
-      label: 'تسجيل كمفقود',
-      onClick: () => {
-        const reason = window.prompt('سبب الفقد (إلزامي)');
-        if (reason) advance.mutate({ leadId, to: 'lost', reason });
-      },
+      label: 'تحويل إلى عميل',
+      icon: <UserRoundCheck className="h-3.5 w-3.5 ml-1" />,
+      onClick: () => convert.mutate(leadId),
+      disabled: convert.isPending || !lead.contact_phone,
     });
   }
 
@@ -189,8 +208,19 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           <span className="text-muted-foreground">
             المسؤول: {ownerName || (lead.current_owner_id ? lead.current_owner_id.slice(0, 8) : 'غير محدد')}
           </span>
+          {lead.lead_number && <Badge variant="outline" dir="ltr">{lead.lead_number}</Badge>}
           {lead.requote_required && <Badge variant="destructive">مطلوب إعادة تسعير</Badge>}
           {lead.is_legacy && <Badge variant="outline">سجل تاريخي</Badge>}
+          {lead.customer_id && (
+            <Button
+              size="sm"
+              variant="link"
+              className="h-auto p-0 text-xs"
+              onClick={() => navigate(`/customers/${lead.customer_id}`)}
+            >
+              ملف العميل <ExternalLink className="h-3 w-3 mr-1" />
+            </Button>
+          )}
         </div>
 
         <div className="rounded-md border bg-muted/40 p-2 text-xs">
@@ -198,7 +228,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           <span className="font-medium">{nextRequiredAction(lead.stage)}</span>
         </div>
 
-        {current && !current.acknowledged_at && (
+        {current && current.assignee_id === user?.id && !current.acknowledged_at && (
           <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
             <span>بانتظار استلامك قبل {new Date(current.ack_deadline_at).toLocaleString('ar-EG')}</span>
             <Button size="sm" onClick={() => ack.mutate(leadId)}>استلام</Button>
@@ -211,7 +241,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
             okLabel={`جاهز للانتقال إلى: ${LEAD_STAGE_LABELS[nextStage]}`}
             compact
             action={
-              !gate?.allowed && handoverType
+              !gate?.allowed && handoverType && canHandover
                 ? { label: 'افتح نافذة التسليم', onClick: () => setHandoverOpen(handoverType) }
                 : null
             }
@@ -253,7 +283,12 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
           )}
         </div>
 
-        <SopStageActions leadId={leadId} stage={lead.stage} />
+        <SopStageActions
+          leadId={leadId}
+          stage={lead.stage}
+          canManage={canManage}
+          canMoveBack={isManager}
+        />
 
       </CardContent>
 
@@ -263,6 +298,7 @@ export const SopLeadPanel = ({ leadId, compact }: Props) => {
     </Card>
 
     <SopLeadBrief lead={lead} />
+    <LeadActivityPanel lead={lead} canManage={canManage || has('customer_service')} />
     <SopPricingResult leadId={leadId} />
     <LeadAuditTimeline leadId={leadId} compact={compact} />
 

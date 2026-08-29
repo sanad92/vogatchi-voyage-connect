@@ -2,6 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, User } from 'lucide-react';
 import type { SopLead } from '@/hooks/useSop';
+import { PAYMENT_POLICY_LABELS } from '@/lib/sop';
+import { LEAD_SOURCE_LABELS } from '@/lib/leadPipeline';
 
 const Row = ({ label, value }: { label: string; value?: React.ReactNode }) => {
   if (value === null || value === undefined || value === '' ) return null;
@@ -37,6 +39,7 @@ export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
       <CardContent className="space-y-2 text-xs">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold">{lead.contact_name || 'بدون اسم'}</span>
+          {lead.lead_number && <Badge variant="secondary" dir="ltr">{lead.lead_number}</Badge>}
           {lead.contact_phone && (
             <a href={`tel:${lead.contact_phone}`} className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary">
               <Phone className="h-3 w-3" /> {lead.contact_phone}
@@ -47,7 +50,11 @@ export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
               <Mail className="h-3 w-3" /> {lead.contact_email}
             </a>
           )}
-          {lead.lead_source && <Badge variant="outline" className="text-[10px]">{lead.lead_source}</Badge>}
+          {lead.lead_source && (
+            <Badge variant="outline" className="text-[10px]">
+              {LEAD_SOURCE_LABELS[lead.lead_source] || lead.lead_source}
+            </Badge>
+          )}
         </div>
 
         <div className="grid gap-1.5 border-t pt-2">
@@ -62,12 +69,14 @@ export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
           <Row label="مستوى الميزانية" value={lead.budget_level} />
           <Row
             label="الميزانية التقريبية"
-            value={lead.budget_amount ? Number(lead.budget_amount).toLocaleString() : undefined}
+            value={lead.budget_amount
+              ? `${Number(lead.budget_amount).toLocaleString()} ${lead.budget_currency || ''}`.trim()
+              : undefined}
           />
           <Row label="الأولويات" value={lead.priorities} />
           <Row label="فندق مرجعي" value={lead.reference_hotel} />
           <Row label="طلبات خاصة" value={lead.special_requests} />
-          <Row label="سياسة الدفع" value={lead.payment_policy} />
+          <Row label="سياسة الدفع" value={PAYMENT_POLICY_LABELS[lead.payment_policy] || lead.payment_policy} />
           <Row label="نسبة العربون" value={lead.deposit_percent ? `${lead.deposit_percent}%` : undefined} />
         </div>
 

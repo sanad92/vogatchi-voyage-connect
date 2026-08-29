@@ -2,7 +2,6 @@ import type { ElementType } from 'react';
 import {
   Activity,
   AlertTriangle,
-  ArrowLeftRight,
   BarChart3,
   BookOpen,
   Briefcase,
@@ -107,20 +106,17 @@ export const ERP_MODULES: ErpModule[] = [
         title: 'العملاء والمتابعة',
         description: 'ملف العميل، مرحلة البيع، المتابعات وقنوات التواصل.',
         screens: [
-          screen({ title: 'نظرة CRM', href: '/crm-dashboard', icon: BarChart3, description: 'مؤشرات العملاء والمبيعات والمتابعات.', requiredPermission: 'crm_view' }),
           screen({ title: 'العملاء', href: '/customers', icon: Users, description: 'قاعدة العملاء وبيانات التواصل وتاريخ التعامل.', requiredPermission: 'customers_view', sidebar: true }),
-          screen({ title: 'CRM', href: '/crm', icon: UserCheck, description: 'إدارة العملاء المحتملين والمراحل والأنشطة.', requiredPermission: 'crm_view', sidebar: true }),
+          screen({ title: 'العملاء المحتملون', href: '/sop/pipeline', icon: TrendingUp, description: 'الوارد والتوزيع ومسار البيع والمتابعات والتحويل إلى عميل.', requiredPermission: 'crm_view', sidebar: true }),
+          screen({ title: 'تحليلات CRM', href: '/crm', icon: UserCheck, description: 'مؤشرات العملاء والعلاقات والشرائح والأنشطة.', requiredPermission: 'crm_view' }),
           screen({ title: 'خدمة العملاء', href: '/customer-service', icon: MessageSquare, description: 'استقبال الطلبات ومتابعة الحالات وخدمة ما بعد البيع.', requiredPermission: 'customer_service_view' }),
           screen({ title: 'صندوق واتساب', href: '/whatsapp-inbox', icon: MessageSquare, description: 'محادثات العملاء المرتبطة بسجل العميل.', requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP, sidebar: true }),
         ],
       },
       {
         title: 'دورة المبيعات',
-        description: 'استلام الطلب وتوزيعه وتجهيز العرض حتى موافقة العميل.',
+        description: 'تجهيز العرض واعتماده بعد تأهيل الطلب داخل مساحة العملاء المحتملين.',
         screens: [
-          screen({ title: 'استقبال الطلبات', href: '/sop/intake', icon: ClipboardList, description: 'تسجيل احتياجات العميل وتحويلها إلى طلب واضح.', requiredPermission: 'crm_view' }),
-          screen({ title: 'التسليم والاستلام', href: '/sop/handovers', icon: ArrowLeftRight, description: 'تسليم الطلب بين خدمة العملاء والمبيعات والحجوزات.', requiredPermission: 'crm_view', sidebar: true }),
-          screen({ title: 'خط المبيعات', href: '/sop/pipeline', icon: TrendingUp, description: 'متابعة الطلبات عبر مراحل البيع المتفق عليها.', requiredPermission: 'crm_view' }),
           screen({ title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, description: 'إنشاء وإرسال ومتابعة عروض الأسعار.', requiredPermission: 'quotes_view', sidebar: true }),
         ],
       },

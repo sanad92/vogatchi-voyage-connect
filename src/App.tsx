@@ -104,7 +104,6 @@ const BookingsCalendar = lazy(() => import("@/pages/BookingsCalendar"));
 
 // CRM
 const CRM = lazy(() => import("@/pages/CRM"));
-const CRMDashboard = lazy(() => import("@/pages/CRMDashboard"));
 
 // Communication
 
@@ -349,7 +348,7 @@ function App() {
                               <Route path="/organization/demo-mode" element={<PermissionRouteGuard requiredPermission="admin_settings"><DemoModePage /></PermissionRouteGuard>} />
                               <Route path="/customer-service" element={<PermissionRouteGuard requiredPermission="customer_service_view"><CustomerService /></PermissionRouteGuard>} />
                               <Route path="/crm" element={<PermissionRouteGuard requiredPermission="crm_view"><CRM /></PermissionRouteGuard>} />
-                              <Route path="/crm-dashboard" element={<PermissionRouteGuard requiredPermission="crm_view"><CRMDashboard /></PermissionRouteGuard>} />
+                              <Route path="/crm-dashboard" element={<Navigate to="/crm" replace />} />
                               
                               <Route path="/bookings-calendar" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingsCalendar /></PermissionRouteGuard>} />
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />

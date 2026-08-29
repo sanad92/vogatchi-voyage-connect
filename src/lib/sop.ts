@@ -142,6 +142,8 @@ export const VIOLATION_GUIDANCE: Record<string, string> = {
   lead_not_qualified: 'حدد «عميل مؤهل» أولًا قبل طلب التسعير.',
 
   pricing_not_published: 'انشر التسعير أولًا قبل الإرسال للمبيعات.',
+  customer_match_ambiguous: 'راجع العملاء المكررين وحدد السجل الصحيح قبل التحويل.',
+  customer_match_archived: 'استعد سجل العميل المؤرشف أولًا ثم أعد التحويل.',
 };
 
 
@@ -202,6 +204,7 @@ export const PAYMENT_POLICY_LABELS: Record<string, string> = {
 /** Arabic labels for the exact field keys returned by the database gates. */
 export const MISSING_FIELD_LABELS: Record<string, string> = {
   contact_name: 'اسم العميل',
+  contact_phone: 'رقم هاتف العميل',
   contact_phone_or_email: 'هاتف أو بريد العميل',
   destination_or_city: 'الوجهة / المدينة',
   dates_or_approx_dates: 'تواريخ السفر أو تواريخ تقريبية',
@@ -258,6 +261,8 @@ export const VIOLATION_LABELS: Record<string, string> = {
   not_reservations_member: 'حسابك غير مسجّل ضمن فريق الحجوزات',
   reservations_member_unavailable: 'حالتك في الحجوزات: غير متاح',
   not_department_member: 'حسابك غير مسجّل في هذا القسم',
+  customer_match_ambiguous: 'بيانات التواصل تطابق أكثر من سجل عميل',
+  customer_match_archived: 'بيانات التواصل تطابق عميلاً مؤرشفاً',
 
 };
 
