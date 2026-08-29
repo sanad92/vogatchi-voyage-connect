@@ -160,7 +160,7 @@ export const validateFormData = <T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string[]> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         if (!errors[path]) errors[path] = [];
         errors[path].push(err.message);
