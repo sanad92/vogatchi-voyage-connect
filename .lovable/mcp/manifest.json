@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "sdk_version": "0.28.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://gvozalurfthzxpuasplo.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "vogatchi-voyage-connect",
+      "version": "0.1.0",
+      "title": "vogatchi-voyage-connect"
+    },
+    "tools": [
+      {
+        "name": "search_customers",
+        "title": "Search customers",
+        "description": "Search the travel agency's customers by name, email, or phone.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Name, email, or phone fragment to search for."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "Maximum number of customers to return (default 20)."
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_leads",
+        "title": "List sales leads",
+        "description": "List sales pipeline leads (SOP leads) for the signed-in user's organization, newest arrivals first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "stage": {
+              "type": "string",
+              "description": "Pipeline stage filter, e.g. new, assigned, qualified, pricing_requested, quoted, lost."
+            },
+            "destination": {
+              "type": "string",
+              "description": "Filter by destination fragment."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "Maximum number of leads to return (default 20)."
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_quotes",
+        "title": "List quotes",
+        "description": "List customer quotations for the signed-in user's organization, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Quote status filter, e.g. draft, sent, accepted, rejected."
+            },
+            "customer_name": {
+              "type": "string",
+              "description": "Filter by customer name fragment."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "Maximum number of quotes to return (default 20)."
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_bookings",
+        "title": "List bookings",
+        "description": "List bookings for the signed-in user's organization, optionally filtered by status or travel start date range.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Booking status filter, e.g. pending, confirmed, cancelled."
+            },
+            "start_from": {
+              "type": "string",
+              "description": "Only bookings starting on or after this ISO date (YYYY-MM-DD)."
+            },
+            "start_to": {
+              "type": "string",
+              "description": "Only bookings starting on or before this ISO date (YYYY-MM-DD)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "Maximum number of bookings to return (default 20)."
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_booking",
+        "title": "Get booking",
+        "description": "Fetch one booking by its booking number (e.g. BK-123456) or its id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "booking_number": {
+              "type": "string",
+              "description": "Booking number such as BK-1783866510972."
+            },
+            "id": {
+              "type": "string",
+              "description": "Booking UUID."
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

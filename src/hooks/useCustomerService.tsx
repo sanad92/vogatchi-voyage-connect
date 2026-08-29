@@ -38,7 +38,7 @@ export const useCustomerService = () => {
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as any[];
     },
     enabled: !!orgId,
   });
