@@ -80,7 +80,7 @@ export const useCRM = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).filter((send): send is CampaignSend => (
+      return ((data || []) as any[]).filter((send): send is CampaignSend => (
         Boolean(send.campaign_id)
         && Boolean(send.customer_id)
         && Boolean(send.created_at)

@@ -266,7 +266,7 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
                       <div key={note.id} className="space-y-1">
                         <p className="text-sm">{note.content}</p>
                         <div className="text-xs text-gray-500">
-                          بواسطة: {note.created_by_profile?.full_name || 'غير معروف'}
+                          بواسطة: {(note.created_by_profile as any)?.full_name || 'غير معروف'}
                         </div>
                       </div>
                     ))

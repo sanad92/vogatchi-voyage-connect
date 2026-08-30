@@ -93,7 +93,7 @@ const CustomerCommunicationLog = ({ customerId }: CustomerCommunicationLogProps)
           content: newCommunication.content,
           handled_by: user.id,
           status: 'completed'
-        } as never);
+        } as any);
 
       if (error) throw error;
 

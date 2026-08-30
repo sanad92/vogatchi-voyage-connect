@@ -19,10 +19,10 @@ const CustomerInteractions = () => {
 
   return (
     <div className="space-y-6">
-      <InteractionStats interactions={communications} />
+      <InteractionStats interactions={communications as any} />
       
       <InteractionsList 
-        interactions={communications}
+        interactions={communications as any}
         onNewInteraction={canEditCRM() ? () => setIsNewInteractionOpen(true) : undefined}
       />
 

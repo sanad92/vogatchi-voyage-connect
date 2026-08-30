@@ -100,7 +100,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
     const payload: NewTeamMemberInput = { ...form, employee_data: buildEmployeeData() };
     try {
       const res = await addMember.mutateAsync(payload);
-      if (res?.success) close();
+      if ((res as any)?.success) close();
     } catch (e: any) {
       if (e?.code === 'EMAIL_EXISTS') {
         try {
@@ -123,7 +123,7 @@ const AddTeamMemberWizard = ({ open, onOpenChange }: Props) => {
       org_role: form.org_role,
       employee_data: buildEmployeeData(),
     });
-    if (res?.success) close();
+    if ((res as any)?.success) close();
   };
 
 
