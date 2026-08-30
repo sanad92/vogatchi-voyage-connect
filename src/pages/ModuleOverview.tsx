@@ -1,21 +1,34 @@
-import { useMemo } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowLeftRight, ChevronLeft, LockKeyhole } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ChevronLeft, LockKeyhole, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
 import { ERP_MODULES, findModuleById } from '@/config/moduleNavigation';
+import { MODULE_PULSE } from '@/config/modulePulse';
 import { useNavigationAccess } from '@/hooks/useNavigationAccess';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useModulePulse, PULSE_RANGES, type PulseRangeKey } from '@/hooks/useModulePulse';
+import ModuleKpiStrip from '@/components/modules/ModuleKpiStrip';
+import ModuleFlowCard from '@/components/modules/ModuleFlowCard';
+import ModuleAlerts from '@/components/modules/ModuleAlerts';
+import ModuleActivityFeed from '@/components/modules/ModuleActivityFeed';
 import { cn } from '@/lib/utils';
 
 const ModuleOverview = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const module = findModuleById(moduleId);
   const { canAccessScreen } = useNavigationAccess();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rangeParam = (searchParams.get('range') as PulseRangeKey) || '30d';
+  const [range, setRange] = useState<PulseRangeKey>(
+    PULSE_RANGES.some((r) => r.key === rangeParam) ? rangeParam : '30d',
+  );
 
   usePageTitle(module?.label || 'الموديولات');
+
+  const { data: pulse, isLoading, isFetching, refetch } = useModulePulse(range);
 
   const visibleSections = useMemo(() => {
     if (!module) return [];
@@ -27,10 +40,26 @@ const ModuleOverview = () => {
       .filter((section) => section.screens.length > 0);
   }, [canAccessScreen, module]);
 
+  const pulseDef = module ? MODULE_PULSE[module.id] : undefined;
+
+  const visibleKpis = useMemo(() => {
+    if (!pulseDef) return [];
+    return pulseDef.kpis.filter((kpi) => canAccessScreen({ ...(kpi as any), title: kpi.label, href: kpi.href ?? '#' }));
+  }, [canAccessScreen, pulseDef]);
+
   if (!module) return <Navigate to="/dashboard" replace />;
 
   const ModuleIcon = module.icon as any;
   const visibleCount = visibleSections.reduce((total, section) => total + section.screens.length, 0);
+  const current = pulse?.current ?? {};
+  const previous = pulse?.previous ?? {};
+
+  const changeRange = (key: PulseRangeKey) => {
+    setRange(key);
+    const next = new URLSearchParams(searchParams);
+    next.set('range', key);
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="w-full px-4 py-6 md:px-6 lg:px-8 space-y-6" dir="rtl">
@@ -41,32 +70,59 @@ const ModuleOverview = () => {
         badge={<Badge variant="outline">{visibleCount} شاشة متاحة</Badge>}
       />
 
-      <Card className="overflow-hidden border-primary/15 bg-gradient-to-l from-primary/[0.08] via-card to-card">
-        <CardContent className="p-5 md:p-6">
-          <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-            <div className="rounded-xl border bg-background/75 p-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">يستلم</p>
-              <p className="text-sm font-medium leading-relaxed">{module.receives}</p>
-            </div>
-            <div className="hidden md:flex h-10 w-10 items-center justify-center rounded-full border bg-background text-primary">
-              <ArrowLeftRight className="h-4 w-4" />
-            </div>
-            <div className="rounded-xl border bg-background/75 p-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">يسلّم</p>
-              <p className="text-sm font-medium leading-relaxed">{module.delivers}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1.5 rounded-lg border bg-card p-1">
+          {PULSE_RANGES.map((r) => (
+            <button
+              key={r.key}
+              type="button"
+              onClick={() => changeRange(r.key)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                range === r.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {pulse?.generated_at && (
+            <span>آخر تحديث: {new Date(pulse.generated_at).toLocaleTimeString('ar-EG')}</span>
+          )}
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={cn('h-3.5 w-3.5 ml-1.5', isFetching && 'animate-spin')} />
+            تحديث
+          </Button>
+        </div>
+      </div>
+
+      {pulseDef && (
+        <ModuleKpiStrip
+          metrics={visibleKpis}
+          current={current}
+          previous={previous}
+          loading={isLoading}
+        />
+      )}
+
+      {pulseDef && (
+        <ModuleFlowCard
+          flow={pulseDef.flow}
+          receives={module.receives}
+          delivers={module.delivers}
+          current={current}
+        />
+      )}
 
       <div className="flex gap-2 overflow-x-auto pb-1" aria-label="الموديولات الرئيسية">
         {ERP_MODULES.map((item) => {
-          const Icon = item.icon;
+          const Icon = item.icon as any;
           const active = item.id === module.id;
           return (
             <Link
               key={item.id}
-              to={item.overviewHref}
+              to={`${item.overviewHref}?range=${range}`}
               className={cn(
                 'inline-flex min-w-fit items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors',
                 active
@@ -81,6 +137,15 @@ const ModuleOverview = () => {
         })}
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        <ModuleAlerts
+          moduleId={module.id}
+          alerts={pulse?.alerts ?? []}
+          canAccess={(def) => canAccessScreen({ ...(def as any), title: def.label })}
+        />
+        <ModuleActivityFeed activity={pulse?.activity ?? []} moduleId={module.id} />
+      </div>
+
       {visibleSections.length > 0 ? (
         <div className="space-y-8">
           {visibleSections.map((section) => (
@@ -91,7 +156,7 @@ const ModuleOverview = () => {
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {section.screens.map((screen) => {
-                  const ScreenIcon = screen.icon;
+                  const ScreenIcon = screen.icon as any;
                   return (
                     <Link key={screen.href} to={screen.href} className="group block h-full">
                       <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-sm">
@@ -133,4 +198,3 @@ const ModuleOverview = () => {
 };
 
 export default ModuleOverview;
-
