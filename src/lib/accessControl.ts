@@ -87,6 +87,17 @@ const AGENT_BASE_PERMISSIONS: PermissionKey[] = [
   'documents_view',
 ];
 
+// Agents that have not been assigned to any department keep a read-only
+// baseline so they are never fully locked out of the workspace.
+const AGENT_UNASSIGNED_PERMISSIONS: PermissionKey[] = [
+  'customers_view',
+  'bookings_view',
+  'crm_view',
+  'quotes_view',
+  'invoices_view',
+];
+
+
 export const DEPARTMENT_PERMISSIONS: Record<SopDepartment, PermissionKey[]> = {
   customer_service: [
     'customers_view', 'customers_create', 'customers_edit',
