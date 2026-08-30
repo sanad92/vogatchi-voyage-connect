@@ -12412,6 +12412,10 @@ export type Database = {
     Functions: {
       _can_manage_refunds: { Args: { _org_id: string }; Returns: boolean }
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
+      _module_pulse_window: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: Json
+      }
       _next_entry_number: { Args: { _org: string }; Returns: string }
       _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
       _render_template: {
@@ -12962,6 +12966,10 @@ export type Database = {
         }[]
       }
       get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
+      get_module_pulse: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: Json
+      }
       get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
