@@ -432,7 +432,7 @@ const CustomerDetails = () => {
 
       {/* Edit Dialog */}
       <CustomerEditDialog
-        customer={customerData}
+        customer={customerData as any}
         open={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleEditSave}

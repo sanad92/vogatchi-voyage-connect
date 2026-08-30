@@ -50,7 +50,7 @@ const CustomerFollowUpButton = ({
           notes: notes || `تمت متابعة العميل ${customerName} بنجاح`,
           priority: 'normal',
           booking_id: null // إضافة booking_id كـ null للمتابعة العامة
-        })
+        } as any)
         .select()
         .single();
 
@@ -70,7 +70,7 @@ const CustomerFollowUpButton = ({
           content: notes || `تمت متابعة العميل ${customerName}`,
           handled_by: user.id,
           completed_at: new Date().toISOString()
-        });
+        } as any);
 
       if (communicationError) {
         console.warn('⚠️ تحذير: لم يتم تسجيل التواصل:', communicationError);

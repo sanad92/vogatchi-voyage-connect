@@ -248,7 +248,7 @@ const NewUnifiedBooking = () => {
                       <CustomerSearch
                         onCustomerSelect={handleCustomerSelect}
                         onNewCustomer={() => { setIsSearchOpen(false); setIsAddOpen(true); }}
-                        selectedCustomer={selectedCustomer}
+                        selectedCustomer={selectedCustomer as any}
                       />
                     </DialogContent>
                   </Dialog>

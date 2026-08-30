@@ -29,7 +29,7 @@ const ModuleOverview = () => {
 
   if (!module) return <Navigate to="/dashboard" replace />;
 
-  const ModuleIcon = module.icon;
+  const ModuleIcon = module.icon as any;
   const visibleCount = visibleSections.reduce((total, section) => total + section.screens.length, 0);
 
   return (

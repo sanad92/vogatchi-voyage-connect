@@ -49,7 +49,7 @@ const MarketingCampaigns = () => {
 
   return (
     <div className="space-y-6">
-      <CampaignStats marketingCampaigns={marketingCampaigns} campaignSends={campaignSends} />
+      <CampaignStats marketingCampaigns={marketingCampaigns} campaignSends={campaignSends as any} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">الحملات التسويقية</h2>

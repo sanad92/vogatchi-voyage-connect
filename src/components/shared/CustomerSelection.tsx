@@ -71,7 +71,7 @@ const CustomerSelection = ({
               <CustomerSearch 
                 onCustomerSelect={handleCustomerSelect} 
                 onNewCustomer={handleNewCustomer}
-                selectedCustomer={selectedCustomer}
+                selectedCustomer={selectedCustomer as any}
               />
             </DialogContent>
           </Dialog>
