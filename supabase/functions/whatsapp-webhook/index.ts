@@ -253,34 +253,69 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           contentText = message.reaction.emoji ?? null;
         }
 
-        const { data: insertedMsg, error: msgErr } = await supabase
+        const messageRow = {
+          organization_id: organizationId,
+          whatsapp_settings_id: whatsappSettingsId,
+          conversation_id: conversationId,
+          message_id: message.id,
+          direction: 'inbound',
+          message_type: message.type,
+          content: contentText,
+          media_storage_path: mediaPath,
+          media_provider_id: mediaProviderId,
+          media_mime_type: mediaMime,
+          media_file_name: mediaFileName,
+          media_caption: mediaCaption,
+          media_download_status: mediaDownloadStatus,
+          media_download_error: mediaDownloadError,
+          media_download_attempts: mediaDownloadStatus ? 1 : 0,
+          media_last_attempt_at: mediaDownloadStatus ? new Date().toISOString() : null,
+          sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+          status: 'delivered',
+        };
+
+        // NOTE: (organization_id, message_id) is a PARTIAL unique index, which
+        // Postgres cannot infer from ON CONFLICT — do a manual find-then-write.
+        const { data: existingMsg } = await supabase
           .from('whatsapp_messages')
-          .upsert(
-            {
-              organization_id: organizationId,
-              whatsapp_settings_id: whatsappSettingsId,
-              conversation_id: conversationId,
-              message_id: message.id,
-              direction: 'inbound',
-              message_type: message.type,
-              content: contentText,
-              media_storage_path: mediaPath,
-              media_provider_id: mediaProviderId,
-              media_mime_type: mediaMime,
-              media_file_name: mediaFileName,
-              media_caption: mediaCaption,
-              media_download_status: mediaDownloadStatus,
-              media_download_error: mediaDownloadError,
-              media_download_attempts: mediaDownloadStatus ? 1 : 0,
-              media_last_attempt_at: mediaDownloadStatus ? new Date().toISOString() : null,
-              sent_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),
-              status: 'delivered',
-            },
-            { onConflict: 'organization_id,message_id', ignoreDuplicates: false },
-          )
           .select('id')
+          .eq('organization_id', organizationId)
+          .eq('message_id', message.id)
           .maybeSingle();
-        if (msgErr) console.error('[wa-webhook] message upsert error:', msgErr);
+
+        let insertedMsg: { id: string } | null = null;
+        let msgErr: unknown = null;
+        if (existingMsg?.id) {
+          const res = await supabase
+            .from('whatsapp_messages')
+            .update(messageRow)
+            .eq('id', existingMsg.id)
+            .select('id')
+            .maybeSingle();
+          insertedMsg = res.data as { id: string } | null;
+          msgErr = res.error;
+        } else {
+          const res = await supabase
+            .from('whatsapp_messages')
+            .insert(messageRow)
+            .select('id')
+            .maybeSingle();
+          insertedMsg = res.data as { id: string } | null;
+          msgErr = res.error;
+          // Concurrent delivery of the same message: recover the existing row.
+          if ((res.error as { code?: string } | null)?.code === '23505') {
+            const retry = await supabase
+              .from('whatsapp_messages')
+              .select('id')
+              .eq('organization_id', organizationId)
+              .eq('message_id', message.id)
+              .maybeSingle();
+            insertedMsg = retry.data as { id: string } | null;
+            msgErr = insertedMsg ? null : res.error;
+          }
+        }
+        if (msgErr) console.error('[wa-webhook] message write error:', msgErr);
+
 
         await supabase
           .from('whatsapp_conversations')
