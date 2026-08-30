@@ -1,25 +1,65 @@
-# Blocked: Unreadable Shared Chat Link
+# الموديولات الستة: من شاشات ثابتة إلى لوحات حيّة مترابطة
 
-## Current situation
+## المشكلة الحالية
+صفحات الموديولات (`/modules/:id`) اليوم مجرد بطاقات تنقّل ثابتة: نص "يستلم / يسلّم" مكتوب يدويًا، وعدد الشاشات فقط. لا توجد أرقام، ولا آخر الأحداث، ولا أي مؤشر على العلاقة الفعلية بين الموديولات. كذلك لا يوجد أي اشتراك تحديث لحظي في هذه الصفحات.
 
-The shared ChatGPT conversation link was provided as the task input, but its content cannot be retrieved:
+## الهدف
+كل موديول يعرض حالته الحقيقية الآن: أرقام مقروءة من قاعدة البيانات، آخر الأحداث، والعناصر العالقة عند حدود الموديول (اللي داخل من قبله واللي مستني يخرج للي بعده) — مع تحديث تلقائي عند أي تغيير.
 
-- The gateway fetch returned an empty page (content is JS-gated).
-- The ChatGPT share JSON endpoint is access-blocked from this environment.
-- A full headless-browser render of the URL returns only a login wall — the conversation messages are not publicly accessible.
+## ما سيتم بناؤه
 
-No part of the conversation text is available, so there is nothing concrete to plan or build against yet.
+### 1) مصدر أرقام واحد لكل الموديولات
+دالة قاعدة بيانات واحدة `get_module_pulse(p_from, p_to)` ترجع لكل موديول:
 
-## Next step (input needed)
+- **المبيعات وCRM**: ليدز جديدة، تحت التأهيل، مؤهلة، عروض مرسلة/مقبولة، نسبة التحويل.
+- **الموردون والتسعير**: طلبات تسعير مفتوحة، متوسط زمن التسعير، عروض منشورة، موردون نشطون.
+- **الحجوزات والتشغيل**: حجوزات مؤكدة، سفر خلال 7 أيام، مهام متأخرة، حجوزات بدون مستندات.
+- **المالية**: إيراد، تكلفة، ربح وهامش، مستحق على العملاء، مستحق للموردين، فواتير متأخرة.
+- **الإدارة والرقابة**: متوسط زمن الدورة لكل مرحلة، ليدز متوقفة، أحداث تدقيق حديثة.
+- **النمو والأتمتة**: رسائل مرسلة/فاشلة، حملات نشطة، قواعد أتمتة شغالة، عملاء متكررون.
 
-To proceed, the conversation content must reach the project in one of these ways:
+كل الأرقام مقيّدة بالمؤسسة (`organization_id`) وبنطاق التاريخ المختار، ومحسوبة من نفس الجداول اللي بتغذّي التقارير التفصيلية حتى لا تختلف الأرقام بين الشاشات.
 
-1. Paste the relevant conversation text directly into the chat.
-2. Upload a screenshot or export file of the conversation.
-3. Describe the request in plain words (what to build, fix, or change in the Vogatchi platform).
+### 2) صحة الترابط بين الموديولات
+مؤشرات "تسريبات المسار" تُحسب في نفس الدالة وتظهر كتنبيهات قابلة للنقر:
 
-## Once content is available
+```text
+ليد مؤهل بدون طلب تسعير
+طلب تسعير منشور بدون عرض سعر للعميل
+عرض سعر مقبول بدون حجز
+حجز مؤكد بدون فاتورة عميل
+حجز بتكلفة مورد بدون أمر دفع
+فاتورة مدفوعة بدون قيد محاسبي
+```
 
-1. Read the shared requirements and map them to the existing codebase (SOP workflow, WhatsApp module, bookings, finance, etc.).
-2. Verify current-state claims with targeted file reads and database queries.
-3. Write a concrete implementation plan scoped to what the conversation actually asks for.
+كل تنبيه يفتح قائمة مفلترة بالسجلات الفعلية، فيبقى الربط بين الموديولات مرئي وقابل للتصحيح بدل ما يكون افتراض.
+
+### 3) شاشة الموديول الجديدة
+`ModuleOverview` تتحول إلى لوحة:
+
+- شريط KPIs حيّ أعلى الصفحة مع مقارنة بالفترة السابقة (سهم صعود/هبوط).
+- منتقي فترة (اليوم / 7 أيام / 30 يوم / مخصص) محفوظ في الرابط.
+- بطاقة "يستلم / يسلّم" تعرض العدد الحقيقي الداخل والخارج بدل النص الثابت.
+- قائمة "آخر الأحداث" لهذا الموديول (آخر 10 أحداث بالوقت والمستخدم).
+- بطاقات التنبيهات من البند 2.
+- بطاقات الشاشات الحالية تبقى كما هي أسفل اللوحة مع عدّاد حي على البطاقات المناسبة.
+
+### 4) التحديث اللحظي
+هوك `useModulePulse` مع:
+- اشتراك Realtime على الجداول المؤثرة (leads، pricing، bookings، invoices، payments، messages) يُبطل الكاش عند أي تغيير.
+- تحديث دوري احتياطي كل دقيقتين وعند العودة للنافذة.
+- مؤشر "آخر تحديث" مع زر تحديث يدوي.
+
+### 5) تصحيح أرقام التقارير
+مراجعة لوحة التحكم والتقارير المالية لتقرأ من نفس الدالة/نفس قواعد الحساب (تحويل العملات، استبعاد الملغي، الأرقام الصافية)، بحيث رقم الإيراد في الموديول = نفسه في المالية = نفسه في تقرير الأرباح.
+
+## تفاصيل تقنية
+- ترحيل SQL جديد: `get_module_pulse` كدالة `SECURITY DEFINER` مع `search_path` مضبوط، وقصر `EXECUTE` على `authenticated` فقط، وتصفية داخلية بعضوية المؤسسة.
+- ملف جديد `src/hooks/useModulePulse.ts` (TanStack Query + مفتاح يشمل `useOrgId` والفترة).
+- مكوّنات جديدة تحت `src/components/modules/`: `ModuleKpiStrip`, `ModuleFlowCard`, `ModuleAlerts`, `ModuleActivityFeed`.
+- توسيع `ErpModule` في `src/config/moduleNavigation.ts` بحقول تعريف المؤشرات والتنبيهات لكل موديول (بدون تغيير هيكل التنقّل الحالي).
+- احترام الصلاحيات: أي مؤشر لا يملك المستخدم صلاحيته لا يُعرض ولا يُحسب له رابط.
+
+## خارج النطاق
+- لا تغيير في منطق الأعمال أو مسار SOP نفسه.
+- لا جداول جديدة ولا نظام تقارير موازٍ.
