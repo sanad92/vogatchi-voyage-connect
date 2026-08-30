@@ -36,7 +36,10 @@ async function getAuthToken(apiKey: string): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ api_key: apiKey }),
   });
-  if (!response.ok) throw new Error("Paymob authentication failed");
+  if (!response.ok) {
+    console.error("Paymob auth failed", response.status, (await response.text()).slice(0, 500));
+    throw new Error("Paymob authentication failed");
+  }
   return (await response.json()).token;
 }
 
@@ -58,7 +61,10 @@ async function createOrder(
       items: [{ name: itemName, amount_cents: amountCents, quantity: 1, description: itemName }],
     }),
   });
-  if (!response.ok) throw new Error("Paymob order creation failed");
+  if (!response.ok) {
+    console.error("Paymob order failed", response.status, (await response.text()).slice(0, 500));
+    throw new Error("Paymob order creation failed");
+  }
   return (await response.json()).id;
 }
 
@@ -97,7 +103,10 @@ async function getPaymentKey(
       integration_id: integrationId,
     }),
   });
-  if (!response.ok) throw new Error("Paymob payment-key creation failed");
+  if (!response.ok) {
+    console.error("Paymob payment key failed", response.status, (await response.text()).slice(0, 500));
+    throw new Error("Paymob payment-key creation failed");
+  }
   return (await response.json()).token;
 }
 
@@ -264,7 +273,10 @@ Deno.serve(async (request) => {
         .select("id")
         .single();
     const { data: checkout, error: checkoutError } = checkoutResult;
-    if (checkoutError || !checkout) throw new Error("Checkout session could not be saved");
+    if (checkoutError || !checkout) {
+      console.error("Checkout session save failed", checkoutError);
+      throw new Error("Checkout session could not be saved");
+    }
 
     const paymentKey = await getPaymentKey(authToken, orderId, amountCents, integrationId, billingData);
     const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${encodeURIComponent(iframeId)}?payment_token=${encodeURIComponent(paymentKey)}`;

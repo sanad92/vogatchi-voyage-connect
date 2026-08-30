@@ -46,8 +46,11 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
   {
     feature: PLAN_FEATURES.MULTI_BRANCH,
     minimumPlan: 'النمو',
-    paths: ['/organization/branches', '/organization/departments', '/organization/sop-team'],
+    // '/organization/departments' and '/organization/sop-team' stay ungated:
+    // owners must always be able to assign departments to restore agent access.
+    paths: ['/organization/branches'],
   },
+
   {
     feature: PLAN_FEATURES.WHATSAPP,
     minimumPlan: 'النمو',
