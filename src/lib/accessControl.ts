@@ -166,11 +166,15 @@ export function permissionsFor(role: string | null, departments: SopDepartment[]
   if (role !== 'agent') return new Set<PermissionKey>();
 
   const permissions = new Set<PermissionKey>(AGENT_BASE_PERMISSIONS);
+  if (departments.length === 0) {
+    for (const permission of AGENT_UNASSIGNED_PERMISSIONS) permissions.add(permission);
+  }
   for (const department of departments) {
     for (const permission of DEPARTMENT_PERMISSIONS[department] ?? []) {
       permissions.add(permission);
     }
   }
+
   return permissions;
 }
 
