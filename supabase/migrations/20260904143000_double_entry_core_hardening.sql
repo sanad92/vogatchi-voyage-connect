@@ -89,15 +89,21 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_entry_id uuid := CASE
-    WHEN TG_TABLE_NAME = 'journal_entries' THEN CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END
-    ELSE CASE WHEN TG_OP = 'DELETE' THEN OLD.journal_entry_id ELSE NEW.journal_entry_id END
-  END;
+  v_entry_id uuid;
   v_header public.journal_entries%ROWTYPE;
   v_debit numeric;
   v_credit numeric;
   v_lines integer;
 BEGIN
+  IF TG_TABLE_NAME = 'journal_entries' THEN
+    v_entry_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END;
+  ELSE
+    v_entry_id := CASE
+      WHEN TG_OP = 'DELETE' THEN OLD.journal_entry_id
+      ELSE NEW.journal_entry_id
+    END;
+  END IF;
+
   SELECT * INTO v_header FROM public.journal_entries WHERE id = v_entry_id;
   IF NOT FOUND OR v_header.status <> 'posted' THEN
     RETURN NULL;
