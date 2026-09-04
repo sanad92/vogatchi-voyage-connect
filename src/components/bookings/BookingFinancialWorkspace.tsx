@@ -7,6 +7,7 @@ import {
   Wallet, FileText, Receipt, BookOpenCheck, AlertTriangle, TrendingUp,
   FileCheck2, Clock, User, Building2,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useBookingFinancials } from '@/hooks/useBookingFinancials';
 
 interface Props { bookingId: string }
@@ -14,10 +15,12 @@ interface Props { bookingId: string }
 const fmt = (n: number, ccy = 'EGP') =>
   `${(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${ccy}`;
 
-const KindMeta: Record<string, { icon: any; color: string; label: string }> = {
+const KindMeta: Record<string, { icon: LucideIcon; color: string; label: string }> = {
   booking: { icon: FileCheck2, color: 'text-primary', label: 'حجز' },
   invoice: { icon: FileText, color: 'text-blue-600', label: 'فاتورة' },
   receipt: { icon: Receipt, color: 'text-green-600', label: 'تحصيل' },
+  supplier_invoice: { icon: Building2, color: 'text-orange-600', label: 'استحقاق مورد' },
+  supplier_order: { icon: FileCheck2, color: 'text-violet-600', label: 'أمر دفع' },
   supplier_payment: { icon: Wallet, color: 'text-purple-600', label: 'سداد مورد' },
   journal: { icon: BookOpenCheck, color: 'text-amber-600', label: 'قيد' },
   document: { icon: FileCheck2, color: 'text-muted-foreground', label: 'مستند' },
@@ -29,7 +32,7 @@ export const BookingFinancialWorkspace: React.FC<Props> = ({ bookingId }) => {
   if (isLoading) return <div className="text-sm text-muted-foreground py-6 text-center">جارٍ تحميل مساحة العمل المالية…</div>;
   if (!data) return null;
 
-  const { booking, invoice, supplierPayments, totals, timeline, warnings } = data;
+  const { booking, invoice, supplierInvoices, paymentOrders, supplierPayments, totals, timeline, warnings } = data;
   const ccy = totals.currency;
 
   return (
@@ -96,17 +99,30 @@ export const BookingFinancialWorkspace: React.FC<Props> = ({ bookingId }) => {
               ) : <Badge variant="outline" className="text-[10px] border-amber-500/40">لا توجد فاتورة</Badge>}
             </div>
             <Row label="قيمة الفاتورة" value={fmt(totals.invoiced, ccy)} />
-            <Row label="المحصّل" value={fmt(totals.receivedFromCustomer, ccy)} tone="good" />
+            <Row label="المحصّل على الفواتير" value={fmt(totals.receivedFromCustomer, ccy)} tone="good" />
+            {totals.customerReceipts > totals.receivedFromCustomer && (
+              <Row label="تحصيل غير مخصص" value={fmt(totals.customerReceipts - totals.receivedFromCustomer, ccy)} tone="bad" />
+            )}
             <Row label="المتبقي على العميل" value={fmt(totals.outstandingFromCustomer, ccy)} tone={totals.outstandingFromCustomer > 0 ? 'bad' : 'muted'} bold />
           </div>
 
           <div className="border rounded-lg p-3 space-y-2 bg-card">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium flex items-center gap-1"><Wallet className="h-4 w-4" /> جهة المورد</span>
-              <Badge variant="outline" className="text-[10px]">{supplierPayments.length} سداد</Badge>
+              <div className="flex gap-1">
+                <Badge variant="outline" className="text-[10px]">{supplierInvoices.length} فاتورة</Badge>
+                <Badge variant="outline" className="text-[10px]">{paymentOrders.length} أمر دفع</Badge>
+              </div>
             </div>
-            <Row label="تكلفة الحجز" value={fmt(totals.cost, ccy)} />
-            <Row label="المسدّد للمورد" value={fmt(totals.paidToSupplier, ccy)} tone="good" />
+            <Row
+              label={totals.payableSource === 'supplier_invoice' ? 'استحقاق المورد' : 'استحقاق تقديري من التكلفة'}
+              value={fmt(totals.payableSource === 'supplier_invoice' ? totals.supplierInvoiced : totals.cost, ccy)}
+              tone={totals.payableSource === 'booking_cost_estimate' ? 'bad' : undefined}
+            />
+            <Row label="المسدّد والمخصص للمورد" value={fmt(totals.paidToSupplier, ccy)} tone="good" />
+            {totals.supplierCashPaid > totals.paidToSupplier && (
+              <Row label="سداد غير مخصص" value={fmt(totals.supplierCashPaid - totals.paidToSupplier, ccy)} tone="bad" />
+            )}
             <Row label="المتبقي للمورد" value={fmt(totals.outstandingToSupplier, ccy)} tone={totals.outstandingToSupplier > 0 ? 'bad' : 'muted'} bold />
           </div>
         </div>

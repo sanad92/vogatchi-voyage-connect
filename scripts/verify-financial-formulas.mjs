@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 const money = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
@@ -66,4 +67,34 @@ assert.equal(
   'invoice journal must balance after discount and VAT',
 );
 
-console.log('Financial formula checks passed: 7/7');
+const supplierIntegrityMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260904100616_booking_supplier_payable_integrity.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  supplierIntegrityMigration,
+  /supplier_invoice_id[\s\S]+refresh_supplier_invoice_payment_state/,
+  'supplier payments must settle a supplier invoice, not only a booking or payment order',
+);
+assert.match(
+  supplierIntegrityMigration,
+  /payment exceeds the remaining supplier invoice balance/i,
+  'supplier invoice overpayments must fail closed',
+);
+
+const bookingFinancialsHook = fs.readFileSync(
+  new URL('../src/hooks/useBookingFinancials.ts', import.meta.url),
+  'utf8',
+);
+assert.match(
+  bookingFinancialsHook,
+  /from\('supplier_invoices'\)/,
+  'booking AP must use supplier invoices as its authoritative obligation',
+);
+assert.doesNotMatch(
+  bookingFinancialsHook,
+  /\bany\b/,
+  'booking financial read model must stay typed',
+);
+
+console.log('Financial formula and supplier payable checks passed: 11/11');
