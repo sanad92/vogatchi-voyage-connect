@@ -19,6 +19,14 @@ const allocateReceipt = ({ receipt, invoiceRemaining }) => {
   return { receivable, customerAdvance: money(receipt - receivable) };
 };
 
+const allocateSupplierPayment = ({ payment, invoiceAllocated }) => {
+  assert(payment > 0 && invoiceAllocated >= 0 && invoiceAllocated <= payment);
+  return {
+    accountsPayable: money(invoiceAllocated),
+    supplierAdvance: money(payment - invoiceAllocated),
+  };
+};
+
 const commission = ({ profits, rate }) => {
   assert(rate >= 0 && rate <= 100);
   return money(Math.max(profits.reduce((sum, profit) => sum + profit, 0), 0) * rate / 100);
@@ -41,6 +49,12 @@ assert.deepEqual(
   allocateReceipt({ receipt: 900, invoiceRemaining: 826 }),
   { receivable: 826, customerAdvance: 74 },
   'overpayment must not overstate accounts receivable',
+);
+
+assert.deepEqual(
+  allocateSupplierPayment({ payment: 1_000, invoiceAllocated: 760 }),
+  { accountsPayable: 760, supplierAdvance: 240 },
+  'unallocated supplier payments must be supplier advances, not AP settlements',
 );
 
 assert.equal(commission({ profits: [190, 110, -50], rate: 10 }), 25, 'period commission uses net profit');
@@ -76,6 +90,31 @@ assert.match(
   /supplier_invoice_id[\s\S]+refresh_supplier_invoice_payment_state/,
   'supplier payments must settle a supplier invoice, not only a booking or payment order',
 );
+
+const doubleEntryMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260904143000_double_entry_core_hardening.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  doubleEntryMigration,
+  /post_supplier_invoice[\s\S]+supplier_invoice[\s\S]+account_id, debit, credit/,
+  'supplier invoices must accrue COGS and AP through a canonical journal',
+);
+assert.match(
+  doubleEntryMigration,
+  /Supplier Advances[\s\S]+v_unallocated[\s\S]+v_advance/,
+  'unallocated supplier payments must post to supplier advances',
+);
+assert.match(
+  doubleEntryMigration,
+  /CREATE CONSTRAINT TRIGGER trg_assert_journal_lines_balanced/,
+  'posted journal lines must be checked at transaction commit',
+);
+assert.match(
+  doubleEntryMigration,
+  /DROP TRIGGER IF EXISTS trg_post_booking_cost/,
+  'booking-level cost accrual must be retired before supplier invoices own AP',
+);
 assert.match(
   supplierIntegrityMigration,
   /payment exceeds the remaining supplier invoice balance/i,
@@ -97,4 +136,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula and supplier payable checks passed: 11/11');
+console.log('Financial formula and double-entry checks passed: 16/16');

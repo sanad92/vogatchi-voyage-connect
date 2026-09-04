@@ -1,14027 +1,6 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
-  public: {
-    Tables: {
-      accounting_periods: {
-        Row: {
-          closed_at: string | null
-          closed_by: string | null
-          created_at: string
-          end_date: string
-          id: string
-          notes: string | null
-          organization_id: string
-          period_name: string
-          start_date: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          closed_at?: string | null
-          closed_by?: string | null
-          created_at?: string
-          end_date: string
-          id?: string
-          notes?: string | null
-          organization_id: string
-          period_name: string
-          start_date: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          closed_at?: string | null
-          closed_by?: string | null
-          created_at?: string
-          end_date?: string
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          period_name?: string
-          start_date?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "accounting_periods_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_audit_log: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          entity_name: string | null
-          id: string
-          ip_address: string | null
-          new_values: Json | null
-          old_values: Json | null
-          organization_id: string | null
-          target_id: string | null
-          target_table: string | null
-          user_email: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          entity_name?: string | null
-          id?: string
-          ip_address?: string | null
-          new_values?: Json | null
-          old_values?: Json | null
-          organization_id?: string | null
-          target_id?: string | null
-          target_table?: string | null
-          user_email?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          entity_name?: string | null
-          id?: string
-          ip_address?: string | null
-          new_values?: Json | null
-          old_values?: Json | null
-          organization_id?: string | null
-          target_id?: string | null
-          target_table?: string | null
-          user_email?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_audit_log_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_assistant_actions_log: {
-        Row: {
-          created_at: string
-          id: string
-          input: Json | null
-          organization_id: string
-          output: Json | null
-          status: string
-          thread_id: string | null
-          tool_name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          input?: Json | null
-          organization_id: string
-          output?: Json | null
-          status?: string
-          thread_id?: string | null
-          tool_name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          input?: Json | null
-          organization_id?: string
-          output?: Json | null
-          status?: string
-          thread_id?: string | null
-          tool_name?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_assistant_actions_log_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_assistant_actions_log_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "ai_assistant_threads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_assistant_messages: {
-        Row: {
-          content: string | null
-          created_at: string
-          id: string
-          metadata: Json | null
-          role: string
-          thread_id: string
-          tool_call_id: string | null
-          tool_calls: Json | null
-          tool_name: string | null
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          role: string
-          thread_id: string
-          tool_call_id?: string | null
-          tool_calls?: Json | null
-          tool_name?: string | null
-        }
-        Update: {
-          content?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          role?: string
-          thread_id?: string
-          tool_call_id?: string | null
-          tool_calls?: Json | null
-          tool_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_assistant_messages_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "ai_assistant_threads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_assistant_threads: {
-        Row: {
-          created_at: string
-          id: string
-          organization_id: string
-          pinned: boolean
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          organization_id: string
-          pinned?: boolean
-          title?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          organization_id?: string
-          pinned?: boolean
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_assistant_threads_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      airlines: {
-        Row: {
-          country: string | null
-          created_at: string | null
-          iata_code: string | null
-          icao_code: string | null
-          id: string
-          is_active: boolean | null
-          is_global: boolean
-          name: string
-          organization_id: string | null
-        }
-        Insert: {
-          country?: string | null
-          created_at?: string | null
-          iata_code?: string | null
-          icao_code?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean
-          name: string
-          organization_id?: string | null
-        }
-        Update: {
-          country?: string | null
-          created_at?: string | null
-          iata_code?: string | null
-          icao_code?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean
-          name?: string
-          organization_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "airlines_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      airports: {
-        Row: {
-          city: string
-          country: string | null
-          created_at: string | null
-          iata_code: string
-          icao_code: string | null
-          id: string
-          is_active: boolean | null
-          is_global: boolean
-          latitude: number | null
-          longitude: number | null
-          name: string
-          organization_id: string | null
-        }
-        Insert: {
-          city: string
-          country?: string | null
-          created_at?: string | null
-          iata_code: string
-          icao_code?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          organization_id?: string | null
-        }
-        Update: {
-          city?: string
-          country?: string | null
-          created_at?: string | null
-          iata_code?: string
-          icao_code?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          organization_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "airports_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      allotment_usage: {
-        Row: {
-          allotment_id: string
-          booking_id: string
-          booking_type: string
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          organization_id: string
-          quantity_used: number
-          usage_date: string
-        }
-        Insert: {
-          allotment_id: string
-          booking_id: string
-          booking_type: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id: string
-          quantity_used?: number
-          usage_date?: string
-        }
-        Update: {
-          allotment_id?: string
-          booking_id?: string
-          booking_type?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          quantity_used?: number
-          usage_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "allotment_usage_allotment_id_fkey"
-            columns: ["allotment_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_allotments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_logs: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          function_name: string
-          id: string
-          ip_address: string | null
-          method: string
-          organization_id: string | null
-          request_body: Json | null
-          response_summary: string | null
-          response_time_ms: number | null
-          status_code: number | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          function_name: string
-          id?: string
-          ip_address?: string | null
-          method?: string
-          organization_id?: string | null
-          request_body?: Json | null
-          response_summary?: string | null
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          function_name?: string
-          id?: string
-          ip_address?: string | null
-          method?: string
-          organization_id?: string | null
-          request_body?: Json | null
-          response_summary?: string | null
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      automation_actions: {
-        Row: {
-          action_config: Json | null
-          action_type: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          rule_id: string
-          sort_order: number | null
-        }
-        Insert: {
-          action_config?: Json | null
-          action_type: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          rule_id: string
-          sort_order?: number | null
-        }
-        Update: {
-          action_config?: Json | null
-          action_type?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          rule_id?: string
-          sort_order?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automation_actions_rule_id_fkey"
-            columns: ["rule_id"]
-            isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      automation_logs: {
-        Row: {
-          action_type: string
-          booking_id: string | null
-          booking_type: string | null
-          completed_at: string | null
-          created_at: string | null
-          error_message: string | null
-          id: string
-          metadata: Json | null
-          organization_id: string | null
-          rule_id: string | null
-          status: string | null
-          trigger_type: string
-        }
-        Insert: {
-          action_type: string
-          booking_id?: string | null
-          booking_type?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          rule_id?: string | null
-          status?: string | null
-          trigger_type: string
-        }
-        Update: {
-          action_type?: string
-          booking_id?: string | null
-          booking_type?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          rule_id?: string | null
-          status?: string | null
-          trigger_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automation_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automation_logs_rule_id_fkey"
-            columns: ["rule_id"]
-            isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      automation_rules: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          organization_id: string
-          trigger_config: Json | null
-          trigger_type: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          organization_id: string
-          trigger_config?: Json | null
-          trigger_type: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          organization_id?: string
-          trigger_config?: Json | null
-          trigger_type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automation_rules_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      backup_logs: {
-        Row: {
-          backup_type: string
-          completed_at: string | null
-          created_at: string | null
-          created_by: string | null
-          file_size: string | null
-          file_url: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          started_at: string | null
-          status: string | null
-        }
-        Insert: {
-          backup_type: string
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          file_size?: string | null
-          file_url?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          started_at?: string | null
-          status?: string | null
-        }
-        Update: {
-          backup_type?: string
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          file_size?: string | null
-          file_url?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          started_at?: string | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "backup_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bank_account_transactions: {
-        Row: {
-          amount: number
-          bank_account_id: string | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          organization_id: string | null
-          reference_number: string | null
-          related_invoice_id: string | null
-          related_payment_order_id: string | null
-          transaction_date: string | null
-          transaction_type: string
-        }
-        Insert: {
-          amount: number
-          bank_account_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          organization_id?: string | null
-          reference_number?: string | null
-          related_invoice_id?: string | null
-          related_payment_order_id?: string | null
-          transaction_date?: string | null
-          transaction_type: string
-        }
-        Update: {
-          amount?: number
-          bank_account_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          organization_id?: string | null
-          reference_number?: string | null
-          related_invoice_id?: string | null
-          related_payment_order_id?: string | null
-          transaction_date?: string | null
-          transaction_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bank_account_transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_account_transactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bank_accounts: {
-        Row: {
-          account_name: string
-          account_number: string
-          account_type: string | null
-          bank_name: string
-          created_at: string | null
-          currency: string | null
-          current_balance: number | null
-          id: string
-          is_active: boolean | null
-          notes: string | null
-          organization_id: string | null
-          treasury_kind: string
-          updated_at: string | null
-        }
-        Insert: {
-          account_name: string
-          account_number: string
-          account_type?: string | null
-          bank_name: string
-          created_at?: string | null
-          currency?: string | null
-          current_balance?: number | null
-          id?: string
-          is_active?: boolean | null
-          notes?: string | null
-          organization_id?: string | null
-          treasury_kind?: string
-          updated_at?: string | null
-        }
-        Update: {
-          account_name?: string
-          account_number?: string
-          account_type?: string | null
-          bank_name?: string
-          created_at?: string | null
-          currency?: string | null
-          current_balance?: number | null
-          id?: string
-          is_active?: boolean | null
-          notes?: string | null
-          organization_id?: string | null
-          treasury_kind?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bank_accounts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bank_transfer_requests: {
-        Row: {
-          amount: number
-          billing_cycle: string
-          created_at: string | null
-          created_by: string | null
-          currency: string
-          id: string
-          notes: string | null
-          organization_id: string
-          plan_id: string
-          receipt_url: string | null
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          transfer_reference: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          amount: number
-          billing_cycle?: string
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string
-          id?: string
-          notes?: string | null
-          organization_id: string
-          plan_id: string
-          receipt_url?: string | null
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          transfer_reference?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          amount?: number
-          billing_cycle?: string
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          plan_id?: string
-          receipt_url?: string | null
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          transfer_reference?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bank_transfer_requests_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_transfer_requests_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      blocks: {
-        Row: {
-          content: Json | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          order_index: number | null
-          organization_id: string | null
-          page_id: string | null
-          title: string | null
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          content?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          order_index?: number | null
-          organization_id?: string | null
-          page_id?: string | null
-          title?: string | null
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          order_index?: number | null
-          organization_id?: string | null
-          page_id?: string | null
-          title?: string | null
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "blocks_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blocks_page_id_fkey"
-            columns: ["page_id"]
-            isOneToOne: false
-            referencedRelation: "pages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_automation_runs: {
-        Row: {
-          booking_id: string
-          completion_score: number
-          created_at: string
-          error_message: string | null
-          id: string
-          last_run_at: string | null
-          organization_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id: string
-          completion_score?: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          last_run_at?: string | null
-          organization_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string
-          completion_score?: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          last_run_at?: string | null
-          organization_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_automation_runs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_runs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_runs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_runs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_runs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_runs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_automation_steps: {
-        Row: {
-          attempts: number
-          booking_id: string
-          created_at: string
-          entity_id: string | null
-          entity_type: string | null
-          error_message: string | null
-          id: string
-          idempotency_key: string
-          last_attempt_at: string | null
-          organization_id: string
-          run_id: string
-          status: string
-          step_key: string
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          booking_id: string
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string | null
-          error_message?: string | null
-          id?: string
-          idempotency_key: string
-          last_attempt_at?: string | null
-          organization_id: string
-          run_id: string
-          status?: string
-          step_key: string
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          booking_id?: string
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string | null
-          error_message?: string | null
-          id?: string
-          idempotency_key?: string
-          last_attempt_at?: string | null
-          organization_id?: string
-          run_id?: string
-          status?: string
-          step_key?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_automation_steps_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_automation_steps_run_id_fkey"
-            columns: ["run_id"]
-            isOneToOne: false
-            referencedRelation: "booking_automation_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_car_details: {
-        Row: {
-          booking_id: string
-          car_type: string | null
-          created_at: string | null
-          daily_rate: number | null
-          dropoff_date: string | null
-          dropoff_location: string | null
-          id: string
-          insurance_included: boolean | null
-          pickup_date: string | null
-          pickup_location: string | null
-        }
-        Insert: {
-          booking_id: string
-          car_type?: string | null
-          created_at?: string | null
-          daily_rate?: number | null
-          dropoff_date?: string | null
-          dropoff_location?: string | null
-          id?: string
-          insurance_included?: boolean | null
-          pickup_date?: string | null
-          pickup_location?: string | null
-        }
-        Update: {
-          booking_id?: string
-          car_type?: string | null
-          created_at?: string | null
-          daily_rate?: number | null
-          dropoff_date?: string | null
-          dropoff_location?: string | null
-          id?: string
-          insurance_included?: boolean | null
-          pickup_date?: string | null
-          pickup_location?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_car_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_car_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_car_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_car_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_car_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_financial_snapshots: {
-        Row: {
-          booking_id: string
-          created_at: string
-          currency: string
-          expected_margin_pct: number
-          expected_profit: number
-          id: string
-          organization_id: string
-          payable_amount: number
-          receivable_amount: number
-          snapshot_at: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id: string
-          created_at?: string
-          currency?: string
-          expected_margin_pct?: number
-          expected_profit?: number
-          id?: string
-          organization_id: string
-          payable_amount?: number
-          receivable_amount?: number
-          snapshot_at?: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string
-          created_at?: string
-          currency?: string
-          expected_margin_pct?: number
-          expected_profit?: number
-          id?: string
-          organization_id?: string
-          payable_amount?: number
-          receivable_amount?: number
-          snapshot_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_financial_snapshots_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_financial_snapshots_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_flight_details: {
-        Row: {
-          airline: string | null
-          arrival_airport: string | null
-          arrival_date: string | null
-          arrival_time: string | null
-          booking_id: string
-          created_at: string | null
-          departure_airport: string | null
-          departure_date: string | null
-          departure_time: string | null
-          flight_class: string | null
-          flight_number: string | null
-          id: string
-          is_round_trip: boolean | null
-          meal_preferences: string | null
-          passengers_count: number | null
-          pnr: string | null
-          seat_preferences: string | null
-          taxes_and_fees: number | null
-          ticket_number: string | null
-          ticket_price_per_person: number | null
-        }
-        Insert: {
-          airline?: string | null
-          arrival_airport?: string | null
-          arrival_date?: string | null
-          arrival_time?: string | null
-          booking_id: string
-          created_at?: string | null
-          departure_airport?: string | null
-          departure_date?: string | null
-          departure_time?: string | null
-          flight_class?: string | null
-          flight_number?: string | null
-          id?: string
-          is_round_trip?: boolean | null
-          meal_preferences?: string | null
-          passengers_count?: number | null
-          pnr?: string | null
-          seat_preferences?: string | null
-          taxes_and_fees?: number | null
-          ticket_number?: string | null
-          ticket_price_per_person?: number | null
-        }
-        Update: {
-          airline?: string | null
-          arrival_airport?: string | null
-          arrival_date?: string | null
-          arrival_time?: string | null
-          booking_id?: string
-          created_at?: string | null
-          departure_airport?: string | null
-          departure_date?: string | null
-          departure_time?: string | null
-          flight_class?: string | null
-          flight_number?: string | null
-          id?: string
-          is_round_trip?: boolean | null
-          meal_preferences?: string | null
-          passengers_count?: number | null
-          pnr?: string | null
-          seat_preferences?: string | null
-          taxes_and_fees?: number | null
-          ticket_number?: string | null
-          ticket_price_per_person?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_flight_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_flight_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_flight_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_flight_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_flight_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_hotel_details: {
-        Row: {
-          adults: number | null
-          board_type: string | null
-          booking_id: string
-          booking_reference: string | null
-          cancellation_policy: string | null
-          check_in: string | null
-          check_out: string | null
-          children: number | null
-          children_ages: string | null
-          city: string | null
-          created_at: string | null
-          hotel_name: string | null
-          id: string
-          meal_plan: string | null
-          nights: number | null
-          room_type: string | null
-          rooms: number | null
-          star_rating: number | null
-        }
-        Insert: {
-          adults?: number | null
-          board_type?: string | null
-          booking_id: string
-          booking_reference?: string | null
-          cancellation_policy?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          children?: number | null
-          children_ages?: string | null
-          city?: string | null
-          created_at?: string | null
-          hotel_name?: string | null
-          id?: string
-          meal_plan?: string | null
-          nights?: number | null
-          room_type?: string | null
-          rooms?: number | null
-          star_rating?: number | null
-        }
-        Update: {
-          adults?: number | null
-          board_type?: string | null
-          booking_id?: string
-          booking_reference?: string | null
-          cancellation_policy?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          children?: number | null
-          children_ages?: string | null
-          city?: string | null
-          created_at?: string | null
-          hotel_name?: string | null
-          id?: string
-          meal_plan?: string | null
-          nights?: number | null
-          room_type?: string | null
-          rooms?: number | null
-          star_rating?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_hotel_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_hotel_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_hotel_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_hotel_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_hotel_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_special_requests: {
-        Row: {
-          booking_id: string | null
-          created_at: string | null
-          custom_request_text: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          special_request_type_id: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string | null
-          custom_request_text?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          special_request_type_id?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string | null
-          custom_request_text?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          special_request_type_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_special_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_special_requests_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_special_requests_special_request_type_id_fkey"
-            columns: ["special_request_type_id"]
-            isOneToOne: false
-            referencedRelation: "special_request_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_status_history: {
-        Row: {
-          booking_id: string | null
-          changed_by: string | null
-          created_at: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          status_id: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          changed_by?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          status_id?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          changed_by?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          status_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_status_history_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_status_history_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_statuses: {
-        Row: {
-          color: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          name_ar: string
-          sort_order: number | null
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          name_ar: string
-          sort_order?: number | null
-        }
-        Update: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          name_ar?: string
-          sort_order?: number | null
-        }
-        Relationships: []
-      }
-      booking_tasks: {
-        Row: {
-          assignee_id: string | null
-          booking_id: string
-          completed_at: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          due_at: string | null
-          id: string
-          organization_id: string
-          priority: string
-          source: string | null
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          assignee_id?: string | null
-          booking_id: string
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          due_at?: string | null
-          id?: string
-          organization_id: string
-          priority?: string
-          source?: string | null
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          assignee_id?: string | null
-          booking_id?: string
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          due_at?: string | null
-          id?: string
-          organization_id?: string
-          priority?: string
-          source?: string | null
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_tasks_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_tasks_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_tasks_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_tasks_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_tasks_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_timeline_events: {
-        Row: {
-          actor_id: string | null
-          actor_label: string | null
-          booking_id: string
-          created_at: string
-          id: string
-          kind: string
-          occurred_at: string
-          organization_id: string
-          payload: Json
-          summary: string | null
-        }
-        Insert: {
-          actor_id?: string | null
-          actor_label?: string | null
-          booking_id: string
-          created_at?: string
-          id?: string
-          kind: string
-          occurred_at?: string
-          organization_id: string
-          payload?: Json
-          summary?: string | null
-        }
-        Update: {
-          actor_id?: string | null
-          actor_label?: string | null
-          booking_id?: string
-          created_at?: string
-          id?: string
-          kind?: string
-          occurred_at?: string
-          organization_id?: string
-          payload?: Json
-          summary?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_timeline_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_timeline_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_timeline_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_timeline_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_timeline_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_transport_details: {
-        Row: {
-          booking_id: string
-          created_at: string | null
-          dropoff_point: string | null
-          id: string
-          passengers: number | null
-          pickup_point: string | null
-          route: string | null
-          vehicle_type: string | null
-        }
-        Insert: {
-          booking_id: string
-          created_at?: string | null
-          dropoff_point?: string | null
-          id?: string
-          passengers?: number | null
-          pickup_point?: string | null
-          route?: string | null
-          vehicle_type?: string | null
-        }
-        Update: {
-          booking_id?: string
-          created_at?: string | null
-          dropoff_point?: string | null
-          id?: string
-          passengers?: number | null
-          pickup_point?: string | null
-          route?: string | null
-          vehicle_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_transport_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_transport_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_transport_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_transport_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_transport_details_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_vouchers: {
-        Row: {
-          booking_id: string
-          created_at: string
-          id: string
-          issued_at: string
-          organization_id: string
-          pdf_url: string | null
-          qr_payload: Json
-          updated_at: string
-          voucher_number: string
-        }
-        Insert: {
-          booking_id: string
-          created_at?: string
-          id?: string
-          issued_at?: string
-          organization_id: string
-          pdf_url?: string | null
-          qr_payload?: Json
-          updated_at?: string
-          voucher_number: string
-        }
-        Update: {
-          booking_id?: string
-          created_at?: string
-          id?: string
-          issued_at?: string
-          organization_id?: string
-          pdf_url?: string | null
-          qr_payload?: Json
-          updated_at?: string
-          voucher_number?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_vouchers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_vouchers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_vouchers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_vouchers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_vouchers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_vouchers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bookings: {
-        Row: {
-          booking_number: string
-          booking_type: string
-          cost_price: number | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          data_quality_status: string | null
-          deposit_percent: number | null
-          employee_id: string | null
-          end_date: string | null
-          id: string
-          is_demo: boolean
-          legacy_id: string | null
-          legacy_table: string | null
-          notes: string | null
-          organization_id: string
-          payment_policy: string
-          profit: number | null
-          quote_id: string | null
-          selling_price: number | null
-          start_date: string | null
-          status: string | null
-          status_id: string | null
-          supplier_id: string | null
-          supplier_name: string | null
-          updated_at: string | null
-          workflow_stage: Database["public"]["Enums"]["booking_workflow_stage"]
-        }
-        Insert: {
-          booking_number: string
-          booking_type: string
-          cost_price?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          data_quality_status?: string | null
-          deposit_percent?: number | null
-          employee_id?: string | null
-          end_date?: string | null
-          id?: string
-          is_demo?: boolean
-          legacy_id?: string | null
-          legacy_table?: string | null
-          notes?: string | null
-          organization_id: string
-          payment_policy?: string
-          profit?: number | null
-          quote_id?: string | null
-          selling_price?: number | null
-          start_date?: string | null
-          status?: string | null
-          status_id?: string | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          updated_at?: string | null
-          workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
-        }
-        Update: {
-          booking_number?: string
-          booking_type?: string
-          cost_price?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          data_quality_status?: string | null
-          deposit_percent?: number | null
-          employee_id?: string | null
-          end_date?: string | null
-          id?: string
-          is_demo?: boolean
-          legacy_id?: string | null
-          legacy_table?: string | null
-          notes?: string | null
-          organization_id?: string
-          payment_policy?: string
-          profit?: number | null
-          quote_id?: string | null
-          selling_price?: number | null
-          start_date?: string | null
-          status?: string | null
-          status_id?: string | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          updated_at?: string | null
-          workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      branches: {
-        Row: {
-          address: string | null
-          code: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          manager_id: string | null
-          name: string
-          organization_id: string
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          manager_id?: string | null
-          name: string
-          organization_id: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          manager_id?: string | null
-          name?: string
-          organization_id?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "branches_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      campaign_sends: {
-        Row: {
-          campaign_id: string
-          created_at: string | null
-          customer_id: string
-          id: string
-          organization_id: string
-          response: string | null
-          sent_at: string | null
-          status: string
-        }
-        Insert: {
-          campaign_id: string
-          created_at?: string | null
-          customer_id: string
-          id?: string
-          organization_id: string
-          response?: string | null
-          sent_at?: string | null
-          status?: string
-        }
-        Update: {
-          campaign_id?: string
-          created_at?: string | null
-          customer_id?: string
-          id?: string
-          organization_id?: string
-          response?: string | null
-          sent_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_sends_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "marketing_campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_sends_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_sends_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      car_rentals: {
-        Row: {
-          additional_costs: number | null
-          additional_driver_count: number | null
-          additional_fees: number | null
-          booking_agent_id: string | null
-          booking_agent_name: string | null
-          contract_sent: boolean | null
-          contract_sent_date: string | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string
-          daily_rate: number | null
-          damage_notes: string | null
-          deposit_paid: number | null
-          deposit_returned: number | null
-          driver_license_expiry: string | null
-          driver_license_number: string | null
-          employee_id: string | null
-          exchange_rate_to_egp: number | null
-          fuel_level_pickup: string | null
-          fuel_level_return: string | null
-          gps_included: boolean | null
-          id: string
-          insurance_cost: number | null
-          insurance_included: boolean | null
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          organization_id: string | null
-          paid_amount: number | null
-          payment_due_date: string | null
-          payment_method: string | null
-          pickup_location: string | null
-          pickup_notes: string | null
-          quote_id: string | null
-          remaining_amount: number | null
-          rental_duration_days: number | null
-          rental_end_date: string
-          rental_reference: string
-          rental_start_date: string
-          return_location: string | null
-          return_notes: string | null
-          security_deposit: number | null
-          special_requirements: string | null
-          status_id: string | null
-          supplier_cost_egp: number | null
-          supplier_daily_cost: number | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          supplier_total_cost: number | null
-          total_cost_egp: number | null
-          total_profit: number | null
-          total_rental_cost: number | null
-          updated_at: string | null
-          vehicle_color: string | null
-          vehicle_make: string | null
-          vehicle_model: string | null
-          vehicle_plate_number: string | null
-          vehicle_type_id: string | null
-          vehicle_year: number | null
-        }
-        Insert: {
-          additional_costs?: number | null
-          additional_driver_count?: number | null
-          additional_fees?: number | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          contract_sent?: boolean | null
-          contract_sent_date?: string | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name: string
-          daily_rate?: number | null
-          damage_notes?: string | null
-          deposit_paid?: number | null
-          deposit_returned?: number | null
-          driver_license_expiry?: string | null
-          driver_license_number?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          fuel_level_pickup?: string | null
-          fuel_level_return?: string | null
-          gps_included?: boolean | null
-          id?: string
-          insurance_cost?: number | null
-          insurance_included?: boolean | null
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          pickup_location?: string | null
-          pickup_notes?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          rental_duration_days?: number | null
-          rental_end_date: string
-          rental_reference?: string
-          rental_start_date: string
-          return_location?: string | null
-          return_notes?: string | null
-          security_deposit?: number | null
-          special_requirements?: string | null
-          status_id?: string | null
-          supplier_cost_egp?: number | null
-          supplier_daily_cost?: number | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          supplier_total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          total_rental_cost?: number | null
-          updated_at?: string | null
-          vehicle_color?: string | null
-          vehicle_make?: string | null
-          vehicle_model?: string | null
-          vehicle_plate_number?: string | null
-          vehicle_type_id?: string | null
-          vehicle_year?: number | null
-        }
-        Update: {
-          additional_costs?: number | null
-          additional_driver_count?: number | null
-          additional_fees?: number | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          contract_sent?: boolean | null
-          contract_sent_date?: string | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string
-          daily_rate?: number | null
-          damage_notes?: string | null
-          deposit_paid?: number | null
-          deposit_returned?: number | null
-          driver_license_expiry?: string | null
-          driver_license_number?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          fuel_level_pickup?: string | null
-          fuel_level_return?: string | null
-          gps_included?: boolean | null
-          id?: string
-          insurance_cost?: number | null
-          insurance_included?: boolean | null
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          pickup_location?: string | null
-          pickup_notes?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          rental_duration_days?: number | null
-          rental_end_date?: string
-          rental_reference?: string
-          rental_start_date?: string
-          return_location?: string | null
-          return_notes?: string | null
-          security_deposit?: number | null
-          special_requirements?: string | null
-          status_id?: string | null
-          supplier_cost_egp?: number | null
-          supplier_daily_cost?: number | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          supplier_total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          total_rental_cost?: number | null
-          updated_at?: string | null
-          vehicle_color?: string | null
-          vehicle_make?: string | null
-          vehicle_model?: string | null
-          vehicle_plate_number?: string | null
-          vehicle_type_id?: string | null
-          vehicle_year?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "car_rentals_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_vehicle_type_id_fkey"
-            columns: ["vehicle_type_id"]
-            isOneToOne: false
-            referencedRelation: "vehicle_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chart_of_accounts: {
-        Row: {
-          account_code: string
-          account_name: string
-          account_name_ar: string | null
-          account_type: Database["public"]["Enums"]["account_type"]
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          is_system: boolean
-          organization_id: string
-          parent_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          account_code: string
-          account_name: string
-          account_name_ar?: string | null
-          account_type: Database["public"]["Enums"]["account_type"]
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_system?: boolean
-          organization_id: string
-          parent_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          account_code?: string
-          account_name?: string
-          account_name_ar?: string | null
-          account_type?: Database["public"]["Enums"]["account_type"]
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_system?: boolean
-          organization_id?: string
-          parent_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chart_of_accounts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chart_of_accounts_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "chart_of_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      commission_payments: {
-        Row: {
-          bank_account_id: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          employee_id: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          payment_date: string | null
-          payment_method: string | null
-          payment_period_end: string | null
-          payment_period_start: string | null
-          reference_number: string | null
-          total_commission_amount: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          bank_account_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_period_end?: string | null
-          payment_period_start?: string | null
-          reference_number?: string | null
-          total_commission_amount?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          bank_account_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_period_end?: string | null
-          payment_period_start?: string | null
-          reference_number?: string | null
-          total_commission_amount?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commission_payments_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "commission_payments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "commission_payments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      content_blocks: {
-        Row: {
-          content: Json | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          layout_settings: Json | null
-          order_index: number | null
-          organization_id: string | null
-          section: string | null
-          style_settings: Json | null
-          title: string | null
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          content?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          layout_settings?: Json | null
-          order_index?: number | null
-          organization_id?: string | null
-          section?: string | null
-          style_settings?: Json | null
-          title?: string | null
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          layout_settings?: Json | null
-          order_index?: number | null
-          organization_id?: string | null
-          section?: string | null
-          style_settings?: Json | null
-          title?: string | null
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "content_blocks_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_assignments_history: {
-        Row: {
-          action: string
-          conversation_id: string
-          created_at: string
-          from_user_id: string | null
-          id: string
-          metadata: Json | null
-          organization_id: string
-          performed_by: string | null
-          reason: string | null
-          to_user_id: string | null
-        }
-        Insert: {
-          action: string
-          conversation_id: string
-          created_at?: string
-          from_user_id?: string | null
-          id?: string
-          metadata?: Json | null
-          organization_id: string
-          performed_by?: string | null
-          reason?: string | null
-          to_user_id?: string | null
-        }
-        Update: {
-          action?: string
-          conversation_id?: string
-          created_at?: string
-          from_user_id?: string | null
-          id?: string
-          metadata?: Json | null
-          organization_id?: string
-          performed_by?: string | null
-          reason?: string | null
-          to_user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_assignments_history_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_internal_notes: {
-        Row: {
-          author_id: string
-          content: string
-          conversation_id: string
-          created_at: string
-          id: string
-          mentions: string[] | null
-          organization_id: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          content: string
-          conversation_id: string
-          created_at?: string
-          id?: string
-          mentions?: string[] | null
-          organization_id: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          content?: string
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          mentions?: string[] | null
-          organization_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_internal_notes_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_tag_assignments: {
-        Row: {
-          assigned_by: string | null
-          conversation_id: string
-          created_at: string
-          id: string
-          organization_id: string
-          tag_id: string
-        }
-        Insert: {
-          assigned_by?: string | null
-          conversation_id: string
-          created_at?: string
-          id?: string
-          organization_id: string
-          tag_id: string
-        }
-        Update: {
-          assigned_by?: string | null
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          organization_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_tag_assignments_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversation_tag_assignments_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "conversation_tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_tags: {
-        Row: {
-          color: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          name: string
-          organization_id: string
-          updated_at: string
-        }
-        Insert: {
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          organization_id: string
-          updated_at?: string
-        }
-        Update: {
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          organization_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cost_centers: {
-        Row: {
-          code: string
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          manager_employee_id: string | null
-          name: string
-          name_ar: string | null
-          organization_id: string
-          parent_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          manager_employee_id?: string | null
-          name: string
-          name_ar?: string | null
-          organization_id: string
-          parent_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          manager_employee_id?: string | null
-          name?: string
-          name_ar?: string | null
-          organization_id?: string
-          parent_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cost_centers_manager_employee_id_fkey"
-            columns: ["manager_employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cost_centers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cost_centers_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "cost_centers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      credit_notes: {
-        Row: {
-          amount: number
-          amount_base: number
-          booking_id: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          exchange_rate: number
-          id: string
-          invoice_id: string | null
-          note_date: string
-          note_number: string
-          organization_id: string
-          party_id: string | null
-          party_type: string
-          reason: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          amount_base: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          note_date?: string
-          note_number: string
-          organization_id: string
-          party_id?: string | null
-          party_type: string
-          reason?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          amount_base?: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          note_date?: string
-          note_number?: string
-          organization_id?: string
-          party_id?: string | null
-          party_type?: string
-          reason?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "credit_notes_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_notes_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_notes_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_notes_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_notes_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_notes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_communications: {
-        Row: {
-          booking_id: string | null
-          communication_type: string
-          completed_at: string | null
-          content: string | null
-          created_at: string | null
-          customer_id: string
-          direction: string
-          duration_minutes: number | null
-          follow_up_id: string | null
-          handled_by: string | null
-          id: string
-          organization_id: string
-          scheduled_at: string | null
-          status: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          communication_type: string
-          completed_at?: string | null
-          content?: string | null
-          created_at?: string | null
-          customer_id: string
-          direction: string
-          duration_minutes?: number | null
-          follow_up_id?: string | null
-          handled_by?: string | null
-          id?: string
-          organization_id: string
-          scheduled_at?: string | null
-          status?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          communication_type?: string
-          completed_at?: string | null
-          content?: string | null
-          created_at?: string | null
-          customer_id?: string
-          direction?: string
-          duration_minutes?: number | null
-          follow_up_id?: string | null
-          handled_by?: string | null
-          id?: string
-          organization_id?: string
-          scheduled_at?: string | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_communications_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_communications_follow_up_id_fkey"
-            columns: ["follow_up_id"]
-            isOneToOne: false
-            referencedRelation: "customer_follow_ups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_communications_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_follow_ups: {
-        Row: {
-          assigned_to: string | null
-          booking_id: string | null
-          completed_at: string | null
-          created_at: string | null
-          customer_id: string
-          customer_value: string | null
-          follow_up_type: string
-          id: string
-          last_contact_date: string | null
-          notes: string | null
-          organization_id: string
-          priority: string | null
-          scheduled_date: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          assigned_to?: string | null
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          customer_id: string
-          customer_value?: string | null
-          follow_up_type: string
-          id?: string
-          last_contact_date?: string | null
-          notes?: string | null
-          organization_id: string
-          priority?: string | null
-          scheduled_date: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          assigned_to?: string | null
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          customer_id?: string
-          customer_value?: string | null
-          follow_up_type?: string
-          id?: string
-          last_contact_date?: string | null
-          notes?: string | null
-          organization_id?: string
-          priority?: string | null
-          scheduled_date?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_follow_ups_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_follow_ups_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_follow_up_assigned"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_notes: {
-        Row: {
-          booking_id: string | null
-          content: string
-          created_at: string | null
-          created_by: string | null
-          customer_id: string
-          id: string
-          is_private: boolean | null
-          note_type: string | null
-          organization_id: string
-          priority: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          content: string
-          created_at?: string | null
-          created_by?: string | null
-          customer_id: string
-          id?: string
-          is_private?: boolean | null
-          note_type?: string | null
-          organization_id: string
-          priority?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          content?: string
-          created_at?: string | null
-          created_by?: string | null
-          customer_id?: string
-          id?: string
-          is_private?: boolean | null
-          note_type?: string | null
-          organization_id?: string
-          priority?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_notes_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_notes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_payment_allocations: {
-        Row: {
-          amount: number
-          amount_base: number
-          created_at: string
-          id: string
-          invoice_id: string
-          organization_id: string
-          payment_id: string
-        }
-        Insert: {
-          amount: number
-          amount_base: number
-          created_at?: string
-          id?: string
-          invoice_id: string
-          organization_id: string
-          payment_id: string
-        }
-        Update: {
-          amount?: number
-          amount_base?: number
-          created_at?: string
-          id?: string
-          invoice_id?: string
-          organization_id?: string
-          payment_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_payment_allocations_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payment_allocations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payment_allocations_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "customer_payments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_payments: {
-        Row: {
-          amount: number
-          amount_base: number
-          booking_id: string | null
-          client_ref: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          customer_id: string | null
-          exchange_rate: number
-          id: string
-          invoice_id: string | null
-          is_demo: boolean
-          notes: string | null
-          organization_id: string
-          payment_date: string
-          payment_method: string
-          reference_number: string | null
-          status: string
-          treasury_account_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          amount_base: number
-          booking_id?: string | null
-          client_ref?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          customer_id?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          is_demo?: boolean
-          notes?: string | null
-          organization_id: string
-          payment_date?: string
-          payment_method?: string
-          reference_number?: string | null
-          status?: string
-          treasury_account_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          amount_base?: number
-          booking_id?: string | null
-          client_ref?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          customer_id?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          is_demo?: boolean
-          notes?: string | null
-          organization_id?: string
-          payment_date?: string
-          payment_method?: string
-          reference_number?: string | null
-          status?: string
-          treasury_account_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_payments_treasury_account_id_fkey"
-            columns: ["treasury_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_satisfaction: {
-        Row: {
-          booking_id: string | null
-          communication_rating: number | null
-          completed_at: string | null
-          created_at: string | null
-          customer_id: string
-          feedback: string | null
-          id: string
-          organization_id: string
-          overall_rating: number | null
-          service_rating: number | null
-          survey_sent_at: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          communication_rating?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          customer_id: string
-          feedback?: string | null
-          id?: string
-          organization_id: string
-          overall_rating?: number | null
-          service_rating?: number | null
-          survey_sent_at?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          communication_rating?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          customer_id?: string
-          feedback?: string | null
-          id?: string
-          organization_id?: string
-          overall_rating?: number | null
-          service_rating?: number | null
-          survey_sent_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_satisfaction_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_satisfaction_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_segments: {
-        Row: {
-          color: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          minimum_bookings: number | null
-          minimum_total_spent: number | null
-          name: string
-          name_ar: string
-          organization_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          minimum_bookings?: number | null
-          minimum_total_spent?: number | null
-          name: string
-          name_ar: string
-          organization_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          minimum_bookings?: number | null
-          minimum_total_spent?: number | null
-          name?: string
-          name_ar?: string
-          organization_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_segments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customers: {
-        Row: {
-          address: string | null
-          archived_at: string | null
-          archived_by: string | null
-          communication_preferences: Json | null
-          created_at: string | null
-          created_by: string | null
-          email: string | null
-          id: string
-          is_demo: boolean
-          last_booking_date: string | null
-          last_follow_up_by: string | null
-          last_follow_up_date: string | null
-          loyalty_points: number | null
-          name: string
-          nationality: string | null
-          organization_id: string
-          passport_number: string | null
-          phone: string | null
-          preferences: Json | null
-          segment_id: string | null
-          total_bookings: number | null
-          total_spent: number | null
-          updated_at: string | null
-          whatsapp_opt_out: boolean
-          whatsapp_opt_out_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          communication_preferences?: Json | null
-          created_at?: string | null
-          created_by?: string | null
-          email?: string | null
-          id?: string
-          is_demo?: boolean
-          last_booking_date?: string | null
-          last_follow_up_by?: string | null
-          last_follow_up_date?: string | null
-          loyalty_points?: number | null
-          name: string
-          nationality?: string | null
-          organization_id: string
-          passport_number?: string | null
-          phone?: string | null
-          preferences?: Json | null
-          segment_id?: string | null
-          total_bookings?: number | null
-          total_spent?: number | null
-          updated_at?: string | null
-          whatsapp_opt_out?: boolean
-          whatsapp_opt_out_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          communication_preferences?: Json | null
-          created_at?: string | null
-          created_by?: string | null
-          email?: string | null
-          id?: string
-          is_demo?: boolean
-          last_booking_date?: string | null
-          last_follow_up_by?: string | null
-          last_follow_up_date?: string | null
-          loyalty_points?: number | null
-          name?: string
-          nationality?: string | null
-          organization_id?: string
-          passport_number?: string | null
-          phone?: string | null
-          preferences?: Json | null
-          segment_id?: string | null
-          total_bookings?: number | null
-          total_spent?: number | null
-          updated_at?: string | null
-          whatsapp_opt_out?: boolean
-          whatsapp_opt_out_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customers_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customers_last_follow_up_by_fkey"
-            columns: ["last_follow_up_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customers_segment_id_fkey"
-            columns: ["segment_id"]
-            isOneToOne: false
-            referencedRelation: "customer_segments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      departments: {
-        Row: {
-          branch_id: string | null
-          code: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          manager_id: string | null
-          name: string
-          organization_id: string
-          updated_at: string
-        }
-        Insert: {
-          branch_id?: string | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          manager_id?: string | null
-          name: string
-          organization_id: string
-          updated_at?: string
-        }
-        Update: {
-          branch_id?: string | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          manager_id?: string | null
-          name?: string
-          organization_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "departments_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "departments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      destinations: {
-        Row: {
-          country: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          name: string
-          name_ar: string | null
-          organization_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          country?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name: string
-          name_ar?: string | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          country?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name?: string
-          name_ar?: string | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "destinations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      document_audit_log: {
-        Row: {
-          action: string
-          actor_id: string | null
-          created_at: string
-          document_id: string | null
-          id: string
-          metadata: Json
-          organization_id: string
-        }
-        Insert: {
-          action: string
-          actor_id?: string | null
-          created_at?: string
-          document_id?: string | null
-          id?: string
-          metadata?: Json
-          organization_id: string
-        }
-        Update: {
-          action?: string
-          actor_id?: string | null
-          created_at?: string
-          document_id?: string | null
-          id?: string
-          metadata?: Json
-          organization_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_audit_log_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      document_templates: {
-        Row: {
-          accent_color: string | null
-          approval_status: string
-          approved_at: string | null
-          approved_by: string | null
-          bank_details: string | null
-          created_at: string | null
-          document_type: string
-          footer_text: string | null
-          header_color: string | null
-          id: string
-          is_default: boolean | null
-          notes_text: string | null
-          organization_id: string
-          show_bank_details: boolean | null
-          show_logo: boolean | null
-          template_name: string
-          terms_text: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          accent_color?: string | null
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          bank_details?: string | null
-          created_at?: string | null
-          document_type: string
-          footer_text?: string | null
-          header_color?: string | null
-          id?: string
-          is_default?: boolean | null
-          notes_text?: string | null
-          organization_id: string
-          show_bank_details?: boolean | null
-          show_logo?: boolean | null
-          template_name?: string
-          terms_text?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          accent_color?: string | null
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          bank_details?: string | null
-          created_at?: string | null
-          document_type?: string
-          footer_text?: string | null
-          header_color?: string | null
-          id?: string
-          is_default?: boolean | null
-          notes_text?: string | null
-          organization_id?: string
-          show_bank_details?: boolean | null
-          show_logo?: boolean | null
-          template_name?: string
-          terms_text?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_templates_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      documents: {
-        Row: {
-          booking_id: string | null
-          category: Database["public"]["Enums"]["document_category"]
-          created_at: string
-          customer_id: string | null
-          description: string | null
-          expiry_date: string | null
-          file_name: string
-          file_path: string
-          file_size: number | null
-          id: string
-          is_confidential: boolean
-          metadata: Json
-          mime_type: string | null
-          organization_id: string
-          parent_document_id: string | null
-          supplier_id: string | null
-          tags: string[]
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
-        Insert: {
-          booking_id?: string | null
-          category?: Database["public"]["Enums"]["document_category"]
-          created_at?: string
-          customer_id?: string | null
-          description?: string | null
-          expiry_date?: string | null
-          file_name: string
-          file_path: string
-          file_size?: number | null
-          id?: string
-          is_confidential?: boolean
-          metadata?: Json
-          mime_type?: string | null
-          organization_id: string
-          parent_document_id?: string | null
-          supplier_id?: string | null
-          tags?: string[]
-          title: string
-          updated_at?: string
-          uploaded_by?: string | null
-          version?: number
-        }
-        Update: {
-          booking_id?: string | null
-          category?: Database["public"]["Enums"]["document_category"]
-          created_at?: string
-          customer_id?: string | null
-          description?: string | null
-          expiry_date?: string | null
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
-          id?: string
-          is_confidential?: boolean
-          metadata?: Json
-          mime_type?: string | null
-          organization_id?: string
-          parent_document_id?: string | null
-          supplier_id?: string | null
-          tags?: string[]
-          title?: string
-          updated_at?: string
-          uploaded_by?: string | null
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "documents_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      domain_events: {
-        Row: {
-          aggregate_id: string | null
-          aggregate_type: string
-          correlation_id: string | null
-          emitted_by: string | null
-          enriched_payload: Json | null
-          event_type: string
-          id: string
-          idempotency_key: string
-          occurred_at: string
-          organization_id: string | null
-          payload: Json
-        }
-        Insert: {
-          aggregate_id?: string | null
-          aggregate_type: string
-          correlation_id?: string | null
-          emitted_by?: string | null
-          enriched_payload?: Json | null
-          event_type: string
-          id?: string
-          idempotency_key: string
-          occurred_at?: string
-          organization_id?: string | null
-          payload?: Json
-        }
-        Update: {
-          aggregate_id?: string | null
-          aggregate_type?: string
-          correlation_id?: string | null
-          emitted_by?: string | null
-          enriched_payload?: Json | null
-          event_type?: string
-          id?: string
-          idempotency_key?: string
-          occurred_at?: string
-          organization_id?: string | null
-          payload?: Json
-        }
-        Relationships: []
-      }
-      email_queue: {
-        Row: {
-          attempts: number
-          created_at: string
-          email_type: string
-          error_message: string | null
-          id: string
-          max_attempts: number
-          organization_id: string | null
-          recipient_email: string
-          recipient_name: string | null
-          scheduled_for: string | null
-          sent_at: string | null
-          status: string
-          subject: string
-          template_data: Json
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          created_at?: string
-          email_type: string
-          error_message?: string | null
-          id?: string
-          max_attempts?: number
-          organization_id?: string | null
-          recipient_email: string
-          recipient_name?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          status?: string
-          subject: string
-          template_data?: Json
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          created_at?: string
-          email_type?: string
-          error_message?: string | null
-          id?: string
-          max_attempts?: number
-          organization_id?: string | null
-          recipient_email?: string
-          recipient_name?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          template_data?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_queue_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_send_log: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          id: string
-          message_id: string | null
-          metadata: Json | null
-          recipient_email: string
-          status: string
-          template_name: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          message_id?: string | null
-          metadata?: Json | null
-          recipient_email: string
-          status: string
-          template_name: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          message_id?: string | null
-          metadata?: Json | null
-          recipient_email?: string
-          status?: string
-          template_name?: string
-        }
-        Relationships: []
-      }
-      email_send_state: {
-        Row: {
-          auth_email_ttl_minutes: number
-          batch_size: number
-          id: number
-          retry_after_until: string | null
-          send_delay_ms: number
-          transactional_email_ttl_minutes: number
-          updated_at: string
-        }
-        Insert: {
-          auth_email_ttl_minutes?: number
-          batch_size?: number
-          id?: number
-          retry_after_until?: string | null
-          send_delay_ms?: number
-          transactional_email_ttl_minutes?: number
-          updated_at?: string
-        }
-        Update: {
-          auth_email_ttl_minutes?: number
-          batch_size?: number
-          id?: number
-          retry_after_until?: string | null
-          send_delay_ms?: number
-          transactional_email_ttl_minutes?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      email_unsubscribe_tokens: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          token: string
-          used_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          token: string
-          used_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          token?: string
-          used_at?: string | null
-        }
-        Relationships: []
-      }
-      employee_commission_periods: {
-        Row: {
-          bank_account_id: string | null
-          commission_amount: number | null
-          commission_rate: number | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          employee_id: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          payment_date: string | null
-          payment_method: string | null
-          period_end: string
-          period_start: string
-          status: string | null
-          total_booking_amount: number | null
-          total_bookings_count: number | null
-          total_profit: number | null
-          total_supplier_cost: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          bank_account_id?: string | null
-          commission_amount?: number | null
-          commission_rate?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          period_end: string
-          period_start: string
-          status?: string | null
-          total_booking_amount?: number | null
-          total_bookings_count?: number | null
-          total_profit?: number | null
-          total_supplier_cost?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          bank_account_id?: string | null
-          commission_amount?: number | null
-          commission_rate?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          period_end?: string
-          period_start?: string
-          status?: string | null
-          total_booking_amount?: number | null
-          total_bookings_count?: number | null
-          total_profit?: number | null
-          total_supplier_cost?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_commission_periods_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_commission_periods_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_commission_periods_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      employee_commissions: {
-        Row: {
-          booking_amount: number | null
-          booking_id: string | null
-          booking_type: string | null
-          commission_amount: number | null
-          commission_date: string | null
-          commission_rate: number | null
-          created_at: string | null
-          currency: string | null
-          employee_id: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          payment_date: string | null
-          payment_status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          booking_amount?: number | null
-          booking_id?: string | null
-          booking_type?: string | null
-          commission_amount?: number | null
-          commission_date?: string | null
-          commission_rate?: number | null
-          created_at?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          booking_amount?: number | null
-          booking_id?: string | null
-          booking_type?: string | null
-          commission_amount?: number | null
-          commission_date?: string | null
-          commission_rate?: number | null
-          created_at?: string | null
-          currency?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_date?: string | null
-          payment_status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_commissions_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_commissions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      employees: {
-        Row: {
-          allowances: number | null
-          bank_account_number: string | null
-          bank_name: string | null
-          base_salary: number | null
-          commission_rate: number | null
-          commission_type: string | null
-          created_at: string | null
-          department: string | null
-          email: string | null
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
-          employee_code: string
-          full_name: string
-          hire_date: string | null
-          id: string
-          is_active: boolean | null
-          national_id: string | null
-          organization_id: string | null
-          phone: string | null
-          position: string | null
-          salary_scale_level: number | null
-          total_commission_earned: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          allowances?: number | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          base_salary?: number | null
-          commission_rate?: number | null
-          commission_type?: string | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          employee_code: string
-          full_name: string
-          hire_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          national_id?: string | null
-          organization_id?: string | null
-          phone?: string | null
-          position?: string | null
-          salary_scale_level?: number | null
-          total_commission_earned?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          allowances?: number | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          base_salary?: number | null
-          commission_rate?: number | null
-          commission_type?: string | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          employee_code?: string
-          full_name?: string
-          hire_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          national_id?: string | null
-          organization_id?: string | null
-          phone?: string | null
-          position?: string | null
-          salary_scale_level?: number | null
-          total_commission_earned?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employees_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      error_logs: {
-        Row: {
-          component_name: string | null
-          created_at: string
-          error_message: string
-          error_stack: string | null
-          error_type: string
-          id: string
-          metadata: Json | null
-          organization_id: string | null
-          resolved: boolean | null
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: string
-          url: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          component_name?: string | null
-          created_at?: string
-          error_message: string
-          error_stack?: string | null
-          error_type?: string
-          id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          component_name?: string | null
-          created_at?: string
-          error_message?: string
-          error_stack?: string | null
-          error_type?: string
-          id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "error_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      event_deliveries: {
-        Row: {
-          attempts: number
-          completed_at: string | null
-          event_id: string
-          handler_key: string
-          id: string
-          last_error: string | null
-          next_retry_at: string
-          processing_ms: number | null
-          started_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          completed_at?: string | null
-          event_id: string
-          handler_key: string
-          id?: string
-          last_error?: string | null
-          next_retry_at?: string
-          processing_ms?: number | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          completed_at?: string | null
-          event_id?: string
-          handler_key?: string
-          id?: string
-          last_error?: string | null
-          next_retry_at?: string
-          processing_ms?: number | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_deliveries_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "domain_events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      event_subscriptions: {
-        Row: {
-          config: Json
-          created_at: string
-          event_type: string
-          handler_key: string
-          id: string
-          is_active: boolean
-        }
-        Insert: {
-          config?: Json
-          created_at?: string
-          event_type: string
-          handler_key: string
-          id?: string
-          is_active?: boolean
-        }
-        Update: {
-          config?: Json
-          created_at?: string
-          event_type?: string
-          handler_key?: string
-          id?: string
-          is_active?: boolean
-        }
-        Relationships: []
-      }
-      exchange_rates: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          effective_date: string | null
-          from_currency: string
-          id: string
-          is_active: boolean | null
-          organization_id: string | null
-          rate: number
-          to_currency: string
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          effective_date?: string | null
-          from_currency: string
-          id?: string
-          is_active?: boolean | null
-          organization_id?: string | null
-          rate: number
-          to_currency: string
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          effective_date?: string | null
-          from_currency?: string
-          id?: string
-          is_active?: boolean | null
-          organization_id?: string | null
-          rate?: number
-          to_currency?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "exchange_rates_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      expense_categories: {
-        Row: {
-          budget_limit: number | null
-          color: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          name_ar: string | null
-          organization_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          budget_limit?: number | null
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          name_ar?: string | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          budget_limit?: number | null
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          name_ar?: string | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expense_categories_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      expense_transactions: {
-        Row: {
-          amount: number
-          approved_at: string | null
-          approved_by: string | null
-          bank_account_id: string | null
-          booking_id: string | null
-          booking_type: string | null
-          category_id: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          description: string
-          id: string
-          invoice_number: string | null
-          notes: string | null
-          organization_id: string | null
-          payment_method: string | null
-          receipt_url: string | null
-          status: string | null
-          transaction_date: string | null
-          transaction_number: string
-          updated_at: string | null
-          vendor_name: string | null
-          vendor_phone: string | null
-        }
-        Insert: {
-          amount: number
-          approved_at?: string | null
-          approved_by?: string | null
-          bank_account_id?: string | null
-          booking_id?: string | null
-          booking_type?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          description: string
-          id?: string
-          invoice_number?: string | null
-          notes?: string | null
-          organization_id?: string | null
-          payment_method?: string | null
-          receipt_url?: string | null
-          status?: string | null
-          transaction_date?: string | null
-          transaction_number?: string
-          updated_at?: string | null
-          vendor_name?: string | null
-          vendor_phone?: string | null
-        }
-        Update: {
-          amount?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          bank_account_id?: string | null
-          booking_id?: string | null
-          booking_type?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          description?: string
-          id?: string
-          invoice_number?: string | null
-          notes?: string | null
-          organization_id?: string | null
-          payment_method?: string | null
-          receipt_url?: string | null
-          status?: string | null
-          transaction_date?: string | null
-          transaction_number?: string
-          updated_at?: string | null
-          vendor_name?: string | null
-          vendor_phone?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expense_transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expense_transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "expense_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expense_transactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      feature_flags: {
-        Row: {
-          created_at: string
-          description: string | null
-          enabled: boolean
-          flag_key: string
-          id: string
-          organization_id: string
-          updated_at: string
-          value: Json | null
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          enabled?: boolean
-          flag_key: string
-          id?: string
-          organization_id: string
-          updated_at?: string
-          value?: Json | null
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          enabled?: boolean
-          flag_key?: string
-          id?: string
-          organization_id?: string
-          updated_at?: string
-          value?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "feature_flags_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      finance_transactions: {
-        Row: {
-          account_code: string | null
-          amount: number
-          amount_base: number
-          booking_id: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          direction: string
-          exchange_rate: number
-          id: string
-          memo: string | null
-          occurred_at: string
-          organization_id: string
-          party_id: string | null
-          party_type: string | null
-          reference_id: string | null
-          reference_type: string | null
-        }
-        Insert: {
-          account_code?: string | null
-          amount: number
-          amount_base: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          direction: string
-          exchange_rate?: number
-          id?: string
-          memo?: string | null
-          occurred_at?: string
-          organization_id: string
-          party_id?: string | null
-          party_type?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-        }
-        Update: {
-          account_code?: string | null
-          amount?: number
-          amount_base?: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          direction?: string
-          exchange_rate?: number
-          id?: string
-          memo?: string | null
-          occurred_at?: string
-          organization_id?: string
-          party_id?: string | null
-          party_type?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "finance_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "finance_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "finance_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "finance_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "finance_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "finance_transactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      financial_repair_audit: {
-        Row: {
-          after_data: Json | null
-          before_data: Json | null
-          created_at: string
-          entity_id: string | null
-          entity_type: string
-          id: number
-          migration_key: string
-          organization_id: string | null
-          reason: string
-        }
-        Insert: {
-          after_data?: Json | null
-          before_data?: Json | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type: string
-          id?: number
-          migration_key: string
-          organization_id?: string | null
-          reason: string
-        }
-        Update: {
-          after_data?: Json | null
-          before_data?: Json | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string
-          id?: number
-          migration_key?: string
-          organization_id?: string | null
-          reason?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financial_repair_audit_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fiscal_year_closures: {
-        Row: {
-          closed_at: string | null
-          closed_by: string | null
-          confirmed_at: string | null
-          confirmed_by: string | null
-          created_at: string
-          fiscal_year: number
-          id: string
-          organization_id: string
-          period_end: string
-          period_start: string
-          reconciled_at: string | null
-          reconciliation: Json
-          reopen_reason: string | null
-          reopened_at: string | null
-          reopened_by: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          closed_at?: string | null
-          closed_by?: string | null
-          confirmed_at?: string | null
-          confirmed_by?: string | null
-          created_at?: string
-          fiscal_year: number
-          id?: string
-          organization_id: string
-          period_end: string
-          period_start: string
-          reconciled_at?: string | null
-          reconciliation?: Json
-          reopen_reason?: string | null
-          reopened_at?: string | null
-          reopened_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          closed_at?: string | null
-          closed_by?: string | null
-          confirmed_at?: string | null
-          confirmed_by?: string | null
-          created_at?: string
-          fiscal_year?: number
-          id?: string
-          organization_id?: string
-          period_end?: string
-          period_start?: string
-          reconciled_at?: string | null
-          reconciliation?: Json
-          reopen_reason?: string | null
-          reopened_at?: string | null
-          reopened_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fiscal_year_closures_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      flight_bookings: {
-        Row: {
-          additional_costs: number | null
-          airline_id: string | null
-          arrival_airport_id: string | null
-          arrival_date: string
-          arrival_time: string | null
-          baggage_info: Json | null
-          booking_agent_id: string | null
-          booking_agent_name: string | null
-          booking_date: string | null
-          booking_reference: string
-          confirmation_number: string | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string
-          departure_airport_id: string | null
-          departure_date: string
-          departure_time: string | null
-          employee_id: string | null
-          exchange_rate_to_egp: number | null
-          flight_class_id: string | null
-          flight_number: string | null
-          id: string
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          is_round_trip: boolean | null
-          meal_preferences: string | null
-          number_of_passengers: number | null
-          organization_id: string | null
-          paid_amount: number | null
-          passenger_details: Json | null
-          payment_due_date: string | null
-          payment_method: string | null
-          quote_id: string | null
-          remaining_amount: number | null
-          return_flight_id: string | null
-          seat_preferences: string | null
-          special_requests: string | null
-          status_id: string | null
-          supplier_cost: number | null
-          supplier_cost_egp: number | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          supplier_reference: string | null
-          taxes_and_fees: number | null
-          ticket_numbers: Json | null
-          ticket_price_per_person: number | null
-          total_cost: number | null
-          total_cost_egp: number | null
-          total_profit: number | null
-          updated_at: string | null
-          voucher_sent: boolean | null
-          voucher_sent_date: string | null
-        }
-        Insert: {
-          additional_costs?: number | null
-          airline_id?: string | null
-          arrival_airport_id?: string | null
-          arrival_date: string
-          arrival_time?: string | null
-          baggage_info?: Json | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_date?: string | null
-          booking_reference?: string
-          confirmation_number?: string | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name: string
-          departure_airport_id?: string | null
-          departure_date: string
-          departure_time?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          flight_class_id?: string | null
-          flight_number?: string | null
-          id?: string
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          is_round_trip?: boolean | null
-          meal_preferences?: string | null
-          number_of_passengers?: number | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          passenger_details?: Json | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          return_flight_id?: string | null
-          seat_preferences?: string | null
-          special_requests?: string | null
-          status_id?: string | null
-          supplier_cost?: number | null
-          supplier_cost_egp?: number | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          supplier_reference?: string | null
-          taxes_and_fees?: number | null
-          ticket_numbers?: Json | null
-          ticket_price_per_person?: number | null
-          total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Update: {
-          additional_costs?: number | null
-          airline_id?: string | null
-          arrival_airport_id?: string | null
-          arrival_date?: string
-          arrival_time?: string | null
-          baggage_info?: Json | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_date?: string | null
-          booking_reference?: string
-          confirmation_number?: string | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string
-          departure_airport_id?: string | null
-          departure_date?: string
-          departure_time?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          flight_class_id?: string | null
-          flight_number?: string | null
-          id?: string
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          is_round_trip?: boolean | null
-          meal_preferences?: string | null
-          number_of_passengers?: number | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          passenger_details?: Json | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          return_flight_id?: string | null
-          seat_preferences?: string | null
-          special_requests?: string | null
-          status_id?: string | null
-          supplier_cost?: number | null
-          supplier_cost_egp?: number | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          supplier_reference?: string | null
-          taxes_and_fees?: number | null
-          ticket_numbers?: Json | null
-          ticket_price_per_person?: number | null
-          total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "flight_bookings_airline_id_fkey"
-            columns: ["airline_id"]
-            isOneToOne: false
-            referencedRelation: "airlines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_arrival_airport_id_fkey"
-            columns: ["arrival_airport_id"]
-            isOneToOne: false
-            referencedRelation: "airports"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_departure_airport_id_fkey"
-            columns: ["departure_airport_id"]
-            isOneToOne: false
-            referencedRelation: "airports"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_flight_class_id_fkey"
-            columns: ["flight_class_id"]
-            isOneToOne: false
-            referencedRelation: "flight_classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      flight_classes: {
-        Row: {
-          baggage_allowance: string | null
-          code: string | null
-          created_at: string | null
-          id: string
-          name: string
-          name_ar: string | null
-          organization_id: string | null
-        }
-        Insert: {
-          baggage_allowance?: string | null
-          code?: string | null
-          created_at?: string | null
-          id?: string
-          name: string
-          name_ar?: string | null
-          organization_id?: string | null
-        }
-        Update: {
-          baggage_allowance?: string | null
-          code?: string | null
-          created_at?: string | null
-          id?: string
-          name?: string
-          name_ar?: string | null
-          organization_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "flight_classes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      form_fields: {
-        Row: {
-          created_at: string | null
-          field_label: string
-          field_name: string
-          field_type: string | null
-          form_id: string | null
-          id: string
-          is_required: boolean | null
-          options: Json | null
-          organization_id: string | null
-          sort_order: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          field_label: string
-          field_name: string
-          field_type?: string | null
-          form_id?: string | null
-          id?: string
-          is_required?: boolean | null
-          options?: Json | null
-          organization_id?: string | null
-          sort_order?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          field_label?: string
-          field_name?: string
-          field_type?: string | null
-          form_id?: string | null
-          id?: string
-          is_required?: boolean | null
-          options?: Json | null
-          organization_id?: string | null
-          sort_order?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_fields_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_fields_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      form_submissions: {
-        Row: {
-          created_at: string | null
-          data: Json
-          form_id: string | null
-          id: string
-          organization_id: string | null
-          submitted_by: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          data?: Json
-          form_id?: string | null
-          id?: string
-          organization_id?: string | null
-          submitted_by?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          data?: Json
-          form_id?: string | null
-          id?: string
-          organization_id?: string | null
-          submitted_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_submissions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      forms: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          failure_message: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          organization_id: string | null
-          success_message: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          failure_message?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          organization_id?: string | null
-          success_message?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          failure_message?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          organization_id?: string | null
-          success_message?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "forms_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      generated_documents: {
-        Row: {
-          booking_id: string | null
-          booking_type: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          document_number: string
-          document_type: string
-          file_path: string | null
-          file_url: string | null
-          id: string
-          invoice_id: string | null
-          metadata: Json | null
-          organization_id: string
-          sent_via_email: boolean | null
-          sent_via_whatsapp: boolean | null
-          title: string
-          total_amount: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          document_number: string
-          document_type: string
-          file_path?: string | null
-          file_url?: string | null
-          id?: string
-          invoice_id?: string | null
-          metadata?: Json | null
-          organization_id: string
-          sent_via_email?: boolean | null
-          sent_via_whatsapp?: boolean | null
-          title: string
-          total_amount?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          document_number?: string
-          document_type?: string
-          file_path?: string | null
-          file_url?: string | null
-          id?: string
-          invoice_id?: string | null
-          metadata?: Json | null
-          organization_id?: string
-          sent_via_email?: boolean | null
-          sent_via_whatsapp?: boolean | null
-          title?: string
-          total_amount?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "generated_documents_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "generated_documents_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      historical_recovery_items: {
-        Row: {
-          action: string
-          booking_id: string | null
-          booking_number: string | null
-          created_at: string
-          detail: string | null
-          entity_id: string | null
-          entity_type: string
-          error_message: string | null
-          id: string
-          organization_id: string
-          run_id: string
-        }
-        Insert: {
-          action: string
-          booking_id?: string | null
-          booking_number?: string | null
-          created_at?: string
-          detail?: string | null
-          entity_id?: string | null
-          entity_type: string
-          error_message?: string | null
-          id?: string
-          organization_id: string
-          run_id: string
-        }
-        Update: {
-          action?: string
-          booking_id?: string | null
-          booking_number?: string | null
-          created_at?: string
-          detail?: string | null
-          entity_id?: string | null
-          entity_type?: string
-          error_message?: string | null
-          id?: string
-          organization_id?: string
-          run_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "historical_recovery_items_run_id_fkey"
-            columns: ["run_id"]
-            isOneToOne: false
-            referencedRelation: "historical_recovery_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      historical_recovery_runs: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          finished_at: string | null
-          fiscal_year: number | null
-          from_date: string
-          id: string
-          mode: string
-          organization_id: string
-          started_at: string
-          started_by: string | null
-          status: string
-          to_date: string
-          totals: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          finished_at?: string | null
-          fiscal_year?: number | null
-          from_date: string
-          id?: string
-          mode: string
-          organization_id: string
-          started_at?: string
-          started_by?: string | null
-          status?: string
-          to_date: string
-          totals?: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          finished_at?: string | null
-          fiscal_year?: number | null
-          from_date?: string
-          id?: string
-          mode?: string
-          organization_id?: string
-          started_at?: string
-          started_by?: string | null
-          status?: string
-          to_date?: string
-          totals?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "historical_recovery_runs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hotel_bookings: {
-        Row: {
-          additional_costs: number | null
-          additional_costs_breakdown: Json | null
-          attachment_urls: string[] | null
-          booking_agent_id: string | null
-          booking_agent_name: string | null
-          booking_date: string | null
-          booking_reference_supplier: string | null
-          booking_source: string | null
-          cancellation_policy: string | null
-          check_in_date: string
-          check_out_date: string
-          children_ages: string | null
-          commission_amount: number
-          cost_per_night: number | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string
-          destination_city: string | null
-          employee_id: string | null
-          hotel_id: string | null
-          hotel_name: string | null
-          hotel_star_rating: number | null
-          id: string
-          internal_booking_number: string
-          internal_notes: string | null
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          meal_plan: string | null
-          number_of_adults: number | null
-          number_of_children: number | null
-          number_of_nights: number | null
-          number_of_rooms: number
-          organization_id: string | null
-          paid_amount: number | null
-          payment_due_date: string | null
-          payment_method: string | null
-          quote_id: string | null
-          remaining_amount: number | null
-          room_type: string | null
-          room_view: string | null
-          selling_price_per_night: number | null
-          status_id: string | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          total_cost_customer: number | null
-          total_profit: number | null
-          updated_at: string | null
-          vat_amount: number
-          vat_included: boolean
-          voucher_sent: boolean | null
-          voucher_sent_date: string | null
-        }
-        Insert: {
-          additional_costs?: number | null
-          additional_costs_breakdown?: Json | null
-          attachment_urls?: string[] | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_date?: string | null
-          booking_reference_supplier?: string | null
-          booking_source?: string | null
-          cancellation_policy?: string | null
-          check_in_date: string
-          check_out_date: string
-          children_ages?: string | null
-          commission_amount?: number
-          cost_per_night?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name: string
-          destination_city?: string | null
-          employee_id?: string | null
-          hotel_id?: string | null
-          hotel_name?: string | null
-          hotel_star_rating?: number | null
-          id?: string
-          internal_booking_number?: string
-          internal_notes?: string | null
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          meal_plan?: string | null
-          number_of_adults?: number | null
-          number_of_children?: number | null
-          number_of_nights?: number | null
-          number_of_rooms?: number
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          room_type?: string | null
-          room_view?: string | null
-          selling_price_per_night?: number | null
-          status_id?: string | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          total_cost_customer?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          vat_amount?: number
-          vat_included?: boolean
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Update: {
-          additional_costs?: number | null
-          additional_costs_breakdown?: Json | null
-          attachment_urls?: string[] | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_date?: string | null
-          booking_reference_supplier?: string | null
-          booking_source?: string | null
-          cancellation_policy?: string | null
-          check_in_date?: string
-          check_out_date?: string
-          children_ages?: string | null
-          commission_amount?: number
-          cost_per_night?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string
-          destination_city?: string | null
-          employee_id?: string | null
-          hotel_id?: string | null
-          hotel_name?: string | null
-          hotel_star_rating?: number | null
-          id?: string
-          internal_booking_number?: string
-          internal_notes?: string | null
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          meal_plan?: string | null
-          number_of_adults?: number | null
-          number_of_children?: number | null
-          number_of_nights?: number | null
-          number_of_rooms?: number
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          room_type?: string | null
-          room_view?: string | null
-          selling_price_per_night?: number | null
-          status_id?: string | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          total_cost_customer?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          vat_amount?: number
-          vat_included?: boolean
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hotel_bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotel_bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotel_bookings_hotel_id_fkey"
-            columns: ["hotel_id"]
-            isOneToOne: false
-            referencedRelation: "hotels"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotel_bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotel_bookings_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotel_bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hotel_suppliers: {
-        Row: {
-          contact_person: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          is_direct_hotel: boolean | null
-          name: string
-          organization_id: string | null
-          payment_terms: string | null
-          phone: string | null
-        }
-        Insert: {
-          contact_person?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          is_direct_hotel?: boolean | null
-          name: string
-          organization_id?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-        }
-        Update: {
-          contact_person?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          is_direct_hotel?: boolean | null
-          name?: string
-          organization_id?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hotel_suppliers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hotels: {
-        Row: {
-          address: string | null
-          amenities: Json | null
-          city: string | null
-          country: string | null
-          country_code: string | null
-          created_at: string | null
-          description: string | null
-          destination_id: string | null
-          email: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          is_global: boolean
-          latitude: number | null
-          longitude: number | null
-          name: string
-          organization_id: string | null
-          phone: string | null
-          star_rating: number | null
-          tbo_hotel_code: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          amenities?: Json | null
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string | null
-          description?: string | null
-          destination_id?: string | null
-          email?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_global?: boolean
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          organization_id?: string | null
-          phone?: string | null
-          star_rating?: number | null
-          tbo_hotel_code?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          amenities?: Json | null
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string | null
-          description?: string | null
-          destination_id?: string | null
-          email?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_global?: boolean
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          organization_id?: string | null
-          phone?: string | null
-          star_rating?: number | null
-          tbo_hotel_code?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hotels_destination_id_fkey"
-            columns: ["destination_id"]
-            isOneToOne: false
-            referencedRelation: "destinations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hotels_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      impersonation_sessions: {
-        Row: {
-          created_at: string
-          ended_at: string | null
-          id: string
-          ip_address: string | null
-          mfa_verified: boolean
-          org_pin_verified: boolean
-          reason: string
-          started_at: string
-          super_admin_id: string
-          target_org_id: string
-          target_user_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          ended_at?: string | null
-          id?: string
-          ip_address?: string | null
-          mfa_verified?: boolean
-          org_pin_verified?: boolean
-          reason: string
-          started_at?: string
-          super_admin_id: string
-          target_org_id: string
-          target_user_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          ended_at?: string | null
-          id?: string
-          ip_address?: string | null
-          mfa_verified?: boolean
-          org_pin_verified?: boolean
-          reason?: string
-          started_at?: string
-          super_admin_id?: string
-          target_org_id?: string
-          target_user_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "impersonation_sessions_target_org_id_fkey"
-            columns: ["target_org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invitations: {
-        Row: {
-          accepted_at: string | null
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          invited_by: string | null
-          organization_id: string
-          role: Database["public"]["Enums"]["org_role"]
-          status: string
-          token: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          created_at?: string
-          email: string
-          expires_at?: string
-          id?: string
-          invited_by?: string | null
-          organization_id: string
-          role?: Database["public"]["Enums"]["org_role"]
-          status?: string
-          token?: string
-        }
-        Update: {
-          accepted_at?: string | null
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          invited_by?: string | null
-          organization_id?: string
-          role?: Database["public"]["Enums"]["org_role"]
-          status?: string
-          token?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invitations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invoice_items: {
-        Row: {
-          created_at: string | null
-          description: string
-          id: string
-          invoice_id: string | null
-          organization_id: string | null
-          quantity: number | null
-          total_price: number | null
-          unit_price: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          description: string
-          id?: string
-          invoice_id?: string | null
-          organization_id?: string | null
-          quantity?: number | null
-          total_price?: number | null
-          unit_price?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string
-          id?: string
-          invoice_id?: string | null
-          organization_id?: string | null
-          quantity?: number | null
-          total_price?: number | null
-          unit_price?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoice_items_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoice_items_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invoices: {
-        Row: {
-          booking_id: string | null
-          booking_type: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          discount_amount: number | null
-          due_date: string | null
-          final_amount: number | null
-          id: string
-          invoice_number: string
-          is_demo: boolean
-          issued_date: string | null
-          notes: string | null
-          organization_id: string | null
-          payment_status: string | null
-          payment_terms: string | null
-          quote_id: string | null
-          remaining_amount: number | null
-          status: string | null
-          subtotal: number | null
-          total_paid_amount: number | null
-          updated_at: string | null
-          vat_amount: number | null
-          vat_rate: number | null
-        }
-        Insert: {
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          discount_amount?: number | null
-          due_date?: string | null
-          final_amount?: number | null
-          id?: string
-          invoice_number?: string
-          is_demo?: boolean
-          issued_date?: string | null
-          notes?: string | null
-          organization_id?: string | null
-          payment_status?: string | null
-          payment_terms?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          status?: string | null
-          subtotal?: number | null
-          total_paid_amount?: number | null
-          updated_at?: string | null
-          vat_amount?: number | null
-          vat_rate?: number | null
-        }
-        Update: {
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          discount_amount?: number | null
-          due_date?: string | null
-          final_amount?: number | null
-          id?: string
-          invoice_number?: string
-          is_demo?: boolean
-          issued_date?: string | null
-          notes?: string | null
-          organization_id?: string | null
-          payment_status?: string | null
-          payment_terms?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          status?: string | null
-          subtotal?: number | null
-          total_paid_amount?: number | null
-          updated_at?: string | null
-          vat_amount?: number | null
-          vat_rate?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      journal_entries: {
-        Row: {
-          auto_generated: boolean
-          booking_id: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          description: string | null
-          entry_date: string
-          entry_number: string
-          functional_currency: string | null
-          fx_rate: number | null
-          id: string
-          is_locked: boolean
-          organization_id: string
-          posted_at: string | null
-          reference_id: string | null
-          reference_type: string | null
-          source_id: string | null
-          source_type: string | null
-          status: string
-          total_credit: number
-          total_debit: number
-          updated_at: string
-        }
-        Insert: {
-          auto_generated?: boolean
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          description?: string | null
-          entry_date?: string
-          entry_number: string
-          functional_currency?: string | null
-          fx_rate?: number | null
-          id?: string
-          is_locked?: boolean
-          organization_id: string
-          posted_at?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-          source_id?: string | null
-          source_type?: string | null
-          status?: string
-          total_credit?: number
-          total_debit?: number
-          updated_at?: string
-        }
-        Update: {
-          auto_generated?: boolean
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          description?: string | null
-          entry_date?: string
-          entry_number?: string
-          functional_currency?: string | null
-          fx_rate?: number | null
-          id?: string
-          is_locked?: boolean
-          organization_id?: string
-          posted_at?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-          source_id?: string | null
-          source_type?: string | null
-          status?: string
-          total_credit?: number
-          total_debit?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journal_entries_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      journal_entry_lines: {
-        Row: {
-          account_id: string
-          cost_center_id: string | null
-          created_at: string
-          credit: number
-          debit: number
-          description: string | null
-          id: string
-          journal_entry_id: string
-          line_order: number
-        }
-        Insert: {
-          account_id: string
-          cost_center_id?: string | null
-          created_at?: string
-          credit?: number
-          debit?: number
-          description?: string | null
-          id?: string
-          journal_entry_id: string
-          line_order?: number
-        }
-        Update: {
-          account_id?: string
-          cost_center_id?: string | null
-          created_at?: string
-          credit?: number
-          debit?: number
-          description?: string | null
-          id?: string
-          journal_entry_id?: string
-          line_order?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journal_entry_lines_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "chart_of_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journal_entry_lines_cost_center_id_fkey"
-            columns: ["cost_center_id"]
-            isOneToOne: false
-            referencedRelation: "cost_centers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
-            columns: ["journal_entry_id"]
-            isOneToOne: false
-            referencedRelation: "journal_entries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      journey_enrollments: {
-        Row: {
-          booking_id: string | null
-          context: Json
-          created_at: string
-          current_step_id: string | null
-          customer_id: string | null
-          exit_reason: string | null
-          id: string
-          journey_id: string
-          next_run_at: string
-          organization_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id?: string | null
-          context?: Json
-          created_at?: string
-          current_step_id?: string | null
-          customer_id?: string | null
-          exit_reason?: string | null
-          id?: string
-          journey_id: string
-          next_run_at?: string
-          organization_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string | null
-          context?: Json
-          created_at?: string
-          current_step_id?: string | null
-          customer_id?: string | null
-          exit_reason?: string | null
-          id?: string
-          journey_id?: string
-          next_run_at?: string
-          organization_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journey_enrollments_journey_id_fkey"
-            columns: ["journey_id"]
-            isOneToOne: false
-            referencedRelation: "marketing_journeys"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journey_enrollments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      journey_step_runs: {
-        Row: {
-          enrollment_id: string
-          error: string | null
-          id: string
-          output: Json | null
-          ran_at: string
-          status: string
-          step_id: string | null
-        }
-        Insert: {
-          enrollment_id: string
-          error?: string | null
-          id?: string
-          output?: Json | null
-          ran_at?: string
-          status: string
-          step_id?: string | null
-        }
-        Update: {
-          enrollment_id?: string
-          error?: string | null
-          id?: string
-          output?: Json | null
-          ran_at?: string
-          status?: string
-          step_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journey_step_runs_enrollment_id_fkey"
-            columns: ["enrollment_id"]
-            isOneToOne: false
-            referencedRelation: "journey_enrollments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journey_step_runs_step_id_fkey"
-            columns: ["step_id"]
-            isOneToOne: false
-            referencedRelation: "journey_steps"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      journey_steps: {
-        Row: {
-          branch_no_step_id: string | null
-          branch_yes_step_id: string | null
-          config: Json
-          created_at: string
-          delay_minutes: number
-          id: string
-          journey_id: string
-          step_order: number
-          step_type: string
-        }
-        Insert: {
-          branch_no_step_id?: string | null
-          branch_yes_step_id?: string | null
-          config?: Json
-          created_at?: string
-          delay_minutes?: number
-          id?: string
-          journey_id: string
-          step_order?: number
-          step_type: string
-        }
-        Update: {
-          branch_no_step_id?: string | null
-          branch_yes_step_id?: string | null
-          config?: Json
-          created_at?: string
-          delay_minutes?: number
-          id?: string
-          journey_id?: string
-          step_order?: number
-          step_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journey_steps_journey_id_fkey"
-            columns: ["journey_id"]
-            isOneToOne: false
-            referencedRelation: "marketing_journeys"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      loyalty_points: {
-        Row: {
-          booking_id: string | null
-          created_at: string | null
-          current_balance: number | null
-          customer_id: string
-          description: string | null
-          id: string
-          organization_id: string
-          points_earned: number | null
-          points_used: number | null
-          transaction_type: string | null
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string | null
-          current_balance?: number | null
-          customer_id: string
-          description?: string | null
-          id?: string
-          organization_id: string
-          points_earned?: number | null
-          points_used?: number | null
-          transaction_type?: string | null
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string | null
-          current_balance?: number | null
-          customer_id?: string
-          description?: string | null
-          id?: string
-          organization_id?: string
-          points_earned?: number | null
-          points_used?: number | null
-          transaction_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loyalty_points_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "loyalty_points_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      loyalty_rewards: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          name_ar: string | null
-          organization_id: string
-          points_required: number | null
-          reward_type: string | null
-          reward_value: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          name_ar?: string | null
-          organization_id: string
-          points_required?: number | null
-          reward_type?: string | null
-          reward_value?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          name_ar?: string | null
-          organization_id?: string
-          points_required?: number | null
-          reward_type?: string | null
-          reward_value?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loyalty_rewards_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      marketing_campaigns: {
-        Row: {
-          campaign_type: string | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          end_date: string | null
-          id: string
-          message_template: string | null
-          name: string
-          organization_id: string
-          start_date: string | null
-          status: string | null
-          target_segment_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          campaign_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          message_template?: string | null
-          name: string
-          organization_id: string
-          start_date?: string | null
-          status?: string | null
-          target_segment_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          campaign_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          message_template?: string | null
-          name?: string
-          organization_id?: string
-          start_date?: string | null
-          status?: string | null
-          target_segment_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "marketing_campaigns_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "marketing_campaigns_target_segment_id_fkey"
-            columns: ["target_segment_id"]
-            isOneToOne: false
-            referencedRelation: "customer_segments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      marketing_journeys: {
-        Row: {
-          category: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          enrollment_condition: Json
-          goal_event: string | null
-          id: string
-          is_active: boolean
-          is_template: boolean
-          name: string
-          organization_id: string | null
-          stats: Json
-          trigger_event: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          enrollment_condition?: Json
-          goal_event?: string | null
-          id?: string
-          is_active?: boolean
-          is_template?: boolean
-          name: string
-          organization_id?: string | null
-          stats?: Json
-          trigger_event: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          enrollment_condition?: Json
-          goal_event?: string | null
-          id?: string
-          is_active?: boolean
-          is_template?: boolean
-          name?: string
-          organization_id?: string | null
-          stats?: Json
-          trigger_event?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "marketing_journeys_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      media_library: {
-        Row: {
-          alt_text: string | null
-          created_at: string | null
-          file_size: number | null
-          file_type: string | null
-          filename: string
-          id: string
-          organization_id: string | null
-          original_name: string | null
-          uploaded_by: string | null
-          url: string | null
-        }
-        Insert: {
-          alt_text?: string | null
-          created_at?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          filename: string
-          id?: string
-          organization_id?: string | null
-          original_name?: string | null
-          uploaded_by?: string | null
-          url?: string | null
-        }
-        Update: {
-          alt_text?: string | null
-          created_at?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          filename?: string
-          id?: string
-          organization_id?: string | null
-          original_name?: string | null
-          uploaded_by?: string | null
-          url?: string | null
-        }
-        Relationships: []
-      }
-      messaging_suggestions: {
-        Row: {
-          booking_id: string
-          channel: string
-          created_at: string
-          id: string
-          organization_id: string
-          status: string
-          template_key: string
-          template_variables: Json
-          updated_at: string
-        }
-        Insert: {
-          booking_id: string
-          channel: string
-          created_at?: string
-          id?: string
-          organization_id: string
-          status?: string
-          template_key: string
-          template_variables?: Json
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string
-          channel?: string
-          created_at?: string
-          id?: string
-          organization_id?: string
-          status?: string
-          template_key?: string
-          template_variables?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messaging_suggestions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messaging_suggestions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messaging_suggestions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messaging_suggestions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messaging_suggestions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messaging_suggestions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      monthly_salaries: {
-        Row: {
-          absence_days: number | null
-          allowances: number | null
-          attendance_days: number | null
-          bank_account_id: string | null
-          base_salary: number | null
-          bonus: number | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          deductions: number | null
-          employee_id: string | null
-          exchange_rate: number | null
-          gross_salary: number | null
-          id: string
-          insurance_deduction: number | null
-          late_hours: number | null
-          net_salary: number | null
-          net_salary_egp: number | null
-          notes: string | null
-          organization_id: string
-          overtime_amount: number | null
-          overtime_hours: number | null
-          overtime_rate: number | null
-          payment_date: string | null
-          payment_method: string | null
-          salary_month: string
-          status: string | null
-          tax_amount: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          absence_days?: number | null
-          allowances?: number | null
-          attendance_days?: number | null
-          bank_account_id?: string | null
-          base_salary?: number | null
-          bonus?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          deductions?: number | null
-          employee_id?: string | null
-          exchange_rate?: number | null
-          gross_salary?: number | null
-          id?: string
-          insurance_deduction?: number | null
-          late_hours?: number | null
-          net_salary?: number | null
-          net_salary_egp?: number | null
-          notes?: string | null
-          organization_id: string
-          overtime_amount?: number | null
-          overtime_hours?: number | null
-          overtime_rate?: number | null
-          payment_date?: string | null
-          payment_method?: string | null
-          salary_month: string
-          status?: string | null
-          tax_amount?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          absence_days?: number | null
-          allowances?: number | null
-          attendance_days?: number | null
-          bank_account_id?: string | null
-          base_salary?: number | null
-          bonus?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          deductions?: number | null
-          employee_id?: string | null
-          exchange_rate?: number | null
-          gross_salary?: number | null
-          id?: string
-          insurance_deduction?: number | null
-          late_hours?: number | null
-          net_salary?: number | null
-          net_salary_egp?: number | null
-          notes?: string | null
-          organization_id?: string
-          overtime_amount?: number | null
-          overtime_hours?: number | null
-          overtime_rate?: number | null
-          payment_date?: string | null
-          payment_method?: string | null
-          salary_month?: string
-          status?: string | null
-          tax_amount?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "monthly_salaries_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "monthly_salaries_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "monthly_salaries_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notification_rules: {
-        Row: {
-          channels: string[]
-          created_at: string
-          event_type: string
-          id: string
-          is_active: boolean
-          organization_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          channels?: string[]
-          created_at?: string
-          event_type: string
-          id?: string
-          is_active?: boolean
-          organization_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          channels?: string[]
-          created_at?: string
-          event_type?: string
-          id?: string
-          is_active?: boolean
-          organization_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notification_rules_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          action_url: string | null
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          is_read: boolean | null
-          message: string
-          metadata: Json
-          organization_id: string | null
-          priority: string | null
-          title: string
-          type: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action_url?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          message: string
-          metadata?: Json
-          organization_id?: string | null
-          priority?: string | null
-          title: string
-          type?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action_url?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          metadata?: Json
-          organization_id?: string | null
-          priority?: string | null
-          title?: string
-          type?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organization_members: {
-        Row: {
-          branch_id: string | null
-          department_id: string | null
-          id: string
-          is_active: boolean
-          joined_at: string
-          organization_id: string
-          role: Database["public"]["Enums"]["org_role"]
-          user_id: string
-        }
-        Insert: {
-          branch_id?: string | null
-          department_id?: string | null
-          id?: string
-          is_active?: boolean
-          joined_at?: string
-          organization_id: string
-          role?: Database["public"]["Enums"]["org_role"]
-          user_id: string
-        }
-        Update: {
-          branch_id?: string | null
-          department_id?: string | null
-          id?: string
-          is_active?: boolean
-          joined_at?: string
-          organization_id?: string
-          role?: Database["public"]["Enums"]["org_role"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_members_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_members_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_members_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organization_settings: {
-        Row: {
-          accent_color: string | null
-          address: string | null
-          commercial_register: string | null
-          company_name: string | null
-          company_name_ar: string | null
-          created_at: string | null
-          currency: string | null
-          email: string | null
-          footer_text: string | null
-          id: string
-          logo_url: string | null
-          organization_id: string
-          phone: string | null
-          primary_color: string | null
-          secondary_color: string | null
-          tax_number: string | null
-          updated_at: string | null
-          website: string | null
-        }
-        Insert: {
-          accent_color?: string | null
-          address?: string | null
-          commercial_register?: string | null
-          company_name?: string | null
-          company_name_ar?: string | null
-          created_at?: string | null
-          currency?: string | null
-          email?: string | null
-          footer_text?: string | null
-          id?: string
-          logo_url?: string | null
-          organization_id: string
-          phone?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          tax_number?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Update: {
-          accent_color?: string | null
-          address?: string | null
-          commercial_register?: string | null
-          company_name?: string | null
-          company_name_ar?: string | null
-          created_at?: string | null
-          currency?: string | null
-          email?: string | null
-          footer_text?: string | null
-          id?: string
-          logo_url?: string | null
-          organization_id?: string
-          phone?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          tax_number?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organizations: {
-        Row: {
-          address: string | null
-          commercial_registration: string | null
-          created_at: string
-          email: string | null
-          has_demo_data: boolean
-          id: string
-          is_active: boolean
-          logo_url: string | null
-          max_users: number
-          name: string
-          onboarding_completed: boolean
-          phone: string | null
-          plan: string
-          plan_expires_at: string | null
-          slug: string
-          tax_number: string | null
-          updated_at: string
-          zatca_enabled: boolean
-        }
-        Insert: {
-          address?: string | null
-          commercial_registration?: string | null
-          created_at?: string
-          email?: string | null
-          has_demo_data?: boolean
-          id?: string
-          is_active?: boolean
-          logo_url?: string | null
-          max_users?: number
-          name: string
-          onboarding_completed?: boolean
-          phone?: string | null
-          plan?: string
-          plan_expires_at?: string | null
-          slug: string
-          tax_number?: string | null
-          updated_at?: string
-          zatca_enabled?: boolean
-        }
-        Update: {
-          address?: string | null
-          commercial_registration?: string | null
-          created_at?: string
-          email?: string | null
-          has_demo_data?: boolean
-          id?: string
-          is_active?: boolean
-          logo_url?: string | null
-          max_users?: number
-          name?: string
-          onboarding_completed?: boolean
-          phone?: string | null
-          plan?: string
-          plan_expires_at?: string | null
-          slug?: string
-          tax_number?: string | null
-          updated_at?: string
-          zatca_enabled?: boolean
-        }
-        Relationships: []
-      }
-      pages: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          is_published: boolean | null
-          organization_id: string | null
-          slug: string
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_published?: boolean | null
-          organization_id?: string | null
-          slug: string
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_published?: boolean | null
-          organization_id?: string | null
-          slug?: string
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      payment_checkout_sessions: {
-        Row: {
-          amount_cents: number
-          billing_cycle: string
-          created_at: string
-          created_by: string | null
-          currency: string
-          expires_at: string
-          id: string
-          merchant_order_id: string
-          organization_id: string
-          paymob_order_id: string | null
-          plan_id: string
-          provider_transaction_id: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          amount_cents: number
-          billing_cycle: string
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          expires_at?: string
-          id?: string
-          merchant_order_id: string
-          organization_id: string
-          paymob_order_id?: string | null
-          plan_id: string
-          provider_transaction_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          billing_cycle?: string
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          expires_at?: string
-          id?: string
-          merchant_order_id?: string
-          organization_id?: string
-          paymob_order_id?: string | null
-          plan_id?: string
-          provider_transaction_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_checkout_sessions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_checkout_sessions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      payment_transactions: {
-        Row: {
-          amount_cents: number
-          billing_cycle: string | null
-          billing_email: string | null
-          billing_name: string | null
-          billing_phone: string | null
-          card_brand: string | null
-          card_last_four: string | null
-          checkout_session_id: string | null
-          created_at: string
-          currency: string | null
-          error_message: string | null
-          expected_amount_cents: number | null
-          hmac_valid: boolean | null
-          id: string
-          organization_id: string | null
-          payment_method: string | null
-          paymob_order_id: string | null
-          paymob_transaction_id: string | null
-          plan_id: string | null
-          processed_at: string | null
-          raw_payload: Json | null
-          status: string
-          subscription_activated_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount_cents: number
-          billing_cycle?: string | null
-          billing_email?: string | null
-          billing_name?: string | null
-          billing_phone?: string | null
-          card_brand?: string | null
-          card_last_four?: string | null
-          checkout_session_id?: string | null
-          created_at?: string
-          currency?: string | null
-          error_message?: string | null
-          expected_amount_cents?: number | null
-          hmac_valid?: boolean | null
-          id?: string
-          organization_id?: string | null
-          payment_method?: string | null
-          paymob_order_id?: string | null
-          paymob_transaction_id?: string | null
-          plan_id?: string | null
-          processed_at?: string | null
-          raw_payload?: Json | null
-          status?: string
-          subscription_activated_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          billing_cycle?: string | null
-          billing_email?: string | null
-          billing_name?: string | null
-          billing_phone?: string | null
-          card_brand?: string | null
-          card_last_four?: string | null
-          checkout_session_id?: string | null
-          created_at?: string
-          currency?: string | null
-          error_message?: string | null
-          expected_amount_cents?: number | null
-          hmac_valid?: boolean | null
-          id?: string
-          organization_id?: string | null
-          payment_method?: string | null
-          paymob_order_id?: string | null
-          paymob_transaction_id?: string | null
-          plan_id?: string | null
-          processed_at?: string | null
-          raw_payload?: Json | null
-          status?: string
-          subscription_activated_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_transactions_checkout_session_id_fkey"
-            columns: ["checkout_session_id"]
-            isOneToOne: false
-            referencedRelation: "payment_checkout_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_transactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_transactions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      performance_logs: {
-        Row: {
-          cls: number | null
-          connection_type: string | null
-          created_at: string
-          fcp_ms: number | null
-          fid_ms: number | null
-          id: string
-          lcp_ms: number | null
-          load_time_ms: number | null
-          metadata: Json | null
-          organization_id: string | null
-          page_url: string
-          ttfb_ms: number | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          cls?: number | null
-          connection_type?: string | null
-          created_at?: string
-          fcp_ms?: number | null
-          fid_ms?: number | null
-          id?: string
-          lcp_ms?: number | null
-          load_time_ms?: number | null
-          metadata?: Json | null
-          organization_id?: string | null
-          page_url: string
-          ttfb_ms?: number | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          cls?: number | null
-          connection_type?: string | null
-          created_at?: string
-          fcp_ms?: number | null
-          fid_ms?: number | null
-          id?: string
-          lcp_ms?: number | null
-          load_time_ms?: number | null
-          metadata?: Json | null
-          organization_id?: string | null
-          page_url?: string
-          ttfb_ms?: number | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "performance_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      platform_roles: {
-        Row: {
-          assigned_by: string | null
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["platform_role"]
-          user_id: string
-        }
-        Insert: {
-          assigned_by?: string | null
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["platform_role"]
-          user_id: string
-        }
-        Update: {
-          assigned_by?: string | null
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["platform_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          department: string | null
-          email: string | null
-          employee_id: string | null
-          full_name: string
-          hire_date: string | null
-          id: string
-          is_active: boolean
-          linked_employee_id: string | null
-          phone: string | null
-          position: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          department?: string | null
-          email?: string | null
-          employee_id?: string | null
-          full_name?: string
-          hire_date?: string | null
-          id: string
-          is_active?: boolean
-          linked_employee_id?: string | null
-          phone?: string | null
-          position?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          department?: string | null
-          email?: string | null
-          employee_id?: string | null
-          full_name?: string
-          hire_date?: string | null
-          id?: string
-          is_active?: boolean
-          linked_employee_id?: string | null
-          phone?: string | null
-          position?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_linked_employee_id_fkey"
-            columns: ["linked_employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quick_replies: {
-        Row: {
-          category: string | null
-          content: string
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_global: boolean | null
-          organization_id: string
-          title: string
-          updated_at: string | null
-          usage_count: number | null
-        }
-        Insert: {
-          category?: string | null
-          content: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_global?: boolean | null
-          organization_id: string
-          title: string
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Update: {
-          category?: string | null
-          content?: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_global?: boolean | null
-          organization_id?: string
-          title?: string
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      quote_items: {
-        Row: {
-          cost_price: number | null
-          created_at: string | null
-          description: string
-          details: Json | null
-          id: string
-          item_type: string
-          organization_id: string | null
-          quantity: number | null
-          quote_id: string
-          selling_price: number | null
-          sort_order: number | null
-          supplier_id: string | null
-          total_cost: number | null
-          total_selling: number | null
-        }
-        Insert: {
-          cost_price?: number | null
-          created_at?: string | null
-          description: string
-          details?: Json | null
-          id?: string
-          item_type: string
-          organization_id?: string | null
-          quantity?: number | null
-          quote_id: string
-          selling_price?: number | null
-          sort_order?: number | null
-          supplier_id?: string | null
-          total_cost?: number | null
-          total_selling?: number | null
-        }
-        Update: {
-          cost_price?: number | null
-          created_at?: string | null
-          description?: string
-          details?: Json | null
-          id?: string
-          item_type?: string
-          organization_id?: string | null
-          quantity?: number | null
-          quote_id?: string
-          selling_price?: number | null
-          sort_order?: number | null
-          supplier_id?: string | null
-          total_cost?: number | null
-          total_selling?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quote_items_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_items_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_items_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quotes: {
-        Row: {
-          assigned_employee_id: string | null
-          created_at: string | null
-          created_by: string | null
-          customer_id: string | null
-          customer_name: string | null
-          destination: string | null
-          discount_amount: number | null
-          id: string
-          is_demo: boolean
-          notes: string | null
-          number_of_travelers: number | null
-          organization_id: string | null
-          quote_number: string
-          return_date: string | null
-          status: string | null
-          subtotal: number | null
-          total_amount: number | null
-          total_cost: number | null
-          total_profit: number | null
-          travel_date: string | null
-          updated_at: string | null
-          valid_until: string | null
-          vat_amount: number | null
-          vat_rate: number | null
-        }
-        Insert: {
-          assigned_employee_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          destination?: string | null
-          discount_amount?: number | null
-          id?: string
-          is_demo?: boolean
-          notes?: string | null
-          number_of_travelers?: number | null
-          organization_id?: string | null
-          quote_number: string
-          return_date?: string | null
-          status?: string | null
-          subtotal?: number | null
-          total_amount?: number | null
-          total_cost?: number | null
-          total_profit?: number | null
-          travel_date?: string | null
-          updated_at?: string | null
-          valid_until?: string | null
-          vat_amount?: number | null
-          vat_rate?: number | null
-        }
-        Update: {
-          assigned_employee_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          customer_id?: string | null
-          customer_name?: string | null
-          destination?: string | null
-          discount_amount?: number | null
-          id?: string
-          is_demo?: boolean
-          notes?: string | null
-          number_of_travelers?: number | null
-          organization_id?: string | null
-          quote_number?: string
-          return_date?: string | null
-          status?: string | null
-          subtotal?: number | null
-          total_amount?: number | null
-          total_cost?: number | null
-          total_profit?: number | null
-          travel_date?: string | null
-          updated_at?: string | null
-          valid_until?: string | null
-          vat_amount?: number | null
-          vat_rate?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quotes_assigned_employee_id_fkey"
-            columns: ["assigned_employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      refund_requests: {
-        Row: {
-          advance_component: number
-          amount: number
-          amount_base: number
-          approved_at: string | null
-          approved_by: string | null
-          booking_id: string | null
-          created_at: string
-          currency: string
-          customer_id: string | null
-          exchange_rate: number
-          id: string
-          invoice_id: string | null
-          organization_id: string
-          paid_at: string | null
-          reason: string | null
-          rejection_reason: string | null
-          requested_by: string | null
-          sales_return_component: number
-          source_payment_id: string | null
-          status: string
-          treasury_account_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          advance_component?: number
-          amount: number
-          amount_base: number
-          approved_at?: string | null
-          approved_by?: string | null
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          customer_id?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          organization_id: string
-          paid_at?: string | null
-          reason?: string | null
-          rejection_reason?: string | null
-          requested_by?: string | null
-          sales_return_component?: number
-          source_payment_id?: string | null
-          status?: string
-          treasury_account_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          advance_component?: number
-          amount?: number
-          amount_base?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          customer_id?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_id?: string | null
-          organization_id?: string
-          paid_at?: string | null
-          reason?: string | null
-          rejection_reason?: string | null
-          requested_by?: string | null
-          sales_return_component?: number
-          source_payment_id?: string | null
-          status?: string
-          treasury_account_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "refund_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_source_payment_id_fkey"
-            columns: ["source_payment_id"]
-            isOneToOne: false
-            referencedRelation: "customer_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_treasury_account_id_fkey"
-            columns: ["treasury_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rent_contracts: {
-        Row: {
-          annual_increase_percentage: number | null
-          bank_account_id: string | null
-          commission_rate: number | null
-          contract_duration_months: number | null
-          contract_end_date: string
-          contract_notes: string | null
-          contract_number: string | null
-          contract_start_date: string
-          contract_terms: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          end_date: string | null
-          id: string
-          is_active: boolean | null
-          landlord_name: string
-          landlord_phone: string | null
-          maintenance_responsibility: string | null
-          monthly_rent: number
-          organization_id: string
-          payment_day_of_month: number | null
-          payment_method: string | null
-          property_address: string | null
-          property_name: string | null
-          property_type: string | null
-          renewal_period_months: number | null
-          security_deposit: number | null
-          start_date: string | null
-          updated_at: string | null
-          utilities_included: boolean | null
-        }
-        Insert: {
-          annual_increase_percentage?: number | null
-          bank_account_id?: string | null
-          commission_rate?: number | null
-          contract_duration_months?: number | null
-          contract_end_date: string
-          contract_notes?: string | null
-          contract_number?: string | null
-          contract_start_date: string
-          contract_terms?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          end_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          landlord_name: string
-          landlord_phone?: string | null
-          maintenance_responsibility?: string | null
-          monthly_rent: number
-          organization_id: string
-          payment_day_of_month?: number | null
-          payment_method?: string | null
-          property_address?: string | null
-          property_name?: string | null
-          property_type?: string | null
-          renewal_period_months?: number | null
-          security_deposit?: number | null
-          start_date?: string | null
-          updated_at?: string | null
-          utilities_included?: boolean | null
-        }
-        Update: {
-          annual_increase_percentage?: number | null
-          bank_account_id?: string | null
-          commission_rate?: number | null
-          contract_duration_months?: number | null
-          contract_end_date?: string
-          contract_notes?: string | null
-          contract_number?: string | null
-          contract_start_date?: string
-          contract_terms?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          end_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          landlord_name?: string
-          landlord_phone?: string | null
-          maintenance_responsibility?: string | null
-          monthly_rent?: number
-          organization_id?: string
-          payment_day_of_month?: number | null
-          payment_method?: string | null
-          property_address?: string | null
-          property_name?: string | null
-          property_type?: string | null
-          renewal_period_months?: number | null
-          security_deposit?: number | null
-          start_date?: string | null
-          updated_at?: string | null
-          utilities_included?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rent_contracts_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_contracts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rent_payments: {
-        Row: {
-          amount: number
-          amount_egp: number | null
-          bank_account_id: string | null
-          contract_id: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          due_date: string
-          exchange_rate: number | null
-          id: string
-          late_fee: number | null
-          notes: string | null
-          organization_id: string
-          payment_date: string | null
-          payment_method: string | null
-          payment_month: string | null
-          reference_number: string | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          amount: number
-          amount_egp?: number | null
-          bank_account_id?: string | null
-          contract_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          due_date: string
-          exchange_rate?: number | null
-          id?: string
-          late_fee?: number | null
-          notes?: string | null
-          organization_id: string
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_month?: string | null
-          reference_number?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          amount?: number
-          amount_egp?: number | null
-          bank_account_id?: string | null
-          contract_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          due_date?: string
-          exchange_rate?: number | null
-          id?: string
-          late_fee?: number | null
-          notes?: string | null
-          organization_id?: string
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_month?: string | null
-          reference_number?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rent_payments_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payments_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "rent_contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      security_settings: {
-        Row: {
-          created_at: string
-          ip_allowlist: Json
-          mfa_required: boolean
-          org_pin_hash: string | null
-          org_pin_set_at: string | null
-          organization_id: string
-          password_policy: Json
-          session_timeout_min: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          ip_allowlist?: Json
-          mfa_required?: boolean
-          org_pin_hash?: string | null
-          org_pin_set_at?: string | null
-          organization_id: string
-          password_policy?: Json
-          session_timeout_min?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          ip_allowlist?: Json
-          mfa_required?: boolean
-          org_pin_hash?: string | null
-          org_pin_set_at?: string | null
-          organization_id?: string
-          password_policy?: Json
-          session_timeout_min?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "security_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_requests: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          id: string
-          message: string | null
-          name: string
-          organization_id: string | null
-          phone: string
-          preferred_contact: string | null
-          service_type: string | null
-          status: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          message?: string | null
-          name: string
-          organization_id?: string | null
-          phone: string
-          preferred_contact?: string | null
-          service_type?: string | null
-          status?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          message?: string | null
-          name?: string
-          organization_id?: string | null
-          phone?: string
-          preferred_contact?: string | null
-          service_type?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      sop_approvals: {
-        Row: {
-          amount: number | null
-          approval_type: Database["public"]["Enums"]["sop_approval_type"]
-          booking_id: string | null
-          created_at: string
-          decided_at: string | null
-          decided_by: string | null
-          decision_note: string | null
-          id: string
-          lead_id: string | null
-          organization_id: string
-          quote_id: string | null
-          reason: string | null
-          requested_by: string | null
-          status: Database["public"]["Enums"]["sop_approval_status"]
-          supplier_payment_order_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount?: number | null
-          approval_type: Database["public"]["Enums"]["sop_approval_type"]
-          booking_id?: string | null
-          created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_note?: string | null
-          id?: string
-          lead_id?: string | null
-          organization_id: string
-          quote_id?: string | null
-          reason?: string | null
-          requested_by?: string | null
-          status?: Database["public"]["Enums"]["sop_approval_status"]
-          supplier_payment_order_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number | null
-          approval_type?: Database["public"]["Enums"]["sop_approval_type"]
-          booking_id?: string | null
-          created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_note?: string | null
-          id?: string
-          lead_id?: string | null
-          organization_id?: string
-          quote_id?: string | null
-          reason?: string | null
-          requested_by?: string | null
-          status?: Database["public"]["Enums"]["sop_approval_status"]
-          supplier_payment_order_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_approvals_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_department_members: {
-        Row: {
-          active_load: number
-          created_at: string
-          department: Database["public"]["Enums"]["sop_department"]
-          id: string
-          is_available: boolean
-          last_assigned_at: string | null
-          organization_id: string
-          specializations: string[]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          active_load?: number
-          created_at?: string
-          department: Database["public"]["Enums"]["sop_department"]
-          id?: string
-          is_available?: boolean
-          last_assigned_at?: string | null
-          organization_id: string
-          specializations?: string[]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          active_load?: number
-          created_at?: string
-          department?: Database["public"]["Enums"]["sop_department"]
-          id?: string
-          is_available?: boolean
-          last_assigned_at?: string | null
-          organization_id?: string
-          specializations?: string[]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      sop_handovers: {
-        Row: {
-          accepted_at: string | null
-          booking_id: string | null
-          checklist: Json
-          created_at: string
-          from_department: Database["public"]["Enums"]["sop_department"] | null
-          from_user_id: string | null
-          handover_type: Database["public"]["Enums"]["sop_handover_type"]
-          id: string
-          is_complete: boolean
-          lead_id: string | null
-          missing_items: string[]
-          notes: string | null
-          organization_id: string
-          to_department: Database["public"]["Enums"]["sop_department"] | null
-          to_user_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          booking_id?: string | null
-          checklist?: Json
-          created_at?: string
-          from_department?: Database["public"]["Enums"]["sop_department"] | null
-          from_user_id?: string | null
-          handover_type: Database["public"]["Enums"]["sop_handover_type"]
-          id?: string
-          is_complete?: boolean
-          lead_id?: string | null
-          missing_items?: string[]
-          notes?: string | null
-          organization_id: string
-          to_department?: Database["public"]["Enums"]["sop_department"] | null
-          to_user_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          accepted_at?: string | null
-          booking_id?: string | null
-          checklist?: Json
-          created_at?: string
-          from_department?: Database["public"]["Enums"]["sop_department"] | null
-          from_user_id?: string | null
-          handover_type?: Database["public"]["Enums"]["sop_handover_type"]
-          id?: string
-          is_complete?: boolean
-          lead_id?: string | null
-          missing_items?: string[]
-          notes?: string | null
-          organization_id?: string
-          to_department?: Database["public"]["Enums"]["sop_department"] | null
-          to_user_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_handovers_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_incidents: {
-        Row: {
-          booking_id: string | null
-          created_at: string
-          created_by: string | null
-          customer_id: string | null
-          description: string | null
-          escalated_to: Database["public"]["Enums"]["sop_department"] | null
-          escalation_level: number
-          id: string
-          lead_id: string | null
-          next_update_at: string | null
-          organization_id: string
-          owner_id: string | null
-          resolution: string | null
-          resolved_at: string | null
-          severity: string
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id?: string | null
-          description?: string | null
-          escalated_to?: Database["public"]["Enums"]["sop_department"] | null
-          escalation_level?: number
-          id?: string
-          lead_id?: string | null
-          next_update_at?: string | null
-          organization_id: string
-          owner_id?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          severity?: string
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id?: string | null
-          description?: string | null
-          escalated_to?: Database["public"]["Enums"]["sop_department"] | null
-          escalation_level?: number
-          id?: string
-          lead_id?: string | null
-          next_update_at?: string | null
-          organization_id?: string
-          owner_id?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          severity?: string
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_incidents_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_lead_activities: {
-        Row: {
-          activity_type: string
-          assigned_to: string | null
-          completed_at: string | null
-          completed_by: string | null
-          created_at: string
-          created_by: string | null
-          due_at: string | null
-          id: string
-          lead_id: string
-          notes: string | null
-          organization_id: string
-          outcome: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          activity_type: string
-          assigned_to?: string | null
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          due_at?: string | null
-          id?: string
-          lead_id: string
-          notes?: string | null
-          organization_id: string
-          outcome?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          activity_type?: string
-          assigned_to?: string | null
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          due_at?: string | null
-          id?: string
-          lead_id?: string
-          notes?: string | null
-          organization_id?: string
-          outcome?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_lead_activities_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sop_lead_activities_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sop_lead_activities_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sop_lead_activities_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sop_lead_activities_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_lead_assignments: {
-        Row: {
-          ack_deadline_at: string | null
-          acknowledged_at: string | null
-          assigned_by: string | null
-          assignee_id: string
-          created_at: string
-          exception_reason: string | null
-          id: string
-          is_current: boolean
-          lead_id: string
-          method: string
-          organization_id: string
-          previous_assignee_id: string | null
-          reassignment_reason: string | null
-          released_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          ack_deadline_at?: string | null
-          acknowledged_at?: string | null
-          assigned_by?: string | null
-          assignee_id: string
-          created_at?: string
-          exception_reason?: string | null
-          id?: string
-          is_current?: boolean
-          lead_id: string
-          method?: string
-          organization_id: string
-          previous_assignee_id?: string | null
-          reassignment_reason?: string | null
-          released_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          ack_deadline_at?: string | null
-          acknowledged_at?: string | null
-          assigned_by?: string | null
-          assignee_id?: string
-          created_at?: string
-          exception_reason?: string | null
-          id?: string
-          is_current?: boolean
-          lead_id?: string
-          method?: string
-          organization_id?: string
-          previous_assignee_id?: string | null
-          reassignment_reason?: string | null
-          released_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_lead_assignments_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_lead_stage_history: {
-        Row: {
-          action: string
-          actor_name: string | null
-          actor_user_id: string | null
-          booking_id: string | null
-          created_at: string
-          dedupe_key: string
-          from_stage: Database["public"]["Enums"]["sop_lead_stage"] | null
-          id: string
-          is_reconstructed: boolean
-          lead_id: string
-          metadata: Json
-          occurred_at: string
-          organization_id: string
-          pricing_request_id: string | null
-          quote_id: string | null
-          reason: string | null
-          source: string
-          to_stage: Database["public"]["Enums"]["sop_lead_stage"] | null
-        }
-        Insert: {
-          action: string
-          actor_name?: string | null
-          actor_user_id?: string | null
-          booking_id?: string | null
-          created_at?: string
-          dedupe_key: string
-          from_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
-          id?: string
-          is_reconstructed?: boolean
-          lead_id: string
-          metadata?: Json
-          occurred_at?: string
-          organization_id: string
-          pricing_request_id?: string | null
-          quote_id?: string | null
-          reason?: string | null
-          source?: string
-          to_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
-        }
-        Update: {
-          action?: string
-          actor_name?: string | null
-          actor_user_id?: string | null
-          booking_id?: string | null
-          created_at?: string
-          dedupe_key?: string
-          from_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
-          id?: string
-          is_reconstructed?: boolean
-          lead_id?: string
-          metadata?: Json
-          occurred_at?: string
-          organization_id?: string
-          pricing_request_id?: string | null
-          quote_id?: string | null
-          reason?: string | null
-          source?: string
-          to_stage?: Database["public"]["Enums"]["sop_lead_stage"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_lead_stage_history_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_leads: {
-        Row: {
-          adults: number | null
-          approx_dates: string | null
-          arrived_at: string
-          booking_id: string | null
-          budget_amount: number | null
-          budget_currency: string | null
-          budget_level: string | null
-          campaign: string | null
-          check_in: string | null
-          check_out: string | null
-          children_ages: Json
-          children_count: number
-          city: string | null
-          contact_email: string | null
-          contact_name: string | null
-          contact_phone: string | null
-          conversation_id: string | null
-          converted_at: string | null
-          converted_by: string | null
-          created_at: string
-          created_by: string | null
-          current_owner_id: string | null
-          customer_id: string | null
-          deposit_percent: number | null
-          destination: string | null
-          first_response_at: string | null
-          id: string
-          intake_completed_at: string | null
-          is_legacy: boolean
-          last_contact_at: string | null
-          lead_number: string | null
-          lead_source: string | null
-          lost_reason: string | null
-          market: string | null
-          migration_source: string | null
-          nationality: string | null
-          next_follow_up_at: string | null
-          occupancy: string | null
-          organization_id: string
-          owner_department: Database["public"]["Enums"]["sop_department"]
-          payment_policy: string
-          priorities: string | null
-          quote_id: string | null
-          reference_hotel: string | null
-          reference_screenshot_url: string | null
-          requote_required: boolean
-          rooms: number | null
-          service_type: string | null
-          special_requests: string | null
-          stage: Database["public"]["Enums"]["sop_lead_stage"]
-          updated_at: string
-        }
-        Insert: {
-          adults?: number | null
-          approx_dates?: string | null
-          arrived_at?: string
-          booking_id?: string | null
-          budget_amount?: number | null
-          budget_currency?: string | null
-          budget_level?: string | null
-          campaign?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          children_ages?: Json
-          children_count?: number
-          city?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          conversation_id?: string | null
-          converted_at?: string | null
-          converted_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          current_owner_id?: string | null
-          customer_id?: string | null
-          deposit_percent?: number | null
-          destination?: string | null
-          first_response_at?: string | null
-          id?: string
-          intake_completed_at?: string | null
-          is_legacy?: boolean
-          last_contact_at?: string | null
-          lead_number?: string | null
-          lead_source?: string | null
-          lost_reason?: string | null
-          market?: string | null
-          migration_source?: string | null
-          nationality?: string | null
-          next_follow_up_at?: string | null
-          occupancy?: string | null
-          organization_id: string
-          owner_department?: Database["public"]["Enums"]["sop_department"]
-          payment_policy?: string
-          priorities?: string | null
-          quote_id?: string | null
-          reference_hotel?: string | null
-          reference_screenshot_url?: string | null
-          requote_required?: boolean
-          rooms?: number | null
-          service_type?: string | null
-          special_requests?: string | null
-          stage?: Database["public"]["Enums"]["sop_lead_stage"]
-          updated_at?: string
-        }
-        Update: {
-          adults?: number | null
-          approx_dates?: string | null
-          arrived_at?: string
-          booking_id?: string | null
-          budget_amount?: number | null
-          budget_currency?: string | null
-          budget_level?: string | null
-          campaign?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          children_ages?: Json
-          children_count?: number
-          city?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          conversation_id?: string | null
-          converted_at?: string | null
-          converted_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          current_owner_id?: string | null
-          customer_id?: string | null
-          deposit_percent?: number | null
-          destination?: string | null
-          first_response_at?: string | null
-          id?: string
-          intake_completed_at?: string | null
-          is_legacy?: boolean
-          last_contact_at?: string | null
-          lead_number?: string | null
-          lead_source?: string | null
-          lost_reason?: string | null
-          market?: string | null
-          migration_source?: string | null
-          nationality?: string | null
-          next_follow_up_at?: string | null
-          occupancy?: string | null
-          organization_id?: string
-          owner_department?: Database["public"]["Enums"]["sop_department"]
-          payment_policy?: string
-          priorities?: string | null
-          quote_id?: string | null
-          reference_hotel?: string | null
-          reference_screenshot_url?: string | null
-          requote_required?: boolean
-          rooms?: number | null
-          service_type?: string | null
-          special_requests?: string | null
-          stage?: Database["public"]["Enums"]["sop_lead_stage"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_leads_converted_by_fkey"
-            columns: ["converted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_operational_deadlines: {
-        Row: {
-          alerted_at: string | null
-          booking_id: string | null
-          completed_at: string | null
-          created_at: string
-          deadline_type: Database["public"]["Enums"]["sop_deadline_type"]
-          due_at: string
-          id: string
-          is_legacy: boolean
-          lead_id: string | null
-          notes: string | null
-          organization_id: string
-          owner_id: string | null
-          pricing_request_id: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          alerted_at?: string | null
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          deadline_type: Database["public"]["Enums"]["sop_deadline_type"]
-          due_at: string
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          notes?: string | null
-          organization_id: string
-          owner_id?: string | null
-          pricing_request_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          alerted_at?: string | null
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          deadline_type?: Database["public"]["Enums"]["sop_deadline_type"]
-          due_at?: string
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          notes?: string | null
-          organization_id?: string
-          owner_id?: string | null
-          pricing_request_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_operational_deadlines_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_org_policies: {
-        Row: {
-          approval_required_above_amount: number | null
-          assignment_ack_sla_minutes: number
-          auto_assign_enabled: boolean
-          created_at: string
-          default_collection_policy: string
-          default_deposit_percent: number
-          first_response_sla_minutes: number
-          incident_update_sla_minutes: number
-          organization_id: string
-          post_trip_days: number
-          pre_arrival_days: number
-          quotation_turnaround_sla_minutes: number
-          require_management_approval: boolean
-          updated_at: string
-        }
-        Insert: {
-          approval_required_above_amount?: number | null
-          assignment_ack_sla_minutes?: number
-          auto_assign_enabled?: boolean
-          created_at?: string
-          default_collection_policy?: string
-          default_deposit_percent?: number
-          first_response_sla_minutes?: number
-          incident_update_sla_minutes?: number
-          organization_id: string
-          post_trip_days?: number
-          pre_arrival_days?: number
-          quotation_turnaround_sla_minutes?: number
-          require_management_approval?: boolean
-          updated_at?: string
-        }
-        Update: {
-          approval_required_above_amount?: number | null
-          assignment_ack_sla_minutes?: number
-          auto_assign_enabled?: boolean
-          created_at?: string
-          default_collection_policy?: string
-          default_deposit_percent?: number
-          first_response_sla_minutes?: number
-          incident_update_sla_minutes?: number
-          organization_id?: string
-          post_trip_days?: number
-          pre_arrival_days?: number
-          quotation_turnaround_sla_minutes?: number
-          require_management_approval?: boolean
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sop_post_trip_actions: {
-        Row: {
-          action_type: string
-          booking_id: string | null
-          completed_at: string | null
-          created_at: string
-          customer_id: string | null
-          due_at: string | null
-          feedback: string | null
-          id: string
-          is_legacy: boolean
-          lead_id: string | null
-          organization_id: string
-          owner_id: string | null
-          rating: number | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          action_type: string
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          customer_id?: string | null
-          due_at?: string | null
-          feedback?: string | null
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          organization_id: string
-          owner_id?: string | null
-          rating?: number | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          action_type?: string
-          booking_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          customer_id?: string | null
-          due_at?: string | null
-          feedback?: string | null
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          organization_id?: string
-          owner_id?: string | null
-          rating?: number | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_post_trip_actions_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_pricing_options: {
-        Row: {
-          cancellation_charge_model: string | null
-          cancellation_charge_value: number | null
-          cancellation_deadline: string | null
-          cancellation_notes: string | null
-          cancellation_policy: string | null
-          cancellation_type: string | null
-          check_in: string | null
-          check_out: string | null
-          created_at: string
-          currency: string
-          destination: string | null
-          free_cancellation_until: string | null
-          hotel_direct_price: number | null
-          hotel_name: string | null
-          id: string
-          internal_notes: string | null
-          is_recommended: boolean
-          is_selected: boolean
-          markup_type: string
-          markup_value: number
-          meal_plan: string | null
-          net_cost: number
-          notes: string | null
-          option_index: number
-          organization_id: string
-          ota_price: number | null
-          ota_source: string | null
-          payment_deadline: string | null
-          price_valid_until: string | null
-          pricing_request_id: string
-          product_name: string | null
-          recommendation_note: string | null
-          recommendation_reason: string | null
-          release_deadline: string | null
-          room_type: string | null
-          room_view: string | null
-          rooms_count: number | null
-          selling_price: number
-          supplier_id: string | null
-          supplier_name: string | null
-          transfer_net_cost: number | null
-          transfer_notes: string | null
-          transfer_selling_price: number | null
-          transfer_status: string
-          transfer_type: string | null
-          updated_at: string
-        }
-        Insert: {
-          cancellation_charge_model?: string | null
-          cancellation_charge_value?: number | null
-          cancellation_deadline?: string | null
-          cancellation_notes?: string | null
-          cancellation_policy?: string | null
-          cancellation_type?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          created_at?: string
-          currency?: string
-          destination?: string | null
-          free_cancellation_until?: string | null
-          hotel_direct_price?: number | null
-          hotel_name?: string | null
-          id?: string
-          internal_notes?: string | null
-          is_recommended?: boolean
-          is_selected?: boolean
-          markup_type?: string
-          markup_value?: number
-          meal_plan?: string | null
-          net_cost?: number
-          notes?: string | null
-          option_index?: number
-          organization_id: string
-          ota_price?: number | null
-          ota_source?: string | null
-          payment_deadline?: string | null
-          price_valid_until?: string | null
-          pricing_request_id: string
-          product_name?: string | null
-          recommendation_note?: string | null
-          recommendation_reason?: string | null
-          release_deadline?: string | null
-          room_type?: string | null
-          room_view?: string | null
-          rooms_count?: number | null
-          selling_price?: number
-          supplier_id?: string | null
-          supplier_name?: string | null
-          transfer_net_cost?: number | null
-          transfer_notes?: string | null
-          transfer_selling_price?: number | null
-          transfer_status?: string
-          transfer_type?: string | null
-          updated_at?: string
-        }
-        Update: {
-          cancellation_charge_model?: string | null
-          cancellation_charge_value?: number | null
-          cancellation_deadline?: string | null
-          cancellation_notes?: string | null
-          cancellation_policy?: string | null
-          cancellation_type?: string | null
-          check_in?: string | null
-          check_out?: string | null
-          created_at?: string
-          currency?: string
-          destination?: string | null
-          free_cancellation_until?: string | null
-          hotel_direct_price?: number | null
-          hotel_name?: string | null
-          id?: string
-          internal_notes?: string | null
-          is_recommended?: boolean
-          is_selected?: boolean
-          markup_type?: string
-          markup_value?: number
-          meal_plan?: string | null
-          net_cost?: number
-          notes?: string | null
-          option_index?: number
-          organization_id?: string
-          ota_price?: number | null
-          ota_source?: string | null
-          payment_deadline?: string | null
-          price_valid_until?: string | null
-          pricing_request_id?: string
-          product_name?: string | null
-          recommendation_note?: string | null
-          recommendation_reason?: string | null
-          release_deadline?: string | null
-          room_type?: string | null
-          room_view?: string | null
-          rooms_count?: number | null
-          selling_price?: number
-          supplier_id?: string | null
-          supplier_name?: string | null
-          transfer_net_cost?: number | null
-          transfer_notes?: string | null
-          transfer_selling_price?: number | null
-          transfer_status?: string
-          transfer_type?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_pricing_options_pricing_request_id_fkey"
-            columns: ["pricing_request_id"]
-            isOneToOne: false
-            referencedRelation: "sop_pricing_requests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sop_pricing_requests: {
-        Row: {
-          assigned_to: string | null
-          booking_id: string | null
-          brief: Json
-          created_at: string
-          customer_id: string | null
-          id: string
-          is_legacy: boolean
-          lead_id: string | null
-          notes: string | null
-          organization_id: string
-          price_valid_until: string | null
-          quote_id: string | null
-          quoted_at: string | null
-          recheck_changed: boolean | null
-          recheck_completed_at: string | null
-          recheck_notes: string | null
-          recheck_requested_at: string | null
-          recommendation: string | null
-          requested_at: string
-          requested_by: string | null
-          status: Database["public"]["Enums"]["sop_pricing_status"]
-          updated_at: string
-        }
-        Insert: {
-          assigned_to?: string | null
-          booking_id?: string | null
-          brief?: Json
-          created_at?: string
-          customer_id?: string | null
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          notes?: string | null
-          organization_id: string
-          price_valid_until?: string | null
-          quote_id?: string | null
-          quoted_at?: string | null
-          recheck_changed?: boolean | null
-          recheck_completed_at?: string | null
-          recheck_notes?: string | null
-          recheck_requested_at?: string | null
-          recommendation?: string | null
-          requested_at?: string
-          requested_by?: string | null
-          status?: Database["public"]["Enums"]["sop_pricing_status"]
-          updated_at?: string
-        }
-        Update: {
-          assigned_to?: string | null
-          booking_id?: string | null
-          brief?: Json
-          created_at?: string
-          customer_id?: string | null
-          id?: string
-          is_legacy?: boolean
-          lead_id?: string | null
-          notes?: string | null
-          organization_id?: string
-          price_valid_until?: string | null
-          quote_id?: string | null
-          quoted_at?: string | null
-          recheck_changed?: boolean | null
-          recheck_completed_at?: string | null
-          recheck_notes?: string | null
-          recheck_requested_at?: string | null
-          recommendation?: string | null
-          requested_at?: string
-          requested_by?: string | null
-          status?: Database["public"]["Enums"]["sop_pricing_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sop_pricing_requests_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "sop_leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      special_request_types: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          extra_cost_amount: number | null
-          has_extra_cost: boolean | null
-          id: string
-          is_active: boolean | null
-          name: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          extra_cost_amount?: number | null
-          has_extra_cost?: boolean | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          extra_cost_amount?: number | null
-          has_extra_cost?: boolean | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-        }
-        Relationships: []
-      }
-      subscription_plans: {
-        Row: {
-          created_at: string
-          duration_days: number | null
-          features: Json
-          id: string
-          is_active: boolean
-          max_bookings_per_month: number
-          max_storage_mb: number
-          max_users: number
-          name: string
-          name_ar: string
-          price_monthly: number
-          price_yearly: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          duration_days?: number | null
-          features?: Json
-          id?: string
-          is_active?: boolean
-          max_bookings_per_month?: number
-          max_storage_mb?: number
-          max_users?: number
-          name: string
-          name_ar: string
-          price_monthly?: number
-          price_yearly?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          duration_days?: number | null
-          features?: Json
-          id?: string
-          is_active?: boolean
-          max_bookings_per_month?: number
-          max_storage_mb?: number
-          max_users?: number
-          name?: string
-          name_ar?: string
-          price_monthly?: number
-          price_yearly?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          activated_by: string | null
-          created_at: string
-          expires_at: string | null
-          grace_period_days: number | null
-          id: string
-          notes: string | null
-          organization_id: string
-          payment_method: string | null
-          payment_reference: string | null
-          paymob_transaction_id: string | null
-          plan_id: string
-          starts_at: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          activated_by?: string | null
-          created_at?: string
-          expires_at?: string | null
-          grace_period_days?: number | null
-          id?: string
-          notes?: string | null
-          organization_id: string
-          payment_method?: string | null
-          payment_reference?: string | null
-          paymob_transaction_id?: string | null
-          plan_id: string
-          starts_at?: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          activated_by?: string | null
-          created_at?: string
-          expires_at?: string | null
-          grace_period_days?: number | null
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          payment_method?: string | null
-          payment_reference?: string | null
-          paymob_transaction_id?: string | null
-          plan_id?: string
-          starts_at?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_allotments: {
-        Row: {
-          allotment_name: string
-          contract_id: string | null
-          cost_per_unit: number | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          end_date: string
-          id: string
-          notes: string | null
-          organization_id: string
-          release_days: number | null
-          service_reference: string | null
-          service_type: string
-          start_date: string
-          status: string
-          supplier_id: string
-          total_quantity: number
-          updated_at: string
-          used_quantity: number
-        }
-        Insert: {
-          allotment_name: string
-          contract_id?: string | null
-          cost_per_unit?: number | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          end_date: string
-          id?: string
-          notes?: string | null
-          organization_id: string
-          release_days?: number | null
-          service_reference?: string | null
-          service_type: string
-          start_date: string
-          status?: string
-          supplier_id: string
-          total_quantity?: number
-          updated_at?: string
-          used_quantity?: number
-        }
-        Update: {
-          allotment_name?: string
-          contract_id?: string | null
-          cost_per_unit?: number | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          end_date?: string
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          release_days?: number | null
-          service_reference?: string | null
-          service_type?: string
-          start_date?: string
-          status?: string
-          supplier_id?: string
-          total_quantity?: number
-          updated_at?: string
-          used_quantity?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_allotments_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_allotments_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_contacts: {
-        Row: {
-          created_at: string
-          email: string | null
-          id: string
-          is_primary: boolean
-          name: string
-          notes: string | null
-          organization_id: string
-          phone: string | null
-          role: string | null
-          supplier_id: string
-          updated_at: string
-          whatsapp: string | null
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          is_primary?: boolean
-          name: string
-          notes?: string | null
-          organization_id: string
-          phone?: string | null
-          role?: string | null
-          supplier_id: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          is_primary?: boolean
-          name?: string
-          notes?: string | null
-          organization_id?: string
-          phone?: string | null
-          role?: string | null
-          supplier_id?: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_contacts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_contacts_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_contracts: {
-        Row: {
-          contract_number: string
-          contract_type: string | null
-          contract_value: number | null
-          created_at: string | null
-          currency: string | null
-          end_date: string
-          id: string
-          is_active: boolean | null
-          organization_id: string | null
-          payment_terms: string | null
-          start_date: string
-          supplier_id: string | null
-          terms_and_conditions: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          contract_number: string
-          contract_type?: string | null
-          contract_value?: number | null
-          created_at?: string | null
-          currency?: string | null
-          end_date: string
-          id?: string
-          is_active?: boolean | null
-          organization_id?: string | null
-          payment_terms?: string | null
-          start_date: string
-          supplier_id?: string | null
-          terms_and_conditions?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          contract_number?: string
-          contract_type?: string | null
-          contract_value?: number | null
-          created_at?: string | null
-          currency?: string | null
-          end_date?: string
-          id?: string
-          is_active?: boolean | null
-          organization_id?: string | null
-          payment_terms?: string | null
-          start_date?: string
-          supplier_id?: string | null
-          terms_and_conditions?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_contracts_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_currencies: {
-        Row: {
-          created_at: string | null
-          currency: string
-          exchange_rate: number | null
-          id: string
-          is_primary: boolean | null
-          supplier_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          currency?: string
-          exchange_rate?: number | null
-          id?: string
-          is_primary?: boolean | null
-          supplier_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          currency?: string
-          exchange_rate?: number | null
-          id?: string
-          is_primary?: boolean | null
-          supplier_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_currencies_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_invoices: {
-        Row: {
-          amount: number
-          amount_base: number
-          amount_paid: number
-          booking_id: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          due_date: string | null
-          exchange_rate: number
-          id: string
-          invoice_date: string
-          invoice_number: string
-          notes: string | null
-          organization_id: string
-          payment_order_id: string | null
-          status: string
-          supplier_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          amount_base: number
-          amount_paid?: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          due_date?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_date?: string
-          invoice_number: string
-          notes?: string | null
-          organization_id: string
-          payment_order_id?: string | null
-          status?: string
-          supplier_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          amount_base?: number
-          amount_paid?: number
-          booking_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          due_date?: string | null
-          exchange_rate?: number
-          id?: string
-          invoice_date?: string
-          invoice_number?: string
-          notes?: string | null
-          organization_id?: string
-          payment_order_id?: string | null
-          status?: string
-          supplier_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_payment_order_id_fkey"
-            columns: ["payment_order_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_payment_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_invoices_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_notes: {
-        Row: {
-          author_id: string | null
-          body: string
-          created_at: string
-          id: string
-          organization_id: string
-          pinned: boolean
-          supplier_id: string
-          updated_at: string
-        }
-        Insert: {
-          author_id?: string | null
-          body: string
-          created_at?: string
-          id?: string
-          organization_id: string
-          pinned?: boolean
-          supplier_id: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string | null
-          body?: string
-          created_at?: string
-          id?: string
-          organization_id?: string
-          pinned?: boolean
-          supplier_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_notes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_notes_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_payment_allocations: {
-        Row: {
-          amount: number
-          amount_base: number
-          created_at: string
-          id: string
-          organization_id: string
-          payment_order_id: string | null
-          supplier_invoice_id: string | null
-          supplier_payment_id: string
-        }
-        Insert: {
-          amount: number
-          amount_base: number
-          created_at?: string
-          id?: string
-          organization_id: string
-          payment_order_id?: string | null
-          supplier_invoice_id?: string | null
-          supplier_payment_id: string
-        }
-        Update: {
-          amount?: number
-          amount_base?: number
-          created_at?: string
-          id?: string
-          organization_id?: string
-          payment_order_id?: string | null
-          supplier_invoice_id?: string | null
-          supplier_payment_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_payment_allocations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_allocations_payment_order_id_fkey"
-            columns: ["payment_order_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_payment_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_allocations_supplier_invoice_id_fkey"
-            columns: ["supplier_invoice_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_allocations_supplier_payment_id_fkey"
-            columns: ["supplier_payment_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_payments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_payment_orders: {
-        Row: {
-          amount: number
-          approval_status: string
-          approved_at: string | null
-          approved_by: string | null
-          booking_id: string
-          created_at: string
-          currency: string
-          due_date: string | null
-          id: string
-          notes: string | null
-          organization_id: string
-          reference_number: string
-          rejection_reason: string | null
-          service_type: string
-          source_id: string | null
-          source_type: string | null
-          status: string
-          supplier_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount?: number
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          booking_id: string
-          created_at?: string
-          currency?: string
-          due_date?: string | null
-          id?: string
-          notes?: string | null
-          organization_id: string
-          reference_number: string
-          rejection_reason?: string | null
-          service_type: string
-          source_id?: string | null
-          source_type?: string | null
-          status?: string
-          supplier_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          booking_id?: string
-          created_at?: string
-          currency?: string
-          due_date?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          reference_number?: string
-          rejection_reason?: string | null
-          service_type?: string
-          source_id?: string | null
-          source_type?: string | null
-          status?: string
-          supplier_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payment_orders_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_payments: {
-        Row: {
-          amount: number
-          amount_in_egp: number | null
-          booking_id: string | null
-          booking_type: string | null
-          created_at: string | null
-          created_by: string | null
-          currency: string | null
-          exchange_rate: number | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          paid_date: string | null
-          payment_date: string | null
-          payment_method: string | null
-          payment_reference: string | null
-          reference_number: string | null
-          status: string | null
-          supplier_id: string | null
-          treasury_account_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          amount: number
-          amount_in_egp?: number | null
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          exchange_rate?: number | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          paid_date?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_reference?: string | null
-          reference_number?: string | null
-          status?: string | null
-          supplier_id?: string | null
-          treasury_account_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          amount?: number
-          amount_in_egp?: number | null
-          booking_id?: string | null
-          booking_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          currency?: string | null
-          exchange_rate?: number | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          paid_date?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_reference?: string | null
-          reference_number?: string | null
-          status?: string | null
-          supplier_id?: string | null
-          treasury_account_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_payments_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payments_treasury_account_id_fkey"
-            columns: ["treasury_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_rates: {
-        Row: {
-          cancellation_policy: string | null
-          contract_id: string | null
-          cost_price: number
-          created_at: string
-          created_by: string | null
-          currency: string
-          end_date: string
-          id: string
-          is_active: boolean | null
-          is_refundable: boolean | null
-          markup_percentage: number | null
-          max_nights: number | null
-          min_nights: number | null
-          notes: string | null
-          organization_id: string
-          season_name: string | null
-          selling_price: number
-          service_reference: string | null
-          service_type: string
-          start_date: string
-          supplier_id: string
-          updated_at: string
-        }
-        Insert: {
-          cancellation_policy?: string | null
-          contract_id?: string | null
-          cost_price?: number
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          end_date: string
-          id?: string
-          is_active?: boolean | null
-          is_refundable?: boolean | null
-          markup_percentage?: number | null
-          max_nights?: number | null
-          min_nights?: number | null
-          notes?: string | null
-          organization_id: string
-          season_name?: string | null
-          selling_price?: number
-          service_reference?: string | null
-          service_type: string
-          start_date: string
-          supplier_id: string
-          updated_at?: string
-        }
-        Update: {
-          cancellation_policy?: string | null
-          contract_id?: string | null
-          cost_price?: number
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          end_date?: string
-          id?: string
-          is_active?: boolean | null
-          is_refundable?: boolean | null
-          markup_percentage?: number | null
-          max_nights?: number | null
-          min_nights?: number | null
-          notes?: string | null
-          organization_id?: string
-          season_name?: string | null
-          selling_price?: number
-          service_reference?: string | null
-          service_type?: string
-          start_date?: string
-          supplier_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_rates_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_rates_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      supplier_ratings: {
-        Row: {
-          communication: number | null
-          created_at: string | null
-          delivery_time: number | null
-          feedback: string | null
-          id: string
-          organization_id: string
-          overall_rating: number | null
-          price_competitiveness: number | null
-          rated_by: string | null
-          rating_date: string | null
-          service_quality: number | null
-          supplier_id: string
-        }
-        Insert: {
-          communication?: number | null
-          created_at?: string | null
-          delivery_time?: number | null
-          feedback?: string | null
-          id?: string
-          organization_id: string
-          overall_rating?: number | null
-          price_competitiveness?: number | null
-          rated_by?: string | null
-          rating_date?: string | null
-          service_quality?: number | null
-          supplier_id: string
-        }
-        Update: {
-          communication?: number | null
-          created_at?: string | null
-          delivery_time?: number | null
-          feedback?: string | null
-          id?: string
-          organization_id?: string
-          overall_rating?: number | null
-          price_competitiveness?: number | null
-          rated_by?: string | null
-          rating_date?: string | null
-          service_quality?: number | null
-          supplier_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_ratings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      suppliers: {
-        Row: {
-          address: string | null
-          bank_account: string | null
-          bank_name: string | null
-          contact_person: string | null
-          created_at: string | null
-          credit_limit: number | null
-          email: string | null
-          id: string
-          is_active: boolean | null
-          is_demo: boolean
-          name: string
-          notes: string | null
-          organization_id: string | null
-          payment_method_options: Json | null
-          payment_terms: string | null
-          payment_type: string | null
-          phone: string | null
-          rating: number | null
-          supplier_type: string | null
-          tax_number: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          bank_account?: string | null
-          bank_name?: string | null
-          contact_person?: string | null
-          created_at?: string | null
-          credit_limit?: number | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_demo?: boolean
-          name: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_method_options?: Json | null
-          payment_terms?: string | null
-          payment_type?: string | null
-          phone?: string | null
-          rating?: number | null
-          supplier_type?: string | null
-          tax_number?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          bank_account?: string | null
-          bank_name?: string | null
-          contact_person?: string | null
-          created_at?: string | null
-          credit_limit?: number | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_demo?: boolean
-          name?: string
-          notes?: string | null
-          organization_id?: string | null
-          payment_method_options?: Json | null
-          payment_terms?: string | null
-          payment_type?: string | null
-          phone?: string | null
-          rating?: number | null
-          supplier_type?: string | null
-          tax_number?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "suppliers_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      suppressed_emails: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          metadata: Json | null
-          reason: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          metadata?: Json | null
-          reason: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          metadata?: Json | null
-          reason?: string
-        }
-        Relationships: []
-      }
-      system_settings: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_public: boolean | null
-          setting_key: string
-          setting_type: string | null
-          setting_value: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_public?: boolean | null
-          setting_key: string
-          setting_type?: string | null
-          setting_value?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_public?: boolean | null
-          setting_key?: string
-          setting_type?: string | null
-          setting_value?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      template_versions: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          organization_id: string | null
-          snapshot: Json
-          template_id: string
-          template_kind: string
-          version_no: number
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          snapshot: Json
-          template_id: string
-          template_kind: string
-          version_no: number
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string | null
-          snapshot?: Json
-          template_id?: string
-          template_kind?: string
-          version_no?: number
-        }
-        Relationships: []
-      }
-      transport_bookings: {
-        Row: {
-          additional_costs: number | null
-          arrival_date: string | null
-          arrival_time: string | null
-          booking_agent_id: string | null
-          booking_agent_name: string | null
-          booking_reference: string
-          cost_per_trip: number | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string
-          departure_date: string
-          departure_time: string | null
-          driver_name: string | null
-          driver_phone: string | null
-          dropoff_location: string | null
-          employee_id: string | null
-          exchange_rate_to_egp: number | null
-          id: string
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          number_of_passengers: number | null
-          organization_id: string | null
-          paid_amount: number | null
-          payment_due_date: string | null
-          payment_method: string | null
-          pickup_location: string | null
-          quote_id: string | null
-          remaining_amount: number | null
-          route_id: string | null
-          selling_price_per_trip: number | null
-          special_requests: string | null
-          status_id: string | null
-          supplier_cost: number | null
-          supplier_cost_egp: number | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          total_cost: number | null
-          total_cost_egp: number | null
-          total_profit: number | null
-          updated_at: string | null
-          vehicle_plate_number: string | null
-          vehicle_type_id: string | null
-          voucher_sent: boolean | null
-          voucher_sent_date: string | null
-        }
-        Insert: {
-          additional_costs?: number | null
-          arrival_date?: string | null
-          arrival_time?: string | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_reference?: string
-          cost_per_trip?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name: string
-          departure_date: string
-          departure_time?: string | null
-          driver_name?: string | null
-          driver_phone?: string | null
-          dropoff_location?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          id?: string
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          number_of_passengers?: number | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          pickup_location?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          route_id?: string | null
-          selling_price_per_trip?: number | null
-          special_requests?: string | null
-          status_id?: string | null
-          supplier_cost?: number | null
-          supplier_cost_egp?: number | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          vehicle_plate_number?: string | null
-          vehicle_type_id?: string | null
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Update: {
-          additional_costs?: number | null
-          arrival_date?: string | null
-          arrival_time?: string | null
-          booking_agent_id?: string | null
-          booking_agent_name?: string | null
-          booking_reference?: string
-          cost_per_trip?: number | null
-          created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          customer_name?: string
-          departure_date?: string
-          departure_time?: string | null
-          driver_name?: string | null
-          driver_phone?: string | null
-          dropoff_location?: string | null
-          employee_id?: string | null
-          exchange_rate_to_egp?: number | null
-          id?: string
-          invoice_sent?: boolean | null
-          invoice_sent_date?: string | null
-          number_of_passengers?: number | null
-          organization_id?: string | null
-          paid_amount?: number | null
-          payment_due_date?: string | null
-          payment_method?: string | null
-          pickup_location?: string | null
-          quote_id?: string | null
-          remaining_amount?: number | null
-          route_id?: string | null
-          selling_price_per_trip?: number | null
-          special_requests?: string | null
-          status_id?: string | null
-          supplier_cost?: number | null
-          supplier_cost_egp?: number | null
-          supplier_id?: string | null
-          supplier_name?: string | null
-          supplier_payment_sent?: boolean | null
-          supplier_payment_sent_date?: string | null
-          total_cost?: number | null
-          total_cost_egp?: number | null
-          total_profit?: number | null
-          updated_at?: string | null
-          vehicle_plate_number?: string | null
-          vehicle_type_id?: string | null
-          voucher_sent?: boolean | null
-          voucher_sent_date?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transport_bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "transport_routes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transport_bookings_vehicle_type_id_fkey"
-            columns: ["vehicle_type_id"]
-            isOneToOne: false
-            referencedRelation: "vehicle_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      transport_routes: {
-        Row: {
-          arrival_city: string
-          created_at: string | null
-          departure_city: string
-          distance_km: number | null
-          estimated_duration_hours: number | null
-          id: string
-          is_active: boolean | null
-          route_name: string
-          route_name_ar: string | null
-          route_type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          arrival_city: string
-          created_at?: string | null
-          departure_city: string
-          distance_km?: number | null
-          estimated_duration_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          route_name: string
-          route_name_ar?: string | null
-          route_type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          arrival_city?: string
-          created_at?: string | null
-          departure_city?: string
-          distance_km?: number | null
-          estimated_duration_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          route_name?: string
-          route_name_ar?: string | null
-          route_type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      user_creation_requests: {
-        Row: {
-          approved_by: string | null
-          created_at: string | null
-          department: string | null
-          email: string
-          full_name: string
-          id: string
-          phone: string | null
-          requested_by: string | null
-          role: string | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          approved_by?: string | null
-          created_at?: string | null
-          department?: string | null
-          email: string
-          full_name: string
-          id?: string
-          phone?: string | null
-          requested_by?: string | null
-          role?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          approved_by?: string | null
-          created_at?: string | null
-          department?: string | null
-          email?: string
-          full_name?: string
-          id?: string
-          phone?: string | null
-          requested_by?: string | null
-          role?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      vehicle_types: {
-        Row: {
-          capacity_passengers: number | null
-          created_at: string | null
-          description: string | null
-          features: Json | null
-          fuel_type: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          name_ar: string | null
-          transmission_type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          capacity_passengers?: number | null
-          created_at?: string | null
-          description?: string | null
-          features?: Json | null
-          fuel_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          name_ar?: string | null
-          transmission_type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          capacity_passengers?: number | null
-          created_at?: string | null
-          description?: string | null
-          features?: Json | null
-          fuel_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          name_ar?: string | null
-          transmission_type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      whatsapp_automation_executions: {
-        Row: {
-          actions_executed: Json | null
-          conversation_id: string | null
-          created_at: string
-          error_message: string | null
-          execution_time_ms: number | null
-          id: string
-          message_id: string | null
-          organization_id: string
-          rule_id: string
-          status: string
-          trigger_type: string
-        }
-        Insert: {
-          actions_executed?: Json | null
-          conversation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          execution_time_ms?: number | null
-          id?: string
-          message_id?: string | null
-          organization_id: string
-          rule_id: string
-          status: string
-          trigger_type: string
-        }
-        Update: {
-          actions_executed?: Json | null
-          conversation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          execution_time_ms?: number | null
-          id?: string
-          message_id?: string | null
-          organization_id?: string
-          rule_id?: string
-          status?: string
-          trigger_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_automation_executions_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_automation_executions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_automation_executions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_automation_executions_rule_id_fkey"
-            columns: ["rule_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_automation_rules_v2"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_automation_rules_v2: {
-        Row: {
-          actions: Json
-          conditions: Json
-          created_at: string
-          created_by: string | null
-          description: string | null
-          execution_count: number
-          id: string
-          is_active: boolean
-          last_executed_at: string | null
-          name: string
-          organization_id: string
-          priority: number
-          trigger_config: Json
-          trigger_type: string
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          actions?: Json
-          conditions?: Json
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          execution_count?: number
-          id?: string
-          is_active?: boolean
-          last_executed_at?: string | null
-          name: string
-          organization_id: string
-          priority?: number
-          trigger_config?: Json
-          trigger_type: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          actions?: Json
-          conditions?: Json
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          execution_count?: number
-          id?: string
-          is_active?: boolean
-          last_executed_at?: string | null
-          name?: string
-          organization_id?: string
-          priority?: number
-          trigger_config?: Json
-          trigger_type?: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_automation_rules_v2_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_automation_rules_v2_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_broadcast_recipients: {
-        Row: {
-          broadcast_id: string
-          created_at: string
-          customer_id: string | null
-          customer_name: string | null
-          delivered_at: string | null
-          error_code: string | null
-          error_details: Json | null
-          error_message: string | null
-          failed_at: string | null
-          id: string
-          message_id: string | null
-          organization_id: string
-          personalization: Json | null
-          phone_number: string
-          provider_message_id: string | null
-          read_at: string | null
-          sent_at: string | null
-          status: string
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          broadcast_id: string
-          created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
-          delivered_at?: string | null
-          error_code?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          failed_at?: string | null
-          id?: string
-          message_id?: string | null
-          organization_id: string
-          personalization?: Json | null
-          phone_number: string
-          provider_message_id?: string | null
-          read_at?: string | null
-          sent_at?: string | null
-          status?: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          broadcast_id?: string
-          created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
-          delivered_at?: string | null
-          error_code?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          failed_at?: string | null
-          id?: string
-          message_id?: string | null
-          organization_id?: string
-          personalization?: Json | null
-          phone_number?: string
-          provider_message_id?: string | null
-          read_at?: string | null
-          sent_at?: string | null
-          status?: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_broadcast_recipients_broadcast_id_fkey"
-            columns: ["broadcast_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_broadcasts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcast_recipients_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcast_recipients_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcast_recipients_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcast_recipients_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_broadcasts: {
-        Row: {
-          audience_filter: Json | null
-          audience_type: string
-          completed_at: string | null
-          created_at: string
-          created_by: string | null
-          delivered_count: number
-          description: string | null
-          failed_count: number
-          id: string
-          last_error: string | null
-          locked_at: string | null
-          message_body: string | null
-          name: string
-          organization_id: string
-          read_count: number
-          scheduled_at: string | null
-          sent_count: number
-          skipped_count: number
-          started_at: string | null
-          status: string
-          template_id: string | null
-          template_variables: Json
-          total_recipients: number
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          audience_filter?: Json | null
-          audience_type?: string
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          delivered_count?: number
-          description?: string | null
-          failed_count?: number
-          id?: string
-          last_error?: string | null
-          locked_at?: string | null
-          message_body?: string | null
-          name: string
-          organization_id: string
-          read_count?: number
-          scheduled_at?: string | null
-          sent_count?: number
-          skipped_count?: number
-          started_at?: string | null
-          status?: string
-          template_id?: string | null
-          template_variables?: Json
-          total_recipients?: number
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          audience_filter?: Json | null
-          audience_type?: string
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          delivered_count?: number
-          description?: string | null
-          failed_count?: number
-          id?: string
-          last_error?: string | null
-          locked_at?: string | null
-          message_body?: string | null
-          name?: string
-          organization_id?: string
-          read_count?: number
-          scheduled_at?: string | null
-          sent_count?: number
-          skipped_count?: number
-          started_at?: string | null
-          status?: string
-          template_id?: string | null
-          template_variables?: Json
-          total_recipients?: number
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_broadcasts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcasts_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_templates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_broadcasts_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_chatbot_interactions: {
-        Row: {
-          bot_reply: string | null
-          conversation_id: string | null
-          created_at: string
-          error_message: string | null
-          handoff_reason: string | null
-          id: string
-          latency_ms: number | null
-          message_id: string | null
-          model_used: string | null
-          organization_id: string
-          user_message: string | null
-          was_handed_off: boolean
-        }
-        Insert: {
-          bot_reply?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          handoff_reason?: string | null
-          id?: string
-          latency_ms?: number | null
-          message_id?: string | null
-          model_used?: string | null
-          organization_id: string
-          user_message?: string | null
-          was_handed_off?: boolean
-        }
-        Update: {
-          bot_reply?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          handoff_reason?: string | null
-          id?: string
-          latency_ms?: number | null
-          message_id?: string | null
-          model_used?: string | null
-          organization_id?: string
-          user_message?: string | null
-          was_handed_off?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_chatbot_interactions_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_chatbot_interactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_chatbot_interactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_chatbot_settings: {
-        Row: {
-          auto_handoff_on_error: boolean
-          bot_name: string
-          created_at: string
-          handoff_keywords: Json
-          id: string
-          is_enabled: boolean
-          max_bot_replies: number
-          model: string
-          organization_id: string
-          respond_only_outside_hours: boolean
-          system_prompt: string
-          updated_at: string
-          welcome_message: string | null
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          auto_handoff_on_error?: boolean
-          bot_name?: string
-          created_at?: string
-          handoff_keywords?: Json
-          id?: string
-          is_enabled?: boolean
-          max_bot_replies?: number
-          model?: string
-          organization_id: string
-          respond_only_outside_hours?: boolean
-          system_prompt?: string
-          updated_at?: string
-          welcome_message?: string | null
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          auto_handoff_on_error?: boolean
-          bot_name?: string
-          created_at?: string
-          handoff_keywords?: Json
-          id?: string
-          is_enabled?: boolean
-          max_bot_replies?: number
-          model?: string
-          organization_id?: string
-          respond_only_outside_hours?: boolean
-          system_prompt?: string
-          updated_at?: string
-          welcome_message?: string | null
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_chatbot_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_chatbot_settings_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_connection_events: {
-        Row: {
-          created_at: string
-          event_type: string
-          id: string
-          organization_id: string | null
-          payload: Json | null
-        }
-        Insert: {
-          created_at?: string
-          event_type: string
-          id?: string
-          organization_id?: string | null
-          payload?: Json | null
-        }
-        Update: {
-          created_at?: string
-          event_type?: string
-          id?: string
-          organization_id?: string | null
-          payload?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_connection_events_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_conversations: {
-        Row: {
-          ai_summary: string | null
-          ai_summary_updated_at: string | null
-          assigned_to: string | null
-          assignment_reason: string | null
-          auto_assigned: boolean | null
-          category: string | null
-          closed_at: string | null
-          closed_by: string | null
-          created_at: string | null
-          customer_id: string | null
-          first_response_at: string | null
-          id: string
-          is_starred: boolean
-          last_activity_at: string | null
-          last_message_at: string | null
-          last_note_preview: string | null
-          organization_id: string | null
-          phone_number: string
-          pinned_booking_id: string | null
-          priority: string | null
-          resolved_at: string | null
-          sla_breached_first_response: boolean
-          sla_breached_resolution: boolean
-          sla_first_response_deadline: string | null
-          status: string | null
-          updated_at: string | null
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          ai_summary?: string | null
-          ai_summary_updated_at?: string | null
-          assigned_to?: string | null
-          assignment_reason?: string | null
-          auto_assigned?: boolean | null
-          category?: string | null
-          closed_at?: string | null
-          closed_by?: string | null
-          created_at?: string | null
-          customer_id?: string | null
-          first_response_at?: string | null
-          id?: string
-          is_starred?: boolean
-          last_activity_at?: string | null
-          last_message_at?: string | null
-          last_note_preview?: string | null
-          organization_id?: string | null
-          phone_number: string
-          pinned_booking_id?: string | null
-          priority?: string | null
-          resolved_at?: string | null
-          sla_breached_first_response?: boolean
-          sla_breached_resolution?: boolean
-          sla_first_response_deadline?: string | null
-          status?: string | null
-          updated_at?: string | null
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          ai_summary?: string | null
-          ai_summary_updated_at?: string | null
-          assigned_to?: string | null
-          assignment_reason?: string | null
-          auto_assigned?: boolean | null
-          category?: string | null
-          closed_at?: string | null
-          closed_by?: string | null
-          created_at?: string | null
-          customer_id?: string | null
-          first_response_at?: string | null
-          id?: string
-          is_starred?: boolean
-          last_activity_at?: string | null
-          last_message_at?: string | null
-          last_note_preview?: string | null
-          organization_id?: string | null
-          phone_number?: string
-          pinned_booking_id?: string | null
-          priority?: string | null
-          resolved_at?: string | null
-          sla_breached_first_response?: boolean
-          sla_breached_resolution?: boolean
-          sla_first_response_deadline?: string | null
-          status?: string | null
-          updated_at?: string | null
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_wa_conv_assigned"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
-            columns: ["pinned_booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
-            columns: ["pinned_booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
-            columns: ["pinned_booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
-            columns: ["pinned_booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_pinned_booking_id_fkey"
-            columns: ["pinned_booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_conversations_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_followups: {
-        Row: {
-          assigned_to: string | null
-          attempt_count: number
-          completed_at: string | null
-          completed_by: string | null
-          conversation_id: string
-          created_at: string
-          created_by: string
-          id: string
-          last_error: string | null
-          locked_at: string | null
-          message_body: string | null
-          mode: string
-          note: string | null
-          organization_id: string
-          remind_at: string
-          sent_at: string | null
-          sent_message_id: string | null
-          status: string
-          template_id: string | null
-          template_variables: Json
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          assigned_to?: string | null
-          attempt_count?: number
-          completed_at?: string | null
-          completed_by?: string | null
-          conversation_id: string
-          created_at?: string
-          created_by: string
-          id?: string
-          last_error?: string | null
-          locked_at?: string | null
-          message_body?: string | null
-          mode?: string
-          note?: string | null
-          organization_id: string
-          remind_at: string
-          sent_at?: string | null
-          sent_message_id?: string | null
-          status?: string
-          template_id?: string | null
-          template_variables?: Json
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          assigned_to?: string | null
-          attempt_count?: number
-          completed_at?: string | null
-          completed_by?: string | null
-          conversation_id?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          last_error?: string | null
-          locked_at?: string | null
-          message_body?: string | null
-          mode?: string
-          note?: string | null
-          organization_id?: string
-          remind_at?: string
-          sent_at?: string | null
-          sent_message_id?: string | null
-          status?: string
-          template_id?: string | null
-          template_variables?: Json
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_followups_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_followups_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_templates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_followups_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_messages: {
-        Row: {
-          broadcast_id: string | null
-          content: string | null
-          conversation_id: string | null
-          correlation_id: string | null
-          created_at: string | null
-          delivered_at: string | null
-          direction: string
-          error_code: string | null
-          error_details: Json | null
-          error_message: string | null
-          followup_id: string | null
-          id: string
-          idempotency_key: string | null
-          media_caption: string | null
-          media_download_attempts: number | null
-          media_download_error: string | null
-          media_download_status: string | null
-          media_duration_seconds: number | null
-          media_file_name: string | null
-          media_last_attempt_at: string | null
-          media_mime_type: string | null
-          media_provider_id: string | null
-          media_storage_path: string | null
-          media_url: string | null
-          message_id: string | null
-          message_type: string | null
-          organization_id: string | null
-          provider_error_code: string | null
-          provider_error_message: string | null
-          provider_response: Json | null
-          read_at: string | null
-          sent_at: string | null
-          sent_by: string | null
-          status: string | null
-          template_language: string | null
-          template_name: string | null
-          template_parameters: Json | null
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          broadcast_id?: string | null
-          content?: string | null
-          conversation_id?: string | null
-          correlation_id?: string | null
-          created_at?: string | null
-          delivered_at?: string | null
-          direction?: string
-          error_code?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          followup_id?: string | null
-          id?: string
-          idempotency_key?: string | null
-          media_caption?: string | null
-          media_download_attempts?: number | null
-          media_download_error?: string | null
-          media_download_status?: string | null
-          media_duration_seconds?: number | null
-          media_file_name?: string | null
-          media_last_attempt_at?: string | null
-          media_mime_type?: string | null
-          media_provider_id?: string | null
-          media_storage_path?: string | null
-          media_url?: string | null
-          message_id?: string | null
-          message_type?: string | null
-          organization_id?: string | null
-          provider_error_code?: string | null
-          provider_error_message?: string | null
-          provider_response?: Json | null
-          read_at?: string | null
-          sent_at?: string | null
-          sent_by?: string | null
-          status?: string | null
-          template_language?: string | null
-          template_name?: string | null
-          template_parameters?: Json | null
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          broadcast_id?: string | null
-          content?: string | null
-          conversation_id?: string | null
-          correlation_id?: string | null
-          created_at?: string | null
-          delivered_at?: string | null
-          direction?: string
-          error_code?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          followup_id?: string | null
-          id?: string
-          idempotency_key?: string | null
-          media_caption?: string | null
-          media_download_attempts?: number | null
-          media_download_error?: string | null
-          media_download_status?: string | null
-          media_duration_seconds?: number | null
-          media_file_name?: string | null
-          media_last_attempt_at?: string | null
-          media_mime_type?: string | null
-          media_provider_id?: string | null
-          media_storage_path?: string | null
-          media_url?: string | null
-          message_id?: string | null
-          message_type?: string | null
-          organization_id?: string | null
-          provider_error_code?: string | null
-          provider_error_message?: string | null
-          provider_response?: Json | null
-          read_at?: string | null
-          sent_at?: string | null
-          sent_by?: string | null
-          status?: string | null
-          template_language?: string | null
-          template_name?: string | null
-          template_parameters?: Json | null
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_messages_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_sessions: {
-        Row: {
-          active_conversations_count: number | null
-          auto_assignment_enabled: boolean | null
-          created_at: string | null
-          employee_id: string | null
-          id: string
-          last_activity: string | null
-          max_conversations: number | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          active_conversations_count?: number | null
-          auto_assignment_enabled?: boolean | null
-          created_at?: string | null
-          employee_id?: string | null
-          id?: string
-          last_activity?: string | null
-          max_conversations?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          active_conversations_count?: number | null
-          auto_assignment_enabled?: boolean | null
-          created_at?: string | null
-          employee_id?: string | null
-          id?: string
-          last_activity?: string | null
-          max_conversations?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      whatsapp_settings: {
-        Row: {
-          access_token: string | null
-          api_version: string | null
-          auto_assignment_enabled: boolean | null
-          business_account_id: string | null
-          business_description: string | null
-          business_email: string | null
-          business_name: string | null
-          business_website: string | null
-          connected_at: string | null
-          connection_method: string | null
-          created_at: string | null
-          disconnected_at: string | null
-          display_phone_number: string | null
-          id: string
-          is_active: boolean | null
-          is_default: boolean
-          label: string | null
-          meta_user_id: string | null
-          onboarding_status: string | null
-          organization_id: string | null
-          phone_number_id: string | null
-          rate_limit_per_minute: number | null
-          token_expires_at: string | null
-          updated_at: string | null
-          waba_id: string | null
-          webhook_url: string | null
-          webhook_verify_token: string | null
-        }
-        Insert: {
-          access_token?: string | null
-          api_version?: string | null
-          auto_assignment_enabled?: boolean | null
-          business_account_id?: string | null
-          business_description?: string | null
-          business_email?: string | null
-          business_name?: string | null
-          business_website?: string | null
-          connected_at?: string | null
-          connection_method?: string | null
-          created_at?: string | null
-          disconnected_at?: string | null
-          display_phone_number?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean
-          label?: string | null
-          meta_user_id?: string | null
-          onboarding_status?: string | null
-          organization_id?: string | null
-          phone_number_id?: string | null
-          rate_limit_per_minute?: number | null
-          token_expires_at?: string | null
-          updated_at?: string | null
-          waba_id?: string | null
-          webhook_url?: string | null
-          webhook_verify_token?: string | null
-        }
-        Update: {
-          access_token?: string | null
-          api_version?: string | null
-          auto_assignment_enabled?: boolean | null
-          business_account_id?: string | null
-          business_description?: string | null
-          business_email?: string | null
-          business_name?: string | null
-          business_website?: string | null
-          connected_at?: string | null
-          connection_method?: string | null
-          created_at?: string | null
-          disconnected_at?: string | null
-          display_phone_number?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean
-          label?: string | null
-          meta_user_id?: string | null
-          onboarding_status?: string | null
-          organization_id?: string | null
-          phone_number_id?: string | null
-          rate_limit_per_minute?: number | null
-          token_expires_at?: string | null
-          updated_at?: string | null
-          waba_id?: string | null
-          webhook_url?: string | null
-          webhook_verify_token?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_sla_settings: {
-        Row: {
-          auto_reply_enabled: boolean
-          business_hours: Json
-          created_at: string
-          id: string
-          organization_id: string
-          out_of_hours_message: string | null
-          sla_first_response_minutes: number
-          sla_resolution_minutes: number
-          timezone: string
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          auto_reply_enabled?: boolean
-          business_hours?: Json
-          created_at?: string
-          id?: string
-          organization_id: string
-          out_of_hours_message?: string | null
-          sla_first_response_minutes?: number
-          sla_resolution_minutes?: number
-          timezone?: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          auto_reply_enabled?: boolean
-          business_hours?: Json
-          created_at?: string
-          id?: string
-          organization_id?: string
-          out_of_hours_message?: string | null
-          sla_first_response_minutes?: number
-          sla_resolution_minutes?: number
-          timezone?: string
-          updated_at?: string
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_sla_settings_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_template_analytics: {
-        Row: {
-          created_at: string
-          date: string
-          delivered_count: number
-          failed_count: number
-          id: string
-          organization_id: string
-          read_count: number
-          replied_count: number
-          sent_count: number
-          template_id: string | null
-          template_language: string | null
-          template_name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          date?: string
-          delivered_count?: number
-          failed_count?: number
-          id?: string
-          organization_id: string
-          read_count?: number
-          replied_count?: number
-          sent_count?: number
-          template_id?: string | null
-          template_language?: string | null
-          template_name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          date?: string
-          delivered_count?: number
-          failed_count?: number
-          id?: string
-          organization_id?: string
-          read_count?: number
-          replied_count?: number
-          sent_count?: number
-          template_id?: string | null
-          template_language?: string | null
-          template_name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_template_analytics_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_templates: {
-        Row: {
-          approval_status: string | null
-          approved_at: string | null
-          approved_by: string | null
-          body_text: string
-          body_variable_count: number
-          buttons: Json | null
-          category: string | null
-          category_key: string | null
-          components: Json | null
-          created_at: string | null
-          description: string | null
-          footer_text: string | null
-          header_format: string | null
-          header_text: string | null
-          header_type: string | null
-          header_variable_count: number
-          id: string
-          is_library_seed: boolean
-          is_org_default: boolean
-          language: string | null
-          last_used_at: string | null
-          library_source_key: string | null
-          locale: string
-          meta_rejection_reason: string | null
-          meta_status: string | null
-          meta_synced_at: string | null
-          meta_template_id: string | null
-          name: string
-          organization_id: string | null
-          preview_variables: Json | null
-          rejection_reason: string | null
-          status: string | null
-          subcategory: string | null
-          tags: string[] | null
-          template_id: string | null
-          updated_at: string | null
-          usage_count: number
-          variable_schema: Json | null
-          variables: Json | null
-          whatsapp_settings_id: string | null
-        }
-        Insert: {
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          body_text: string
-          body_variable_count?: number
-          buttons?: Json | null
-          category?: string | null
-          category_key?: string | null
-          components?: Json | null
-          created_at?: string | null
-          description?: string | null
-          footer_text?: string | null
-          header_format?: string | null
-          header_text?: string | null
-          header_type?: string | null
-          header_variable_count?: number
-          id?: string
-          is_library_seed?: boolean
-          is_org_default?: boolean
-          language?: string | null
-          last_used_at?: string | null
-          library_source_key?: string | null
-          locale?: string
-          meta_rejection_reason?: string | null
-          meta_status?: string | null
-          meta_synced_at?: string | null
-          meta_template_id?: string | null
-          name: string
-          organization_id?: string | null
-          preview_variables?: Json | null
-          rejection_reason?: string | null
-          status?: string | null
-          subcategory?: string | null
-          tags?: string[] | null
-          template_id?: string | null
-          updated_at?: string | null
-          usage_count?: number
-          variable_schema?: Json | null
-          variables?: Json | null
-          whatsapp_settings_id?: string | null
-        }
-        Update: {
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          body_text?: string
-          body_variable_count?: number
-          buttons?: Json | null
-          category?: string | null
-          category_key?: string | null
-          components?: Json | null
-          created_at?: string | null
-          description?: string | null
-          footer_text?: string | null
-          header_format?: string | null
-          header_text?: string | null
-          header_type?: string | null
-          header_variable_count?: number
-          id?: string
-          is_library_seed?: boolean
-          is_org_default?: boolean
-          language?: string | null
-          last_used_at?: string | null
-          library_source_key?: string | null
-          locale?: string
-          meta_rejection_reason?: string | null
-          meta_status?: string | null
-          meta_synced_at?: string | null
-          meta_template_id?: string | null
-          name?: string
-          organization_id?: string | null
-          preview_variables?: Json | null
-          rejection_reason?: string | null
-          status?: string | null
-          subcategory?: string | null
-          tags?: string[] | null
-          template_id?: string | null
-          updated_at?: string | null
-          usage_count?: number
-          variable_schema?: Json | null
-          variables?: Json | null
-          whatsapp_settings_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_templates_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_templates_whatsapp_settings_id_fkey"
-            columns: ["whatsapp_settings_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_settings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      white_label_settings: {
-        Row: {
-          accent_color: string | null
-          brand_name: string | null
-          created_at: string
-          custom_domain: string | null
-          email_from_name: string | null
-          favicon_url: string | null
-          logo_url: string | null
-          organization_id: string
-          primary_color: string | null
-          support_email: string | null
-          updated_at: string
-        }
-        Insert: {
-          accent_color?: string | null
-          brand_name?: string | null
-          created_at?: string
-          custom_domain?: string | null
-          email_from_name?: string | null
-          favicon_url?: string | null
-          logo_url?: string | null
-          organization_id: string
-          primary_color?: string | null
-          support_email?: string | null
-          updated_at?: string
-        }
-        Update: {
-          accent_color?: string | null
-          brand_name?: string | null
-          created_at?: string
-          custom_domain?: string | null
-          email_from_name?: string | null
-          favicon_url?: string | null
-          logo_url?: string | null
-          organization_id?: string
-          primary_color?: string | null
-          support_email?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "white_label_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      workflow_definitions: {
-        Row: {
-          aggregate_type: string
-          created_at: string
-          id: string
-          is_active: boolean
-          key: string
-          name: string
-        }
-        Insert: {
-          aggregate_type: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          key: string
-          name: string
-        }
-        Update: {
-          aggregate_type?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          key?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      workflow_rule_runs: {
-        Row: {
-          duration_ms: number | null
-          error: string | null
-          event_id: string | null
-          id: string
-          organization_id: string | null
-          ran_at: string
-          rule_id: string
-          status: string
-        }
-        Insert: {
-          duration_ms?: number | null
-          error?: string | null
-          event_id?: string | null
-          id?: string
-          organization_id?: string | null
-          ran_at?: string
-          rule_id: string
-          status: string
-        }
-        Update: {
-          duration_ms?: number | null
-          error?: string | null
-          event_id?: string | null
-          id?: string
-          organization_id?: string | null
-          ran_at?: string
-          rule_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflow_rule_runs_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "domain_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workflow_rule_runs_rule_id_fkey"
-            columns: ["rule_id"]
-            isOneToOne: false
-            referencedRelation: "workflow_rules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      workflow_rules: {
-        Row: {
-          action: Json
-          condition: Json
-          created_at: string
-          description: string | null
-          event_type: string
-          failure_count: number
-          id: string
-          is_active: boolean
-          last_duration_ms: number | null
-          last_run_at: string | null
-          name: string
-          organization_id: string | null
-          priority: number
-          success_count: number
-          updated_at: string
-        }
-        Insert: {
-          action?: Json
-          condition?: Json
-          created_at?: string
-          description?: string | null
-          event_type: string
-          failure_count?: number
-          id?: string
-          is_active?: boolean
-          last_duration_ms?: number | null
-          last_run_at?: string | null
-          name: string
-          organization_id?: string | null
-          priority?: number
-          success_count?: number
-          updated_at?: string
-        }
-        Update: {
-          action?: Json
-          condition?: Json
-          created_at?: string
-          description?: string | null
-          event_type?: string
-          failure_count?: number
-          id?: string
-          is_active?: boolean
-          last_duration_ms?: number | null
-          last_run_at?: string | null
-          name?: string
-          organization_id?: string | null
-          priority?: number
-          success_count?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflow_rules_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      workflow_stages: {
-        Row: {
-          category: string | null
-          definition_id: string
-          id: string
-          key: string
-          label: string
-          order_index: number
-          required_fields: Json
-        }
-        Insert: {
-          category?: string | null
-          definition_id: string
-          id?: string
-          key: string
-          label: string
-          order_index: number
-          required_fields?: Json
-        }
-        Update: {
-          category?: string | null
-          definition_id?: string
-          id?: string
-          key?: string
-          label?: string
-          order_index?: number
-          required_fields?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflow_stages_definition_id_fkey"
-            columns: ["definition_id"]
-            isOneToOne: false
-            referencedRelation: "workflow_definitions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      zatca_invoice_data: {
-        Row: {
-          created_at: string
-          id: string
-          invoice_hash: string | null
-          invoice_id: string
-          organization_id: string
-          qr_code: string | null
-          status: string
-          submission_response: Json | null
-          submitted_at: string | null
-          updated_at: string
-          xml_content: string | null
-          zatca_uuid: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          invoice_hash?: string | null
-          invoice_id: string
-          organization_id: string
-          qr_code?: string | null
-          status?: string
-          submission_response?: Json | null
-          submitted_at?: string | null
-          updated_at?: string
-          xml_content?: string | null
-          zatca_uuid?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          invoice_hash?: string | null
-          invoice_id?: string
-          organization_id?: string
-          qr_code?: string | null
-          status?: string
-          submission_response?: Json | null
-          submitted_at?: string | null
-          updated_at?: string
-          xml_content?: string | null
-          zatca_uuid?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zatca_invoice_data_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: true
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "zatca_invoice_data_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      car_rentals_unified: {
-        Row: {
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          daily_rate: number | null
-          employee_id: string | null
-          id: string | null
-          insurance_included: boolean | null
-          invoice_sent: boolean | null
-          organization_id: string | null
-          paid_amount: number | null
-          pickup_location: string | null
-          remaining_amount: number | null
-          rental_duration_days: number | null
-          rental_end_date: string | null
-          rental_reference: string | null
-          rental_start_date: string | null
-          return_location: string | null
-          special_requirements: string | null
-          status_id: string | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_total_cost: number | null
-          total_profit: number | null
-          total_rental_cost: number | null
-          updated_at: string | null
-          vehicle_type_name: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      flight_bookings_unified: {
-        Row: {
-          airline_name: string | null
-          arrival_airport_code: string | null
-          arrival_date: string | null
-          arrival_time: string | null
-          booking_agent_name: string | null
-          booking_reference: string | null
-          confirmation_number: string | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          departure_airport_code: string | null
-          departure_date: string | null
-          departure_time: string | null
-          employee_id: string | null
-          flight_class_name: string | null
-          flight_number: string | null
-          id: string | null
-          invoice_sent: boolean | null
-          is_round_trip: boolean | null
-          meal_preferences: string | null
-          number_of_passengers: number | null
-          organization_id: string | null
-          paid_amount: number | null
-          remaining_amount: number | null
-          seat_preferences: string | null
-          special_requests: string | null
-          status_id: string | null
-          supplier_cost: number | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          taxes_and_fees: number | null
-          ticket_number: string | null
-          ticket_price_per_person: number | null
-          total_cost: number | null
-          total_profit: number | null
-          updated_at: string | null
-          voucher_sent: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hotel_bookings_unified: {
-        Row: {
-          booking_agent_name: string | null
-          booking_date: string | null
-          booking_reference_supplier: string | null
-          cancellation_policy: string | null
-          check_in_date: string | null
-          check_out_date: string | null
-          children_ages: string | null
-          cost_per_night: number | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          destination_city: string | null
-          employee_id: string | null
-          hotel_name: string | null
-          hotel_star_rating: number | null
-          id: string | null
-          internal_booking_number: string | null
-          internal_notes: string | null
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          meal_plan: string | null
-          number_of_adults: number | null
-          number_of_children: number | null
-          number_of_nights: number | null
-          number_of_rooms: number | null
-          organization_id: string | null
-          paid_amount: number | null
-          remaining_amount: number | null
-          room_type: string | null
-          selling_price_per_night: number | null
-          status_id: string | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          total_cost_customer: number | null
-          total_cost_supplier: number | null
-          total_profit: number | null
-          updated_at: string | null
-          voucher_sent: boolean | null
-          voucher_sent_date: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      transport_bookings_unified: {
-        Row: {
-          booking_reference: string | null
-          created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          customer_name: string | null
-          departure_date: string | null
-          departure_time: string | null
-          driver_name: string | null
-          driver_phone: string | null
-          dropoff_location: string | null
-          employee_id: string | null
-          id: string | null
-          invoice_sent: boolean | null
-          invoice_sent_date: string | null
-          number_of_passengers: number | null
-          organization_id: string | null
-          paid_amount: number | null
-          pickup_location: string | null
-          remaining_amount: number | null
-          route_name: string | null
-          special_requests: string | null
-          status_id: string | null
-          supplier_cost: number | null
-          supplier_id: string | null
-          supplier_name: string | null
-          supplier_payment_sent: boolean | null
-          supplier_payment_sent_date: string | null
-          total_cost: number | null
-          total_profit: number | null
-          updated_at: string | null
-          vehicle_plate_number: string | null
-          vehicle_type_name: string | null
-          voucher_sent: boolean | null
-          voucher_sent_date: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "booking_statuses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Functions: {
-      _can_manage_refunds: { Args: { _org_id: string }; Returns: boolean }
-      _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
-      _module_pulse_window: {
-        Args: { p_from: string; p_org: string; p_to: string }
-        Returns: Json
-      }
-      _next_entry_number: { Args: { _org: string }; Returns: string }
-      _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
-      _render_template: {
-        Args: { _text: string; _vars: Json }
-        Returns: string
-      }
-      _resolve_account: {
-        Args: { _code: string; _org: string }
-        Returns: string
-      }
-      _workflow_check_condition: {
-        Args: { cond: Json; ctx: Json }
-        Returns: boolean
-      }
-      _workflow_get: { Args: { path: string; payload: Json }; Returns: Json }
-      _workflow_run_step: {
-        Args: {
-          p_event: Database["public"]["Tables"]["domain_events"]["Row"]
-          p_rule_id: string
-          step: Json
-        }
-        Returns: undefined
-      }
-      accept_invitation: { Args: { _token: string }; Returns: Json }
-      activate_subscription_from_paymob: {
-        Args: { _paymob_transaction_id: string }
-        Returns: boolean
-      }
-      advance_workflow: {
-        Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
-        Returns: Json
-      }
-      approve_refund_request: {
-        Args: { _approve?: boolean; _reason?: string; _refund_id: string }
-        Returns: undefined
-      }
-      approve_supplier_payment_order: {
-        Args: { _approve?: boolean; _po_id: string; _reason?: string }
-        Returns: undefined
-      }
-      audit_historical_gaps: {
-        Args: { _from?: string; _org: string; _to?: string }
-        Returns: {
-          booking_id: string
-          booking_number: string
-          cost_price: number
-          created_on: string
-          currency: string
-          customer_id: string
-          gap_count: number
-          missing_automation_run: boolean
-          missing_events: boolean
-          missing_gl: boolean
-          missing_invoice: boolean
-          missing_snapshot: boolean
-          missing_supplier_po: boolean
-          missing_timeline: boolean
-          missing_voucher: boolean
-          missing_workflow_history: boolean
-          negative_margin: boolean
-          no_customer: boolean
-          no_supplier: boolean
-          selling_price: number
-          supplier_id: string
-          workflow_stage: string
-          zero_price: boolean
-        }[]
-      }
-      audit_historical_summary: {
-        Args: { _from?: string; _log?: boolean; _org: string; _to?: string }
-        Returns: Json
-      }
-      backfill_historical_bookings: {
-        Args: {
-          _dry_run?: boolean
-          _from?: string
-          _limit?: number
-          _org: string
-          _to?: string
-        }
-        Returns: Json
-      }
-      backfill_journals: {
-        Args: { _org_id: string }
-        Returns: {
-          bookings_posted: number
-          customer_payments_posted: number
-          expenses_posted: number
-          invoices_posted: number
-          supplier_payments_posted: number
-        }[]
-      }
-      booking_make_journal: {
-        Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
-        Returns: undefined
-      }
-      calculate_employee_bookings_profit:
-        | {
-            Args: {
-              p_employee_id: string
-              p_period_end: string
-              p_period_start: string
-            }
-            Returns: {
-              booking_amount: number
-              booking_date: string
-              booking_id: string
-              booking_type: string
-              profit: number
-              supplier_cost: number
-            }[]
-          }
-        | {
-            Args: {
-              p_currency?: string
-              p_employee_id: string
-              p_period_end: string
-              p_period_start: string
-            }
-            Returns: {
-              booking_amount: number
-              booking_date: string
-              booking_id: string
-              booking_type: string
-              currency: string
-              profit: number
-              supplier_cost: number
-            }[]
-          }
-      calculate_employee_commission: {
-        Args: {
-          p_booking_amount: number
-          p_commission_rate?: number
-          p_employee_id: string
-        }
-        Returns: number
-      }
-      calculate_monthly_salary: {
-        Args: {
-          p_bonus?: number
-          p_deductions?: number
-          p_employee_id: string
-          p_notes?: string
-          p_overtime_hours?: number
-          p_salary_month: string
-        }
-        Returns: Json
-      }
-      can_manage_customers: { Args: never; Returns: boolean }
-      can_org_write: { Args: { _org_id: string }; Returns: boolean }
-      cancel_commission: {
-        Args: { p_commission_id: string; p_reason?: string }
-        Returns: boolean
-      }
-      cancel_organization_invitation: {
-        Args: { _invitation_id: string }
-        Returns: Json
-      }
-      check_customer_duplicate_contact: {
-        Args: {
-          _email?: string
-          _exclude_id?: string
-          _org_id: string
-          _phone: string
-        }
-        Returns: Json
-      }
-      check_employee_deletion: {
-        Args: { p_employee_id: string }
-        Returns: Json
-      }
-      check_subscription_active: { Args: { _org_id: string }; Returns: boolean }
-      check_subscription_limits: { Args: { _org_id: string }; Returns: Json }
-      claim_due_whatsapp_followups: {
-        Args: { _limit?: number }
-        Returns: {
-          assigned_to: string | null
-          attempt_count: number
-          completed_at: string | null
-          completed_by: string | null
-          conversation_id: string
-          created_at: string
-          created_by: string
-          id: string
-          last_error: string | null
-          locked_at: string | null
-          message_body: string | null
-          mode: string
-          note: string | null
-          organization_id: string
-          remind_at: string
-          sent_at: string | null
-          sent_message_id: string | null
-          status: string
-          template_id: string | null
-          template_variables: Json
-          updated_at: string
-          whatsapp_settings_id: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "whatsapp_followups"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      close_accounting_period: { Args: { _period_id: string }; Returns: Json }
-      close_fiscal_year: {
-        Args: { _confirmation: string; _org: string; _year: number }
-        Returns: Json
-      }
-      convert_quote_to_bookings: {
-        Args: { p_quote_id: string }
-        Returns: {
-          booking_id: string
-        }[]
-      }
-      count_org_bookings_this_month: {
-        Args: { _org_id: string }
-        Returns: number
-      }
-      count_org_members: { Args: { _org_id: string }; Returns: number }
-      create_booking_commission: {
-        Args: {
-          p_booking_id: string
-          p_commission_rate?: number
-          p_employee_id: string
-        }
-        Returns: string
-      }
-      create_manual_journal_entry: {
-        Args: {
-          _description: string
-          _entry_date: string
-          _lines: Json
-          _org_id: string
-        }
-        Returns: string
-      }
-      create_organization_invitation: {
-        Args: {
-          _email: string
-          _organization_id: string
-          _role?: Database["public"]["Enums"]["org_role"]
-        }
-        Returns: Json
-      }
-      create_organization_onboarding: {
-        Args: {
-          _address?: string
-          _email?: string
-          _name: string
-          _phone?: string
-          _slug?: string
-        }
-        Returns: string
-      }
-      create_refund_request: {
-        Args: {
-          _amount: number
-          _booking_id: string
-          _currency?: string
-          _exchange_rate?: number
-          _reason?: string
-          _source_payment_id?: string
-        }
-        Returns: string
-      }
-      crm_customer_booking_metrics: {
-        Args: { _org_id: string }
-        Returns: {
-          booking_count_by_currency: Json
-          customer_id: string
-          last_booking_date: string
-          spend_by_currency: Json
-          total_bookings: number
-        }[]
-      }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      emit_event: {
-        Args: {
-          p_aggregate_id: string
-          p_aggregate_type: string
-          p_idempotency_key: string
-          p_organization_id: string
-          p_payload: Json
-          p_type: string
-        }
-        Returns: string
-      }
-      employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
-      enrich_event_payload: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: Json
-      }
-      enroll_in_journey: {
-        Args: { p_context?: Json; p_customer_id: string; p_journey_id: string }
-        Returns: string
-      }
-      ensure_employee_for_user: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: string
-      }
-      extend_trial: {
-        Args: { _extra_days?: number; _org_id: string }
-        Returns: Json
-      }
-      find_duplicate_customers: {
-        Args: { _org_id: string }
-        Returns: {
-          customer_count: number
-          customer_ids: string[]
-          emails: string[]
-          names: string[]
-          normalized_phone: string
-        }[]
-      }
-      find_supplier_rate: {
-        Args: {
-          _org_id: string
-          _service_date: string
-          _service_reference?: string
-          _service_type: string
-          _supplier_id: string
-        }
-        Returns: {
-          cost_price: number
-          currency: string
-          markup_percentage: number
-          rate_id: string
-          season_name: string
-          selling_price: number
-        }[]
-      }
-      fiscal_year_reconciliation: {
-        Args: { _org: string; _year: number }
-        Returns: Json
-      }
-      generate_booking_number: { Args: never; Returns: string }
-      generate_invoice_number: { Args: never; Returns: string }
-      generate_journal_entry_number: {
-        Args: { _org_id: string }
-        Returns: string
-      }
-      generate_period_commission: {
-        Args: {
-          p_currency?: string
-          p_employee_id: string
-          p_notes?: string
-          p_period_end: string
-          p_period_start: string
-        }
-        Returns: Json
-      }
-      generate_quote_number: { Args: never; Returns: string }
-      generate_zatca_qr: { Args: { _invoice_id: string }; Returns: Json }
-      get_account_balance: {
-        Args: { _account_id: string; _end_date?: string; _start_date?: string }
-        Returns: number
-      }
-      get_account_id_by_code: {
-        Args: { _code: string; _org_id: string }
-        Returns: string
-      }
-      get_active_currencies: {
-        Args: { _org_id: string }
-        Returns: {
-          currency: string
-          entries_count: number
-        }[]
-      }
-      get_active_impersonation: {
-        Args: never
-        Returns: {
-          reason: string
-          session_id: string
-          started_at: string
-          target_org_id: string
-          target_user_id: string
-        }[]
-      }
-      get_balance_sheet:
-        | {
-            Args: { _as_of_date?: string; _org_id: string }
-            Returns: {
-              account_code: string
-              account_name: string
-              account_name_ar: string
-              account_type: string
-              balance: number
-            }[]
-          }
-        | {
-            Args: { _as_of_date?: string; _currency?: string; _org_id: string }
-            Returns: {
-              account_code: string
-              account_name: string
-              account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
-              balance: number
-              currency: string
-            }[]
-          }
-      get_booking_status_id: { Args: { _name: string }; Returns: string }
-      get_business_health_kpis: {
-        Args: { p_from?: string; p_to?: string }
-        Returns: Json
-      }
-      get_cash_flow:
-        | {
-            Args: { _from?: string; _org: string; _to?: string }
-            Returns: {
-              day: string
-              incoming: number
-              net: number
-              outgoing: number
-            }[]
-          }
-        | {
-            Args: {
-              _currency?: string
-              _end_date: string
-              _org_id: string
-              _start_date: string
-            }
-            Returns: {
-              currency: string
-              inflows: number
-              net_flow: number
-              outflows: number
-              period_date: string
-            }[]
-          }
-      get_cost_center_pnl: {
-        Args: { _end_date: string; _org_id: string; _start_date: string }
-        Returns: {
-          cost_center_code: string
-          cost_center_id: string
-          cost_center_name: string
-          expenses: number
-          profit: number
-          revenue: number
-        }[]
-      }
-      get_customer_aging: {
-        Args: { _as_of_date?: string; _org_id: string }
-        Returns: {
-          current_due: number
-          customer_id: string
-          customer_name: string
-          days_30: number
-          days_60: number
-          days_90: number
-          days_over_90: number
-          total_due: number
-        }[]
-      }
-      get_customer_aging_by_currency: {
-        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
-        Returns: {
-          currency: string
-          current_due: number
-          customer_id: string
-          customer_name: string
-          days_30: number
-          days_60: number
-          days_90: number
-          days_over_90: number
-          total_due: number
-        }[]
-      }
-      get_customer_ledger: {
-        Args: { _customer_id: string; _from?: string; _to?: string }
-        Returns: {
-          balance: number
-          booking_id: string
-          credit: number
-          currency: string
-          debit: number
-          entry_date: string
-          entry_type: string
-          reference: string
-        }[]
-      }
-      get_data_quality_details: { Args: { _org_id: string }; Returns: Json }
-      get_duplicate_customers: {
-        Args: never
-        Returns: {
-          count: number
-          customer_ids: string[]
-          phone: string
-        }[]
-      }
-      get_finance_executive: {
-        Args: { _from?: string; _org: string; _to?: string }
-        Returns: Json
-      }
-      get_financial_launch_health: { Args: { _org_id: string }; Returns: Json }
-      get_general_ledger: {
-        Args: {
-          _account_id: string
-          _end_date?: string
-          _org_id: string
-          _start_date?: string
-        }
-        Returns: {
-          booking_id: string
-          credit: number
-          currency: string
-          debit: number
-          description: string
-          entry_date: string
-          entry_id: string
-          entry_number: string
-          is_locked: boolean
-          line_description: string
-          line_id: string
-          reference_id: string
-          reference_type: string
-          running_balance: number
-          source_id: string
-          source_type: string
-          status: string
-        }[]
-      }
-      get_income_statement: {
-        Args: {
-          _currency?: string
-          _end_date: string
-          _org_id: string
-          _start_date: string
-        }
-        Returns: {
-          account_code: string
-          account_name: string
-          account_name_ar: string
-          account_type: string
-          amount: number
-          currency: string
-        }[]
-      }
-      get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
-      get_module_pulse: {
-        Args: { p_from?: string; p_to?: string }
-        Returns: Json
-      }
-      get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
-      get_org_plan_limits: {
-        Args: { _org_id: string }
-        Returns: {
-          max_bookings_per_month: number
-          max_storage_mb: number
-          max_users: number
-        }[]
-      }
-      get_supplier_ledger: {
-        Args: { _from?: string; _supplier_id: string; _to?: string }
-        Returns: {
-          balance: number
-          booking_id: string
-          credit: number
-          currency: string
-          debit: number
-          entry_date: string
-          entry_type: string
-          reference: string
-        }[]
-      }
-      get_supplier_performance: {
-        Args: { _org_id: string; _supplier_id: string }
-        Returns: Json
-      }
-      get_trial_balance:
-        | {
-            Args: { _end_date?: string; _org_id: string }
-            Returns: {
-              account_code: string
-              account_id: string
-              account_name: string
-              account_name_ar: string
-              account_type: string
-              balance: number
-              total_credit: number
-              total_debit: number
-            }[]
-          }
-        | {
-            Args: { _currency?: string; _end_date?: string; _org_id: string }
-            Returns: {
-              account_code: string
-              account_id: string
-              account_name: string
-              account_name_ar: string
-              account_type: Database["public"]["Enums"]["account_type"]
-              balance: number
-              currency: string
-              total_credit: number
-              total_debit: number
-            }[]
-          }
-      get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
-      get_user_org_role: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: Database["public"]["Enums"]["org_role"]
-      }
-      get_workflow_progress: {
-        Args: { p_aggregate_id: string; p_aggregate_type: string }
-        Returns: Json
-      }
-      handler_ai_summary_refresh: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_audit_write: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_enqueue_email: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_enqueue_whatsapp_suggestion: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_finance_post: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_notification_dispatch: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_notify_in_app: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_run_booking_automation: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_timeline_append: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      handler_workflow_rules: {
-        Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
-        Returns: undefined
-      }
-      has_org_permission: {
-        Args: { _org_id: string; _permission: string }
-        Returns: boolean
-      }
-      has_platform_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["platform_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      html_escape: { Args: { _value: string }; Returns: string }
-      is_org_expired: { Args: { _org_id: string }; Returns: boolean }
-      is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
-      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
-      link_user_to_employee: {
-        Args: { p_employee_id: string; p_user_id: string }
-        Returns: Json
-      }
-      log_admin_action: {
-        Args: {
-          p_action_type: string
-          p_description?: string
-          p_new_values?: Json
-          p_old_values?: Json
-          p_target_id?: string
-          p_target_table?: string
-        }
-        Returns: undefined
-      }
-      manage_organization_member: {
-        Args: {
-          _is_active?: boolean
-          _membership_id: string
-          _new_role?: Database["public"]["Enums"]["org_role"]
-          _note?: string
-          _termination_date?: string
-        }
-        Returns: Json
-      }
-      manage_sop_department_member: {
-        Args: {
-          _assign?: boolean
-          _department: Database["public"]["Enums"]["sop_department"]
-          _is_available?: boolean
-          _organization_id: string
-          _user_id: string
-        }
-        Returns: Json
-      }
-      merge_customers: {
-        Args: { _keep_id: string; _merge_ids: string[]; _org_id: string }
-        Returns: Json
-      }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
-      normalize_email_address: { Args: { _email: string }; Returns: string }
-      normalize_phone_digits: { Args: { _phone: string }; Returns: string }
-      org_has_active_subscription: {
-        Args: { _org_id: string }
-        Returns: boolean
-      }
-      pay_refund_request: {
-        Args: {
-          _reference?: string
-          _refund_id: string
-          _treasury_account_id: string
-        }
-        Returns: undefined
-      }
-      post_booking_cost: { Args: { _booking_id: string }; Returns: string }
-      post_commission_period_accrual: {
-        Args: { _period_id: string }
-        Returns: string
-      }
-      post_commission_period_payment: {
-        Args: { _period_id: string }
-        Returns: string
-      }
-      post_customer_payment: { Args: { _payment_id: string }; Returns: string }
-      post_customer_refund: { Args: { _refund_id: string }; Returns: string }
-      post_expense_transaction: {
-        Args: { _expense_id: string }
-        Returns: string
-      }
-      post_invoice: { Args: { _invoice_id: string }; Returns: string }
-      post_invoice_legacy_receipt: {
-        Args: { _invoice_id: string }
-        Returns: string
-      }
-      post_journal_entry:
-        | {
-            Args: {
-              _description: string
-              _entry_date: string
-              _lines: Json
-              _org_id: string
-              _reference_id: string
-              _reference_type: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _currency?: string
-              _description: string
-              _entry_date: string
-              _lines: Json
-              _org_id: string
-              _reference_id: string
-              _reference_type: string
-            }
-            Returns: string
-          }
-      post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
-      prepare_subscription_checkout: {
-        Args: {
-          _billing_cycle: string
-          _organization_id: string
-          _plan_id: string
-        }
-        Returns: Json
-      }
-      process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
-      process_journey_enrollments: {
-        Args: { p_limit?: number }
-        Returns: number
-      }
-      queue_organization_invitation_email: {
-        Args: { _invitation_id: string }
-        Returns: number
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
-      }
-      recompute_broadcast_counters: {
-        Args: { _broadcast_id: string }
-        Returns: undefined
-      }
-      reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
-      record_customer_payment: {
-        Args: {
-          _amount: number
-          _booking_id?: string
-          _client_ref?: string
-          _currency?: string
-          _customer_id?: string
-          _exchange_rate?: number
-          _invoice_id: string
-          _method?: string
-          _notes?: string
-          _payment_date?: string
-          _reference?: string
-          _treasury_account_id?: string
-        }
-        Returns: string
-      }
-      record_supplier_payment: {
-        Args: {
-          _amount: number
-          _currency?: string
-          _exchange_rate?: number
-          _method?: string
-          _notes?: string
-          _payment_date?: string
-          _po_id: string
-          _reference?: string
-          _treasury_account_id?: string
-        }
-        Returns: string
-      }
-      redeem_loyalty_reward: {
-        Args: { _customer_id: string; _reward_id: string }
-        Returns: Json
-      }
-      refresh_customer_booking_summary: {
-        Args: { _customer_id: string; _org_id: string }
-        Returns: undefined
-      }
-      reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
-      reopen_fiscal_year: {
-        Args: { _org: string; _reason: string; _year: number }
-        Returns: Json
-      }
-      replay_event: { Args: { p_event_id: string }; Returns: number }
-      replay_gl_postings: {
-        Args: { _dry_run?: boolean; _from?: string; _org: string; _to?: string }
-        Returns: Json
-      }
-      resend_organization_invitation: {
-        Args: { _invitation_id: string }
-        Returns: Json
-      }
-      reset_demo_data: { Args: { _org_id: string }; Returns: Json }
-      retry_booking_automation_step: {
-        Args: { p_step_id: string }
-        Returns: string
-      }
-      retry_event_delivery: {
-        Args: { p_delivery_id: string }
-        Returns: undefined
-      }
-      retry_workflow_rule_run: {
-        Args: { p_event_id: string; p_rule_id: string }
-        Returns: undefined
-      }
-      run_booking_automation: {
-        Args: { p_booking_id: string }
-        Returns: string
-      }
-      safe_delete_employee: {
-        Args: {
-          p_employee_id: string
-          p_force_delete?: boolean
-          p_reason?: string
-        }
-        Returns: Json
-      }
-      seed_default_chart_of_accounts: {
-        Args: { _org_id: string }
-        Returns: undefined
-      }
-      set_customer_archived: {
-        Args: { _archived: boolean; _customer_id: string; _org_id: string }
-        Returns: Json
-      }
-      set_org_pin: {
-        Args: { _org_id: string; _pin: string }
-        Returns: undefined
-      }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
-      sop_acknowledge_assignment: { Args: { _lead: string }; Returns: Json }
-      sop_acknowledge_assignment_unsafe_impl: {
-        Args: { _lead: string }
-        Returns: Json
-      }
-      sop_actor_name: { Args: { _user: string }; Returns: string }
-      sop_add_lead_activity: {
-        Args: {
-          _activity_type: string
-          _assigned_to?: string
-          _completed?: boolean
-          _due_at?: string
-          _lead: string
-          _notes?: string
-          _outcome?: string
-        }
-        Returns: Json
-      }
-      sop_advance_lead: {
-        Args: {
-          _lead: string
-          _reason?: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      sop_advance_lead_unsafe_impl: {
-        Args: {
-          _lead: string
-          _reason?: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      sop_allowed_next: {
-        Args: { _s: Database["public"]["Enums"]["sop_lead_stage"] }
-        Returns: Database["public"]["Enums"]["sop_lead_stage"][]
-      }
-      sop_assign_lead: {
-        Args: { _assignee?: string; _exception_reason?: string; _lead: string }
-        Returns: Json
-      }
-      sop_assign_lead_unsafe_impl: {
-        Args: { _assignee?: string; _exception_reason?: string; _lead: string }
-        Returns: Json
-      }
-      sop_auto_assign: { Args: { _lead: string }; Returns: string }
-      sop_backfill_stage_history: { Args: { p_org?: string }; Returns: Json }
-      sop_brief_missing: {
-        Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
-        Returns: string[]
-      }
-      sop_can_manage_pricing: {
-        Args: { _org: string; _user: string }
-        Returns: boolean
-      }
-      sop_cancel_lead_activity: {
-        Args: { _activity: string; _reason?: string }
-        Returns: Json
-      }
-      sop_claim_lead: { Args: { _lead: string }; Returns: Json }
-      sop_claim_lead_unsafe_impl: { Args: { _lead: string }; Returns: Json }
-      sop_claim_pricing_request: { Args: { _request: string }; Returns: Json }
-      sop_collection_status: { Args: { _lead: string }; Returns: Json }
-      sop_complete_handover: {
-        Args: {
-          _checklist: Json
-          _lead: string
-          _notes?: string
-          _to_user?: string
-          _type: Database["public"]["Enums"]["sop_handover_type"]
-        }
-        Returns: Json
-      }
-      sop_complete_lead_activity: {
-        Args: { _activity: string; _notes?: string; _outcome?: string }
-        Returns: Json
-      }
-      sop_complete_recheck: {
-        Args: { _changed: boolean; _notes?: string; _request: string }
-        Returns: Json
-      }
-      sop_complete_recheck_unsafe_impl: {
-        Args: { _changed: boolean; _notes?: string; _request: string }
-        Returns: Json
-      }
-      sop_compliance_report: { Args: { p_org: string }; Returns: Json }
-      sop_convert_lead_to_customer: { Args: { _lead: string }; Returns: Json }
-      sop_create_pricing_request: {
-        Args: { _lead: string; _notes?: string }
-        Returns: Json
-      }
-      sop_create_pricing_request_unsafe_impl: {
-        Args: { _lead: string; _notes?: string }
-        Returns: Json
-      }
-      sop_decide_approval: {
-        Args: { _approval: string; _approve: boolean; _note?: string }
-        Returns: Json
-      }
-      sop_department_kpis: {
-        Args: { p_from?: string; p_org: string; p_to?: string }
-        Returns: Json
-      }
-      sop_disqualify: {
-        Args: { _lead: string; _note?: string; _reason: string }
-        Returns: Json
-      }
-      sop_disqualify_unsafe_impl: {
-        Args: { _lead: string; _note?: string; _reason: string }
-        Returns: Json
-      }
-      sop_handover_checklist_keys: {
-        Args: { _t: Database["public"]["Enums"]["sop_handover_type"] }
-        Returns: string[]
-      }
-      sop_handover_status: {
-        Args: {
-          _lead: string
-          _t: Database["public"]["Enums"]["sop_handover_type"]
-        }
-        Returns: Json
-      }
-      sop_has_department: {
-        Args: {
-          _dept: Database["public"]["Enums"]["sop_department"]
-          _org: string
-          _user: string
-        }
-        Returns: boolean
-      }
-      sop_history_write: {
-        Args: {
-          _action: string
-          _actor: string
-          _at: string
-          _booking: string
-          _from: Database["public"]["Enums"]["sop_lead_stage"]
-          _key: string
-          _lead: string
-          _meta: Json
-          _org: string
-          _pricing: string
-          _quote: string
-          _reason: string
-          _reconstructed: boolean
-          _source: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: undefined
-      }
-      sop_intake_missing: {
-        Args: { l: Database["public"]["Tables"]["sop_leads"]["Row"] }
-        Returns: string[]
-      }
-      sop_is_manager: {
-        Args: { _org: string; _user: string }
-        Returns: boolean
-      }
-      sop_lead_cycle_report: {
-        Args: {
-          p_department?: Database["public"]["Enums"]["sop_department"]
-          p_employee?: string
-          p_from?: string
-          p_include_legacy?: boolean
-          p_org: string
-          p_outcome?: string
-          p_source?: string
-          p_stage?: Database["public"]["Enums"]["sop_lead_stage"]
-          p_to?: string
-        }
-        Returns: Json
-      }
-      sop_lead_timeline: { Args: { _lead: string }; Returns: Json }
-      sop_move_back: {
-        Args: {
-          _lead: string
-          _reason: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      sop_move_back_unsafe_impl: {
-        Args: {
-          _lead: string
-          _reason: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      sop_my_departments: { Args: { _org: string }; Returns: Json }
-      sop_on_booking_confirmed: { Args: { _lead: string }; Returns: Json }
-      sop_publish_pricing: {
-        Args: {
-          _recommendation?: string
-          _request: string
-          _valid_until?: string
-        }
-        Returns: Json
-      }
-      sop_reassign_lead: {
-        Args: { _assignee: string; _lead: string; _reason: string }
-        Returns: Json
-      }
-      sop_reassign_lead_unsafe_impl: {
-        Args: { _assignee: string; _lead: string; _reason: string }
-        Returns: Json
-      }
-      sop_reopen_lead: { Args: { _lead: string }; Returns: Json }
-      sop_reopen_lead_unsafe_impl: { Args: { _lead: string }; Returns: Json }
-      sop_request_approval: {
-        Args: {
-          _amount?: number
-          _booking?: string
-          _lead?: string
-          _reason?: string
-          _supplier_payment_order?: string
-          _type: Database["public"]["Enums"]["sop_approval_type"]
-        }
-        Returns: Json
-      }
-      sop_request_recheck: {
-        Args: { _lead: string; _notes?: string }
-        Returns: Json
-      }
-      sop_request_recheck_unsafe_impl: {
-        Args: { _lead: string; _notes?: string }
-        Returns: Json
-      }
-      sop_return_to_sales: { Args: { _request: string }; Returns: Json }
-      sop_return_to_sales_unsafe_impl: {
-        Args: { _request: string }
-        Returns: Json
-      }
-      sop_save_lead: {
-        Args: { _lead?: string; _org: string; _payload?: Json }
-        Returns: Json
-      }
-      sop_search_leads: {
-        Args: {
-          _follow_up?: string
-          _include_legacy?: boolean
-          _limit?: number
-          _org: string
-          _owner?: string
-          _search?: string
-          _sort?: string
-          _source?: string
-          _stages?: Database["public"]["Enums"]["sop_lead_stage"][]
-        }
-        Returns: {
-          adults: number | null
-          approx_dates: string | null
-          arrived_at: string
-          booking_id: string | null
-          budget_amount: number | null
-          budget_currency: string | null
-          budget_level: string | null
-          campaign: string | null
-          check_in: string | null
-          check_out: string | null
-          children_ages: Json
-          children_count: number
-          city: string | null
-          contact_email: string | null
-          contact_name: string | null
-          contact_phone: string | null
-          conversation_id: string | null
-          converted_at: string | null
-          converted_by: string | null
-          created_at: string
-          created_by: string | null
-          current_owner_id: string | null
-          customer_id: string | null
-          deposit_percent: number | null
-          destination: string | null
-          first_response_at: string | null
-          id: string
-          intake_completed_at: string | null
-          is_legacy: boolean
-          last_contact_at: string | null
-          lead_number: string | null
-          lead_source: string | null
-          lost_reason: string | null
-          market: string | null
-          migration_source: string | null
-          nationality: string | null
-          next_follow_up_at: string | null
-          occupancy: string | null
-          organization_id: string
-          owner_department: Database["public"]["Enums"]["sop_department"]
-          payment_policy: string
-          priorities: string | null
-          quote_id: string | null
-          reference_hotel: string | null
-          reference_screenshot_url: string | null
-          requote_required: boolean
-          rooms: number | null
-          service_type: string | null
-          special_requests: string | null
-          stage: Database["public"]["Enums"]["sop_lead_stage"]
-          updated_at: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "sop_leads"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      sop_set_availability: {
-        Args: { _is_available: boolean; _reason?: string; _user_id: string }
-        Returns: Json
-      }
-      sop_set_department: {
-        Args: {
-          _department?: Database["public"]["Enums"]["sop_department"]
-          _is_available?: boolean
-          _reason?: string
-          _user_id: string
-        }
-        Returns: Json
-      }
-      sop_set_my_availability: {
-        Args: {
-          _available: boolean
-          _department: Database["public"]["Enums"]["sop_department"]
-          _org: string
-        }
-        Returns: Json
-      }
-      sop_stage_to_booking_stage: {
-        Args: { _s: Database["public"]["Enums"]["sop_lead_stage"] }
-        Returns: string
-      }
-      sop_validate_transition: {
-        Args: {
-          _lead: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      sop_validate_transition_unsafe_impl: {
-        Args: {
-          _lead: string
-          _to: Database["public"]["Enums"]["sop_lead_stage"]
-        }
-        Returns: Json
-      }
-      start_impersonation: {
-        Args: {
-          _mfa_verified: boolean
-          _org_pin: string
-          _reason: string
-          _target_org_id: string
-          _target_user_id: string
-        }
-        Returns: string
-      }
-      stop_impersonation: { Args: never; Returns: undefined }
-      supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
-      toggle_employee_status: {
-        Args: { p_employee_id: string; p_is_active: boolean; p_reason?: string }
-        Returns: Json
-      }
-      unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
-      unpost_journal: {
-        Args: { _source_id: string; _source_type: string }
-        Returns: boolean
-      }
-      update_booking_status: {
-        Args: {
-          p_booking_id: string
-          p_booking_type?: string
-          p_new_status_id?: string
-          p_notes?: string
-          p_status_id?: string
-        }
-        Returns: boolean
-      }
-      update_period_commission_status: {
-        Args: {
-          p_bank_account_id?: string
-          p_commission_period_id: string
-          p_notes?: string
-          p_payment_date?: string
-          p_payment_method?: string
-          p_status: string
-        }
-        Returns: Json
-      }
-      update_salary_status: {
-        Args: {
-          p_bank_account_id?: string
-          p_notes?: string
-          p_payment_date?: string
-          p_payment_method?: string
-          p_salary_id: string
-          p_status: string
-        }
-        Returns: Json
-      }
-      update_system_setting: {
-        Args: { setting_key_param: string; setting_value_param: string }
-        Returns: boolean
-      }
-      user_belongs_to_org: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
-      user_has_any_org: { Args: never; Returns: boolean }
-      validate_employee_commissions: {
-        Args: { p_employee_id: string }
-        Returns: {
-          actual_amount: number
-          commission_id: string
-          expected_amount: number
-          issue: string
-        }[]
-      }
-      wa_count_placeholders: { Args: { _text: string }; Returns: number }
-      whatsapp_window_open: {
-        Args: { _conversation_id: string }
-        Returns: boolean
-      }
-    }
-    Enums: {
-      account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
-      booking_workflow_stage:
-        | "lead"
-        | "qualified"
-        | "quoted"
-        | "confirmed"
-        | "paid"
-        | "operations"
-        | "traveling"
-        | "completed"
-        | "post_travel"
-        | "cancelled"
-      document_category:
-        | "passport"
-        | "visa"
-        | "voucher"
-        | "invoice"
-        | "purchase_order"
-        | "ticket"
-        | "insurance"
-        | "contract"
-        | "other"
-      org_role: "owner" | "admin" | "manager" | "agent" | "viewer"
-      platform_role: "platform_admin" | "platform_owner"
-      sop_approval_status: "pending" | "approved" | "rejected"
-      sop_approval_type:
-        | "discount"
-        | "free_service"
-        | "booking_confirmation"
-        | "supplier_payment"
-        | "refund_compensation"
-      sop_deadline_type:
-        | "payment"
-        | "cancellation"
-        | "release"
-        | "pre_arrival"
-        | "reconfirmation"
-      sop_department:
-        | "customer_service"
-        | "sales"
-        | "reservations"
-        | "operations"
-        | "management"
-        | "marketing"
-        | "finance"
-      sop_handover_type:
-        | "cs_to_sales"
-        | "sales_to_reservations"
-        | "reservations_to_sales"
-        | "reservations_to_cs"
-      sop_lead_stage:
-        | "new"
-        | "qualified"
-        | "assigned"
-        | "pricing_requested"
-        | "quoted"
-        | "follow_up"
-        | "accepted_pending_recheck"
-        | "rechecked"
-        | "payment_pending"
-        | "won"
-        | "lost"
-        | "cancelled"
-      sop_pricing_status:
-        | "requested"
-        | "in_progress"
-        | "quoted"
-        | "requoted"
-        | "recheck"
-        | "closed"
-        | "cancelled"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      account_type: ["asset", "liability", "equity", "revenue", "expense"],
-      booking_workflow_stage: [
-        "lead",
-        "qualified",
-        "quoted",
-        "confirmed",
-        "paid",
-        "operations",
-        "traveling",
-        "completed",
-        "post_travel",
-        "cancelled",
-      ],
-      document_category: [
-        "passport",
-        "visa",
-        "voucher",
-        "invoice",
-        "purchase_order",
-        "ticket",
-        "insurance",
-        "contract",
-        "other",
-      ],
-      org_role: ["owner", "admin", "manager", "agent", "viewer"],
-      platform_role: ["platform_admin", "platform_owner"],
-      sop_approval_status: ["pending", "approved", "rejected"],
-      sop_approval_type: [
-        "discount",
-        "free_service",
-        "booking_confirmation",
-        "supplier_payment",
-        "refund_compensation",
-      ],
-      sop_deadline_type: [
-        "payment",
-        "cancellation",
-        "release",
-        "pre_arrival",
-        "reconfirmation",
-      ],
-      sop_department: [
-        "customer_service",
-        "sales",
-        "reservations",
-        "operations",
-        "management",
-        "marketing",
-        "finance",
-      ],
-      sop_handover_type: [
-        "cs_to_sales",
-        "sales_to_reservations",
-        "reservations_to_sales",
-        "reservations_to_cs",
-      ],
-      sop_lead_stage: [
-        "new",
-        "qualified",
-        "assigned",
-        "pricing_requested",
-        "quoted",
-        "follow_up",
-        "accepted_pending_recheck",
-        "rechecked",
-        "payment_pending",
-        "won",
-        "lost",
-        "cancelled",
-      ],
-      sop_pricing_status: [
-        "requested",
-        "in_progress",
-        "quoted",
-        "requoted",
-        "recheck",
-        "closed",
-        "cancelled",
-      ],
-    },
-  },
-} as const
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×}ÓTèµ©hºÚn¶X§zÍY^Ü\HœÛÛˆBˆİš[™Âˆ[X™\‚ˆ›ÛÛX[‚ˆ[ˆÈÚÙ^Nˆİš[™×NˆœÛÛˆ[™Yš[™YBˆœÛÛ–×B‚™^Ü\H]X˜\ÙHHÂˆËÈ[İÜÈÈ]]ÛX]XØ[H[œİ[X]HÜ™X]PÛY[Ú]šYÚÜ[ÛœÂˆËÈ[œİXYÙˆÜ™X]PÛY[]X˜\ÙKÈÜİÜ™\İ™\œÚ[Ûˆ	Ö	ÈOŠT“ÑVJBˆ×Ò[\›˜[İ\X˜\ÙNˆÂˆÜİÜ™\İ™\œÚ[ÛˆŒMH‚ˆBˆX›XÎˆÂˆX›\ÎˆÂˆXØÛİ[[™×Ü\š[ÙÎˆÂˆ›İÎˆÂˆÛÜÙYØ]ˆİš[™È[ˆÛÜÙYØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆ[™Ù]Nˆİš[™ÂˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\š[ÙÛ˜[YNˆİš[™Âˆİ\Ù]Nˆİš[™Âˆİ]\Îˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆÛÜÙYØ]Îˆİš[™È[ˆÛÜÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ[™Ù]Nˆİš[™ÂˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\š[ÙÛ˜[YNˆİš[™Âˆİ\Ù]Nˆİš[™Âˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆÛÜÙYØ]Îˆİš[™È[ˆÛÜÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ[™Ù]OÎˆİš[™ÂˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\š[ÙÛ˜[YOÎˆİš[™Âˆİ\Ù]OÎˆİš[™Âˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜XØÛİ[[™×Ü\š[Ù×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆYZ[—Ø]Y]ÛÙÎˆÂˆ›İÎˆÂˆXİ[Ûˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆ]Z[ÎˆœÛÛˆ[ˆ[]WÛ˜[YNˆİš[™È[ˆYˆİš[™Âˆ\ØY™\ÜÎˆİš[™È[ˆ™]×İ˜[Y\ÎˆœÛÛˆ[ˆÛİ˜[Y\ÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ\™Ù]ÚYˆİš[™È[ˆ\™Ù]İX›Nˆİš[™È[ˆ\Ù\—Ù[XZ[ˆİš[™È[ˆ\Ù\—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆXİ[Ûˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ]Z[ÏÎˆœÛÛˆ[ˆ[]WÛ˜[YOÎˆİš[™È[ˆYÎˆİš[™Âˆ\ØY™\ÜÏÎˆİš[™È[ˆ™]×İ˜[Y\ÏÎˆœÛÛˆ[ˆÛİ˜[Y\ÏÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\™Ù]ÚYÎˆİš[™È[ˆ\™Ù]İX›OÎˆİš[™È[ˆ\Ù\—Ù[XZ[Îˆİš[™È[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆXİ[ÛÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ]Z[ÏÎˆœÛÛˆ[ˆ[]WÛ˜[YOÎˆİš[™È[ˆYÎˆİš[™Âˆ\ØY™\ÜÏÎˆİš[™È[ˆ™]×İ˜[Y\ÏÎˆœÛÛˆ[ˆÛİ˜[Y\ÏÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\™Ù]ÚYÎˆİš[™È[ˆ\™Ù]İX›OÎˆİš[™È[ˆ\Ù\—Ù[XZ[Îˆİš[™È[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜YZ[—Ø]Y]ÛÙ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆZWØ\ÜÚ\İ[ØXİ[Ûœ×ÛÙÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ[œ]ˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]]ˆœÛÛˆ[ˆİ]\Îˆİš[™Âˆ™XYÚYˆİš[™È[ˆÛÛÛ˜[YNˆİš[™Âˆ\Ù\—ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[œ]ÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]]ÎˆœÛÛˆ[ˆİ]\ÏÎˆİš[™Âˆ™XYÚYÎˆİš[™È[ˆÛÛÛ˜[YNˆİš[™Âˆ\Ù\—ÚYˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[œ]ÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆİ]]ÎˆœÛÛˆ[ˆİ]\ÏÎˆİš[™Âˆ™XYÚYÎˆİš[™È[ˆÛÛÛ˜[YOÎˆİš[™Âˆ\Ù\—ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ZWØ\ÜÚ\İ[ØXİ[Ûœ×ÛÙ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ZWØ\ÜÚ\İ[ØXİ[Ûœ×ÛÙ×İ™XYÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™XYÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜ZWØ\ÜÚ\İ[İ™XYÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆZWØ\ÜÚ\İ[ÛY\ÜØYÙ\ÎˆÂˆ›İÎˆÂˆÛÛ[ˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆY]Y]NˆœÛÛˆ[ˆ›ÛNˆİš[™Âˆ™XYÚYˆİš[™ÂˆÛÛØØ[ÚYˆİš[™È[ˆÛÛØØ[ÎˆœÛÛˆ[ˆÛÛÛ˜[YNˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛ[Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆ›ÛNˆİš[™Âˆ™XYÚYˆİš[™ÂˆÛÛØØ[ÚYÎˆİš[™È[ˆÛÛØØ[ÏÎˆœÛÛˆ[ˆÛÛÛ˜[YOÎˆİš[™È[ˆBˆ\]NˆÂˆÛÛ[Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆ›ÛOÎˆİš[™Âˆ™XYÚYÎˆİš[™ÂˆÛÛØØ[ÚYÎˆİš[™È[ˆÛÛØØ[ÏÎˆœÛÛˆ[ˆÛÛÛ˜[YOÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ZWØ\ÜÚ\İ[ÛY\ÜØYÙ\×İ™XYÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™XYÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜ZWØ\ÜÚ\İ[İ™XYÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆZWØ\ÜÚ\İ[İ™XYÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[›™Yˆ›ÛÛX[‚ˆ]Nˆİš[™Âˆ\]YØ]ˆİš[™Âˆ\Ù\—ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[›™YÎˆ›ÛÛX[‚ˆ]OÎˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ\Ù\—ÚYˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ[›™YÎˆ›ÛÛX[‚ˆ]OÎˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ\Ù\—ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ZWØ\ÜÚ\İ[İ™XY×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆZ\›[™\ÎˆÂˆ›İÎˆÂˆÛİ[Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆX]WØÛÙNˆİš[™È[ˆXØ[×ØÛÙNˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[ˆ›ÛÛX[‚ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆX]WØÛÙOÎˆİš[™È[ˆXØ[×ØÛÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[Îˆ›ÛÛX[‚ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆX]WØÛÙOÎˆİš[™È[ˆXØ[×ØÛÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[Îˆ›ÛÛX[‚ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Z\›[™\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆZ\œÜÎˆÂˆ›İÎˆÂˆÚ]Nˆİš[™ÂˆÛİ[Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆX]WØÛÙNˆİš[™ÂˆXØ[×ØÛÙNˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[ˆ›ÛÛX[‚ˆ]]YNˆ[X™\ˆ[ˆÛ™Ú]YNˆ[X™\ˆ[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆÚ]Nˆİš[™ÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆX]WØÛÙNˆİš[™ÂˆXØ[×ØÛÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[Îˆ›ÛÛX[‚ˆ]]YOÎˆ[X™\ˆ[ˆÛ™Ú]YOÎˆ[X™\ˆ[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆÚ]OÎˆİš[™ÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆX]WØÛÙOÎˆİš[™ÂˆXØ[×ØÛÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙÛØ˜[Îˆ›ÛÛX[‚ˆ]]YOÎˆ[X™\ˆ[ˆÛ™Ú]YOÎˆ[X™\ˆ[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Z\œÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ[İY[İ\ØYÙNˆÂˆ›İÎˆÂˆ[İY[ÚYˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ]X[]Wİ\ÙYˆ[X™\‚ˆ\ØYÙWÙ]Nˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[İY[ÚYˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ]X[]Wİ\ÙYÎˆ[X™\‚ˆ\ØYÙWÙ]OÎˆİš[™ÂˆBˆ\]NˆÂˆ[İY[ÚYÎˆİš[™Âˆ›ÛÚÚ[™×ÚYÎˆİš[™Âˆ›ÛÚÚ[™×İ\OÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ]X[]Wİ\ÙYÎˆ[X™\‚ˆ\ØYÙWÙ]OÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[İY[İ\ØYÙWØ[İY[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜[İY[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—Ø[İY[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ\WÛÙÜÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ[˜İ[Û—Û˜[YNˆİš[™ÂˆYˆİš[™Âˆ\ØY™\ÜÎˆİš[™È[ˆY]Ùˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™\]Y\İØ›ÙNˆœÛÛˆ[ˆ™\ÜÛœÙWÜİ[[X\Nˆİš[™È[ˆ™\ÜÛœÙWİ[YWÛ\Îˆ[X™\ˆ[ˆİ]\×ØÛÙNˆ[X™\ˆ[ˆ\Ù\—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ[˜İ[Û—Û˜[YNˆİš[™ÂˆYÎˆİš[™Âˆ\ØY™\ÜÏÎˆİš[™È[ˆY]ÙÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™\]Y\İØ›ÙOÎˆœÛÛˆ[ˆ™\ÜÛœÙWÜİ[[X\OÎˆİš[™È[ˆ™\ÜÛœÙWİ[YWÛ\ÏÎˆ[X™\ˆ[ˆİ]\×ØÛÙOÎˆ[X™\ˆ[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ[˜İ[Û—Û˜[YOÎˆİš[™ÂˆYÎˆİš[™Âˆ\ØY™\ÜÏÎˆİš[™È[ˆY]ÙÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™\]Y\İØ›ÙOÎˆœÛÛˆ[ˆ™\ÜÛœÙWÜİ[[X\OÎˆİš[™È[ˆ™\ÜÛœÙWİ[YWÛ\ÏÎˆ[X™\ˆ[ˆİ]\×ØÛÙOÎˆ[X™\ˆ[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜\WÛÙÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ]]ÛX][Û—ØXİ[ÛœÎˆÂˆ›İÎˆÂˆXİ[Û—ØÛÛ™šYÎˆœÛÛˆ[ˆXİ[Û—İ\Nˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ[WÚYˆİš[™ÂˆÛÜÛÜ™\ˆ[X™\ˆ[ˆBˆ[œÙ\ˆÂˆXİ[Û—ØÛÛ™šYÏÎˆœÛÛˆ[ˆXİ[Û—İ\Nˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ[WÚYˆİš[™ÂˆÛÜÛÜ™\Îˆ[X™\ˆ[ˆBˆ\]NˆÂˆXİ[Û—ØÛÛ™šYÏÎˆœÛÛˆ[ˆXİ[Û—İ\OÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ[WÚYÎˆİš[™ÂˆÛÜÛÜ™\Îˆ[X™\ˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]]ÛX][Û—ØXİ[Ûœ×Ü[WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜]]ÛX][Û—Ü[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ]]ÛX][Û—ÛÙÜÎˆÂˆ›İÎˆÂˆXİ[Û—İ\Nˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆ›ÛÚÚ[™×İ\Nˆİš[™È[ˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆYˆİš[™ÂˆY]Y]NˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ[WÚYˆİš[™È[ˆİ]\Îˆİš[™È[ˆšYÙÙ\—İ\Nˆİš[™ÂˆBˆ[œÙ\ˆÂˆXİ[Û—İ\Nˆİš[™Âˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ[WÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆšYÙÙ\—İ\Nˆİš[™ÂˆBˆ\]NˆÂˆXİ[Û—İ\OÎˆİš[™Âˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ[WÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆšYÙÙ\—İ\OÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]]ÛX][Û—ÛÙÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]]ÛX][Û—ÛÙÜ×Ü[WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜]]ÛX][Û—Ü[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ]]ÛX][Û—Ü[\ÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆšYÙÙ\—ØÛÛ™šYÎˆœÛÛˆ[ˆšYÙÙ\—İ\Nˆİš[™Âˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆšYÙÙ\—ØÛÛ™šYÏÎˆœÛÛˆ[ˆšYÙÙ\—İ\Nˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆšYÙÙ\—ØÛÛ™šYÏÎˆœÛÛˆ[ˆšYÙÙ\—İ\OÎˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]]ÛX][Û—Ü[\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜XÚİ\ÛÙÜÎˆÂˆ›İÎˆÂˆ˜XÚİ\İ\Nˆİš[™ÂˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆš[WÜÚ^™Nˆİš[™È[ˆš[Wİ\›ˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆİ\YØ]ˆİš[™È[ˆİ]\Îˆİš[™È[ˆBˆ[œÙ\ˆÂˆ˜XÚİ\İ\Nˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆš[WÜÚ^™OÎˆİš[™È[ˆš[Wİ\›Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆBˆ\]NˆÂˆ˜XÚİ\İ\OÎˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆš[WÜÚ^™OÎˆİš[™È[ˆš[Wİ\›Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜XÚİ\ÛÙÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜[š×ØXØÛİ[İ˜[œØXİ[ÛœÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ˜[š×ØXØÛİ[ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™È[ˆ™[]YÚ[›ÚXÙWÚYˆİš[™È[ˆ™[]YÜ^[Y[ÛÜ™\—ÚYˆİš[™È[ˆ˜[œØXİ[Û—Ù]Nˆİš[™È[ˆ˜[œØXİ[Û—İ\Nˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆ™[]YÚ[›ÚXÙWÚYÎˆİš[™È[ˆ™[]YÜ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆ˜[œØXİ[Û—Ù]OÎˆİš[™È[ˆ˜[œØXİ[Û—İ\Nˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆ™[]YÚ[›ÚXÙWÚYÎˆİš[™È[ˆ™[]YÜ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆ˜[œØXİ[Û—Ù]OÎˆİš[™È[ˆ˜[œØXİ[Û—İ\OÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜[š×ØXØÛİ[İ˜[œØXİ[Ûœ×Ø˜[š×ØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜˜[š×ØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜[š×ØXØÛİ[İ˜[œØXİ[Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜[š×ØXØÛİ[ÎˆÂˆ›İÎˆÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û[X™\ˆİš[™ÂˆXØÛİ[İ\Nˆİš[™È[ˆ˜[š×Û˜[YNˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\œ™[Ø˜[[˜ÙNˆ[X™\ˆ[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™X\İ\WÚÚ[™ˆİš[™Âˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û[X™\ˆİš[™ÂˆXØÛİ[İ\OÎˆİš[™È[ˆ˜[š×Û˜[YNˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\œ™[Ø˜[[˜ÙOÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™X\İ\WÚÚ[™Îˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆXØÛİ[Û˜[YOÎˆİš[™ÂˆXØÛİ[Û[X™\Îˆİš[™ÂˆXØÛİ[İ\OÎˆİš[™È[ˆ˜[š×Û˜[YOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\œ™[Ø˜[[˜ÙOÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™X\İ\WÚÚ[™Îˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜[š×ØXØÛİ[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜[š×İ˜[œÙ™\—Ü™\]Y\İÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆš[[™×ØŞXÛNˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™ÂˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[—ÚYˆİš[™Âˆ™XÙZ\İ\›ˆİš[™È[ˆ™Z™Xİ[Û—Ü™X\ÛÛˆİš[™È[ˆ™]šY]ÙYØ]ˆİš[™È[ˆ™]šY]ÙYØNˆİš[™È[ˆİ]\Îˆİš[™Âˆ˜[œÙ™\—Ü™Y™\™[˜ÙNˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆš[[™×ØŞXÛOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™ÂˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[—ÚYˆİš[™Âˆ™XÙZ\İ\›Îˆİš[™È[ˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆ™]šY]ÙYØ]Îˆİš[™È[ˆ™]šY]ÙYØOÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ˜[œÙ™\—Ü™Y™\™[˜ÙOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆš[[™×ØŞXÛOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™ÂˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ[—ÚYÎˆİš[™Âˆ™XÙZ\İ\›Îˆİš[™È[ˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆ™]šY]ÙYØ]Îˆİš[™È[ˆ™]šY]ÙYØOÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ˜[œÙ™\—Ü™Y™\™[˜ÙOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜[š×İ˜[œÙ™\—Ü™\]Y\İ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜˜[š×İ˜[œÙ™\—Ü™\]Y\İ×Ü[—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆœİXœØÜš\[Û—Ü[œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ØÚÜÎˆÂˆ›İÎˆÂˆÛÛ[ˆœÛÛˆ[ˆÜ™X]YØ]ˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆÜ™\—Ú[™^ˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆYÙWÚYˆİš[™È[ˆ]Nˆİš[™È[ˆ\Nˆİš[™Âˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛ[ÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™\—Ú[™^Îˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆYÙWÚYÎˆİš[™È[ˆ]OÎˆİš[™È[ˆ\Nˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÛÛ[ÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™\—Ú[™^Îˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆYÙWÚYÎˆİš[™È[ˆ]OÎˆİš[™È[ˆ\OÎˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ØÚÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ØÚÜ×ÜYÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœYÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆœYÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÛÛ\][Û—ÜØÛÜ™Nˆ[X™\‚ˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆYˆİš[™Âˆ\İÜ[—Ø]ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]\Îˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÛÛ\][Û—ÜØÛÜ™OÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\İÜ[—Ø]Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÛÛ\][Û—ÜØÛÜ™OÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™Âˆ\İÜ[—Ø]Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\ÎˆÂˆ›İÎˆÂˆ][\Îˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆ[]WÚYˆİš[™È[ˆ[]Wİ\Nˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆYˆİš[™ÂˆY[\İ[˜ŞWÚÙ^Nˆİš[™Âˆ\İØ][\Ø]ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[—ÚYˆİš[™Âˆİ]\Îˆİš[™Âˆİ\ÚÙ^Nˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ][\ÏÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ[]WÚYÎˆİš[™È[ˆ[]Wİ\OÎˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^Nˆİš[™Âˆ\İØ][\Ø]Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[—ÚYˆİš[™Âˆİ]\ÏÎˆİš[™Âˆİ\ÚÙ^Nˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ][\ÏÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ[]WÚYÎˆİš[™È[ˆ[]Wİ\OÎˆİš[™È[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^OÎˆİš[™Âˆ\İØ][\Ø]Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ[—ÚYÎˆİš[™Âˆİ]\ÏÎˆİš[™Âˆİ\ÚÙ^OÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\×Ü[—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Ø]]ÛX][Û—Ü[œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×ØØ\—Ù]Z[ÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆØ\—İ\Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆZ[WÜ˜]Nˆ[X™\ˆ[ˆ›ÜÙ™—Ù]Nˆİš[™È[ˆ›ÜÙ™—ÛØØ][Ûˆİš[™È[ˆYˆİš[™Âˆ[œİ\˜[˜ÙWÚ[˜ÛYYˆ›ÛÛX[ˆ[ˆXÚİ\Ù]Nˆİš[™È[ˆXÚİ\ÛØØ][Ûˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆØ\—İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆZ[WÜ˜]OÎˆ[X™\ˆ[ˆ›ÜÙ™—Ù]OÎˆİš[™È[ˆ›ÜÙ™—ÛØØ][ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ[œİ\˜[˜ÙWÚ[˜ÛYYÎˆ›ÛÛX[ˆ[ˆXÚİ\Ù]OÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆØ\—İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆZ[WÜ˜]OÎˆ[X™\ˆ[ˆ›ÜÙ™—Ù]OÎˆİš[™È[ˆ›ÜÙ™—ÛØØ][ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ[œİ\˜[˜ÙWÚ[˜ÛYYÎˆ›ÛÛX[ˆ[ˆXÚİ\Ù]OÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ØØ\—Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ØØ\—Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ØØ\—Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ØØ\—Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ØØ\—Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\ÚİÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆİ\œ™[˜ŞNˆİš[™Âˆ^XİYÛX\™Ú[—Üİˆ[X™\‚ˆ^XİYÜ›Ùš]ˆ[X™\‚ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^XX›WØ[[İ[ˆ[X™\‚ˆ™XÙZ]˜X›WØ[[İ[ˆ[X™\‚ˆÛ˜\ÚİØ]ˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\œ™[˜ŞOÎˆİš[™Âˆ^XİYÛX\™Ú[—ÜİÎˆ[X™\‚ˆ^XİYÜ›Ùš]Îˆ[X™\‚ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^XX›WØ[[İ[Îˆ[X™\‚ˆ™XÙZ]˜X›WØ[[İ[Îˆ[X™\‚ˆÛ˜\ÚİØ]Îˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\œ™[˜ŞOÎˆİš[™Âˆ^XİYÛX\™Ú[—ÜİÎˆ[X™\‚ˆ^XİYÜ›Ùš]Îˆ[X™\‚ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^XX›WØ[[İ[Îˆ[X™\‚ˆ™XÙZ]˜X›WØ[[İ[Îˆ[X™\‚ˆÛ˜\ÚİØ]Îˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ùš[˜[˜ÚX[ÜÛ˜\Úİ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Ù›YÚÙ]Z[ÎˆÂˆ›İÎˆÂˆZ\›[™Nˆİš[™È[ˆ\œš]˜[ØZ\œÜˆİš[™È[ˆ\œš]˜[Ù]Nˆİš[™È[ˆ\œš]˜[İ[YNˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆ\\\™WØZ\œÜˆİš[™È[ˆ\\\™WÙ]Nˆİš[™È[ˆ\\\™Wİ[YNˆİš[™È[ˆ›YÚØÛ\ÜÎˆİš[™È[ˆ›YÚÛ[X™\ˆİš[™È[ˆYˆİš[™Âˆ\×Ü›İ[™İš\ˆ›ÛÛX[ˆ[ˆYX[Ü™Y™\™[˜Ù\Îˆİš[™È[ˆ\ÜÙ[™Ù\œ×ØÛİ[ˆ[X™\ˆ[ˆœˆİš[™È[ˆÙX]Ü™Y™\™[˜Ù\Îˆİš[™È[ˆ^\×Ø[™Ù™Y\Îˆ[X™\ˆ[ˆXÚÙ]Û[X™\ˆİš[™È[ˆXÚÙ]ÜšXÙWÜ\—Ü\œÛÛˆ[X™\ˆ[ˆBˆ[œÙ\ˆÂˆZ\›[™OÎˆİš[™È[ˆ\œš]˜[ØZ\œÜÎˆİš[™È[ˆ\œš]˜[Ù]OÎˆİš[™È[ˆ\œš]˜[İ[YOÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ\\\™WØZ\œÜÎˆİš[™È[ˆ\\\™WÙ]OÎˆİš[™È[ˆ\\\™Wİ[YOÎˆİš[™È[ˆ›YÚØÛ\ÜÏÎˆİš[™È[ˆ›YÚÛ[X™\Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Ü›İ[™İš\Îˆ›ÛÛX[ˆ[ˆYX[Ü™Y™\™[˜Ù\ÏÎˆİš[™È[ˆ\ÜÙ[™Ù\œ×ØÛİ[Îˆ[X™\ˆ[ˆœÎˆİš[™È[ˆÙX]Ü™Y™\™[˜Ù\ÏÎˆİš[™È[ˆ^\×Ø[™Ù™Y\ÏÎˆ[X™\ˆ[ˆXÚÙ]Û[X™\Îˆİš[™È[ˆXÚÙ]ÜšXÙWÜ\—Ü\œÛÛÎˆ[X™\ˆ[ˆBˆ\]NˆÂˆZ\›[™OÎˆİš[™È[ˆ\œš]˜[ØZ\œÜÎˆİš[™È[ˆ\œš]˜[Ù]OÎˆİš[™È[ˆ\œš]˜[İ[YOÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ\\\™WØZ\œÜÎˆİš[™È[ˆ\\\™WÙ]OÎˆİš[™È[ˆ\\\™Wİ[YOÎˆİš[™È[ˆ›YÚØÛ\ÜÏÎˆİš[™È[ˆ›YÚÛ[X™\Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Ü›İ[™İš\Îˆ›ÛÛX[ˆ[ˆYX[Ü™Y™\™[˜Ù\ÏÎˆİš[™È[ˆ\ÜÙ[™Ù\œ×ØÛİ[Îˆ[X™\ˆ[ˆœÎˆİš[™È[ˆÙX]Ü™Y™\™[˜Ù\ÏÎˆİš[™È[ˆ^\×Ø[™Ù™Y\ÏÎˆ[X™\ˆ[ˆXÚÙ]Û[X™\Îˆİš[™È[ˆXÚÙ]ÜšXÙWÜ\—Ü\œÛÛÎˆ[X™\ˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ù›YÚÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ù›YÚÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ù›YÚÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ù›YÚÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Ù›YÚÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Úİ[Ù]Z[ÎˆÂˆ›İÎˆÂˆY[Îˆ[X™\ˆ[ˆ›Ø\™İ\Nˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙNˆİš[™È[ˆØ[˜Ù[][Û—ÜÛXŞNˆİš[™È[ˆÚXÚ×Ú[ˆİš[™È[ˆÚXÚ×Ûİ]ˆİš[™È[ˆÚ[™[ˆ[X™\ˆ[ˆÚ[™[—ØYÙ\Îˆİš[™È[ˆÚ]Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ[Û˜[YNˆİš[™È[ˆYˆİš[™ÂˆYX[Ü[ˆİš[™È[ˆšYÚÎˆ[X™\ˆ[ˆ›ÛÛWİ\Nˆİš[™È[ˆ›ÛÛ\Îˆ[X™\ˆ[ˆİ\—Ü˜][™Îˆ[X™\ˆ[ˆBˆ[œÙ\ˆÂˆY[ÏÎˆ[X™\ˆ[ˆ›Ø\™İ\OÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙOÎˆİš[™È[ˆØ[˜Ù[][Û—ÜÛXŞOÎˆİš[™È[ˆÚXÚ×Ú[Îˆİš[™È[ˆÚXÚ×Ûİ]Îˆİš[™È[ˆÚ[™[Îˆ[X™\ˆ[ˆÚ[™[—ØYÙ\ÏÎˆİš[™È[ˆÚ]OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ[Û˜[YOÎˆİš[™È[ˆYÎˆİš[™ÂˆYX[Ü[Îˆİš[™È[ˆšYÚÏÎˆ[X™\ˆ[ˆ›ÛÛWİ\OÎˆİš[™È[ˆ›ÛÛ\ÏÎˆ[X™\ˆ[ˆİ\—Ü˜][™ÏÎˆ[X™\ˆ[ˆBˆ\]NˆÂˆY[ÏÎˆ[X™\ˆ[ˆ›Ø\™İ\OÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™Âˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙOÎˆİš[™È[ˆØ[˜Ù[][Û—ÜÛXŞOÎˆİš[™È[ˆÚXÚ×Ú[Îˆİš[™È[ˆÚXÚ×Ûİ]Îˆİš[™È[ˆÚ[™[Îˆ[X™\ˆ[ˆÚ[™[—ØYÙ\ÏÎˆİš[™È[ˆÚ]OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ[Û˜[YOÎˆİš[™È[ˆYÎˆİš[™ÂˆYX[Ü[Îˆİš[™È[ˆšYÚÏÎˆ[X™\ˆ[ˆ›ÛÛWİ\OÎˆİš[™È[ˆ›ÛÛ\ÏÎˆ[X™\ˆ[ˆİ\—Ü˜][™ÏÎˆ[X™\ˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Úİ[Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Úİ[Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Úİ[Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Úİ[Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Úİ[Ù]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×ÜÜXÚX[Ü™\]Y\İÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛWÜ™\]Y\İİ^ˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÜXÚX[Ü™\]Y\İİ\WÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛWÜ™\]Y\İİ^Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÜXÚX[Ü™\]Y\İİ\WÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛWÜ™\]Y\İİ^Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÜXÚX[Ü™\]Y\İİ\WÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ÜÜXÚX[Ü™\]Y\İ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ÜÜXÚX[Ü™\]Y\İ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×ÜÜXÚX[Ü™\]Y\İ×ÜÜXÚX[Ü™\]Y\İİ\WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœÜXÚX[Ü™\]Y\İİ\WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆœÜXÚX[Ü™\]Y\İİ\\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Üİ]\×Ú\İÜNˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÚ[™ÙYØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÚ[™ÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÚ[™ÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Üİ]\×Ú\İÜWÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×Üİ]\×Ú\İÜWÜİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×Üİ]\Ù\ÎˆÂˆ›İÎˆÂˆÛÛÜˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™ÂˆÛÜÛÜ™\ˆ[X™\ˆ[ˆBˆ[œÙ\ˆÂˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™ÂˆÛÜÛÜ™\Îˆ[X™\ˆ[ˆBˆ\]NˆÂˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™ÂˆÛÜÛÜ™\Îˆ[X™\ˆ[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ›ÛÚÚ[™×İ\ÚÜÎˆÂˆ›İÎˆÂˆ\ÜÚYÛ™YWÚYˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYWØ]ˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]Nˆİš[™ÂˆÛİ\˜ÙNˆİš[™È[ˆİ]\Îˆİš[™Âˆ]Nˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ\ÜÚYÛ™YWÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYWØ]Îˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]OÎˆİš[™ÂˆÛİ\˜ÙOÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ]Nˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ\ÜÚYÛ™YWÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYWØ]Îˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆš[Üš]OÎˆİš[™ÂˆÛİ\˜ÙOÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ]OÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ\ÚÜ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ\ÚÜ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ\ÚÜ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ\ÚÜ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ\ÚÜ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×İ[Y[[™WÙ]™[ÎˆÂˆ›İÎˆÂˆXİÜ—ÚYˆİš[™È[ˆXİÜ—ÛX™[ˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÚ[™ˆİš[™ÂˆØØİ\œ™YØ]ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[ØYˆœÛÛ‚ˆİ[[X\Nˆİš[™È[ˆBˆ[œÙ\ˆÂˆXİÜ—ÚYÎˆİš[™È[ˆXİÜ—ÛX™[Îˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÚ[™ˆİš[™ÂˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[ØYÎˆœÛÛ‚ˆİ[[X\OÎˆİš[™È[ˆBˆ\]NˆÂˆXİÜ—ÚYÎˆİš[™È[ˆXİÜ—ÛX™[Îˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÚ[™Îˆİš[™ÂˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[ØYÎˆœÛÛ‚ˆİ[[X\OÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ[Y[[™WÙ]™[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ[Y[[™WÙ]™[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ[Y[[™WÙ]™[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ[Y[[™WÙ]™[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ[Y[[™WÙ]™[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×İ˜[œÜÜÙ]Z[ÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆ›ÜÙ™—ÜÚ[ˆİš[™È[ˆYˆİš[™Âˆ\ÜÙ[™Ù\œÎˆ[X™\ˆ[ˆXÚİ\ÜÚ[ˆİš[™È[ˆ›İ]Nˆİš[™È[ˆ™ZXÛWİ\Nˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ›ÜÙ™—ÜÚ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆXÚİ\ÜÚ[Îˆİš[™È[ˆ›İ]OÎˆİš[™È[ˆ™ZXÛWİ\OÎˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ›ÜÙ™—ÜÚ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆXÚİ\ÜÚ[Îˆİš[™È[ˆ›İ]OÎˆİš[™È[ˆ™ZXÛWİ\OÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ˜[œÜÜÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ˜[œÜÜÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ˜[œÜÜÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ˜[œÜÜÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ˜[œÜÜÙ]Z[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™×İ›İXÚ\œÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ\ÜİYYØ]ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ—İ\›ˆİš[™È[ˆ\—Ü^[ØYˆœÛÛ‚ˆ\]YØ]ˆİš[™Âˆ›İXÚ\—Û[X™\ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\ÜİYYØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ—İ\›Îˆİš[™È[ˆ\—Ü^[ØYÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™Âˆ›İXÚ\—Û[X™\ˆİš[™ÂˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\ÜİYYØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ—İ\›Îˆİš[™È[ˆ\—Ü^[ØYÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™Âˆ›İXÚ\—Û[X™\Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™×İ›İXÚ\œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›ÛÚÚ[™ÜÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×Û[X™\ˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™ÂˆÛÜİÜšXÙNˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆ]WÜ]X[]WÜİ]\Îˆİš[™È[ˆ\ÜÚ]Ü\˜Ù[ˆ[X™\ˆ[ˆ[\ŞYYWÚYˆİš[™È[ˆ[™Ù]Nˆİš[™È[ˆYˆİš[™Âˆ\×Ù[[Îˆ›ÛÛX[‚ˆYØXŞWÚYˆİš[™È[ˆYØXŞWİX›Nˆİš[™È[ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÜÛXŞNˆİš[™Âˆ›Ùš]ˆ[X™\ˆ[ˆ][İWÚYˆİš[™È[ˆÙ[[™×ÜšXÙNˆ[X™\ˆ[ˆİ\Ù]Nˆİš[™È[ˆİ]\Îˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆÛÜšÙ›İ×ÜİYÙNˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜›ÛÚÚ[™×İÛÜšÙ›İ×ÜİYÙH—BˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×Û[X™\ˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™ÂˆÛÜİÜšXÙOÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™È[ˆ]WÜ]X[]WÜİ]\ÏÎˆİš[™È[ˆ\ÜÚ]Ü\˜Ù[Îˆ[X™\ˆ[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ[™Ù]OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆYØXŞWÚYÎˆİš[™È[ˆYØXŞWİX›OÎˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÜÛXŞOÎˆİš[™Âˆ›Ùš]Îˆ[X™\ˆ[ˆ][İWÚYÎˆİš[™È[ˆÙ[[™×ÜšXÙOÎˆ[X™\ˆ[ˆİ\Ù]OÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆÛÜšÙ›İ×ÜİYÙOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜›ÛÚÚ[™×İÛÜšÙ›İ×ÜİYÙH—BˆBˆ\]NˆÂˆ›ÛÚÚ[™×Û[X™\Îˆİš[™Âˆ›ÛÚÚ[™×İ\OÎˆİš[™ÂˆÛÜİÜšXÙOÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™È[ˆ]WÜ]X[]WÜİ]\ÏÎˆİš[™È[ˆ\ÜÚ]Ü\˜Ù[Îˆ[X™\ˆ[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ[™Ù]OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆYØXŞWÚYÎˆİš[™È[ˆYØXŞWİX›OÎˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[Y[ÜÛXŞOÎˆİš[™Âˆ›Ùš]Îˆ[X™\ˆ[ˆ][İWÚYÎˆİš[™È[ˆÙ[[™×ÜšXÙOÎˆ[X™\ˆ[ˆİ\Ù]OÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆÛÜšÙ›İ×ÜİYÙOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜›ÛÚÚ[™×İÛÜšÙ›İ×ÜİYÙH—BˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ü][İWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ][İWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ][İ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆœ˜[˜Ú\ÎˆÂˆ›İÎˆÂˆY™\ÜÎˆİš[™È[ˆÛÙNˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÛ™Nˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆY™\ÜÏÎˆİš[™È[ˆÛÙOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYÎˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÛ™OÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆY™\ÜÏÎˆİš[™È[ˆÛÙOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYÎˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆÛ™OÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜œ˜[˜Ú\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆØ[\ZYÛ—ÜÙ[™ÎˆÂˆ›İÎˆÂˆØ[\ZYÛ—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™\ÜÛœÙNˆİš[™È[ˆÙ[Ø]ˆİš[™È[ˆİ]\Îˆİš[™ÂˆBˆ[œÙ\ˆÂˆØ[\ZYÛ—ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™\ÜÛœÙOÎˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆBˆ\]NˆÂˆØ[\ZYÛ—ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™\ÜÛœÙOÎˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø[\ZYÛ—ÜÙ[™×ØØ[\ZYÛ—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜Ø[\ZYÛ—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›X\šÙ][™×ØØ[\ZYÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø[\ZYÛ—ÜÙ[™×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø[\ZYÛ—ÜÙ[™×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆØ\—Ü™[[ÎˆÂˆ›İÎˆÂˆY][Û˜[ØÛÜİÎˆ[X™\ˆ[ˆY][Û˜[Ùš]™\—ØÛİ[ˆ[X™\ˆ[ˆY][Û˜[Ù™Y\Îˆ[X™\ˆ[ˆ›ÛÚÚ[™×ØYÙ[ÚYˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YNˆİš[™È[ˆÛÛ˜XİÜÙ[ˆ›ÛÛX[ˆ[ˆÛÛ˜XİÜÙ[Ù]Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™ÂˆZ[WÜ˜]Nˆ[X™\ˆ[ˆ[XYÙWÛ›İ\Îˆİš[™È[ˆ\ÜÚ]ÜZYˆ[X™\ˆ[ˆ\ÜÚ]Ü™]\›™Yˆ[X™\ˆ[ˆš]™\—ÛXÙ[œÙWÙ^\Nˆİš[™È[ˆš]™\—ÛXÙ[œÙWÛ[X™\ˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜˆ[X™\ˆ[ˆY[Û]™[ÜXÚİ\ˆİš[™È[ˆY[Û]™[Ü™]\›ˆİš[™È[ˆÜ×Ú[˜ÛYYˆ›ÛÛX[ˆ[ˆYˆİš[™Âˆ[œİ\˜[˜ÙWØÛÜİˆ[X™\ˆ[ˆ[œİ\˜[˜ÙWÚ[˜ÛYYˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]Nˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]Nˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆXÚİ\ÛØØ][Ûˆİš[™È[ˆXÚİ\Û›İ\Îˆİš[™È[ˆ][İWÚYˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆ™[[Ù\˜][Û—Ù^\Îˆ[X™\ˆ[ˆ™[[Ù[™Ù]Nˆİš[™Âˆ™[[Ü™Y™\™[˜ÙNˆİš[™Âˆ™[[Üİ\Ù]Nˆİš[™Âˆ™]\›—ÛØØ][Ûˆİš[™È[ˆ™]\›—Û›İ\Îˆİš[™È[ˆÙXİ\š]WÙ\ÜÚ]ˆ[X™\ˆ[ˆÜXÚX[Ü™\]Z\™[Y[Îˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ØÛÜİÙYÜˆ[X™\ˆ[ˆİ\Y\—ÙZ[WØÛÜİˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]Nˆİš[™È[ˆİ\Y\—İİ[ØÛÜİˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆİ[Ü™[[ØÛÜİˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ™ZXÛWØÛÛÜˆİš[™È[ˆ™ZXÛWÛXZÙNˆİš[™È[ˆ™ZXÛWÛ[Ù[ˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\ˆİš[™È[ˆ™ZXÛWİ\WÚYˆİš[™È[ˆ™ZXÛWŞYX\ˆ[X™\ˆ[ˆBˆ[œÙ\ˆÂˆY][Û˜[ØÛÜİÏÎˆ[X™\ˆ[ˆY][Û˜[Ùš]™\—ØÛİ[Îˆ[X™\ˆ[ˆY][Û˜[Ù™Y\ÏÎˆ[X™\ˆ[ˆ›ÛÚÚ[™×ØYÙ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YOÎˆİš[™È[ˆÛÛ˜XİÜÙ[Îˆ›ÛÛX[ˆ[ˆÛÛ˜XİÜÙ[Ù]OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™ÂˆZ[WÜ˜]OÎˆ[X™\ˆ[ˆ[XYÙWÛ›İ\ÏÎˆİš[™È[ˆ\ÜÚ]ÜZYÎˆ[X™\ˆ[ˆ\ÜÚ]Ü™]\›™YÎˆ[X™\ˆ[ˆš]™\—ÛXÙ[œÙWÙ^\OÎˆİš[™È[ˆš]™\—ÛXÙ[œÙWÛ[X™\Îˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜÎˆ[X™\ˆ[ˆY[Û]™[ÜXÚİ\Îˆİš[™È[ˆY[Û]™[Ü™]\›Îˆİš[™È[ˆÜ×Ú[˜ÛYYÎˆ›ÛÛX[ˆ[ˆYÎˆİš[™Âˆ[œİ\˜[˜ÙWØÛÜİÎˆ[X™\ˆ[ˆ[œİ\˜[˜ÙWÚ[˜ÛYYÎˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Îˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYØ[[İ[Îˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆXÚİ\Û›İ\ÏÎˆİš[™È[ˆ][İWÚYÎˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[Îˆ[X™\ˆ[ˆ™[[Ù\˜][Û—Ù^\ÏÎˆ[X™\ˆ[ˆ™[[Ù[™Ù]Nˆİš[™Âˆ™[[Ü™Y™\™[˜ÙOÎˆİš[™Âˆ™[[Üİ\Ù]Nˆİš[™Âˆ™]\›—ÛØØ][ÛÎˆİš[™È[ˆ™]\›—Û›İ\ÏÎˆİš[™È[ˆÙXİ\š]WÙ\ÜÚ]Îˆ[X™\ˆ[ˆÜXÚX[Ü™\]Z\™[Y[ÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ\Y\—ÙZ[WØÛÜİÎˆ[X™\ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[Îˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]OÎˆİš[™È[ˆİ\Y\—İİ[ØÛÜİÎˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆİ[Ü™[[ØÛÜİÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆ™ZXÛWØÛÛÜÎˆİš[™È[ˆ™ZXÛWÛXZÙOÎˆİš[™È[ˆ™ZXÛWÛ[Ù[Îˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\Îˆİš[™È[ˆ™ZXÛWİ\WÚYÎˆİš[™È[ˆ™ZXÛWŞYX\Îˆ[X™\ˆ[ˆBˆ\]NˆÂˆY][Û˜[ØÛÜİÏÎˆ[X™\ˆ[ˆY][Û˜[Ùš]™\—ØÛİ[Îˆ[X™\ˆ[ˆY][Û˜[Ù™Y\ÏÎˆ[X™\ˆ[ˆ›ÛÚÚ[™×ØYÙ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YOÎˆİš[™È[ˆÛÛ˜XİÜÙ[Îˆ›ÛÛX[ˆ[ˆÛÛ˜XİÜÙ[Ù]OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™ÂˆZ[WÜ˜]OÎˆ[X™\ˆ[ˆ[XYÙWÛ›İ\ÏÎˆİš[™È[ˆ\ÜÚ]ÜZYÎˆ[X™\ˆ[ˆ\ÜÚ]Ü™]\›™YÎˆ[X™\ˆ[ˆš]™\—ÛXÙ[œÙWÙ^\OÎˆİš[™È[ˆš]™\—ÛXÙ[œÙWÛ[X™\Îˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜÎˆ[X™\ˆ[ˆY[Û]™[ÜXÚİ\Îˆİš[™È[ˆY[Û]™[Ü™]\›Îˆİš[™È[ˆÜ×Ú[˜ÛYYÎˆ›ÛÛX[ˆ[ˆYÎˆİš[™Âˆ[œİ\˜[˜ÙWØÛÜİÎˆ[X™\ˆ[ˆ[œİ\˜[˜ÙWÚ[˜ÛYYÎˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Îˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYØ[[İ[Îˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆXÚİ\Û›İ\ÏÎˆİš[™È[ˆ][İWÚYÎˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[Îˆ[X™\ˆ[ˆ™[[Ù\˜][Û—Ù^\ÏÎˆ[X™\ˆ[ˆ™[[Ù[™Ù]OÎˆİš[™Âˆ™[[Ü™Y™\™[˜ÙOÎˆİš[™Âˆ™[[Üİ\Ù]OÎˆİš[™Âˆ™]\›—ÛØØ][ÛÎˆİš[™È[ˆ™]\›—Û›İ\ÏÎˆİš[™È[ˆÙXİ\š]WÙ\ÜÚ]Îˆ[X™\ˆ[ˆÜXÚX[Ü™\]Z\™[Y[ÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ\Y\—ÙZ[WØÛÜİÎˆ[X™\ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[Îˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]OÎˆİš[™È[ˆİ\Y\—İİ[ØÛÜİÎˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆİ[Ü™[[ØÛÜİÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆ™ZXÛWØÛÛÜÎˆİš[™È[ˆ™ZXÛWÛXZÙOÎˆİš[™È[ˆ™ZXÛWÛ[Ù[Îˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\Îˆİš[™È[ˆ™ZXÛWİ\WÚYÎˆİš[™È[ˆ™ZXÛWŞYX\Îˆ[X™\ˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×Ü][İWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ][İWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ][İ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ø\—Ü™[[×İ™ZXÛWİ\WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™ZXÛWİ\WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™ZXÛWİ\\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ\ÛÙ—ØXØÛİ[ÎˆÂˆ›İÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™È[ˆXØÛİ[İ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜XØÛİ[İ\H—BˆÜ™X]YØ]ˆİš[™Âˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆ\×ÜŞ\İ[Nˆ›ÛÛX[‚ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÚYˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\Îˆİš[™È[ˆXØÛİ[İ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜XØÛİ[İ\H—BˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\×ÜŞ\İ[OÎˆ›ÛÛX[‚ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆXØÛİ[ØÛÙOÎˆİš[™ÂˆXØÛİ[Û˜[YOÎˆİš[™ÂˆXØÛİ[Û˜[YWØ\Îˆİš[™È[ˆXØÛİ[İ\OÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜XØÛİ[İ\H—BˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\×ÜŞ\İ[OÎˆ›ÛÛX[‚ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\™[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ú\ÛÙ—ØXØÛİ[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ú\ÛÙ—ØXØÛİ[×Ü\™[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ\™[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ú\ÛÙ—ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ[Z\ÜÚ[Û—Ü^[Y[ÎˆÂˆ›İÎˆÂˆ˜[š×ØXØÛİ[ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[Ù]Nˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆ^[Y[Ü\š[ÙÙ[™ˆİš[™È[ˆ^[Y[Ü\š[ÙÜİ\ˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™È[ˆİ[ØÛÛ[Z\ÜÚ[Û—Ø[[İ[ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ^[Y[Ü\š[ÙÙ[™Îˆİš[™È[ˆ^[Y[Ü\š[ÙÜİ\Îˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ[ØÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ^[Y[Ü\š[ÙÙ[™Îˆİš[™È[ˆ^[Y[Ü\š[ÙÜİ\Îˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ[ØÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ[Z\ÜÚ[Û—Ü^[Y[×Ø˜[š×ØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜˜[š×ØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ[Z\ÜÚ[Û—Ü^[Y[×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ[Z\ÜÚ[Û—Ü^[Y[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ[Ø›ØÚÜÎˆÂˆ›İÎˆÂˆÛÛ[ˆœÛÛˆ[ˆÜ™X]YØ]ˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ^[İ]ÜÙ][™ÜÎˆœÛÛˆ[ˆÜ™\—Ú[™^ˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÙXİ[Ûˆİš[™È[ˆİ[WÜÙ][™ÜÎˆœÛÛˆ[ˆ]Nˆİš[™È[ˆ\Nˆİš[™Âˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛ[ÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ^[İ]ÜÙ][™ÜÏÎˆœÛÛˆ[ˆÜ™\—Ú[™^Îˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÙXİ[ÛÎˆİš[™È[ˆİ[WÜÙ][™ÜÏÎˆœÛÛˆ[ˆ]OÎˆİš[™È[ˆ\Nˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÛÛ[ÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ^[İ]ÜÙ][™ÜÏÎˆœÛÛˆ[ˆÜ™\—Ú[™^Îˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÙXİ[ÛÎˆİš[™È[ˆİ[WÜÙ][™ÜÏÎˆœÛÛˆ[ˆ]OÎˆİš[™È[ˆ\OÎˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ[Ø›ØÚÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ™\œØ][Û—Ø\ÜÚYÛ›Y[×Ú\İÜNˆÂˆ›İÎˆÂˆXİ[Ûˆİš[™ÂˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆœ›ÛWİ\Ù\—ÚYˆİš[™È[ˆYˆİš[™ÂˆY]Y]NˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™›Ü›YYØNˆİš[™È[ˆ™X\ÛÛˆİš[™È[ˆ×İ\Ù\—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆXİ[Ûˆİš[™ÂˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆœ›ÛWİ\Ù\—ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™›Ü›YYØOÎˆİš[™È[ˆ™X\ÛÛÎˆİš[™È[ˆ×İ\Ù\—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆXİ[ÛÎˆİš[™ÂˆÛÛ™\œØ][Û—ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆœ›ÛWİ\Ù\—ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\™›Ü›YYØOÎˆİš[™È[ˆ™X\ÛÛÎˆİš[™È[ˆ×İ\Ù\—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ™\œØ][Û—Ø\ÜÚYÛ›Y[×Ú\İÜWØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ™\œØ][Û—Ú[\›˜[Û›İ\ÎˆÂˆ›İÎˆÂˆ]]Ü—ÚYˆİš[™ÂˆÛÛ[ˆİš[™ÂˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆY[[ÛœÎˆİš[™Ö×H[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ]]Ü—ÚYˆİš[™ÂˆÛÛ[ˆİš[™ÂˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆY[[ÛœÏÎˆİš[™Ö×H[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ]]Ü—ÚYÎˆİš[™ÂˆÛÛ[Îˆİš[™ÂˆÛÛ™\œØ][Û—ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆY[[ÛœÏÎˆİš[™Ö×H[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ™\œØ][Û—Ú[\›˜[Û›İ\×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ™\œØ][Û—İY×Ø\ÜÚYÛ›Y[ÎˆÂˆ›İÎˆÂˆ\ÜÚYÛ™YØNˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆY×ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆ\ÜÚYÛ™YØOÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆY×ÚYˆİš[™ÂˆBˆ\]NˆÂˆ\ÜÚYÛ™YØOÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆY×ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ™\œØ][Û—İY×Ø\ÜÚYÛ›Y[×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÛ™\œØ][Û—İY×Ø\ÜÚYÛ›Y[×İY×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈY×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜ÛÛ™\œØ][Û—İYÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÛ™\œØ][Û—İYÜÎˆÂˆ›İÎˆÂˆÛÛÜˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆÛÛÜÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆÛÛÜÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\Îˆ×BˆBˆÛÜİØÙ[\œÎˆÂˆ›İÎˆÂˆÛÙNˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆX[˜YÙ\—Ù[\ŞYYWÚYˆİš[™È[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÚYˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆÛÙNˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—Ù[\ŞYYWÚYÎˆİš[™È[ˆ˜[YNˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆÛÙOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—Ù[\ŞYYWÚYÎˆİš[™È[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\™[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÜİØÙ[\œ×ÛX[˜YÙ\—Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›X[˜YÙ\—Ù[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÜİØÙ[\œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜ÛÜİØÙ[\œ×Ü\™[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ\™[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜ÛÜİØÙ[\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÜ™Y]Û›İ\ÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™Âˆ^Ú[™ÙWÜ˜]Nˆ[X™\‚ˆYˆİš[™Âˆ[›ÚXÙWÚYˆİš[™È[ˆ›İWÙ]Nˆİš[™Âˆ›İWÛ[X™\ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\WÚYˆİš[™È[ˆ\Wİ\Nˆİš[™Âˆ™X\ÛÛˆİš[™È[ˆİ]\Îˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÚYÎˆİš[™È[ˆ›İWÙ]OÎˆİš[™Âˆ›İWÛ[X™\ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\WÚYÎˆİš[™È[ˆ\Wİ\Nˆİš[™Âˆ™X\ÛÛÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÚYÎˆİš[™È[ˆ›İWÙ]OÎˆİš[™Âˆ›İWÛ[X™\Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\WÚYÎˆİš[™È[ˆ\Wİ\OÎˆİš[™Âˆ™X\ÛÛÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜Ü™Y]Û›İ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—ØÛÛ[][šXØ][ÛœÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÛÛ[][šXØ][Û—İ\Nˆİš[™ÂˆÛÛ\]YØ]ˆİš[™È[ˆÛÛ[ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆ\™Xİ[Ûˆİš[™Âˆ\˜][Û—ÛZ[]\Îˆ[X™\ˆ[ˆ›Ûİ×İ\ÚYˆİš[™È[ˆ[™YØNˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆØÚY[YØ]ˆİš[™È[ˆİ]\Îˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[][šXØ][Û—İ\Nˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÛÛ[Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆ\™Xİ[Ûˆİš[™Âˆ\˜][Û—ÛZ[]\ÏÎˆ[X™\ˆ[ˆ›Ûİ×İ\ÚYÎˆİš[™È[ˆ[™YØOÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆØÚY[YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[][šXØ][Û—İ\OÎˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÛÛ[Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™Âˆ\™Xİ[ÛÎˆİš[™Âˆ\˜][Û—ÛZ[]\ÏÎˆ[X™\ˆ[ˆ›Ûİ×İ\ÚYÎˆİš[™È[ˆ[™YØOÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆØÚY[YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ØÛÛ[][šXØ][Ûœ×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ØÛÛ[][šXØ][Ûœ×Ù›Ûİ×İ\ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™›Ûİ×İ\ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\—Ù›Ûİ×İ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ØÛÛ[][šXØ][Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—Ù›Ûİ×İ\ÎˆÂˆ›İÎˆÂˆ\ÜÚYÛ™YİÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆİ\İÛY\—İ˜[YNˆİš[™È[ˆ›Ûİ×İ\İ\Nˆİš[™ÂˆYˆİš[™Âˆ\İØÛÛXİÙ]Nˆİš[™È[ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]Nˆİš[™È[ˆØÚY[YÙ]Nˆİš[™Âˆİ]\Îˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆİ\İÛY\—İ˜[YOÎˆİš[™È[ˆ›Ûİ×İ\İ\Nˆİš[™ÂˆYÎˆİš[™Âˆ\İØÛÛXİÙ]OÎˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]OÎˆİš[™È[ˆØÚY[YÙ]Nˆİš[™Âˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™Âˆİ\İÛY\—İ˜[YOÎˆİš[™È[ˆ›Ûİ×İ\İ\OÎˆİš[™ÂˆYÎˆİš[™Âˆ\İØÛÛXİÙ]OÎˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆš[Üš]OÎˆİš[™È[ˆØÚY[YÙ]OÎˆİš[™Âˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ù›Ûİ×İ\×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ù›Ûİ×İ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š×Ù›Ûİ×İ\Ø\ÜÚYÛ™Y‚ˆÛÛ[[œÎˆÈ˜\ÜÚYÛ™YİÈ—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ›Ùš[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—Û›İ\ÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÛÛ[ˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™ÂˆYˆİš[™Âˆ\×Üš]˜]Nˆ›ÛÛX[ˆ[ˆ›İWİ\Nˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]Nˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[ˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™ÂˆYÎˆİš[™Âˆ\×Üš]˜]OÎˆ›ÛÛX[ˆ[ˆ›İWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[Îˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™ÂˆYÎˆİš[™Âˆ\×Üš]˜]OÎˆ›ÛÛX[ˆ[ˆ›İWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆš[Üš]OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Û›İ\×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Û›İ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—Ü^[Y[Ø[ØØ][ÛœÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ[›ÚXÙWÚYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÚYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÚYˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÚYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[Y[ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[Ø[ØØ][Ûœ×Ú[›ÚXÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈš[›ÚXÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆš[›ÚXÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[Ø[ØØ][Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[Ø[ØØ][Ûœ×Ü^[Y[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ^[Y[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\—Ü^[Y[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—Ü^[Y[ÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÛY[Ü™Yˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™Âˆİ\İÛY\—ÚYˆİš[™È[ˆ^Ú[™ÙWÜ˜]Nˆ[X™\‚ˆYˆİš[™Âˆ[›ÚXÙWÚYˆİš[™È[ˆ\×Ù[[Îˆ›ÛÛX[‚ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[Ù]Nˆİš[™Âˆ^[Y[ÛY]Ùˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™È[ˆİ]\Îˆİš[™Âˆ™X\İ\WØXØÛİ[ÚYˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛY[Ü™YÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÚYÎˆİš[™È[ˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[Ù]OÎˆİš[™Âˆ^[Y[ÛY]ÙÎˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ™X\İ\WØXØÛİ[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛY[Ü™YÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÚYÎˆİš[™È[ˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[Y[Ù]OÎˆİš[™Âˆ^[Y[ÛY]ÙÎˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ™X\İ\WØXØÛİ[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×Ú[›ÚXÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈš[›ÚXÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆš[›ÚXÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—Ü^[Y[×İ™X\İ\WØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™X\İ\WØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—ÜØ]\Ù˜Xİ[ÛˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÛÛ[][šXØ][Û—Ü˜][™Îˆ[X™\ˆ[ˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆ™YY˜XÚÎˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ™\˜[Ü˜][™Îˆ[X™\ˆ[ˆÙ\šXÙWÜ˜][™Îˆ[X™\ˆ[ˆİ\™^WÜÙ[Ø]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[][šXØ][Û—Ü˜][™ÏÎˆ[X™\ˆ[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™Âˆ™YY˜XÚÏÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ™\˜[Ü˜][™ÏÎˆ[X™\ˆ[ˆÙ\šXÙWÜ˜][™ÏÎˆ[X™\ˆ[ˆİ\™^WÜÙ[Ø]Îˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÛÛ[][šXØ][Û—Ü˜][™ÏÎˆ[X™\ˆ[ˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™Âˆ™YY˜XÚÏÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆİ™\˜[Ü˜][™ÏÎˆ[X™\ˆ[ˆÙ\šXÙWÜ˜][™ÏÎˆ[X™\ˆ[ˆİ\™^WÜÙ[Ø]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ÜØ]\Ù˜Xİ[Û—Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ÜØ]\Ù˜Xİ[Û—ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\—ÜÙYÛY[ÎˆÂˆ›İÎˆÂˆÛÛÜˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆZ[š[][WØ›ÛÚÚ[™ÜÎˆ[X™\ˆ[ˆZ[š[][Wİİ[ÜÜ[ˆ[X™\ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆZ[š[][WØ›ÛÚÚ[™ÜÏÎˆ[X™\ˆ[ˆZ[š[][Wİİ[ÜÜ[Îˆ[X™\ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆZ[š[][WØ›ÛÚÚ[™ÜÏÎˆ[X™\ˆ[ˆZ[š[][Wİİ[ÜÜ[Îˆ[X™\ˆ[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\—ÜÙYÛY[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\İÛY\œÎˆÂˆ›İÎˆÂˆY™\ÜÎˆİš[™È[ˆ\˜Ú]™YØ]ˆİš[™È[ˆ\˜Ú]™YØNˆİš[™È[ˆÛÛ[][šXØ][Û—Ü™Y™\™[˜Ù\ÎˆœÛÛˆ[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆ[XZ[ˆİš[™È[ˆYˆİš[™Âˆ\×Ù[[Îˆ›ÛÛX[‚ˆ\İØ›ÛÚÚ[™×Ù]Nˆİš[™È[ˆ\İÙ›Ûİ×İ\ØNˆİš[™È[ˆ\İÙ›Ûİ×İ\Ù]Nˆİš[™È[ˆŞX[WÜÚ[Îˆ[X™\ˆ[ˆ˜[YNˆİš[™Âˆ˜][Û˜[]Nˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\ÜÜÜÛ[X™\ˆİš[™È[ˆÛ™Nˆİš[™È[ˆ™Y™\™[˜Ù\ÎˆœÛÛˆ[ˆÙYÛY[ÚYˆİš[™È[ˆİ[Ø›ÛÚÚ[™ÜÎˆ[X™\ˆ[ˆİ[ÜÜ[ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆÚ]Ø\ÛÜÛİ]ˆ›ÛÛX[‚ˆÚ]Ø\ÛÜÛİ]Ø]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆY™\ÜÏÎˆİš[™È[ˆ\˜Ú]™YØ]Îˆİš[™È[ˆ\˜Ú]™YØOÎˆİš[™È[ˆÛÛ[][šXØ][Û—Ü™Y™\™[˜Ù\ÏÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ[XZ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ\İØ›ÛÚÚ[™×Ù]OÎˆİš[™È[ˆ\İÙ›Ûİ×İ\ØOÎˆİš[™È[ˆ\İÙ›Ûİ×İ\Ù]OÎˆİš[™È[ˆŞX[WÜÚ[ÏÎˆ[X™\ˆ[ˆ˜[YNˆİš[™Âˆ˜][Û˜[]OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\ÜÜÜÛ[X™\Îˆİš[™È[ˆÛ™OÎˆİš[™È[ˆ™Y™\™[˜Ù\ÏÎˆœÛÛˆ[ˆÙYÛY[ÚYÎˆİš[™È[ˆİ[Ø›ÛÚÚ[™ÜÏÎˆ[X™\ˆ[ˆİ[ÜÜ[Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆÚ]Ø\ÛÜÛİ]Îˆ›ÛÛX[‚ˆÚ]Ø\ÛÜÛİ]Ø]Îˆİš[™È[ˆBˆ\]NˆÂˆY™\ÜÏÎˆİš[™È[ˆ\˜Ú]™YØ]Îˆİš[™È[ˆ\˜Ú]™YØOÎˆİš[™È[ˆÛÛ[][šXØ][Û—Ü™Y™\™[˜Ù\ÏÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆ[XZ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ\İØ›ÛÚÚ[™×Ù]OÎˆİš[™È[ˆ\İÙ›Ûİ×İ\ØOÎˆİš[™È[ˆ\İÙ›Ûİ×İ\Ù]OÎˆİš[™È[ˆŞX[WÜÚ[ÏÎˆ[X™\ˆ[ˆ˜[YOÎˆİš[™Âˆ˜][Û˜[]OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\ÜÜÜÛ[X™\Îˆİš[™È[ˆÛ™OÎˆİš[™È[ˆ™Y™\™[˜Ù\ÏÎˆœÛÛˆ[ˆÙYÛY[ÚYÎˆİš[™È[ˆİ[Ø›ÛÚÚ[™ÜÏÎˆ[X™\ˆ[ˆİ[ÜÜ[Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆÚ]Ø\ÛÜÛİ]Îˆ›ÛÛX[‚ˆÚ]Ø\ÛÜÛİ]Ø]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\œ×Ø\˜Ú]™YØWÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜\˜Ú]™YØH—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ›Ùš[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\œ×ØÜ™X]YØWÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜Ü™X]YØH—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ›Ùš[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\œ×Û\İÙ›Ûİ×İ\ØWÙšÙ^H‚ˆÛÛ[[œÎˆÈ›\İÙ›Ûİ×İ\ØH—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ›Ùš[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜İ\İÛY\œ×ÜÙYÛY[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœÙYÛY[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\—ÜÙYÛY[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ\\Y[ÎˆÂˆ›İÎˆÂˆœ˜[˜ÚÚYˆİš[™È[ˆÛÙNˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆœ˜[˜ÚÚYÎˆİš[™È[ˆÛÙOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYÎˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆœ˜[˜ÚÚYÎˆİš[™È[ˆÛÙOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆX[˜YÙ\—ÚYÎˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™\\Y[×Øœ˜[˜ÚÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜œ˜[˜ÚÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜œ˜[˜Ú\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™\\Y[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ\İ[˜][ÛœÎˆÂˆ›İÎˆÂˆÛİ[Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ[XYÙWİ\›ˆİš[™È[ˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ[XYÙWİ\›Îˆİš[™È[ˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÛİ[OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ[XYÙWİ\›Îˆİš[™È[ˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™\İ[˜][Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆØİ[Y[Ø]Y]ÛÙÎˆÂˆ›İÎˆÂˆXİ[Ûˆİš[™ÂˆXİÜ—ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆØİ[Y[ÚYˆİš[™È[ˆYˆİš[™ÂˆY]Y]NˆœÛÛ‚ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆXİ[Ûˆİš[™ÂˆXİÜ—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆØİ[Y[ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛ‚ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆBˆ\]NˆÂˆXİ[ÛÎˆİš[™ÂˆXİÜ—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆØİ[Y[ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛ‚ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™Øİ[Y[Ø]Y]ÛÙ×ÙØİ[Y[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™Øİ[Y[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™Øİ[Y[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆØİ[Y[İ[\]\ÎˆÂˆ›İÎˆÂˆXØÙ[ØÛÛÜˆİš[™È[ˆ\›İ˜[Üİ]\Îˆİš[™Âˆ\›İ™YØ]ˆİš[™È[ˆ\›İ™YØNˆİš[™È[ˆ˜[š×Ù]Z[Îˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆØİ[Y[İ\Nˆİš[™Âˆ›Ûİ\—İ^ˆİš[™È[ˆXY\—ØÛÛÜˆİš[™È[ˆYˆİš[™Âˆ\×ÙY˜][ˆ›ÛÛX[ˆ[ˆ›İ\×İ^ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÚİ×Ø˜[š×Ù]Z[Îˆ›ÛÛX[ˆ[ˆÚİ×ÛÙÛÎˆ›ÛÛX[ˆ[ˆ[\]WÛ˜[YNˆİš[™Âˆ\›\×İ^ˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆXØÙ[ØÛÛÜÎˆİš[™È[ˆ\›İ˜[Üİ]\ÏÎˆİš[™Âˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ˜[š×Ù]Z[ÏÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆØİ[Y[İ\Nˆİš[™Âˆ›Ûİ\—İ^Îˆİš[™È[ˆXY\—ØÛÛÜÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ÙY˜][Îˆ›ÛÛX[ˆ[ˆ›İ\×İ^Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÚİ×Ø˜[š×Ù]Z[ÏÎˆ›ÛÛX[ˆ[ˆÚİ×ÛÙÛÏÎˆ›ÛÛX[ˆ[ˆ[\]WÛ˜[YOÎˆİš[™Âˆ\›\×İ^Îˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆXØÙ[ØÛÛÜÎˆİš[™È[ˆ\›İ˜[Üİ]\ÏÎˆİš[™Âˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ˜[š×Ù]Z[ÏÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆØİ[Y[İ\OÎˆİš[™Âˆ›Ûİ\—İ^Îˆİš[™È[ˆXY\—ØÛÛÜÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ÙY˜][Îˆ›ÛÛX[ˆ[ˆ›İ\×İ^Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆÚİ×Ø˜[š×Ù]Z[ÏÎˆ›ÛÛX[ˆ[ˆÚİ×ÛÙÛÏÎˆ›ÛÛX[ˆ[ˆ[\]WÛ˜[YOÎˆİš[™Âˆ\›\×İ^Îˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™Øİ[Y[İ[\]\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆØİ[Y[ÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆØ]YÛÜNˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ™Øİ[Y[ØØ]YÛÜH—BˆÜ™X]YØ]ˆİš[™Âˆİ\İÛY\—ÚYˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆ^\WÙ]Nˆİš[™È[ˆš[WÛ˜[YNˆİš[™Âˆš[WÜ]ˆİš[™Âˆš[WÜÚ^™Nˆ[X™\ˆ[ˆYˆİš[™Âˆ\×ØÛÛ™šY[X[ˆ›ÛÛX[‚ˆY]Y]NˆœÛÛ‚ˆZ[YWİ\Nˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÙØİ[Y[ÚYˆİš[™È[ˆİ\Y\—ÚYˆİš[™È[ˆYÜÎˆİš[™Ö×Bˆ]Nˆİš[™Âˆ\]YØ]ˆİš[™Âˆ\ØYYØNˆİš[™È[ˆ™\œÚ[Ûˆ[X™\‚ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆØ]YÛÜOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ™Øİ[Y[ØØ]YÛÜH—BˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ^\WÙ]OÎˆİš[™È[ˆš[WÛ˜[YNˆİš[™Âˆš[WÜ]ˆİš[™Âˆš[WÜÚ^™OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØÛÛ™šY[X[Îˆ›ÛÛX[‚ˆY]Y]OÎˆœÛÛ‚ˆZ[YWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\™[ÙØİ[Y[ÚYÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆYÜÏÎˆİš[™Ö×Bˆ]Nˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ\ØYYØOÎˆİš[™È[ˆ™\œÚ[ÛÎˆ[X™\‚ˆBˆ\]NˆÂˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆØ]YÛÜOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ™Øİ[Y[ØØ]YÛÜH—BˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ^\WÙ]OÎˆİš[™È[ˆš[WÛ˜[YOÎˆİš[™Âˆš[WÜ]Îˆİš[™Âˆš[WÜÚ^™OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØÛÛ™šY[X[Îˆ›ÛÛX[‚ˆY]Y]OÎˆœÛÛ‚ˆZ[YWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\™[ÙØİ[Y[ÚYÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆYÜÏÎˆİš[™Ö×Bˆ]OÎˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ\ØYYØOÎˆİš[™È[ˆ™\œÚ[ÛÎˆ[X™\‚ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™Øİ[Y[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™Øİ[Y[×Ü\™[ÙØİ[Y[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ\™[ÙØİ[Y[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™Øİ[Y[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛXZ[—Ù]™[ÎˆÂˆ›İÎˆÂˆYÙÜ™YØ]WÚYˆİš[™È[ˆYÙÜ™YØ]Wİ\Nˆİš[™ÂˆÛÜœ™[][Û—ÚYˆİš[™È[ˆ[Z]YØNˆİš[™È[ˆ[œšXÚYÜ^[ØYˆœÛÛˆ[ˆ]™[İ\Nˆİš[™ÂˆYˆİš[™ÂˆY[\İ[˜ŞWÚÙ^Nˆİš[™ÂˆØØİ\œ™YØ]ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[ØYˆœÛÛ‚ˆBˆ[œÙ\ˆÂˆYÙÜ™YØ]WÚYÎˆİš[™È[ˆYÙÜ™YØ]Wİ\Nˆİš[™ÂˆÛÜœ™[][Û—ÚYÎˆİš[™È[ˆ[Z]YØOÎˆİš[™È[ˆ[œšXÚYÜ^[ØYÎˆœÛÛˆ[ˆ]™[İ\Nˆİš[™ÂˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^Nˆİš[™ÂˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[ØYÎˆœÛÛ‚ˆBˆ\]NˆÂˆYÙÜ™YØ]WÚYÎˆİš[™È[ˆYÙÜ™YØ]Wİ\OÎˆİš[™ÂˆÛÜœ™[][Û—ÚYÎˆİš[™È[ˆ[Z]YØOÎˆİš[™È[ˆ[œšXÚYÜ^[ØYÎˆœÛÛˆ[ˆ]™[İ\OÎˆİš[™ÂˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^OÎˆİš[™ÂˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[ØYÎˆœÛÛ‚ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ[XZ[Ü]Y]YNˆÂˆ›İÎˆÂˆ][\Îˆ[X™\‚ˆÜ™X]YØ]ˆİš[™Âˆ[XZ[İ\Nˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆYˆİš[™ÂˆX^Ø][\Îˆ[X™\‚ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™XÚ\Y[Ù[XZ[ˆİš[™Âˆ™XÚ\Y[Û˜[YNˆİš[™È[ˆØÚY[YÙ›Üˆİš[™È[ˆÙ[Ø]ˆİš[™È[ˆİ]\Îˆİš[™ÂˆİXš™Xİˆİš[™Âˆ[\]WÙ]NˆœÛÛ‚ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ][\ÏÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[İ\Nˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆX^Ø][\ÏÎˆ[X™\‚ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™XÚ\Y[Ù[XZ[ˆİš[™Âˆ™XÚ\Y[Û˜[YOÎˆİš[™È[ˆØÚY[YÙ›ÜÎˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆİXš™Xİˆİš[™Âˆ[\]WÙ]OÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ][\ÏÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[İ\OÎˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆX^Ø][\ÏÎˆ[X™\‚ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™XÚ\Y[Ù[XZ[Îˆİš[™Âˆ™XÚ\Y[Û˜[YOÎˆİš[™È[ˆØÚY[YÙ›ÜÎˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆİXš™XİÎˆİš[™Âˆ[\]WÙ]OÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[XZ[Ü]Y]YWÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ[XZ[ÜÙ[™ÛÙÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆYˆİš[™ÂˆY\ÜØYÙWÚYˆİš[™È[ˆY]Y]NˆœÛÛˆ[ˆ™XÚ\Y[Ù[XZ[ˆİš[™Âˆİ]\Îˆİš[™Âˆ[\]WÛ˜[YNˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆY]Y]OÎˆœÛÛˆ[ˆ™XÚ\Y[Ù[XZ[ˆİš[™Âˆİ]\Îˆİš[™Âˆ[\]WÛ˜[YNˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆY]Y]OÎˆœÛÛˆ[ˆ™XÚ\Y[Ù[XZ[Îˆİš[™Âˆİ]\ÏÎˆİš[™Âˆ[\]WÛ˜[YOÎˆİš[™ÂˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ[XZ[ÜÙ[™Üİ]NˆÂˆ›İÎˆÂˆ]]Ù[XZ[İÛZ[]\Îˆ[X™\‚ˆ˜]ÚÜÚ^™Nˆ[X™\‚ˆYˆ[X™\‚ˆ™]WØY\—İ[[ˆİš[™È[ˆÙ[™Ù[^WÛ\Îˆ[X™\‚ˆ˜[œØXİ[Û˜[Ù[XZ[İÛZ[]\Îˆ[X™\‚ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ]]Ù[XZ[İÛZ[]\ÏÎˆ[X™\‚ˆ˜]ÚÜÚ^™OÎˆ[X™\‚ˆYÎˆ[X™\‚ˆ™]WØY\—İ[[Îˆİš[™È[ˆÙ[™Ù[^WÛ\ÏÎˆ[X™\‚ˆ˜[œØXİ[Û˜[Ù[XZ[İÛZ[]\ÏÎˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ]]Ù[XZ[İÛZ[]\ÏÎˆ[X™\‚ˆ˜]ÚÜÚ^™OÎˆ[X™\‚ˆYÎˆ[X™\‚ˆ™]WØY\—İ[[Îˆİš[™È[ˆÙ[™Ù[^WÛ\ÏÎˆ[X™\‚ˆ˜[œØXİ[Û˜[Ù[XZ[İÛZ[]\ÏÎˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ[XZ[İ[œİXœØÜšX™WİÚÙ[œÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ[XZ[ˆİš[™ÂˆYˆİš[™ÂˆÚÙ[ˆİš[™Âˆ\ÙYØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[ˆİš[™ÂˆYÎˆİš[™ÂˆÚÙ[ˆİš[™Âˆ\ÙYØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[Îˆİš[™ÂˆYÎˆİš[™ÂˆÚÙ[Îˆİš[™Âˆ\ÙYØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ[\ŞYYWØÛÛ[Z\ÜÚ[Û—Ü\š[ÙÎˆÂˆ›İÎˆÂˆ˜[š×ØXØÛİ[ÚYˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[ˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]Nˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[Ù]Nˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆ\š[ÙÙ[™ˆİš[™Âˆ\š[ÙÜİ\ˆİš[™Âˆİ]\Îˆİš[™È[ˆİ[Ø›ÛÚÚ[™×Ø[[İ[ˆ[X™\ˆ[ˆİ[Ø›ÛÚÚ[™Ü×ØÛİ[ˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆİ[Üİ\Y\—ØÛÜİˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ\š[ÙÙ[™ˆİš[™Âˆ\š[ÙÜİ\ˆİš[™Âˆİ]\ÏÎˆİš[™È[ˆİ[Ø›ÛÚÚ[™×Ø[[İ[Îˆ[X™\ˆ[ˆİ[Ø›ÛÚÚ[™Ü×ØÛİ[Îˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆİ[Üİ\Y\—ØÛÜİÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ\š[ÙÙ[™Îˆİš[™Âˆ\š[ÙÜİ\Îˆİš[™Âˆİ]\ÏÎˆİš[™È[ˆİ[Ø›ÛÚÚ[™×Ø[[İ[Îˆ[X™\ˆ[ˆİ[Ø›ÛÚÚ[™Ü×ØÛİ[Îˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆİ[Üİ\Y\—ØÛÜİÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYYWØÛÛ[Z\ÜÚ[Û—Ü\š[Ù×Ø˜[š×ØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜˜[š×ØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYYWØÛÛ[Z\ÜÚ[Û—Ü\š[Ù×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYYWØÛÛ[Z\ÜÚ[Û—Ü\š[Ù×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ[\ŞYYWØÛÛ[Z\ÜÚ[ÛœÎˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×Ø[[İ[ˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆ›ÛÚÚ[™×İ\Nˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[ˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ù]Nˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ü˜]Nˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[Ù]Nˆİš[™È[ˆ^[Y[Üİ]\Îˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ›ÛÚÚ[™×Ø[[İ[Îˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ù]OÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[Üİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ›ÛÚÚ[™×Ø[[İ[Îˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ø[[İ[Îˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ù]OÎˆİš[™È[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[Üİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYYWØÛÛ[Z\ÜÚ[Ûœ×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYYWØÛÛ[Z\ÜÚ[Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ[\ŞYY\ÎˆÂˆ›İÎˆÂˆ[İØ[˜Ù\Îˆ[X™\ˆ[ˆ˜[š×ØXØÛİ[Û[X™\ˆİš[™È[ˆ˜[š×Û˜[YNˆİš[™È[ˆ˜\ÙWÜØ[\Nˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]Nˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—İ\Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\\Y[ˆİš[™È[ˆ[XZ[ˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÛ˜[YNˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÜÛ™Nˆİš[™È[ˆ[\ŞYYWØÛÙNˆİš[™Âˆ[Û˜[YNˆİš[™Âˆ\™WÙ]Nˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜][Û˜[ÚYˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÛ™Nˆİš[™È[ˆÜÚ][Ûˆİš[™È[ˆØ[\WÜØØ[WÛ]™[ˆ[X™\ˆ[ˆİ[ØÛÛ[Z\ÜÚ[Û—ÙX\›™Yˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ[İØ[˜Ù\ÏÎˆ[X™\ˆ[ˆ˜[š×ØXØÛİ[Û[X™\Îˆİš[™È[ˆ˜[š×Û˜[YOÎˆİš[™È[ˆ˜\ÙWÜØ[\OÎˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\\Y[Îˆİš[™È[ˆ[XZ[Îˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÛ˜[YOÎˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÜÛ™OÎˆİš[™È[ˆ[\ŞYYWØÛÙNˆİš[™Âˆ[Û˜[YNˆİš[™Âˆ\™WÙ]OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜][Û˜[ÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™OÎˆİš[™È[ˆÜÚ][ÛÎˆİš[™È[ˆØ[\WÜØØ[WÛ]™[Îˆ[X™\ˆ[ˆİ[ØÛÛ[Z\ÜÚ[Û—ÙX\›™YÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ[İØ[˜Ù\ÏÎˆ[X™\ˆ[ˆ˜[š×ØXØÛİ[Û[X™\Îˆİš[™È[ˆ˜[š×Û˜[YOÎˆİš[™È[ˆ˜\ÙWÜØ[\OÎˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\ˆ[ˆÛÛ[Z\ÜÚ[Û—İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\\Y[Îˆİš[™È[ˆ[XZ[Îˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÛ˜[YOÎˆİš[™È[ˆ[Y\™Ù[˜ŞWØÛÛXİÜÛ™OÎˆİš[™È[ˆ[\ŞYYWØÛÙOÎˆİš[™Âˆ[Û˜[YOÎˆİš[™Âˆ\™WÙ]OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜][Û˜[ÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™OÎˆİš[™È[ˆÜÚ][ÛÎˆİš[™È[ˆØ[\WÜØØ[WÛ]™[Îˆ[X™\ˆ[ˆİ[ØÛÛ[Z\ÜÚ[Û—ÙX\›™YÎˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™[\ŞYY\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ\œ›Ü—ÛÙÜÎˆÂˆ›İÎˆÂˆÛÛ\Û™[Û˜[YNˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™Âˆ\œ›Ü—ÜİXÚÎˆİš[™È[ˆ\œ›Ü—İ\Nˆİš[™ÂˆYˆİš[™ÂˆY]Y]NˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™\ÛÛ™Yˆ›ÛÛX[ˆ[ˆ™\ÛÛ™YØ]ˆİš[™È[ˆ™\ÛÛ™YØNˆİš[™È[ˆÙ]™\š]Nˆİš[™Âˆ\›ˆİš[™È[ˆ\Ù\—ØYÙ[ˆİš[™È[ˆ\Ù\—ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛ\Û™[Û˜[YOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™Âˆ\œ›Ü—ÜİXÚÏÎˆİš[™È[ˆ\œ›Ü—İ\OÎˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™\ÛÛ™YÎˆ›ÛÛX[ˆ[ˆ™\ÛÛ™YØ]Îˆİš[™È[ˆ™\ÛÛ™YØOÎˆİš[™È[ˆÙ]™\š]OÎˆİš[™Âˆ\›Îˆİš[™È[ˆ\Ù\—ØYÙ[Îˆİš[™È[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆÛÛ\Û™[Û˜[YOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™Âˆ\œ›Ü—ÜİXÚÏÎˆİš[™È[ˆ\œ›Ü—İ\OÎˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™\ÛÛ™YÎˆ›ÛÛX[ˆ[ˆ™\ÛÛ™YØ]Îˆİš[™È[ˆ™\ÛÛ™YØOÎˆİš[™È[ˆÙ]™\š]OÎˆİš[™Âˆ\›Îˆİš[™È[ˆ\Ù\—ØYÙ[Îˆİš[™È[ˆ\Ù\—ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™\œ›Ü—ÛÙÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ]™[Ù[]™\šY\ÎˆÂˆ›İÎˆÂˆ][\Îˆ[X™\‚ˆÛÛ\]YØ]ˆİš[™È[ˆ]™[ÚYˆİš[™Âˆ[™\—ÚÙ^Nˆİš[™ÂˆYˆİš[™Âˆ\İÙ\œ›Üˆİš[™È[ˆ™^Ü™]WØ]ˆİš[™Âˆ›ØÙ\ÜÚ[™×Û\Îˆ[X™\ˆ[ˆİ\YØ]ˆİš[™È[ˆİ]\Îˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ][\ÏÎˆ[X™\‚ˆÛÛ\]YØ]Îˆİš[™È[ˆ]™[ÚYˆİš[™Âˆ[™\—ÚÙ^Nˆİš[™ÂˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆ™^Ü™]WØ]Îˆİš[™Âˆ›ØÙ\ÜÚ[™×Û\ÏÎˆ[X™\ˆ[ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ][\ÏÎˆ[X™\‚ˆÛÛ\]YØ]Îˆİš[™È[ˆ]™[ÚYÎˆİš[™Âˆ[™\—ÚÙ^OÎˆİš[™ÂˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆ™^Ü™]WØ]Îˆİš[™Âˆ›ØÙ\ÜÚ[™×Û\ÏÎˆ[X™\ˆ[ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™]™[Ù[]™\šY\×Ù]™[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™]™[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™ÛXZ[—Ù]™[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ]™[ÜİXœØÜš\[ÛœÎˆÂˆ›İÎˆÂˆÛÛ™šYÎˆœÛÛ‚ˆÜ™X]YØ]ˆİš[™Âˆ]™[İ\Nˆİš[™Âˆ[™\—ÚÙ^Nˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆBˆ[œÙ\ˆÂˆÛÛ™šYÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™Âˆ]™[İ\Nˆİš[™Âˆ[™\—ÚÙ^Nˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆBˆ\]NˆÂˆÛÛ™šYÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™Âˆ]™[İ\OÎˆİš[™Âˆ[™\—ÚÙ^OÎˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ^Ú[™ÙWÜ˜]\ÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆY™™Xİ]™WÙ]Nˆİš[™È[ˆœ›ÛWØİ\œ™[˜ŞNˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ˜]Nˆ[X™\‚ˆ×Øİ\œ™[˜ŞNˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆY™™Xİ]™WÙ]OÎˆİš[™È[ˆœ›ÛWØİ\œ™[˜ŞNˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ˜]Nˆ[X™\‚ˆ×Øİ\œ™[˜ŞNˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆY™™Xİ]™WÙ]OÎˆİš[™È[ˆœ›ÛWØİ\œ™[˜ŞOÎˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ˜]OÎˆ[X™\‚ˆ×Øİ\œ™[˜ŞOÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™^Ú[™ÙWÜ˜]\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ^[œÙWØØ]YÛÜšY\ÎˆÂˆ›İÎˆÂˆYÙ]Û[Z]ˆ[X™\ˆ[ˆÛÛÜˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆYÙ]Û[Z]Îˆ[X™\ˆ[ˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆYÙ]Û[Z]Îˆ[X™\ˆ[ˆÛÛÜÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™^[œÙWØØ]YÛÜšY\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ^[œÙWİ˜[œØXİ[ÛœÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ\›İ™YØ]ˆİš[™È[ˆ\›İ™YØNˆİš[™È[ˆ˜[š×ØXØÛİ[ÚYˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆ›ÛÚÚ[™×İ\Nˆİš[™È[ˆØ]YÛÜWÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™ÂˆYˆİš[™Âˆ[›ÚXÙWÛ[X™\ˆİš[™È[ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆ™XÙZ\İ\›ˆİš[™È[ˆİ]\Îˆİš[™È[ˆ˜[œØXİ[Û—Ù]Nˆİš[™È[ˆ˜[œØXİ[Û—Û[X™\ˆİš[™Âˆ\]YØ]ˆİš[™È[ˆ™[™Ü—Û˜[YNˆİš[™È[ˆ™[™Ü—ÜÛ™Nˆİš[™È[ˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆØ]YÛÜWÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ\ØÜš\[Ûˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÛ[X™\Îˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ™XÙZ\İ\›Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ˜[œØXİ[Û—Ù]OÎˆİš[™È[ˆ˜[œØXİ[Û—Û[X™\Îˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆ™[™Ü—Û˜[YOÎˆİš[™È[ˆ™[™Ü—ÜÛ™OÎˆİš[™È[ˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ˜[š×ØXØÛİ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆØ]YÛÜWÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÛ[X™\Îˆİš[™È[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ™XÙZ\İ\›Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ˜[œØXİ[Û—Ù]OÎˆİš[™È[ˆ˜[œØXİ[Û—Û[X™\Îˆİš[™Âˆ\]YØ]Îˆİš[™È[ˆ™[™Ü—Û˜[YOÎˆİš[™È[ˆ™[™Ü—ÜÛ™OÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™^[œÙWİ˜[œØXİ[Ûœ×Ø˜[š×ØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜˜[š×ØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™^[œÙWİ˜[œØXİ[Ûœ×ØØ]YÛÜWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜Ø]YÛÜWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™^[œÙWØØ]YÛÜšY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™^[œÙWİ˜[œØXİ[Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ™X]\™WÙ›YÜÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ\ØÜš\[Ûˆİš[™È[ˆ[˜X›Yˆ›ÛÛX[‚ˆ›Y×ÚÙ^Nˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]ˆİš[™Âˆ˜[YNˆœÛÛˆ[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆ[˜X›YÎˆ›ÛÛX[‚ˆ›Y×ÚÙ^Nˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ˜[YOÎˆœÛÛˆ[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆ[˜X›YÎˆ›ÛÛX[‚ˆ›Y×ÚÙ^OÎˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™Âˆ˜[YOÎˆœÛÛˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™™X]\™WÙ›YÜ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆš[˜[˜ÙWİ˜[œØXİ[ÛœÎˆÂˆ›İÎˆÂˆXØÛİ[ØÛÙNˆİš[™È[ˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™Âˆ\™Xİ[Ûˆİš[™Âˆ^Ú[™ÙWÜ˜]Nˆ[X™\‚ˆYˆİš[™ÂˆY[[Îˆİš[™È[ˆØØİ\œ™YØ]ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\WÚYˆİš[™È[ˆ\Wİ\Nˆİš[™È[ˆ™Y™\™[˜ÙWÚYˆİš[™È[ˆ™Y™\™[˜ÙWİ\Nˆİš[™È[ˆBˆ[œÙ\ˆÂˆXØÛİ[ØÛÙOÎˆİš[™È[ˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ\™Xİ[Ûˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™ÂˆY[[ÏÎˆİš[™È[ˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\WÚYÎˆİš[™È[ˆ\Wİ\OÎˆİš[™È[ˆ™Y™\™[˜ÙWÚYÎˆİš[™È[ˆ™Y™\™[˜ÙWİ\OÎˆİš[™È[ˆBˆ\]NˆÂˆXØÛİ[ØÛÙOÎˆİš[™È[ˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ\™Xİ[ÛÎˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™ÂˆY[[ÏÎˆİš[™È[ˆØØİ\œ™YØ]Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\WÚYÎˆİš[™È[ˆ\Wİ\OÎˆİš[™È[ˆ™Y™\™[˜ÙWÚYÎˆİš[™È[ˆ™Y™\™[˜ÙWİ\OÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÙWİ˜[œØXİ[Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆš[˜[˜ÚX[Ü™\Z\—Ø]Y]ˆÂˆ›İÎˆÂˆY\—Ù]NˆœÛÛˆ[ˆ™Y›Ü™WÙ]NˆœÛÛˆ[ˆÜ™X]YØ]ˆİš[™Âˆ[]WÚYˆİš[™È[ˆ[]Wİ\Nˆİš[™ÂˆYˆ[X™\‚ˆZYÜ˜][Û—ÚÙ^Nˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™X\ÛÛˆİš[™ÂˆBˆ[œÙ\ˆÂˆY\—Ù]OÎˆœÛÛˆ[ˆ™Y›Ü™WÙ]OÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™Âˆ[]WÚYÎˆİš[™È[ˆ[]Wİ\Nˆİš[™ÂˆYÎˆ[X™\‚ˆZYÜ˜][Û—ÚÙ^Nˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™X\ÛÛˆİš[™ÂˆBˆ\]NˆÂˆY\—Ù]OÎˆœÛÛˆ[ˆ™Y›Ü™WÙ]OÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™Âˆ[]WÚYÎˆİš[™È[ˆ[]Wİ\OÎˆİš[™ÂˆYÎˆ[X™\‚ˆZYÜ˜][Û—ÚÙ^OÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™X\ÛÛÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š[˜[˜ÚX[Ü™\Z\—Ø]Y]ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆš\ØØ[ŞYX\—ØÛÜİ\™\ÎˆÂˆ›İÎˆÂˆÛÜÙYØ]ˆİš[™È[ˆÛÜÙYØNˆİš[™È[ˆÛÛ™š\›YYØ]ˆİš[™È[ˆÛÛ™š\›YYØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆš\ØØ[ŞYX\ˆ[X™\‚ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\š[ÙÙ[™ˆİš[™Âˆ\š[ÙÜİ8÷İ5¶‰ËkºwµçXİİ˜[YNˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ[™Ù]Nˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[İ\›\Îˆİš[™È[ˆİ\Ù]Nˆİš[™Âˆİ\Y\—ÚYˆİš[™È[ˆ\›\×Ø[™ØÛÛ™][ÛœÎˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÛÛ˜XİÛ[X™\ˆİš[™ÂˆÛÛ˜Xİİ\OÎˆİš[™È[ˆÛÛ˜Xİİ˜[YOÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[™Ù]Nˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[İ\›\ÏÎˆİš[™È[ˆİ\Ù]Nˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\›\×Ø[™ØÛÛ™][ÛœÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÛÛ˜XİÛ[X™\Îˆİš[™ÂˆÛÛ˜Xİİ\OÎˆİš[™È[ˆÛÛ˜Xİİ˜[YOÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ[™Ù]OÎˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[İ\›\ÏÎˆİš[™È[ˆİ\Ù]OÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\›\×Ø[™ØÛÛ™][ÛœÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—ØÛÛ˜Xİ×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Øİ\œ™[˜ÚY\ÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™Âˆ^Ú[™ÙWÜ˜]Nˆ[X™\ˆ[ˆYˆİš[™Âˆ\×Üš[X\Nˆ›ÛÛX[ˆ[ˆİ\Y\—ÚYˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×Üš[X\OÎˆ›ÛÛX[ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ^Ú[™ÙWÜ˜]OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×Üš[X\OÎˆ›ÛÛX[ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Øİ\œ™[˜ÚY\×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ú[›ÚXÙ\ÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ[[İ[ÜZYˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™ÂˆYWÙ]Nˆİš[™È[ˆ^Ú[™ÙWÜ˜]Nˆ[X™\‚ˆYˆİš[™Âˆ[›ÚXÙWÙ]Nˆİš[™Âˆ[›ÚXÙWÛ[X™\ˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÛÜ™\—ÚYˆİš[™È[ˆİ]\Îˆİš[™Âˆİ\Y\—ÚYˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆ[[İ[ÜZYÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™ÂˆYWÙ]OÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÙ]OÎˆİš[™Âˆ[›ÚXÙWÛ[X™\ˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆ[[İ[ÜZYÎˆ[X™\‚ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™ÂˆYWÙ]OÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆYÎˆİš[™Âˆ[›ÚXÙWÙ]OÎˆİš[™Âˆ[›ÚXÙWÛ[X™\Îˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Ü^[Y[ÛÜ™\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ^[Y[ÛÜ™\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—Ü^[Y[ÛÜ™\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ú[›ÚXÙ\×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Û›İ\ÎˆÂˆ›İÎˆÂˆ]]Ü—ÚYˆİš[™È[ˆ›ÙNˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[›™Yˆ›ÛÛX[‚ˆİ\Y\—ÚYˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ]]Ü—ÚYÎˆİš[™È[ˆ›ÙNˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[›™YÎˆ›ÛÛX[‚ˆİ\Y\—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ]]Ü—ÚYÎˆİš[™È[ˆ›ÙOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ[›™YÎˆ›ÛÛX[‚ˆİ\Y\—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Û›İ\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Û›İ\×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ü^[Y[Ø[ØØ][ÛœÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÛÜ™\—ÚYˆİš[™È[ˆİ\Y\—Ú[›ÚXÙWÚYˆİš[™È[ˆİ\Y\—Ü^[Y[ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ø˜\ÙNˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆİ\Y\—Ú[›ÚXÙWÚYÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÚYˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ø˜\ÙOÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ^[Y[ÛÜ™\—ÚYÎˆİš[™È[ˆİ\Y\—Ú[›ÚXÙWÚYÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[Ø[ØØ][Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[Ø[ØØ][Ûœ×Ü^[Y[ÛÜ™\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ^[Y[ÛÜ™\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—Ü^[Y[ÛÜ™\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[Ø[ØØ][Ûœ×Üİ\Y\—Ú[›ÚXÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—Ú[›ÚXÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—Ú[›ÚXÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[Ø[ØØ][Ûœ×Üİ\Y\—Ü^[Y[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—Ü^[Y[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—Ü^[Y[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ü^[Y[ÛÜ™\œÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ\›İ˜[Üİ]\Îˆİš[™Âˆ\›İ™YØ]ˆİš[™È[ˆ\›İ™YØNˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆİ\œ™[˜ŞNˆİš[™ÂˆYWÙ]Nˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™Âˆ™Z™Xİ[Û—Ü™X\ÛÛˆİš[™È[ˆÙ\šXÙWİ\Nˆİš[™ÂˆÛİ\˜ÙWÚYˆİš[™È[ˆÛİ\˜ÙWİ\Nˆİš[™È[ˆİ]\Îˆİš[™Âˆİ\Y\—ÚYˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆ[[İ[Îˆ[X™\‚ˆ\›İ˜[Üİ]\ÏÎˆİš[™Âˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\œ™[˜ŞOÎˆİš[™ÂˆYWÙ]OÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™Âˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆÙ\šXÙWİ\Nˆİš[™ÂˆÛİ\˜ÙWÚYÎˆİš[™È[ˆÛİ\˜ÙWİ\OÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ\›İ˜[Üİ]\ÏÎˆİš[™Âˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\œ™[˜ŞOÎˆİš[™ÂˆYWÙ]OÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™Âˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆÙ\šXÙWİ\OÎˆİš[™ÂˆÛİ\˜ÙWÚYÎˆİš[™È[ˆÛİ\˜ÙWİ\OÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Ø›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[ÛÜ™\œ×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ü^[Y[ÎˆÂˆ›İÎˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ú[—ÙYÜˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆ›ÛÚÚ[™×İ\Nˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆ^Ú[™ÙWÜ˜]Nˆ[X™\ˆ[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYÙ]Nˆİš[™È[ˆ^[Y[Ù]Nˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆ^[Y[Ü™Y™\™[˜ÙNˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\ˆİš[™È[ˆİ]\Îˆİš[™È[ˆİ\Y\—ÚYˆİš[™È[ˆ™X\İ\WØXØÛİ[ÚYˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ[[İ[ˆ[X™\‚ˆ[[İ[Ú[—ÙYÜÎˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYÙ]OÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ^[Y[Ü™Y™\™[˜ÙOÎˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆ™X\İ\WØXØÛİ[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ[[İ[Îˆ[X™\‚ˆ[[İ[Ú[—ÙYÜÎˆ[X™\ˆ[ˆ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×İ\OÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]OÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYÙ]OÎˆİš[™È[ˆ^[Y[Ù]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆ^[Y[Ü™Y™\™[˜ÙOÎˆİš[™È[ˆ™Y™\™[˜ÙWÛ[X™\Îˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİ\Y\—ÚYÎˆİš[™È[ˆ™X\İ\WØXØÛİ[ÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü^[Y[×İ™X\İ\WØXØÛİ[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™X\İ\WØXØÛİ[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜˜[š×ØXØÛİ[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ü˜]\ÎˆÂˆ›İÎˆÂˆØ[˜Ù[][Û—ÜÛXŞNˆİš[™È[ˆÛÛ˜XİÚYˆİš[™È[ˆÛÜİÜšXÙNˆ[X™\‚ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™Âˆ[™Ù]Nˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ\×Ü™Y[™X›Nˆ›ÛÛX[ˆ[ˆX\šİ\Ü\˜Ù[YÙNˆ[X™\ˆ[ˆX^ÛšYÚÎˆ[X™\ˆ[ˆZ[—ÛšYÚÎˆ[X™\ˆ[ˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÙX\ÛÛ—Û˜[YNˆİš[™È[ˆÙ[[™×ÜšXÙNˆ[X™\‚ˆÙ\šXÙWÜ™Y™\™[˜ÙNˆİš[™È[ˆÙ\šXÙWİ\Nˆİš[™Âˆİ\Ù]Nˆİš[™Âˆİ\Y\—ÚYˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆØ[˜Ù[][Û—ÜÛXŞOÎˆİš[™È[ˆÛÛ˜XİÚYÎˆİš[™È[ˆÛÜİÜšXÙOÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ[™Ù]Nˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×Ü™Y[™X›OÎˆ›ÛÛX[ˆ[ˆX\šİ\Ü\˜Ù[YÙOÎˆ[X™\ˆ[ˆX^ÛšYÚÏÎˆ[X™\ˆ[ˆZ[—ÛšYÚÏÎˆ[X™\ˆ[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÙX\ÛÛ—Û˜[YOÎˆİš[™È[ˆÙ[[™×ÜšXÙOÎˆ[X™\‚ˆÙ\šXÙWÜ™Y™\™[˜ÙOÎˆİš[™È[ˆÙ\šXÙWİ\Nˆİš[™Âˆİ\Ù]Nˆİš[™Âˆİ\Y\—ÚYˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆØ[˜Ù[][Û—ÜÛXŞOÎˆİš[™È[ˆÛÛ˜XİÚYÎˆİš[™È[ˆÛÜİÜšXÙOÎˆ[X™\‚ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™Âˆ[™Ù]OÎˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×Ü™Y[™X›OÎˆ›ÛÛX[ˆ[ˆX\šİ\Ü\˜Ù[YÙOÎˆ[X™\ˆ[ˆX^ÛšYÚÏÎˆ[X™\ˆ[ˆZ[—ÛšYÚÏÎˆ[X™\ˆ[ˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™ÂˆÙX\ÛÛ—Û˜[YOÎˆİš[™È[ˆÙ[[™×ÜšXÙOÎˆ[X™\‚ˆÙ\šXÙWÜ™Y™\™[˜ÙOÎˆİš[™È[ˆÙ\šXÙWİ\OÎˆİš[™Âˆİ\Ù]OÎˆİš[™Âˆİ\Y\—ÚYÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü˜]\×ØÛÛ˜XİÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ˜XİÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\—ØÛÛ˜XİÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü˜]\×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\—Ü˜][™ÜÎˆÂˆ›İÎˆÂˆÛÛ[][šXØ][Ûˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆ[]™\Wİ[YNˆ[X™\ˆ[ˆ™YY˜XÚÎˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ™\˜[Ü˜][™Îˆ[X™\ˆ[ˆšXÙWØÛÛ\]]]™[™\ÜÎˆ[X™\ˆ[ˆ˜]YØNˆİš[™È[ˆ˜][™×Ù]Nˆİš[™È[ˆÙ\šXÙWÜ]X[]Nˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™ÂˆBˆ[œÙ\ˆÂˆÛÛ[][šXØ][ÛÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ[]™\Wİ[YOÎˆ[X™\ˆ[ˆ™YY˜XÚÏÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ™\˜[Ü˜][™ÏÎˆ[X™\ˆ[ˆšXÙWØÛÛ\]]]™[™\ÜÏÎˆ[X™\ˆ[ˆ˜]YØOÎˆİš[™È[ˆ˜][™×Ù]OÎˆİš[™È[ˆÙ\šXÙWÜ]X[]OÎˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™ÂˆBˆ\]NˆÂˆÛÛ[][šXØ][ÛÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ[]™\Wİ[YOÎˆ[X™\ˆ[ˆ™YY˜XÚÏÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆİ™\˜[Ü˜][™ÏÎˆ[X™\ˆ[ˆšXÙWØÛÛ\]]]™[™\ÜÏÎˆ[X™\ˆ[ˆ˜]YØOÎˆİš[™È[ˆ˜][™×Ù]OÎˆİš[™È[ˆÙ\šXÙWÜ]X[]OÎˆ[X™\ˆ[ˆİ\Y\—ÚYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\—Ü˜][™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\Y\œÎˆÂˆ›İÎˆÂˆY™\ÜÎˆİš[™È[ˆ˜[š×ØXØÛİ[ˆİš[™È[ˆ˜[š×Û˜[YNˆİš[™È[ˆÛÛXİÜ\œÛÛˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆÜ™Y]Û[Z]ˆ[X™\ˆ[ˆ[XZ[ˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ\×Ù[[Îˆ›ÛÛX[‚ˆ˜[YNˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[Y[ÛY]ÙÛÜ[ÛœÎˆœÛÛˆ[ˆ^[Y[İ\›\Îˆİš[™È[ˆ^[Y[İ\Nˆİš[™È[ˆÛ™Nˆİš[™È[ˆ˜][™Îˆ[X™\ˆ[ˆİ\Y\—İ\Nˆİš[™È[ˆ^Û[X™\ˆİš[™È[ˆ\Nˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆY™\ÜÏÎˆİš[™È[ˆ˜[š×ØXØÛİ[Îˆİš[™È[ˆ˜[š×Û˜[YOÎˆİš[™È[ˆÛÛXİÜ\œÛÛÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™Y]Û[Z]Îˆ[X™\ˆ[ˆ[XZ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ˜[YNˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[ÛY]ÙÛÜ[ÛœÏÎˆœÛÛˆ[ˆ^[Y[İ\›\ÏÎˆİš[™È[ˆ^[Y[İ\OÎˆİš[™È[ˆÛ™OÎˆİš[™È[ˆ˜][™ÏÎˆ[X™\ˆ[ˆİ\Y\—İ\OÎˆİš[™È[ˆ^Û[X™\Îˆİš[™È[ˆ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆY™\ÜÏÎˆİš[™È[ˆ˜[š×ØXØÛİ[Îˆİš[™È[ˆ˜[š×Û˜[YOÎˆİš[™È[ˆÛÛXİÜ\œÛÛÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆÜ™Y]Û[Z]Îˆ[X™\ˆ[ˆ[XZ[Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×Ù[[ÏÎˆ›ÛÛX[‚ˆ˜[YOÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[Y[ÛY]ÙÛÜ[ÛœÏÎˆœÛÛˆ[ˆ^[Y[İ\›\ÏÎˆİš[™È[ˆ^[Y[İ\OÎˆİš[™È[ˆÛ™OÎˆİš[™È[ˆ˜][™ÏÎˆ[X™\ˆ[ˆİ\Y\—İ\OÎˆİš[™È[ˆ^Û[X™\Îˆİš[™È[ˆ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆœİ\Y\œ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ\™\ÜÙYÙ[XZ[ÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ[XZ[ˆİš[™ÂˆYˆİš[™ÂˆY]Y]NˆœÛÛˆ[ˆ™X\ÛÛˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[ˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆ™X\ÛÛˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ[XZ[Îˆİš[™ÂˆYÎˆİš[™ÂˆY]Y]OÎˆœÛÛˆ[ˆ™X\ÛÛÎˆİš[™ÂˆBˆ™[][ÛœÚ\Îˆ×BˆBˆŞ\İ[WÜÙ][™ÜÎˆÂˆ›İÎˆÂˆØ]YÛÜNˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆYˆİš[™Âˆ\×ÜX›XÎˆ›ÛÛX[ˆ[ˆÙ][™×ÚÙ^Nˆİš[™ÂˆÙ][™×İ\Nˆİš[™È[ˆÙ][™×İ˜[YNˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆØ]YÛÜOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ÜX›XÏÎˆ›ÛÛX[ˆ[ˆÙ][™×ÚÙ^Nˆİš[™ÂˆÙ][™×İ\OÎˆİš[™È[ˆÙ][™×İ˜[YOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆØ]YÛÜOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ÜX›XÏÎˆ›ÛÛX[ˆ[ˆÙ][™×ÚÙ^OÎˆİš[™ÂˆÙ][™×İ\OÎˆİš[™È[ˆÙ][™×İ˜[YOÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ[\]Wİ™\œÚ[ÛœÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆYˆİš[™Âˆ›İ\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÛ˜\ÚİˆœÛÛ‚ˆ[\]WÚYˆİš[™Âˆ[\]WÚÚ[™ˆİš[™Âˆ™\œÚ[Û—Û›Îˆ[X™\‚ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ˜\ÚİˆœÛÛ‚ˆ[\]WÚYˆİš[™Âˆ[\]WÚÚ[™ˆİš[™Âˆ™\œÚ[Û—Û›Îˆ[X™\‚ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆYÎˆİš[™Âˆ›İ\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ˜\ÚİÎˆœÛÛ‚ˆ[\]WÚYÎˆİš[™Âˆ[\]WÚÚ[™Îˆİš[™Âˆ™\œÚ[Û—Û›ÏÎˆ[X™\‚ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ˜[œÜÜØ›ÛÚÚ[™ÜÎˆÂˆ›İÎˆÂˆY][Û˜[ØÛÜİÎˆ[X™\ˆ[ˆ\œš]˜[Ù]Nˆİš[™È[ˆ\œš]˜[İ[YNˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[ÚYˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YNˆİš[™È[ˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙNˆİš[™ÂˆÛÜİÜ\—İš\ˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™Âˆ\\\™WÙ]Nˆİš[™Âˆ\\\™Wİ[YNˆİš[™È[ˆš]™\—Û˜[YNˆİš[™È[ˆš]™\—ÜÛ™Nˆİš[™È[ˆ›ÜÙ™—ÛØØ][Ûˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜˆ[X™\ˆ[ˆYˆİš[™Âˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]Nˆİš[™È[ˆ[X™\—ÛÙ—Ü\ÜÙ[™Ù\œÎˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]Nˆİš[™È[ˆ^[Y[ÛY]Ùˆİš[™È[ˆXÚİ\ÛØØ][Ûˆİš[™È[ˆ][İWÚYˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆ›İ]WÚYˆİš[™È[ˆÙ[[™×ÜšXÙWÜ\—İš\ˆ[X™\ˆ[ˆÜXÚX[Ü™\]Y\İÎˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ØÛÜİˆ[X™\ˆ[ˆİ\Y\—ØÛÜİÙYÜˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]Nˆİš[™È[ˆİ[ØÛÜİˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\ˆİš[™È[ˆ™ZXÛWİ\WÚYˆİš[™È[ˆ›İXÚ\—ÜÙ[ˆ›ÛÛX[ˆ[ˆ›İXÚ\—ÜÙ[Ù]Nˆİš[™È[ˆBˆ[œÙ\ˆÂˆY][Û˜[ØÛÜİÏÎˆ[X™\ˆ[ˆ\œš]˜[Ù]OÎˆİš[™È[ˆ\œš]˜[İ[YOÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YOÎˆİš[™È[ˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙOÎˆİš[™ÂˆÛÜİÜ\—İš\Îˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™Âˆ\\\™WÙ]Nˆİš[™Âˆ\\\™Wİ[YOÎˆİš[™È[ˆš]™\—Û˜[YOÎˆİš[™È[ˆš]™\—ÜÛ™OÎˆİš[™È[ˆ›ÜÙ™—ÛØØ][ÛÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ[›ÚXÙWÜÙ[Îˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]OÎˆİš[™È[ˆ[X™\—ÛÙ—Ü\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYØ[[İ[Îˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆ][İWÚYÎˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[Îˆ[X™\ˆ[ˆ›İ]WÚYÎˆİš[™È[ˆÙ[[™×ÜšXÙWÜ\—İš\Îˆ[X™\ˆ[ˆÜXÚX[Ü™\]Y\İÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ØÛÜİÎˆ[X™\ˆ[ˆİ\Y\—ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[Îˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]OÎˆİš[™È[ˆİ[ØÛÜİÎˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\Îˆİš[™È[ˆ™ZXÛWİ\WÚYÎˆİš[™È[ˆ›İXÚ\—ÜÙ[Îˆ›ÛÛX[ˆ[ˆ›İXÚ\—ÜÙ[Ù]OÎˆİš[™È[ˆBˆ\]NˆÂˆY][Û˜[ØÛÜİÏÎˆ[X™\ˆ[ˆ\œš]˜[Ù]OÎˆİš[™È[ˆ\œš]˜[İ[YOÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[ÚYÎˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YOÎˆİš[™È[ˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙOÎˆİš[™ÂˆÛÜİÜ\—İš\Îˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\œ™[˜ŞOÎˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™Âˆ\\\™WÙ]OÎˆİš[™Âˆ\\\™Wİ[YOÎˆİš[™È[ˆš]™\—Û˜[YOÎˆİš[™È[ˆš]™\—ÜÛ™OÎˆİš[™È[ˆ›ÜÙ™—ÛØØ][ÛÎˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆ^Ú[™ÙWÜ˜]Wİ×ÙYÜÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ[›ÚXÙWÜÙ[Îˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]OÎˆİš[™È[ˆ[X™\—ÛÙ—Ü\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆZYØ[[İ[Îˆ[X™\ˆ[ˆ^[Y[ÙYWÙ]OÎˆİš[™È[ˆ^[Y[ÛY]ÙÎˆİš[™È[ˆXÚİ\ÛØØ][ÛÎˆİš[™È[ˆ][İWÚYÎˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[Îˆ[X™\ˆ[ˆ›İ]WÚYÎˆİš[™È[ˆÙ[[™×ÜšXÙWÜ\—İš\Îˆ[X™\ˆ[ˆÜXÚX[Ü™\]Y\İÏÎˆİš[™È[ˆİ]\×ÚYÎˆİš[™È[ˆİ\Y\—ØÛÜİÎˆ[X™\ˆ[ˆİ\Y\—ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ\Y\—ÚYÎˆİš[™È[ˆİ\Y\—Û˜[YOÎˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[Îˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]OÎˆİš[™È[ˆİ[ØÛÜİÎˆ[X™\ˆ[ˆİ[ØÛÜİÙYÜÎˆ[X™\ˆ[ˆİ[Ü›Ùš]Îˆ[X™\ˆ[ˆ\]YØ]Îˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\Îˆİš[™È[ˆ™ZXÛWİ\WÚYÎˆİš[™È[ˆ›İXÚ\—ÜÙ[Îˆ›ÛÛX[ˆ[ˆ›İXÚ\—ÜÙ[Ù]OÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Ü][İWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ][İWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœ][İ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Ü›İ]WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ›İ]WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜÜ›İ]\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ™ZXÛWİ\WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™ZXÛWİ\WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™ZXÛWİ\\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜[œÜÜÜ›İ]\ÎˆÂˆ›İÎˆÂˆ\œš]˜[ØÚ]Nˆİš[™ÂˆÜ™X]YØ]ˆİš[™È[ˆ\\\™WØÚ]Nˆİš[™Âˆ\İ[˜ÙWÚÛNˆ[X™\ˆ[ˆ\İ[X]YÙ\˜][Û—Úİ\œÎˆ[X™\ˆ[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ›İ]WÛ˜[YNˆİš[™Âˆ›İ]WÛ˜[YWØ\ˆİš[™È[ˆ›İ]Wİ\Nˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ\œš]˜[ØÚ]Nˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ\\\™WØÚ]Nˆİš[™Âˆ\İ[˜ÙWÚÛOÎˆ[X™\ˆ[ˆ\İ[X]YÙ\˜][Û—Úİ\œÏÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ›İ]WÛ˜[YNˆİš[™Âˆ›İ]WÛ˜[YWØ\Îˆİš[™È[ˆ›İ]Wİ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ\œš]˜[ØÚ]OÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™È[ˆ\\\™WØÚ]OÎˆİš[™Âˆ\İ[˜ÙWÚÛOÎˆ[X™\ˆ[ˆ\İ[X]YÙ\˜][Û—Úİ\œÏÎˆ[X™\ˆ[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ›İ]WÛ˜[YOÎˆİš[™Âˆ›İ]WÛ˜[YWØ\Îˆİš[™È[ˆ›İ]Wİ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ\Ù\—ØÜ™X][Û—Ü™\]Y\İÎˆÂˆ›İÎˆÂˆ\›İ™YØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\\Y[ˆİš[™È[ˆ[XZ[ˆİš[™Âˆ[Û˜[YNˆİš[™ÂˆYˆİš[™ÂˆÛ™Nˆİš[™È[ˆ™\]Y\İYØNˆİš[™È[ˆ›ÛNˆİš[™È[ˆİ]\Îˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆ\›İ™YØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\\Y[Îˆİš[™È[ˆ[XZ[ˆİš[™Âˆ[Û˜[YNˆİš[™ÂˆYÎˆİš[™ÂˆÛ™OÎˆİš[™È[ˆ™\]Y\İYØOÎˆİš[™È[ˆ›ÛOÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆ\›İ™YØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\\Y[Îˆİš[™È[ˆ[XZ[Îˆİš[™Âˆ[Û˜[YOÎˆİš[™ÂˆYÎˆİš[™ÂˆÛ™OÎˆİš[™È[ˆ™\]Y\İYØOÎˆİš[™È[ˆ›ÛOÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆ™ZXÛWİ\\ÎˆÂˆ›İÎˆÂˆØ\XÚ]WÜ\ÜÙ[™Ù\œÎˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆ™X]\™\ÎˆœÛÛˆ[ˆY[İ\Nˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\ˆİš[™È[ˆ˜[œÛZ\ÜÚ[Û—İ\Nˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆØ\XÚ]WÜ\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ™X]\™\ÏÎˆœÛÛˆ[ˆY[İ\OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YNˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆ˜[œÛZ\ÜÚ[Û—İ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆØ\XÚ]WÜ\ÜÙ[™Ù\œÏÎˆ[X™\ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ™X]\™\ÏÎˆœÛÛˆ[ˆY[İ\OÎˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ˜[YOÎˆİš[™Âˆ˜[YWØ\Îˆİš[™È[ˆ˜[œÛZ\ÜÚ[Û—İ\OÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆÚ]Ø\Ø]]ÛX][Û—Ù^Xİ][ÛœÎˆÂˆ›İÎˆÂˆXİ[Ûœ×Ù^Xİ]YˆœÛÛˆ[ˆÛÛ™\œØ][Û—ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ^Xİ][Û—İ[YWÛ\Îˆ[X™\ˆ[ˆYˆİš[™ÂˆY\ÜØYÙWÚYˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[WÚYˆİš[™Âˆİ]\Îˆİš[™ÂˆšYÙÙ\—İ\Nˆİš[™ÂˆBˆ[œÙ\ˆÂˆXİ[Ûœ×Ù^Xİ]YÎˆœÛÛˆ[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ^Xİ][Û—İ[YWÛ\ÏÎˆ[X™\ˆ[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ[WÚYˆİš[™Âˆİ]\Îˆİš[™ÂˆšYÙÙ\—İ\Nˆİš[™ÂˆBˆ\]NˆÂˆXİ[Ûœ×Ù^Xİ]YÎˆœÛÛˆ[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ^Xİ][Û—İ[YWÛ\ÏÎˆ[X™\ˆ[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ[WÚYÎˆİš[™Âˆİ]\ÏÎˆİš[™ÂˆšYÙÙ\—İ\OÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ù^Xİ][Ûœ×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ù^Xİ][Ûœ×ÛY\ÜØYÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Y\ÜØYÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÛY\ÜØYÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ù^Xİ][Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ù^Xİ][Ûœ×Ü[WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\Ø]]ÛX][Û—Ü[\×İŒˆ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\Ø]]ÛX][Û—Ü[\×İŒˆÂˆ›İÎˆÂˆXİ[ÛœÎˆœÛÛ‚ˆÛÛ™][ÛœÎˆœÛÛ‚ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆ^Xİ][Û—ØÛİ[ˆ[X™\‚ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆ\İÙ^Xİ]YØ]ˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]Nˆ[X™\‚ˆšYÙÙ\—ØÛÛ™šYÎˆœÛÛ‚ˆšYÙÙ\—İ\Nˆİš[™Âˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆXİ[ÛœÏÎˆœÛÛ‚ˆÛÛ™][ÛœÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ^Xİ][Û—ØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\İÙ^Xİ]YØ]Îˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[Üš]OÎˆ[X™\‚ˆšYÙÙ\—ØÛÛ™šYÏÎˆœÛÛ‚ˆšYÙÙ\—İ\Nˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆXİ[ÛœÏÎˆœÛÛ‚ˆÛÛ™][ÛœÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ^Xİ][Û—ØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\İÙ^Xİ]YØ]Îˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆš[Üš]OÎˆ[X™\‚ˆšYÙÙ\—ØÛÛ™šYÏÎˆœÛÛ‚ˆšYÙÙ\—İ\OÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ü[\×İŒ—ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ø]]ÛX][Û—Ü[\×İŒ—İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[ÎˆÂˆ›İÎˆÂˆœ›ØYØ\İÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆ[]™\™YØ]ˆİš[™È[ˆ\œ›Ü—ØÛÙNˆİš[™È[ˆ\œ›Ü—Ù]Z[ÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ˜Z[YØ]ˆİš[™È[ˆYˆİš[™ÂˆY\ÜØYÙWÚYˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\œÛÛ˜[^˜][ÛˆœÛÛˆ[ˆÛ™WÛ[X™\ˆİš[™Âˆ›İšY\—ÛY\ÜØYÙWÚYˆİš[™È[ˆ™XYØ]ˆİš[™È[ˆÙ[Ø]ˆİš[™È[ˆİ]\Îˆİš[™Âˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆœ›ØYØ\İÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™È[ˆ[]™\™YØ]Îˆİš[™È[ˆ\œ›Ü—ØÛÙOÎˆİš[™È[ˆ\œ›Ü—Ù]Z[ÏÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ˜Z[YØ]Îˆİš[™È[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\œÛÛ˜[^˜][ÛÎˆœÛÛˆ[ˆÛ™WÛ[X™\ˆİš[™Âˆ›İšY\—ÛY\ÜØYÙWÚYÎˆİš[™È[ˆ™XYØ]Îˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆœ›ØYØ\İÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛY\—ÚYÎˆİš[™È[ˆİ\İÛY\—Û˜[YOÎˆİš[™È[ˆ[]™\™YØ]Îˆİš[™È[ˆ\œ›Ü—ØÛÙOÎˆİš[™È[ˆ\œ›Ü—Ù]Z[ÏÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ˜Z[YØ]Îˆİš[™È[ˆYÎˆİš[™ÂˆY\ÜØYÙWÚYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\œÛÛ˜[^˜][ÛÎˆœÛÛˆ[ˆÛ™WÛ[X™\Îˆİš[™Âˆ›İšY\—ÛY\ÜØYÙWÚYÎˆİš[™È[ˆ™XYØ]Îˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[×Øœ›ØYØ\İÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜œ›ØYØ\İÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\Øœ›ØYØ\İÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[×ÛY\ÜØYÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Y\ÜØYÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÛY\ÜØYÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İÜ™XÚ\Y[×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\Øœ›ØYØ\İÎˆÂˆ›İÎˆÂˆ]YY[˜ÙWÙš[\ˆœÛÛˆ[ˆ]YY[˜ÙWİ\Nˆİš[™ÂˆÛÛ\]YØ]ˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆ[]™\™YØÛİ[ˆ[X™\‚ˆ\ØÜš\[Ûˆİš[™È[ˆ˜Z[YØÛİ[ˆ[X™\‚ˆYˆİš[™Âˆ\İÙ\œ›Üˆİš[™È[ˆØÚÙYØ]ˆİš[™È[ˆY\ÜØYÙWØ›ÙNˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™XYØÛİ[ˆ[X™\‚ˆØÚY[YØ]ˆİš[™È[ˆÙ[ØÛİ[ˆ[X™\‚ˆÚÚ\YØÛİ[ˆ[X™\‚ˆİ\YØ]ˆİš[™È[ˆİ]\Îˆİš[™Âˆ[\]WÚYˆİš[™È[ˆ[\]Wİ˜\šXX›\ÎˆœÛÛ‚ˆİ[Ü™XÚ\Y[Îˆ[X™\‚ˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ]YY[˜ÙWÙš[\ÎˆœÛÛˆ[ˆ]YY[˜ÙWİ\OÎˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ[]™\™YØÛİ[Îˆ[X™\‚ˆ\ØÜš\[ÛÎˆİš[™È[ˆ˜Z[YØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆØÚÙYØ]Îˆİš[™È[ˆY\ÜØYÙWØ›ÙOÎˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™XYØÛİ[Îˆ[X™\‚ˆØÚY[YØ]Îˆİš[™È[ˆÙ[ØÛİ[Îˆ[X™\‚ˆÚÚ\YØÛİ[Îˆ[X™\‚ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ[\]WÚYÎˆİš[™È[ˆ[\]Wİ˜\šXX›\ÏÎˆœÛÛ‚ˆİ[Ü™XÚ\Y[ÏÎˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ]YY[˜ÙWÙš[\ÎˆœÛÛˆ[ˆ]YY[˜ÙWİ\OÎˆİš[™ÂˆÛÛ\]YØ]Îˆİš[™È[ˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™È[ˆ[]™\™YØÛİ[Îˆ[X™\‚ˆ\ØÜš\[ÛÎˆİš[™È[ˆ˜Z[YØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆØÚÙYØ]Îˆİš[™È[ˆY\ÜØYÙWØ›ÙOÎˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™XYØÛİ[Îˆ[X™\‚ˆØÚY[YØ]Îˆİš[™È[ˆÙ[ØÛİ[Îˆ[X™\‚ˆÚÚ\YØÛİ[Îˆ[X™\‚ˆİ\YØ]Îˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ[\]WÚYÎˆİš[™È[ˆ[\]Wİ˜\šXX›\ÏÎˆœÛÛ‚ˆİ[Ü™XÚ\Y[ÏÎˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İ×İ[\]WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ[\]WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\İ[\]\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Øœ›ØYØ\İ×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ØÚ]›İÚ[\˜Xİ[ÛœÎˆÂˆ›İÎˆÂˆ›İÜ™\Nˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ[™Ù™—Ü™X\ÛÛˆİš[™È[ˆYˆİš[™Âˆ][˜ŞWÛ\Îˆ[X™\ˆ[ˆY\ÜØYÙWÚYˆİš[™È[ˆ[Ù[İ\ÙYˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\Ù\—ÛY\ÜØYÙNˆİš[™È[ˆØ\×Ú[™YÛÙ™ˆ›ÛÛX[‚ˆBˆ[œÙ\ˆÂˆ›İÜ™\OÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ[™Ù™—Ü™X\ÛÛÎˆİš[™È[ˆYÎˆİš[™Âˆ][˜ŞWÛ\ÏÎˆ[X™\ˆ[ˆY\ÜØYÙWÚYÎˆİš[™È[ˆ[Ù[İ\ÙYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\Ù\—ÛY\ÜØYÙOÎˆİš[™È[ˆØ\×Ú[™YÛÙ™Îˆ›ÛÛX[‚ˆBˆ\]NˆÂˆ›İÜ™\OÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ[™Ù™—Ü™X\ÛÛÎˆİš[™È[ˆYÎˆİš[™Âˆ][˜ŞWÛ\ÏÎˆ[X™\ˆ[ˆY\ÜØYÙWÚYÎˆİš[™È[ˆ[Ù[İ\ÙYÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\Ù\—ÛY\ÜØYÙOÎˆİš[™È[ˆØ\×Ú[™YÛÙ™Îˆ›ÛÛX[‚ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÚ]›İÚ[\˜Xİ[Ûœ×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÚ]›İÚ[\˜Xİ[Ûœ×ÛY\ÜØYÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Y\ÜØYÙWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÛY\ÜØYÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÚ]›İÚ[\˜Xİ[Ûœ×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ØÚ]›İÜÙ][™ÜÎˆÂˆ›İÎˆÂˆ]]×Ú[™Ù™—ÛÛ—Ù\œ›Üˆ›ÛÛX[‚ˆ›İÛ˜[YNˆİš[™ÂˆÜ™X]YØ]ˆİš[™Âˆ[™Ù™—ÚÙ^]ÛÜ™ÎˆœÛÛ‚ˆYˆİš[™Âˆ\×Ù[˜X›Yˆ›ÛÛX[‚ˆX^Ø›İÜ™\Y\Îˆ[X™\‚ˆ[Ù[ˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™\ÜÛ™ÛÛ›WÛİ]ÚYWÚİ\œÎˆ›ÛÛX[‚ˆŞ\İ[WÜ›Û\ˆİš[™Âˆ\]YØ]ˆİš[™ÂˆÙ[ÛÛYWÛY\ÜØYÙNˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ]]×Ú[™Ù™—ÛÛ—Ù\œ›ÜÎˆ›ÛÛX[‚ˆ›İÛ˜[YOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ[™Ù™—ÚÙ^]ÛÜ™ÏÎˆœÛÛ‚ˆYÎˆİš[™Âˆ\×Ù[˜X›YÎˆ›ÛÛX[‚ˆX^Ø›İÜ™\Y\ÏÎˆ[X™\‚ˆ[Ù[Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™\ÜÛ™ÛÛ›WÛİ]ÚYWÚİ\œÏÎˆ›ÛÛX[‚ˆŞ\İ[WÜ›Û\Îˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÙ[ÛÛYWÛY\ÜØYÙOÎˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ]]×Ú[™Ù™—ÛÛ—Ù\œ›ÜÎˆ›ÛÛX[‚ˆ›İÛ˜[YOÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™Âˆ[™Ù™—ÚÙ^]ÛÜ™ÏÎˆœÛÛ‚ˆYÎˆİš[™Âˆ\×Ù[˜X›YÎˆ›ÛÛX[‚ˆX^Ø›İÜ™\Y\ÏÎˆ[X™\‚ˆ[Ù[Îˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™\ÜÛ™ÛÛ›WÛİ]ÚYWÚİ\œÏÎˆ›ÛÛX[‚ˆŞ\İ[WÜ›Û\Îˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÙ[ÛÛYWÛY\ÜØYÙOÎˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÚ]›İÜÙ][™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÚ]›İÜÙ][™Ü×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ØÛÛ›™Xİ[Û—Ù]™[ÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ]™[İ\Nˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ^[ØYˆœÛÛˆ[ˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ]™[İ\Nˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[ØYÎˆœÛÛˆ[ˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ]™[İ\OÎˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ^[ØYÎˆœÛÛˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ›™Xİ[Û—Ù]™[×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ØÛÛ™\œØ][ÛœÎˆÂˆ›İÎˆÂˆZWÜİ[[X\Nˆİš[™È[ˆZWÜİ[[X\Wİ\]YØ]ˆİš[™È[ˆ\ÜÚYÛ™YİÎˆİš[™È[ˆ\ÜÚYÛ›Y[Ü™X\ÛÛˆİš[™È[ˆ]]×Ø\ÜÚYÛ™Yˆ›ÛÛX[ˆ[ˆØ]YÛÜNˆİš[™È[ˆÛÜÙYØ]ˆİš[™È[ˆÛÜÙYØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆš\œİÜ™\ÜÛœÙWØ]ˆİš[™È[ˆYˆİš[™Âˆ\×Üİ\œ™Yˆ›ÛÛX[‚ˆ\İØXİ]š]WØ]ˆİš[™È[ˆ\İÛY\ÜØYÙWØ]ˆİš[™È[ˆ\İÛ›İWÜ™]šY]Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÛ™WÛ[X™\ˆİš[™Âˆ[›™YØ›ÛÚÚ[™×ÚYˆİš[™È[ˆš[Üš]Nˆİš[™È[ˆ™\ÛÛ™YØ]ˆİš[™È[ˆÛWØœ™XXÚYÙš\œİÜ™\ÜÛœÙNˆ›ÛÛX[‚ˆÛWØœ™XXÚYÜ™\ÛÛ][Ûˆ›ÛÛX[‚ˆÛWÙš\œİÜ™\ÜÛœÙWÙXY[™Nˆİš[™È[ˆİ]\Îˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆZWÜİ[[X\OÎˆİš[™È[ˆZWÜİ[[X\Wİ\]YØ]Îˆİš[™È[ˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ\ÜÚYÛ›Y[Ü™X\ÛÛÎˆİš[™È[ˆ]]×Ø\ÜÚYÛ™YÎˆ›ÛÛX[ˆ[ˆØ]YÛÜOÎˆİš[™È[ˆÛÜÙYØ]Îˆİš[™È[ˆÛÜÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆš\œİÜ™\ÜÛœÙWØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Üİ\œ™YÎˆ›ÛÛX[‚ˆ\İØXİ]š]WØ]Îˆİš[™È[ˆ\İÛY\ÜØYÙWØ]Îˆİš[™È[ˆ\İÛ›İWÜ™]šY]ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™WÛ[X™\ˆİš[™Âˆ[›™YØ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆš[Üš]OÎˆİš[™È[ˆ™\ÛÛ™YØ]Îˆİš[™È[ˆÛWØœ™XXÚYÙš\œİÜ™\ÜÛœÙOÎˆ›ÛÛX[‚ˆÛWØœ™XXÚYÜ™\ÛÛ][ÛÎˆ›ÛÛX[‚ˆÛWÙš\œİÜ™\ÜÛœÙWÙXY[™OÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆZWÜİ[[X\OÎˆİš[™È[ˆZWÜİ[[X\Wİ\]YØ]Îˆİš[™È[ˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ\ÜÚYÛ›Y[Ü™X\ÛÛÎˆİš[™È[ˆ]]×Ø\ÜÚYÛ™YÎˆ›ÛÛX[ˆ[ˆØ]YÛÜOÎˆİš[™È[ˆÛÜÙYØ]Îˆİš[™È[ˆÛÜÙYØOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆİ\İÛY\—ÚYÎˆİš[™È[ˆš\œİÜ™\ÜÛœÙWØ]Îˆİš[™È[ˆYÎˆİš[™Âˆ\×Üİ\œ™YÎˆ›ÛÛX[‚ˆ\İØXİ]š]WØ]Îˆİš[™È[ˆ\İÛY\ÜØYÙWØ]Îˆİš[™È[ˆ\İÛ›İWÜ™]šY]ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™WÛ[X™\Îˆİš[™Âˆ[›™YØ›ÛÚÚ[™×ÚYÎˆİš[™È[ˆš[Üš]OÎˆİš[™È[ˆ™\ÛÛ™YØ]Îˆİš[™È[ˆÛWØœ™XXÚYÙš\œİÜ™\ÜÛœÙOÎˆ›ÛÛX[‚ˆÛWØœ™XXÚYÜ™\ÛÛ][ÛÎˆ›ÛÛX[‚ˆÛWÙš\œİÜ™\ÜÛœÙWÙXY[™OÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ™š×İØWØÛÛ—Ø\ÜÚYÛ™Y‚ˆÛÛ[[œÎˆÈ˜\ÜÚYÛ™YİÈ—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Ü[›™YØ›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[›™YØ›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Ü[›™YØ›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[›™YØ›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜Ø\—Ü™[[×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Ü[›™YØ›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[›™YØ›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™›YÚØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Ü[›™YØ›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[›™YØ›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆšİ[Ø›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×Ü[›™YØ›ÛÚÚ[™×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[›™YØ›ÛÚÚ[™×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYY‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ØÛÛ™\œØ][Ûœ×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\Ù›Ûİİ\ÎˆÂˆ›İÎˆÂˆ\ÜÚYÛ™YİÎˆİš[™È[ˆ][\ØÛİ[ˆ[X™\‚ˆÛÛ\]YØ]ˆİš[™È[ˆÛÛ\]YØNˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™ÂˆYˆİš[™Âˆ\İÙ\œ›Üˆİš[™È[ˆØÚÙYØ]ˆİš[™È[ˆY\ÜØYÙWØ›ÙNˆİš[™È[ˆ[ÙNˆİš[™Âˆ›İNˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™[Z[™Ø]ˆİš[™ÂˆÙ[Ø]ˆİš[™È[ˆÙ[ÛY\ÜØYÙWÚYˆİš[™È[ˆİ]\Îˆİš[™Âˆ[\]WÚYˆİš[™È[ˆ[\]Wİ˜\šXX›\ÎˆœÛÛ‚ˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ][\ØÛİ[Îˆ[X™\‚ˆÛÛ\]YØ]Îˆİš[™È[ˆÛÛ\]YØOÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØNˆİš[™ÂˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆØÚÙYØ]Îˆİš[™È[ˆY\ÜØYÙWØ›ÙOÎˆİš[™È[ˆ[ÙOÎˆİš[™Âˆ›İOÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™[Z[™Ø]ˆİš[™ÂˆÙ[Ø]Îˆİš[™È[ˆÙ[ÛY\ÜØYÙWÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ[\]WÚYÎˆİš[™È[ˆ[\]Wİ˜\šXX›\ÏÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ\ÜÚYÛ™YİÏÎˆİš[™È[ˆ][\ØÛİ[Îˆ[X™\‚ˆÛÛ\]YØ]Îˆİš[™È[ˆÛÛ\]YØOÎˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆÜ™X]YØOÎˆİš[™ÂˆYÎˆİš[™Âˆ\İÙ\œ›ÜÎˆİš[™È[ˆØÚÙYØ]Îˆİš[™È[ˆY\ÜØYÙWØ›ÙOÎˆİš[™È[ˆ[ÙOÎˆİš[™Âˆ›İOÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™[Z[™Ø]Îˆİš[™ÂˆÙ[Ø]Îˆİš[™È[ˆÙ[ÛY\ÜØYÙWÚYÎˆİš[™È[ˆİ]\ÏÎˆİš[™Âˆ[\]WÚYÎˆİš[™È[ˆ[\]Wİ˜\šXX›\ÏÎˆœÛÛ‚ˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ù›Ûİİ\×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ù›Ûİİ\×İ[\]WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ[\]WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\İ[\]\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\Ù›Ûİİ\×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ÛY\ÜØYÙ\ÎˆÂˆ›İÎˆÂˆœ›ØYØ\İÚYˆİš[™È[ˆÛÛ[ˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™È[ˆÛÜœ™[][Û—ÚYˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ[]™\™YØ]ˆİš[™È[ˆ\™Xİ[Ûˆİš[™Âˆ\œ›Ü—ØÛÙNˆİš[™È[ˆ\œ›Ü—Ù]Z[ÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ›Ûİİ\ÚYˆİš[™È[ˆYˆİš[™ÂˆY[\İ[˜ŞWÚÙ^Nˆİš[™È[ˆYYXWØØ\[Ûˆİš[™È[ˆYYXWÙİÛ›ØYØ][\Îˆ[X™\ˆ[ˆYYXWÙİÛ›ØYÙ\œ›Üˆİš[™È[ˆYYXWÙİÛ›ØYÜİ]\Îˆİš[™È[ˆYYXWÙ\˜][Û—ÜÙXÛÛ™Îˆ[X™\ˆ[ˆYYXWÙš[WÛ˜[YNˆİš[™È[ˆYYXWÛ\İØ][\Ø]ˆİš[™È[ˆYYXWÛZ[YWİ\Nˆİš[™È[ˆYYXWÜ›İšY\—ÚYˆİš[™È[ˆYYXWÜİÜ˜YÙWÜ]ˆİš[™È[ˆYYXWİ\›ˆİš[™È[ˆY\ÜØYÙWÚYˆİš[™È[ˆY\ÜØYÙWİ\Nˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ØÛÙNˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ÛY\ÜØYÙNˆİš[™È[ˆ›İšY\—Ü™\ÜÛœÙNˆœÛÛˆ[ˆ™XYØ]ˆİš[™È[ˆÙ[Ø]ˆİš[™È[ˆÙ[ØNˆİš[™È[ˆİ]\Îˆİš[™È[ˆ[\]WÛ[™İXYÙNˆİš[™È[ˆ[\]WÛ˜[YNˆİš[™È[ˆ[\]WÜ\˜[Y]\œÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆœ›ØYØ\İÚYÎˆİš[™È[ˆÛÛ[Îˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÛÜœ™[][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ[]™\™YØ]Îˆİš[™È[ˆ\™Xİ[ÛÎˆİš[™Âˆ\œ›Ü—ØÛÙOÎˆİš[™È[ˆ\œ›Ü—Ù]Z[ÏÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ›Ûİİ\ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^OÎˆİš[™È[ˆYYXWØØ\[ÛÎˆİš[™È[ˆYYXWÙİÛ›ØYØ][\ÏÎˆ[X™\ˆ[ˆYYXWÙİÛ›ØYÙ\œ›ÜÎˆİš[™È[ˆYYXWÙİÛ›ØYÜİ]\ÏÎˆİš[™È[ˆYYXWÙ\˜][Û—ÜÙXÛÛ™ÏÎˆ[X™\ˆ[ˆYYXWÙš[WÛ˜[YOÎˆİš[™È[ˆYYXWÛ\İØ][\Ø]Îˆİš[™È[ˆYYXWÛZ[YWİ\OÎˆİš[™È[ˆYYXWÜ›İšY\—ÚYÎˆİš[™È[ˆYYXWÜİÜ˜YÙWÜ]Îˆİš[™È[ˆYYXWİ\›Îˆİš[™È[ˆY\ÜØYÙWÚYÎˆİš[™È[ˆY\ÜØYÙWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ØÛÙOÎˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ›İšY\—Ü™\ÜÛœÙOÎˆœÛÛˆ[ˆ™XYØ]Îˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆÙ[ØOÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ[\]WÛ[™İXYÙOÎˆİš[™È[ˆ[\]WÛ˜[YOÎˆİš[™È[ˆ[\]WÜ\˜[Y]\œÏÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆœ›ØYØ\İÚYÎˆİš[™È[ˆÛÛ[Îˆİš[™È[ˆÛÛ™\œØ][Û—ÚYÎˆİš[™È[ˆÛÜœ™[][Û—ÚYÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ[]™\™YØ]Îˆİš[™È[ˆ\™Xİ[ÛÎˆİš[™Âˆ\œ›Ü—ØÛÙOÎˆİš[™È[ˆ\œ›Ü—Ù]Z[ÏÎˆœÛÛˆ[ˆ\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ›Ûİİ\ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆY[\İ[˜ŞWÚÙ^OÎˆİš[™È[ˆYYXWØØ\[ÛÎˆİš[™È[ˆYYXWÙİÛ›ØYØ][\ÏÎˆ[X™\ˆ[ˆYYXWÙİÛ›ØYÙ\œ›ÜÎˆİš[™È[ˆYYXWÙİÛ›ØYÜİ]\ÏÎˆİš[™È[ˆYYXWÙ\˜][Û—ÜÙXÛÛ™ÏÎˆ[X™\ˆ[ˆYYXWÙš[WÛ˜[YOÎˆİš[™È[ˆYYXWÛ\İØ][\Ø]Îˆİš[™È[ˆYYXWÛZ[YWİ\OÎˆİš[™È[ˆYYXWÜ›İšY\—ÚYÎˆİš[™È[ˆYYXWÜİÜ˜YÙWÜ]Îˆİš[™È[ˆYYXWİ\›Îˆİš[™È[ˆY\ÜØYÙWÚYÎˆİš[™È[ˆY\ÜØYÙWİ\OÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ØÛÙOÎˆİš[™È[ˆ›İšY\—Ù\œ›Ü—ÛY\ÜØYÙOÎˆİš[™È[ˆ›İšY\—Ü™\ÜÛœÙOÎˆœÛÛˆ[ˆ™XYØ]Îˆİš[™È[ˆÙ[Ø]Îˆİš[™È[ˆÙ[ØOÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆ[\]WÛ[™İXYÙOÎˆİš[™È[ˆ[\]WÛ˜[YOÎˆİš[™È[ˆ[\]WÜ\˜[Y]\œÏÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ÛY\ÜØYÙ\×ØÛÛ™\œØ][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜ÛÛ™\œØ][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ØÛÛ™\œØ][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ÛY\ÜØYÙ\×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ÜÙ\ÜÚ[ÛœÎˆÂˆ›İÎˆÂˆXİ]™WØÛÛ™\œØ][Ûœ×ØÛİ[ˆ[X™\ˆ[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›Yˆ›ÛÛX[ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™Âˆ\İØXİ]š]Nˆİš[™È[ˆX^ØÛÛ™\œØ][ÛœÎˆ[X™\ˆ[ˆİ]\Îˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆBˆ[œÙ\ˆÂˆXİ]™WØÛÛ™\œØ][Ûœ×ØÛİ[Îˆ[X™\ˆ[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›YÎˆ›ÛÛX[ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ\İØXİ]š]OÎˆİš[™È[ˆX^ØÛÛ™\œØ][ÛœÏÎˆ[X™\ˆ[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ\]NˆÂˆXİ]™WØÛÛ™\œØ][Ûœ×ØÛİ[Îˆ[X™\ˆ[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›YÎˆ›ÛÛX[ˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ[\ŞYYWÚYÎˆİš[™È[ˆYÎˆİš[™Âˆ\İØXİ]š]OÎˆİš[™È[ˆX^ØÛÛ™\œØ][ÛœÏÎˆ[X™\ˆ[ˆİ]\ÏÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆBˆ™[][ÛœÚ\Îˆ×BˆBˆÚ]Ø\ÜÙ][™ÜÎˆÂˆ›İÎˆÂˆXØÙ\Ü×İÚÙ[ˆİš[™È[ˆ\Wİ™\œÚ[Ûˆİš[™È[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›Yˆ›ÛÛX[ˆ[ˆ\Ú[™\Ü×ØXØÛİ[ÚYˆİš[™È[ˆ\Ú[™\Ü×Ù\ØÜš\[Ûˆİš[™È[ˆ\Ú[™\Ü×Ù[XZ[ˆİš[™È[ˆ\Ú[™\Ü×Û˜[YNˆİš[™È[ˆ\Ú[™\Ü×İÙXœÚ]Nˆİš[™È[ˆÛÛ›™XİYØ]ˆİš[™È[ˆÛÛ›™Xİ[Û—ÛY]Ùˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÛÛ›™XİYØ]ˆİš[™È[ˆ\Ü^WÜÛ™WÛ[X™\ˆİš[™È[ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[ˆ[ˆ\×ÙY˜][ˆ›ÛÛX[‚ˆX™[ˆİš[™È[ˆY]Wİ\Ù\—ÚYˆİš[™È[ˆÛ˜›Ø\™[™×Üİ]\Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆÛ™WÛ[X™\—ÚYˆİš[™È[ˆ˜]WÛ[Z]Ü\—ÛZ[]Nˆ[X™\ˆ[ˆÚÙ[—Ù^\™\×Ø]ˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆØX˜WÚYˆİš[™È[ˆÙXšÛÚ×İ\›ˆİš[™È[ˆÙXšÛÚ×İ™\šYWİÚÙ[ˆİš[™È[ˆBˆ[œÙ\ˆÂˆXØÙ\Ü×İÚÙ[Îˆİš[™È[ˆ\Wİ™\œÚ[ÛÎˆİš[™È[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›YÎˆ›ÛÛX[ˆ[ˆ\Ú[™\Ü×ØXØÛİ[ÚYÎˆİš[™È[ˆ\Ú[™\Ü×Ù\ØÜš\[ÛÎˆİš[™È[ˆ\Ú[™\Ü×Ù[XZ[Îˆİš[™È[ˆ\Ú[™\Ü×Û˜[YOÎˆİš[™È[ˆ\Ú[™\Ü×İÙXœÚ]OÎˆİš[™È[ˆÛÛ›™XİYØ]Îˆİš[™È[ˆÛÛ›™Xİ[Û—ÛY]ÙÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÛÛ›™XİYØ]Îˆİš[™È[ˆ\Ü^WÜÛ™WÛ[X™\Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙY˜][Îˆ›ÛÛX[‚ˆX™[Îˆİš[™È[ˆY]Wİ\Ù\—ÚYÎˆİš[™È[ˆÛ˜›Ø\™[™×Üİ]\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™WÛ[X™\—ÚYÎˆİš[™È[ˆ˜]WÛ[Z]Ü\—ÛZ[]OÎˆ[X™\ˆ[ˆÚÙ[—Ù^\™\×Ø]Îˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆØX˜WÚYÎˆİš[™È[ˆÙXšÛÚ×İ\›Îˆİš[™È[ˆÙXšÛÚ×İ™\šYWİÚÙ[Îˆİš[™È[ˆBˆ\]NˆÂˆXØÙ\Ü×İÚÙ[Îˆİš[™È[ˆ\Wİ™\œÚ[ÛÎˆİš[™È[ˆ]]×Ø\ÜÚYÛ›Y[Ù[˜X›YÎˆ›ÛÛX[ˆ[ˆ\Ú[™\Ü×ØXØÛİ[ÚYÎˆİš[™È[ˆ\Ú[™\Ü×Ù\ØÜš\[ÛÎˆİš[™È[ˆ\Ú[™\Ü×Ù[XZ[Îˆİš[™È[ˆ\Ú[™\Ü×Û˜[YOÎˆİš[™È[ˆ\Ú[™\Ü×İÙXœÚ]OÎˆİš[™È[ˆÛÛ›™XİYØ]Îˆİš[™È[ˆÛÛ›™Xİ[Û—ÛY]ÙÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÛÛ›™XİYØ]Îˆİš[™È[ˆ\Ü^WÜÛ™WÛ[X™\Îˆİš[™È[ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[ˆ[ˆ\×ÙY˜][Îˆ›ÛÛX[‚ˆX™[Îˆİš[™È[ˆY]Wİ\Ù\—ÚYÎˆİš[™È[ˆÛ˜›Ø\™[™×Üİ]\ÏÎˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆÛ™WÛ[X™\—ÚYÎˆİš[™È[ˆ˜]WÛ[Z]Ü\—ÛZ[]OÎˆ[X™\ˆ[ˆÚÙ[—Ù^\™\×Ø]Îˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆØX˜WÚYÎˆİš[™È[ˆÙXšÛÚ×İ\›Îˆİš[™È[ˆÙXšÛÚ×İ™\šYWİÚÙ[Îˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ÜÙ][™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\ÜÛWÜÙ][™ÜÎˆÂˆ›İÎˆÂˆ]]×Ü™\WÙ[˜X›Yˆ›ÛÛX[‚ˆ\Ú[™\Ü×Úİ\œÎˆœÛÛ‚ˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]ÛÙ—Úİ\œ×ÛY\ÜØYÙNˆİš[™È[ˆÛWÙš\œİÜ™\ÜÛœÙWÛZ[]\Îˆ[X™\‚ˆÛWÜ™\ÛÛ][Û—ÛZ[]\Îˆ[X™\‚ˆ[Y^›Û™Nˆİš[™Âˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ]]×Ü™\WÙ[˜X›YÎˆ›ÛÛX[‚ˆ\Ú[™\Ü×Úİ\œÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ]ÛÙ—Úİ\œ×ÛY\ÜØYÙOÎˆİš[™È[ˆÛWÙš\œİÜ™\ÜÛœÙWÛZ[]\ÏÎˆ[X™\‚ˆÛWÜ™\ÛÛ][Û—ÛZ[]\ÏÎˆ[X™\‚ˆ[Y^›Û™OÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ]]×Ü™\WÙ[˜X›YÎˆ›ÛÛX[‚ˆ\Ú[™\Ü×Úİ\œÏÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆİ]ÛÙ—Úİ\œ×ÛY\ÜØYÙOÎˆİš[™È[ˆÛWÙš\œİÜ™\ÜÛœÙWÛZ[]\ÏÎˆ[X™\‚ˆÛWÜ™\ÛÛ][Û—ÛZ[]\ÏÎˆ[X™\‚ˆ[Y^›Û™OÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\ÜÛWÜÙ][™Ü×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\İ[\]WØ[˜[]XÜÎˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™Âˆ]Nˆİš[™Âˆ[]™\™YØÛİ[ˆ[X™\‚ˆ˜Z[YØÛİ[ˆ[X™\‚ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™XYØÛİ[ˆ[X™\‚ˆ™\YYØÛİ[ˆ[X™\‚ˆÙ[ØÛİ[ˆ[X™\‚ˆ[\]WÚYˆİš[™È[ˆ[\]WÛ[™İXYÙNˆİš[™È[ˆ[\]WÛ˜[YNˆİš[™Âˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™Âˆ]OÎˆİš[™Âˆ[]™\™YØÛİ[Îˆ[X™\‚ˆ˜Z[YØÛİ[Îˆ[X™\‚ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™XYØÛİ[Îˆ[X™\‚ˆ™\YYØÛİ[Îˆ[X™\‚ˆÙ[ØÛİ[Îˆ[X™\‚ˆ[\]WÚYÎˆİš[™È[ˆ[\]WÛ[™İXYÙOÎˆİš[™È[ˆ[\]WÛ˜[YNˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™Âˆ]OÎˆİš[™Âˆ[]™\™YØÛİ[Îˆ[X™\‚ˆ˜Z[YØÛİ[Îˆ[X™\‚ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ™XYØÛİ[Îˆ[X™\‚ˆ™\YYØÛİ[Îˆ[X™\‚ˆÙ[ØÛİ[Îˆ[X™\‚ˆ[\]WÚYÎˆİš[™È[ˆ[\]WÛ[™İXYÙOÎˆİš[™È[ˆ[\]WÛ˜[YOÎˆİš[™Âˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\İ[\]WØ[˜[]XÜ×İ[\]WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ[\]WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\İ[\]\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]Ø\İ[\]\ÎˆÂˆ›İÎˆÂˆ\›İ˜[Üİ]\Îˆİš[™È[ˆ\›İ™YØ]ˆİš[™È[ˆ\›İ™YØNˆİš[™È[ˆ›ÙWİ^ˆİš[™Âˆ›ÙWİ˜\šXX›WØÛİ[ˆ[X™\‚ˆ]ÛœÎˆœÛÛˆ[ˆØ]YÛÜNˆİš[™È[ˆØ]YÛÜWÚÙ^Nˆİš[™È[ˆÛÛ\Û™[ÎˆœÛÛˆ[ˆÜ™X]YØ]ˆİš[™È[ˆ\ØÜš\[Ûˆİš[™È[ˆ›Ûİ\—İ^ˆİš[™È[ˆXY\—Ù›Ü›X]ˆİš[™È[ˆXY\—İ^ˆİš[™È[ˆXY\—İ\Nˆİš[™È[ˆXY\—İ˜\šXX›WØÛİ[ˆ[X™\‚ˆYˆİš[™Âˆ\×ÛXœ˜\WÜÙYYˆ›ÛÛX[‚ˆ\×ÛÜ™×ÙY˜][ˆ›ÛÛX[‚ˆ[™İXYÙNˆİš[™È[ˆ\İİ\ÙYØ]ˆİš[™È[ˆXœ˜\WÜÛİ\˜ÙWÚÙ^Nˆİš[™È[ˆØØ[Nˆİš[™ÂˆY]WÜ™Z™Xİ[Û—Ü™X\ÛÛˆİš[™È[ˆY]WÜİ]\Îˆİš[™È[ˆY]WÜŞ[˜ÙYØ]ˆİš[™È[ˆY]Wİ[\]WÚYˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ™]šY]×İ˜\šXX›\ÎˆœÛÛˆ[ˆ™Z™Xİ[Û—Ü™X\ÛÛˆİš[™È[ˆİ]\Îˆİš[™È[ˆİX˜Ø]YÛÜNˆİš[™È[ˆYÜÎˆİš[™Ö×H[ˆ[\]WÚYˆİš[™È[ˆ\]YØ]ˆİš[™È[ˆ\ØYÙWØÛİ[ˆ[X™\‚ˆ˜\šXX›WÜØÚ[XNˆœÛÛˆ[ˆ˜\šXX›\ÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆBˆ[œÙ\ˆÂˆ\›İ˜[Üİ]\ÏÎˆİš[™È[ˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ›ÙWİ^ˆİš[™Âˆ›ÙWİ˜\šXX›WØÛİ[Îˆ[X™\‚ˆ]ÛœÏÎˆœÛÛˆ[ˆØ]YÛÜOÎˆİš[™È[ˆØ]YÛÜWÚÙ^OÎˆİš[™È[ˆÛÛ\Û™[ÏÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ›Ûİ\—İ^Îˆİš[™È[ˆXY\—Ù›Ü›X]Îˆİš[™È[ˆXY\—İ^Îˆİš[™È[ˆXY\—İ\OÎˆİš[™È[ˆXY\—İ˜\šXX›WØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ÛXœ˜\WÜÙYYÎˆ›ÛÛX[‚ˆ\×ÛÜ™×ÙY˜][Îˆ›ÛÛX[‚ˆ[™İXYÙOÎˆİš[™È[ˆ\İİ\ÙYØ]Îˆİš[™È[ˆXœ˜\WÜÛİ\˜ÙWÚÙ^OÎˆİš[™È[ˆØØ[OÎˆİš[™ÂˆY]WÜ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆY]WÜİ]\ÏÎˆİš[™È[ˆY]WÜŞ[˜ÙYØ]Îˆİš[™È[ˆY]Wİ[\]WÚYÎˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™]šY]×İ˜\šXX›\ÏÎˆœÛÛˆ[ˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİX˜Ø]YÛÜOÎˆİš[™È[ˆYÜÏÎˆİš[™Ö×H[ˆ[\]WÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆ\ØYÙWØÛİ[Îˆ[X™\‚ˆ˜\šXX›WÜØÚ[XOÎˆœÛÛˆ[ˆ˜\šXX›\ÏÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ\]NˆÂˆ\›İ˜[Üİ]\ÏÎˆİš[™È[ˆ\›İ™YØ]Îˆİš[™È[ˆ\›İ™YØOÎˆİš[™È[ˆ›ÙWİ^Îˆİš[™Âˆ›ÙWİ˜\šXX›WØÛİ[Îˆ[X™\‚ˆ]ÛœÏÎˆœÛÛˆ[ˆØ]YÛÜOÎˆİš[™È[ˆØ]YÛÜWÚÙ^OÎˆİš[™È[ˆÛÛ\Û™[ÏÎˆœÛÛˆ[ˆÜ™X]YØ]Îˆİš[™È[ˆ\ØÜš\[ÛÎˆİš[™È[ˆ›Ûİ\—İ^Îˆİš[™È[ˆXY\—Ù›Ü›X]Îˆİš[™È[ˆXY\—İ^Îˆİš[™È[ˆXY\—İ\OÎˆİš[™È[ˆXY\—İ˜\šXX›WØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ÛXœ˜\WÜÙYYÎˆ›ÛÛX[‚ˆ\×ÛÜ™×ÙY˜][Îˆ›ÛÛX[‚ˆ[™İXYÙOÎˆİš[™È[ˆ\İİ\ÙYØ]Îˆİš[™È[ˆXœ˜\WÜÛİ\˜ÙWÚÙ^OÎˆİš[™È[ˆØØ[OÎˆİš[™ÂˆY]WÜ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆY]WÜİ]\ÏÎˆİš[™È[ˆY]WÜŞ[˜ÙYØ]Îˆİš[™È[ˆY]Wİ[\]WÚYÎˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ™]šY]×İ˜\šXX›\ÏÎˆœÛÛˆ[ˆ™Z™Xİ[Û—Ü™X\ÛÛÎˆİš[™È[ˆİ]\ÏÎˆİš[™È[ˆİX˜Ø]YÛÜOÎˆİš[™È[ˆYÜÏÎˆİš[™Ö×H[ˆ[\]WÚYÎˆİš[™È[ˆ\]YØ]Îˆİš[™È[ˆ\ØYÙWØÛİ[Îˆ[X™\‚ˆ˜\šXX›WÜØÚ[XOÎˆœÛÛˆ[ˆ˜\šXX›\ÏÎˆœÛÛˆ[ˆÚ]Ø\ÜÙ][™Ü×ÚYÎˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\İ[\]\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]Ø\İ[\]\×İÚ]Ø\ÜÙ][™Ü×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈÚ]Ø\ÜÙ][™Ü×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÚ]Ø\ÜÙ][™ÜÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÚ]WÛX™[ÜÙ][™ÜÎˆÂˆ›İÎˆÂˆXØÙ[ØÛÛÜˆİš[™È[ˆœ˜[™Û˜[YNˆİš[™È[ˆÜ™X]YØ]ˆİš[™Âˆİ\İÛWÙÛXZ[ˆİš[™È[ˆ[XZ[Ùœ›ÛWÛ˜[YNˆİš[™È[ˆ˜]šXÛÛ—İ\›ˆİš[™È[ˆÙÛ×İ\›ˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[X\WØÛÛÜˆİš[™È[ˆİ\ÜÙ[XZ[ˆİš[™È[ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆXØÙ[ØÛÛÜÎˆİš[™È[ˆœ˜[™Û˜[YOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛWÙÛXZ[Îˆİš[™È[ˆ[XZ[Ùœ›ÛWÛ˜[YOÎˆİš[™È[ˆ˜]šXÛÛ—İ\›Îˆİš[™È[ˆÙÛ×İ\›Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆš[X\WØÛÛÜÎˆİš[™È[ˆİ\ÜÙ[XZ[Îˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆXØÙ[ØÛÛÜÎˆİš[™È[ˆœ˜[™Û˜[YOÎˆİš[™È[ˆÜ™X]YØ]Îˆİš[™Âˆİ\İÛWÙÛXZ[Îˆİš[™È[ˆ[XZ[Ùœ›ÛWÛ˜[YOÎˆİš[™È[ˆ˜]šXÛÛ—İ\›Îˆİš[™È[ˆÙÛ×İ\›Îˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆš[X\WØÛÛÜÎˆİš[™È[ˆİ\ÜÙ[XZ[Îˆİš[™È[ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÚ]WÛX™[ÜÙ][™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÜšÙ›İ×ÙYš[š][ÛœÎˆÂˆ›İÎˆÂˆYÙÜ™YØ]Wİ\Nˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆÙ^Nˆİš[™Âˆ˜[YNˆİš[™ÂˆBˆ[œÙ\ˆÂˆYÙÜ™YØ]Wİ\Nˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆÙ^Nˆİš[™Âˆ˜[YNˆİš[™ÂˆBˆ\]NˆÂˆYÙÜ™YØ]Wİ\OÎˆİš[™ÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆÙ^OÎˆİš[™Âˆ˜[YOÎˆİš[™ÂˆBˆ™[][ÛœÚ\Îˆ×BˆBˆÛÜšÙ›İ×Ü[WÜ[œÎˆÂˆ›İÎˆÂˆ\˜][Û—Û\Îˆ[X™\ˆ[ˆ\œ›Üˆİš[™È[ˆ]™[ÚYˆİš[™È[ˆYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆ˜[—Ø]ˆİš[™Âˆ[WÚYˆİš[™Âˆİ]\Îˆİš[™ÂˆBˆ[œÙ\ˆÂˆ\˜][Û—Û\ÏÎˆ[X™\ˆ[ˆ\œ›ÜÎˆİš[™È[ˆ]™[ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ˜[—Ø]Îˆİš[™Âˆ[WÚYˆİš[™Âˆİ]\Îˆİš[™ÂˆBˆ\]NˆÂˆ\˜][Û—Û\ÏÎˆ[X™\ˆ[ˆ\œ›ÜÎˆİš[™È[ˆ]™[ÚYÎˆİš[™È[ˆYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆ˜[—Ø]Îˆİš[™Âˆ[WÚYÎˆİš[™Âˆİ]\ÏÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÛÜšÙ›İ×Ü[WÜ[œ×Ù]™[ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™]™[ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™ÛXZ[—Ù]™[È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÛÜšÙ›İ×Ü[WÜ[œ×Ü[WÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœ[WÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÛÜšÙ›İ×Ü[\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÜšÙ›İ×Ü[\ÎˆÂˆ›İÎˆÂˆXİ[ÛˆœÛÛ‚ˆÛÛ™][ÛˆœÛÛ‚ˆÜ™X]YØ]ˆİš[™Âˆ\ØÜš\[Ûˆİš[™È[ˆ]™[İ\Nˆİš[™Âˆ˜Z[\™WØÛİ[ˆ[X™\‚ˆYˆİš[™Âˆ\×ØXİ]™Nˆ›ÛÛX[‚ˆ\İÙ\˜][Û—Û\Îˆ[X™\ˆ[ˆ\İÜ[—Ø]ˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆš[Üš]Nˆ[X™\‚ˆİXØÙ\Ü×ØÛİ[ˆ[X™\‚ˆ\]YØ]ˆİš[™ÂˆBˆ[œÙ\ˆÂˆXİ[ÛÎˆœÛÛ‚ˆÛÛ™][ÛÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆ]™[İ\Nˆİš[™Âˆ˜Z[\™WØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\İÙ\˜][Û—Û\ÏÎˆ[X™\ˆ[ˆ\İÜ[—Ø]Îˆİš[™È[ˆ˜[YNˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆš[Üš]OÎˆ[X™\‚ˆİXØÙ\Ü×ØÛİ[Îˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆBˆ\]NˆÂˆXİ[ÛÎˆœÛÛ‚ˆÛÛ™][ÛÎˆœÛÛ‚ˆÜ™X]YØ]Îˆİš[™Âˆ\ØÜš\[ÛÎˆİš[™È[ˆ]™[İ\OÎˆİš[™Âˆ˜Z[\™WØÛİ[Îˆ[X™\‚ˆYÎˆİš[™Âˆ\×ØXİ]™OÎˆ›ÛÛX[‚ˆ\İÙ\˜][Û—Û\ÏÎˆ[X™\ˆ[ˆ\İÜ[—Ø]Îˆİš[™È[ˆ˜[YOÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™È[ˆš[Üš]OÎˆ[X™\‚ˆİXØÙ\Ü×ØÛİ[Îˆ[X™\‚ˆ\]YØ]Îˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÛÜšÙ›İ×Ü[\×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆÛÜšÙ›İ×ÜİYÙ\ÎˆÂˆ›İÎˆÂˆØ]YÛÜNˆİš[™È[ˆYš[š][Û—ÚYˆİš[™ÂˆYˆİš[™ÂˆÙ^Nˆİš[™ÂˆX™[ˆİš[™ÂˆÜ™\—Ú[™^ˆ[X™\‚ˆ™\]Z\™YÙšY[ÎˆœÛÛ‚ˆBˆ[œÙ\ˆÂˆØ]YÛÜOÎˆİš[™È[ˆYš[š][Û—ÚYˆİš[™ÂˆYÎˆİš[™ÂˆÙ^Nˆİš[™ÂˆX™[ˆİš[™ÂˆÜ™\—Ú[™^ˆ[X™\‚ˆ™\]Z\™YÙšY[ÏÎˆœÛÛ‚ˆBˆ\]NˆÂˆØ]YÛÜOÎˆİš[™È[ˆYš[š][Û—ÚYÎˆİš[™ÂˆYÎˆİš[™ÂˆÙ^OÎˆİš[™ÂˆX™[Îˆİš[™ÂˆÜ™\—Ú[™^Îˆ[X™\‚ˆ™\]Z\™YÙšY[ÏÎˆœÛÛ‚ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆÛÜšÙ›İ×ÜİYÙ\×ÙYš[š][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™Yš[š][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][ÛˆÛÜšÙ›İ×ÙYš[š][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜]ØWÚ[›ÚXÙWÙ]NˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™ÂˆYˆİš[™Âˆ[›ÚXÙWÚ\Úˆİš[™È[ˆ[›ÚXÙWÚYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\—ØÛÙNˆİš[™È[ˆİ]\Îˆİš[™ÂˆİX›Z\ÜÚ[Û—Ü™\ÜÛœÙNˆœÛÛˆ[ˆİX›Z]YØ]ˆİš[™È[ˆ\]YØ]ˆİš[™Âˆ[ØÛÛ[ˆİš[™È[ˆ˜]ØWİ]ZYˆİš[™ÂˆBˆ[œÙ\ˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÚ\ÚÎˆİš[™È[ˆ[›ÚXÙWÚYˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ\—ØÛÙOÎˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆİX›Z\ÜÚ[Û—Ü™\ÜÛœÙOÎˆœÛÛˆ[ˆİX›Z]YØ]Îˆİš[™È[ˆ\]YØ]Îˆİš[™Âˆ[ØÛÛ[Îˆİš[™È[ˆ˜]ØWİ]ZYÎˆİš[™ÂˆBˆ\]NˆÂˆÜ™X]YØ]Îˆİš[™ÂˆYÎˆİš[™Âˆ[›ÚXÙWÚ\ÚÎˆİš[™È[ˆ[›ÚXÙWÚYÎˆİš[™ÂˆÜ™Ø[š^˜][Û—ÚYÎˆİš[™Âˆ\—ØÛÙOÎˆİš[™È[ˆİ]\ÏÎˆİš[™ÂˆİX›Z\ÜÚ[Û—Ü™\ÜÛœÙOÎˆœÛÛˆ[ˆİX›Z]YØ]Îˆİš[™È[ˆ\]YØ]Îˆİš[™Âˆ[ØÛÛ[Îˆİš[™È[ˆ˜]ØWİ]ZYÎˆİš[™ÂˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]ØWÚ[›ÚXÙWÙ]WÚ[›ÚXÙWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈš[›ÚXÙWÚY—Bˆ\ÓÛ™UÓÛ™NˆYBˆ™Y™\™[˜ÙY™[][Ûˆš[›ÚXÙ\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜]ØWÚ[›ÚXÙWÙ]WÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆBˆšY]ÜÎˆÂˆØ\—Ü™[[×İ[šYšYYˆÂˆ›İÎˆÂˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆZ[WÜ˜]Nˆ[X™\ˆ[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™È[ˆ[œİ\˜[˜ÙWÚ[˜ÛYYˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆXÚİ\ÛØØ][Ûˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆ™[[Ù\˜][Û—Ù^\Îˆ[X™\ˆ[ˆ™[[Ù[™Ù]Nˆİš[™È[ˆ™[[Ü™Y™\™[˜ÙNˆİš[™È[ˆ™[[Üİ\Ù]Nˆİš[™È[ˆ™]\›—ÛØØ][Ûˆİš[™È[ˆÜXÚX[Ü™\]Z\™[Y[Îˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆİ\Y\—İİ[ØÛÜİˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆİ[Ü™[[ØÛÜİˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ™ZXÛWİ\WÛ˜[YNˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ›YÚØ›ÛÚÚ[™Ü×İ[šYšYYˆÂˆ›İÎˆÂˆZ\›[™WÛ˜[YNˆİš[™È[ˆ\œš]˜[ØZ\œÜØÛÙNˆİš[™È[ˆ\œš]˜[Ù]Nˆİš[™È[ˆ\œš]˜[İ[YNˆİš[™È[ˆ›ÛÚÚ[™×ØYÙ[Û˜[YNˆİš[™È[ˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙNˆİš[™È[ˆÛÛ™š\›X][Û—Û[X™\ˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆ\\\™WØZ\œÜØÛÙNˆİš[™È[ˆ\\\™WÙ]Nˆİš[™È[ˆ\\\™Wİ[YNˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆ›YÚØÛ\Ü×Û˜[YNˆİš[™È[ˆ›YÚÛ[X™\ˆİš[™È[ˆYˆİš[™È[ˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆ\×Ü›İ[™İš\ˆ›ÛÛX[ˆ[ˆYX[Ü™Y™\™[˜Ù\Îˆİš[™È[ˆ[X™\—ÛÙ—Ü\ÜÙ[™Ù\œÎˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆÙX]Ü™Y™\™[˜Ù\Îˆİš[™È[ˆÜXÚX[Ü™\]Y\İÎˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ØÛÜİˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆ^\×Ø[™Ù™Y\Îˆ[X™\ˆ[ˆXÚÙ]Û[X™\ˆİš[™È[ˆXÚÙ]ÜšXÙWÜ\—Ü\œÛÛˆ[X™\ˆ[ˆİ[ØÛÜİˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ›İXÚ\—ÜÙ[ˆ›ÛÛX[ˆ[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆİ[Ø›ÛÚÚ[™Ü×İ[šYšYYˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×ØYÙ[Û˜[YNˆİš[™È[ˆ›ÛÚÚ[™×Ù]Nˆİš[™È[ˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙWÜİ\Y\ˆİš[™È[ˆØ[˜Ù[][Û—ÜÛXŞNˆİš[™È[ˆÚXÚ×Ú[—Ù]Nˆİš[™È[ˆÚXÚ×Ûİ]Ù]Nˆİš[™È[ˆÚ[™[—ØYÙ\Îˆİš[™È[ˆÛÜİÜ\—ÛšYÚˆ[X™\ˆ[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆ\İ[˜][Û—ØÚ]Nˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆİ[Û˜[YNˆİš[™È[ˆİ[Üİ\—Ü˜][™Îˆ[X™\ˆ[ˆYˆİš[™È[ˆ[\›˜[Ø›ÛÚÚ[™×Û[X™\ˆİš[™È[ˆ[\›˜[Û›İ\Îˆİš[™È[ˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]Nˆİš[™È[ˆYX[Ü[ˆİš[™È[ˆ[X™\—ÛÙ—ØY[Îˆ[X™\ˆ[ˆ[X™\—ÛÙ—ØÚ[™[ˆ[X™\ˆ[ˆ[X™\—ÛÙ—ÛšYÚÎˆ[X™\ˆ[ˆ[X™\—ÛÙ—Ü›ÛÛ\Îˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆ›ÛÛWİ\Nˆİš[™È[ˆÙ[[™×ÜšXÙWÜ\—ÛšYÚˆ[X™\ˆ[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]Nˆİš[™È[ˆİ[ØÛÜİØİ\İÛY\ˆ[X™\ˆ[ˆİ[ØÛÜİÜİ\Y\ˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ›İXÚ\—ÜÙ[ˆ›ÛÛX[ˆ[ˆ›İXÚ\—ÜÙ[Ù]Nˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆ˜[œÜÜØ›ÛÚÚ[™Ü×İ[šYšYYˆÂˆ›İÎˆÂˆ›ÛÚÚ[™×Ü™Y™\™[˜ÙNˆİš[™È[ˆÜ™X]YØ]ˆİš[™È[ˆİ\œ™[˜ŞNˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆİ\İÛY\—Û˜[YNˆİš[™È[ˆ\\\™WÙ]Nˆİš[™È[ˆ\\\™Wİ[YNˆİš[™È[ˆš]™\—Û˜[YNˆİš[™È[ˆš]™\—ÜÛ™Nˆİš[™È[ˆ›ÜÙ™—ÛØØ][Ûˆİš[™È[ˆ[\ŞYYWÚYˆİš[™È[ˆYˆİš[™È[ˆ[›ÚXÙWÜÙ[ˆ›ÛÛX[ˆ[ˆ[›ÚXÙWÜÙ[Ù]Nˆİš[™È[ˆ[X™\—ÛÙ—Ü\ÜÙ[™Ù\œÎˆ[X™\ˆ[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™È[ˆZYØ[[İ[ˆ[X™\ˆ[ˆXÚİ\ÛØØ][Ûˆİš[™È[ˆ™[XZ[š[™×Ø[[İ[ˆ[X™\ˆ[ˆ›İ]WÛ˜[YNˆİš[™È[ˆÜXÚX[Ü™\]Y\İÎˆİš[™È[ˆİ]\×ÚYˆİš[™È[ˆİ\Y\—ØÛÜİˆ[X™\ˆ[ˆİ\Y\—ÚYˆİš[™È[ˆİ\Y\—Û˜[YNˆİš[™È[ˆİ\Y\—Ü^[Y[ÜÙ[ˆ›ÛÛX[ˆ[ˆİ\Y\—Ü^[Y[ÜÙ[Ù]Nˆİš[™È[ˆİ[ØÛÜİˆ[X™\ˆ[ˆİ[Ü›Ùš]ˆ[X™\ˆ[ˆ\]YØ]ˆİš[™È[ˆ™ZXÛWÜ]WÛ[X™\ˆİš[™È[ˆ™ZXÛWİ\WÛ˜[YNˆİš[™È[ˆ›İXÚ\—ÜÙ[ˆ›ÛÛX[ˆ[ˆ›İXÚ\—ÜÙ[Ù]Nˆİš[™È[ˆBˆ™[][ÛœÚ\ÎˆÂˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Øİ\İÛY\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ˜İ\İÛY\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜İ\İÛY\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Ù[\ŞYYWÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ™[\ŞYYWÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ™[\ŞYY\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×ÛÜ™Ø[š^˜][Û—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈ›Ü™Ø[š^˜][Û—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ›Ü™Ø[š^˜][ÛœÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ]\×ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ]\×ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆ˜›ÛÚÚ[™×Üİ]\Ù\È‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆÂˆ›Ü™ZYÛ’Ù^S˜[YNˆ˜›ÛÚÚ[™Ü×Üİ\Y\—ÚYÙšÙ^H‚ˆÛÛ[[œÎˆÈœİ\Y\—ÚY—Bˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ™Y™\™[˜ÙY™[][Ûˆœİ\Y\œÈ‚ˆ™Y™\™[˜ÙYÛÛ[[œÎˆÈšY—BˆKˆBˆBˆBˆ[˜İ[ÛœÎˆÂˆØØ[—ÛX[˜YÙWÜ™Y[™ÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆØØ[—Ü™XYÛÜ™×Ùš[˜[˜ÙNˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆÛ[Ù[WÜ[ÙWİÚ[™İÎˆÂˆ\™ÜÎˆÈÙœ›ÛNˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛ™^Ù[WÛ[X™\ˆÈ\™ÜÎˆÈÛÜ™Îˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜ™XÛİ™\WØØ[—ÛX[˜YÙNˆÈ\™ÜÎˆÈÛÜ™Îˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆÜ™[™\—İ[\]NˆÂˆ\™ÜÎˆÈİ^ˆİš[™ÎÈİ˜\œÎˆœÛÛˆBˆ™]\›œÎˆİš[™ÂˆBˆÜ™\ÛÛ™WØXØÛİ[ˆÂˆ\™ÜÎˆÈØÛÙNˆİš[™ÎÈÛÜ™Îˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆİÛÜšÙ›İ×ØÚXÚ×ØÛÛ™][ÛˆÂˆ\™ÜÎˆÈÛÛ™ˆœÛÛÈİˆœÛÛˆBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆİÛÜšÙ›İ×ÙÙ]ˆÈ\™ÜÎˆÈ]ˆİš[™ÎÈ^[ØYˆœÛÛˆNÈ™]\›œÎˆœÛÛˆBˆİÛÜšÙ›İ×Ü[—Üİ\ˆÂˆ\™ÜÎˆÂˆÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—BˆÜ[WÚYˆİš[™Âˆİ\ˆœÛÛ‚ˆBˆ™]\›œÎˆ[™Yš[™YˆBˆXØÙ\Ú[š]][ÛˆÈ\™ÜÎˆÈİÚÙ[ˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆXİ]˜]WÜİXœØÜš\[Û—Ùœ›ÛWÜ^[[ØˆÂˆ\™ÜÎˆÈÜ^[[Ø—İ˜[œØXİ[Û—ÚYˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆY˜[˜ÙWİÛÜšÙ›İÎˆÂˆ\™ÜÎˆÈØ›ÛÚÚ[™×ÚYˆİš[™ÎÈÜ™X\ÛÛÎˆİš[™ÎÈİ×ÜİYÙNˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ\›İ™WÜ™Y[™Ü™\]Y\İˆÂˆ\™ÜÎˆÈØ\›İ™OÎˆ›ÛÛX[ÈÜ™X\ÛÛÎˆİš[™ÎÈÜ™Y[™ÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ\›İ™WÜİ\Y\—Ü^[Y[ÛÜ™\ˆÂˆ\™ÜÎˆÈØ\›İ™OÎˆ›ÛÛX[ÈÜ×ÚYˆİš[™ÎÈÜ™X\ÛÛÎˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ]Y]Ú\İÜšXØ[ÙØ\ÎˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×Û[X™\ˆİš[™ÂˆÛÜİÜšXÙNˆ[X™\‚ˆÜ™X]YÛÛˆİš[™Âˆİ\œ™[˜ŞNˆİš[™Âˆİ\İÛY\—ÚYˆİš[™ÂˆØ\ØÛİ[ˆ[X™\‚ˆZ\ÜÚ[™×Ø]]ÛX][Û—Ü[ˆ›ÛÛX[‚ˆZ\ÜÚ[™×Ù]™[Îˆ›ÛÛX[‚ˆZ\ÜÚ[™×ÙÛˆ›ÛÛX[‚ˆZ\ÜÚ[™×Ú[›ÚXÙNˆ›ÛÛX[‚ˆZ\ÜÚ[™×ÜÛ˜\Úİˆ›ÛÛX[‚ˆZ\ÜÚ[™×Üİ\Y\—ÜÎˆ›ÛÛX[‚ˆZ\ÜÚ[™×İ[Y[[™Nˆ›ÛÛX[‚ˆZ\ÜÚ[™×İ›İXÚ\ˆ›ÛÛX[‚ˆZ\ÜÚ[™×İÛÜšÙ›İ×Ú\İÜNˆ›ÛÛX[‚ˆ™YØ]]™WÛX\™Ú[ˆ›ÛÛX[‚ˆ›×Øİ\İÛY\ˆ›ÛÛX[‚ˆ›×Üİ\Y\ˆ›ÛÛX[‚ˆÙ[[™×ÜšXÙNˆ[X™\‚ˆİ\Y\—ÚYˆİš[™ÂˆÛÜšÙ›İ×ÜİYÙNˆİš[™Âˆ™\›×ÜšXÙNˆ›ÛÛX[‚ˆV×BˆBˆ]Y]Ú\İÜšXØ[Üİ[[X\NˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÛÙÏÎˆ›ÛÛX[ÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ˜XÚÙš[Ú\İÜšXØ[Ø›ÛÚÚ[™ÜÎˆÂˆ\™ÜÎˆÂˆÙWÜ[Îˆ›ÛÛX[‚ˆÙœ›ÛOÎˆİš[™ÂˆÛ[Z]Îˆ[X™\‚ˆÛÜ™Îˆİš[™ÂˆİÏÎˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆ˜XÚÙš[Ú›İ\›˜[ÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆ›ÛÚÚ[™Ü×ÜÜİYˆ[X™\‚ˆİ\İÛY\—Ü^[Y[×ÜÜİYˆ[X™\‚ˆ^[œÙ\×ÜÜİYˆ[X™\‚ˆ[›ÚXÙ\×ÜÜİYˆ[X™\‚ˆİ\Y\—Ü^[Y[×ÜÜİYˆ[X™\‚ˆV×BˆBˆ›ÛÚÚ[™×ÛXZÙWÚ›İ\›˜[ˆÂˆ\™ÜÎˆÈˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ˜›ÛÚÚ[™ÜÈ—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆØ[İ[]WÙ[\ŞYYWØ›ÛÚÚ[™Ü×Ü›Ùš]‚ˆÂˆ\™ÜÎˆÂˆÙ[\ŞYYWÚYˆİš[™ÂˆÜ\š[ÙÙ[™ˆİš[™ÂˆÜ\š[ÙÜİ\ˆİš[™ÂˆBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×Ø[[İ[ˆ[X™\‚ˆ›ÛÚÚ[™×Ù]Nˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™Âˆ›Ùš]ˆ[X™\‚ˆİ\Y\—ØÛÜİˆ[X™\‚ˆV×BˆBˆÂˆ\™ÜÎˆÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ[\ŞYYWÚYˆİš[™ÂˆÜ\š[ÙÙ[™ˆİš[™ÂˆÜ\š[ÙÜİ\ˆİš[™ÂˆBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×Ø[[İ[ˆ[X™\‚ˆ›ÛÚÚ[™×Ù]Nˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™Âˆ›ÛÚÚ[™×İ\Nˆİš[™Âˆİ\œ™[˜ŞNˆİš[™Âˆ›Ùš]ˆ[X™\‚ˆİ\Y\—ØÛÜİˆ[X™\‚ˆV×BˆBˆØ[İ[]WÙ[\ŞYYWØÛÛ[Z\ÜÚ[ÛˆÂˆ\™ÜÎˆÂˆØ›ÛÚÚ[™×Ø[[İ[ˆ[X™\‚ˆØÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\‚ˆÙ[\ŞYYWÚYˆİš[™ÂˆBˆ™]\›œÎˆ[X™\‚ˆBˆØ[İ[]WÛ[ÛWÜØ[\NˆÂˆ\™ÜÎˆÂˆØ›Û\ÏÎˆ[X™\‚ˆÙYXİ[ÛœÏÎˆ[X™\‚ˆÙ[\ŞYYWÚYˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÛİ™\[YWÚİ\œÏÎˆ[X™\‚ˆÜØ[\WÛ[Ûˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆØ[—ÛX[˜YÙWØİ\İÛY\œÎˆÈ\™ÜÎˆ™]™\È™]\›œÎˆ›ÛÛX[ˆBˆØ[—ÛÜ™×İÜš]NˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆØ[˜Ù[ØÛÛ[Z\ÜÚ[ÛˆÂˆ\™ÜÎˆÈØÛÛ[Z\ÜÚ[Û—ÚYˆİš[™ÎÈÜ™X\ÛÛÎˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆØ[˜Ù[ÛÜ™Ø[š^˜][Û—Ú[š]][ÛˆÂˆ\™ÜÎˆÈÚ[š]][Û—ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÚXÚ×Øİ\İÛY\—Ù\XØ]WØÛÛXİˆÂˆ\™ÜÎˆÂˆÙ[XZ[Îˆİš[™ÂˆÙ^ÛYWÚYÎˆİš[™ÂˆÛÜ™×ÚYˆİš[™ÂˆÜÛ™Nˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÚXÚ×Ù[\ŞYYWÙ[][ÛˆÂˆ\™ÜÎˆÈÙ[\ŞYYWÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÚXÚ×ÜİXœØÜš\[Û—ØXİ]™NˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆÚXÚ×ÜİXœØÜš\[Û—Û[Z]ÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛZ[WÙYWİÚ]Ø\Ù›Ûİİ\ÎˆÂˆ\™ÜÎˆÈÛ[Z]Îˆ[X™\ˆBˆ™]\›œÎˆÂˆ\ÜÚYÛ™YİÎˆİš[™È[ˆ][\ØÛİ[ˆ[X™\‚ˆÛÛ\]YØ]ˆİš[™È[ˆÛÛ\]YØNˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™ÂˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™ÂˆYˆİš[™Âˆ\İÙ\œ›Üˆİš[™È[ˆØÚÙYØ]ˆİš[™È[ˆY\ÜØYÙWØ›ÙNˆİš[™È[ˆ[ÙNˆİš[™Âˆ›İNˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆ™[Z[™Ø]ˆİš[™ÂˆÙ[Ø]ˆİš[™È[ˆÙ[ÛY\ÜØYÙWÚYˆİš[™È[ˆİ]\Îˆİš[™Âˆ[\]WÚYˆİš[™È[ˆ[\]Wİ˜\šXX›\ÎˆœÛÛ‚ˆ\]YØ]ˆİš[™ÂˆÚ]Ø\ÜÙ][™Ü×ÚYˆİš[™È[ˆV×BˆÙ]Ù“Ü[ÛœÎˆÂˆœ›ÛNˆŠˆ‚ˆÎˆÚ]Ø\Ù›Ûİİ\È‚ˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ\ÔÙ]Ù”™]\›ˆYBˆBˆBˆÛÜÙWØXØÛİ[[™×Ü\š[ÙˆÈ\™ÜÎˆÈÜ\š[ÙÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÙWÙš\ØØ[ŞYX\ˆÂˆ\™ÜÎˆÈØÛÛ™š\›X][Ûˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈŞYX\ˆ[X™\ˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÛ™\Ü][İWİ×Ø›ÛÚÚ[™ÜÎˆÂˆ\™ÜÎˆÈÜ][İWÚYˆİš[™ÈBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆV×BˆBˆÛİ[ÛÜ™×Ø›ÛÚÚ[™Ü×İ\×Û[ÛˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆ[X™\‚ˆBˆÛİ[ÛÜ™×ÛY[X™\œÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ[X™\ˆBˆÜ™X]WØ›ÛÚÚ[™×ØÛÛ[Z\ÜÚ[ÛˆÂˆ\™ÜÎˆÂˆØ›ÛÚÚ[™×ÚYˆİš[™ÂˆØÛÛ[Z\ÜÚ[Û—Ü˜]OÎˆ[X™\‚ˆÙ[\ŞYYWÚYˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÜ™X]WÛX[X[Ú›İ\›˜[Ù[NˆÂˆ\™ÜÎˆÂˆÙ\ØÜš\[Ûˆİš[™ÂˆÙ[WÙ]Nˆİš[™ÂˆÛ[™\ÎˆœÛÛ‚ˆÛÜ™×ÚYˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÜ™X]WÛÜ™Ø[š^˜][Û—Ú[š]][ÛˆÂˆ\™ÜÎˆÂˆÙ[XZ[ˆİš[™ÂˆÛÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÜ›ÛOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ›Ü™×Ü›ÛH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÜ™X]WÛÜ™Ø[š^˜][Û—ÛÛ˜›Ø\™[™ÎˆÂˆ\™ÜÎˆÂˆØY™\ÜÏÎˆİš[™ÂˆÙ[XZ[Îˆİš[™ÂˆÛ˜[YNˆİš[™ÂˆÜÛ™OÎˆİš[™ÂˆÜÛYÏÎˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÜ™X]WÜ™Y[™Ü™\]Y\İˆÂˆ\™ÜÎˆÂˆØ[[İ[ˆ[X™\‚ˆØ›ÛÚÚ[™×ÚYˆİš[™ÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆÜ™X\ÛÛÎˆİš[™ÂˆÜÛİ\˜ÙWÜ^[Y[ÚYÎˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÜ›WØİ\İÛY\—Ø›ÛÚÚ[™×ÛY]šXÜÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×ØÛİ[ØWØİ\œ™[˜ŞNˆœÛÛ‚ˆİ\İÛY\—ÚYˆİš[™Âˆ\İØ›ÛÚÚ[™×Ù]Nˆİš[™ÂˆÜ[™ØWØİ\œ™[˜ŞNˆœÛÛ‚ˆİ[Ø›ÛÚÚ[™ÜÎˆ[X™\‚ˆV×BˆBˆ[]WÙ[XZ[ˆÂˆ\™ÜÎˆÈY\ÜØYÙWÚYˆ[X™\È]Y]YWÛ˜[YNˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ[XZ[Ü]Y]YWÙ\Ü]ÚˆÈ\™ÜÎˆ™]™\È™]\›œÎˆ[™Yš[™YBˆ[Z]Ù]™[ˆÂˆ\™ÜÎˆÂˆØYÙÜ™YØ]WÚYˆİš[™ÂˆØYÙÜ™YØ]Wİ\Nˆİš[™ÂˆÚY[\İ[˜ŞWÚÙ^Nˆİš[™ÂˆÛÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÜ^[ØYˆœÛÛ‚ˆİ\Nˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆ[\ŞYYWÛÜ™×ÛX]ÚˆÈ\™ÜÎˆÈÙ[\ŞYYWÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆ[œ]Y]YWÙ[XZ[ˆÂˆ\™ÜÎˆÈ^[ØYˆœÛÛÈ]Y]YWÛ˜[YNˆİš[™ÈBˆ™]\›œÎˆ[X™\‚ˆBˆ[œšXÚÙ]™[Ü^[ØYˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆœÛÛ‚ˆBˆ[œ›ÛÚ[—Ú›İ\›™^NˆÂˆ\™ÜÎˆÈØÛÛ^ÎˆœÛÛÈØİ\İÛY\—ÚYˆİš[™ÎÈÚ›İ\›™^WÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆ[œİ\™WÙ[\ŞYYWÙ›Ü—İ\Ù\ˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈİ\Ù\—ÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆ^[™İšX[ˆÂˆ\™ÜÎˆÈÙ^˜WÙ^\ÏÎˆ[X™\ÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆš[™Ù\XØ]WØİ\İÛY\œÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆİ\İÛY\—ØÛİ[ˆ[X™\‚ˆİ\İÛY\—ÚYÎˆİš[™Ö×Bˆ[XZ[Îˆİš[™Ö×Bˆ˜[Y\Îˆİš[™Ö×Bˆ›Ü›X[^™YÜÛ™Nˆİš[™ÂˆV×BˆBˆš[™Üİ\Y\—Ü˜]NˆÂˆ\™ÜÎˆÂˆÛÜ™×ÚYˆİš[™ÂˆÜÙ\šXÙWÙ]Nˆİš[™ÂˆÜÙ\šXÙWÜ™Y™\™[˜ÙOÎˆİš[™ÂˆÜÙ\šXÙWİ\Nˆİš[™ÂˆÜİ\Y\—ÚYˆİš[™ÂˆBˆ™]\›œÎˆÂˆÛÜİÜšXÙNˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆX\šİ\Ü\˜Ù[YÙNˆ[X™\‚ˆ˜]WÚYˆİš[™ÂˆÙX\ÛÛ—Û˜[YNˆİš[™ÂˆÙ[[™×ÜšXÙNˆ[X™\‚ˆV×BˆBˆš\ØØ[ŞYX\—Ü™XÛÛ˜Ú[X][ÛˆÂˆ\™ÜÎˆÈÛÜ™Îˆİš[™ÎÈŞYX\ˆ[X™\ˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ[™\˜]WØ›ÛÚÚ[™×Û[X™\ˆÈ\™ÜÎˆ™]™\È™]\›œÎˆİš[™ÈBˆÙ[™\˜]WÚ[›ÚXÙWÛ[X™\ˆÈ\™ÜÎˆ™]™\È™]\›œÎˆİš[™ÈBˆÙ[™\˜]WÚ›İ\›˜[Ù[WÛ[X™\ˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÙ[™\˜]WÜ\š[ÙØÛÛ[Z\ÜÚ[ÛˆÂˆ\™ÜÎˆÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ[\ŞYYWÚYˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜ\š[ÙÙ[™ˆİš[™ÂˆÜ\š[ÙÜİ\ˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ[™\˜]WÜ][İWÛ[X™\ˆÈ\™ÜÎˆ™]™\È™]\›œÎˆİš[™ÈBˆÙ[™\˜]WŞ˜]ØWÜ\ˆÈ\™ÜÎˆÈÚ[›ÚXÙWÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÙ]ØXØÛİ[Ø˜[[˜ÙNˆÂˆ\™ÜÎˆÈØXØÛİ[ÚYˆİš[™ÎÈÙ[™Ù]OÎˆİš[™ÎÈÜİ\Ù]OÎˆİš[™ÈBˆ™]\›œÎˆ[X™\‚ˆBˆÙ]ØXØÛİ[ÚYØWØÛÙNˆÂˆ\™ÜÎˆÈØÛÙNˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÙ]ØXİ]™WØİ\œ™[˜ÚY\ÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆİ\œ™[˜ŞNˆİš[™Âˆ[šY\×ØÛİ[ˆ[X™\‚ˆV×BˆBˆÙ]ØXİ]™WÚ[\\œÛÛ˜][ÛˆÂˆ\™ÜÎˆ™]™\‚ˆ™]\›œÎˆÂˆ™X\ÛÛˆİš[™ÂˆÙ\ÜÚ[Û—ÚYˆİš[™Âˆİ\YØ]ˆİš[™Âˆ\™Ù]ÛÜ™×ÚYˆİš[™Âˆ\™Ù]İ\Ù\—ÚYˆİš[™ÂˆV×BˆBˆÙ]Ø˜[[˜ÙWÜÚY]‚ˆÂˆ\™ÜÎˆÈØ\×ÛÙ—Ù]OÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™ÂˆXØÛİ[İ\Nˆİš[™Âˆ˜[[˜ÙNˆ[X™\‚ˆV×BˆBˆÂˆ\™ÜÎˆÈØ\×ÛÙ—Ù]OÎˆİš[™ÎÈØİ\œ™[˜ŞOÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™ÂˆXØÛİ[İ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜XØÛİ[İ\H—Bˆ˜[[˜ÙNˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆV×BˆBˆÙ]Ø›ÛÚÚ[™×Üİ]\×ÚYˆÈ\™ÜÎˆÈÛ˜[YNˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÙ]Ø\Ú[™\Ü×ÚX[ÚÜ\ÎˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ]ØØ\ÚÙ›İÎ‚ˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆÂˆ^Nˆİš[™Âˆ[˜ÛÛZ[™Îˆ[X™\‚ˆ™]ˆ[X™\‚ˆİ]ÛÚ[™Îˆ[X™\‚ˆV×BˆBˆÂˆ\™ÜÎˆÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ[™Ù]Nˆİš[™ÂˆÛÜ™×ÚYˆİš[™ÂˆÜİ\Ù]Nˆİš[™ÂˆBˆ™]\›œÎˆÂˆİ\œ™[˜ŞNˆİš[™Âˆ[™›İÜÎˆ[X™\‚ˆ™]Ù›İÎˆ[X™\‚ˆİ]›İÜÎˆ[X™\‚ˆ\š[ÙÙ]Nˆİš[™ÂˆV×BˆBˆÙ]ØÛÜİØÙ[\—Ü›ˆÂˆ\™ÜÎˆÈÙ[™Ù]Nˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÎÈÜİ\Ù]Nˆİš[™ÈBˆ™]\›œÎˆÂˆÛÜİØÙ[\—ØÛÙNˆİš[™ÂˆÛÜİØÙ[\—ÚYˆİš[™ÂˆÛÜİØÙ[\—Û˜[YNˆİš[™Âˆ^[œÙ\Îˆ[X™\‚ˆ›Ùš]ˆ[X™\‚ˆ™]™[YNˆ[X™\‚ˆV×BˆBˆÙ]Øİ\İÛY\—ØYÚ[™ÎˆÂˆ\™ÜÎˆÈØ\×ÛÙ—Ù]OÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆİ\œ™[ÙYNˆ[X™\‚ˆİ\İÛY\—ÚYˆİš[™Âˆİ\İÛY\—Û˜[YNˆİš[™Âˆ^\×ÌÌˆ[X™\‚ˆ^\×ÍŒˆ[X™\‚ˆ^\×ÎLˆ[X™\‚ˆ^\×Ûİ™\—ÎLˆ[X™\‚ˆİ[ÙYNˆ[X™\‚ˆV×BˆBˆÙ]Øİ\İÛY\—ØYÚ[™×ØWØİ\œ™[˜ŞNˆÂˆ\™ÜÎˆÈØ\×ÛÙ—Ù]OÎˆİš[™ÎÈØİ\œ™[˜ŞOÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆİ\œ™[˜ŞNˆİš[™Âˆİ\œ™[ÙYNˆ[X™\‚ˆİ\İÛY\—ÚYˆİš[™Âˆİ\İÛY\—Û˜[YNˆİš[™Âˆ^\×ÌÌˆ[X™\‚ˆ^\×ÍŒˆ[X™\‚ˆ^\×ÎLˆ[X™\‚ˆ^\×Ûİ™\—ÎLˆ[X™\‚ˆİ[ÙYNˆ[X™\‚ˆV×BˆBˆÙ]Øİ\İÛY\—ÛYÙ\ˆÂˆ\™ÜÎˆÈØİ\İÛY\—ÚYˆİš[™ÎÈÙœ›ÛOÎˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆÂˆ˜[[˜ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™Y]ˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆXš]ˆ[X™\‚ˆ[WÙ]Nˆİš[™Âˆ[Wİ\Nˆİš[™Âˆ™Y™\™[˜ÙNˆİš[™ÂˆV×BˆBˆÙ]Ù]WÜ]X[]WÙ]Z[ÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÙ]Ù\XØ]WØİ\İÛY\œÎˆÂˆ\™ÜÎˆ™]™\‚ˆ™]\›œÎˆÂˆÛİ[ˆ[X™\‚ˆİ\İÛY\—ÚYÎˆİš[™Ö×BˆÛ™Nˆİš[™ÂˆV×BˆBˆÙ]Ùš[˜[˜ÙWÙ^Xİ]]™NˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ]Ùš[˜[˜ÚX[Û][˜ÚÚX[ˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÙ]ÙÙ[™\˜[ÛYÙ\ˆÂˆ\™ÜÎˆÂˆØXØÛİ[ÚYˆİš[™ÂˆÙ[™Ù]OÎˆİš[™ÂˆÛÜ™×ÚYˆİš[™ÂˆÜİ\Ù]OÎˆİš[™ÂˆBˆ™]\›œÎˆÂˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™Y]ˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆXš]ˆ[X™\‚ˆ\ØÜš\[Ûˆİš[™Âˆ[WÙ]Nˆİš[™Âˆ[WÚYˆİš[™Âˆ[WÛ[X™\ˆİš[™Âˆ\×ÛØÚÙYˆ›ÛÛX[‚ˆ[™WÙ\ØÜš\[Ûˆİš[™Âˆ[™WÚYˆİš[™Âˆ™Y™\™[˜ÙWÚYˆİš[™Âˆ™Y™\™[˜ÙWİ\Nˆİš[™Âˆ[›š[™×Ø˜[[˜ÙNˆ[X™\‚ˆÛİ\˜ÙWÚYˆİš[™ÂˆÛİ\˜ÙWİ\Nˆİš[™Âˆİ]\Îˆİš[™ÂˆV×BˆBˆÙ]Ú[˜ÛÛYWÜİ][Y[ˆÂˆ\™ÜÎˆÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ[™Ù]Nˆİš[™ÂˆÛÜ™×ÚYˆİš[™ÂˆÜİ\Ù]Nˆİš[™ÂˆBˆ™]\›œÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™ÂˆXØÛİ[İ\Nˆİš[™Âˆ[[İ[ˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆV×BˆBˆÙ]Ú[˜ÛÛ\]WÜ™XÛÜ™ÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÙ]Û[Ù[WÜ[ÙNˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ]ÛÜ×ØÛÛ[X[™ØÙ[\ˆÈ\™ÜÎˆÈÙ]OÎˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÙ]ÛÜ™×Ü[—Û[Z]ÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆX^Ø›ÛÚÚ[™Ü×Ü\—Û[Ûˆ[X™\‚ˆX^ÜİÜ˜YÙWÛXˆ[X™\‚ˆX^İ\Ù\œÎˆ[X™\‚ˆV×BˆBˆÙ]Üİ\Y\—ÛYÙ\ˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÜİ\Y\—ÚYˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆÂˆ˜[[˜ÙNˆ[X™\‚ˆ›ÛÚÚ[™×ÚYˆİš[™ÂˆÜ™Y]ˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™ÂˆXš]ˆ[X™\‚ˆ[WÙ]Nˆİš[™Âˆ[Wİ\Nˆİš[™Âˆ™Y™\™[˜ÙNˆİš[™ÂˆV×BˆBˆÙ]Üİ\Y\—Ü\™›Ü›X[˜ÙNˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈÜİ\Y\—ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ]İšX[Ø˜[[˜ÙN‚ˆÂˆ\™ÜÎˆÈÙ[™Ù]OÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[ÚYˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™ÂˆXØÛİ[İ\Nˆİš[™Âˆ˜[[˜ÙNˆ[X™\‚ˆİ[ØÜ™Y]ˆ[X™\‚ˆİ[ÙXš]ˆ[X™\‚ˆV×BˆBˆÂˆ\™ÜÎˆÈØİ\œ™[˜ŞOÎˆİš[™ÎÈÙ[™Ù]OÎˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆÂˆXØÛİ[ØÛÙNˆİš[™ÂˆXØÛİ[ÚYˆİš[™ÂˆXØÛİ[Û˜[YNˆİš[™ÂˆXØÛİ[Û˜[YWØ\ˆİš[™ÂˆXØÛİ[İ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ˜XØÛİ[İ\H—Bˆ˜[[˜ÙNˆ[X™\‚ˆİ\œ™[˜ŞNˆİš[™Âˆİ[ØÜ™Y]ˆ[X™\‚ˆİ[ÙXš]ˆ[X™\‚ˆV×BˆBˆÙ]İ\Ù\—ÛÜ™×ÚYÎˆÈ\™ÜÎˆÈİ\Ù\—ÚYˆİš[™ÈNÈ™]\›œÎˆİš[™Ö×HBˆÙ]İ\Ù\—ÛÜ™×Ü›ÛNˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈİ\Ù\—ÚYˆİš[™ÈBˆ™]\›œÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ›Ü™×Ü›ÛH—BˆBˆÙ]İÛÜšÙ›İ×Ü›ÙÜ™\ÜÎˆÂˆ\™ÜÎˆÈØYÙÜ™YØ]WÚYˆİš[™ÎÈØYÙÜ™YØ]Wİ\Nˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ[™\—ØZWÜİ[[X\WÜ™Yœ™\ÚˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Ø]Y]İÜš]NˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Ù[œ]Y]YWÙ[XZ[ˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Ù[œ]Y]YWİÚ]Ø\ÜİYÙÙ\İ[ÛˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Ùš[˜[˜ÙWÜÜİˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Û›İYšXØ][Û—Ù\Ü]ÚˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Û›İYWÚ[—Ø\ˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—Ü[—Ø›ÛÚÚ[™×Ø]]ÛX][ÛˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—İ[Y[[™WØ\[™ˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ[™\—İÛÜšÙ›İ×Ü[\ÎˆÂˆ\™ÜÎˆÈÙ]™[ˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈ™ÛXZ[—Ù]™[È—VÈ”›İÈ—HBˆ™]\›œÎˆ[™Yš[™YˆBˆ\×ÛÜ™×Ü\›Z\ÜÚ[ÛˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈÜ\›Z\ÜÚ[Ûˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ\×Ü]›Ü›WÜ›ÛNˆÂˆ\™ÜÎˆÂˆÜ›ÛNˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœ]›Ü›WÜ›ÛH—Bˆİ\Ù\—ÚYˆİš[™ÂˆBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ[Ù\ØØ\NˆÈ\™ÜÎˆÈİ˜[YNˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆ\×ÛÜ™×Ù^\™YˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆ\×ÛÜ™×Ú[—ÙÜ˜XÙWÜ\š[ÙˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆ\×Ü]›Ü›WØYZ[ˆÈ\™ÜÎˆÈİ\Ù\—ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆ\×Ü]›Ü›WØYZ[—İŒˆÈ\™ÜÎˆÈİ\Ù\—ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆ[š×İ\Ù\—İ×Ù[\ŞYYNˆÂˆ\™ÜÎˆÈÙ[\ŞYYWÚYˆİš[™ÎÈİ\Ù\—ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ×ØYZ[—ØXİ[ÛˆÂˆ\™ÜÎˆÂˆØXİ[Û—İ\Nˆİš[™ÂˆÙ\ØÜš\[ÛÎˆİš[™ÂˆÛ™]×İ˜[Y\ÏÎˆœÛÛ‚ˆÛÛİ˜[Y\ÏÎˆœÛÛ‚ˆİ\™Ù]ÚYÎˆİš[™Âˆİ\™Ù]İX›OÎˆİš[™ÂˆBˆ™]\›œÎˆ[™Yš[™YˆBˆX[˜YÙWÛÜ™Ø[š^˜][Û—ÛY[X™\ˆÂˆ\™ÜÎˆÂˆÚ\×ØXİ]™OÎˆ›ÛÛX[‚ˆÛY[X™\œÚ\ÚYˆİš[™ÂˆÛ™]×Ü›ÛOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈ›Ü™×Ü›ÛH—BˆÛ›İOÎˆİš[™Âˆİ\›Z[˜][Û—Ù]OÎˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆX[˜YÙWÜÛÜÙ\\Y[ÛY[X™\ˆÂˆ\™ÜÎˆÂˆØ\ÜÚYÛÎˆ›ÛÛX[‚ˆÙ\\Y[ˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—BˆÚ\×Ø]˜Z[X›OÎˆ›ÛÛX[‚ˆÛÜ™Ø[š^˜][Û—ÚYˆİš[™Âˆİ\Ù\—ÚYˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆY\™ÙWØİ\İÛY\œÎˆÂˆ\™ÜÎˆÈÚÙY\ÚYˆİš[™ÎÈÛY\™ÙWÚYÎˆİš[™Ö×NÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ[İ™Wİ×ÙNˆÂˆ\™ÜÎˆÂˆWÛ˜[YNˆİš[™ÂˆY\ÜØYÙWÚYˆ[X™\‚ˆ^[ØYˆœÛÛ‚ˆÛİ\˜ÙWÜ]Y]YNˆİš[™ÂˆBˆ™]\›œÎˆ[X™\‚ˆBˆ›Ü›X[^™WÙ[XZ[ØY™\ÜÎˆÈ\™ÜÎˆÈÙ[XZ[ˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆ›Ü›X[^™WÜÛ™WÙYÚ]ÎˆÈ\™ÜÎˆÈÜÛ™Nˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜ™×Ú\×ØXİ]™WÜİXœØÜš\[ÛˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ^WÜ™Y[™Ü™\]Y\İˆÂˆ\™ÜÎˆÂˆÜ™Y™\™[˜ÙOÎˆİš[™ÂˆÜ™Y[™ÚYˆİš[™Âˆİ™X\İ\WØXØÛİ[ÚYˆİš[™ÂˆBˆ™]\›œÎˆ[™Yš[™YˆBˆÜİØ›ÛÚÚ[™×ØÛÜİˆÈ\™ÜÎˆÈØ›ÛÚÚ[™×ÚYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜİØÛÛ[Z\ÜÚ[Û—Ü\š[ÙØXØÜX[ˆÂˆ\™ÜÎˆÈÜ\š[ÙÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÜİØÛÛ[Z\ÜÚ[Û—Ü\š[ÙÜ^[Y[ˆÂˆ\™ÜÎˆÈÜ\š[ÙÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÜİØİ\İÛY\—Ü^[Y[ˆÈ\™ÜÎˆÈÜ^[Y[ÚYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜİØİ\İÛY\—Ü™Y[™ˆÈ\™ÜÎˆÈÜ™Y[™ÚYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜİÙ^[œÙWİ˜[œØXİ[ÛˆÂˆ\™ÜÎˆÈÙ^[œÙWÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÜİÚ[›ÚXÙNˆÈ\™ÜÎˆÈÚ[›ÚXÙWÚYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÜİÚ[›ÚXÙWÛYØXŞWÜ™XÙZ\ˆÂˆ\™ÜÎˆÈÚ[›ÚXÙWÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÜİÚ›İ\›˜[Ù[N‚ˆÂˆ\™ÜÎˆÂˆÙ\ØÜš\[Ûˆİš[™ÂˆÙ[WÙ]Nˆİš[™ÂˆÛ[™\ÎˆœÛÛ‚ˆÛÜ™×ÚYˆİš[™ÂˆÜ™Y™\™[˜ÙWÚYˆİš[™ÂˆÜ™Y™\™[˜ÙWİ\Nˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÂˆ\™ÜÎˆÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ\ØÜš\[Ûˆİš[™ÂˆÙ[WÙ]Nˆİš[™ÂˆÛ[™\ÎˆœÛÛ‚ˆÛÜ™×ÚYˆİš[™ÂˆÜ™Y™\™[˜ÙWÚYˆİš[™ÂˆÜ™Y™\™[˜ÙWİ\Nˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆÜİÜİ\Y\—Ú[›ÚXÙNˆÂˆ\™ÜÎˆÈÜİ\Y\—Ú[›ÚXÙWÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆÜİÜİ\Y\—Ü^[Y[ˆÈ\™ÜÎˆÈÜ^[Y[ÚYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆ™\\™WÜİXœØÜš\[Û—ØÚXÚÛİ]ˆÂˆ\™ÜÎˆÂˆØš[[™×ØŞXÛNˆİš[™ÂˆÛÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆÜ[—ÚYˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆ›ØÙ\Ü×Ù]™[Ù[]™\šY\ÎˆÈ\™ÜÎˆÈÛ[Z]Îˆ[X™\ˆNÈ™]\›œÎˆ[X™\ˆBˆ›ØÙ\Ü×Ú›İ\›™^WÙ[œ›ÛY[ÎˆÂˆ\™ÜÎˆÈÛ[Z]Îˆ[X™\ˆBˆ™]\›œÎˆ[X™\‚ˆBˆ]Y]YWÛÜ™Ø[š^˜][Û—Ú[š]][Û—Ù[XZ[ˆÂˆ\™ÜÎˆÈÚ[š]][Û—ÚYˆİš[™ÈBˆ™]\›œÎˆ[X™\‚ˆBˆ™XYÙ[XZ[Ø˜]ÚˆÂˆ\™ÜÎˆÈ˜]ÚÜÚ^™Nˆ[X™\È]Y]YWÛ˜[YNˆİš[™ÎÈˆ[X™\ˆBˆ™]\›œÎˆÂˆY\ÜØYÙNˆœÛÛ‚ˆ\Ù×ÚYˆ[X™\‚ˆ™XYØİˆ[X™\‚ˆV×BˆBˆ™XÛÛ\]WØœ›ØYØ\İØÛİ[\œÎˆÂˆ\™ÜÎˆÈØœ›ØYØ\İÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ™XÛÛ˜Ú[WØ›ÛÚÚ[™Ü×Ù›Ü—ÛÜ™ÎˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆ™XÛÜ™Øİ\İÛY\—Ü^[Y[ˆÂˆ\™ÜÎˆÂˆØ[[İ[ˆ[X™\‚ˆØ›ÛÚÚ[™×ÚYÎˆİš[™ÂˆØÛY[Ü™YÎˆİš[™ÂˆØİ\œ™[˜ŞOÎˆİš[™ÂˆØİ\İÛY\—ÚYÎˆİš[™ÂˆÙ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆÚ[›ÚXÙWÚYˆİš[™ÂˆÛY]ÙÎˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜ^[Y[Ù]OÎˆİš[™ÂˆÜ™Y™\™[˜ÙOÎˆİš[™Âˆİ™X\İ\WØXØÛİ[ÚYÎˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆ™XÛÜ™Üİ\Y\—Ü^[Y[ˆÂˆ\™ÜÎˆÂˆØ[[İ[ˆ[X™\‚ˆØİ\œ™[˜ŞOÎˆİš[™ÂˆÙ^Ú[™ÙWÜ˜]OÎˆ[X™\‚ˆÛY]ÙÎˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜ^[Y[Ù]OÎˆİš[™ÂˆÜ×ÚYˆİš[™ÂˆÜ™Y™\™[˜ÙOÎˆİš[™Âˆİ™X\İ\WØXØÛİ[ÚYÎˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆ™YY[WÛŞX[WÜ™]Ø\™ˆÂˆ\™ÜÎˆÈØİ\İÛY\—ÚYˆİš[™ÎÈÜ™]Ø\™ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ™Yœ™\ÚØİ\İÛY\—Ø›ÛÚÚ[™×Üİ[[X\NˆÂˆ\™ÜÎˆÈØİ\İÛY\—ÚYˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ™[Ü[—ØXØÛİ[[™×Ü\š[ÙˆÈ\™ÜÎˆÈÜ\š[ÙÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆ™[Ü[—Ùš\ØØ[ŞYX\ˆÂˆ\™ÜÎˆÈÛÜ™Îˆİš[™ÎÈÜ™X\ÛÛˆİš[™ÎÈŞYX\ˆ[X™\ˆBˆ™]\›œÎˆœÛÛ‚ˆBˆ™\^WÙ]™[ˆÈ\™ÜÎˆÈÙ]™[ÚYˆİš[™ÈNÈ™]\›œÎˆ[X™\ˆBˆ™\^WÙÛÜÜİ[™ÜÎˆÂˆ\™ÜÎˆÈÙWÜ[Îˆ›ÛÛX[ÈÙœ›ÛOÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ™\Ù[™ÛÜ™Ø[š^˜][Û—Ú[š]][ÛˆÂˆ\™ÜÎˆÈÚ[š]][Û—ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ™\Ù]Ù[[×Ù]NˆÈ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆ™]WØ›ÛÚÚ[™×Ø]]ÛX][Û—Üİ\ˆÂˆ\™ÜÎˆÈÜİ\ÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆ™]WÙ]™[Ù[]™\NˆÂˆ\™ÜÎˆÈÙ[]™\WÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ™]WİÛÜšÙ›İ×Ü[WÜ[ˆÂˆ\™ÜÎˆÈÙ]™[ÚYˆİš[™ÎÈÜ[WÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆ[—Ø›ÛÚÚ[™×Ø]]ÛX][ÛˆÂˆ\™ÜÎˆÈØ›ÛÚÚ[™×ÚYˆİš[™ÈBˆ™]\›œÎˆİš[™ÂˆBˆØY™WÙ[]WÙ[\ŞYYNˆÂˆ\™ÜÎˆÂˆÙ[\ŞYYWÚYˆİš[™ÂˆÙ›Ü˜ÙWÙ[]OÎˆ›ÛÛX[‚ˆÜ™X\ÛÛÎˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÙYYÙY˜][ØÚ\ÛÙ—ØXØÛİ[ÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆÙ]Øİ\İÛY\—Ø\˜Ú]™YˆÂˆ\™ÜÎˆÈØ\˜Ú]™Yˆ›ÛÛX[ÈØİ\İÛY\—ÚYˆİš[™ÎÈÛÜ™×ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÙ]ÛÜ™×Ü[ˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈÜ[ˆİš[™ÈBˆ™]\›œÎˆ[™Yš[™YˆBˆÚİ×Û[Z]ˆÈ\™ÜÎˆ™]™\È™]\›œÎˆ[X™\ˆBˆÚİ×İ™ÛNˆÈ\™ÜÎˆÈˆˆİš[™ÈNÈ™]\›œÎˆİš[™Ö×HBˆÛÜØXÚÛ›İÛYÙWØ\ÜÚYÛ›Y[ˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØXÚÛ›İÛYÙWØ\ÜÚYÛ›Y[İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØXİÜ—Û˜[YNˆÈ\™ÜÎˆÈİ\Ù\ˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÛÜØYÛXYØXİ]š]NˆÂˆ\™ÜÎˆÂˆØXİ]š]Wİ\Nˆİš[™ÂˆØ\ÜÚYÛ™YİÏÎˆİš[™ÂˆØÛÛ\]YÎˆ›ÛÛX[‚ˆÙYWØ]Îˆİš[™ÂˆÛXYˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÛİ]ÛÛYOÎˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØY˜[˜ÙWÛXYˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆÜ™X\ÛÛÎˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØY˜[˜ÙWÛXYİ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆÜ™X\ÛÛÎˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØ[İÙYÛ™^ˆÂˆ\™ÜÎˆÈÜÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—HBˆ™]\›œÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—V×BˆBˆÛÜØ\ÜÚYÛ—ÛXYˆÂˆ\™ÜÎˆÈØ\ÜÚYÛ™YOÎˆİš[™ÎÈÙ^Ù\[Û—Ü™X\ÛÛÎˆİš[™ÎÈÛXYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØ\ÜÚYÛ—ÛXYİ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈØ\ÜÚYÛ™YOÎˆİš[™ÎÈÙ^Ù\[Û—Ü™X\ÛÛÎˆİš[™ÎÈÛXYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØ]]×Ø\ÜÚYÛˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆİš[™ÈBˆÛÜØ˜XÚÙš[ÜİYÙWÚ\İÜNˆÈ\™ÜÎˆÈÛÜ™ÏÎˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØœšYY—ÛZ\ÜÚ[™ÎˆÂˆ\™ÜÎˆÈˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈœÛÜÛXYÈ—VÈ”›İÈ—HBˆ™]\›œÎˆİš[™Ö×BˆBˆÛÜØØ[—ÛX[˜YÙWÜšXÚ[™ÎˆÂˆ\™ÜÎˆÈÛÜ™Îˆİš[™ÎÈİ\Ù\ˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆÛÜØØ[˜Ù[ÛXYØXİ]š]NˆÂˆ\™ÜÎˆÈØXİ]š]Nˆİš[™ÎÈÜ™X\ÛÛÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÛZ[WÛXYˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÛZ[WÛXYİ[œØY™WÚ[\ˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÛZ[WÜšXÚ[™×Ü™\]Y\İˆÈ\™ÜÎˆÈÜ™\]Y\İˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÛÛXİ[Û—Üİ]\ÎˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÛÛ\]WÚ[™İ™\ˆÂˆ\™ÜÎˆÂˆØÚXÚÛ\İˆœÛÛ‚ˆÛXYˆİš[™ÂˆÛ›İ\ÏÎˆİš[™Âˆİ×İ\Ù\Îˆİš[™Âˆİ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÚ[™İ™\—İ\H—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÛÛ\]WÛXYØXİ]š]NˆÂˆ\™ÜÎˆÈØXİ]š]Nˆİš[™ÎÈÛ›İ\ÏÎˆİš[™ÎÈÛİ]ÛÛYOÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÛÛ\]WÜ™XÚXÚÎˆÂˆ\™ÜÎˆÈØÚ[™ÙYˆ›ÛÛX[ÈÛ›İ\ÏÎˆİš[™ÎÈÜ™\]Y\İˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÛÛ\]WÜ™XÚXÚ×İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈØÚ[™ÙYˆ›ÛÛX[ÈÛ›İ\ÏÎˆİš[™ÎÈÜ™\]Y\İˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÛÛ\X[˜ÙWÜ™\ÜˆÈ\™ÜÎˆÈÛÜ™Îˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÛÛ™\ÛXYİ×Øİ\İÛY\ˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜØÜ™X]WÜšXÚ[™×Ü™\]Y\İˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İ\ÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜØÜ™X]WÜšXÚ[™×Ü™\]Y\İİ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İ\ÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÙXÚYWØ\›İ˜[ˆÂˆ\™ÜÎˆÈØ\›İ˜[ˆİš[™ÎÈØ\›İ™Nˆ›ÛÛX[ÈÛ›İOÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÙ\\Y[ÚÜ\ÎˆÂˆ\™ÜÎˆÈÙœ›ÛOÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈİÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÙ\Ü]X[YNˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İOÎˆİš[™ÎÈÜ™X\ÛÛˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÙ\Ü]X[YWİ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İOÎˆİš[™ÎÈÜ™X\ÛÛˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÚ[™İ™\—ØÚXÚÛ\İÚÙ^\ÎˆÂˆ\™ÜÎˆÈİˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÚ[™İ™\—İ\H—HBˆ™]\›œÎˆİš[™Ö×BˆBˆÛÜÚ[™İ™\—Üİ]\ÎˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™Âˆİˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÚ[™İ™\—İ\H—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÚ\×Ù\\Y[ˆÂˆ\™ÜÎˆÂˆÙ\ˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—BˆÛÜ™Îˆİš[™Âˆİ\Ù\ˆİš[™ÂˆBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆÛÜÚ\İÜWİÜš]NˆÂˆ\™ÜÎˆÂˆØXİ[Ûˆİš[™ÂˆØXİÜˆİš[™ÂˆØ]ˆİš[™ÂˆØ›ÛÚÚ[™Îˆİš[™ÂˆÙœ›ÛNˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆÚÙ^Nˆİš[™ÂˆÛXYˆİš[™ÂˆÛY]NˆœÛÛ‚ˆÛÜ™Îˆİš[™ÂˆÜšXÚ[™Îˆİš[™ÂˆÜ][İNˆİš[™ÂˆÜ™X\ÛÛˆİš[™ÂˆÜ™XÛÛœİXİYˆ›ÛÛX[‚ˆÜÛİ\˜ÙNˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆ[™Yš[™YˆBˆÛÜÚ[ZÙWÛZ\ÜÚ[™ÎˆÂˆ\™ÜÎˆÈˆ]X˜\ÙVÈœX›XÈ—VÈ•X›\È—VÈœÛÜÛXYÈ—VÈ”›İÈ—HBˆ™]\›œÎˆİš[™Ö×BˆBˆÛÜÚ\×ÛX[˜YÙ\ˆÂˆ\™ÜÎˆÈÛÜ™Îˆİš[™ÎÈİ\Ù\ˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆÛÜÛXYØŞXÛWÜ™\ÜˆÂˆ\™ÜÎˆÂˆÙ\\Y[Îˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—BˆÙ[\ŞYYOÎˆİš[™ÂˆÙœ›ÛOÎˆİš[™ÂˆÚ[˜ÛYWÛYØXŞOÎˆ›ÛÛX[‚ˆÛÜ™Îˆİš[™ÂˆÛİ]ÛÛYOÎˆİš[™ÂˆÜÛİ\˜ÙOÎˆİš[™ÂˆÜİYÙOÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆİÏÎˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÛXYİ[Y[[™NˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÛ[İ™WØ˜XÚÎˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆÜ™X\ÛÛˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÛ[İ™WØ˜XÚ×İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆÜ™X\ÛÛˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÛ^WÙ\\Y[ÎˆÈ\™ÜÎˆÈÛÜ™Îˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÛÛ—Ø›ÛÚÚ[™×ØÛÛ™š\›YYˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÜX›\ÚÜšXÚ[™ÎˆÂˆ\™ÜÎˆÂˆÜ™XÛÛ[Y[™][ÛÎˆİš[™ÂˆÜ™\]Y\İˆİš[™Âˆİ˜[Yİ[[Îˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™X\ÜÚYÛ—ÛXYˆÂˆ\™ÜÎˆÈØ\ÜÚYÛ™YNˆİš[™ÎÈÛXYˆİš[™ÎÈÜ™X\ÛÛˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™X\ÜÚYÛ—ÛXYİ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈØ\ÜÚYÛ™YNˆİš[™ÎÈÛXYˆİš[™ÎÈÜ™X\ÛÛˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™[Ü[—ÛXYˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÜ™[Ü[—ÛXYİ[œØY™WÚ[\ˆÈ\™ÜÎˆÈÛXYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÜ™\]Y\İØ\›İ˜[ˆÂˆ\™ÜÎˆÂˆØ[[İ[Îˆ[X™\‚ˆØ›ÛÚÚ[™ÏÎˆİš[™ÂˆÛXYÎˆİš[™ÂˆÜ™X\ÛÛÎˆİš[™ÂˆÜİ\Y\—Ü^[Y[ÛÜ™\Îˆİš[™Âˆİ\Nˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜØ\›İ˜[İ\H—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™\]Y\İÜ™XÚXÚÎˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İ\ÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™\]Y\İÜ™XÚXÚ×İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈÛXYˆİš[™ÎÈÛ›İ\ÏÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜ™]\›—İ×ÜØ[\ÎˆÈ\™ÜÎˆÈÜ™\]Y\İˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆÛÜÜ™]\›—İ×ÜØ[\×İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÈÜ™\]Y\İˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜØ]™WÛXYˆÂˆ\™ÜÎˆÈÛXYÎˆİš[™ÎÈÛÜ™Îˆİš[™ÎÈÜ^[ØYÎˆœÛÛˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜÙX\˜ÚÛXYÎˆÂˆ\™ÜÎˆÂˆÙ›Ûİ×İ\Îˆİš[™ÂˆÚ[˜ÛYWÛYØXŞOÎˆ›ÛÛX[‚ˆÛ[Z]Îˆ[X™\‚ˆÛÜ™Îˆİš[™ÂˆÛİÛ™\Îˆİš[™ÂˆÜÙX\˜ÚÎˆİš[™ÂˆÜÛÜÎˆİš[™ÂˆÜÛİ\˜ÙOÎˆİš[™ÂˆÜİYÙ\ÏÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—V×BˆBˆ™]\›œÎˆÂˆY[Îˆ[X™\ˆ[ˆ\›ŞÙ]\Îˆİš[™È[ˆ\œš]™YØ]ˆİš[™Âˆ›ÛÚÚ[™×ÚYˆİš[™È[ˆYÙ]Ø[[İ[ˆ[X™\ˆ[ˆYÙ]Øİ\œ™[˜ŞNˆİš[™È[ˆYÙ]Û]™[ˆİš[™È[ˆØ[\ZYÛˆİš[™È[ˆÚXÚ×Ú[ˆİš[™È[ˆÚXÚ×Ûİ]ˆİš[™È[ˆÚ[™[—ØYÙ\ÎˆœÛÛ‚ˆÚ[™[—ØÛİ[ˆ[X™\‚ˆÚ]Nˆİš[™È[ˆÛÛXİÙ[XZ[ˆİš[™È[ˆÛÛXİÛ˜[YNˆİš[™È[ˆÛÛXİÜÛ™Nˆİš[™È[ˆÛÛ™\œØ][Û—ÚYˆİš[™È[ˆÛÛ™\YØ]ˆİš[™È[ˆÛÛ™\YØNˆİš[™È[ˆÜ™X]YØ]ˆİš[™ÂˆÜ™X]YØNˆİš[™È[ˆİ\œ™[ÛİÛ™\—ÚYˆİš[™È[ˆİ\İÛY\—ÚYˆİš[™È[ˆ\ÜÚ]Ü\˜Ù[ˆ[X™\ˆ[ˆ\İ[˜][Ûˆİš[™È[ˆš\œİÜ™\ÜÛœÙWØ]ˆİš[™È[ˆYˆİš[™Âˆ[ZÙWØÛÛ\]YØ]ˆİš[™È[ˆ\×ÛYØXŞNˆ›ÛÛX[‚ˆ\İØÛÛXİØ]ˆİš[™È[ˆXYÛ[X™\ˆİš[™È[ˆXYÜÛİ\˜ÙNˆİš[™È[ˆÜİÜ™X\ÛÛˆİš[™È[ˆX\šÙ]ˆİš[™È[ˆZYÜ˜][Û—ÜÛİ\˜ÙNˆİš[™È[ˆ˜][Û˜[]Nˆİš[™È[ˆ™^Ù›Ûİ×İ\Ø]ˆİš[™È[ˆØØİ\[˜ŞNˆİš[™È[ˆÜ™Ø[š^˜][Û—ÚYˆİš[™ÂˆİÛ™\—Ù\\Y[ˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—Bˆ^[Y[ÜÛXŞNˆİš[™Âˆš[Üš]Y\Îˆİš[™È[ˆ][İWÚYˆİš[™È[ˆ™Y™\™[˜ÙWÚİ[ˆİš[™È[ˆ™Y™\™[˜ÙWÜØÜ™Y[œÚİİ\›ˆİš[™È[ˆ™\][İWÜ™\]Z\™Yˆ›ÛÛX[‚ˆ›ÛÛ\Îˆ[X™\ˆ[ˆÙ\šXÙWİ\Nˆİš[™È[ˆÜXÚX[Ü™\]Y\İÎˆİš[™È[ˆİYÙNˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—Bˆ\]YØ]ˆİš[™ÂˆV×BˆÙ]Ù“Ü[ÛœÎˆÂˆœ›ÛNˆŠˆ‚ˆÎˆœÛÜÛXYÈ‚ˆ\ÓÛ™UÓÛ™Nˆ˜[ÙBˆ\ÔÙ]Ù”™]\›ˆYBˆBˆBˆÛÜÜÙ]Ø]˜Z[Xš[]NˆÂˆ\™ÜÎˆÈÚ\×Ø]˜Z[X›Nˆ›ÛÛX[ÈÜ™X\ÛÛÎˆİš[™ÎÈİ\Ù\—ÚYˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜÙ]Ù\\Y[ˆÂˆ\™ÜÎˆÂˆÙ\\Y[Îˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—BˆÚ\×Ø]˜Z[X›OÎˆ›ÛÛX[‚ˆÜ™X\ÛÛÎˆİš[™Âˆİ\Ù\—ÚYˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜÙ]Û^WØ]˜Z[Xš[]NˆÂˆ\™ÜÎˆÂˆØ]˜Z[X›Nˆ›ÛÛX[‚ˆÙ\\Y[ˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÙ\\Y[—BˆÛÜ™Îˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜÜİYÙWİ×Ø›ÛÚÚ[™×ÜİYÙNˆÂˆ\™ÜÎˆÈÜÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—HBˆ™]\›œÎˆİš[™ÂˆBˆÛÜİ˜[Y]Wİ˜[œÚ][ÛˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆÛÜİ˜[Y]Wİ˜[œÚ][Û—İ[œØY™WÚ[\ˆÂˆ\™ÜÎˆÂˆÛXYˆİš[™ÂˆİÎˆ]X˜\ÙVÈœX›XÈ—VÈ‘[[\È—VÈœÛÜÛXYÜİYÙH—BˆBˆ™]\›œÎˆœÛÛ‚ˆBˆİ\Ú[\\œÛÛ˜][ÛˆÂˆ\™ÜÎˆÂˆÛY˜Wİ™\šYšYYˆ›ÛÛX[‚ˆÛÜ™×Ü[ˆİš[™ÂˆÜ™X\ÛÛˆİš[™Âˆİ\™Ù]ÛÜ™×ÚYˆİš[™Âˆİ\™Ù]İ\Ù\—ÚYˆİš[™ÂˆBˆ™]\›œÎˆİš[™ÂˆBˆİÜÚ[\\œÛÛ˜][ÛˆÈ\™ÜÎˆ™]™\È™]\›œÎˆ[™Yš[™YBˆİ\Y\—ÛÜ™×ÛX]ÚˆÈ\™ÜÎˆÈÜİ\Y\—ÚYˆİš[™ÈNÈ™]\›œÎˆ›ÛÛX[ˆBˆÙÙÛWÙ[\ŞYYWÜİ]\ÎˆÂˆ\™ÜÎˆÈÙ[\ŞYYWÚYˆİš[™ÎÈÚ\×ØXİ]™Nˆ›ÛÛX[ÈÜ™X\ÛÛÎˆİš[™ÈBˆ™]\›œÎˆœÛÛ‚ˆBˆ[›[š×İ\Ù\—Ùœ›ÛWÙ[\ŞYYNˆÈ\™ÜÎˆÈİ\Ù\—ÚYˆİš[™ÈNÈ™]\›œÎˆœÛÛˆBˆ[œÜİÚ›İ\›˜[ˆÂˆ\™ÜÎˆÈÜÛİ\˜ÙWÚYˆİš[™ÎÈÜÛİ\˜ÙWİ\Nˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ\]WØ›ÛÚÚ[™×Üİ]\ÎˆÂˆ\™ÜÎˆÂˆØ›ÛÚÚ[™×ÚYˆİš[™ÂˆØ›ÛÚÚ[™×İ\OÎˆİš[™ÂˆÛ™]×Üİ]\×ÚYÎˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜİ]\×ÚYÎˆİš[™ÂˆBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ\]WÜ\š[ÙØÛÛ[Z\ÜÚ[Û—Üİ]\ÎˆÂˆ\™ÜÎˆÂˆØ˜[š×ØXØÛİ[ÚYÎˆİš[™ÂˆØÛÛ[Z\ÜÚ[Û—Ü\š[ÙÚYˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜ^[Y[Ù]OÎˆİš[™ÂˆÜ^[Y[ÛY]ÙÎˆİš[™ÂˆÜİ]\Îˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆ\]WÜØ[\WÜİ]\ÎˆÂˆ\™ÜÎˆÂˆØ˜[š×ØXØÛİ[ÚYÎˆİš[™ÂˆÛ›İ\ÏÎˆİš[™ÂˆÜ^[Y[Ù]OÎˆİš[™ÂˆÜ^[Y[ÛY]ÙÎˆİš[™ÂˆÜØ[\WÚYˆİš[™ÂˆÜİ]\Îˆİš[™ÂˆBˆ™]\›œÎˆœÛÛ‚ˆBˆ\]WÜŞ\İ[WÜÙ][™ÎˆÂˆ\™ÜÎˆÈÙ][™×ÚÙ^WÜ\˜[Nˆİš[™ÎÈÙ][™×İ˜[YWÜ\˜[Nˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ\Ù\—Ø™[Û™Ü×İ×ÛÜ™ÎˆÂˆ\™ÜÎˆÈÛÜ™×ÚYˆİš[™ÎÈİ\Ù\—ÚYˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆ\Ù\—Ú\×Ø[WÛÜ™ÎˆÈ\™ÜÎˆ™]™\È™]\›œÎˆ›ÛÛX[ˆBˆ˜[Y]WÙ[\ŞYYWØÛÛ[Z\ÜÚ[ÛœÎˆÂˆ\™ÜÎˆÈÙ[\ŞYYWÚYˆİš[™ÈBˆ™]\›œÎˆÂˆXİX[Ø[[İ[ˆ[X™\‚ˆÛÛ[Z\ÜÚ[Û—ÚYˆİš[™Âˆ^XİYØ[[İ[ˆ[X™\‚ˆ\ÜİYNˆİš[™ÂˆV×BˆBˆØWØÛİ[ÜXÙZÛ\œÎˆÈ\™ÜÎˆÈİ^ˆİš[™ÈNÈ™]\›œÎˆ[X™\ˆBˆÚ]Ø\İÚ[™İ×ÛÜ[ˆÂˆ\™ÜÎˆÈØÛÛ™\œØ][Û—ÚYˆİš[™ÈBˆ™]\›œÎˆ›ÛÛX[‚ˆBˆBˆ[[\ÎˆÂˆXØÛİ[İ\Nˆ˜\ÜÙ]ˆ›XXš[]Hˆ™\]Z]Hˆœ™]™[YHˆ™^[œÙH‚ˆ›ÛÚÚ[™×İÛÜšÙ›İ×ÜİYÙN‚ˆ›XY‚ˆœ]X[YšYY‚ˆœ][İY‚ˆ˜ÛÛ™š\›YY‚ˆœZY‚ˆ›Ü\˜][ÛœÈ‚ˆ˜]™[[™È‚ˆ˜ÛÛ\]Y‚ˆœÜİİ˜]™[‚ˆ˜Ø[˜Ù[Y‚ˆØİ[Y[ØØ]YÛÜN‚ˆœ\ÜÜÜ‚ˆš\ØH‚ˆ›İXÚ\ˆ‚ˆš[›ÚXÙH‚ˆœ\˜Ú\ÙWÛÜ™\ˆ‚ˆXÚÙ]‚ˆš[œİ\˜[˜ÙH‚ˆ˜ÛÛ˜Xİ‚ˆ›İ\ˆ‚ˆÜ™×Ü›ÛNˆ›İÛ™\ˆˆ˜YZ[ˆˆ›X[˜YÙ\ˆˆ˜YÙ[ˆšY]Ù\ˆ‚ˆ]›Ü›WÜ›ÛNˆœ]›Ü›WØYZ[ˆˆœ]›Ü›WÛİÛ™\ˆ‚ˆÛÜØ\›İ˜[Üİ]\Îˆœ[™[™Èˆ˜\›İ™Yˆœ™Z™XİY‚ˆÛÜØ\›İ˜[İ\N‚ˆ™\ØÛİ[‚ˆ™œ™YWÜÙ\šXÙH‚ˆ˜›ÛÚÚ[™×ØÛÛ™š\›X][Ûˆ‚ˆœİ\Y\—Ü^[Y[‚ˆœ™Y[™ØÛÛ\[œØ][Ûˆ‚ˆÛÜÙXY[™Wİ\N‚ˆœ^[Y[‚ˆ˜Ø[˜Ù[][Ûˆ‚ˆœ™[X\ÙH‚ˆœ™WØ\œš]˜[‚ˆœ™XÛÛ™š\›X][Ûˆ‚ˆÛÜÙ\\Y[‚ˆ˜İ\İÛY\—ÜÙ\šXÙH‚ˆœØ[\È‚ˆœ™\Ù\˜][ÛœÈ‚ˆ›Ü\˜][ÛœÈ‚ˆ›X[˜YÙ[Y[‚ˆ›X\šÙ][™È‚ˆ™š[˜[˜ÙH‚ˆÛÜÚ[™İ™\—İ\N‚ˆ˜Ü×İ×ÜØ[\È‚ˆœØ[\×İ×Ü™\Ù\˜][ÛœÈ‚ˆœ™\Ù\˜][Ûœ×İ×ÜØ[\È‚ˆœ™\Ù\˜][Ûœ×İ×ØÜÈ‚ˆÛÜÛXYÜİYÙN‚ˆ›™]È‚ˆœ]X[YšYY‚ˆ˜\ÜÚYÛ™Y‚ˆœšXÚ[™×Ü™\]Y\İY‚ˆœ][İY‚ˆ™›Ûİ×İ\‚ˆ˜XØÙ\YÜ[™[™×Ü™XÚXÚÈ‚ˆœ™XÚXÚÙY‚ˆœ^[Y[Ü[™[™È‚ˆÛÛˆ‚ˆ›Üİ‚ˆ˜Ø[˜Ù[Y‚ˆÛÜÜšXÚ[™×Üİ]\Î‚ˆœ™\]Y\İY‚ˆš[—Ü›ÙÜ™\ÜÈ‚ˆœ][İY‚ˆœ™\][İY‚ˆœ™XÚXÚÈ‚ˆ˜ÛÜÙY‚ˆ˜Ø[˜Ù[Y‚ˆBˆÛÛ\ÜÚ]U\\ÎˆÂˆ×È[ˆ™]™\—Nˆ™]™\‚ˆBˆBŸB‚\H]X˜\ÙUÚ]İ][\›˜[ÈHÛZ]]X˜\ÙK—×Ò[\›˜[İ\X˜\ÙH‚‚\HY˜][ØÚ[XHH]X˜\ÙUÚ]İ][\›˜[ÖÑ^˜XİÙ^[Ùˆ]X˜\ÙKœX›XÈ—B‚™^Ü\HX›\ÏˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÂˆÙ^[Ùˆ
+Y˜][ØÚ[XVÈ•X›\È—H	ˆY˜][ØÚ[XVÈ•šY]ÜÈ—JBˆÈØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÈKˆX›S˜[YH^[™ÈY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂˆBˆÈÙ^[Ùˆ
+]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—H	‚ˆ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•šY]ÜÈ—JBˆˆ™]™\ˆH™]™\‹ˆHY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂŸBˆÈ
+]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—H	‚ˆ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•šY]ÜÈ—JVÕX›S˜[YWH^[™ÈÂˆ›İÎˆ[™™\ˆ‚ˆBˆÈ‚ˆˆ™]™\‚ˆˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÙ^[Ùˆ
+Y˜][ØÚ[XVÈ•X›\È—H	‚ˆY˜][ØÚ[XVÈ•šY]ÜÈ—JBˆÈ
+Y˜][ØÚ[XVÈ•X›\È—H	‚ˆY˜][ØÚ[XVÈ•šY]ÜÈ—JVÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[Ûœ×H^[™ÈÂˆ›İÎˆ[™™\ˆ‚ˆBˆÈ‚ˆˆ™]™\‚ˆˆ™]™\‚‚™^Ü\HX›\Ò[œÙ\ˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÂˆÙ^[ÙˆY˜][ØÚ[XVÈ•X›\È—BˆÈØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÈKˆX›S˜[YH^[™ÈY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂˆBˆÈÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—Bˆˆ™]™\ˆH™]™\‹ˆHY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂŸBˆÈ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—VÕX›S˜[YWH^[™ÈÂˆ[œÙ\ˆ[™™\ˆBˆBˆÈBˆˆ™]™\‚ˆˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÙ^[ÙˆY˜][ØÚ[XVÈ•X›\È—BˆÈY˜][ØÚ[XVÈ•X›\È—VÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[Ûœ×H^[™ÈÂˆ[œÙ\ˆ[™™\ˆBˆBˆÈBˆˆ™]™\‚ˆˆ™]™\‚‚™^Ü\HX›\Õ\]OˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÂˆÙ^[ÙˆY˜][ØÚ[XVÈ•X›\È—BˆÈØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÈKˆX›S˜[YH^[™ÈY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂˆBˆÈÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—Bˆˆ™]™\ˆH™]™\‹ˆHY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂŸBˆÈ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ•X›\È—VÕX›S˜[YWH^[™ÈÂˆ\]Nˆ[™™\ˆBˆBˆÈBˆˆ™]™\‚ˆˆY˜][ØÚ[XUX›S˜[YSÜ“Ü[ÛœÈ^[™ÈÙ^[ÙˆY˜][ØÚ[XVÈ•X›\È—BˆÈY˜][ØÚ[XVÈ•X›\È—VÑY˜][ØÚ[XUX›S˜[YSÜ“Ü[Ûœ×H^[™ÈÂˆ\]Nˆ[™™\ˆBˆBˆÈBˆˆ™]™\‚ˆˆ™]™\‚‚™^Ü\H[[\ÏˆY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÈ^[™ÂˆÙ^[ÙˆY˜][ØÚ[XVÈ‘[[\È—BˆÈØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÈKˆ[[S˜[YH^[™ÈY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂˆBˆÈÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ‘[[\È—Bˆˆ™]™\ˆH™]™\‹ˆHY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂŸBˆÈ]X˜\ÙUÚ]İ][\›˜[ÖÑY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈ‘[[\È—VÑ[[S˜[YWBˆˆY˜][ØÚ[XQ[[S˜[YSÜ“Ü[ÛœÈ^[™ÈÙ^[ÙˆY˜][ØÚ[XVÈ‘[[\È—BˆÈY˜][ØÚ[XVÈ‘[[\È—VÑY˜][ØÚ[XQ[[S˜[YSÜ“Ü[Ûœ×Bˆˆ™]™\‚‚™^Ü\HÛÛ\ÜÚ]U\\ÏˆX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÈ^[™ÂˆÙ^[ÙˆY˜][ØÚ[XVÈÛÛ\ÜÚ]U\\È—BˆÈØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÈKˆÛÛ\ÜÚ]U\S˜[YH^[™ÈX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂˆBˆÈÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÖÔX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈÛÛ\ÜÚ]U\\È—Bˆˆ™]™\ˆH™]™\‹ˆHX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÈ^[™ÈÂˆØÚ[XNˆÙ^[Ùˆ]X˜\ÙUÚ]İ][\›˜[ÂŸBˆÈ]X˜\ÙUÚ]İ][\›˜[ÖÔX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÖÈœØÚ[XH—WVÈÛÛ\ÜÚ]U\\È—VĞÛÛ\ÜÚ]U\S˜[YWBˆˆX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[ÛœÈ^[™ÈÙ^[ÙˆY˜][ØÚ[XVÈÛÛ\ÜÚ]U\\È—BˆÈY˜][ØÚ[XVÈÛÛ\ÜÚ]U\\È—VÔX›XĞÛÛ\ÜÚ]U\S˜[YSÜ“Ü[Ûœ×Bˆˆ™]™\‚‚™^ÜÛÛœİÛÛœİ[ÈHÂˆX›XÎˆÂˆ[[\ÎˆÂˆXØÛİ[İ\NˆÈ˜\ÜÙ]‹›XXš[]H‹™\]Z]H‹œ™]™[YH‹™^[œÙH—Kˆ›ÛÚÚ[™×İÛÜšÙ›İ×ÜİYÙNˆÂˆ›XY‹ˆœ]X[YšYY‹ˆœ][İY‹ˆ˜ÛÛ™š\›YY‹ˆœZY‹ˆ›Ü\˜][ÛœÈ‹ˆ˜]™[[™È‹ˆ˜ÛÛ\]Y‹ˆœÜİİ˜]™[‹ˆ˜Ø[˜Ù[Y‹ˆKˆØİ[Y[ØØ]YÛÜNˆÂˆœ\ÜÜÜ‹ˆš\ØH‹ˆ›İXÚ\ˆ‹ˆš[›ÚXÙH‹ˆœ\˜Ú\ÙWÛÜ™\ˆ‹ˆXÚÙ]‹ˆš[œİ\˜[˜ÙH‹ˆ˜ÛÛ˜Xİ‹ˆ›İ\ˆ‹ˆKˆÜ™×Ü›ÛNˆÈ›İÛ™\ˆ‹˜YZ[ˆ‹›X[˜YÙ\ˆ‹˜YÙ[‹šY]Ù\ˆ—Kˆ]›Ü›WÜ›ÛNˆÈœ]›Ü›WØYZ[ˆ‹œ]›Ü›WÛİÛ™\ˆ—KˆÛÜØ\›İ˜[Üİ]\ÎˆÈœ[™[™È‹˜\›İ™Y‹œ™Z™XİY—KˆÛÜØ\›İ˜[İ\NˆÂˆ™\ØÛİ[‹ˆ™œ™YWÜÙ\šXÙH‹ˆ˜›ÛÚÚ[™×ØÛÛ™š\›X][Ûˆ‹ˆœİ\Y\—Ü^[Y[‹ˆœ™Y[™ØÛÛ\[œØ][Ûˆ‹ˆKˆÛÜÙXY[™Wİ\NˆÂˆœ^[Y[‹ˆ˜Ø[˜Ù[][Ûˆ‹ˆœ™[X\ÙH‹ˆœ™WØ\œš]˜[‹ˆœ™XÛÛ™š\›X][Ûˆ‹ˆKˆÛÜÙ\\Y[ˆÂˆ˜İ\İÛY\—ÜÙ\šXÙH‹ˆœØ[\È‹ˆœ™\Ù\˜][ÛœÈ‹ˆ›Ü\˜][ÛœÈ‹ˆ›X[˜YÙ[Y[‹ˆ›X\šÙ][™È‹ˆ™š[˜[˜ÙH‹ˆKˆÛÜÚ[™İ™\—İ\NˆÂˆ˜Ü×İ×ÜØ[\È‹ˆœØ[\×İ×Ü™\Ù\˜][ÛœÈ‹ˆœ™\Ù\˜][Ûœ×İ×ÜØ[\È‹ˆœ™\Ù\˜][Ûœ×İ×ØÜÈ‹ˆKˆÛÜÛXYÜİYÙNˆÂˆ›™]È‹ˆœ]X[YšYY‹ˆ˜\ÜÚYÛ™Y‹ˆœšXÚ[™×Ü™\]Y\İY‹ˆœ][İY‹ˆ™›Ûİ×İ\‹ˆ˜XØÙ\YÜ[™[™×Ü™XÚXÚÈ‹ˆœ™XÚXÚÙY‹ˆœ^[Y[Ü[™[™È‹ˆÛÛˆ‹ˆ›Üİ‹ˆ˜Ø[˜Ù[Y‹ˆKˆÛÜÜšXÚ[™×Üİ]\ÎˆÂˆœ™\]Y\İY‹ˆš[—Ü›ÙÜ™\ÜÈ‹ˆœ][İY‹ˆœ™\][İY‹ˆœ™XÚXÚÈ‹ˆ˜ÛÜÙY‹ˆ˜Ø[˜Ù[Y‹ˆKˆKˆKŸH\ÈÛÛœİ
