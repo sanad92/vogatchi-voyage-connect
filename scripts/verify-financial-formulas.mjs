@@ -112,6 +112,40 @@ const agingMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905090544_wave3_receivables_payables_aging.sql', import.meta.url),
   'utf8',
 );
+const historicalSettlementMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905105407_settle_existing_bookings_history.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  historicalSettlementMigration,
+  /_confirmation IS DISTINCT FROM 'SETTLE ALL EXISTING BOOKINGS'/,
+  'historical settlement execution must require an exact explicit confirmation',
+);
+assert.match(
+  historicalSettlementMigration,
+  /financial_repair_audit[\s\S]+historical_recovery_items[\s\S]+Settlement verification failed/,
+  'historical settlement must retain before/after audit evidence and fail atomically on reconciliation errors',
+);
+assert.match(
+  historicalSettlementMigration,
+  /v_ap, v_amount, 0[\s\S]+v_supplier_advances, 0, v_amount/,
+  'already-recorded supplier cash payments must reclassify supplier advances to AP without crediting cash twice',
+);
+assert.match(
+  historicalSettlementMigration,
+  /A repeated confirmed call is a true no-op[\s\S]+RETURN jsonb_build_object\([\s\S]+'status', 'already_settled'/,
+  'repeating a completed historical settlement must be a true no-op',
+);
+assert.doesNotMatch(
+  historicalSettlementMigration,
+  /DELETE\s+FROM\s+public\.(?:invoices|supplier_invoices|customer_payments|supplier_payments|journal_entries)/i,
+  'historical settlement must preserve source documents and journals',
+);
+assert.match(
+  historicalSettlementMigration,
+  /REVOKE ALL ON FUNCTION public\.execute_existing_bookings_settlement\(uuid,text\) FROM PUBLIC, anon/,
+  'anonymous users must not be allowed to execute the historical settlement',
+);
 assert.match(
   wave3ReportingMigration,
   /get_general_ledger_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
@@ -237,4 +271,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, and reporting checks passed: 31/31');
+console.log('Financial formula, double-entry, reporting, and settlement checks passed: 37/37');
