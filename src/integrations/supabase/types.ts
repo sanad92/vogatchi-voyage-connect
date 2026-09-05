@@ -12827,6 +12827,19 @@ export type Database = {
               currency: string
             }[]
           }
+      get_balance_sheet_v2: {
+        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
+        Returns: {
+          account_code: string
+          account_id: string
+          account_name: string
+          account_name_ar: string
+          account_type: Database["public"]["Enums"]["account_type"]
+          balance: number
+          currency: string
+          is_current_earnings: boolean
+        }[]
+      }
       get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_business_health_kpis: {
         Args: { p_from?: string; p_to?: string }

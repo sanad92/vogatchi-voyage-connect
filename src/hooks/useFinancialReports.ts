@@ -44,6 +44,11 @@ export interface BalanceSheetRow {
   currency: string;
 }
 
+export interface BalanceSheetV2Row extends BalanceSheetRow {
+  account_id: string;
+  is_current_earnings: boolean;
+}
+
 export interface CashFlowRow {
   period_date: string;
   inflows: number;
@@ -164,6 +169,24 @@ export const useBalanceSheet = (asOfDate?: string, currency = 'EGP') => {
       });
       if (error) throw error;
       return (data || []) as BalanceSheetRow[];
+    },
+    enabled: !!orgId,
+  });
+};
+
+export const useBalanceSheetV2 = (asOfDate?: string, currency = 'EGP') => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['balance-sheet-v2', orgId, asOfDate, currency],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_balance_sheet_v2', {
+        _org_id: orgId,
+        _as_of_date: asOfDate || undefined,
+        _currency: currency,
+      });
+      if (error) throw error;
+      return (data || []) as BalanceSheetV2Row[];
     },
     enabled: !!orgId,
   });

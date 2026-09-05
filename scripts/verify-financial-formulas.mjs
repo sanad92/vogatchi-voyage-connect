@@ -104,6 +104,10 @@ const incomeStatementMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905011917_wave3_income_statement.sql', import.meta.url),
   'utf8',
 );
+const balanceSheetMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905020015_wave3_balance_sheet.sql', import.meta.url),
+  'utf8',
+);
 assert.match(
   wave3ReportingMigration,
   /get_general_ledger_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
@@ -113,6 +117,21 @@ assert.match(
   incomeStatementMigration,
   /get_income_statement_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
   'income statement must never mix currencies and must support cost-center filtering',
+);
+assert.match(
+  balanceSheetMigration,
+  /get_balance_sheet_v2[\s\S]+e\.status = 'posted'[\s\S]+e\.currency = v_currency/,
+  'balance sheet must use posted journals only and never mix currencies',
+);
+assert.match(
+  balanceSheetMigration,
+  /current_earnings[\s\S]+SUM\(l\.total_credit - l\.total_debit\)[\s\S]+account_code = '3999'/,
+  'balance sheet must include unclosed revenue and expense accounts as current earnings',
+);
+assert.match(
+  balanceSheetMigration,
+  /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_balance_sheet_v2[\s\S]+FROM PUBLIC, anon/,
+  'balance sheet RPC must enforce organization access and deny anonymous execution',
 );
 assert.match(
   incomeStatementMigration,
@@ -143,6 +162,15 @@ assert.match(
 const generalLedgerPage = fs.readFileSync(
   new URL('../src/pages/GeneralLedger.tsx', import.meta.url),
   'utf8',
+);
+const balanceSheetPage = fs.readFileSync(
+  new URL('../src/pages/finance/BalanceSheet.tsx', import.meta.url),
+  'utf8',
+);
+assert.match(
+  balanceSheetPage,
+  /useBalanceSheetV2[\s\S]+reports_export[\s\S]+general-ledger\?[\s\S]+downloadCsv/,
+  'balance sheet must support account drill-down and permission-controlled safe export',
 );
 assert.match(
   generalLedgerPage,
@@ -190,4 +218,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, and reporting checks passed: 24/24');
+console.log('Financial formula, double-entry, and reporting checks passed: 28/28');
