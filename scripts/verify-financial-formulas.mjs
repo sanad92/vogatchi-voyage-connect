@@ -100,10 +100,34 @@ const wave3ReportingMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260904212953_wave3_general_ledger_trial_balance.sql', import.meta.url),
   'utf8',
 );
+const incomeStatementMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905011917_wave3_income_statement.sql', import.meta.url),
+  'utf8',
+);
 assert.match(
   wave3ReportingMigration,
   /get_general_ledger_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
   'general ledger must never mix currencies and must support cost-center filtering',
+);
+assert.match(
+  incomeStatementMigration,
+  /get_income_statement_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
+  'income statement must never mix currencies and must support cost-center filtering',
+);
+assert.match(
+  incomeStatementMigration,
+  /LEFT JOIN public\.bookings[\s\S]+lower\(b\.booking_type\) = v_booking_type/,
+  'income statement must support booking-type filtering through the journal booking dimension',
+);
+assert.match(
+  incomeStatementMigration,
+  /account_code LIKE '5%' THEN 'cost_of_sales'[\s\S]+ELSE 'operating_expense'/,
+  'income statement must separate direct service costs from operating expenses',
+);
+assert.match(
+  incomeStatementMigration,
+  /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_income_statement_v2[\s\S]+FROM PUBLIC, anon/,
+  'income statement RPC must enforce organization access and deny anonymous execution',
 );
 assert.match(
   wave3ReportingMigration,
@@ -166,4 +190,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, and reporting checks passed: 20/20');
+console.log('Financial formula, double-entry, and reporting checks passed: 24/24');

@@ -29,6 +29,12 @@ export interface IncomeStatementRow {
   currency: string;
 }
 
+export interface IncomeStatementV2Row extends IncomeStatementRow {
+  account_id: string;
+  section: 'revenue' | 'cost_of_sales' | 'operating_expense';
+  entry_count: number;
+}
+
 export interface BalanceSheetRow {
   account_type: AccountType;
   account_code: string;
@@ -115,6 +121,33 @@ export const useIncomeStatement = (startDate: string, endDate: string, currency 
       return (data || []) as IncomeStatementRow[];
     },
     enabled: !!orgId && !!startDate && !!endDate,
+  });
+};
+
+export const useIncomeStatementV2 = (
+  startDate: string,
+  endDate: string,
+  currency = 'EGP',
+  costCenterId?: string,
+  bookingType?: string,
+) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['income-statement-v2', orgId, startDate, endDate, currency, costCenterId, bookingType],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_income_statement_v2', {
+        _org_id: orgId,
+        _start_date: startDate,
+        _end_date: endDate,
+        _currency: currency,
+        _cost_center_id: costCenterId || undefined,
+        _booking_type: bookingType || undefined,
+      });
+      if (error) throw error;
+      return (data || []) as IncomeStatementV2Row[];
+    },
+    enabled: !!orgId && !!startDate && !!endDate && startDate <= endDate,
   });
 };
 
