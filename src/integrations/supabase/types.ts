@@ -12908,6 +12908,69 @@ export type Database = {
           total_due: number
         }[]
       }
+      get_customer_aging_details_v2: {
+        Args: {
+          _as_of_date?: string
+          _currency?: string
+          _customer_id?: string
+          _org_id: string
+        }
+        Returns: {
+          aging_bucket: string
+          booking_id: string | null
+          booking_type: string | null
+          currency: string
+          customer_id: string | null
+          customer_name: string
+          days_overdue: number
+          due_date: string
+          invoice_id: string
+          invoice_number: string | null
+          is_date_corrected: boolean
+          is_historical_estimate: boolean
+          issued_date: string
+          original_amount: number
+          outstanding_amount: number
+          paid_as_of: number
+        }[]
+      }
+      get_supplier_aging_details_v2: {
+        Args: {
+          _as_of_date?: string
+          _currency?: string
+          _org_id: string
+          _supplier_id?: string
+        }
+        Returns: {
+          aging_bucket: string
+          booking_id: string | null
+          currency: string
+          days_overdue: number
+          due_date: string
+          invoice_id: string
+          invoice_number: string | null
+          is_date_corrected: boolean
+          is_historical_estimate: boolean
+          issued_date: string
+          original_amount: number
+          outstanding_amount: number
+          paid_as_of: number
+          supplier_id: string | null
+          supplier_name: string
+        }[]
+      }
+      get_aging_control_totals_v2: {
+        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
+        Returns: {
+          aging_total: number
+          control_balance: number
+          corrected_date_count: number
+          currency: string
+          difference: number
+          entity_type: string
+          historical_estimate_count: number
+        }[]
+      }
       get_customer_ledger: {
         Args: { _customer_id: string; _from?: string; _to?: string }
         Returns: {

@@ -98,7 +98,9 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
       '/accounting-reports',
       '/cfo-dashboard',
       '/customer-ledger',
+      '/customer-aging',
       '/supplier-ledger',
+      '/supplier-aging',
       '/executive-finance',
       '/treasury',
       '/cash-flow',
@@ -122,4 +124,3 @@ const routeMatches = (pathname: string, route: string) =>
 
 export const getRequiredPlanFeature = (pathname: string): PlanFeatureRouteRule | null =>
   ROUTE_RULES.find((rule) => rule.paths.some((route) => routeMatches(pathname, route))) ?? null;
-

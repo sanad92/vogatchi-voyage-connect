@@ -69,6 +69,37 @@ export interface CustomerAgingRow {
   currency: string;
 }
 
+export interface AgingDetailRow {
+  invoice_id: string;
+  invoice_number: string | null;
+  customer_id?: string | null;
+  customer_name?: string;
+  supplier_id?: string | null;
+  supplier_name?: string;
+  issued_date: string;
+  due_date: string;
+  original_amount: number;
+  paid_as_of: number;
+  outstanding_amount: number;
+  days_overdue: number;
+  aging_bucket: 'current' | '1-30' | '31-60' | '61-90' | 'over-90';
+  booking_id: string | null;
+  booking_type?: string | null;
+  currency: string;
+  is_historical_estimate: boolean;
+  is_date_corrected: boolean;
+}
+
+export interface AgingControlTotal {
+  entity_type: 'customer' | 'supplier';
+  aging_total: number;
+  control_balance: number;
+  difference: number;
+  historical_estimate_count: number;
+  corrected_date_count: number;
+  currency: string;
+}
+
 export const useTrialBalance = (endDate?: string, currency = 'EGP') => {
   const orgId = useOrgId();
   return useQuery({
@@ -224,6 +255,62 @@ export const useCustomerAging = (asOfDate?: string, currency = 'EGP') => {
       });
       if (error) throw error;
       return (data || []) as CustomerAgingRow[];
+    },
+    enabled: !!orgId,
+  });
+};
+
+export const useCustomerAgingDetails = (asOfDate?: string, currency = 'EGP', enabled = true) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['customer-aging-details-v2', orgId, asOfDate, currency],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_customer_aging_details_v2', {
+        _org_id: orgId,
+        _as_of_date: asOfDate || undefined,
+        _currency: currency,
+        _customer_id: undefined,
+      });
+      if (error) throw error;
+      return (data || []) as AgingDetailRow[];
+    },
+    enabled: !!orgId && enabled,
+  });
+};
+
+export const useSupplierAgingDetails = (asOfDate?: string, currency = 'EGP', enabled = true) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['supplier-aging-details-v2', orgId, asOfDate, currency],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_supplier_aging_details_v2', {
+        _org_id: orgId,
+        _as_of_date: asOfDate || undefined,
+        _currency: currency,
+        _supplier_id: undefined,
+      });
+      if (error) throw error;
+      return (data || []) as AgingDetailRow[];
+    },
+    enabled: !!orgId && enabled,
+  });
+};
+
+export const useAgingControlTotals = (asOfDate?: string, currency = 'EGP') => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['aging-control-totals-v2', orgId, asOfDate, currency],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_aging_control_totals_v2', {
+        _org_id: orgId,
+        _as_of_date: asOfDate || undefined,
+        _currency: currency,
+      });
+      if (error) throw error;
+      return (data || []) as AgingControlTotal[];
     },
     enabled: !!orgId,
   });

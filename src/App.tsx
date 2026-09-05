@@ -168,6 +168,8 @@ const FinanceApprovals = lazy(() => import("@/pages/finance/FinanceApprovals"));
 const TrialBalance = lazy(() => import("@/pages/finance/TrialBalance"));
 const IncomeStatement = lazy(() => import("@/pages/finance/IncomeStatement"));
 const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
+const CustomerAging = lazy(() => import("@/pages/finance/CustomerAging"));
+const SupplierAging = lazy(() => import("@/pages/finance/SupplierAging"));
 const HistoricalRecoveryCenter = lazy(() => import("@/pages/finance/HistoricalRecoveryCenter"));
 
 // Phase 7 - SaaS Core & Enterprise
@@ -394,6 +396,8 @@ function App() {
                              <Route path="/trial-balance" element={<PermissionRouteGuard requiredPermission="financial_view"><TrialBalance /></PermissionRouteGuard>} />
                              <Route path="/income-statement" element={<PermissionRouteGuard requiredPermission="financial_view"><IncomeStatement /></PermissionRouteGuard>} />
                              <Route path="/balance-sheet" element={<PermissionRouteGuard requiredPermission="financial_view"><BalanceSheet /></PermissionRouteGuard>} />
+                             <Route path="/customer-aging" element={<PermissionRouteGuard requiredPermission="financial_view"><CustomerAging /></PermissionRouteGuard>} />
+                             <Route path="/supplier-aging" element={<PermissionRouteGuard requiredPermission="financial_view"><SupplierAging /></PermissionRouteGuard>} />
                              <Route path="/finance/historical-recovery" element={<PermissionRouteGuard requiredPermission="financial_view"><HistoricalRecoveryCenter /></PermissionRouteGuard>} />
                               <Route path="/financial-validation" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialValidation /></PermissionRouteGuard>} />
                               <Route path="/cost-centers" element={<PermissionRouteGuard requiredPermission="financial_view"><CostCentersPage /></PermissionRouteGuard>} />

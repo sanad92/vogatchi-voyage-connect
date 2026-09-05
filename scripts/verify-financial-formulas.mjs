@@ -108,10 +108,29 @@ const balanceSheetMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905020015_wave3_balance_sheet.sql', import.meta.url),
   'utf8',
 );
+const agingMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905090544_wave3_receivables_payables_aging.sql', import.meta.url),
+  'utf8',
+);
 assert.match(
   wave3ReportingMigration,
   /get_general_ledger_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
   'general ledger must never mix currencies and must support cost-center filtering',
+);
+assert.match(
+  agingMigration,
+  /payment_date[\s\S]+customer_payment_allocations[\s\S]+payment_date[\s\S]+paid_date[\s\S]+supplier_payment_allocations/,
+  'aging reports must calculate payments allocated by the selected as-of date',
+);
+assert.match(
+  agingMigration,
+  /account_code IN \('1100', '2000'\)[\s\S]+aging_total - x\.customer_control[\s\S]+aging_total - x\.supplier_control/,
+  'customer and supplier aging must reconcile to their ledger control accounts',
+);
+assert.match(
+  agingMigration,
+  /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_customer_aging_details_v2[\s\S]+FROM PUBLIC, anon/,
+  'aging RPCs must enforce organization access and deny anonymous execution',
 );
 assert.match(
   incomeStatementMigration,
@@ -218,4 +237,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, and reporting checks passed: 28/28');
+console.log('Financial formula, double-entry, and reporting checks passed: 31/31');

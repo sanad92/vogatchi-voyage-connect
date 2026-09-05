@@ -223,6 +223,7 @@ export const ERP_MODULES: ErpModule[] = [
         screens: [
           screen({ title: 'الفواتير والتحصيلات', href: '/invoices', icon: Receipt, description: 'فواتير العملاء والمدفوع والمتبقي والاستحقاقات.', requiredPermission: 'invoices_view', sidebar: true }),
           screen({ title: 'كشف حساب العميل', href: '/customer-ledger', icon: BookOpen, description: 'الحركات والمديونيات والتحصيلات لكل عميل.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'أعمار ديون العملاء', href: '/customer-aging', icon: Users, description: 'الفواتير المفتوحة حسب مدة التأخر مع مطابقة الذمم.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
       },
       {
@@ -230,6 +231,7 @@ export const ERP_MODULES: ErpModule[] = [
         description: 'المستحقات والسداد والمصروفات والموافقات المالية.',
         screens: [
           screen({ title: 'كشف حساب المورد', href: '/supplier-ledger', icon: Building2, description: 'مستحقات المورد ومدفوعاته والحركات المرتبطة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'أعمار ديون الموردين', href: '/supplier-aging', icon: Building2, description: 'فواتير الموردين المفتوحة حسب مدة التأخر ومطابقة الذمم.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'المصروفات والعمولات', href: '/expense-management', icon: Calculator, description: 'مصروفات الشركة والموظفين والعمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الاعتمادات المالية', href: '/finance-approvals', icon: CheckCircle2, description: 'اعتماد السداد للموردين وطلبات الاسترداد.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
