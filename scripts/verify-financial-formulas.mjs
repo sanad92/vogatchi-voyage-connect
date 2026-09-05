@@ -95,6 +95,36 @@ const doubleEntryMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260904143000_double_entry_core_hardening.sql', import.meta.url),
   'utf8',
 );
+
+const wave3ReportingMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260904212953_wave3_general_ledger_trial_balance.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  wave3ReportingMigration,
+  /get_general_ledger_v2[\s\S]+e\.currency = v_currency[\s\S]+l\.cost_center_id = _cost_center_id/,
+  'general ledger must never mix currencies and must support cost-center filtering',
+);
+assert.match(
+  wave3ReportingMigration,
+  /get_trial_balance_v2[\s\S]+GREATEST\(b\.balance, 0\)[\s\S]+GREATEST\(-b\.balance, 0\)/,
+  'trial balance must split ending balances into debit and credit columns',
+);
+assert.match(
+  wave3ReportingMigration,
+  /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_trial_balance_v2[\s\S]+FROM PUBLIC, anon/,
+  'financial report RPCs must enforce organization access and deny anonymous execution',
+);
+
+const generalLedgerPage = fs.readFileSync(
+  new URL('../src/pages/GeneralLedger.tsx', import.meta.url),
+  'utf8',
+);
+assert.match(
+  generalLedgerPage,
+  /get_general_ledger_summary_v2[\s\S]+journal-entries\?entry=/,
+  'general ledger must show authoritative opening/closing totals and drill down to the journal entry',
+);
 assert.match(
   doubleEntryMigration,
   /post_supplier_invoice[\s\S]+supplier_invoice[\s\S]+account_id, debit, credit/,
@@ -136,4 +166,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula and double-entry checks passed: 16/16');
+console.log('Financial formula, double-entry, and reporting checks passed: 20/20');
