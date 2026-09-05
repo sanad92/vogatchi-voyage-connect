@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useJournalEntries, useJournalEntryLines } from '@/hooks/useAccounting';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,8 +13,31 @@ const formatNumber = (n: number) => new Intl.NumberFormat('ar-EG', { minimumFrac
 
 export default function JournalEntriesPage() {
   const { data: entries = [], isLoading } = useJournalEntries(200);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('entry'));
   const { data: lines = [] } = useJournalEntryLines(selectedId);
+
+  useEffect(() => {
+    setSelectedId(searchParams.get('entry'));
+  }, [searchParams]);
+
+  const openEntry = (entryId: string) => {
+    setSelectedId(entryId);
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('entry', entryId);
+      return next;
+    });
+  };
+
+  const closeEntry = () => {
+    setSelectedId(null);
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('entry');
+      return next;
+    }, { replace: true });
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -57,7 +81,7 @@ export default function JournalEntriesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedId(e.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => openEntry(e.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -72,7 +96,7 @@ export default function JournalEntriesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selectedId} onOpenChange={(o) => !o && setSelectedId(null)}>
+      <Dialog open={!!selectedId} onOpenChange={(o) => !o && closeEntry()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>تفاصيل القيد</DialogTitle></DialogHeader>
           <Table>
