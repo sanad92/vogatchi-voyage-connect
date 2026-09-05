@@ -120,6 +120,35 @@ const cashFlowMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905113957_wave3_cash_flow_statement.sql', import.meta.url),
   'utf8',
 );
+const dateRepairMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905115402_repair_invalid_financial_dates.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  dateRepairMigration,
+  /_confirmation IS DISTINCT FROM 'REPAIR INVALID FINANCIAL DATES'/,
+  'financial-date repair must require an exact explicit confirmation',
+);
+assert.match(
+  dateRepairMigration,
+  /EXTRACT\(MONTH FROM b\.start_date\)[\s\S]+EXTRACT\(DAY FROM b\.start_date\)[\s\S]+payment_date = r\.target_date/,
+  'an invalid supplier-payment year may be repaired only from a booking date with the same month and day',
+);
+assert.match(
+  dateRepairMigration,
+  /min\(e\.entry_date\) - 1[\s\S]+source_type IS DISTINCT FROM 'launch_opening_balance'/,
+  'launch opening entries must be dated immediately before the earliest valid posted source journal',
+);
+assert.match(
+  dateRepairMigration,
+  /financial_repair_audit[\s\S]+before_data[\s\S]+after_data[\s\S]+Date repair verification failed/,
+  'financial-date repair must preserve before/after evidence and fail atomically when invalid dates remain',
+);
+assert.doesNotMatch(
+  dateRepairMigration,
+  /DELETE\s+FROM\s+public\.(?:journal_entries|supplier_payments)/i,
+  'financial-date repair must not delete source payments or journals',
+);
 assert.match(
   cashFlowMigration,
   /get_cash_flow_v2[\s\S]+e\.status = 'posted'[\s\S]+upper\(e\.currency\) = v_currency[\s\S]+a\.account_code IN \('1000', '1010'\)/,
@@ -304,4 +333,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, and cash-flow checks passed: 42/42');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, and date-repair checks passed: 47/47');
