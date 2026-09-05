@@ -15,6 +15,11 @@ export interface TrialBalanceRow {
   currency: string;
 }
 
+export interface TrialBalanceV2Row extends TrialBalanceRow {
+  debit_balance: number;
+  credit_balance: number;
+}
+
 export interface IncomeStatementRow {
   account_type: AccountType;
   account_code: string;
@@ -59,13 +64,36 @@ export const useTrialBalance = (endDate?: string, currency = 'EGP') => {
     queryKey: ['trial-balance', orgId, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_trial_balance', {
+      const { data, error } = await supabase.rpc('get_trial_balance', {
         _org_id: orgId,
-        _end_date: endDate || null,
+        _end_date: endDate || undefined,
         _currency: currency,
       });
       if (error) throw error;
       return (data || []) as TrialBalanceRow[];
+    },
+    enabled: !!orgId,
+  });
+};
+
+export const useTrialBalanceV2 = (
+  asOfDate?: string,
+  currency = 'EGP',
+  costCenterId?: string,
+) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['trial-balance-v2', orgId, asOfDate, currency, costCenterId],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.rpc('get_trial_balance_v2', {
+        _org_id: orgId,
+        _as_of_date: asOfDate || undefined,
+        _currency: currency,
+        _cost_center_id: costCenterId || undefined,
+      });
+      if (error) throw error;
+      return (data || []) as TrialBalanceV2Row[];
     },
     enabled: !!orgId,
   });
@@ -77,7 +105,7 @@ export const useIncomeStatement = (startDate: string, endDate: string, currency 
     queryKey: ['income-statement', orgId, startDate, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_income_statement', {
+      const { data, error } = await supabase.rpc('get_income_statement', {
         _org_id: orgId,
         _start_date: startDate,
         _end_date: endDate,
@@ -96,9 +124,9 @@ export const useBalanceSheet = (asOfDate?: string, currency = 'EGP') => {
     queryKey: ['balance-sheet', orgId, asOfDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_balance_sheet', {
+      const { data, error } = await supabase.rpc('get_balance_sheet', {
         _org_id: orgId,
-        _as_of_date: asOfDate || null,
+        _as_of_date: asOfDate || undefined,
         _currency: currency,
       });
       if (error) throw error;
@@ -114,7 +142,7 @@ export const useCashFlow = (startDate: string, endDate: string, currency = 'EGP'
     queryKey: ['cash-flow', orgId, startDate, endDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_cash_flow', {
+      const { data, error } = await supabase.rpc('get_cash_flow', {
         _org_id: orgId,
         _start_date: startDate,
         _end_date: endDate,
@@ -133,9 +161,9 @@ export const useCustomerAging = (asOfDate?: string, currency = 'EGP') => {
     queryKey: ['customer-aging', orgId, asOfDate, currency],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase.rpc as any)('get_customer_aging_by_currency', {
+      const { data, error } = await supabase.rpc('get_customer_aging_by_currency', {
         _org_id: orgId,
-        _as_of_date: asOfDate || null,
+        _as_of_date: asOfDate || undefined,
         _currency: currency,
       });
       if (error) throw error;
