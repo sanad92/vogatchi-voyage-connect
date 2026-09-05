@@ -116,6 +116,30 @@ const historicalSettlementMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905105407_settle_existing_bookings_history.sql', import.meta.url),
   'utf8',
 );
+const cashFlowMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260905113957_wave3_cash_flow_statement.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  cashFlowMigration,
+  /get_cash_flow_v2[\s\S]+e\.status = 'posted'[\s\S]+upper\(e\.currency\) = v_currency[\s\S]+a\.account_code IN \('1000', '1010'\)/,
+  'cash flow must use posted Cash and Bank journal movements without mixing currencies',
+);
+assert.match(
+  cashFlowMigration,
+  /SUM\(l\.debit - l\.credit\)[\s\S]+GROUP BY e\.id[\s\S]+ABS\(ce\.cash_change\)/,
+  'cash flow must net cash lines per journal so internal transfers do not inflate combined inflows and outflows',
+);
+assert.match(
+  cashFlowMigration,
+  /entry_date < _start_date[\s\S]+ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING[\s\S]+closing_balance/,
+  'cash flow must reconcile opening, daily movement, and closing ledger balances',
+);
+assert.match(
+  cashFlowMigration,
+  /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_cash_flow_v2[\s\S]+FROM PUBLIC, anon/,
+  'cash flow RPCs must enforce organization access and deny anonymous execution',
+);
 assert.match(
   historicalSettlementMigration,
   /_confirmation IS DISTINCT FROM 'SETTLE ALL EXISTING BOOKINGS'/,
@@ -220,6 +244,15 @@ const balanceSheetPage = fs.readFileSync(
   new URL('../src/pages/finance/BalanceSheet.tsx', import.meta.url),
   'utf8',
 );
+const cashFlowPage = fs.readFileSync(
+  new URL('../src/pages/finance/CashFlowDashboard.tsx', import.meta.url),
+  'utf8',
+);
+assert.match(
+  cashFlowPage,
+  /useCashFlowV2[\s\S]+reconciliationDifference[\s\S]+reports_export[\s\S]+journal-entries\?entry=/,
+  'cash flow must show ledger reconciliation, permission-controlled export, and journal drill-down',
+);
 assert.match(
   balanceSheetPage,
   /useBalanceSheetV2[\s\S]+reports_export[\s\S]+general-ledger\?[\s\S]+downloadCsv/,
@@ -271,4 +304,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, and settlement checks passed: 37/37');
+console.log('Financial formula, double-entry, reporting, settlement, and cash-flow checks passed: 42/42');

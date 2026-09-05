@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from './useOrgId';
 import type { AccountType } from './useChartOfAccounts';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 export interface TrialBalanceRow {
   account_id: string;
@@ -55,6 +56,45 @@ export interface CashFlowRow {
   outflows: number;
   net_flow: number;
   currency: string;
+}
+
+export interface CashFlowV2Row extends CashFlowRow {
+  opening_balance: number;
+  closing_balance: number;
+  operating_inflows: number;
+  operating_outflows: number;
+  investing_inflows: number;
+  investing_outflows: number;
+  financing_inflows: number;
+  financing_outflows: number;
+  other_inflows: number;
+  other_outflows: number;
+  entry_count: number;
+}
+
+export interface CashFlowDetailRow {
+  entry_id: string;
+  entry_number: string;
+  entry_date: string;
+  description: string | null;
+  source_type: string | null;
+  source_id: string | null;
+  booking_id: string | null;
+  booking_number: string | null;
+  flow_category: 'customer_collection' | 'supplier_payment' | 'operating_expense' | 'refund' | 'investing' | 'financing' | 'opening_adjustment' | 'internal_transfer' | 'other';
+  cash_accounts: string;
+  cost_centers: string;
+  inflow: number;
+  outflow: number;
+  net_flow: number;
+  currency: string;
+  is_locked: boolean;
+}
+
+export interface CashFlowV2Filters {
+  cashAccountId?: string;
+  costCenterId?: string;
+  bookingType?: string;
 }
 
 export interface CustomerAgingRow {
@@ -239,6 +279,66 @@ export const useCashFlow = (startDate: string, endDate: string, currency = 'EGP'
       return (data || []) as CashFlowRow[];
     },
     enabled: !!orgId && !!startDate && !!endDate,
+  });
+};
+
+const cashFlowV2Args = (
+  orgId: string,
+  startDate: string,
+  endDate: string,
+  currency: string,
+  filters: CashFlowV2Filters,
+) => ({
+  _org_id: orgId,
+  _start_date: startDate,
+  _end_date: endDate,
+  _currency: currency,
+  _cash_account_id: filters.cashAccountId,
+  _cost_center_id: filters.costCenterId,
+  _booking_type: filters.bookingType,
+});
+
+export const useCashFlowV2 = (
+  startDate: string,
+  endDate: string,
+  currency = 'EGP',
+  filters: CashFlowV2Filters = {},
+) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['cash-flow-v2', orgId, startDate, endDate, currency, filters.cashAccountId, filters.costCenterId, filters.bookingType],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await callUntypedRpc<CashFlowV2Row[]>(
+        'get_cash_flow_v2',
+        cashFlowV2Args(orgId, startDate, endDate, currency, filters),
+      );
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!orgId && !!startDate && !!endDate && startDate <= endDate,
+  });
+};
+
+export const useCashFlowDetailsV2 = (
+  startDate: string,
+  endDate: string,
+  currency = 'EGP',
+  filters: CashFlowV2Filters = {},
+) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['cash-flow-details-v2', orgId, startDate, endDate, currency, filters.cashAccountId, filters.costCenterId, filters.bookingType],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await callUntypedRpc<CashFlowDetailRow[]>(
+        'get_cash_flow_details_v2',
+        cashFlowV2Args(orgId, startDate, endDate, currency, filters),
+      );
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!orgId && !!startDate && !!endDate && startDate <= endDate,
   });
 };
 
