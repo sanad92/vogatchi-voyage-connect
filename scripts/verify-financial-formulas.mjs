@@ -124,6 +124,20 @@ const dateRepairMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260905115402_repair_invalid_financial_dates.sql', import.meta.url),
   'utf8',
 );
+const recoveryAuthorizationMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260906012529_harden_recovery_authorization_guard.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  recoveryAuthorizationMigration,
+  /COALESCE\([\s\S]+get_user_org_role\([\s\S]+false[\s\S]+OR COALESCE\(public\.is_platform_admin\(auth\.uid\(\)\), false\)/,
+  'recovery authorization must return false instead of NULL for users without an organization role',
+);
+assert.match(
+  recoveryAuthorizationMigration,
+  /REVOKE ALL ON FUNCTION public\._recovery_can_manage\(uuid\) FROM PUBLIC, anon/,
+  'the recovery authorization helper must not be callable anonymously',
+);
 assert.match(
   dateRepairMigration,
   /_confirmation IS DISTINCT FROM 'REPAIR INVALID FINANCIAL DATES'/,
@@ -333,4 +347,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, and date-repair checks passed: 47/47');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, and recovery-authorization checks passed: 49/49');
