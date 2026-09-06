@@ -20,8 +20,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wallet } from 'lucide-react';
 
-const anyClient = supabase as any;
-
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'نقدي' },
   { value: 'bank_transfer', label: 'تحويل بنكي' },
@@ -80,7 +78,7 @@ export const RecordPaymentDialog = ({
       const value = Number(amount);
       if (!value || value <= 0) throw new Error('أدخل مبلغًا صحيحًا أكبر من صفر');
 
-      const { error } = await anyClient.from('customer_payments').insert({
+      const { error } = await supabase.from('customer_payments').insert({
         organization_id: orgId,
         booking_id: bookingId,
         customer_id: customerId ?? null,
@@ -102,12 +100,13 @@ export const RecordPaymentDialog = ({
       toast({ title: 'تم تسجيل الدفعة بنجاح' });
       queryClient.invalidateQueries({ queryKey: ['workspace-payments'] });
       queryClient.invalidateQueries({ queryKey: ['booking-financial-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-profit-cockpit', bookingId] });
       onSaved?.();
       reset();
       setOpen(false);
     },
-    onError: (e: any) =>
-      toast({ title: 'تعذر تسجيل الدفعة', description: e.message, variant: 'destructive' }),
+    onError: (error) =>
+      toast({ title: 'تعذر تسجيل الدفعة', description: error instanceof Error ? error.message : 'حدث خطأ غير متوقع', variant: 'destructive' }),
   });
 
   return (
@@ -196,7 +195,7 @@ export const RecordPaymentDialog = ({
                 <SelectTrigger><SelectValue placeholder="بدون" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">بدون</SelectItem>
-                  {bankAccounts.map((a: any) => (
+                  {bankAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.account_name} ({a.currency})
                     </SelectItem>

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import BookingFinancialWorkspace from '@/components/bookings/BookingFinancialWorkspace';
 import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
 import RecordPaymentDialog from './RecordPaymentDialog';
+import { BookingProfitCockpit } from './BookingProfitCockpit';
 import type { Workspace } from './types';
 
 
@@ -12,28 +13,37 @@ interface Props {
 
 export const FinancialsTab = ({ workspace }: Props) => {
   const f = workspace.financials;
+  const paymentInvoices = (workspace.invoices as Array<Record<string, unknown>>).map((invoice) => ({
+    id: String(invoice.id),
+    invoice_number: typeof invoice.invoice_number === 'string' ? invoice.invoice_number : null,
+    total_amount: Number(invoice.total_amount ?? invoice.final_amount ?? 0),
+  }));
+  const payments = workspace.payments as Array<{
+    id: string;
+    amount?: number | null;
+    currency?: string | null;
+    created_at: string;
+    status?: string | null;
+  }>;
   return (
     <div className="space-y-4">
+      {workspace.booking?.id && <BookingProfitCockpit bookingId={workspace.booking.id} />}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">ملخص مالي</CardTitle>
+          <CardTitle className="text-base">إجراءات التحصيل</CardTitle>
           {workspace.booking?.id && (
             <RecordPaymentDialog
               bookingId={workspace.booking.id}
               customerId={workspace.booking.customer_id ?? workspace.customer?.id}
               currency={f.currency}
               outstanding={f.outstanding}
-              invoices={workspace.invoices as any[]}
+              invoices={paymentInvoices}
               onSaved={() => workspace.refetch()}
             />
           )}
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <Stat label="إجمالي الفواتير" value={`${f.invoiced.toLocaleString()} ${f.currency}`} />
-          <Stat label="المدفوع" value={`${f.paid.toLocaleString()} ${f.currency}`} tone="positive" />
-          <Stat label="المستحق" value={`${f.outstanding.toLocaleString()} ${f.currency}`} tone={f.outstanding > 0 ? 'negative' : 'default'} />
-          <Stat label="الربح" value={`${f.profit.toLocaleString()} ${f.currency}`} tone={f.profit >= 0 ? 'positive' : 'negative'} />
-        </CardContent>
+        <CardContent className="text-sm text-muted-foreground">سجّل تحصيلًا جديدًا ثم راجع أثره فورًا في تسوية العميل وربحية الحجز.</CardContent>
       </Card>
 
       {workspace.booking?.id && (
@@ -52,7 +62,7 @@ export const FinancialsTab = ({ workspace }: Props) => {
               customerId={workspace.booking.customer_id ?? workspace.customer?.id}
               currency={f.currency}
               outstanding={f.outstanding}
-              invoices={workspace.invoices as any[]}
+              invoices={paymentInvoices}
               onSaved={() => workspace.refetch()}
             />
           )}
@@ -63,7 +73,7 @@ export const FinancialsTab = ({ workspace }: Props) => {
           ) : (
 
             <div className="space-y-2">
-              {workspace.payments.map((p: any) => (
+              {payments.map((p) => (
                 <div key={p.id} className="flex items-center justify-between border rounded-md p-2 text-sm">
                   <div className="flex flex-col">
                     <span className="font-medium">
@@ -85,24 +95,3 @@ export const FinancialsTab = ({ workspace }: Props) => {
     </div>
   );
 };
-
-const Stat = ({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: 'positive' | 'negative' | 'default';
-}) => (
-  <div>
-    <p className="text-xs text-muted-foreground mb-1">{label}</p>
-    <p
-      className={`font-semibold ${
-        tone === 'positive' ? 'text-emerald-600' : tone === 'negative' ? 'text-destructive' : ''
-      }`}
-    >
-      {value}
-    </p>
-  </div>
-);

@@ -132,6 +132,17 @@ const bankReconciliationMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260906013615_bank_reconciliation_engine.sql', import.meta.url),
   'utf8',
 );
+const bookingProfitCockpitMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260906102500_booking_profit_cockpit.sql', import.meta.url),
+  'utf8',
+);
+assert.match(bookingProfitCockpitMigration, /greatest\([\s\S]+total_paid_amount[\s\S]+customer_payment_allocations[\s\S]+v_customer_doc_paid/, 'booking collections must reconcile historical invoice balances with structured allocations');
+assert.match(bookingProfitCockpitMigration, /greatest\([\s\S]+amount_paid[\s\S]+supplier_payment_allocations[\s\S]+v_supplier_doc_paid/, 'supplier settlement must reconcile historical invoice balances with structured allocations');
+assert.match(bookingProfitCockpitMigration, /v_customer_obligation := CASE WHEN v_invoiced > 0 THEN v_invoiced ELSE v_selling END/, 'customer balance must fall back to booking selling price when no invoice exists');
+assert.match(bookingProfitCockpitMigration, /v_net := v_gross - v_expenses - v_commissions/, 'net booking contribution must deduct direct expenses and accrued commissions');
+assert.match(bookingProfitCockpitMigration, /account_code LIKE '4%'[\s\S]+account_code LIKE '5%'[\s\S]+account_code LIKE '6%'/, 'booking ledger comparison must classify revenue, cost of sales, and expenses');
+assert.match(bookingProfitCockpitMigration, /upper\(coalesce\([\s\S]+v_foreign_rows[\s\S]+تم استبعاد/, 'booking profitability must not mix currencies silently');
+assert.match(bookingProfitCockpitMigration, /_can_read_org_finance\(v_booking\.organization_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_booking_profit_cockpit\(uuid\) FROM PUBLIC, anon/, 'booking profitability RPC must enforce organization finance access and deny anonymous execution');
 assert.match(bankReconciliationMigration, /CREATE TABLE IF NOT EXISTS public\.bank_statement_lines[\s\S]+CREATE TABLE IF NOT EXISTS public\.bank_reconciliation_matches/, 'bank statement rows and allocations must remain separate from treasury transactions');
 assert.match(bankReconciliationMigration, /UNIQUE \(bank_account_id, fingerprint\)[\s\S]+ON CONFLICT \(bank_account_id, fingerprint\) DO NOTHING/, 're-imported statement rows must be deduplicated');
 assert.match(bankReconciliationMigration, /match_bank_statement_line[\s\S]+LEAST\(v_line_remaining, v_tx_remaining\)/, 'manual matching must support partial allocations');
@@ -357,4 +368,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, and bank-reconciliation checks passed: 55/55');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, and booking-profit checks passed: 62/62');
