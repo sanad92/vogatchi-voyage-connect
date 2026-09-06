@@ -136,6 +136,16 @@ const bookingProfitCockpitMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260906102500_booking_profit_cockpit.sql', import.meta.url),
   'utf8',
 );
+const executiveKpiMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260906124500_executive_kpi_dashboard.sql', import.meta.url),
+  'utf8',
+);
+assert.match(executiveKpiMigration, /get_booking_profit_cockpit\(b\.id\)[\s\S]+current_metrics AS MATERIALIZED/, 'executive KPIs must reuse the booking profitability source of truth');
+assert.match(executiveKpiMigration, /upper\(coalesce\(nullif\(b\.currency[\s\S]+v_currency/, 'executive KPI totals must isolate the selected currency');
+assert.match(executiveKpiMigration, /v_previous_start[\s\S]+selling_change_pct[\s\S]+net_change_pct/, 'executive KPIs must compare with an equally sized previous period');
+assert.match(executiveKpiMigration, /by_type[\s\S]+by_employee[\s\S]+by_customer[\s\S]+by_supplier/, 'executive KPIs must provide the agreed performance breakdowns');
+assert.match(executiveKpiMigration, /attention_bookings[\s\S]+risk_score[\s\S]+financially_complete/, 'executive KPIs must expose actionable booking drilldowns');
+assert.match(executiveKpiMigration, /_can_read_org_finance\(_org_id\)[\s\S]+REVOKE ALL ON FUNCTION public\.get_executive_kpi_dashboard[\s\S]+FROM PUBLIC, anon/, 'executive KPI RPC must enforce finance access and deny anonymous execution');
 assert.match(bookingProfitCockpitMigration, /greatest\([\s\S]+total_paid_amount[\s\S]+customer_payment_allocations[\s\S]+v_customer_doc_paid/, 'booking collections must reconcile historical invoice balances with structured allocations');
 assert.match(bookingProfitCockpitMigration, /greatest\([\s\S]+amount_paid[\s\S]+supplier_payment_allocations[\s\S]+v_supplier_doc_paid/, 'supplier settlement must reconcile historical invoice balances with structured allocations');
 assert.match(bookingProfitCockpitMigration, /v_customer_obligation := CASE WHEN v_invoiced > 0 THEN v_invoiced ELSE v_selling END/, 'customer balance must fall back to booking selling price when no invoice exists');
@@ -368,4 +378,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, and booking-profit checks passed: 62/62');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, booking-profit, and executive-KPI checks passed: 68/68');
