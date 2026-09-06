@@ -128,6 +128,16 @@ const recoveryAuthorizationMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260906012529_harden_recovery_authorization_guard.sql', import.meta.url),
   'utf8',
 );
+const bankReconciliationMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260906013615_bank_reconciliation_engine.sql', import.meta.url),
+  'utf8',
+);
+assert.match(bankReconciliationMigration, /CREATE TABLE IF NOT EXISTS public\.bank_statement_lines[\s\S]+CREATE TABLE IF NOT EXISTS public\.bank_reconciliation_matches/, 'bank statement rows and allocations must remain separate from treasury transactions');
+assert.match(bankReconciliationMigration, /UNIQUE \(bank_account_id, fingerprint\)[\s\S]+ON CONFLICT \(bank_account_id, fingerprint\) DO NOTHING/, 're-imported statement rows must be deduplicated');
+assert.match(bankReconciliationMigration, /match_bank_statement_line[\s\S]+LEAST\(v_line_remaining, v_tx_remaining\)/, 'manual matching must support partial allocations');
+assert.match(bankReconciliationMigration, /create_bank_reconciliation_adjustment[\s\S]+journal_entry_lines[\s\S]+bank_account_transactions/, 'reconciliation adjustments must create journals and treasury transactions');
+assert.match(bankReconciliationMigration, /approve_bank_reconciliation[\s\S]+v_unresolved > 0[\s\S]+statement_closing_balance - v_book_close/, 'approval must require resolved rows and equal balances');
+assert.match(bankReconciliationMigration, /REVOKE ALL ON public\.bank_reconciliation_sessions, public\.bank_statement_lines, public\.bank_reconciliation_matches FROM PUBLIC, anon, authenticated[\s\S]+GRANT SELECT/, 'authenticated writes must pass through guarded RPCs');
 assert.match(
   recoveryAuthorizationMigration,
   /COALESCE\([\s\S]+get_user_org_role\([\s\S]+false[\s\S]+OR COALESCE\(public\.is_platform_admin\(auth\.uid\(\)\), false\)/,
@@ -347,4 +357,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, and recovery-authorization checks passed: 49/49');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, and bank-reconciliation checks passed: 55/55');

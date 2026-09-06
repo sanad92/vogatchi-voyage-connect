@@ -1,188 +1,63 @@
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useOrgId } from '@/hooks/useOrgId';
+import { useEffect, useState } from 'react';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
+import { CheckCircle2, Download, FileSpreadsheet, Landmark, Link2, Loader2, Plus, Sparkles, Unlink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Landmark, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { BankStatementImportLine, BankStatementLine, BookTransaction, Direction, ReconciliationMatch, useBankReconciliation } from '@/hooks/useBankReconciliation';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
+const fmt=(n:number,c?:string)=>`${new Intl.NumberFormat('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0))}${c?` ${c}`:''}`;
+const today=new Date(), end=today.toISOString().slice(0,10), start=new Date(today.getFullYear(),today.getMonth(),1).toISOString().slice(0,10);
+const labels={draft:'مسودة',in_review:'قيد التسوية',reconciled:'معتمدة',closed:'مغلقة',unmatched:'غير مطابقة',partial:'جزئية',matched:'مطابقة',ignored:'مستبعدة'} as const;
+const message=(e:unknown)=>e instanceof Error?e.message:'حدث خطأ غير متوقع';
+type Row=Record<string,string|number|null>; type MapKey='date'|'valueDate'|'amount'|'debit'|'credit'|'direction'|'description'|'reference'|'externalId'; type Mapping=Record<MapKey,string>;
+const blank:Mapping={date:'',valueDate:'',amount:'',debit:'',credit:'',direction:'',description:'',reference:'',externalId:''};
+const aliases:Record<MapKey,string[]>={date:['date','transaction date','التاريخ','تاريخ الحركة'],valueDate:['value date','تاريخ القيمة'],amount:['amount','value','المبلغ','القيمة'],debit:['debit','withdrawal','مدين','خصم'],credit:['credit','deposit','دائن','إيداع','ايداع'],direction:['direction','type','drcr','نوع الحركة','الاتجاه'],description:['description','details','memo','البيان','الوصف'],reference:['reference','ref','المرجع','رقم المرجع'],externalId:['id','transaction id','معرف الحركة']};
+const norm=(s:string)=>s.toLowerCase().replace(/[-_.]/g,' ').replace(/\s+/g,' ').trim();
+const detect=(headers:string[])=>{const out={...blank};(Object.keys(out) as MapKey[]).forEach(k=>out[k]=headers.find(h=>aliases[k].includes(norm(h)))||'');return out;};
+const val=(r:Row,k:string)=>k?r[k]:null;
+const amount=(v:unknown)=>{const n=Number(String(v??'').replace(/[٬,\s]/g,'').replace(/\((.*)\)/,'-$1').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?Math.abs(n):0;};
+const date=(v:unknown)=>{if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);if(p)return`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;}const s=String(v??'').trim(),a=s.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/),b=s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);if(a)return`${a[1]}-${a[2].padStart(2,'0')}-${a[3].padStart(2,'0')}`;if(b)return`${b[3]}-${b[2].padStart(2,'0')}-${b[1].padStart(2,'0')}`;return'';};
 
-const today = new Date();
-const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-const todayStr = today.toISOString().slice(0, 10);
-
-export default function BankReconciliation() {
-  const orgId = useOrgId();
-  const [accountId, setAccountId] = useState<string>('');
-  const [start, setStart] = useState(firstOfMonth);
-  const [end, setEnd] = useState(todayStr);
-  const [statementBalance, setStatementBalance] = useState<string>('0');
-
-  const accounts = useQuery({
-    queryKey: ['recon-bank-accounts', orgId],
-    enabled: !!orgId,
-    queryFn: async () => {
-      const { data } = await supabase.from('bank_accounts').select('*').eq('organization_id', orgId).eq('is_active', true).order('account_name');
-      return data || [];
-    },
-  });
-
-  const txns = useQuery({
-    queryKey: ['recon-txns', orgId, accountId, start, end],
-    enabled: !!orgId && !!accountId,
-    queryFn: async () => {
-      const q = supabase.from('bank_account_transactions').select('*')
-        .eq('organization_id', orgId)
-        .eq('bank_account_id', accountId);
-      if (start) q.gte('transaction_date', start);
-      if (end) q.lte('transaction_date', end);
-      const { data } = await q.order('transaction_date', { ascending: true });
-      return data || [];
-    },
-  });
-
-  const enriched = useMemo(() => {
-    return (txns.data || []).map((t: any) => {
-      const matched = !!(t.related_invoice_id || t.related_payment_order_id);
-      const isDeposit = ['deposit', 'transfer_in', 'income', 'receipt'].includes((t.transaction_type || '').toLowerCase());
-      const signed = isDeposit ? Number(t.amount) : -Number(t.amount);
-      return { ...t, matched, signed };
-    });
-  }, [txns.data]);
-
-  const totals = useMemo(() => {
-    const rows = enriched;
-    const bookBalance = rows.reduce((s, r) => s + r.signed, 0);
-    const matchedCount = rows.filter(r => r.matched).length;
-    const unmatchedCount = rows.length - matchedCount;
-    const stmt = Number(statementBalance || 0);
-    const diff = stmt - bookBalance;
-    return { bookBalance, matchedCount, unmatchedCount, total: rows.length, stmt, diff };
-  }, [enriched, statementBalance]);
-
-  const selectedAcc = (accounts.data || []).find((a: any) => a.id === accountId);
-
-  const unmatched = enriched.filter(r => !r.matched);
-  const matched = enriched.filter(r => r.matched);
-
-  return (
-    <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Landmark className="h-8 w-8 text-primary" />
-          تسوية الحساب البنكي
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          مقارنة الحركات المسجّلة في النظام مع كشف حساب البنك، وتحديد الفروقات والحركات غير المطابقة.
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-1 md:col-span-2">
-            <Label>الحساب البنكي</Label>
-            <Select value={accountId} onValueChange={setAccountId} disabled={accounts.isLoading}>
-              <SelectTrigger><SelectValue placeholder="اختر الحساب البنكي" /></SelectTrigger>
-              <SelectContent>
-                {(accounts.data || []).map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.account_name} — {a.currency}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1"><Label>من تاريخ</Label><Input type="date" value={start} onChange={e => setStart(e.target.value)} /></div>
-          <div className="space-y-1"><Label>إلى تاريخ</Label><Input type="date" value={end} onChange={e => setEnd(e.target.value)} /></div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>رصيد كشف البنك</Label>
-            <Input type="number" step="0.01" value={statementBalance} onChange={e => setStatementBalance(e.target.value)} placeholder="أدخل الرصيد الختامي من كشف البنك" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {accountId && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI label="الرصيد الدفتري" value={fmt(totals.bookBalance)} sub={selectedAcc?.currency} />
-          <KPI label="رصيد كشف البنك" value={fmt(totals.stmt)} sub={selectedAcc?.currency} />
-          <KPI label="الفرق" value={fmt(totals.diff)} tone={Math.abs(totals.diff) < 0.01 ? 'good' : 'bad'} />
-          <KPI label="مطابق / غير مطابق" value={`${totals.matchedCount} / ${totals.unmatchedCount}`} />
-        </div>
-      )}
-
-      {accountId && (
-        <Tabs defaultValue="unmatched">
-          <TabsList>
-            <TabsTrigger value="unmatched">غير مطابقة ({unmatched.length})</TabsTrigger>
-            <TabsTrigger value="matched">مطابقة ({matched.length})</TabsTrigger>
-            <TabsTrigger value="all">الكل ({enriched.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="unmatched"><TxnTable rows={unmatched} /></TabsContent>
-          <TabsContent value="matched"><TxnTable rows={matched} /></TabsContent>
-          <TabsContent value="all"><TxnTable rows={enriched} /></TabsContent>
-        </Tabs>
-      )}
-    </div>
-  );
+export default function BankReconciliation(){
+ const {toast}=useToast(); const [account,setAccount]=useState(''),[session,setSession]=useState(''),[newOpen,setNewOpen]=useState(false),[importOpen,setImportOpen]=useState(false),[adjustLine,setAdjustLine]=useState<BankStatementLine|null>(null),[targets,setTargets]=useState<Record<string,string>>({});
+ const [form,setForm]=useState({start,end,opening:'0',closing:'0',notes:''}),[adjust,setAdjust]=useState({account:'',description:''}); const r=useBankReconciliation(account,session),w=r.workspace.data, editable=!!w&&!['reconciled','closed'].includes(w.session.status);
+ useEffect(()=>{if(!account&&r.accounts.data?.length)setAccount(r.accounts.data[0].id);},[account,r.accounts.data]);
+ useEffect(()=>{if(!r.sessions.data?.some(x=>x.id===session))setSession(r.sessions.data?.[0]?.id||'');},[r.sessions.data,session]);
+ const run=async(p:Promise<unknown>,ok:string)=>{try{await p;toast({title:ok});}catch(e){toast({title:'تعذر إتمام العملية',description:message(e),variant:'destructive'});}};
+ const create=async()=>{try{const id=await r.createSession.mutateAsync({statementStart:form.start,statementEnd:form.end,openingBalance:Number(form.opening),closingBalance:Number(form.closing),notes:form.notes});setSession(id);setNewOpen(false);toast({title:'تم إنشاء دورة التسوية'});}catch(e){toast({title:'تعذر إنشاء التسوية',description:message(e),variant:'destructive'});}};
+ const match=async(line:BankStatementLine)=>{const id=targets[line.id],tx=w?.book_transactions.find(x=>x.id===id);if(id)await run(r.manualMatch.mutateAsync({lineId:line.id,transactionId:id,amount:Math.min(line.amount-line.matched_amount,tx?.remaining_amount||line.amount)}),'تمت المطابقة اليدوية');};
+ const exportCsv=()=>{if(!w)return;const csv='\uFEFF'+Papa.unparse(w.lines.map(x=>({التاريخ:x.transaction_date,الاتجاه:x.direction==='credit'?'دائن':'مدين',المبلغ:x.amount,المرجع:x.reference||'',البيان:x.description||'',المطابق:x.matched_amount,المتبقي:x.amount-x.matched_amount,الحالة:labels[x.status]}))),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`bank-reconciliation-${w.session.statement_end}.csv`;a.click();URL.revokeObjectURL(url);};
+ const resolved=w?w.summary.matched_count+w.summary.ignored_count:0,progress=w?.summary.line_count?resolved/w.summary.line_count*100:0;
+ return <div className="container mx-auto p-4 md:p-6 space-y-6" dir="rtl">
+  <div className="flex flex-col md:flex-row justify-between gap-3"><div><h1 className="text-3xl font-bold flex gap-2"><Landmark className="h-8 w-8 text-primary"/>التسوية البنكية</h1><p className="text-sm text-muted-foreground">استيراد كشف البنك، المطابقة، ثم الاعتماد والإغلاق.</p></div><div className="flex gap-2"><Button variant="outline" disabled={!w} onClick={exportCsv}><Download className="h-4 w-4 ml-2"/>تصدير</Button><Button disabled={!account} onClick={()=>setNewOpen(true)}><Plus className="h-4 w-4 ml-2"/>دورة جديدة</Button></div></div>
+  <Card><CardContent className="pt-6 grid md:grid-cols-2 gap-4"><Field label="الحساب البنكي"><Select value={account} onValueChange={v=>{setAccount(v);setSession('');}}><SelectTrigger><SelectValue placeholder="اختر الحساب"/></SelectTrigger><SelectContent>{r.accounts.data?.map(x=><SelectItem key={x.id} value={x.id}>{x.account_name} — {x.currency}</SelectItem>)}</SelectContent></Select></Field><Field label="دورة التسوية"><Select value={session} onValueChange={setSession} disabled={!r.sessions.data?.length}><SelectTrigger><SelectValue placeholder="لا توجد دورات"/></SelectTrigger><SelectContent>{r.sessions.data?.map(x=><SelectItem key={x.id} value={x.id}>{x.statement_start} ← {x.statement_end} — {labels[x.status]}</SelectItem>)}</SelectContent></Select></Field></CardContent></Card>
+  {r.workspace.isLoading&&<Loader2 className="h-8 w-8 animate-spin mx-auto my-16"/>}{!r.workspace.isLoading&&account&&!session&&<Empty/>}
+  {w&&<><div className="grid grid-cols-2 lg:grid-cols-5 gap-3"><Kpi l="رصيد الكشف" v={fmt(w.session.statement_closing_balance,w.session.currency)}/><Kpi l="الرصيد الدفتري" v={fmt(w.summary.current_book_closing_balance,w.session.currency)}/><Kpi l="الفرق" v={fmt(w.summary.difference,w.session.currency)} bad={Math.abs(w.summary.difference)>=.01}/><Kpi l="تمت المعالجة" v={`${resolved} / ${w.summary.line_count}`}/><Kpi l="الحالة" v={labels[w.session.status]}/></div>
+   <Card><CardContent className="pt-6 space-y-3"><Progress value={progress}/><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!editable} onClick={()=>setImportOpen(true)}><FileSpreadsheet className="h-4 w-4 ml-2"/>استيراد كشف</Button><Button variant="outline" disabled={!editable||!w.lines.length||r.autoMatch.isPending} onClick={()=>void run(r.autoMatch.mutateAsync(),'اكتملت المطابقة الآلية')}><Sparkles className="h-4 w-4 ml-2"/>مطابقة آلية</Button>{w.session.status==='in_review'&&<Button disabled={w.summary.unresolved_count>0||Math.abs(w.summary.difference)>=.01} onClick={()=>void run(r.approve.mutateAsync(),'تم اعتماد التسوية')}><CheckCircle2 className="h-4 w-4 ml-2"/>اعتماد</Button>}{w.session.status==='reconciled'&&<Button onClick={()=>void run(r.close.mutateAsync(),'تم إغلاق التسوية')}>إغلاق</Button>}</div></CardContent></Card>
+   <Tabs defaultValue="statement"><TabsList><TabsTrigger value="statement">كشف البنك ({w.lines.length})</TabsTrigger><TabsTrigger value="book">حركات النظام ({w.book_transactions.length})</TabsTrigger><TabsTrigger value="matches">المطابقات ({w.matches.length})</TabsTrigger></TabsList><TabsContent value="statement"><Statement lines={w.lines} book={w.book_transactions} editable={editable} targets={targets} setTargets={setTargets} match={match} ignore={x=>void run(r.setIgnored.mutateAsync({lineId:x.id,ignored:x.status!=='ignored',reason:'مستبعد يدوياً'}),x.status==='ignored'?'تم إلغاء الاستبعاد':'تم الاستبعاد')} adjust={x=>{setAdjustLine(x);setAdjust({account:'',description:x.description||'قيد تسوية بنكية'});}}/></TabsContent><TabsContent value="book"><Book rows={w.book_transactions}/></TabsContent><TabsContent value="matches"><Matches rows={w.matches} editable={editable} unmatch={id=>void run(r.unmatch.mutateAsync(id),'تم فك المطابقة')}/></TabsContent></Tabs></>}
+  <Dialog open={newOpen} onOpenChange={setNewOpen}><DialogContent dir="rtl"><DialogHeader><DialogTitle>دورة تسوية جديدة</DialogTitle></DialogHeader><div className="grid grid-cols-2 gap-4"><Field label="من"><Input type="date" value={form.start} onChange={e=>setForm({...form,start:e.target.value})}/></Field><Field label="إلى"><Input type="date" value={form.end} onChange={e=>setForm({...form,end:e.target.value})}/></Field><Field label="رصيد البداية"><Input type="number" value={form.opening} onChange={e=>setForm({...form,opening:e.target.value})}/></Field><Field label="رصيد النهاية"><Input type="number" value={form.closing} onChange={e=>setForm({...form,closing:e.target.value})}/></Field><div className="col-span-2"><Field label="ملاحظات"><Textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></Field></div></div><DialogFooter><Button disabled={!form.start||!form.end||form.start>form.end} onClick={()=>void create()}>إنشاء</Button></DialogFooter></DialogContent></Dialog>
+  <Importer open={importOpen} setOpen={setImportOpen} start={w?.session.statement_start||''} end={w?.session.statement_end||''} loading={r.importLines.isPending} submit={async lines=>{try{const x=await r.importLines.mutateAsync(lines);setImportOpen(false);toast({title:`تم استيراد ${x.inserted} حركة`,description:x.duplicates_skipped?`تم تجاهل ${x.duplicates_skipped} مكررة`:undefined});}catch(e){toast({title:'تعذر الاستيراد',description:message(e),variant:'destructive'});}}}/>
+  <Dialog open={!!adjustLine} onOpenChange={o=>!o&&setAdjustLine(null)}><DialogContent dir="rtl"><DialogHeader><DialogTitle>إنشاء قيد تسوية</DialogTitle></DialogHeader><Field label="الحساب المقابل"><Select value={adjust.account} onValueChange={v=>setAdjust({...adjust,account:v})}><SelectTrigger><SelectValue placeholder="اختر الحساب"/></SelectTrigger><SelectContent>{w?.adjustment_accounts.map(x=><SelectItem key={x.id} value={x.id}>{x.code} — {x.name}</SelectItem>)}</SelectContent></Select></Field><Field label="البيان"><Textarea value={adjust.description} onChange={e=>setAdjust({...adjust,description:e.target.value})}/></Field><DialogFooter><Button disabled={!adjust.account||!adjust.description.trim()} onClick={()=>{if(adjustLine)void run(r.createAdjustment.mutateAsync({lineId:adjustLine.id,counterAccountId:adjust.account,description:adjust.description}),'تم إنشاء قيد التسوية').then(()=>setAdjustLine(null));}}>إنشاء</Button></DialogFooter></DialogContent></Dialog>
+ </div>;
 }
 
-const KPI = ({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'bad' }) => {
-  const color = tone === 'good' ? 'text-green-600' : tone === 'bad' ? 'text-red-600' : '';
-  return (
-    <div className="border rounded-lg p-3 bg-card">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-lg font-bold font-mono ${color}`}>{value} {sub && <span className="text-xs text-muted-foreground">{sub}</span>}</div>
-    </div>
-  );
-};
+function Importer({open,setOpen,start,end,loading,submit}:{open:boolean;setOpen:(v:boolean)=>void;start:string;end:string;loading:boolean;submit:(v:BankStatementImportLine[])=>Promise<void>}){const{toast}=useToast(),[rows,setRows]=useState<Row[]>([]),[headers,setHeaders]=useState<string[]>([]),[map,setMap]=useState<Mapping>(blank),[name,setName]=useState('');const read=async(f?:File)=>{if(!f)return;try{let data:Row[];if(/\.csv$/i.test(f.name)){const p=Papa.parse<Record<string,unknown>>(await f.text(),{header:true,skipEmptyLines:true});if(p.errors.length)throw new Error(p.errors[0].message);data=p.data.map(r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[k,typeof v==='number'?v:String(v??'').trim()])));}else{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});data=XLSX.utils.sheet_to_json<Row>(wb.Sheets[wb.SheetNames[0]],{defval:''});}if(!data.length)throw new Error('الملف فارغ');const h=Object.keys(data[0]);setRows(data);setHeaders(h);setMap(detect(h));setName(f.name);}catch(e){toast({title:'تعذر قراءة الملف',description:message(e),variant:'destructive'});}};const go=async()=>{if(!map.date||(!map.amount&&!map.debit&&!map.credit)){toast({title:'حدد التاريخ والمبلغ',variant:'destructive'});return;}const seen=new Map<string,number>(),lines=rows.map((r,i)=>{const d=date(val(r,map.date)),debit=amount(val(r,map.debit)),credit=amount(val(r,map.credit)),raw=Number(String(val(r,map.amount)??'').replace(/[٬,\s]/g,''))||0,a=credit||debit||Math.abs(raw),word=String(val(r,map.direction)??'').toLowerCase(),direction:Direction=credit?'credit':debit?'debit':/debit|dr|مدين|خصم/.test(word)||raw<0?'debit':'credit',reference=String(val(r,map.reference)??'').trim(),description=String(val(r,map.description)??'').trim(),key=[d,direction,a,reference,description].join('|'),occurrence=(seen.get(key)||0)+1;seen.set(key,occurrence);return{transaction_date:d,value_date:date(val(r,map.valueDate))||undefined,direction,amount:a,reference:reference||undefined,description:description||undefined,external_id:String(val(r,map.externalId)??'').trim()||undefined,occurrence,row_number:i+2,raw_data:r} satisfies BankStatementImportLine;});const bad=lines.find(x=>!x.transaction_date||!x.amount||x.transaction_date<start||x.transaction_date>end);if(bad){toast({title:`راجع الصف ${bad.row_number}`,description:'التاريخ أو المبلغ غير صحيح أو خارج الفترة.',variant:'destructive'});return;}await submit(lines);};return <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl"><DialogHeader><DialogTitle>استيراد كشف CSV أو Excel</DialogTitle></DialogHeader><Input type="file" accept=".csv,.xlsx,.xls" onChange={e=>void read(e.target.files?.[0])}/>{name&&<><p>{name} — {rows.length} حركة</p><div className="grid grid-cols-2 md:grid-cols-3 gap-3">{([['date','التاريخ *'],['valueDate','تاريخ القيمة'],['amount','المبلغ'],['debit','مدين'],['credit','دائن'],['direction','الاتجاه'],['description','البيان'],['reference','المرجع'],['externalId','معرف البنك']] as [MapKey,string][]).map(([k,l])=><Field key={k} label={l}><Select value={map[k]||'__none'} onValueChange={v=>setMap({...map,[k]:v==='__none'?'':v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="__none">غير محدد</SelectItem>{headers.map(h=><SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent></Select></Field>)}</div><p className="text-xs text-muted-foreground">الفترة: {start} إلى {end}. إعادة رفع الملف آمنة؛ المكرر يُتجاهل.</p></>}<DialogFooter><Button disabled={!rows.length||loading} onClick={()=>void go()}>{loading&&<Loader2 className="h-4 w-4 animate-spin ml-2"/>}استيراد</Button></DialogFooter></DialogContent></Dialog>;}
 
-const TxnTable = ({ rows }: { rows: any[] }) => (
-  <Card>
-    <CardHeader><CardTitle className="text-sm">الحركات</CardTitle></CardHeader>
-    <CardContent>
-      {rows.length === 0 ? (
-        <div className="text-center text-muted-foreground py-10 text-sm">لا توجد حركات.</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>التاريخ</TableHead>
-                <TableHead>النوع</TableHead>
-                <TableHead>الوصف</TableHead>
-                <TableHead>المرجع</TableHead>
-                <TableHead className="text-left">المبلغ</TableHead>
-                <TableHead>الحالة</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="whitespace-nowrap text-xs">{r.transaction_date}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-[10px]">{r.transaction_type}</Badge></TableCell>
-                  <TableCell className="text-sm max-w-xs truncate">{r.description || '—'}</TableCell>
-                  <TableCell className="text-xs font-mono">{r.reference_number || '—'}</TableCell>
-                  <TableCell className={`text-left font-mono ${r.signed >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fmt(r.signed)}</TableCell>
-                  <TableCell>
-                    {r.matched ? (
-                      <Badge className="bg-green-500/10 text-green-700 text-[10px]"><CheckCircle2 className="h-3 w-3 ml-1" />مطابق</Badge>
-                    ) : (
-                      <Badge className="bg-amber-500/10 text-amber-700 text-[10px]"><AlertTriangle className="h-3 w-3 ml-1" />غير مطابق</Badge>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
+function Statement({lines,book,editable,targets,setTargets,match,ignore,adjust}:{lines:BankStatementLine[];book:BookTransaction[];editable:boolean;targets:Record<string,string>;setTargets:(v:Record<string,string>)=>void;match:(x:BankStatementLine)=>Promise<void>;ignore:(x:BankStatementLine)=>void;adjust:(x:BankStatementLine)=>void}){return <Card><CardContent className="pt-6 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>التاريخ</TableHead><TableHead>الاتجاه</TableHead><TableHead>البيان</TableHead><TableHead>المبلغ</TableHead><TableHead>المطابق</TableHead><TableHead>الحالة</TableHead><TableHead>الإجراء</TableHead></TableRow></TableHeader><TableBody>{lines.map(x=>{const done=['matched','ignored'].includes(x.status);return <TableRow key={x.id}><TableCell>{x.transaction_date}</TableCell><TableCell><Dir d={x.direction}/></TableCell><TableCell>{x.description||'—'}<small className="block text-muted-foreground">{x.reference||'—'}</small></TableCell><TableCell>{fmt(x.amount,x.currency)}</TableCell><TableCell>{fmt(x.matched_amount)}</TableCell><TableCell><Badge variant="outline">{labels[x.status]}</Badge></TableCell><TableCell>{editable&&!done&&<div className="flex gap-1"><Select value={targets[x.id]||''} onValueChange={v=>setTargets({...targets,[x.id]:v})}><SelectTrigger className="w-40"><SelectValue placeholder="حركة النظام"/></SelectTrigger><SelectContent>{book.filter(t=>t.direction===x.direction&&t.remaining_amount>.005).map(t=><SelectItem key={t.id} value={t.id}>{t.transaction_date} — {fmt(t.remaining_amount)}</SelectItem>)}</SelectContent></Select><Button size="sm" variant="outline" disabled={!targets[x.id]} onClick={()=>void match(x)}><Link2 className="h-4 w-4"/></Button><Button size="sm" variant="outline" onClick={()=>adjust(x)}>قيد</Button><Button size="sm" variant="ghost" onClick={()=>ignore(x)}>استبعاد</Button></div>}{editable&&x.status==='ignored'&&<Button size="sm" variant="ghost" onClick={()=>ignore(x)}>إلغاء الاستبعاد</Button>}</TableCell></TableRow>})}{!lines.length&&<TableRow><TableCell colSpan={7} className="text-center py-10">استورد كشف البنك للبدء.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>;}
+const Book=({rows}:{rows:BookTransaction[]})=><Card><CardContent className="pt-6 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>التاريخ</TableHead><TableHead>الاتجاه</TableHead><TableHead>البيان</TableHead><TableHead>المبلغ</TableHead><TableHead>المطابق</TableHead><TableHead>المتبقي</TableHead></TableRow></TableHeader><TableBody>{rows.map(x=><TableRow key={x.id}><TableCell>{x.transaction_date}</TableCell><TableCell><Dir d={x.direction}/></TableCell><TableCell>{x.description||'—'}</TableCell><TableCell>{fmt(x.amount,x.currency||undefined)}</TableCell><TableCell>{fmt(x.matched_amount)}</TableCell><TableCell>{fmt(x.remaining_amount)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>;
+const Matches=({rows,editable,unmatch}:{rows:ReconciliationMatch[];editable:boolean;unmatch:(id:string)=>void})=><Card><CardContent className="pt-6 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>التاريخ</TableHead><TableHead>النوع</TableHead><TableHead>المرجع</TableHead><TableHead>المبلغ</TableHead><TableHead>الطريقة</TableHead><TableHead/></TableRow></TableHeader><TableBody>{rows.map(x=><TableRow key={x.id}><TableCell>{x.book_date}</TableCell><TableCell>{x.transaction_type}</TableCell><TableCell>{x.book_reference||'—'}</TableCell><TableCell>{fmt(x.matched_amount)}</TableCell><TableCell>{{automatic:'آلية',manual:'يدوية',adjustment:'قيد تسوية'}[x.match_type]}</TableCell><TableCell>{editable&&x.match_type!=='adjustment'&&<Button size="sm" variant="ghost" onClick={()=>unmatch(x.id)}><Unlink className="h-4 w-4 ml-1"/>فك</Button>}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>;
+const Dir=({d}:{d:Direction})=><Badge variant="outline" className={d==='credit'?'text-emerald-700':'text-red-700'}>{d==='credit'?'دائن':'مدين'}</Badge>;
+const Field=({label,children}:{label:string;children:React.ReactNode})=><div className="space-y-1"><Label>{label}</Label>{children}</div>;
+const Kpi=({l,v,bad}:{l:string;v:string;bad?:boolean})=><div className="border rounded-lg p-3"><small className="text-muted-foreground">{l}</small><div className={`font-bold ${bad?'text-red-700':''}`}>{v}</div></div>;
+const Empty=()=> <Card><CardHeader className="items-center text-center py-14"><FileSpreadsheet className="h-10 w-10 text-muted-foreground"/><CardTitle>لا توجد دورة تسوية</CardTitle><p className="text-sm text-muted-foreground">أنشئ دورة وحدد أرصدة كشف البنك.</p></CardHeader></Card>;
