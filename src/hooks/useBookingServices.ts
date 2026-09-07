@@ -35,19 +35,19 @@ export const useBookingServices = (bookingId?: string) =>
         client
           .from('flight_bookings')
           .select(
-            'id, booking_reference, flight_number, supplier_name, departure_date, return_date, total_cost, supplier_cost, currency',
+            'id, booking_reference, flight_number, supplier_name, departure_date, arrival_date, total_cost, supplier_cost, currency',
           )
           .eq('booking_id', bookingId),
         client
           .from('transport_bookings')
           .select(
-            'id, booking_reference, vehicle_type, supplier_name, service_date, total_cost, supplier_cost, currency',
+            'id, booking_reference, pickup_location, dropoff_location, supplier_name, departure_date, arrival_date, total_cost, supplier_cost, currency',
           )
           .eq('booking_id', bookingId),
         client
           .from('car_rentals')
           .select(
-            'id, rental_reference, vehicle_model, supplier_name, pickup_date, return_date, total_rental_cost, supplier_total_cost, currency',
+            'id, rental_reference, vehicle_model, supplier_name, rental_start_date, rental_end_date, total_rental_cost, supplier_total_cost, currency',
           )
           .eq('booking_id', bookingId),
       ]);
@@ -81,7 +81,7 @@ export const useBookingServices = (bookingId?: string) =>
           title: f.flight_number ? `رحلة ${f.flight_number}` : 'حجز طيران',
           supplierName: f.supplier_name,
           dateFrom: f.departure_date,
-          dateTo: f.return_date,
+          dateTo: f.arrival_date,
           selling: num(f.total_cost),
           cost: num(f.supplier_cost),
           currency: f.currency,
@@ -94,10 +94,10 @@ export const useBookingServices = (bookingId?: string) =>
           kind: 'transport',
           id: t.id,
           reference: t.booking_reference || '—',
-          title: t.vehicle_type || 'انتقالات',
+          title: [t.pickup_location, t.dropoff_location].filter(Boolean).join(' ← ') || 'انتقالات',
           supplierName: t.supplier_name,
-          dateFrom: t.service_date,
-          dateTo: null,
+          dateFrom: t.departure_date,
+          dateTo: t.arrival_date,
           selling: num(t.total_cost),
           cost: num(t.supplier_cost),
           currency: t.currency,
@@ -112,8 +112,8 @@ export const useBookingServices = (bookingId?: string) =>
           reference: c.rental_reference || '—',
           title: c.vehicle_model || 'تأجير سيارة',
           supplierName: c.supplier_name,
-          dateFrom: c.pickup_date,
-          dateTo: c.return_date,
+          dateFrom: c.rental_start_date,
+          dateTo: c.rental_end_date,
           selling: num(c.total_rental_cost),
           cost: num(c.supplier_total_cost),
           currency: c.currency,
