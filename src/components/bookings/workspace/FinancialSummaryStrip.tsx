@@ -9,10 +9,17 @@ interface Props {
 const fmt = (n: number, ccy: string) => `${Math.round(n).toLocaleString()} ${ccy}`;
 
 export const FinancialSummaryStrip = ({ bookingId }: Props) => {
-  const { data, isLoading } = useBookingProfitCockpit(bookingId);
+  const { data, isLoading, error } = useBookingProfitCockpit(bookingId);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <Card className="p-4 text-sm text-muted-foreground">جاري حساب المؤشرات المالية...</Card>;
+  }
+  if (error || !data) {
+    return (
+      <Card className="p-4 text-sm text-destructive">
+        تعذر تحميل المؤشرات المالية{error ? `: ${(error as Error).message}` : ''}
+      </Card>
+    );
   }
   const t = data.summary;
   const currency = data.booking.currency;

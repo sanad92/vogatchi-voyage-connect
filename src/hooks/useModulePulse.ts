@@ -78,6 +78,7 @@ export function useModulePulse(rangeKey: PulseRangeKey = '30d') {
       const { data, error } = await (supabase as any).rpc('get_module_pulse', {
         p_from: from,
         p_to: to,
+        p_org: orgId,
       });
       if (error) throw error;
       const raw = (data || {}) as any;

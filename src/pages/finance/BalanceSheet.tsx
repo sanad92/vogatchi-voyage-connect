@@ -125,7 +125,7 @@ function BalanceSection({ title, rows, total, onOpenAccount }: {
         {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد أرصدة في هذا القسم.</p> : <div className="overflow-x-auto"><Table>
           <TableHeader><TableRow><TableHead>الكود</TableHead><TableHead>الحساب</TableHead><TableHead className="text-left">الرصيد</TableHead></TableRow></TableHeader>
           <TableBody>
-            {rows.map((row) => <TableRow key={row.account_id} className={row.is_current_earnings ? '' : 'cursor-pointer hover:bg-muted/60'} onClick={() => openAccount(row)}>
+            {rows.map((row) => <TableRow key={row.account_id} className={row.is_current_earnings ? '' : 'cursor-pointer hover:bg-muted/60'} onClick={() => onOpenAccount(row)}>
               <TableCell className={`font-mono text-xs ${row.is_current_earnings ? '' : 'text-primary'}`}>{row.account_code}</TableCell>
               <TableCell className="font-medium">{row.account_name_ar || row.account_name}{row.is_current_earnings && <Badge variant="outline" className="mr-2 text-[10px]">محسوب تلقائيًا</Badge>}</TableCell>
               <TableCell className={`text-left font-mono ${Number(row.balance) < 0 ? 'text-destructive' : ''}`}>{fmt(row.balance)}</TableCell>

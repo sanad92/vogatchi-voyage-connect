@@ -23,7 +23,7 @@ export function useSupplier360(supplierId?: string) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('bookings')
-        .select('id, booking_reference, customer_name, workflow_stage, total_amount, currency, created_at, travel_date')
+        .select('id, booking_reference:booking_number, customer_name, workflow_stage, total_amount:selling_price, currency, created_at, travel_date:start_date')
         .eq('organization_id', orgId)
         .eq('supplier_id', supplierId)
         .order('created_at', { ascending: false })
