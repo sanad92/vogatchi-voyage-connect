@@ -12969,6 +12969,7 @@ export type Database = {
       }
       can_manage_customers: { Args: never; Returns: boolean }
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
+      can_process_org_payments: { Args: { _org_id: string }; Returns: boolean }
       cancel_commission: {
         Args: { p_commission_id: string; p_reason?: string }
         Returns: boolean
