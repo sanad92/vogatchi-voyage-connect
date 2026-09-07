@@ -1,3 +1,4 @@
+import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -43,6 +44,7 @@ interface UseFlightBookingFormProps {
 }
 
 export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookingFormProps) => {
+  const { withParentBooking, syncParent } = useParentBookingLink();
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<{ id: string; name: string } | null>(null);
@@ -119,11 +121,12 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
 
       const { data: result, error } = await supabase
         .from('flight_bookings')
-        .insert(bookingData)
+        .insert(withParentBooking(bookingData))
         .select('*')
         .single();
 
       if (error) throw error;
+      await syncParent();
       return result;
     },
     onSuccess: (data) => {
