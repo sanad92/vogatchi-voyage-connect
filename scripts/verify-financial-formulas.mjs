@@ -140,6 +140,43 @@ const executiveKpiMigration = fs.readFileSync(
   new URL('../supabase/migrations/20260906124500_executive_kpi_dashboard.sql', import.meta.url),
   'utf8',
 );
+const accountRoutingMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260907170000_company_account_routing.sql', import.meta.url),
+  'utf8',
+);
+const routeAwareCashFlowMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260907170500_route_aware_cash_flow.sql', import.meta.url),
+  'utf8',
+);
+const routeAwareBookingProfitMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260907171000_route_aware_booking_profit.sql', import.meta.url),
+  'utf8',
+);
+assert.match(
+  accountRoutingMigration,
+  /organization_account_routing_catalog[\s\S]+organization_account_routing[\s\S]+fallback_account_code/,
+  'company accounting routes must have a catalog, an organization override, and a documented fallback',
+);
+assert.match(
+  accountRoutingMigration,
+  /set_org_account_route[\s\S]+financial_edit[\s\S]+expected_account_type[\s\S]+organization_id/,
+  'account routing writes must enforce financial-edit access, account type, and company ownership',
+);
+assert.match(
+  accountRoutingMigration,
+  /get_account_id_by_code[\s\S]+get_org_account_route[\s\S]+_resolve_account[\s\S]+get_account_id_by_code/,
+  'journal posting helpers must resolve canonical codes through the company routing map',
+);
+assert.match(
+  routeAwareCashFlowMigration,
+  /get_org_account_route\(_org_id, 'cash'\)[\s\S]+get_org_account_route\(_org_id, 'bank'\)/,
+  'cash-flow reports must follow company-specific cash and bank accounts',
+);
+assert.match(
+  routeAwareBookingProfitMigration,
+  /a\.account_type = 'revenue'[\s\S]+cost_hotel[\s\S]+a\.account_type = 'expense'/,
+  'booking profitability must classify routed revenue, service costs, and operating expenses by account metadata',
+);
 assert.match(executiveKpiMigration, /get_booking_profit_cockpit\(b\.id\)[\s\S]+current_metrics AS MATERIALIZED/, 'executive KPIs must reuse the booking profitability source of truth');
 assert.match(executiveKpiMigration, /upper\(coalesce\(nullif\(b\.currency[\s\S]+v_currency/, 'executive KPI totals must isolate the selected currency');
 assert.match(executiveKpiMigration, /v_previous_start[\s\S]+selling_change_pct[\s\S]+net_change_pct/, 'executive KPIs must compare with an equally sized previous period');
@@ -378,4 +415,4 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, booking-profit, and executive-KPI checks passed: 68/68');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, booking-profit, executive-KPI, and company-account-routing checks passed.');
