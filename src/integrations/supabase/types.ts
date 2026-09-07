@@ -1333,6 +1333,7 @@ export type Database = {
         Row: {
           booking_id: string
           car_type: string | null
+          cost_amount: number
           created_at: string | null
           daily_rate: number | null
           dropoff_date: string | null
@@ -1341,10 +1342,12 @@ export type Database = {
           insurance_included: boolean | null
           pickup_date: string | null
           pickup_location: string | null
+          selling_amount: number
         }
         Insert: {
           booking_id: string
           car_type?: string | null
+          cost_amount?: number
           created_at?: string | null
           daily_rate?: number | null
           dropoff_date?: string | null
@@ -1353,10 +1356,12 @@ export type Database = {
           insurance_included?: boolean | null
           pickup_date?: string | null
           pickup_location?: string | null
+          selling_amount?: number
         }
         Update: {
           booking_id?: string
           car_type?: string | null
+          cost_amount?: number
           created_at?: string | null
           daily_rate?: number | null
           dropoff_date?: string | null
@@ -1365,6 +1370,7 @@ export type Database = {
           insurance_included?: boolean | null
           pickup_date?: string | null
           pickup_location?: string | null
+          selling_amount?: number
         }
         Relationships: [
           {
@@ -1496,6 +1502,7 @@ export type Database = {
           arrival_date: string | null
           arrival_time: string | null
           booking_id: string
+          cost_amount: number
           created_at: string | null
           departure_airport: string | null
           departure_date: string | null
@@ -1508,6 +1515,7 @@ export type Database = {
           passengers_count: number | null
           pnr: string | null
           seat_preferences: string | null
+          selling_amount: number
           taxes_and_fees: number | null
           ticket_number: string | null
           ticket_price_per_person: number | null
@@ -1518,6 +1526,7 @@ export type Database = {
           arrival_date?: string | null
           arrival_time?: string | null
           booking_id: string
+          cost_amount?: number
           created_at?: string | null
           departure_airport?: string | null
           departure_date?: string | null
@@ -1530,6 +1539,7 @@ export type Database = {
           passengers_count?: number | null
           pnr?: string | null
           seat_preferences?: string | null
+          selling_amount?: number
           taxes_and_fees?: number | null
           ticket_number?: string | null
           ticket_price_per_person?: number | null
@@ -1540,6 +1550,7 @@ export type Database = {
           arrival_date?: string | null
           arrival_time?: string | null
           booking_id?: string
+          cost_amount?: number
           created_at?: string | null
           departure_airport?: string | null
           departure_date?: string | null
@@ -1552,6 +1563,7 @@ export type Database = {
           passengers_count?: number | null
           pnr?: string | null
           seat_preferences?: string | null
+          selling_amount?: number
           taxes_and_fees?: number | null
           ticket_number?: string | null
           ticket_price_per_person?: number | null
@@ -1606,6 +1618,7 @@ export type Database = {
           children: number | null
           children_ages: string | null
           city: string | null
+          cost_amount: number
           created_at: string | null
           hotel_name: string | null
           id: string
@@ -1613,6 +1626,7 @@ export type Database = {
           nights: number | null
           room_type: string | null
           rooms: number | null
+          selling_amount: number
           star_rating: number | null
         }
         Insert: {
@@ -1626,6 +1640,7 @@ export type Database = {
           children?: number | null
           children_ages?: string | null
           city?: string | null
+          cost_amount?: number
           created_at?: string | null
           hotel_name?: string | null
           id?: string
@@ -1633,6 +1648,7 @@ export type Database = {
           nights?: number | null
           room_type?: string | null
           rooms?: number | null
+          selling_amount?: number
           star_rating?: number | null
         }
         Update: {
@@ -1646,6 +1662,7 @@ export type Database = {
           children?: number | null
           children_ages?: string | null
           city?: string | null
+          cost_amount?: number
           created_at?: string | null
           hotel_name?: string | null
           id?: string
@@ -1653,6 +1670,7 @@ export type Database = {
           nights?: number | null
           room_type?: string | null
           rooms?: number | null
+          selling_amount?: number
           star_rating?: number | null
         }
         Relationships: [
@@ -1988,32 +2006,38 @@ export type Database = {
       booking_transport_details: {
         Row: {
           booking_id: string
+          cost_amount: number
           created_at: string | null
           dropoff_point: string | null
           id: string
           passengers: number | null
           pickup_point: string | null
           route: string | null
+          selling_amount: number
           vehicle_type: string | null
         }
         Insert: {
           booking_id: string
+          cost_amount?: number
           created_at?: string | null
           dropoff_point?: string | null
           id?: string
           passengers?: number | null
           pickup_point?: string | null
           route?: string | null
+          selling_amount?: number
           vehicle_type?: string | null
         }
         Update: {
           booking_id?: string
+          cost_amount?: number
           created_at?: string | null
           dropoff_point?: string | null
           id?: string
           passengers?: number | null
           pickup_point?: string | null
           route?: string | null
+          selling_amount?: number
           vehicle_type?: string | null
         }
         Relationships: [
@@ -2135,6 +2159,8 @@ export type Database = {
       }
       bookings: {
         Row: {
+          base_cost_price: number | null
+          base_selling_price: number | null
           booking_number: string
           booking_type: string
           cost_price: number | null
@@ -2166,6 +2192,8 @@ export type Database = {
           workflow_stage: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Insert: {
+          base_cost_price?: number | null
+          base_selling_price?: number | null
           booking_number: string
           booking_type: string
           cost_price?: number | null
@@ -2197,6 +2225,8 @@ export type Database = {
           workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Update: {
+          base_cost_price?: number | null
+          base_selling_price?: number | null
           booking_number?: string
           booking_type?: string
           cost_price?: number | null
@@ -14398,6 +14428,7 @@ export type Database = {
       }
       stop_impersonation: { Args: never; Returns: undefined }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
+      sync_booking_financials: { Args: { p_booking_id: string }; Returns: Json }
       sync_operating_bank_outflow: {
         Args: {
           _amount: number
