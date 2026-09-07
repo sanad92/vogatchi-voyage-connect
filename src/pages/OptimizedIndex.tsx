@@ -1,5 +1,6 @@
-import React from 'react';
-import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import React, { useState } from 'react';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -35,8 +36,10 @@ const DashboardSkeleton = () => (
 
 const OptimizedIndex = () => {
   usePageTitle('لوحة التحكم');
-  const { user } = useOptimizedAuth();
-  const { dashboardData, isLoading, error } = useOptimizedDashboard();
+  const [currency, setCurrency] = useState('EGP');
+  const { hasPermission } = useSupabasePermissions();
+  const canViewFinance = hasPermission('financial_view');
+  const { dashboardData, isLoading, error } = useOptimizedDashboard(currency);
 
 
   if (error) {
@@ -74,15 +77,17 @@ const OptimizedIndex = () => {
           <Alert className="border-border/60 bg-muted/40">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              القيم الإجمالية في هذه الصفحة معروضة بالجنيه المصري كمعادل تقريبي.
-              للحصول على أرقام مفصّلة لكل عملة، استخدم صفحة <strong>التقارير المالية المحسّنة</strong>.
+              المؤشرات المالية تخص الحجوزات من بداية السنة حتى اليوم، حسب تاريخ الخدمة.
+              كل مبلغ بعملته المختارة، بدون جمع العملات أو تحويل تقريبي.
+              صافي مساهمة الحجوزات قبل المصروفات العامة للشركة.
             </AlertDescription>
           </Alert>
         </div>
 
-        <div className="animate-in fade-in" style={{ animationDelay: '100ms' }}>
+        {canViewFinance && <div className="animate-in fade-in" style={{ animationDelay: '100ms' }}>
+          <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           <EnhancedStatsCards realStats={realStats} alerts={alerts} today={today} byCurrency={byCurrency} />
-        </div>
+        </div>}
 
         <div className="animate-in fade-in" style={{ animationDelay: '150ms' }}>
           <DataQualityAlertCard />
@@ -104,7 +109,7 @@ const OptimizedIndex = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-in fade-in" style={{ animationDelay: '300ms' }}>
           <div className="xl:col-span-2">
             <OptimizedErrorBoundary>
-              <RevenueChart />
+              {canViewFinance && <RevenueChart currency={currency} />}
             </OptimizedErrorBoundary>
           </div>
           <OptimizedErrorBoundary>

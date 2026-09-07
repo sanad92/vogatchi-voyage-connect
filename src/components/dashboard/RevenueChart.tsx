@@ -4,26 +4,26 @@ import { Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProfitAnalytics } from '@/hooks/useProfitAnalytics';
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, currency = 'EGP' }: { active?: boolean; payload?: Array<{value?: number}>; label?: string; currency?: string }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-xl p-3 shadow-xl" dir="rtl">
       <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
       <p className="text-sm text-primary">
-        الإيرادات: <span className="font-bold">{payload[0]?.value?.toLocaleString()} ج.م</span>
+        الإيرادات: <span className="font-bold">{payload[0]?.value?.toLocaleString()} {currency}</span>
       </p>
       {payload[1] && (
         <p className="text-sm text-green-600">
-          الربح: <span className="font-bold">{payload[1]?.value?.toLocaleString()} ج.م</span>
+          صافي المساهمة: <span className="font-bold">{payload[1]?.value?.toLocaleString()} {currency}</span>
         </p>
       )}
     </div>
   );
 };
 
-const RevenueChart = () => {
+const RevenueChart = ({ currency = 'EGP' }: { currency?: string }) => {
   const currentYear = new Date().getFullYear();
-  const { monthlyProfits, isLoading } = useProfitAnalytics(`${currentYear}-01-01`, `${currentYear}-12-31`);
+  const { monthlyProfits, isLoading } = useProfitAnalytics(`${currentYear}-01-01`, new Date().toISOString().slice(0, 10), currency);
 
   const chartData = monthlyProfits.map(m => ({
     month: m.monthName,
@@ -35,7 +35,7 @@ const RevenueChart = () => {
     <Card className="col-span-full xl:col-span-2 border-border/60 shadow-none rounded-2xl">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold text-foreground">
-          الإيرادات الشهرية
+          الإيرادات الشهرية ({currency})
         </CardTitle>
         <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">{currentYear}</span>
       </CardHeader>
@@ -57,7 +57,7 @@ const RevenueChart = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+                <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
                 <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#revenueGradient)" dot={false} activeDot={{ r: 5, fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>

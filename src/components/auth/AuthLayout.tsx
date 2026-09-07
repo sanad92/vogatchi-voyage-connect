@@ -67,18 +67,18 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           {/* Bottom - Stats */}
           <div className="flex items-center gap-8">
             <div>
-              <div className="text-2xl font-bold">+500</div>
-              <div className="text-xs text-white/60">شركة سياحة</div>
+              <div className="text-xl font-bold">العملاء</div>
+              <div className="text-xs text-white/60">طلبات ومتابعات</div>
             </div>
             <div className="w-px h-10 bg-white/20" />
             <div>
-              <div className="text-2xl font-bold">+50K</div>
-              <div className="text-xs text-white/60">حجز شهرياً</div>
+              <div className="text-xl font-bold">الحجوزات</div>
+              <div className="text-xs text-white/60">خدمات وتشغيل</div>
             </div>
             <div className="w-px h-10 bg-white/20" />
             <div>
-              <div className="text-2xl font-bold">99.9%</div>
-              <div className="text-xs text-white/60">وقت التشغيل</div>
+              <div className="text-xl font-bold">الحسابات</div>
+              <div className="text-xs text-white/60">تحصيل ومستحقات</div>
             </div>
           </div>
         </div>

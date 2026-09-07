@@ -82,10 +82,10 @@ const CurrencyRow = ({ totals, today, checkoutsToday }: { totals: CurrencyTotals
       value: formatNumber(totals.totalRevenue, totals.currency),
       icon: TrendingUp,
       trend: totals.monthlyGrowth,
-      hint: 'مقارنة بالشهر الماضي',
+      hint: 'مقارنة بالفترة السابقة المماثلة',
     },
     {
-      title: `صافي الربح (${totals.currency})`,
+      title: `صافي مساهمة الحجوزات (${totals.currency})`,
       value: formatNumber(totals.netProfit, totals.currency),
       icon: Wallet,
       hint: `هامش ${profitMargin}%`,
@@ -95,7 +95,7 @@ const CurrencyRow = ({ totals, today, checkoutsToday }: { totals: CurrencyTotals
       title: `مستحقات على العملاء (${totals.currency})`,
       value: formatNumber(totals.outstandingAmount, totals.currency),
       icon: AlertCircle,
-      hint: `${totals.outstandingCount} حجز غير مكتمل الدفع`,
+      hint: 'الرصيد حسب المستندات والتسويات المسجلة',
       tone: totals.outstandingAmount > 0 ? 'warning' : 'default',
     },
     {

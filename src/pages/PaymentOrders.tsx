@@ -31,6 +31,8 @@ import {
 } from "@/hooks/finance/useFinanceRpcs";
 import { useOrgId } from "@/hooks/useOrgId";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
+import { paymentOrderBalance, canPayOrder } from "@/lib/paymentOrderBalance";
 
 type Order = {
   id: string;
@@ -46,6 +48,9 @@ type Order = {
   rejection_reason: string | null;
   suppliers?: { name: string } | null;
   bookings?: { booking_number: string } | null;
+  supplier_payment_allocations?: Array<{ amount: number }>;
+  paidAmount: number;
+  remainingAmount: number;
 };
 type TreasuryAccount = { id: string; account_name: string; currency: string };
 const labels: Record<string, string> = {
@@ -54,11 +59,14 @@ const labels: Record<string, string> = {
   rejected: "مرفوض",
   paid: "مدفوع",
   cancelled: "ملغي",
+  partially_paid: "مدفوع جزئيًا",
 };
 
 export default function PaymentOrders() {
   usePageTitle("أوامر دفع الموردين");
   const orgId = useOrgId();
+  const { canProcessPayments } = useSupabasePermissions();
+  const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("all"),
     [search, setSearch] = useState(""),
     [accounts, setAccounts] = useState<Record<string, string>>({});
@@ -72,11 +80,11 @@ export default function PaymentOrders() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_payment_orders")
-        .select("*, suppliers(name), bookings(booking_number)")
+        .select("*, suppliers(name), bookings(booking_number), supplier_payment_allocations(amount)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as Order[];
+      return (data || []).map(order => ({ ...order, ...paymentOrderBalance(order.amount, order.supplier_payment_allocations) })) as unknown as Order[];
     },
   });
   const rows = useMemo(
@@ -101,7 +109,7 @@ export default function PaymentOrders() {
       pending: (query.data || []).filter((r) => r.approval_status === "pending")
         .length,
       approved: (query.data || []).filter(
-        (r) => r.approval_status === "approved" && r.status !== "paid",
+        (r) => canPayOrder(r),
       ).length,
       paid: (query.data || []).filter((r) => r.status === "paid").length,
     }),
@@ -141,6 +149,7 @@ export default function PaymentOrders() {
               <SelectItem value="approved">معتمد</SelectItem>
               <SelectItem value="rejected">مرفوض</SelectItem>
               <SelectItem value="paid">مدفوع</SelectItem>
+              <SelectItem value="partially_paid">مدفوع جزئيًا</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -215,10 +224,11 @@ export default function PaymentOrders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex min-w-64 items-center gap-2">
-                          {r.approval_status === "pending" && (
+                          {canProcessPayments() && r.approval_status === "pending" && r.status !== "cancelled" && (
                             <>
                               <Button
                                 size="sm"
+                                disabled={approve.isPending}
                                 onClick={() =>
                                   approve.mutate({ po_id: r.id, approve: true })
                                 }
@@ -228,6 +238,7 @@ export default function PaymentOrders() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                disabled={approve.isPending}
                                 onClick={() =>
                                   approve.mutate({
                                     po_id: r.id,
@@ -239,8 +250,7 @@ export default function PaymentOrders() {
                               </Button>
                             </>
                           )}
-                          {r.approval_status === "approved" &&
-                            r.status !== "paid" && (
+                          {canProcessPayments() && canPayOrder(r) && (
                               <>
                                 <Select
                                   value={accounts[r.id]}
@@ -263,14 +273,22 @@ export default function PaymentOrders() {
                                       ))}
                                   </SelectContent>
                                 </Select>
+                                {r.currency !== 'EGP' && <Input
+                                  type="number" min="0.000001" step="any"
+                                  aria-label={`سعر صرف ${r.currency} إلى EGP للأمر ${r.reference_number}`}
+                                  placeholder="سعر الصرف إلى EGP"
+                                  value={exchangeRates[r.id] || ''}
+                                  onChange={event => setExchangeRates(previous => ({ ...previous, [r.id]: event.target.value }))}
+                                />}
                                 <Button
                                   size="sm"
-                                  disabled={!accounts[r.id] || pay.isPending}
+                                  disabled={!accounts[r.id] || pay.isPending || (r.currency !== 'EGP' && !(Number(exchangeRates[r.id]) > 0 && Number.isFinite(Number(exchangeRates[r.id]))))}
                                   onClick={() =>
                                     pay.mutate({
                                       po_id: r.id,
-                                      amount: Number(r.amount),
+                                      amount: r.remainingAmount,
                                       currency: r.currency,
+                                      exchange_rate: r.currency === 'EGP' ? 1 : Number(exchangeRates[r.id]),
                                       treasury_account_id: accounts[r.id],
                                       payment_date: new Date()
                                         .toISOString()
@@ -278,7 +296,7 @@ export default function PaymentOrders() {
                                     })
                                   }
                                 >
-                                  صرف
+                                صرف المتبقي ({r.remainingAmount.toLocaleString('ar-EG')} {r.currency})
                                 </Button>
                               </>
                             )}
