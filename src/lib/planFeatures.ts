@@ -94,6 +94,7 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
       '/bank-accounts',
       '/expense-management',
       '/chart-of-accounts',
+      '/account-routing',
       '/journal-entries',
       '/accounting-reports',
       '/cfo-dashboard',
