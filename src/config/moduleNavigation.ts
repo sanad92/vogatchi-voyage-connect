@@ -252,6 +252,7 @@ export const ERP_MODULES: ErpModule[] = [
         description: 'القيود والأستاذ والفترات والقوائم المالية الرسمية.',
         screens: [
           screen({ title: 'دليل الحسابات', href: '/chart-of-accounts', icon: BookOpen, description: 'هيكل الحسابات المحاسبي للمؤسسة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'توجيه الحسابات', href: '/account-routing', icon: GitBranch, description: 'ربط وظائف الترحيل بحسابات الشركة مع بديل افتراضي.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'القيود اليومية', href: '/journal-entries', icon: Receipt, description: 'القيود المرحلة آليًا والقيود اليدوية المعتمدة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'الأستاذ العام', href: '/general-ledger', icon: FileText, description: 'حركات وأرصدة الحسابات حسب الفترة والعملة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'مراكز التكلفة', href: '/cost-centers', icon: GitBranch, description: 'توزيع الإيرادات والمصروفات على مراكز التكلفة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
