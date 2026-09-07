@@ -50,8 +50,8 @@ These have not passed end-to-end and must not be presented as completed:
 3. Multi-service/multi-supplier packages and partial cancellation/refund penalties.
 4. Repeated submissions and concurrent edits with network interruption.
 5. Duplicate import with preview and rollback, exports, and backup restore exercise.
-6. Verify changed UI in preview after code deployment (current browser observations were on the pre-fix deployed UI).
-7. Broader finance read/table policy review: _can_read_org_finance remains membership-based; this change only hardens the three payment mutation entry points.
+6. Walk through the changed roles screen and booking/finance UI in the deployed preview with authenticated test accounts.
+7. Broader finance read/table policy review with isolated accounts; the live `_can_read_org_finance` function now delegates to `financial_view`, but end-to-end row and export checks remain.
 8. Remaining data-quality alerts, missing documents and legacy navigation destinations need independent review.
 
-The latest migration was applied to the live database. Frontend changes are local until separately pushed/published. Existing static suites passing does not substitute for these acceptance gates.
+The latest company-scoped permissions migration is applied to the live database. The frontend changes are pushed to GitHub `main`, synchronized to Lovable commit `d334be7b95a1f83173b97eacdbad46df9b606841`, and the Lovable production build passed. Existing static suites and schema checks do not substitute for the remaining end-to-end acceptance gates.
