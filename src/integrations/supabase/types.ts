@@ -7348,6 +7348,236 @@ export type Database = {
           },
         ]
       }
+      organization_permission_catalog: {
+        Row: {
+          created_at: string
+          default_scope: string
+          is_active: boolean
+          is_sensitive: boolean
+          label_ar: string
+          module: string
+          permission_key: string
+        }
+        Insert: {
+          created_at?: string
+          default_scope?: string
+          is_active?: boolean
+          is_sensitive?: boolean
+          label_ar: string
+          module: string
+          permission_key: string
+        }
+        Update: {
+          created_at?: string
+          default_scope?: string
+          is_active?: boolean
+          is_sensitive?: boolean
+          label_ar?: string
+          module?: string
+          permission_key?: string
+        }
+        Relationships: []
+      }
+      organization_permission_overrides: {
+        Row: {
+          data_scope: string
+          granted: boolean
+          organization_id: string
+          permission_key: string
+          reason: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          data_scope?: string
+          granted: boolean
+          organization_id: string
+          permission_key: string
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          data_scope?: string
+          granted?: boolean
+          organization_id?: string
+          permission_key?: string
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_permission_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_permission_overrides_organization_id_user_id_fkey"
+            columns: ["organization_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_members"
+            referencedColumns: ["organization_id", "user_id"]
+          },
+          {
+            foreignKeyName: "organization_permission_overrides_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "organization_permission_catalog"
+            referencedColumns: ["permission_key"]
+          },
+        ]
+      }
+      organization_permission_role_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          organization_id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          organization_id: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          organization_id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_permission_role_assig_organization_id_user_id_fkey"
+            columns: ["organization_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_members"
+            referencedColumns: ["organization_id", "user_id"]
+          },
+          {
+            foreignKeyName: "organization_permission_role_assig_role_id_organization_id_fkey"
+            columns: ["role_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_permission_roles"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "organization_permission_role_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_permission_role_grants: {
+        Row: {
+          created_at: string
+          data_scope: string
+          granted: boolean
+          id: string
+          organization_id: string
+          permission_key: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_scope?: string
+          granted?: boolean
+          id?: string
+          organization_id: string
+          permission_key: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_scope?: string
+          granted?: boolean
+          id?: string
+          organization_id?: string
+          permission_key?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_permission_role_grant_role_id_organization_id_fkey"
+            columns: ["role_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_permission_roles"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "organization_permission_role_grants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_permission_role_grants_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "organization_permission_catalog"
+            referencedColumns: ["permission_key"]
+          },
+        ]
+      }
+      organization_permission_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          inherits_base_role: boolean
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inherits_base_role?: boolean
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inherits_base_role?: boolean
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_permission_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_salary_settings: {
         Row: {
           created_at: string
@@ -12956,6 +13186,22 @@ export type Database = {
         Returns: Json
       }
       _next_entry_number: { Args: { _org: string }; Returns: string }
+      _org_default_permission: {
+        Args: {
+          _org_id: string
+          _permission: string
+          _role: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      _org_permission_state: {
+        Args: { _org_id: string; _permission: string; _user_id: string }
+        Returns: {
+          data_scope: string
+          granted: boolean
+        }[]
+      }
       _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
       _refresh_bank_statement_line_status: {
         Args: { _line: string }
@@ -13001,6 +13247,15 @@ export type Database = {
       }
       approve_supplier_payment_order: {
         Args: { _approve?: boolean; _po_id: string; _reason?: string }
+        Returns: undefined
+      }
+      assign_org_permission_role: {
+        Args: {
+          _assigned?: boolean
+          _org_id: string
+          _role_id: string
+          _user_id: string
+        }
         Returns: undefined
       }
       audit_historical_gaps: {
@@ -13224,6 +13479,15 @@ export type Database = {
           _description: string
           _entry_date: string
           _lines: Json
+          _org_id: string
+        }
+        Returns: string
+      }
+      create_org_permission_role: {
+        Args: {
+          _description?: string
+          _inherits_base_role?: boolean
+          _name: string
           _org_id: string
         }
         Returns: string
@@ -13753,6 +14017,7 @@ export type Database = {
         Returns: Json
       }
       get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
+      get_org_permission_profile: { Args: { _org_id: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
         Returns: {
@@ -13951,6 +14216,38 @@ export type Database = {
       list_bank_reconciliation_sessions: {
         Args: { _bank_account?: string; _org: string }
         Returns: Json
+      }
+      list_org_permission_catalog: {
+        Args: never
+        Returns: {
+          default_scope: string
+          is_sensitive: boolean
+          label_ar: string
+          module: string
+          permission_key: string
+        }[]
+      }
+      list_org_permission_members: {
+        Args: { _org_id: string }
+        Returns: {
+          assigned_role_ids: Json
+          base_role: string
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
+      list_org_permission_roles: {
+        Args: { _org_id: string }
+        Returns: {
+          assigned_user_count: number
+          description: string
+          grants: Json
+          id: string
+          inherits_base_role: boolean
+          is_active: boolean
+          name: string
+        }[]
       }
       log_admin_action: {
         Args: {
@@ -14213,6 +14510,27 @@ export type Database = {
       set_customer_archived: {
         Args: { _archived: boolean; _customer_id: string; _org_id: string }
         Returns: Json
+      }
+      set_org_permission_grant: {
+        Args: {
+          _data_scope?: string
+          _granted: boolean
+          _org_id: string
+          _permission_key: string
+          _role_id: string
+        }
+        Returns: undefined
+      }
+      set_org_permission_override: {
+        Args: {
+          _data_scope?: string
+          _granted: boolean
+          _org_id: string
+          _permission_key: string
+          _reason?: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       set_org_pin: {
         Args: { _org_id: string; _pin: string }
