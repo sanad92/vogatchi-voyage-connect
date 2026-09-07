@@ -2411,6 +2411,7 @@ export type Database = {
           additional_fees: number | null
           booking_agent_id: string | null
           booking_agent_name: string | null
+          booking_id: string | null
           contract_sent: boolean | null
           contract_sent_date: string | null
           created_at: string | null
@@ -2474,6 +2475,7 @@ export type Database = {
           additional_fees?: number | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
+          booking_id?: string | null
           contract_sent?: boolean | null
           contract_sent_date?: string | null
           created_at?: string | null
@@ -2537,6 +2539,7 @@ export type Database = {
           additional_fees?: number | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
+          booking_id?: string | null
           contract_sent?: boolean | null
           contract_sent_date?: string | null
           created_at?: string | null
@@ -2595,6 +2598,41 @@ export type Database = {
           vehicle_year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "car_rentals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "car_rentals_customer_id_fkey"
             columns: ["customer_id"]
@@ -5149,6 +5187,7 @@ export type Database = {
           booking_agent_id: string | null
           booking_agent_name: string | null
           booking_date: string | null
+          booking_id: string | null
           booking_reference: string
           confirmation_number: string | null
           created_at: string | null
@@ -5205,6 +5244,7 @@ export type Database = {
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
+          booking_id?: string | null
           booking_reference?: string
           confirmation_number?: string | null
           created_at?: string | null
@@ -5261,6 +5301,7 @@ export type Database = {
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
+          booking_id?: string | null
           booking_reference?: string
           confirmation_number?: string | null
           created_at?: string | null
@@ -5320,6 +5361,41 @@ export type Database = {
             columns: ["arrival_airport_id"]
             isOneToOne: false
             referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
             referencedColumns: ["id"]
           },
           {
@@ -5745,6 +5821,7 @@ export type Database = {
           booking_agent_id: string | null
           booking_agent_name: string | null
           booking_date: string | null
+          booking_id: string | null
           booking_reference_supplier: string | null
           booking_source: string | null
           cancellation_policy: string | null
@@ -5801,6 +5878,7 @@ export type Database = {
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
+          booking_id?: string | null
           booking_reference_supplier?: string | null
           booking_source?: string | null
           cancellation_policy?: string | null
@@ -5857,6 +5935,7 @@ export type Database = {
           booking_agent_id?: string | null
           booking_agent_name?: string | null
           booking_date?: string | null
+          booking_id?: string | null
           booking_reference_supplier?: string | null
           booking_source?: string | null
           cancellation_policy?: string | null
@@ -5907,6 +5986,41 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hotel_bookings_customer_id_fkey"
             columns: ["customer_id"]
@@ -10577,6 +10691,7 @@ export type Database = {
           arrival_time: string | null
           booking_agent_id: string | null
           booking_agent_name: string | null
+          booking_id: string | null
           booking_reference: string
           cost_per_trip: number | null
           created_at: string | null
@@ -10626,6 +10741,7 @@ export type Database = {
           arrival_time?: string | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
+          booking_id?: string | null
           booking_reference?: string
           cost_per_trip?: number | null
           created_at?: string | null
@@ -10675,6 +10791,7 @@ export type Database = {
           arrival_time?: string | null
           booking_agent_id?: string | null
           booking_agent_name?: string | null
+          booking_id?: string | null
           booking_reference?: string
           cost_per_trip?: number | null
           created_at?: string | null
@@ -10719,6 +10836,41 @@ export type Database = {
           voucher_sent_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "transport_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transport_bookings_customer_id_fkey"
             columns: ["customer_id"]
