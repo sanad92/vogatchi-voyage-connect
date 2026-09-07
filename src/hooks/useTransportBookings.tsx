@@ -8,6 +8,7 @@ import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 export const useTransportBookings = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
+  const { withParentBooking, syncParent } = useParentBookingLink();
 
   const { data: transportData, isLoading: bookingsLoading, refetch } = useQuery({
     queryKey: ['transport-bookings-unified', orgId],

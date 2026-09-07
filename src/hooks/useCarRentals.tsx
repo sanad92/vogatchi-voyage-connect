@@ -9,6 +9,7 @@ import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 export const useCarRentals = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
+  const { withParentBooking, syncParent } = useParentBookingLink();
 
   const { data, isLoading: rentalsLoading } = useQuery({
     queryKey: ['car-rentals-unified', orgId],
