@@ -11,6 +11,8 @@ interface Props {
 export const ItineraryTab = ({ workspace }: Props) => {
   const navigate = useNavigate();
   const it = workspace.itinerary;
+  const bookingId = (workspace as any).booking?.id;
+  const withBooking = (path: string) => (bookingId ? `${path}?booking_id=${bookingId}` : path);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
