@@ -11,6 +11,8 @@ interface Props {
 export const ItineraryTab = ({ workspace }: Props) => {
   const navigate = useNavigate();
   const it = workspace.itinerary;
+  const bookingId = (workspace as any).booking?.id;
+  const withBooking = (path: string) => (bookingId ? `${path}?booking_id=${bookingId}` : path);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -18,7 +20,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
         title="الفندق"
         icon={<Hotel className="h-4 w-4" />}
         empty="لا توجد تفاصيل فندق"
-        onAdd={() => navigate('/hotels/new')}
+        onAdd={() => navigate(withBooking('/new-hotel-booking'))}
         data={it?.hotel}
         labels={{
           hotel_name: 'اسم الفندق',
@@ -34,7 +36,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
         title="الطيران"
         icon={<Plane className="h-4 w-4" />}
         empty="لا توجد تفاصيل طيران"
-        onAdd={() => navigate('/flights/new')}
+        onAdd={() => navigate(withBooking('/new-flight-booking'))}
         data={it?.flight}
         labels={{
           airline: 'شركة الطيران',
@@ -51,7 +53,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
         title="النقل"
         icon={<Truck className="h-4 w-4" />}
         empty="لا يوجد نقل"
-        onAdd={() => navigate('/transport/new')}
+        onAdd={() => navigate(withBooking('/transport-bookings'))}
         data={it?.transport}
         labels={{
           vehicle_type: 'المركبة',
