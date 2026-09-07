@@ -645,6 +645,66 @@ export type Database = {
           },
         ]
       }
+      bank_account_baseline_audit: {
+        Row: {
+          action: string
+          bank_account_id: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_balance: number | null
+          new_balance_date: string | null
+          note: string | null
+          old_balance: number | null
+          old_balance_date: string | null
+          organization_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          bank_account_id: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_balance?: number | null
+          new_balance_date?: string | null
+          note?: string | null
+          old_balance?: number | null
+          old_balance_date?: string | null
+          organization_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          bank_account_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_balance?: number | null
+          new_balance_date?: string | null
+          note?: string | null
+          old_balance?: number | null
+          old_balance_date?: string | null
+          organization_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_account_baseline_audit_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_account_baseline_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_account_transactions: {
         Row: {
           amount: number
@@ -726,6 +786,11 @@ export type Database = {
           id: string
           is_active: boolean | null
           notes: string | null
+          opening_balance: number | null
+          opening_balance_date: string | null
+          opening_balance_note: string | null
+          opening_balance_set_at: string | null
+          opening_balance_set_by: string | null
           organization_id: string | null
           treasury_kind: string
           updated_at: string | null
@@ -741,6 +806,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           notes?: string | null
+          opening_balance?: number | null
+          opening_balance_date?: string | null
+          opening_balance_note?: string | null
+          opening_balance_set_at?: string | null
+          opening_balance_set_by?: string | null
           organization_id?: string | null
           treasury_kind?: string
           updated_at?: string | null
@@ -756,6 +826,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           notes?: string | null
+          opening_balance?: number | null
+          opening_balance_date?: string | null
+          opening_balance_note?: string | null
+          opening_balance_set_at?: string | null
+          opening_balance_set_by?: string | null
           organization_id?: string | null
           treasury_kind?: string
           updated_at?: string | null
@@ -13254,11 +13329,13 @@ export type Database = {
       }
     }
     Functions: {
+      _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }
         Returns: number
       }
       _bank_transaction_is_credit: { Args: { _type: string }; Returns: boolean }
+      _can_manage_bank_baseline: { Args: { _org: string }; Returns: boolean }
       _can_manage_bank_reconciliation: {
         Args: { _org: string }
         Returns: boolean
@@ -13789,6 +13866,7 @@ export type Database = {
           is_current_earnings: boolean
         }[]
       }
+      get_bank_account_baseline: { Args: { _account: string }; Returns: Json }
       get_bank_reconciliation_workspace: {
         Args: { _session: string }
         Returns: Json
@@ -14626,6 +14704,17 @@ export type Database = {
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
         Returns: undefined
+      }
+      set_bank_account_opening_baseline: {
+        Args: {
+          _account: string
+          _balance: number
+          _balance_date: string
+          _force_correction?: boolean
+          _note: string
+          _reason?: string
+        }
+        Returns: Json
       }
       set_bank_statement_line_ignored: {
         Args: { _ignored: boolean; _line: string; _reason?: string }
