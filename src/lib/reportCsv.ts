@@ -1,7 +1,11 @@
+// Plain numbers (including negatives like -1500.00) must stay numeric in Excel.
+const isNumericValue = (value: string) => /^-?\d+(\.\d+)?$/.test(value.trim());
+
 const protectSpreadsheetCell = (value: string) =>
-  /^[=+\-@]/.test(value) ? `'${value}` : value;
+  !isNumericValue(value) && /^[=+\-@]/.test(value) ? `'${value}` : value;
 
 const csvCell = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   const raw = protectSpreadsheetCell(String(value ?? ''));
   return `"${raw.replace(/"/g, '""')}"`;
 };
