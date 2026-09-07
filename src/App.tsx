@@ -172,6 +172,7 @@ const BalanceSheet = lazy(() => import("@/pages/finance/BalanceSheet"));
 const CustomerAging = lazy(() => import("@/pages/finance/CustomerAging"));
 const SupplierAging = lazy(() => import("@/pages/finance/SupplierAging"));
 const HistoricalRecoveryCenter = lazy(() => import("@/pages/finance/HistoricalRecoveryCenter"));
+const AccountRoutingPage = lazy(() => import("@/pages/finance/AccountRoutingPage"));
 
 // Phase 7 - SaaS Core & Enterprise
 const OrganizationCenter = lazy(() => import("@/pages/organization/OrganizationCenter"));
@@ -387,6 +388,7 @@ function App() {
                               <Route path="/sop/compliance" element={<PermissionRouteGuard requiredPermission="reports_view"><SopCompliance /></PermissionRouteGuard>} />
                               <Route path="/erp-dashboard" element={<Navigate to="/cfo-dashboard" replace />} />
                               <Route path="/chart-of-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><ChartOfAccountsPage /></PermissionRouteGuard>} />
+                              <Route path="/account-routing" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountRoutingPage /></PermissionRouteGuard>} />
                               <Route path="/journal-entries" element={<PermissionRouteGuard requiredPermission="financial_view"><JournalEntriesPage /></PermissionRouteGuard>} />
                               <Route path="/accounting-reports" element={<PermissionRouteGuard requiredPermission="financial_view"><AccountingReportsPage /></PermissionRouteGuard>} />
                               <Route path="/cfo-dashboard" element={<PermissionRouteGuard requiredPermission="financial_view"><CFODashboard /></PermissionRouteGuard>} />
