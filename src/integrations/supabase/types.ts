@@ -13566,7 +13566,7 @@ export type Database = {
       }
       get_incomplete_records: { Args: { _org_id: string }; Returns: Json }
       get_module_pulse: {
-        Args: { p_from?: string; p_to?: string }
+        Args: { p_from: string; p_org?: string; p_to: string }
         Returns: Json
       }
       get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
