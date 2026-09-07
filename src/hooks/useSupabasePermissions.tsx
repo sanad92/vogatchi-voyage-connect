@@ -9,6 +9,14 @@ import {
   hasPermissionForRole,
   type PermissionKey,
 } from '@/lib/accessControl';
+import {
+  companyPermissionGranted,
+  companyPermissionScope,
+  normalizeCompanyPermissionProfile,
+  type PermissionDataScope,
+  type CompanyPermissionProfile,
+} from '@/lib/companyPermissions';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 export type { PermissionKey } from '@/lib/accessControl';
 
@@ -37,15 +45,54 @@ export const useSupabasePermissions = () => {
     staleTime: 30_000,
   });
 
+  const {
+    data: companyPermissionProfile = null,
+    isLoading: companyPermissionsLoading,
+    isError: companyPermissionsFailed,
+    error: companyPermissionsError,
+  } = useQuery<CompanyPermissionProfile | null>({
+    queryKey: ['my-company-permission-profile', orgId, user?.id],
+    queryFn: async () => {
+      if (!orgId || !user?.id) return null;
+      const { data, error } = await callUntypedRpc<unknown>('get_org_permission_profile', {
+        _org_id: orgId,
+      });
+      if (error) throw error;
+      return normalizeCompanyPermissionProfile(data);
+    },
+    enabled: Boolean(orgId && user?.id && !organizationLoading),
+    staleTime: 30_000,
+  });
+
   const permissionDepartments = useMemo(
     () => (userRole === 'agent' ? departments : []),
     [departments, userRole],
   );
 
+  // During rollout, an older database may not have the new RPC yet. In that
+  // narrow case keep the legacy role/department resolver until the migration
+  // is applied; all other profile errors fail closed.
+  const profileErrorMessage = companyPermissionsError instanceof Error
+    ? companyPermissionsError.message
+    : typeof companyPermissionsError === 'object' && companyPermissionsError !== null && 'message' in companyPermissionsError
+      ? String((companyPermissionsError as { message?: unknown }).message ?? '')
+      : '';
+  const profileFunctionMissing = companyPermissionsFailed && /42883|does not exist|Could not find the function/i.test(profileErrorMessage);
   const permissionsUnavailable = !user || !orgId || organizationLoading ||
-    (userRole === 'agent' && (departmentsLoading || departmentsFailed));
-  const hasPermission = (permission: PermissionKey): boolean =>
-    !permissionsUnavailable && hasPermissionForRole(userRole, permissionDepartments, permission);
+    (userRole === 'agent' && (departmentsLoading || departmentsFailed)) ||
+    (companyPermissionsLoading && !profileFunctionMissing) ||
+    (companyPermissionsFailed && !profileFunctionMissing);
+
+  const hasPermission = (permission: PermissionKey): boolean => {
+    if (permissionsUnavailable) return false;
+    const companyDecision = companyPermissionGranted(companyPermissionProfile, permission);
+    return companyDecision ?? hasPermissionForRole(userRole, permissionDepartments, permission);
+  };
+
+  const getPermissionScope = (permission: PermissionKey): PermissionDataScope => {
+    if (companyPermissionProfile) return companyPermissionScope(companyPermissionProfile, permission);
+    return hasPermission(permission) ? 'organization' : 'none';
+  };
 
   const hasAnyPermission = (permissions: PermissionKey[]): boolean =>
     permissions.some(hasPermission);
@@ -57,6 +104,7 @@ export const useSupabasePermissions = () => {
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
+    getPermissionScope,
     userRole,
     departments: permissionDepartments,
     loading: organizationLoading || (userRole === 'agent' && departmentsLoading),
