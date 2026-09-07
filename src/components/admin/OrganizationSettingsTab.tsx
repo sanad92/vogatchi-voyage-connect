@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
-import { supabase } from '@/integrations/supabase/client';
+
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 import { Building2, Palette, Phone, Save, Upload, Loader2 } from 'lucide-react';
