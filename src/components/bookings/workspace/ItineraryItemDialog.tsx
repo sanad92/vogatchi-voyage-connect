@@ -269,7 +269,7 @@ export const ItineraryItemDialog = ({
         <div className="grid gap-3 md:grid-cols-2 border-t pt-4">
           <div className="space-y-1">
             <Label htmlFor="add_selling" className="text-xs">
-              إضافة لسعر البيع للعميل ({currency})
+              سعر بيع هذه الخدمة للعميل ({currency})
             </Label>
             <Input
               id="add_selling"
@@ -282,7 +282,7 @@ export const ItineraryItemDialog = ({
           </div>
           <div className="space-y-1">
             <Label htmlFor="add_cost" className="text-xs">
-              إضافة لتكلفة المورد ({currency})
+              تكلفة هذه الخدمة من المورد ({currency})
             </Label>
             <Input
               id="add_cost"
@@ -294,8 +294,9 @@ export const ItineraryItemDialog = ({
             />
           </div>
           <p className="md:col-span-2 text-xs text-muted-foreground">
-            اتركها فارغة إذا كانت الأسعار مسجلة بالفعل على الحجز.
+            يُضاف المبلغ كبند مستقل في فاتورة العميل ويُحدَّث إجمالي الحجز والربحية والقيود تلقائيًا.
           </p>
+
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
