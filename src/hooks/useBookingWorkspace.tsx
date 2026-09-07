@@ -161,22 +161,14 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     queryKey: ['workspace-payments', bookingId, customerId],
     enabled: !!bookingId,
     queryFn: async () => {
-      const [legacy, customerPays] = await Promise.all([
-        anyClient
-          .from('payment_transactions')
-          .select('*')
-          .or(`booking_id.eq.${bookingId}${customerId ? `,customer_id.eq.${customerId}` : ''}`)
-          .order('created_at', { ascending: false }),
-        anyClient
-          .from('customer_payments')
-          .select('*')
-          .eq('booking_id', bookingId)
-          .order('created_at', { ascending: false }),
-      ]);
-      const rows = [
-        ...((customerPays.data ?? []) as any[]).map((p) => ({ ...p, source: 'customer_payment' })),
-        ...((legacy.data ?? []) as any[]).map((p) => ({ ...p, source: 'payment_transaction' })),
-      ];
+      // payment_transactions is subscription/Paymob-only (no booking_id/customer_id),
+      // so booking payments come from customer_payments.
+      const customerPays = await anyClient
+        .from('customer_payments')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: false });
+      const rows = ((customerPays.data ?? []) as any[]).map((p) => ({ ...p, source: 'customer_payment' }));
       return rows.sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
