@@ -180,28 +180,39 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   const switchOrganization = async (orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
     if (!org || !user?.id) return;
-
-    setCurrentOrganization(org);
-    localStorage.setItem(`current_org_${user.id}`, orgId);
-
-    // Fetch role for the new org
-    const { data: membership } = await supabase
-      .from('organization_members')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('organization_id', orgId)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    const role = membership?.role || 'viewer';
-    setLocalOrgRole(role);
-    setOrgRole(role); // Sync to auth context
+    const targetUserId = user.id;
+    const requestId = ++requestIdRef.current;
+    // Never combine the next company's ID with the previous company's role.
+    setLoading(true);
+    setCurrentOrganization(null);
+    setLocalOrgRole(null);
+    setOrgRole(null);
+    try {
+      const { data: membership, error } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', targetUserId)
+        .eq('organization_id', orgId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (requestId !== requestIdRef.current) return;
+      if (error || !membership) return;
+      setCurrentOrganization(org);
+      setLocalOrgRole(membership.role);
+      setOrgRole(membership.role);
+      setLoadedForUserId(targetUserId);
+      localStorage.setItem(`current_org_${targetUserId}`, orgId);
+    } catch (error) {
+      console.error('Unable to switch organization:', error);
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
+    }
   };
 
   const value: OrganizationContextType = {
     currentOrganization,
-    organizationId: currentOrganization?.id || null,
-    orgRole,
+    organizationId: hasOrganization && !effectiveLoading ? currentOrganization?.id || null : null,
+    orgRole: hasOrganization && !effectiveLoading ? orgRole : null,
     organizations,
     loading: effectiveLoading,
     hasOrganization,

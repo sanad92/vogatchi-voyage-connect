@@ -13,7 +13,8 @@
     "test:finance": "node scripts/verify-financial-formulas.mjs",
     "test:navigation": "node scripts/verify-module-navigation.mjs",
     "test:backlog": "node scripts/verify-remaining-backlog.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:company-core": "node scripts/verify-company-core.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5",

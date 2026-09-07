@@ -8,7 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Plus, BookOpen, Search } from 'lucide-react';
+import { Plus, BookOpen, Search, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { accountHierarchy } from '@/lib/accountHierarchy';
 
 const TYPE_LABELS: Record<AccountType, { ar: string; color: string }> = {
   asset: { ar: 'أصول', color: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
@@ -19,7 +22,8 @@ const TYPE_LABELS: Record<AccountType, { ar: string; color: string }> = {
 };
 
 export default function ChartOfAccountsPage() {
-  const { accounts, isLoading, createAccount } = useChartOfAccounts();
+  const { accounts, isLoading, error, refetch, createAccount } = useChartOfAccounts();
+  const { hasPermission } = usePermissionCheck();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [open, setOpen] = useState(false);
@@ -28,28 +32,23 @@ export default function ChartOfAccountsPage() {
     account_name: '',
     account_name_ar: '',
     account_type: 'asset' as AccountType,
+    parent_id: 'none',
   });
 
-  const filtered = useMemo(() => {
-    return accounts.filter((a) => {
-      const matchSearch = !search || 
-        a.account_code.includes(search) ||
-        a.account_name.toLowerCase().includes(search.toLowerCase()) ||
-        (a.account_name_ar || '').includes(search);
-      const matchType = filterType === 'all' || a.account_type === filterType;
-      return matchSearch && matchType;
-    });
-  }, [accounts, search, filterType]);
+  const filtered = useMemo(() => accountHierarchy(accounts, search, filterType), [accounts, search, filterType]);
 
-  const handleCreate = async () => {
-    if (!form.account_code || !form.account_name) return;
-    await createAccount.mutateAsync(form);
-    setOpen(false);
-    setForm({ account_code: '', account_name: '', account_name_ar: '', account_type: 'asset' });
+  const handleCreate = () => {
+    if (!form.account_code.trim() || !form.account_name.trim()) return;
+    createAccount.mutate({ ...form, parent_id: form.parent_id === 'none' ? null : form.parent_id }, {
+      onSuccess: () => {
+        setOpen(false);
+        setForm({ account_code: '', account_name: '', account_name_ar: '', account_type: 'asset', parent_id: 'none' });
+      },
+    });
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -58,7 +57,7 @@ export default function ChartOfAccountsPage() {
           </h1>
           <p className="text-muted-foreground mt-1">دليل الحسابات المحاسبية للمؤسسة</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        {hasPermission('financial_edit') && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />إضافة حساب</Button>
           </DialogTrigger>
@@ -79,7 +78,7 @@ export default function ChartOfAccountsPage() {
               </div>
               <div>
                 <Label>نوع الحساب</Label>
-                <Select value={form.account_type} onValueChange={(v) => setForm({ ...form, account_type: v as AccountType })}>
+                <Select value={form.account_type} onValueChange={(v) => setForm({ ...form, account_type: v as AccountType, parent_id: 'none' })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(TYPE_LABELS).map(([k, v]) => (
@@ -88,10 +87,22 @@ export default function ChartOfAccountsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleCreate} disabled={createAccount.isPending} className="w-full">حفظ</Button>
+              <div>
+                <Label>الحساب الرئيسي</Label>
+                <Select value={form.parent_id} onValueChange={(parent_id) => setForm({ ...form, parent_id })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">حساب مستقل</SelectItem>
+                    {accounts.filter(account => account.is_active && account.account_type === form.account_type).map(account => (
+                      <SelectItem key={account.id} value={account.id}>{account.account_code} — {account.account_name_ar || account.account_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleCreate} disabled={createAccount.isPending || !form.account_code.trim() || !form.account_name.trim() || !!error} className="w-full">حفظ</Button>
             </div>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <Card>
@@ -115,6 +126,11 @@ export default function ChartOfAccountsPage() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">جارٍ التحميل...</div>
+          ) : error ? (
+            <div role="alert" className="text-center py-8 space-y-3">
+              <p className="text-destructive">تعذر تحميل دليل الحسابات. لا يمكن تأكيد بياناته حاليًا.</p>
+              <Button variant="outline" onClick={() => refetch()}>إعادة المحاولة</Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -122,25 +138,27 @@ export default function ChartOfAccountsPage() {
                   <TableHead>الكود</TableHead>
                   <TableHead>الاسم</TableHead>
                   <TableHead>النوع</TableHead>
-                  <TableHead>النظام</TableHead>
+                  <TableHead>النظام</TableHead><TableHead>دفتر الأستاذ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((a) => (
+                {filtered.map(({ account: a, depth, invalidParent }) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-mono">{a.account_code}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{a.account_name_ar || a.account_name}</div>
+                      <div className="font-medium" style={{ paddingInlineStart: `${Math.min(depth, 12) * 16}px` }}>{depth > 0 && '↳ '}{a.account_name_ar || a.account_name}</div>
+                      {invalidParent && <p className="text-xs text-amber-700">ربط الحساب الرئيسي يحتاج مراجعة</p>}
                       {a.account_name_ar && <div className="text-xs text-muted-foreground">{a.account_name}</div>}
                     </TableCell>
                     <TableCell>
                       <Badge className={TYPE_LABELS[a.account_type].color}>{TYPE_LABELS[a.account_type].ar}</Badge>
                     </TableCell>
                     <TableCell>{a.is_system && <Badge variant="outline">افتراضي</Badge>}</TableCell>
+                    <TableCell><Link className="inline-flex items-center gap-1 text-primary hover:underline" to={`/general-ledger?account=${a.id}`} aria-label={`حركات ${a.account_name_ar || a.account_name}`}>الحركات <ExternalLink className="h-3 w-3" /></Link></TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">لا توجد حسابات</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{accounts.length ? 'لا توجد حسابات تطابق البحث' : 'لم تُجهّز حسابات الشركة بعد'}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

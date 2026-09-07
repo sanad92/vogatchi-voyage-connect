@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { SopDepartment } from '@/lib/sop';
 import {
@@ -14,10 +15,12 @@ export type { PermissionKey } from '@/lib/accessControl';
 export const useSupabasePermissions = () => {
   const { user, userRole } = useOptimizedAuth();
   const orgId = useOrgId();
+  const { loading: organizationLoading } = useOrganization();
 
   const {
     data: departments = [],
     isLoading: departmentsLoading,
+    isError: departmentsFailed,
   } = useQuery({
     queryKey: ['my-permission-departments', orgId, user?.id],
     queryFn: async (): Promise<SopDepartment[]> => {
@@ -39,8 +42,10 @@ export const useSupabasePermissions = () => {
     [departments, userRole],
   );
 
+  const permissionsUnavailable = !user || !orgId || organizationLoading ||
+    (userRole === 'agent' && (departmentsLoading || departmentsFailed));
   const hasPermission = (permission: PermissionKey): boolean =>
-    hasPermissionForRole(userRole, permissionDepartments, permission);
+    !permissionsUnavailable && hasPermissionForRole(userRole, permissionDepartments, permission);
 
   const hasAnyPermission = (permissions: PermissionKey[]): boolean =>
     permissions.some(hasPermission);
@@ -54,7 +59,7 @@ export const useSupabasePermissions = () => {
     hasAllPermissions,
     userRole,
     departments: permissionDepartments,
-    loading: userRole === 'agent' && departmentsLoading,
+    loading: organizationLoading || (userRole === 'agent' && departmentsLoading),
     canViewCustomers: () => hasPermission('customers_view'),
     canCreateCustomers: () => hasPermission('customers_create'),
     canEditCustomers: () => hasPermission('customers_edit'),

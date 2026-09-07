@@ -75,7 +75,7 @@ export default function GeneralLedger() {
   usePageTitle('دفتر الأستاذ العام');
   const orgId = useOrgId();
   const { hasPermission } = usePermissionCheck();
-  const { accounts, isLoading: accountsLoading } = useChartOfAccounts();
+  const { accounts, isLoading: accountsLoading, error: accountsError } = useChartOfAccounts();
   const { data: costCenters = [], isLoading: costCentersLoading } = useCostCenters();
   const [searchParams, setSearchParams] = useSearchParams();
   const [accountId, setAccountId] = useState(searchParams.get('account') || '');
@@ -112,12 +112,13 @@ export default function GeneralLedger() {
       ]);
       if (rowsResult.error) throw rowsResult.error;
       if (summaryResult.error) throw summaryResult.error;
+      if (!summaryResult.data?.[0]) throw new Error('لم يُرجع النظام ملخص الحساب؛ لا يمكن تأكيد الأرصدة');
       return {
         rows: (rowsResult.data || []) as GLRow[],
         summary: (summaryResult.data?.[0] || null) as GLSummary | null,
       };
     },
-    enabled: !!orgId && !!accountId,
+    enabled: !!orgId && accounts.some(account => account.id === accountId) && hasPermission('financial_view') && (!start || !end || start <= end),
   });
 
   const rows = useMemo(() => ledger.data?.rows || [], [ledger.data?.rows]);
@@ -168,7 +169,10 @@ export default function GeneralLedger() {
         </CardContent>
       </Card>
 
-      {accountId && <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+      {accountsError && <p role="alert" className="text-destructive">تعذر تحميل حسابات الشركة.</p>}
+      {start && end && start > end && <p role="alert" className="text-destructive">تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.</p>}
+      {accountId && !accountsLoading && !accountsError && !selectedAccount && <p role="alert" className="text-destructive">الحساب المحدد غير متاح في الشركة الحالية. اختر حسابًا من القائمة.</p>}
+      {selectedAccount && (!start || !end || start <= end) && !ledger.isFetching && !ledger.error && summary && <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
         <KPI label="الرصيد الافتتاحي" value={fmt(summary?.opening_balance || 0)} />
         <KPI label="إجمالي المدين" value={fmt(summary?.total_debit || 0)} tone="good" />
         <KPI label="إجمالي الدائن" value={fmt(summary?.total_credit || 0)} tone="warn" />
@@ -180,11 +184,12 @@ export default function GeneralLedger() {
         <CardHeader className="flex-row items-center justify-between gap-3">
           <div><CardTitle>{selectedAccount ? `${selectedAccount.account_code} — ${selectedAccount.account_name_ar || selectedAccount.account_name}` : 'حركات الحساب'}</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">{currency}{selectedCostCenter ? ` • ${selectedCostCenter.name_ar || selectedCostCenter.name}` : ''}{summary ? ` • ${summary.transaction_count} قيد` : ''}</p></div>
-          <Button variant="outline" onClick={exportCsv} disabled={!canExport || rows.length === 0} title={!canExport ? 'لا تملك صلاحية تصدير التقارير' : undefined}><Download className="h-4 w-4 ml-2" />تصدير CSV</Button>
+          <Button variant="outline" onClick={exportCsv} disabled={!canExport || !selectedAccount || ledger.isFetching || !!ledger.error || rows.length === 0 || (!!start && !!end && start > end)} title={!canExport ? 'لا تملك صلاحية تصدير التقارير' : undefined}><Download className="h-4 w-4 ml-2" />تصدير CSV</Button>
         </CardHeader>
         <CardContent>
-          {!accountId ? <div className="text-center text-muted-foreground py-10 text-sm">اختر حسابًا لعرض حركاته.</div>
-            : ledger.isLoading ? <div className="text-center text-muted-foreground py-10 text-sm">جارٍ التحميل…</div>
+          {!selectedAccount ? <div className="text-center text-muted-foreground py-10 text-sm">اختر حسابًا لعرض حركاته.</div>
+            : start && end && start > end ? <div className="text-center py-10">صحح الفترة لعرض الحركات.</div>
+            : ledger.isFetching ? <div className="text-center text-muted-foreground py-10 text-sm">جارٍ التحميل…</div>
             : ledger.error ? <div className="text-center text-destructive py-10 text-sm">تعذر تحميل دفتر الأستاذ: {(ledger.error as Error).message}</div>
             : rows.length === 0 ? <div className="text-center text-muted-foreground py-10 text-sm">لا توجد حركات ضمن الفترة، والرصيد الافتتاحي هو {fmt(summary?.opening_balance || 0)} {currency}.</div>
             : <div className="overflow-x-auto"><Table>

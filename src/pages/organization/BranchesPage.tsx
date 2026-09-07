@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Building2 } from 'lucide-react';
 import { useBranches, useBranchMutations, Branch } from '@/hooks/useBranchesDepartments';
 
 export default function BranchesPage() {
-  const { data = [], isLoading } = useBranches();
+  const { data = [], isLoading, error, refetch } = useBranches();
   const { save, remove } = useBranchMutations();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Branch>>({});
@@ -28,6 +28,7 @@ export default function BranchesPage() {
         <Button onClick={openNew}><Plus className="h-4 w-4 ml-1" /> فرع جديد</Button>
       </div>
 
+      {error && <div role="alert" className="text-destructive flex items-center gap-3">تعذر تحميل البيانات<Button variant="outline" onClick={() => refetch()}>إعادة المحاولة</Button></div>}
       <Card><CardContent className="p-0">
         <Table>
           <TableHeader><TableRow>
@@ -36,7 +37,7 @@ export default function BranchesPage() {
           </TableRow></TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={6} className="text-center py-8">جارٍ التحميل...</TableCell></TableRow> :
-              data.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">لا توجد فروع</TableCell></TableRow> :
+              error ? <TableRow><TableCell colSpan={6} className="text-center py-8">البيانات غير متاحة حاليًا</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">لا توجد فروع</TableCell></TableRow> :
               data.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell className="font-medium">{b.name}</TableCell>
@@ -66,7 +67,7 @@ export default function BranchesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
-            <Button onClick={() => { save.mutate(editing as any, { onSuccess: () => setOpen(false) }); }} disabled={!editing.name || save.isPending}>حفظ</Button>
+            <Button onClick={() => { save.mutate(editing, { onSuccess: () => setOpen(false) }); }} disabled={!editing.name?.trim() || save.isPending}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
