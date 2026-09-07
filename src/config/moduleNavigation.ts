@@ -296,6 +296,7 @@ export const ERP_MODULES: ErpModule[] = [
         screens: [
           screen({ title: 'مركز المؤسسة', href: '/organization', icon: Building2, description: 'نقطة الدخول لإعدادات المؤسسة ومكوناتها.', requiredPermission: 'team_view', sidebar: true }),
           screen({ title: 'فريق العمل', href: '/team', icon: Users, description: 'المستخدمون والدعوات والأدوار وحالة العضوية.', requiredPermission: 'team_view', sidebar: true }),
+          screen({ title: 'الأدوار والصلاحيات', href: '/organization/roles', icon: ShieldCheck, description: 'تعريف أدوار خاصة بالمؤسسة وتعيين نطاق البيانات.', requiredPermission: 'team_manage_roles' }),
           screen({ title: 'الفروع', href: '/organization/branches', icon: Building2, description: 'فروع المؤسسة ونطاق كل فرع.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.MULTI_BRANCH }),
           screen({ title: 'الأقسام', href: '/organization/departments', icon: GitBranch, description: 'الأقسام والهيكل التنظيمي.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.MULTI_BRANCH }),
           screen({ title: 'سياسات الفريق وSOP', href: '/organization/sop-team', icon: ClipboardList, description: 'توزيع الأقسام وسياسات التسليم والتشغيل.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.MULTI_BRANCH }),
