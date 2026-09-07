@@ -6,6 +6,7 @@ import { Customer } from "@/types/customer";
 import { useOrgId } from "./useOrgId";
 import { useCurrencyHelper } from "./useCurrencyHelper";
 import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
+import { useParentBookingLink } from "@/contexts/ParentBookingContext";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;
@@ -16,6 +17,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
   const [isSubmitting, setIsSubmitting] = useState(false);
   const orgId = useOrgId();
   const { ensureSupportedCurrency } = useCurrencyHelper();
+  const { parentBookingId, syncParent } = useParentBookingLink();
 
   const submitBooking = async (
     data: NewHotelBooking,
@@ -85,6 +87,8 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         attachment_urls: attachment_urls || [],
       };
 
+      if (parentBookingId) submitData.booking_id = parentBookingId;
+
       let bookingId = booking?.id;
 
       if (booking) {
@@ -120,6 +124,8 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
           await supabase.from('booking_special_requests').insert(requestRows);
         }
       }
+
+      await syncParent();
 
       onSuccess(bookingId ? { id: bookingId } : undefined);
     } catch (error: any) {
