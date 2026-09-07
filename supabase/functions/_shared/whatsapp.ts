@@ -202,8 +202,48 @@ export function buildTemplateComponents(tpl: TemplateRow, vars: TemplateVarInput
   if (expectedBody) {
     out.push({ type: 'body', parameters: body.map((t, i) => param(t, i, spec.bodyNames)) });
   }
+
+  // Interactive buttons (FLOW / dynamic URL / COPY_CODE) need their own
+  // component with a `sub_type` + `index`, otherwise Meta rejects with #131009
+  // "Components sub_type invalid at index: 0".
+  const comps: any[] = Array.isArray(tpl.components) ? tpl.components : [];
+  const buttonsComp = comps.find((c: any) => String(c?.type).toUpperCase() === 'BUTTONS');
+  const buttons: any[] = Array.isArray(buttonsComp?.buttons) ? buttonsComp.buttons : [];
+  buttons.forEach((b: any, i: number) => {
+    const bType = String(b?.type || '').toUpperCase();
+    if (bType === 'FLOW') {
+      out.push({
+        type: 'button',
+        sub_type: 'flow',
+        index: String(i),
+        parameters: [{ type: 'action', action: { flow_token: crypto.randomUUID() } }],
+      });
+    } else if (bType === 'COPY_CODE') {
+      const code = b?.example ?? b?.coupon_code;
+      if (code) {
+        out.push({
+          type: 'button',
+          sub_type: 'copy_code',
+          index: String(i),
+          parameters: [{ type: 'coupon_code', coupon_code: String(code) }],
+        });
+      }
+    } else if (bType === 'URL' && /\{\{\s*[^}]+\s*\}\}/.test(String(b?.url || ''))) {
+      const suffix = Array.isArray(b?.example) ? b.example[0] : undefined;
+      if (suffix) {
+        out.push({
+          type: 'button',
+          sub_type: 'url',
+          index: String(i),
+          parameters: [{ type: 'text', text: String(suffix) }],
+        });
+      }
+    }
+  });
+
   return out;
 }
+
 
 export interface SendResult {
   ok: boolean;
