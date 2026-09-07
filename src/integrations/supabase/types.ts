@@ -13303,6 +13303,10 @@ export type Database = {
         Args: { _text: string; _vars: Json }
         Returns: string
       }
+      _require_route_code: {
+        Args: { _org_id: string; _routing_key: string }
+        Returns: string
+      }
       _resolve_account: {
         Args: { _code: string; _org: string }
         Returns: string
