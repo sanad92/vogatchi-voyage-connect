@@ -120,11 +120,27 @@ export const ItineraryItemDialog = ({
       initial[f.key] = v == null ? '' : String(v);
     });
     setValues(initial);
-    setSelling('');
-    setCost('');
+    setSelling(existing?.selling_amount ? String(existing.selling_amount) : '');
+    setCost(existing?.cost_amount ? String(existing.cost_amount) : '');
   }, [open, existing, kind]);
 
   const currency = booking?.currency ?? 'EGP';
+
+  const syncFinancials = async () => {
+    const { error } = await anyClient.rpc('sync_booking_financials', { p_booking_id: bookingId });
+    if (error) throw error;
+  };
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ['workspace-itinerary', bookingId] });
+    qc.invalidateQueries({ queryKey: ['workspace-booking', bookingId] });
+    qc.invalidateQueries({ queryKey: ['workspace-timeline', bookingId] });
+    qc.invalidateQueries({ queryKey: ['booking-profit-cockpit', bookingId] });
+    qc.invalidateQueries({ queryKey: ['booking-financials', bookingId] });
+    qc.invalidateQueries({ queryKey: ['workspace-invoices', bookingId] });
+    qc.invalidateQueries({ queryKey: ['bookings'] });
+    qc.invalidateQueries({ queryKey: ['invoices'] });
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -149,6 +165,10 @@ export const ItineraryItemDialog = ({
         payload.nights = nights;
       }
 
+      // Per-service amounts drive the booking totals, the customer invoice and the journals.
+      payload.selling_amount = Number(selling) || 0;
+      payload.cost_amount = Number(cost) || 0;
+
       if (existing?.id) {
         const { error } = await anyClient
           .from(TABLES[kind])
@@ -160,21 +180,11 @@ export const ItineraryItemDialog = ({
         if (error) throw error;
       }
 
-      // Roll the service amounts into the booking so the customer account reflects them.
-      const addSelling = Number(selling) || 0;
-      const addCost = Number(cost) || 0;
       const dateKeys = DATE_KEYS[kind];
       const startVal = dateKeys.start ? payload[dateKeys.start] : null;
       const endVal = dateKeys.end ? payload[dateKeys.end] : null;
 
       const bookingPatch: Record<string, any> = {};
-      if (addSelling || addCost) {
-        const newSelling = Number(booking?.selling_price ?? 0) + addSelling;
-        const newCost = Number(booking?.cost_price ?? 0) + addCost;
-        bookingPatch.selling_price = newSelling;
-        bookingPatch.cost_price = newCost;
-        bookingPatch.profit = newSelling - newCost;
-      }
       if (startVal && (!booking?.start_date || startVal < booking.start_date)) {
         bookingPatch.start_date = startVal;
       }
@@ -186,20 +196,23 @@ export const ItineraryItemDialog = ({
         if (error) throw error;
       }
 
+      await syncFinancials();
+
       await anyClient.from('booking_timeline_events').insert({
         booking_id: bookingId,
         organization_id: booking?.organization_id,
         kind: 'itinerary_updated',
         summary: `${existing?.id ? 'تحديث' : 'إضافة'} ${TITLES[kind]}`,
-        payload: { service: kind, added_selling: addSelling, added_cost: addCost },
+        payload: {
+          service: kind,
+          selling_amount: payload.selling_amount,
+          cost_amount: payload.cost_amount,
+        },
       });
     },
     onSuccess: () => {
-      toast.success('تم حفظ الخدمة داخل الحجز');
-      qc.invalidateQueries({ queryKey: ['workspace-itinerary', bookingId] });
-      qc.invalidateQueries({ queryKey: ['workspace-booking', bookingId] });
-      qc.invalidateQueries({ queryKey: ['workspace-timeline', bookingId] });
-      qc.invalidateQueries({ queryKey: ['bookings'] });
+      toast.success('تم حفظ الخدمة وتحديث الفاتورة والحسابات');
+      invalidateAll();
       onSaved();
       onOpenChange(false);
     },
@@ -211,15 +224,17 @@ export const ItineraryItemDialog = ({
       if (!existing?.id) return;
       const { error } = await anyClient.from(TABLES[kind]).delete().eq('id', existing.id);
       if (error) throw error;
+      await syncFinancials();
     },
     onSuccess: () => {
-      toast.success('تم حذف الخدمة من الحجز');
-      qc.invalidateQueries({ queryKey: ['workspace-itinerary', bookingId] });
+      toast.success('تم حذف الخدمة وتحديث الفاتورة والحسابات');
+      invalidateAll();
       onSaved();
       onOpenChange(false);
     },
     onError: (e: any) => toast.error(e?.message || 'تعذر حذف الخدمة'),
   });
+
 
   const busy = save.isPending || remove.isPending;
 
