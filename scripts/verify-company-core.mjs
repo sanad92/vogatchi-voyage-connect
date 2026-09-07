@@ -14,6 +14,7 @@ async function loadModule(path, imports = {}) {
   return exports;
 }
 const { accountHierarchy } = await loadModule('../src/lib/accountHierarchy.ts');
+const companyPermissions = await loadModule('../src/lib/companyPermissions.ts');
 const account = (id, parent_id = null, extra = {}) => ({ id, parent_id, organization_id: 'a', account_code: id, account_name: id, account_name_ar: null, account_type: 'asset', ...extra });
 const accounts = [account('10', '2'), account('2'), account('3'), account('11', '10')];
 assert.equal(accountHierarchy(accounts).map(r => `${r.account.id}:${r.depth}`).join(','), '2:0,10:1,11:2,3:0');
@@ -27,6 +28,20 @@ assert.equal(cycle.length, 2); assert.ok(cycle.every(row => row.invalidParent));
 assert.equal(accountHierarchy([account('a'), account('b', 'a', { organization_id: 'b' })]).find(row => row.account.id === 'b').invalidParent, true);
 assert.equal(accountHierarchy([account('a'), account('b', 'a', { account_type: 'expense' })]).find(row => row.account.id === 'b').invalidParent, true);
 assert.equal(accountHierarchy([account('a', null, { account_name_ar: 'حساب المورد' })], 'المورد').length, 1);
+
+const profile = companyPermissions.normalizeCompanyPermissionProfile({
+  customers_view: { granted: true, data_scope: 'team' },
+  financial_view: { granted: false, data_scope: 'organization' },
+  malformed: { granted: 'yes', data_scope: 'organization' },
+  invalid_scope: { granted: true, data_scope: 'unknown' },
+});
+assert.equal(companyPermissions.companyPermissionGranted(profile, 'customers_view'), true);
+assert.equal(companyPermissions.companyPermissionScope(profile, 'customers_view'), 'team');
+assert.equal(companyPermissions.companyPermissionGranted(profile, 'financial_view'), false);
+assert.equal(companyPermissions.companyPermissionScope(profile, 'financial_view'), 'none');
+assert.equal(companyPermissions.companyPermissionScope(profile, 'invalid_scope'), 'organization');
+assert.equal(companyPermissions.companyPermissionGranted(profile, 'missing'), null);
+assert.equal(companyPermissions.normalizeCompanyPermissionProfile({ malformed: { granted: 'yes' } }), null);
 
 // Exercise the actual provider with delayed membership replies, without a live account.
 const orgA = { id: 'a', name: 'A' }, orgB = { id: 'b', name: 'B' };
@@ -72,6 +87,8 @@ const { useSupabasePermissions } = await loadModule('../src/hooks/useSupabasePer
   '@/contexts/OrganizationContext': { useOrganization: () => ({ loading: permissionState.loading }) },
   '@/integrations/supabase/client': { supabase: {} },
   '@/lib/accessControl': accessControl,
+  '@/lib/companyPermissions': companyPermissions,
+  '@/lib/supabaseRpc': { callUntypedRpc: async () => ({ data: null, error: null }) },
 });
 permissionState = { user: { id: 'u' }, role: 'agent', org: 'a', loading: false, query: { data: ['finance'], isLoading: false, isError: false } };
 assert.equal(useSupabasePermissions().hasPermission('payments_process'), true);
