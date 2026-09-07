@@ -25,6 +25,7 @@ export interface BankBaseline {
   set_by_name: string | null;
   locked: boolean;
   can_manage: boolean;
+  can_correct: boolean;
   history: BaselineHistoryEntry[];
 }
 
@@ -46,7 +47,8 @@ export const useBankBaseline = (accountId: string) => {
     queryFn: async () => {
       const { data, error } = await callUntypedRpc<BankBaseline>('get_bank_account_baseline', { _account: accountId });
       if (error) throw error;
-      return data as BankBaseline;
+      if (!data) throw new Error('تعذر تحميل بيانات الرصيد الافتتاحي');
+      return data;
     },
   });
 

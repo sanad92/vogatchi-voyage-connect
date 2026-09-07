@@ -11,6 +11,7 @@
     "test:core": "node scripts/verify-saas-core.mjs",
     "test:crm": "node scripts/verify-crm-core.mjs",
     "test:finance": "node scripts/verify-financial-formulas.mjs",
+    "test:bank-baseline": "node scripts/verify-bank-baseline-ui.mjs",
     "test:navigation": "node scripts/verify-module-navigation.mjs",
     "test:backlog": "node scripts/verify-remaining-backlog.mjs",
     "preview": "vite preview",

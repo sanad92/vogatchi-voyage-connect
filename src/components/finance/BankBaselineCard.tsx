@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { History, Lock, ShieldAlert } from 'lucide-react';
+import { useId, useState } from 'react';
+import { History, Loader2, Lock, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,10 @@ const actionLabels: Record<string, string> = {
   correction: 'تصحيح بعد الإغلاق',
 };
 
-const message = (error: unknown) => (error instanceof Error ? error.message : 'حدث خطأ غير متوقع');
+const message = (error: unknown) =>
+  error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+    ? error.message
+    : 'حدث خطأ غير متوقع';
 
 interface Props {
   accountId: string;
@@ -34,12 +37,12 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
   const { toast } = useToast();
   const { baseline, setBaseline } = useBankBaseline(accountId);
   const data = baseline.data;
+  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [form, setForm] = useState({ balance: '', date: '', note: '', reason: '', confirm: false });
 
-  useEffect(() => {
-    if (!open) return;
+  const openEditor = () => {
     setForm({
       balance: data?.opening_balance != null ? String(data.opening_balance) : '',
       date: data?.opening_balance_date ?? '',
@@ -47,20 +50,24 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
       reason: '',
       confirm: false,
     });
-  }, [open, data]);
+    setOpen(true);
+  };
 
   if (!accountId) return null;
 
-  const needsCorrection = Boolean(data?.locked && data?.is_set);
+  const needsCorrection = Boolean(data?.locked);
   const canSubmit =
+    Boolean(data?.can_manage) &&
+    !baseline.isFetching && !baseline.isError &&
     form.note.trim().length > 0 &&
     form.date.length > 0 &&
     form.balance.trim().length > 0 &&
     Number.isFinite(Number(form.balance)) &&
     form.confirm &&
-    (!needsCorrection || form.reason.trim().length > 0);
+    (!needsCorrection || (data?.can_correct && form.reason.trim().length > 0));
 
   const submit = async () => {
+    if (!canSubmit || setBaseline.isPending) return;
     try {
       await setBaseline.mutateAsync({
         balance: Number(form.balance),
@@ -78,28 +85,39 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-3">
         <CardTitle className="text-base">الرصيد الافتتاحي (خط الأساس)</CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {data?.locked && (
             <Badge variant="outline" className="gap-1">
               <Lock className="h-3 w-3" />
               مقفل بتسوية مغلقة
             </Badge>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setShowHistory((value) => !value)}>
+          <Button variant="ghost" size="sm" disabled={!data || baseline.isError} onClick={() => setShowHistory((value) => !value)}>
             <History className="h-4 w-4 ml-1" />
             سجل التعديلات ({data?.history?.length ?? 0})
           </Button>
           {data?.can_manage && (
-            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-              {data?.is_set ? 'تعديل خط الأساس' : 'ضبط خط الأساس'}
+            <Button size="sm" variant="outline" disabled={baseline.isFetching || baseline.isError} onClick={openEditor}>
+              {needsCorrection ? 'تصحيح خط الأساس' : data?.is_set ? 'تعديل خط الأساس' : 'ضبط خط الأساس'}
             </Button>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {!data?.is_set ? (
+        {baseline.isPending ? (
+          <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> جارٍ تحميل الرصيد الافتتاحي…
+          </p>
+        ) : baseline.isError ? (
+          <div role="alert" className="space-y-2 text-sm text-destructive">
+            <p>تعذر تحميل الرصيد الافتتاحي وسجل التعديلات. {message(baseline.error)}</p>
+            <Button variant="outline" size="sm" disabled={baseline.isFetching} onClick={() => void baseline.refetch()}>
+              إعادة المحاولة
+            </Button>
+          </div>
+        ) : !data?.is_set ? (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <ShieldAlert className="h-4 w-4" />
             غير مضبوط. التسوية تعمل بالسلوك الحالي حتى يتم ضبط رصيد افتتاحي صريح.
@@ -127,8 +145,11 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
         <p className="text-xs text-muted-foreground">
           ضبط خط الأساس لا يغيّر الرصيد الدفتري ولا ينشئ أي حركة مالية؛ هو مرجع لمطابقة الأرصدة التاريخية فقط.
         </p>
+        {data?.locked && !data.can_correct && !baseline.isError && (
+          <p className="text-sm text-muted-foreground">تصحيح خط الأساس بعد إغلاق تسوية متاح لمالك الشركة فقط، مع تسجيل السبب.</p>
+        )}
 
-        {showHistory && (
+        {showHistory && data && !baseline.isError && (
           <div className="border rounded-lg divide-y">
             {(data?.history ?? []).length === 0 && (
               <p className="p-3 text-sm text-muted-foreground">لا توجد تعديلات مسجلة.</p>
@@ -160,8 +181,9 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label>الرصيد الافتتاحي</Label>
+              <Label htmlFor={`${fieldId}-balance`}>الرصيد الافتتاحي</Label>
               <Input
+                id={`${fieldId}-balance`}
                 type="number"
                 step="0.01"
                 value={form.balance}
@@ -169,16 +191,18 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
               />
             </div>
             <div className="space-y-1">
-              <Label>تاريخ خط الأساس</Label>
+              <Label htmlFor={`${fieldId}-date`}>تاريخ خط الأساس</Label>
               <Input
+                id={`${fieldId}-date`}
                 type="date"
                 value={form.date}
                 onChange={(event) => setForm((value) => ({ ...value, date: event.target.value }))}
               />
             </div>
             <div className="space-y-1">
-              <Label>ملاحظة (إلزامية)</Label>
+              <Label htmlFor={`${fieldId}-note`}>ملاحظة (إلزامية)</Label>
               <Textarea
+                id={`${fieldId}-note`}
                 value={form.note}
                 placeholder="مثال: رصيد كشف البنك في 2025-12-31"
                 onChange={(event) => setForm((value) => ({ ...value, note: event.target.value }))}
@@ -186,8 +210,9 @@ export const BankBaselineCard = ({ accountId, currency }: Props) => {
             </div>
             {needsCorrection && (
               <div className="space-y-1">
-                <Label>سبب التصحيح (إلزامي بعد إغلاق تسوية)</Label>
+                <Label htmlFor={`${fieldId}-reason`}>سبب التصحيح (إلزامي بعد إغلاق تسوية)</Label>
                 <Textarea
+                  id={`${fieldId}-reason`}
                   value={form.reason}
                   onChange={(event) => setForm((value) => ({ ...value, reason: event.target.value }))}
                 />
