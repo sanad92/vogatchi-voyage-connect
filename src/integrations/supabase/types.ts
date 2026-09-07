@@ -7293,6 +7293,94 @@ export type Database = {
           },
         ]
       }
+      organization_account_routing: {
+        Row: {
+          account_id: string
+          configured_by: string | null
+          created_at: string
+          notes: string | null
+          organization_id: string
+          routing_key: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          configured_by?: string | null
+          created_at?: string
+          notes?: string | null
+          organization_id: string
+          routing_key: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          configured_by?: string | null
+          created_at?: string
+          notes?: string | null
+          organization_id?: string
+          routing_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_account_routing_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_account_routing_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_account_routing_routing_key_fkey"
+            columns: ["routing_key"]
+            isOneToOne: false
+            referencedRelation: "organization_account_routing_catalog"
+            referencedColumns: ["routing_key"]
+          },
+        ]
+      }
+      organization_account_routing_catalog: {
+        Row: {
+          created_at: string
+          expected_account_type: Database["public"]["Enums"]["account_type"]
+          fallback_account_code: string
+          group_key: string
+          is_active: boolean
+          is_required: boolean
+          label_ar: string
+          label_en: string
+          routing_key: string
+        }
+        Insert: {
+          created_at?: string
+          expected_account_type: Database["public"]["Enums"]["account_type"]
+          fallback_account_code: string
+          group_key: string
+          is_active?: boolean
+          is_required?: boolean
+          label_ar: string
+          label_en: string
+          routing_key: string
+        }
+        Update: {
+          created_at?: string
+          expected_account_type?: Database["public"]["Enums"]["account_type"]
+          fallback_account_code?: string
+          group_key?: string
+          is_active?: boolean
+          is_required?: boolean
+          label_ar?: string
+          label_en?: string
+          routing_key?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           branch_id: string | null
@@ -13181,6 +13269,10 @@ export type Database = {
         Args: { _reference_type: string; _source_type: string }
         Returns: string
       }
+      _ensure_account_routing_defaults: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
       _module_pulse_window: {
         Args: { p_from: string; p_org: string; p_to: string }
         Returns: Json
@@ -14017,6 +14109,14 @@ export type Database = {
         Returns: Json
       }
       get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
+      get_org_account_route: {
+        Args: { _org_id: string; _routing_key: string }
+        Returns: string
+      }
+      get_org_account_route_code: {
+        Args: { _org_id: string; _routing_key: string }
+        Returns: string
+      }
       get_org_permission_profile: { Args: { _org_id: string }; Returns: Json }
       get_org_plan_limits: {
         Args: { _org_id: string }
@@ -14216,6 +14316,22 @@ export type Database = {
       list_bank_reconciliation_sessions: {
         Args: { _bank_account?: string; _org: string }
         Returns: Json
+      }
+      list_org_account_routing: {
+        Args: { _org_id: string }
+        Returns: {
+          account_code: string
+          account_id: string
+          account_name: string
+          account_name_ar: string
+          configured: boolean
+          expected_account_type: Database["public"]["Enums"]["account_type"]
+          fallback_account_code: string
+          group_key: string
+          label_ar: string
+          label_en: string
+          routing_key: string
+        }[]
       }
       list_org_permission_catalog: {
         Args: never
@@ -14475,6 +14591,10 @@ export type Database = {
         Returns: Json
       }
       reset_demo_data: { Args: { _org_id: string }; Returns: Json }
+      reset_org_account_route: {
+        Args: { _org_id: string; _routing_key: string }
+        Returns: undefined
+      }
       retry_booking_automation_step: {
         Args: { p_step_id: string }
         Returns: string
@@ -14510,6 +14630,15 @@ export type Database = {
       set_customer_archived: {
         Args: { _archived: boolean; _customer_id: string; _org_id: string }
         Returns: Json
+      }
+      set_org_account_route: {
+        Args: {
+          _account_id: string
+          _notes?: string
+          _org_id: string
+          _routing_key: string
+        }
+        Returns: string
       }
       set_org_permission_grant: {
         Args: {
