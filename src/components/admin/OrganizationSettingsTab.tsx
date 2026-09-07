@@ -58,31 +58,39 @@ const OrganizationSettingsTab = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('تعذر قراءة الملف'));
+      reader.readAsDataURL(file);
+    });
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !orgId) return;
 
+    if (file.size > 1024 * 1024) {
+      toast.error('حجم الشعار كبير. برجاء رفع صورة أقل من 1 ميجابايت.');
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const path = `${orgId}/logo.${ext}`;
+      // The company logo is stored inline with the organization settings so it
+      // always renders in the app and inside generated PDF documents.
+      const dataUrl = await readFileAsDataUrl(file);
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(path, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(path);
-
-      setForm(prev => ({ ...prev, logo_url: urlData.publicUrl }));
-      toast.success('تم رفع الشعار بنجاح');
+      setForm(prev => ({ ...prev, logo_url: dataUrl }));
+      // Persist immediately so the logo shows everywhere without an extra save step.
+      saveSettings({ ...form, logo_url: dataUrl });
+      toast.success('تم رفع الشعار وحفظه بنجاح');
     } catch (err: any) {
       toast.error('فشل رفع الشعار: ' + err.message);
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
