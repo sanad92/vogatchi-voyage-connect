@@ -175,6 +175,7 @@ const HistoricalRecoveryCenter = lazy(() => import("@/pages/finance/HistoricalRe
 
 // Phase 7 - SaaS Core & Enterprise
 const OrganizationCenter = lazy(() => import("@/pages/organization/OrganizationCenter"));
+const OrganizationRolesPage = lazy(() => import("@/pages/organization/OrganizationRolesPage"));
 const BranchesPage = lazy(() => import("@/pages/organization/BranchesPage"));
 const DepartmentsPage = lazy(() => import("@/pages/organization/DepartmentsPage"));
 const FeatureFlagsPage = lazy(() => import("@/pages/organization/FeatureFlagsPage"));
@@ -411,6 +412,7 @@ function App() {
                               <Route path="/ai-assistant/:threadId" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
                               {/* Phase 7 — Enterprise / SaaS Core */}
                               <Route path="/organization" element={<OrganizationCenter />} />
+                              <Route path="/organization/roles" element={<PermissionRouteGuard requiredPermission="team_manage_roles"><OrganizationRolesPage /></PermissionRouteGuard>} />
                               <Route path="/organization/branches" element={<PermissionRouteGuard requiredPermission="admin_settings"><BranchesPage /></PermissionRouteGuard>} />
                               <Route path="/organization/departments" element={<PermissionRouteGuard requiredPermission="admin_settings"><DepartmentsPage /></PermissionRouteGuard>} />
                               <Route path="/organization/feature-flags" element={<PermissionRouteGuard requiredPermission="admin_settings"><FeatureFlagsPage /></PermissionRouteGuard>} />
