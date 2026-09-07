@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Hotel, Plane, Car, Truck, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Hotel, Plane, Car, Truck, Plus, Pencil } from 'lucide-react';
+import { ItineraryItemDialog, type ItineraryKind } from './ItineraryItemDialog';
 import type { Workspace } from './types';
 
 interface Props {
@@ -9,76 +10,115 @@ interface Props {
 }
 
 export const ItineraryTab = ({ workspace }: Props) => {
-  const navigate = useNavigate();
   const it = workspace.itinerary;
-  const bookingId = (workspace as any).booking?.id;
-  const withBooking = (path: string) => (bookingId ? `${path}?booking_id=${bookingId}` : path);
+  const booking = (workspace as any).booking;
+  const bookingId: string | undefined = booking?.id;
+  const [openKind, setOpenKind] = useState<ItineraryKind | null>(null);
+
+  const sections: Array<{
+    kind: ItineraryKind;
+    title: string;
+    icon: React.ReactNode;
+    empty: string;
+    data: any;
+    labels: Record<string, string>;
+  }> = [
+    {
+      kind: 'hotel',
+      title: 'الفندق',
+      icon: <Hotel className="h-4 w-4" />,
+      empty: 'لا توجد تفاصيل فندق',
+      data: it?.hotel,
+      labels: {
+        hotel_name: 'اسم الفندق',
+        city: 'المدينة',
+        room_type: 'نوع الغرفة',
+        board_type: 'الإقامة',
+        check_in: 'دخول',
+        check_out: 'خروج',
+        nights: 'الليالي',
+        rooms: 'الغرف',
+      },
+    },
+    {
+      kind: 'flight',
+      title: 'الطيران',
+      icon: <Plane className="h-4 w-4" />,
+      empty: 'لا توجد تفاصيل طيران',
+      data: it?.flight,
+      labels: {
+        airline: 'شركة الطيران',
+        flight_number: 'رقم الرحلة',
+        departure_airport: 'المغادرة',
+        arrival_airport: 'الوصول',
+        departure_date: 'التاريخ',
+        departure_time: 'الوقت',
+        pnr: 'PNR',
+        ticket_number: 'رقم التذكرة',
+      },
+    },
+    {
+      kind: 'transport',
+      title: 'النقل',
+      icon: <Truck className="h-4 w-4" />,
+      empty: 'لا يوجد نقل',
+      data: it?.transport,
+      labels: {
+        vehicle_type: 'المركبة',
+        route: 'المسار',
+        pickup_point: 'الالتقاط',
+        dropoff_point: 'التوصيل',
+        passengers: 'الركاب',
+      },
+    },
+    {
+      kind: 'car',
+      title: 'تأجير سيارة',
+      icon: <Car className="h-4 w-4" />,
+      empty: 'لا يوجد تأجير',
+      data: it?.car,
+      labels: {
+        car_type: 'نوع السيارة',
+        pickup_location: 'الاستلام',
+        dropoff_location: 'التسليم',
+        pickup_date: 'من',
+        dropoff_date: 'إلى',
+        daily_rate: 'السعر اليومي',
+      },
+    },
+  ];
+
+  const activeSection = sections.find((s) => s.kind === openKind);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <SubCard
-        title="الفندق"
-        icon={<Hotel className="h-4 w-4" />}
-        empty="لا توجد تفاصيل فندق"
-        onAdd={() => navigate(withBooking('/new-hotel-booking'))}
-        data={it?.hotel}
-        labels={{
-          hotel_name: 'اسم الفندق',
-          room_type: 'نوع الغرفة',
-          board_type: 'الإقامة',
-          check_in: 'دخول',
-          check_out: 'خروج',
-          nights: 'الليالي',
-          rooms: 'الغرف',
-        }}
-      />
-      <SubCard
-        title="الطيران"
-        icon={<Plane className="h-4 w-4" />}
-        empty="لا توجد تفاصيل طيران"
-        onAdd={() => navigate(withBooking('/new-flight-booking'))}
-        data={it?.flight}
-        labels={{
-          airline: 'شركة الطيران',
-          flight_number: 'رقم الرحلة',
-          departure_airport: 'المغادرة',
-          arrival_airport: 'الوصول',
-          departure_date: 'التاريخ',
-          departure_time: 'الوقت',
-          pnr: 'PNR',
-          ticket_number: 'رقم التذكرة',
-        }}
-      />
-      <SubCard
-        title="النقل"
-        icon={<Truck className="h-4 w-4" />}
-        empty="لا يوجد نقل"
-        onAdd={() => navigate(withBooking('/transport-bookings'))}
-        data={it?.transport}
-        labels={{
-          vehicle_type: 'المركبة',
-          route: 'المسار',
-          pickup_point: 'الالتقاط',
-          dropoff_point: 'التوصيل',
-          passengers: 'الركاب',
-        }}
-      />
-      <SubCard
-        title="تأجير سيارة"
-        icon={<Car className="h-4 w-4" />}
-        empty="لا يوجد تأجير"
-        onAdd={() => navigate('/car-rentals')}
-        data={it?.car}
-        labels={{
-          car_type: 'نوع السيارة',
-          pickup_location: 'الاستلام',
-          dropoff_location: 'التسليم',
-          pickup_date: 'من',
-          dropoff_date: 'إلى',
-          daily_rate: 'السعر اليومي',
-        }}
-      />
-    </div>
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        {sections.map((s) => (
+          <SubCard
+            key={s.kind}
+            title={s.title}
+            icon={s.icon}
+            empty={s.empty}
+            data={s.data}
+            labels={s.labels}
+            disabled={!bookingId}
+            onOpen={() => setOpenKind(s.kind)}
+          />
+        ))}
+      </div>
+
+      {bookingId && activeSection && (
+        <ItineraryItemDialog
+          open={!!openKind}
+          onOpenChange={(o) => !o && setOpenKind(null)}
+          kind={activeSection.kind}
+          bookingId={bookingId}
+          booking={booking}
+          existing={activeSection.data}
+          onSaved={() => workspace.refetch()}
+        />
+      )}
+    </>
   );
 };
 
@@ -88,14 +128,16 @@ const SubCard = ({
   data,
   labels,
   empty,
-  onAdd,
+  onOpen,
+  disabled,
 }: {
   title: string;
   icon: React.ReactNode;
   data: any;
   labels: Record<string, string>;
   empty: string;
-  onAdd: () => void;
+  onOpen: () => void;
+  disabled?: boolean;
 }) => (
   <Card>
     <CardHeader className="flex-row items-center justify-between">
@@ -103,11 +145,17 @@ const SubCard = ({
         {icon}
         {title}
       </CardTitle>
-      {!data && (
-        <Button size="sm" variant="ghost" onClick={onAdd}>
-          <Plus className="h-4 w-4 ml-1" /> إضافة
-        </Button>
-      )}
+      <Button size="sm" variant="ghost" onClick={onOpen} disabled={disabled}>
+        {data ? (
+          <>
+            <Pencil className="h-4 w-4 ml-1" /> تعديل
+          </>
+        ) : (
+          <>
+            <Plus className="h-4 w-4 ml-1" /> إضافة
+          </>
+        )}
+      </Button>
     </CardHeader>
     <CardContent className="text-sm">
       {data ? (
