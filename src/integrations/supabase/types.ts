@@ -651,12 +651,15 @@ export type Database = {
           bank_account_id: string | null
           created_at: string | null
           created_by: string | null
+          currency: string | null
           description: string | null
           id: string
           organization_id: string | null
           reference_number: string | null
           related_invoice_id: string | null
           related_payment_order_id: string | null
+          source_id: string | null
+          source_type: string | null
           transaction_date: string | null
           transaction_type: string
         }
@@ -665,12 +668,15 @@ export type Database = {
           bank_account_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           description?: string | null
           id?: string
           organization_id?: string | null
           reference_number?: string | null
           related_invoice_id?: string | null
           related_payment_order_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
           transaction_date?: string | null
           transaction_type: string
         }
@@ -679,12 +685,15 @@ export type Database = {
           bank_account_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           description?: string | null
           id?: string
           organization_id?: string | null
           reference_number?: string | null
           related_invoice_id?: string | null
           related_payment_order_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
           transaction_date?: string | null
           transaction_type?: string
         }
@@ -757,6 +766,259 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_reconciliation_matches: {
+        Row: {
+          bank_transaction_id: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_entry_id: string | null
+          match_type: string
+          matched_amount: number
+          notes: string | null
+          organization_id: string
+          session_id: string
+          statement_line_id: string
+        }
+        Insert: {
+          bank_transaction_id: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          match_type: string
+          matched_amount: number
+          notes?: string | null
+          organization_id: string
+          session_id: string
+          statement_line_id: string
+        }
+        Update: {
+          bank_transaction_id?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          match_type?: string
+          matched_amount?: number
+          notes?: string | null
+          organization_id?: string
+          session_id?: string
+          statement_line_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_matches_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_statement_line_id_fkey"
+            columns: ["statement_line_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statement_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_reconciliation_sessions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string
+          book_closing_balance_snapshot: number
+          book_opening_balance: number
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          notes: string | null
+          organization_id: string
+          statement_closing_balance: number
+          statement_end: string
+          statement_opening_balance: number
+          statement_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id: string
+          book_closing_balance_snapshot?: number
+          book_opening_balance?: number
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          statement_closing_balance: number
+          statement_end: string
+          statement_opening_balance: number
+          statement_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string
+          book_closing_balance_snapshot?: number
+          book_opening_balance?: number
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          statement_closing_balance?: number
+          statement_end?: string
+          statement_opening_balance?: number
+          statement_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_sessions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_lines: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          direction: string
+          external_id: string | null
+          fingerprint: string
+          id: string
+          ignored_reason: string | null
+          import_row: number | null
+          organization_id: string
+          raw_data: Json
+          reference: string | null
+          session_id: string
+          status: string
+          transaction_date: string
+          updated_at: string
+          value_date: string | null
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          description?: string | null
+          direction: string
+          external_id?: string | null
+          fingerprint: string
+          id?: string
+          ignored_reason?: string | null
+          import_row?: number | null
+          organization_id: string
+          raw_data?: Json
+          reference?: string | null
+          session_id: string
+          status?: string
+          transaction_date: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          direction?: string
+          external_id?: string | null
+          fingerprint?: string
+          id?: string
+          ignored_reason?: string | null
+          import_row?: number | null
+          organization_id?: string
+          raw_data?: Json
+          reference?: string | null
+          session_id?: string
+          status?: string
+          transaction_date?: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_lines_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliation_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1893,6 +2155,7 @@ export type Database = {
           payment_policy: string
           profit: number | null
           quote_id: string | null
+          revenue_recognition_mode: string
           selling_price: number | null
           start_date: string | null
           status: string | null
@@ -1923,6 +2186,7 @@ export type Database = {
           payment_policy?: string
           profit?: number | null
           quote_id?: string | null
+          revenue_recognition_mode: string
           selling_price?: number | null
           start_date?: string | null
           status?: string | null
@@ -1953,6 +2217,7 @@ export type Database = {
           payment_policy?: string
           profit?: number | null
           quote_id?: string | null
+          revenue_recognition_mode?: string
           selling_price?: number | null
           start_date?: string | null
           status?: string | null
@@ -4133,6 +4398,41 @@ export type Database = {
           },
         ]
       }
+      employee_merge_audit: {
+        Row: {
+          created_at: string
+          id: string
+          kept_employee_id: string
+          merged_by: string
+          merged_employee_ids: string[]
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kept_employee_id: string
+          merged_by: string
+          merged_employee_ids: string[]
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kept_employee_id?: string
+          merged_by?: string
+          merged_employee_ids?: string[]
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_merge_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           allowances: number | null
@@ -4466,6 +4766,7 @@ export type Database = {
           invoice_number: string | null
           notes: string | null
           organization_id: string | null
+          payment_date: string | null
           payment_method: string | null
           receipt_url: string | null
           status: string | null
@@ -4491,6 +4792,7 @@ export type Database = {
           invoice_number?: string | null
           notes?: string | null
           organization_id?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           receipt_url?: string | null
           status?: string | null
@@ -4516,6 +4818,7 @@ export type Database = {
           invoice_number?: string | null
           notes?: string | null
           organization_id?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           receipt_url?: string | null
           status?: string | null
@@ -6901,6 +7204,44 @@ export type Database = {
           },
         ]
       }
+      organization_salary_settings: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          organization_id: string
+          setting_key: string
+          setting_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id: string
+          setting_key: string
+          setting_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          setting_key?: string
+          setting_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_salary_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_settings: {
         Row: {
           accent_color: string | null
@@ -6910,6 +7251,7 @@ export type Database = {
           company_name_ar: string | null
           created_at: string | null
           currency: string | null
+          default_revenue_recognition_mode: string
           email: string | null
           footer_text: string | null
           id: string
@@ -6930,6 +7272,7 @@ export type Database = {
           company_name_ar?: string | null
           created_at?: string | null
           currency?: string | null
+          default_revenue_recognition_mode?: string
           email?: string | null
           footer_text?: string | null
           id?: string
@@ -6950,6 +7293,7 @@ export type Database = {
           company_name_ar?: string | null
           created_at?: string | null
           currency?: string | null
+          default_revenue_recognition_mode?: string
           email?: string | null
           footer_text?: string | null
           id?: string
@@ -12410,14 +12754,31 @@ export type Database = {
       }
     }
     Functions: {
+      _bank_book_balance_at: {
+        Args: { _account: string; _as_of: string }
+        Returns: number
+      }
+      _bank_transaction_is_credit: { Args: { _type: string }; Returns: boolean }
+      _can_manage_bank_reconciliation: {
+        Args: { _org: string }
+        Returns: boolean
+      }
       _can_manage_refunds: { Args: { _org_id: string }; Returns: boolean }
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
+      _cash_flow_category: {
+        Args: { _reference_type: string; _source_type: string }
+        Returns: string
+      }
       _module_pulse_window: {
         Args: { p_from: string; p_org: string; p_to: string }
         Returns: Json
       }
       _next_entry_number: { Args: { _org: string }; Returns: string }
       _recovery_can_manage: { Args: { _org: string }; Returns: boolean }
+      _refresh_bank_statement_line_status: {
+        Args: { _line: string }
+        Returns: undefined
+      }
       _render_template: {
         Args: { _text: string; _vars: Json }
         Returns: string
@@ -12446,6 +12807,10 @@ export type Database = {
       }
       advance_workflow: {
         Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
+        Returns: Json
+      }
+      approve_bank_reconciliation: {
+        Args: { _session: string; _tolerance?: number }
         Returns: Json
       }
       approve_refund_request: {
@@ -12486,6 +12851,14 @@ export type Database = {
       }
       audit_historical_summary: {
         Args: { _from?: string; _log?: boolean; _org: string; _to?: string }
+        Returns: Json
+      }
+      auto_match_bank_reconciliation: {
+        Args: {
+          _date_window_days?: number
+          _session: string
+          _tolerance?: number
+        }
         Returns: Json
       }
       backfill_historical_bookings: {
@@ -12623,6 +12996,7 @@ export type Database = {
         }
       }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
+      close_bank_reconciliation: { Args: { _session: string }; Returns: Json }
       close_fiscal_year: {
         Args: { _confirmation: string; _org: string; _year: number }
         Returns: Json
@@ -12638,6 +13012,22 @@ export type Database = {
         Returns: number
       }
       count_org_members: { Args: { _org_id: string }; Returns: number }
+      create_bank_reconciliation_adjustment: {
+        Args: { _counter_account: string; _description: string; _line: string }
+        Returns: Json
+      }
+      create_bank_reconciliation_session: {
+        Args: {
+          _bank_account: string
+          _closing_balance: number
+          _notes?: string
+          _opening_balance: number
+          _org: string
+          _statement_end: string
+          _statement_start: string
+        }
+        Returns: string
+      }
       create_booking_commission: {
         Args: {
           p_booking_id: string
@@ -12727,6 +13117,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: string
       }
+      execute_existing_bookings_settlement: {
+        Args: { _confirmation: string; _org: string }
+        Returns: Json
+      }
       extend_trial: {
         Args: { _extra_days?: number; _org_id: string }
         Returns: Json
@@ -12805,6 +13199,18 @@ export type Database = {
           target_user_id: string
         }[]
       }
+      get_aging_control_totals_v2: {
+        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
+        Returns: {
+          aging_total: number
+          control_balance: number
+          corrected_date_count: number
+          currency: string
+          difference: number
+          entity_type: string
+          historical_estimate_count: number
+        }[]
+      }
       get_balance_sheet:
         | {
             Args: { _as_of_date?: string; _org_id: string }
@@ -12840,6 +13246,11 @@ export type Database = {
           is_current_earnings: boolean
         }[]
       }
+      get_bank_reconciliation_workspace: {
+        Args: { _session: string }
+        Returns: Json
+      }
+      get_booking_profit_cockpit: { Args: { _booking: string }; Returns: Json }
       get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_business_health_kpis: {
         Args: { p_from?: string; p_to?: string }
@@ -12870,6 +13281,64 @@ export type Database = {
               period_date: string
             }[]
           }
+      get_cash_flow_details_v2: {
+        Args: {
+          _booking_type?: string
+          _cash_account_id?: string
+          _cost_center_id?: string
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          cash_accounts: string
+          cost_centers: string
+          currency: string
+          description: string
+          entry_date: string
+          entry_id: string
+          entry_number: string
+          flow_category: string
+          inflow: number
+          is_locked: boolean
+          net_flow: number
+          outflow: number
+          source_id: string
+          source_type: string
+        }[]
+      }
+      get_cash_flow_v2: {
+        Args: {
+          _booking_type?: string
+          _cash_account_id?: string
+          _cost_center_id?: string
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
+        Returns: {
+          closing_balance: number
+          currency: string
+          entry_count: number
+          financing_inflows: number
+          financing_outflows: number
+          inflows: number
+          investing_inflows: number
+          investing_outflows: number
+          net_flow: number
+          opening_balance: number
+          operating_inflows: number
+          operating_outflows: number
+          other_inflows: number
+          other_outflows: number
+          outflows: number
+          period_date: string
+        }[]
+      }
       get_cost_center_pnl: {
         Args: { _end_date: string; _org_id: string; _start_date: string }
         Returns: {
@@ -12917,58 +13386,21 @@ export type Database = {
         }
         Returns: {
           aging_bucket: string
-          booking_id: string | null
-          booking_type: string | null
+          booking_id: string
+          booking_type: string
           currency: string
-          customer_id: string | null
+          customer_id: string
           customer_name: string
           days_overdue: number
           due_date: string
           invoice_id: string
-          invoice_number: string | null
+          invoice_number: string
           is_date_corrected: boolean
           is_historical_estimate: boolean
           issued_date: string
           original_amount: number
           outstanding_amount: number
           paid_as_of: number
-        }[]
-      }
-      get_supplier_aging_details_v2: {
-        Args: {
-          _as_of_date?: string
-          _currency?: string
-          _org_id: string
-          _supplier_id?: string
-        }
-        Returns: {
-          aging_bucket: string
-          booking_id: string | null
-          currency: string
-          days_overdue: number
-          due_date: string
-          invoice_id: string
-          invoice_number: string | null
-          is_date_corrected: boolean
-          is_historical_estimate: boolean
-          issued_date: string
-          original_amount: number
-          outstanding_amount: number
-          paid_as_of: number
-          supplier_id: string | null
-          supplier_name: string
-        }[]
-      }
-      get_aging_control_totals_v2: {
-        Args: { _as_of_date?: string; _currency?: string; _org_id: string }
-        Returns: {
-          aging_total: number
-          control_balance: number
-          corrected_date_count: number
-          currency: string
-          difference: number
-          entity_type: string
-          historical_estimate_count: number
         }[]
       }
       get_customer_ledger: {
@@ -12993,8 +13425,26 @@ export type Database = {
           phone: string
         }[]
       }
+      get_executive_kpi_dashboard: {
+        Args: {
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
+        Returns: Json
+      }
       get_finance_executive: {
         Args: { _from?: string; _org: string; _to?: string }
+        Returns: Json
+      }
+      get_financial_exception_report: {
+        Args: {
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
         Returns: Json
       }
       get_financial_launch_health: { Args: { _org_id: string }; Returns: Json }
@@ -13128,6 +13578,45 @@ export type Database = {
           max_users: number
         }[]
       }
+      get_organization_salary_settings: {
+        Args: { _org_id: string }
+        Returns: Json
+      }
+      get_profit_analytics_dashboard: {
+        Args: {
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
+        Returns: Json
+      }
+      get_smart_operational_alerts: { Args: { _org_id: string }; Returns: Json }
+      get_supplier_aging_details_v2: {
+        Args: {
+          _as_of_date?: string
+          _currency?: string
+          _org_id: string
+          _supplier_id?: string
+        }
+        Returns: {
+          aging_bucket: string
+          booking_id: string
+          currency: string
+          days_overdue: number
+          due_date: string
+          invoice_id: string
+          invoice_number: string
+          is_date_corrected: boolean
+          is_historical_estimate: boolean
+          issued_date: string
+          original_amount: number
+          outstanding_amount: number
+          paid_as_of: number
+          supplier_id: string
+          supplier_name: string
+        }[]
+      }
       get_supplier_ledger: {
         Args: { _from?: string; _supplier_id: string; _to?: string }
         Returns: {
@@ -13143,6 +13632,15 @@ export type Database = {
       }
       get_supplier_performance: {
         Args: { _org_id: string; _supplier_id: string }
+        Returns: Json
+      }
+      get_travel_kpi_dashboard: {
+        Args: {
+          _currency?: string
+          _end_date: string
+          _org_id: string
+          _start_date: string
+        }
         Returns: Json
       }
       get_trial_balance:
@@ -13255,12 +13753,20 @@ export type Database = {
         Returns: boolean
       }
       html_escape: { Args: { _value: string }; Returns: string }
+      import_bank_statement_lines: {
+        Args: { _lines: Json; _session: string }
+        Returns: Json
+      }
       is_org_expired: { Args: { _org_id: string }; Returns: boolean }
       is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
+        Returns: Json
+      }
+      list_bank_reconciliation_sessions: {
+        Args: { _bank_account?: string; _org: string }
         Returns: Json
       }
       log_admin_action: {
@@ -13294,8 +13800,21 @@ export type Database = {
         }
         Returns: Json
       }
+      match_bank_statement_line: {
+        Args: {
+          _amount?: number
+          _bank_transaction: string
+          _line: string
+          _notes?: string
+        }
+        Returns: string
+      }
       merge_customers: {
         Args: { _keep_id: string; _merge_ids: string[]; _org_id: string }
+        Returns: Json
+      }
+      merge_employee_records: {
+        Args: { _keep_id: string; _merge_ids: string[] }
         Returns: Json
       }
       move_to_dlq: {
@@ -13332,6 +13851,8 @@ export type Database = {
       }
       post_customer_payment: { Args: { _payment_id: string }; Returns: string }
       post_customer_refund: { Args: { _refund_id: string }; Returns: string }
+      post_expense_accrual: { Args: { _expense_id: string }; Returns: string }
+      post_expense_payment: { Args: { _expense_id: string }; Returns: string }
       post_expense_transaction: {
         Args: { _expense_id: string }
         Returns: string
@@ -13365,6 +13886,10 @@ export type Database = {
             }
             Returns: string
           }
+      post_rent_accrual: { Args: { _rent_id: string }; Returns: string }
+      post_rent_payment: { Args: { _rent_id: string }; Returns: string }
+      post_salary_accrual: { Args: { _salary_id: string }; Returns: string }
+      post_salary_payment: { Args: { _salary_id: string }; Returns: string }
       post_supplier_invoice: {
         Args: { _supplier_invoice_id: string }
         Returns: string
@@ -13376,6 +13901,10 @@ export type Database = {
           _organization_id: string
           _plan_id: string
         }
+        Returns: Json
+      }
+      preview_existing_bookings_settlement: {
+        Args: { _org: string }
         Returns: Json
       }
       process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
@@ -13439,9 +13968,21 @@ export type Database = {
         Args: { _customer_id: string; _org_id: string }
         Returns: undefined
       }
+      refresh_customer_invoice_payment_state: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
+      refresh_supplier_invoice_payment_state: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       reopen_fiscal_year: {
         Args: { _org: string; _reason: string; _year: number }
+        Returns: Json
+      }
+      repair_invalid_financial_dates: {
+        Args: { _confirmation: string; _org: string }
         Returns: Json
       }
       replay_event: { Args: { p_event_id: string }; Returns: number }
@@ -13480,6 +14021,10 @@ export type Database = {
       }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
+        Returns: undefined
+      }
+      set_bank_statement_line_ignored: {
+        Args: { _ignored: boolean; _line: string; _reason?: string }
         Returns: undefined
       }
       set_customer_archived: {
@@ -13853,11 +14398,30 @@ export type Database = {
       }
       stop_impersonation: { Args: never; Returns: undefined }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
+      sync_operating_bank_outflow: {
+        Args: {
+          _amount: number
+          _bank_account_id: string
+          _currency: string
+          _description: string
+          _is_paid: boolean
+          _org_id: string
+          _payment_method: string
+          _source_id: string
+          _source_type: string
+          _transaction_date: string
+        }
+        Returns: string
+      }
       toggle_employee_status: {
         Args: { p_employee_id: string; p_is_active: boolean; p_reason?: string }
         Returns: Json
       }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
+      unmatch_bank_reconciliation: {
+        Args: { _match: string }
+        Returns: undefined
+      }
       unpost_journal: {
         Args: { _source_id: string; _source_type: string }
         Returns: boolean
@@ -13871,6 +14435,10 @@ export type Database = {
           p_status_id?: string
         }
         Returns: boolean
+      }
+      update_organization_salary_setting: {
+        Args: { _setting_id: string; _setting_value: number }
+        Returns: Json
       }
       update_period_commission_status: {
         Args: {
@@ -14005,12 +14573,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14034,11 +14602,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14059,11 +14627,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14084,11 +14652,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -14101,11 +14669,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
