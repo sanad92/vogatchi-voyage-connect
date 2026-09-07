@@ -415,4 +415,58 @@ assert.doesNotMatch(
   'booking financial read model must stay typed',
 );
 
-console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, booking-profit, executive-KPI, and company-account-routing checks passed.');
+console.log('Financial formula, double-entry, reporting, settlement, cash-flow, date-repair, recovery-authorization, bank-reconciliation, booking-profit, executive-KPI, and company-account-routing, and treasury single-count checks passed.');
+
+// --- Treasury single-count regression (QA: double-counted bank balances) ---
+const treasuryDoubleCountMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260907160253_3951a969-8a9d-4656-bbdc-bf859cf5178a.sql', import.meta.url),
+  'utf8',
+);
+
+const paymentFunctionBody = (name) => {
+  const start = treasuryDoubleCountMigration.indexOf(`FUNCTION public.${name}(`);
+  assert(start > -1, `${name} must be redefined by the treasury single-count migration`);
+  const end = treasuryDoubleCountMigration.indexOf('$function$;', start);
+  assert(end > start, `${name} body must be complete`);
+  return treasuryDoubleCountMigration.slice(start, end);
+};
+
+const customerPaymentFn = paymentFunctionBody('record_customer_payment');
+const supplierPaymentFn = paymentFunctionBody('record_supplier_payment');
+const refundPaymentFn = paymentFunctionBody('pay_refund_request');
+
+for (const [name, body, movement] of [
+  ['record_customer_payment', customerPaymentFn, "'deposit'"],
+  ['record_supplier_payment', supplierPaymentFn, "'withdrawal'"],
+  ['pay_refund_request', refundPaymentFn, "'refund'"],
+]) {
+  assert.doesNotMatch(
+    body,
+    /UPDATE public\.bank_accounts\s+SET current_balance/,
+    `${name} must not update treasury balances manually — trg_bank_balance_update owns the balance`,
+  );
+  assert.match(
+    body,
+    /INSERT INTO public\.bank_account_transactions/,
+    `${name} must still record the treasury movement`,
+  );
+  assert(body.includes(movement), `${name} must keep its ${movement} movement semantics`);
+  assert.match(body, /_require_route_code/, `${name} must stay route-aware`);
+  assert.match(body, /FOR UPDATE/, `${name} must keep its row lock`);
+}
+
+assert.match(
+  customerPaymentFn,
+  /client_ref=_client_ref;[\s\S]+IF v_payment_id IS NOT NULL THEN RETURN v_payment_id/,
+  'customer payment client_ref idempotency must still short-circuit duplicates',
+);
+assert.match(
+  refundPaymentFn,
+  /Cash treasury has insufficient balance/,
+  'refund disbursement must keep the cash balance guard',
+);
+assert.match(
+  supplierPaymentFn,
+  /Payment exceeds the remaining payment-order balance/,
+  'supplier payment must keep the payment-order balance guard',
+);
