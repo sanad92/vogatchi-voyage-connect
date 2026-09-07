@@ -50,7 +50,7 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
         <div className="border rounded-lg p-3 space-y-2 bg-card">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="h-3.5 w-3.5" /> سداد المورد</span>
-            {data?.supplierInvoices.length ? (
+            {data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
               <Badge variant={data.totals.outstandingToSupplier === 0 ? 'default' : 'outline'} className="text-[10px]">
                 {data.totals.outstandingToSupplier === 0 ? 'مسدد بالكامل' : 'مستحق'}
               </Badge>
@@ -58,9 +58,13 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
               <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">غير مسدد</Badge>
             )}
           </div>
-          {data?.supplierInvoices.length ? (
+          {data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
             <div>
-              <div className="text-xs font-mono">{data.supplierInvoices.map((row) => row.invoice_number).join('، ')}</div>
+              {data.supplierInvoices.length > 0 ? (
+                <div className="text-xs font-mono">{data.supplierInvoices.map((row) => row.invoice_number).join('، ')}</div>
+              ) : (
+                <div className="text-xs text-muted-foreground">دفعات مسجلة بدون فاتورة مورد</div>
+              )}
               <div className="text-xs text-muted-foreground">{data.supplierPayments.length} دفعة مسجلة</div>
               <div className="text-base font-bold">{data.totals.outstandingToSupplier.toLocaleString()} {data.totals.currency || currency} متبقي</div>
             </div>
