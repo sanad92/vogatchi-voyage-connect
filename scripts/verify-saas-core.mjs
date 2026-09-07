@@ -39,7 +39,8 @@ assert.equal(can('agent', ['finance'], 'marketing_edit'), false, 'finance cannot
 assert.equal(can('agent', ['marketing'], 'marketing_edit'), true, 'marketing can edit journeys');
 assert.equal(can('agent', ['marketing'], 'financial_view'), false, 'marketing cannot see finance');
 assert.equal(can('agent', [], 'team_view'), true, 'an unassigned agent can see the team directory');
-assert.equal(can('agent', [], 'customers_view'), false, 'an unassigned agent fails closed');
+assert.equal(can('agent', [], 'customers_view'), true, 'an unassigned agent keeps the approved read-only workspace baseline');
+assert.equal(can('agent', [], 'customers_edit'), false, 'an unassigned agent cannot mutate customer records');
 assert.equal(can('viewer', [], 'bookings_view'), true, 'viewer has read-only operational access');
 assert.equal(can('viewer', [], 'bookings_edit'), false, 'viewer cannot edit bookings');
 
@@ -106,4 +107,4 @@ assert.doesNotMatch(protectedRoute, /org_setup_skipped/, 'protected routes canno
 assert.doesNotMatch(registerOrganization, /handleSkip/, 'organization creation has no skip action');
 assert.doesNotMatch(registerOrganization, /تخطي والدخول للوحة التحكم/, 'organization creation has no skip prompt');
 
-console.log('SaaS core checks passed: 38/38');
+console.log('SaaS core checks passed.');

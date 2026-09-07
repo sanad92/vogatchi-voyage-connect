@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Users, AlertCircle } from "lucide-react";
 import { useCustomerService } from "@/hooks/useCustomerService";
 import { Link } from "react-router-dom";
+import ComplaintManagementSystem from '@/components/customers/ComplaintManagementSystem';
 
 const CustomerService = () => {
   const { followUps, todayTasks } = useCustomerService();
@@ -111,6 +112,8 @@ const CustomerService = () => {
       )}
 
       <TodayTasks />
+
+      <ComplaintManagementSystem />
 
       <ServicePerformance 
         todayTasksCount={todayTasksCount}

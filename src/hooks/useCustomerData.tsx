@@ -152,7 +152,7 @@ export const useCustomerData = (customerId: string) => {
           status: { name_ar: b.status, name: b.status, color: '#64748b' },
         };
         const key = isBookingGroupKey(b.booking_type) ? b.booking_type : 'hotel';
-        byType[key].push(normalised as any);
+        byType[key].push(normalised as CustomerBookingSummary);
       }
 
       const confirmedBookings = ((unifiedBookings ?? []) as CustomerBookingRow[]).filter((booking) =>

@@ -1,92 +1,61 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOrgId } from "@/hooks/useOrgId";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-interface SalarySetting {
+export type SalarySetting = {
   id: string;
+  organization_id: string;
   setting_key: string;
-  setting_value: string;
+  setting_value: number;
   description: string;
   created_at: string;
   updated_at: string;
-}
+};
 
 export const useSalarySettings = () => {
+  const orgId = useOrgId();
   const queryClient = useQueryClient();
-
-  // محاكاة إعدادات الرواتب (سيتم استبدالها بالبيانات الحقيقية لاحقاً)
-  const { data: salarySettings, isLoading: settingsLoading } = useQuery({
-    queryKey: ['salary-settings'],
+  const settings = useQuery({
+    queryKey: ["salary-settings", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      // بيانات وهمية للعرض
-      const mockSettings: SalarySetting[] = [
-        {
-          id: '1',
-          setting_key: 'tax_rate',
-          setting_value: '14',
-          description: 'معدل الضريبة الافتراضي (%)',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          setting_key: 'insurance_rate',
-          setting_value: '9',
-          description: 'معدل التأمين الاجتماعي (%)',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          setting_key: 'overtime_multiplier',
-          setting_value: '1.5',
-          description: 'مضاعف الساعات الإضافية',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          setting_key: 'working_days_per_month',
-          setting_value: '30',
-          description: 'أيام العمل في الشهر',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '5',
-          setting_key: 'working_hours_per_day',
-          setting_value: '8',
-          description: 'ساعات العمل في اليوم',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      return mockSettings;
+      const { data, error } = await callUntypedRpc<SalarySetting[]>(
+        "get_organization_salary_settings",
+        { _org_id: orgId },
+      );
+      if (error) throw error;
+      return data ?? [];
     },
   });
-
-  // تحديث إعداد راتب (محاكاة)
-  const { mutateAsync: updateSalarySetting, isPending: isUpdatingSetting } = useMutation({
-    mutationFn: async ({ id, setting_value }: { id: string; setting_value: string }) => {
-      // محاكاة العملية
-      return { id, setting_value } as any;
+  const update = useMutation({
+    mutationFn: async ({
+      id,
+      setting_value,
+    }: {
+      id: string;
+      setting_value: string;
+    }) => {
+      const parsedValue = Number(setting_value);
+      if (!Number.isFinite(parsedValue) || parsedValue < 0)
+        throw new Error("قيمة إعداد الراتب غير صالحة");
+      const { data, error } = await callUntypedRpc<SalarySetting>(
+        "update_organization_salary_setting",
+        { _setting_id: id, _setting_value: parsedValue },
+      );
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-settings'] });
-    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["salary-settings", orgId] }),
   });
-
-  // الحصول على قيمة إعداد معين
-  const getSetting = (key: string): string => {
-    const setting = salarySettings?.find(s => s.setting_key === key);
-    return setting?.setting_value || '0';
-  };
-
   return {
-    salarySettings,
-    settingsLoading,
-    updateSalarySetting,
-    isUpdatingSetting,
-    getSetting,
+    salarySettings: settings.data ?? [],
+    settingsLoading: settings.isLoading,
+    updateSalarySetting: update.mutateAsync,
+    isUpdatingSetting: update.isPending,
+    getSetting: (key: string) =>
+      settings.data
+        ?.find((setting) => setting.setting_key === key)
+        ?.setting_value.toString(),
   };
 };

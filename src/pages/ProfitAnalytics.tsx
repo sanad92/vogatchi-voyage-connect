@@ -11,6 +11,8 @@ import ProfitOverviewTab from '@/components/profits/ProfitOverviewTab';
 import BookingProfitsTab from '@/components/profits/BookingProfitsTab';
 import CustomerProfitsTab from '@/components/profits/CustomerProfitsTab';
 import EmployeeProfitsTab from '@/components/profits/EmployeeProfitsTab';
+import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ProfitAnalytics = () => {
   const currentYear = new Date().getFullYear();
@@ -18,8 +20,9 @@ const ProfitAnalytics = () => {
   const [endDate, setEndDate] = useState(`${currentYear}-12-31`);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [currency, setCurrency] = useState('EGP');
 
-  const { bookings, summary, customerProfits, employeeProfits, monthlyProfits, isLoading } = useProfitAnalytics(startDate, endDate);
+  const { bookings, summary, customerProfits, employeeProfits, monthlyProfits, isLoading, error } = useProfitAnalytics(startDate, endDate, currency);
 
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
@@ -64,9 +67,12 @@ const ProfitAnalytics = () => {
                 <SelectItem value="transport">نقل</SelectItem>
               </SelectContent>
             </Select>
+            <ReportCurrencySelect value={currency} onValueChange={setCurrency} />
           </div>
         </CardContent>
       </Card>
+
+      {error && <Alert variant="destructive"><AlertTitle>تعذر تحميل تحليل الأرباح</AlertTitle><AlertDescription>{error instanceof Error ? error.message : 'حدث خطأ غير متوقع.'}</AlertDescription></Alert>}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -79,6 +85,7 @@ const ProfitAnalytics = () => {
             totalCosts={summary.totalCosts}
             netProfit={summary.netProfit}
             profitMargin={summary.profitMargin}
+            currency={currency}
           />
 
           <Tabs defaultValue="overview" dir="rtl">
@@ -90,7 +97,7 @@ const ProfitAnalytics = () => {
             </TabsList>
 
             <TabsContent value="overview">
-              <ProfitOverviewTab monthlyProfits={monthlyProfits} summary={summary} />
+              <ProfitOverviewTab monthlyProfits={monthlyProfits} summary={summary} currency={currency} />
             </TabsContent>
 
             <TabsContent value="bookings">

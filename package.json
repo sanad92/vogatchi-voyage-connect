@@ -12,6 +12,7 @@
     "test:crm": "node scripts/verify-crm-core.mjs",
     "test:finance": "node scripts/verify-financial-formulas.mjs",
     "test:navigation": "node scripts/verify-module-navigation.mjs",
+    "test:backlog": "node scripts/verify-remaining-backlog.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

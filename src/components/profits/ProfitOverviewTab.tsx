@@ -7,20 +7,28 @@ import type { MonthlyProfit, ProfitSummary } from '@/hooks/useProfitAnalytics';
 interface ProfitOverviewTabProps {
   monthlyProfits: MonthlyProfit[];
   summary: ProfitSummary;
+  currency?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+  label?: string;
+  currency?: string;
+};
+
+const CustomTooltip = ({ active, payload, label, currency = 'EGP' }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-xl p-3 shadow-xl" dir="rtl">
       <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
-      <p className="text-sm text-primary">الإيرادات: <span className="font-bold">{payload[0]?.value?.toLocaleString()} ج.م</span></p>
-      {payload[1] && <p className="text-sm text-green-600">الربح: <span className="font-bold">{payload[1]?.value?.toLocaleString()} ج.م</span></p>}
+      <p className="text-sm text-primary">الإيرادات: <span className="font-bold">{Number(payload[0]?.value || 0).toLocaleString('ar-EG')} {currency}</span></p>
+      {payload[1] && <p className="text-sm text-green-600">الربح: <span className="font-bold">{Number(payload[1]?.value || 0).toLocaleString('ar-EG')} {currency}</span></p>}
     </div>
   );
 };
 
-const ProfitOverviewTab = ({ monthlyProfits, summary }: ProfitOverviewTabProps) => {
+const ProfitOverviewTab = ({ monthlyProfits, summary, currency = 'EGP' }: ProfitOverviewTabProps) => {
   const chartData = monthlyProfits.map(m => ({
     month: m.monthName,
     revenue: m.revenue,
@@ -54,7 +62,7 @@ const ProfitOverviewTab = ({ monthlyProfits, summary }: ProfitOverviewTabProps) 
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(215, 16%, 47%)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(215, 16%, 47%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip currency={currency} />} />
                 <Area type="monotone" dataKey="revenue" stroke="hsl(231, 48%, 48%)" strokeWidth={2} fill="url(#revGrad)" dot={{ r: 3, fill: 'hsl(231, 48%, 48%)', stroke: '#fff', strokeWidth: 2 }} />
                 <Area type="monotone" dataKey="profit" stroke="hsl(152, 60%, 42%)" strokeWidth={2} fill="url(#profitGrad)" dot={{ r: 3, fill: 'hsl(152, 60%, 42%)', stroke: '#fff', strokeWidth: 2 }} />
               </AreaChart>
@@ -75,7 +83,7 @@ const ProfitOverviewTab = ({ monthlyProfits, summary }: ProfitOverviewTabProps) 
             {summary.topEmployee ? (
               <div>
                 <p className="text-lg font-bold text-foreground">{summary.topEmployee.name}</p>
-                <p className="text-sm text-muted-foreground">ربح: {summary.topEmployee.profit.toLocaleString()} ج.م</p>
+                <p className="text-sm text-muted-foreground">ربح: {summary.topEmployee.profit.toLocaleString('ar-EG')} {currency}</p>
               </div>
             ) : <p className="text-sm text-muted-foreground">لا توجد بيانات</p>}
           </CardContent>
@@ -90,7 +98,7 @@ const ProfitOverviewTab = ({ monthlyProfits, summary }: ProfitOverviewTabProps) 
             {summary.topCustomer ? (
               <div>
                 <p className="text-lg font-bold text-foreground">{summary.topCustomer.name}</p>
-                <p className="text-sm text-muted-foreground">ربح: {summary.topCustomer.profit.toLocaleString()} ج.م</p>
+                <p className="text-sm text-muted-foreground">ربح: {summary.topCustomer.profit.toLocaleString('ar-EG')} {currency}</p>
               </div>
             ) : <p className="text-sm text-muted-foreground">لا توجد بيانات</p>}
           </CardContent>

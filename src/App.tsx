@@ -89,6 +89,7 @@ const QuoteDetails = lazy(() => import("@/pages/QuoteDetails"));
 const Invoices = lazy(() => import("@/pages/Invoices"));
 const NewInvoice = lazy(() => import("@/pages/NewInvoice"));
 const PaymentOrders = lazy(() => import("@/pages/PaymentOrders"));
+const FinancialExceptions = lazy(() => import("@/pages/finance/FinancialExceptions"));
 const BankAccounts = lazy(() => import("@/pages/BankAccounts"));
 const ExpenseManagementEnhanced = lazy(() => import("@/pages/ExpenseManagementEnhanced"));
 const ProfitAnalytics = lazy(() => import("@/pages/ProfitAnalytics"));
@@ -340,7 +341,8 @@ function App() {
                               <Route path="/landing-admin" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
                               <Route path="/admin-import-export" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminImportExport /></PermissionRouteGuard>} />
                               <Route path="/site-customization" element={<PermissionRouteGuard requiredPermission="admin_settings"><SiteCustomization /></PermissionRouteGuard>} />
-                              {/* <Route path="/payment-orders" element={<PermissionRouteGuard requiredPermission="financial_view"><PaymentOrders /></PermissionRouteGuard>} /> Deferred: payment_orders table not implemented */}
+                              <Route path="/payment-orders" element={<PermissionRouteGuard requiredPermission="financial_view"><PaymentOrders /></PermissionRouteGuard>} />
+                              <Route path="/financial-exceptions" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialExceptions /></PermissionRouteGuard>} />
                               <Route path="/payment-success" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
                               <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />

@@ -234,6 +234,7 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'أعمار ديون الموردين', href: '/supplier-aging', icon: Building2, description: 'فواتير الموردين المفتوحة حسب مدة التأخر ومطابقة الذمم.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'المصروفات والعمولات', href: '/expense-management', icon: Calculator, description: 'مصروفات الشركة والموظفين والعمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الاعتمادات المالية', href: '/finance-approvals', icon: CheckCircle2, description: 'اعتماد السداد للموردين وطلبات الاسترداد.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, description: 'متابعة أوامر دفع الموردين واعتمادها وصرفها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
       },
       {
@@ -260,6 +261,7 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'الميزانية العمومية', href: '/balance-sheet', icon: Landmark, description: 'الأصول والخصوم وحقوق الملكية.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'التقارير المحاسبية', href: '/accounting-reports', icon: BarChart3, description: 'مركز القوائم والتقارير المحاسبية.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'التحقق المالي', href: '/financial-validation', icon: ShieldCheck, description: 'فحوص توازن القيود واتساق البيانات المالية.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'الاستثناءات المالية', href: '/financial-exceptions', icon: AlertTriangle, description: 'الحجوزات غير المفوترة والدفعات المقدمة والمستندات الناقصة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'الاسترداد التاريخي', href: '/finance/historical-recovery', icon: History, description: 'مراجعة وترحيل البيانات المالية التاريخية.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
       },

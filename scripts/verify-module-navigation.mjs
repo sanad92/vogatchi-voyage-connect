@@ -40,7 +40,8 @@ for (const href of new Set(configuredHrefs)) {
   assert.ok(activeRoutes.has(href), `configured screen has an active App route: ${href}`);
 }
 
-assert.doesNotMatch(navigation, /payment-orders/, 'deferred payment orders are not exposed');
+assert.match(navigation, /href: '\/payment-orders'/, 'supplier payment orders are exposed after implementation');
+assert.match(navigation, /href: '\/financial-exceptions'/, 'financial exception reporting is exposed');
 assert.match(app, /path="\/modules\/:moduleId" element={<ModuleOverview \/>}/, 'module overview route is registered');
 assert.match(sidebar, /NAVIGATION_GROUPS/, 'sidebar reads the shared module registry');
 assert.match(sidebar, /canAccessScreen/, 'sidebar filters screens by permissions and plan');

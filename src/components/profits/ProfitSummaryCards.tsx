@@ -7,25 +7,27 @@ interface ProfitSummaryCardsProps {
   totalCosts: number;
   netProfit: number;
   profitMargin: number;
+  currency?: string;
 }
 
-const ProfitSummaryCards = ({ totalRevenue, totalCosts, netProfit, profitMargin }: ProfitSummaryCardsProps) => {
+const ProfitSummaryCards = ({ totalRevenue, totalCosts, netProfit, profitMargin, currency = 'EGP' }: ProfitSummaryCardsProps) => {
+  const money = (value: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value);
   const cards = [
     {
       title: 'إجمالي الإيرادات',
-      value: `${totalRevenue.toLocaleString()} ج.م`,
+      value: money(totalRevenue),
       icon: DollarSign,
       gradient: 'bg-gradient-to-br from-[hsl(231,65%,52%)] to-[hsl(250,60%,35%)]',
     },
     {
       title: 'إجمالي التكاليف',
-      value: `${totalCosts.toLocaleString()} ج.م`,
+      value: money(totalCosts),
       icon: TrendingDown,
       gradient: 'bg-gradient-to-br from-[hsl(30,95%,52%)] to-[hsl(15,85%,40%)]',
     },
     {
       title: 'صافي الربح',
-      value: `${netProfit.toLocaleString()} ج.م`,
+      value: money(netProfit),
       icon: TrendingUp,
       gradient: netProfit >= 0
         ? 'bg-gradient-to-br from-[hsl(152,60%,42%)] to-[hsl(170,50%,28%)]'

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEmployeeManagementData } from "@/hooks/useEmployeeManagementData";
 import { toast } from "sonner";
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 interface DuplicateGroup {
   name?: string;
@@ -49,9 +50,9 @@ const DuplicateEmployeesManager = () => {
   useEffect(() => {
     if (!allEmployees || allEmployees.length === 0) return;
 
-    const nameGroups = new Map<string, any[]>();
-    const phoneGroups = new Map<string, any[]>();
-    const emailGroups = new Map<string, any[]>();
+    const nameGroups = new Map<string, DuplicateGroup['employees']>();
+    const phoneGroups = new Map<string, DuplicateGroup['employees']>();
+    const emailGroups = new Map<string, DuplicateGroup['employees']>();
 
     // تجميع الموظفين حسب المعايير المختلفة
     allEmployees.forEach(employee => {
@@ -156,8 +157,20 @@ const DuplicateEmployeesManager = () => {
   });
 
   const handleMergeEmployees = async (group: DuplicateGroup) => {
-    // سنقوم بتنفيذ عملية الدمج لاحقاً
-    toast.info('ميزة الدمج قيد التطوير - يرجى التواصل مع المطور');
+    const keep = group.employees[0];
+    const mergedIds = group.employees.slice(1).map(employee => employee.id);
+    if (!keep || mergedIds.length === 0) return;
+    const confirmed = window.confirm(`سيتم الاحتفاظ بسجل ${keep.full_name} (${keep.employee_code}) ونقل كل الارتباطات إليه ثم تعطيل ${mergedIds.length} سجل مكرر. هل تريد المتابعة؟`);
+    if (!confirmed) return;
+    try {
+      const { error } = await callUntypedRpc('merge_employee_records', { _keep_id: keep.id, _merge_ids: mergedIds });
+      if (error) throw error;
+      toast.success('تم دمج سجلات الموظفين ونقل الارتباطات بنجاح');
+      await refreshAllData();
+    } catch (error) {
+      console.error('Employee merge failed:', error);
+      toast.error(error instanceof Error ? error.message : 'تعذر دمج الموظفين');
+    }
   };
 
   const handleRefresh = async () => {
@@ -230,7 +243,7 @@ const DuplicateEmployeesManager = () => {
                       onClick={() => handleMergeEmployees(group)}
                     >
                       <Merge className="h-4 w-4 mr-1" />
-                      دمج الموظفين
+                      دمج في أقدم سجل
                     </Button>
                   </CardTitle>
                   {group.name && (
