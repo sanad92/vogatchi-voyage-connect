@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { TransportBooking, VehicleType, TransportRoute } from '@/types/transport';
 import { useOrgId } from './useOrgId';
+import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 
 export const useTransportBookings = () => {
   const queryClient = useQueryClient();
@@ -66,9 +67,10 @@ export const useTransportBookings = () => {
   const addTransportBookingMutation = useMutation({
     mutationFn: async (booking: Omit<TransportBooking, 'id' | 'created_at' | 'updated_at' | 'booking_reference'>) => {
       const { data, error } = await supabase.from('transport_bookings')
-        .insert({ ...booking, currency: booking.currency || 'EGP', organization_id: orgId })
+        .insert(withParentBooking({ ...booking, currency: booking.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
+      await syncParent();
 
       // Trigger confirmation notification
       try {

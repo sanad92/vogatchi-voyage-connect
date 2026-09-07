@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { FlightBooking, NewFlightBooking, Airport, Airline, FlightClass } from '@/types/flightBooking';
 import { useOrgId } from './useOrgId';
+import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 
 export const useFlightBookings = () => {
   const queryClient = useQueryClient();
@@ -98,8 +99,9 @@ export const useFlightBookings = () => {
         baggage_info: booking.baggage_info ? JSON.stringify(booking.baggage_info) : null,
         ticket_numbers: booking.ticket_numbers || []
       };
-      const { data, error } = await supabase.from('flight_bookings').insert([dbBooking]).select().single();
+      const { data, error } = await supabase.from('flight_bookings').insert([withParentBooking(dbBooking)]).select().single();
       if (error) throw error;
+      await syncParent();
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['flight-bookings'] }); toast({ title: "تم إنشاء حجز الطيران", description: "تم إضافة حجز الطيران بنجاح" }); },

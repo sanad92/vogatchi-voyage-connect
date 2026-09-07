@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { CarRental } from '@/types/transport';
 import { useOrgId } from './useOrgId';
+import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 
 export const useCarRentals = () => {
   const queryClient = useQueryClient();
@@ -46,9 +47,10 @@ export const useCarRentals = () => {
     mutationFn: async (rental: Omit<CarRental, 'id' | 'created_at' | 'updated_at' | 'rental_reference'>) => {
       const { data, error } = await supabase
         .from('car_rentals')
-        .insert({ ...rental, currency: rental.currency || 'EGP', organization_id: orgId })
+        .insert(withParentBooking({ ...rental, currency: rental.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
+      await syncParent();
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['car-rentals'] }); toast({ title: "تم الحفظ بنجاح", description: "تم إضافة عقد إيجار السيارة بنجاح" }); },
