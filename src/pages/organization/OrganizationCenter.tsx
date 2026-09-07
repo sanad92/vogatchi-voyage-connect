@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key, ClipboardCheck } from 'lucide-react';
+import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key, ClipboardCheck, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBranches, useDepartments } from '@/hooks/useBranchesDepartments';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
@@ -8,6 +8,7 @@ const sections = [
   { to: '/organization/branches', title: 'الفروع', icon: Building2, desc: 'إدارة فروع المؤسسة' },
   { to: '/organization/departments', title: 'الإدارات', icon: GitBranch, desc: 'إدارة الأقسام والإدارات' },
   { to: '/team', title: 'المستخدمون', icon: Users, desc: 'إدارة أعضاء الفريق' },
+  { to: '/organization/roles', title: 'الأدوار والصلاحيات', icon: ShieldCheck, desc: 'صلاحيات حسب شركتك وأقسامك' },
   { to: '/organization/feature-flags', title: 'الميزات', icon: Flag, desc: 'تفعيل/تعطيل الميزات' },
   { to: '/organization/white-label', title: 'الهوية البصرية', icon: Palette, desc: 'شعار وألوان المؤسسة' },
   { to: '/organization/sop-team', title: 'فريق وسياسات SOP', icon: ClipboardCheck, desc: 'توزيع الأقسام وسياسات دليل العمل' },
@@ -19,7 +20,7 @@ const sections = [
 export default function OrganizationCenter() {
   const { data: branches = [] } = useBranches();
   const { data: departments = [] } = useDepartments();
-  const { members = [] } = useOrgMembers() as any;
+  const { members = [] } = useOrgMembers();
 
   return (
     <div className="p-6 space-y-6" dir="rtl">
