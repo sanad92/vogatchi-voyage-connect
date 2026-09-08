@@ -110,6 +110,7 @@ const { useBankReconciliation } = await loadModule('../src/hooks/useBankReconcil
   '@/integrations/supabase/client': { supabase: {} },
   '@/lib/supabaseRpc': { callUntypedRpc: () => {} },
   '@/hooks/useOrgId': { useOrgId: () => 'org-a' },
+  '@/hooks/useOptimizedAuth': { useOptimizedAuth: () => ({ user: { id: 'user-a' } }) },
 });
 await useBankReconciliation('account-a', 'session-a').close.onSuccess();
 assert.ok(invalidations.some(key => key[0] === 'bank-account-baseline'));

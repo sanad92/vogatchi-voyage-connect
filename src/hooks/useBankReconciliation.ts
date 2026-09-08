@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 export type ReconciliationStatus = 'draft' | 'in_review' | 'reconciled' | 'closed';
 export type LineStatus = 'unmatched' | 'partial' | 'matched' | 'ignored';
@@ -18,8 +19,30 @@ export interface BankReconciliationWorkspace { session:BankReconciliationSession
 
 const rpc = async <T>(name:string, args:Record<string,unknown>) => { const { data, error } = await callUntypedRpc<T>(name,args); if (error) throw error; return data as T; };
 
+export interface ReconciliationPermission { allowed:boolean; isLoading:boolean; isError:boolean; refetch:()=>void }
+
 export function useBankReconciliation(accountId:string, sessionId:string) {
-  const orgId=useOrgId(); const client=useQueryClient();
+  const orgId=useOrgId(); const client=useQueryClient(); const { user }=useOptimizedAuth();
+  const permissionQuery=useQuery({
+    queryKey:['bank-reconciliation-can-manage',orgId,user?.id],
+    enabled:Boolean(orgId&&user?.id),
+    staleTime:30_000,
+    gcTime:0,
+    retry:false,
+    refetchOnWindowFocus:true,
+    queryFn:async()=>{
+      const {data,error}=await callUntypedRpc<boolean>('_can_manage_bank_reconciliation',{_org:orgId});
+      if(error)throw error;
+      return data===true;
+    },
+  });
+  const permissionPending=Boolean(orgId&&user?.id)&&(permissionQuery.isPending||permissionQuery.isFetching&&permissionQuery.data===undefined);
+  const permission:ReconciliationPermission={
+    allowed:!permissionPending&&!permissionQuery.isError&&permissionQuery.data===true,
+    isLoading:!user||!orgId||permissionPending,
+    isError:permissionQuery.isError,
+    refetch:()=>{void permissionQuery.refetch();},
+  };
   const sessionsKey=['bank-reconciliation-sessions',orgId,accountId]; const workspaceKey=['bank-reconciliation-workspace',sessionId];
   const accounts=useQuery({queryKey:['reconciliation-bank-accounts',orgId],enabled:!!orgId,queryFn:async()=>{const {data,error}=await supabase.from('bank_accounts').select('id,account_name,bank_name,account_number,currency,current_balance,treasury_kind,is_active').eq('organization_id',orgId!).eq('is_active',true).eq('treasury_kind','bank').order('account_name');if(error)throw error;return data||[];}});
   const sessions=useQuery({queryKey:sessionsKey,enabled:!!orgId&&!!accountId,queryFn:()=>rpc<BankReconciliationSession[]>('list_bank_reconciliation_sessions',{_org:orgId,_bank_account:accountId})});
@@ -34,5 +57,5 @@ export function useBankReconciliation(accountId:string, sessionId:string) {
   const createAdjustment=useMutation({mutationFn:(v:{lineId:string;counterAccountId:string;description:string})=>rpc<{journal_entry_id:string;bank_transaction_id:string;amount:number}>('create_bank_reconciliation_adjustment',{_line:v.lineId,_counter_account:v.counterAccountId,_description:v.description}),onSuccess:refresh});
   const approve=useMutation({mutationFn:()=>rpc<{status:string;difference:number}>('approve_bank_reconciliation',{_session:sessionId,_tolerance:.01}),onSuccess:refresh});
   const close=useMutation({mutationFn:()=>rpc<{status:string}>('close_bank_reconciliation',{_session:sessionId}),onSuccess:refresh});
-  return {orgId,accounts,sessions,workspace,createSession,importLines,autoMatch,manualMatch,unmatch,setIgnored,createAdjustment,approve,close};
+  return {orgId,permission,accounts,sessions,workspace,createSession,importLines,autoMatch,manualMatch,unmatch,setIgnored,createAdjustment,approve,close};
 }
