@@ -134,3 +134,31 @@ assert.equal(button(render({ allowed: true }, closed), 'إغلاق').props.disab
 assert.equal(button(render({ allowed: false }, closed), 'إغلاق').props.disabled, true, 'close disabled when denied');
 
 console.log('bank reconciliation permission UI checks passed');
+
+
+// Exercise the actual hook: a previous allow must not survive revalidation.
+let response, queryOptions;
+const { useBankReconciliation } = await loadModule('../src/hooks/useBankReconciliation.ts', {
+  '@tanstack/react-query': {
+    useQuery: options => { if (options.queryKey[0] === 'bank-reconciliation-can-manage') { queryOptions=options; return response; } return {}; },
+    useMutation: options => options,
+    useQueryClient: () => ({ invalidateQueries: async () => {} }),
+  },
+  '@/integrations/supabase/client': { supabase: {} },
+  '@/lib/supabaseRpc': { callUntypedRpc: async () => ({ data: true, error: null }) },
+  '@/hooks/useOrgId': { useOrgId: () => 'org-1' },
+  '@/hooks/useOptimizedAuth': { useOptimizedAuth: () => ({ user: { id: 'user-1' } }) },
+});
+for (const [state, expected] of [
+  [{ data:true, isPending:false, isFetching:false, isError:false },true],
+  [{ data:true, isPending:false, isFetching:true, isError:false },false],
+  [{ data:true, isPending:false, isFetching:false, isError:true },false],
+  [{ data:undefined, isPending:true, isFetching:true, isError:false },false],
+  [{ data:false, isPending:false, isFetching:false, isError:false },false],
+]) {
+  response=state;
+  assert.equal(useBankReconciliation('account-1','session-1').permission.allowed,expected);
+}
+assert.equal(queryOptions.queryKey.join('|'),'bank-reconciliation-can-manage|org-1|user-1');
+assert.equal(queryOptions.staleTime,0);
+console.log('Permission hook denies cached allow during revalidation and errors.');

@@ -26,7 +26,7 @@ export function useBankReconciliation(accountId:string, sessionId:string) {
   const permissionQuery=useQuery({
     queryKey:['bank-reconciliation-can-manage',orgId,user?.id],
     enabled:Boolean(orgId&&user?.id),
-    staleTime:30_000,
+    staleTime:0,
     gcTime:0,
     retry:false,
     refetchOnWindowFocus:true,
@@ -36,7 +36,7 @@ export function useBankReconciliation(accountId:string, sessionId:string) {
       return data===true;
     },
   });
-  const permissionPending=Boolean(orgId&&user?.id)&&(permissionQuery.isPending||permissionQuery.isFetching&&permissionQuery.data===undefined);
+  const permissionPending=!orgId||!user?.id||permissionQuery.isPending||permissionQuery.isFetching;
   const permission:ReconciliationPermission={
     allowed:!permissionPending&&!permissionQuery.isError&&permissionQuery.data===true,
     isLoading:!user||!orgId||permissionPending,
