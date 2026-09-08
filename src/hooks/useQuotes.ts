@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { toast } from 'sonner';
-import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
+import { useRef } from 'react';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 export interface QuoteItem {
   id?: string;
@@ -16,7 +17,7 @@ export interface QuoteItem {
   quantity: number;
   total_cost: number;
   total_selling: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   sort_order?: number;
 }
 
@@ -69,6 +70,7 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
+  const creationRequest = useRef<{ fingerprint: string; id: string } | null>(null);
   const page = filters?.page ?? 1;
   const pageSize = filters?.pageSize ?? 20;
 
@@ -96,7 +98,7 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
     enabled: !!orgId,
   });
 
-  const quoteDetailsQuery = (quoteId: string) => useQuery({
+  const useQuoteDetails = (quoteId: string) => useQuery({
     queryKey: ['quote', quoteId, orgId],
     queryFn: async () => {
       const [quoteRes, itemsRes] = await Promise.all([
@@ -120,70 +122,18 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
 
   const createQuote = useMutation({
     mutationFn: async (data: QuoteFormData) => {
-      // Generate quote number
-      const { data: qNum, error: numErr } = await supabase.rpc('generate_quote_number');
-      if (numErr) throw numErr;
-
-      const subtotal = data.items.reduce((sum, i) => sum + i.total_selling, 0);
-      const totalCost = data.items.reduce((sum, i) => sum + i.total_cost, 0);
-      const financialBreakdown = calculateFinancialBreakdown({
-        subtotal,
-        discountAmount: data.discount_amount ?? 0,
-        vatRate: data.vat_rate ?? 0,
-        totalCost,
-      });
-      const totalAmount = financialBreakdown.totalAmount;
-      const totalProfit = financialBreakdown.totalProfit;
-
-      const { data: quote, error } = await supabase
-        .from('quotes')
-        .insert({
-          organization_id: orgId!,
-          quote_number: qNum,
-          customer_id: data.customer_id || null,
-          customer_name: data.customer_name,
-          status: data.status || 'draft',
-          travel_date: data.travel_date || null,
-          return_date: data.return_date || null,
-          destination: data.destination || null,
-          number_of_travelers: data.number_of_travelers,
-          notes: data.notes || null,
-          subtotal: financialBreakdown.subtotal,
-          discount_amount: financialBreakdown.discountAmount,
-          vat_rate: financialBreakdown.vatRate,
-          vat_amount: financialBreakdown.vatAmount,
-          total_amount: financialBreakdown.totalAmount,
-          total_cost: totalCost,
-          total_profit: totalProfit,
-          valid_until: data.valid_until || null,
-          assigned_employee_id: data.assigned_employee_id || null,
-          created_by: user?.id,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-
-      // Insert items
-      if (data.items.length > 0) {
-        const { error: itemsErr } = await supabase.from('quote_items').insert(
-          data.items.map((item, idx) => ({
-            quote_id: quote.id,
-            organization_id: orgId!,
-            item_type: item.item_type,
-            description: item.description,
-            supplier_id: item.supplier_id || null,
-            cost_price: item.cost_price,
-            selling_price: item.selling_price,
-            quantity: item.quantity,
-            total_cost: item.total_cost,
-            total_selling: item.total_selling,
-            details: item.details || {},
-            sort_order: idx,
-          }))
-        );
-        if (itemsErr) throw itemsErr;
+      if (!orgId || !user?.id) throw new Error('تعذر تحديد الشركة أو المستخدم');
+      // Reuse the key after timeout/retry, even if the form returns a new object.
+      const payload = JSON.parse(JSON.stringify(data));
+      const fingerprint = JSON.stringify([orgId, user.id, payload]);
+      if (creationRequest.current?.fingerprint !== fingerprint) {
+        creationRequest.current = { fingerprint, id: crypto.randomUUID() };
       }
-
+      const { data: quote, error } = await callUntypedRpc<Quote>('create_quote_atomic', {
+        _org: orgId, _request_id: creationRequest.current.id, _payload: payload,
+      });
+      if (error) throw new Error(error.message);
+      if (!quote?.id) throw new Error('لم يرجع الخادم تأكيد حفظ العرض؛ أعد المحاولة');
       return quote;
     },
     onSuccess: () => {
@@ -225,6 +175,6 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
     createQuote,
     updateQuoteStatus,
     deleteQuote,
-    useQuoteDetails: quoteDetailsQuery,
+    useQuoteDetails,
   };
 };
