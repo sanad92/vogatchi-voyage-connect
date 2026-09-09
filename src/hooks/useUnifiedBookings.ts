@@ -1,5 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
+import { getBookingCreationRequest, finishBookingCreationRequest, type BookingCreationRequest } from "@/lib/bookingCreationRequest";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from './useOrgId';
 import { toast } from "sonner";
@@ -50,6 +54,8 @@ export interface NewBookingData {
   booking_type: BookingType;
   customer_id?: string;
   customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
   employee_id?: string;
   supplier_id?: string;
   supplier_name?: string;
@@ -59,16 +65,17 @@ export interface NewBookingData {
   start_date?: string;
   end_date?: string;
   notes?: string;
-  quote_id?: string;
   // Detail data
-  hotelDetails?: Record<string, any>;
-  flightDetails?: Record<string, any>;
-  carDetails?: Record<string, any>;
-  transportDetails?: Record<string, any>;
+  hotelDetails?: Record<string, unknown>;
+  flightDetails?: Record<string, unknown>;
+  carDetails?: Record<string, unknown>;
+  transportDetails?: Record<string, unknown>;
 }
 
 export const useUnifiedBookings = (filters: BookingFilters = {}) => {
   const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  const creationRequest = useRef<BookingCreationRequest | null>(null);
   const queryClient = useQueryClient();
   const { type, status, search, startDate, endDate, page = 1, pageSize = 20 } = filters;
 
@@ -77,7 +84,7 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     queryFn: async () => {
       let q = supabase
         .from('bookings')
-        .select('*, customers(name), employees(full_name), booking_statuses(name, name_ar, color)', { count: 'exact' }) as any;
+        .select('*, customers(name), employees(full_name), booking_statuses(name, name_ar, color)', { count: 'exact' });
 
       if (orgId) q = q.eq('organization_id', orgId);
       if (type) q = q.eq('booking_type', type);
@@ -103,104 +110,34 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
 
   const createBooking = useMutation({
     mutationFn: async (input: NewBookingData) => {
-      // Generate booking number
-      const { data: numData } = await supabase.rpc('generate_booking_number');
-      const bookingNumber = numData || `BK-${Date.now()}`;
-
-      const profit = (input.selling_price || 0) - (input.cost_price || 0);
-
-      // Ensure the booking is always linked to a customer record —
-      // the invoice automation requires customer_id.
-      let customerId = input.customer_id || null;
-      const typedName = (input.customer_name || '').trim();
-      if (!customerId && typedName && orgId) {
-        const { data: existing } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('organization_id', orgId)
-          .ilike('name', typedName)
-          .limit(1)
-          .maybeSingle();
-
-        if (existing?.id) {
-          customerId = existing.id;
-        } else {
-          const { data: created, error: custError } = await supabase
-            .from('customers')
-            .insert({ organization_id: orgId, name: typedName } as any)
-            .select('id')
-            .single();
-          if (custError) throw custError;
-          customerId = (created as any).id;
-        }
+      if (!orgId || !user?.id) throw new Error('تعذر تحديد الشركة أو المستخدم');
+      const payload = JSON.parse(JSON.stringify(input));
+      const request = await getBookingCreationRequest(orgId, user.id, payload, creationRequest.current);
+      creationRequest.current = request;
+      const { data: booking, error } = await callUntypedRpc<UnifiedBooking & { invoice_id: string; already_created: boolean }>(
+        'create_booking_atomic', { _org: orgId, _request_id: request.id, _payload: payload },
+      );
+      if (error) throw new Error(error.message);
+      if (!booking || typeof booking.id !== 'string' || !booking.id ||
+        typeof booking.invoice_id !== 'string' || !booking.invoice_id) {
+        throw new Error('لم يرجع الخادم تأكيد الحفظ؛ أعد المحاولة بنفس البيانات');
       }
-
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .insert({
-          organization_id: orgId!,
-          booking_number: bookingNumber,
-          booking_type: input.booking_type,
-          customer_id: customerId,
-          customer_name: input.customer_name || null,
-          employee_id: input.employee_id || null,
-          supplier_id: input.supplier_id || null,
-          supplier_name: input.supplier_name || null,
-          selling_price: input.selling_price || 0,
-          cost_price: input.cost_price || 0,
-          profit,
-          currency: input.currency || 'EGP',
-          start_date: input.start_date || null,
-          end_date: input.end_date || null,
-          notes: input.notes || null,
-          quote_id: input.quote_id || null,
-        } as any)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Insert details based on type
-      const bookingId = (booking as any).id;
-
-      if (input.booking_type === 'hotel' && input.hotelDetails) {
-        await supabase.from('booking_hotel_details').insert({
-          booking_id: bookingId,
-          ...input.hotelDetails,
-        } as any);
-      } else if (input.booking_type === 'flight' && input.flightDetails) {
-        await supabase.from('booking_flight_details').insert({
-          booking_id: bookingId,
-          ...input.flightDetails,
-        } as any);
-      } else if (input.booking_type === 'car_rental' && input.carDetails) {
-        await supabase.from('booking_car_details').insert({
-          booking_id: bookingId,
-          ...input.carDetails,
-        } as any);
-      } else if (input.booking_type === 'transport' && input.transportDetails) {
-        await supabase.from('booking_transport_details').insert({
-          booking_id: bookingId,
-          ...input.transportDetails,
-        } as any);
-      }
-
       return booking;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
-      toast.success('تم إنشاء الحجز بنجاح');
+    onSuccess: async (booking) => {
+      await Promise.all(['unified-bookings', 'bookings', 'invoices', 'supplier-payment-orders',
+        'supplier-invoices', 'customers', 'booking-workspace']
+        .map(key => queryClient.invalidateQueries({ queryKey: [key] })));
+      toast.success(booking.already_created ? 'تم استرجاع نفس الحجز المحفوظ' : 'تم حفظ الحجز وتفاصيله ومستنداته');
     },
-    onError: (err: any) => {
-      toast.error('خطأ في إنشاء الحجز: ' + err.message);
-    },
+    onError: (err: Error) => toast.error('خطأ في إنشاء الحجز: ' + err.message),
   });
 
   const updateBookingStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: BookingStatus }) => {
       const { error } = await supabase
         .from('bookings')
-        .update({ status } as any)
+        .update({ status })
         .eq('id', id);
       if (error) throw error;
     },
@@ -216,6 +153,9 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     isLoading: bookingsQuery.isLoading,
     error: bookingsQuery.error,
     createBooking,
+    finishCreation: () => {
+      if (creationRequest.current) finishBookingCreationRequest(creationRequest.current);
+    },
     updateBookingStatus,
   };
 };
@@ -228,7 +168,7 @@ export const useBookingDetails = (bookingId: string) => {
         .from('bookings')
         .select('*, customers(name, phone, email), employees(full_name), booking_statuses(name, name_ar, color)')
         .eq('id', bookingId)
-        .single() as any;
+        .single();
 
       if (error) throw error;
 
@@ -236,16 +176,16 @@ export const useBookingDetails = (bookingId: string) => {
       const type = booking.booking_type;
 
       if (type === 'hotel') {
-        const { data } = await supabase.from('booking_hotel_details').select('*').eq('booking_id', bookingId).single() as any;
+        const { data } = await supabase.from('booking_hotel_details').select('*').eq('booking_id', bookingId).single();
         details = data;
       } else if (type === 'flight') {
-        const { data } = await supabase.from('booking_flight_details').select('*').eq('booking_id', bookingId).single() as any;
+        const { data } = await supabase.from('booking_flight_details').select('*').eq('booking_id', bookingId).single();
         details = data;
       } else if (type === 'car_rental') {
-        const { data } = await supabase.from('booking_car_details').select('*').eq('booking_id', bookingId).single() as any;
+        const { data } = await supabase.from('booking_car_details').select('*').eq('booking_id', bookingId).single();
         details = data;
       } else if (type === 'transport') {
-        const { data } = await supabase.from('booking_transport_details').select('*').eq('booking_id', bookingId).single() as any;
+        const { data } = await supabase.from('booking_transport_details').select('*').eq('booking_id', bookingId).single();
         details = data;
       }
 

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedBookings, BookingType } from '@/hooks/useUnifiedBookings';
-import { useAutomationEngine } from '@/hooks/useAutomationEngine';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,8 +53,9 @@ const wizardSteps: WizardStepConfig[] = [
     title: 'التفاصيل',
     validate: (data) => {
       const errors: Record<string, string> = {};
-      if (!data.selling_price || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
-      if (!data.cost_price || Number(data.cost_price) <= 0) errors.cost_price = 'التكلفة مطلوبة';
+      if (!Number.isFinite(Number(data.selling_price)) || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
+      if (data.cost_price == null || data.cost_price === '' || !Number.isFinite(Number(data.cost_price)) || Number(data.cost_price) < 0) errors.cost_price = 'أدخل تكلفة غير سالبة';
+      if (Number(data.cost_price) > 0 && !data.supplier_id) errors.supplier_id = 'اختر المورد لتسجيل المستحقات';
       if (data.booking_type === 'hotel' && !data.hotel_name) errors.hotel_name = 'اسم الفندق مطلوب';
       if (data.booking_type === 'flight' && !data.airline) errors.airline = 'شركة الطيران مطلوبة';
       if (data.booking_type === 'car_rental' && !data.car_type) errors.car_type = 'نوع السيارة مطلوب';
@@ -64,18 +66,25 @@ const wizardSteps: WizardStepConfig[] = [
   { title: 'مراجعة' },
 ];
 
-const NewUnifiedBooking = () => {
+export const NewUnifiedBookingForm = () => {
   const navigate = useNavigate();
   const orgId = useOrgId();
-  const { createBooking } = useUnifiedBookings();
-  const { executeTrigger } = useAutomationEngine();
+  const { user } = useOptimizedAuth();
+  const { createBooking, finishCreation } = useUnifiedBookings();
+  const { hasAllPermissions } = useSupabasePermissions();
+  const canCreate = hasAllPermissions(['bookings_create', 'invoices_create', 'customers_view']);
+  const submitting = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const activeScope = useRef('');
+  activeScope.current = `${orgId}:${user?.id}`;
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const wizard = useWizardForm({
     steps: wizardSteps,
-    draftKey: orgId ? `draft_booking_${orgId}` : undefined,
+    draftKey: orgId && user?.id ? `draft_booking_${orgId}_${user.id}` : undefined,
     initialData: {
       booking_type: '', customer_id: '', customer_name: '', supplier_id: '', supplier_name: '',
       selling_price: 0, cost_price: 0, currency: 'EGP',
@@ -104,49 +113,52 @@ const NewUnifiedBooking = () => {
   };
 
   const handleSubmit = async () => {
-    if (!bookingType) return;
+    if (!bookingType || !canCreate || createBooking.isPending || submitting.current) return;
+    const submittedScope = activeScope.current;
+    submitting.current = true;
+    try {
 
-    // جمع التفاصيل حسب النوع
-    const hotelKeys = ['hotel_name', 'room_type', 'board_type', 'nights', 'check_in', 'check_out', 'rooms', 'star_rating', 'city', 'adults', 'children', 'children_ages', 'meal_plan', 'cancellation_policy', 'booking_reference'];
-    const flightKeys = ['airline', 'flight_number', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'pnr', 'ticket_number', 'passengers_count', 'flight_class', 'ticket_price_per_person', 'taxes_and_fees', 'is_round_trip', 'seat_preferences', 'meal_preferences'];
-    const carKeys = ['car_type', 'pickup_location', 'dropoff_location', 'daily_rate', 'pickup_date', 'dropoff_date', 'insurance_included'];
-    const transportKeys = ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers'];
+      // جمع التفاصيل حسب النوع
+      const hotelKeys = ['hotel_name', 'room_type', 'board_type', 'nights', 'check_in', 'check_out', 'rooms', 'star_rating', 'city', 'adults', 'children', 'children_ages', 'meal_plan', 'cancellation_policy', 'booking_reference'];
+      const flightKeys = ['airline', 'flight_number', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'pnr', 'ticket_number', 'passengers_count', 'flight_class', 'ticket_price_per_person', 'taxes_and_fees', 'is_round_trip', 'seat_preferences', 'meal_preferences'];
+      const carKeys = ['car_type', 'pickup_location', 'dropoff_location', 'daily_rate', 'pickup_date', 'dropoff_date', 'insurance_included'];
+      const transportKeys = ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers'];
 
-    const keyMap: Record<string, string[]> = { hotel: hotelKeys, flight: flightKeys, car_rental: carKeys, transport: transportKeys };
-    const detailKeyMap: Record<string, string> = { hotel: 'hotelDetails', flight: 'flightDetails', car_rental: 'carDetails', transport: 'transportDetails' };
+      const keyMap: Record<string, string[]> = { hotel: hotelKeys, flight: flightKeys, car_rental: carKeys, transport: transportKeys };
+      const detailKeyMap: Record<string, string> = { hotel: 'hotelDetails', flight: 'flightDetails', car_rental: 'carDetails', transport: 'transportDetails' };
 
-    const keys = keyMap[bookingType] || [];
-    const details: Record<string, any> = {};
-    keys.forEach(k => { if (wizard.formData[k] != null && wizard.formData[k] !== '') details[k] = wizard.formData[k]; });
+      const keys = keyMap[bookingType] || [];
+      const details: Record<string, unknown> = {};
+      keys.forEach(k => { if (wizard.formData[k] != null && wizard.formData[k] !== '') details[k] = wizard.formData[k]; });
 
-    const result = await createBooking.mutateAsync({
-      booking_type: bookingType,
-      customer_id: wizard.formData.customer_id || undefined,
-      customer_name: wizard.formData.customer_name || undefined,
-      supplier_id: wizard.formData.supplier_id || undefined,
-      supplier_name: wizard.formData.supplier_name || undefined,
-      selling_price: Number(wizard.formData.selling_price) || 0,
-      cost_price: Number(wizard.formData.cost_price) || 0,
-      currency: wizard.formData.currency,
-      start_date: wizard.formData.start_date || undefined,
-      end_date: wizard.formData.end_date || undefined,
-      notes: wizard.formData.notes || undefined,
-      [detailKeyMap[bookingType]]: Object.keys(details).length > 0 ? details : undefined,
-    });
-
-    if (result?.id) {
-      executeTrigger('booking_created', {
-        bookingId: result.id,
-        bookingType,
-        customerName: wizard.formData.customer_name,
-        totalAmount: Number(wizard.formData.selling_price) || 0,
-        travelDate: wizard.formData.start_date,
-        organizationId: orgId,
+      const result = await createBooking.mutateAsync({
+        booking_type: bookingType,
+        customer_id: wizard.formData.customer_id || undefined,
+        customer_name: wizard.formData.customer_name || undefined,
+        customer_phone: wizard.formData.customer_id ? undefined : wizard.formData.customer_phone || undefined,
+        customer_email: wizard.formData.customer_id ? undefined : wizard.formData.customer_email || undefined,
+        supplier_id: wizard.formData.supplier_id || undefined,
+        supplier_name: wizard.formData.supplier_name || undefined,
+        selling_price: Number(wizard.formData.selling_price),
+        cost_price: Number(wizard.formData.cost_price),
+        currency: wizard.formData.currency,
+        start_date: wizard.formData.start_date || undefined,
+        end_date: wizard.formData.end_date || undefined,
+        notes: wizard.formData.notes || undefined,
+        [detailKeyMap[bookingType]]: Object.keys(details).length > 0 ? details : undefined,
       });
-    }
 
-    wizard.clearDraft();
-    navigate('/bookings');
+      // The server already generated the canonical invoice, supplier obligation,
+      // voucher and event. Do not start a second client-side invoice workflow.
+      if (!mounted.current || activeScope.current !== submittedScope) return;
+      wizard.clearDraft();
+      finishCreation();
+      navigate(`/bookings/${result.id}`);
+    } catch {
+      // The mutation displays the server error; preserve the form and draft.
+    } finally {
+      submitting.current = false;
+    }
   };
 
   // ملصقات الحقول للمراجعة
@@ -179,7 +191,7 @@ const NewUnifiedBooking = () => {
     return (keyMap[bookingType] || []).filter(k => wizard.formData[k] != null && wizard.formData[k] !== '' && wizard.formData[k] !== false);
   };
 
-  const formatReviewValue = (key: string, value: any): string => {
+  const formatReviewValue = (key: string, value: unknown): string => {
     if (typeof value === 'boolean') return value ? 'نعم' : 'لا';
     if (key === 'star_rating') return '⭐'.repeat(Number(value));
     return String(value);
@@ -188,7 +200,9 @@ const NewUnifiedBooking = () => {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-4" dir="rtl">
       <h1 className="text-2xl font-bold">إنشاء حجز جديد</h1>
+      {!canCreate && <p role="alert" className="text-sm text-destructive">حفظ الحجز يحتاج صلاحيات إنشاء الحجوزات والفواتير وعرض العملاء.</p>}
 
+      <fieldset disabled={createBooking.isPending}>
       <StepWizard
         steps={wizardSteps}
         currentStep={wizard.currentStep}
@@ -248,7 +262,7 @@ const NewUnifiedBooking = () => {
                       <CustomerSearch
                         onCustomerSelect={handleCustomerSelect}
                         onNewCustomer={() => { setIsSearchOpen(false); setIsAddOpen(true); }}
-                        selectedCustomer={selectedCustomer as any}
+                        selectedCustomer={selectedCustomer ? { ...selectedCustomer, phone: selectedCustomer.phone || '' } : null}
                       />
                     </DialogContent>
                   </Dialog>
@@ -281,6 +295,14 @@ const NewUnifiedBooking = () => {
                 )}
               </div>
 
+              {!wizard.formData.customer_id && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>هاتف العميل الجديد</Label><Input type="tel" value={wizard.formData.customer_phone || ''} onChange={e => wizard.updateField('customer_phone', e.target.value)} /></div>
+                  <div><Label>بريد العميل الجديد</Label><Input type="email" value={wizard.formData.customer_email || ''} onChange={e => wizard.updateField('customer_email', e.target.value)} /></div>
+                  <p className="text-sm text-muted-foreground md:col-span-2">لو العميل جديد، أدخل هاتفه أو بريده ليتم حفظه مع الحجز.</p>
+                </div>
+              )}
+
               {/* اختيار المورد */}
               <SupplierSelection
                 selectedSupplierId={wizard.formData.supplier_id || ''}
@@ -288,6 +310,7 @@ const NewUnifiedBooking = () => {
                 onSupplierSelect={(id, name) => wizard.updateFields({ supplier_id: id, supplier_name: name })}
                 supplierType={bookingType === 'hotel' ? 'hotel' : bookingType === 'flight' ? 'airline' : bookingType === 'transport' ? 'transport' : undefined}
               />
+              <FieldError error={wizard.errors.supplier_id} />
 
               {/* التواريخ */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -435,12 +458,14 @@ const NewUnifiedBooking = () => {
                 onBack={() => wizard.goBack()}
                 onNext={handleSubmit}
                 isSubmitting={createBooking.isPending}
+                nextDisabled={!canCreate}
                 submitLabel={createBooking.isPending ? 'جاري الحفظ...' : 'تأكيد وحفظ الحجز'}
               />
             </CardContent>
           </Card>
         )}
       </StepWizard>
+      </fieldset>
     </div>
   );
 };
@@ -451,5 +476,11 @@ const ReviewRow = ({ label, value }: { label: string; value: string }) => (
     <span className="font-medium">{value}</span>
   </div>
 );
+
+const NewUnifiedBooking = () => {
+  const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  return <NewUnifiedBookingForm key={`${orgId}:${user?.id}`} />;
+};
 
 export default NewUnifiedBooking;
