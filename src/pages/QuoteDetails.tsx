@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/useQuotes';
 import { useQuoteConversion } from '@/hooks/useQuoteConversion';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import QuoteStatusBadge from '@/components/quotes/QuoteStatusBadge';
 import ConvertQuoteDialog from '@/components/quotes/ConvertQuoteDialog';
 import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
@@ -29,30 +30,41 @@ export default function QuoteDetails() {
   const orgId = useOrgId();
   const { updateQuoteStatus } = useQuotes();
   const { convertToBooking } = useQuoteConversion();
+  const { hasAllPermissions, hasPermission } = useSupabasePermissions();
   const [convertOpen, setConvertOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['quote', id, orgId],
     queryFn: async () => {
       const [quoteRes, itemsRes] = await Promise.all([
-        supabase.from('quotes').select('*, customers(name, phone, email), employees(full_name)').eq('id', id!).single(),
-        supabase.from('quote_items').select('*').eq('quote_id', id!).order('sort_order'),
+        supabase.from('quotes').select('*, customers(name, phone, email), employees(full_name)').eq('organization_id', orgId!).eq('id', id!).single(),
+        supabase.from('quote_items').select('*').eq('organization_id', orgId!).eq('quote_id', id!).order('sort_order'),
       ]);
       if (quoteRes.error) throw quoteRes.error;
+      if (itemsRes.error) throw itemsRes.error;
       return { quote: quoteRes.data as Quote, items: (itemsRes.data ?? []) as QuoteItem[] };
     },
     enabled: !!id && !!orgId,
   });
 
   if (isLoading) return <div className="p-6 text-center text-muted-foreground">جاري التحميل...</div>;
+  if (isError) return <div className="p-6 text-center space-y-3"><p>تعذر تحميل عرض السعر وبنوده.</p><Button onClick={() => void refetch()}>إعادة المحاولة</Button></div>;
   if (!data) return <div className="p-6 text-center text-muted-foreground">عرض السعر غير موجود</div>;
 
   const { quote, items } = data;
-  const canConvert = quote.status === 'sent' || quote.status === 'draft';
+  const canEdit = hasPermission('quotes_edit');
+  const eligibleStatus = ['draft', 'sent', 'accepted'].includes(quote.status);
+  const canConvert = eligibleStatus && hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
 
   const handleConvert = async () => {
-    await convertToBooking.mutateAsync({ quote, items });
-    setConvertOpen(false);
+    if (!canConvert || convertToBooking.isPending) return;
+    try {
+      const result = await convertToBooking.mutateAsync({ quoteId: quote.id });
+      setConvertOpen(false);
+      navigate(`/bookings/${result.booking_id}`);
+    } catch {
+      // The hook displays the server error. Keep the dialog open for a safe retry.
+    }
   };
 
   return (
@@ -69,13 +81,13 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {quote.status === 'draft' && (
+          {quote.status === 'draft' && canEdit && (
             <Button variant="outline" size="sm" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'sent' })}>
               <Send className="h-4 w-4 ml-1" />
               إرسال
             </Button>
           )}
-          {canConvert && (
+          {['draft','sent'].includes(quote.status) && canEdit && (
             <>
               <Button variant="outline" size="sm" className="text-green-600" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'accepted' })}>
                 <CheckCircle className="h-4 w-4 ml-1" />
@@ -87,8 +99,8 @@ export default function QuoteDetails() {
               </Button>
             </>
           )}
-          {canConvert && items.length > 0 && (
-            <Button size="sm" onClick={() => setConvertOpen(true)}>
+          {eligibleStatus && items.length > 0 && (
+            <Button size="sm" disabled={!canConvert || convertToBooking.isPending} onClick={() => setConvertOpen(true)}>
               <ArrowLeftRight className="h-4 w-4 ml-1" />
               تحويل لحجز + فاتورة
             </Button>

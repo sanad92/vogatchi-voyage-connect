@@ -27,10 +27,11 @@ The frontend test executes the actual hook with RPC mocks; it checks retry-key r
 changed input/company, server failures, absent responses and missing identity.
 TypeScript passed. Browser acceptance and production frontend publishing are pending.
 
-This closes the tested creation portion of Q01. It does not close Q02 conversion:
-the old frontend conversion remains a known blocker involving canonical automation,
-supplier allocation and duplicated invoice risk. A one-master-booking design must
-preserve each supplier's payable and booking confirmation rules before rollout.
+This closes the tested creation portion of Q01. The subsequent Q02 implementation
+now uses one master booking and its canonical invoice, with service-level supplier
+obligations and confirmation checks. See [conversion delivery](quote-conversion-delivery.md)
+for its 28 SQL assertions, deployment evidence and remaining publication/acceptance
+limits. This does not certify the complete travel or accounting workflow.
 
 Tests:
 - `node scripts/verify-atomic-quote-ui.mjs`
