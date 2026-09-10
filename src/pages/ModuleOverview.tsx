@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
-import { ERP_MODULES, findModuleById } from '@/config/moduleNavigation';
+import { ALL_WORKSPACES, findModuleById } from '@/config/moduleNavigation';
 import { MODULE_PULSE } from '@/config/modulePulse';
 import { useNavigationAccess } from '@/hooks/useNavigationAccess';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -115,8 +115,17 @@ const ModuleOverview = () => {
         />
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1" aria-label="الموديولات الرئيسية">
-        {ERP_MODULES.map((item) => {
+      {!pulseDef && (
+        <Card>
+          <CardContent className="p-4 space-y-2 text-sm">
+            <p><strong>يستقبل: </strong>{module.receives}</p>
+            <p><strong>يسلّم: </strong>{module.delivers}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto pb-1" aria-label="الموديولات والأدوات المشتركة">
+        {ALL_WORKSPACES.filter((item) => item.sections.some((section) => section.screens.some(canAccessScreen))).map((item) => {
           const Icon = item.icon as any;
           const active = item.id === module.id;
           return (

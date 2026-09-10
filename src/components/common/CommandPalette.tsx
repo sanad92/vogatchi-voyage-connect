@@ -10,7 +10,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import {
-  ERP_MODULES,
+  ALL_WORKSPACES,
   HOME_SCREENS,
   QUICK_ACTIONS,
   SYSTEM_SCREENS,
@@ -48,7 +48,7 @@ const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
     addGroup('إنشاء سريع', QUICK_ACTIONS);
     addGroup('الرئيسية', HOME_SCREENS);
 
-    ERP_MODULES.forEach((module) => {
+    ALL_WORKSPACES.forEach((module) => {
       const screens = getModuleScreens(module).filter(canAccessScreen);
       if (screens.length === 0) return;
       addGroup(module.label, [

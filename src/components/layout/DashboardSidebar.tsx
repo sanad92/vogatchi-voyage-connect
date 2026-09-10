@@ -7,6 +7,8 @@ import { useNavigationAccess } from '@/hooks/useNavigationAccess';
 import {
   NAVIGATION_GROUPS,
   findModuleByPath,
+  findModuleById,
+  getModuleScreens,
   pathMatchesScreen,
   type NavigationGroup,
   type NavigationScreen,
@@ -89,8 +91,11 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
   const isActive = (href: string) => href === activeHref;
 
-  const canAccessGroup = (group: NavigationGroup): boolean =>
-    group.items.some((item) => !item.isOverview && canAccessScreen(item));
+  const canAccessGroup = (group: NavigationGroup): boolean => {
+    const workspace = findModuleById(group.moduleId);
+    return (workspace ? getModuleScreens(workspace) : group.items)
+      .some((item) => !item.isOverview && canAccessScreen(item));
+  };
 
   // Resolve favorite items by looking them up across all groups
   const favoriteItems = useMemo(() => {

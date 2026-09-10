@@ -55,18 +55,17 @@ interface PlanLimitDefinition {
 
 const FEATURE_GROUPS: FeatureGroup[] = [
   {
-    label: 'المبيعات وCRM',
+    label: 'العملاء والمبيعات',
     description: 'من أول تواصل حتى اعتماد عرض السعر',
     icon: Users,
     features: [
       { label: 'العملاء وCRM ودورة البيع', icon: Users, keys: ['basic_crm'] },
       { label: 'استقبال الطلبات وتسليمها بين الأقسام', icon: Workflow, keys: ['sop_workflow'] },
       { label: 'عروض الأسعار والمتابعة', icon: FileCheck2, keys: ['quotes'] },
-      { label: 'واتساب وصندوق المحادثات', icon: MessageSquareText, keys: ['whatsapp'] },
     ],
   },
   {
-    label: 'الموردون والتسعير',
+    label: 'الموردون والمشتريات',
     description: 'التكلفة والتوفر وشروط المورد',
     icon: Hotel,
     features: [
@@ -101,25 +100,40 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
-    label: 'الإدارة والرقابة',
+    label: 'الموظفون والعمولات',
+    description: 'ملفات الموظفين واستحقاقات العمولات',
+    icon: Users,
+    features: [
+      { label: 'عمولات الموظفين ومتابعة الاستحقاق', icon: WalletCards, keys: ['commissions'] },
+    ],
+  },
+  {
+    label: 'الإدارة والإعدادات المشتركة',
     description: 'الفريق والتقارير والصلاحيات والحوكمة',
     icon: ShieldCheck,
     features: [
       { label: 'التقارير الإدارية الأساسية', icon: BarChart3, keys: ['reports'] },
       { label: 'التحليلات والتقارير المتقدمة', icon: BarChart3, keys: ['advanced_reports'] },
       { label: 'الفروع والأقسام', icon: Building2, keys: ['multi_branch'] },
-      { label: 'عمولات الموظفين ومتابعة الاستحقاق', icon: WalletCards, keys: ['commissions'] },
       { label: 'سجل المراجعة', icon: ShieldCheck, keys: ['audit_log'] },
       { label: 'ضوابط المؤسسات المتقدمة', icon: ShieldCheck, keys: ['enterprise_controls'] },
     ],
   },
   {
-    label: 'النمو والأتمتة',
-    description: 'التسويق والأتمتة والذكاء الاصطناعي',
+    label: 'التسويق والتواصل',
+    description: 'محادثات العملاء ورحلات التسويق',
+    icon: Zap,
+    features: [
+      { label: 'رحلات وحملات التسويق', icon: Zap, keys: ['marketing'] },
+      { label: 'واتساب وصندوق المحادثات', icon: MessageSquareText, keys: ['whatsapp'] },
+    ],
+  },
+  {
+    label: 'الأتمتة والأدوات المشتركة',
+    description: 'أدوات تخدم جميع الموديولات',
     icon: Zap,
     features: [
       { label: 'قواعد الأتمتة', icon: Zap, keys: ['automation'] },
-      { label: 'رحلات وحملات التسويق', icon: Zap, keys: ['marketing'] },
       { label: 'المساعد الذكي', icon: Sparkles, keys: ['ai_assistant'] },
       { label: 'هوية مخصصة White label', icon: Sparkles, keys: ['white_label'] },
     ],
@@ -136,7 +150,7 @@ const PLAN_CARD_FEATURES: FeatureDefinition[] = [
     keys: ['hotel_bookings', 'flight_bookings', 'car_rentals', 'transport'],
     mode: 'all',
   },
-  { label: 'الموردون والتسعير', icon: Hotel, keys: ['suppliers'] },
+  { label: 'الموردون والمشتريات', icon: Hotel, keys: ['suppliers'] },
   { label: 'الفواتير والمستندات', icon: ReceiptText, keys: ['invoices', 'documents'], mode: 'all' },
   { label: 'التقارير الأساسية', icon: BarChart3, keys: ['reports'] },
   { label: 'المالية والمحاسبة', icon: WalletCards, keys: ['finance'] },

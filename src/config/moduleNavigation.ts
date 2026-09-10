@@ -48,8 +48,11 @@ export type ModuleId =
   | 'supply'
   | 'operations'
   | 'finance'
+  | 'employees'
+  | 'growth'
   | 'management'
-  | 'growth';
+  | 'settings'
+  | 'automation';
 
 export interface NavigationScreen {
   title: string;
@@ -94,7 +97,7 @@ const screen = (value: NavigationScreen): NavigationScreen => value;
 export const ERP_MODULES: ErpModule[] = [
   {
     id: 'sales',
-    label: 'المبيعات وCRM',
+    label: 'العملاء والمبيعات',
     shortLabel: 'المبيعات',
     icon: Users,
     description: 'إدارة طلب العميل من أول تواصل حتى اعتماد عرض السعر وتسليمه للحجوزات.',
@@ -110,7 +113,6 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'العملاء المحتملون', href: '/sop/pipeline', icon: TrendingUp, description: 'الوارد والتوزيع ومسار البيع والمتابعات والتحويل إلى عميل.', requiredPermission: 'crm_view', sidebar: true }),
           screen({ title: 'تحليلات CRM', href: '/crm', icon: UserCheck, description: 'مؤشرات العملاء والعلاقات والشرائح والأنشطة.', requiredPermission: 'crm_view' }),
           screen({ title: 'خدمة العملاء', href: '/customer-service', icon: MessageSquare, description: 'استقبال الطلبات ومتابعة الحالات وخدمة ما بعد البيع.', requiredPermission: 'customer_service_view' }),
-          screen({ title: 'صندوق واتساب', href: '/whatsapp-inbox', icon: MessageSquare, description: 'محادثات العملاء المرتبطة بسجل العميل.', requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP, sidebar: true }),
         ],
       },
       {
@@ -132,7 +134,7 @@ export const ERP_MODULES: ErpModule[] = [
   },
   {
     id: 'supply',
-    label: 'الموردون والتسعير',
+    label: 'الموردون والمشتريات',
     shortLabel: 'الموردون',
     icon: Building2,
     description: 'مصدر التكلفة والتوفر والشروط التي تعتمد عليها عروض الأسعار والحجوزات.',
@@ -232,7 +234,7 @@ export const ERP_MODULES: ErpModule[] = [
         screens: [
           screen({ title: 'كشف حساب المورد', href: '/supplier-ledger', icon: Building2, description: 'مستحقات المورد ومدفوعاته والحركات المرتبطة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'أعمار ديون الموردين', href: '/supplier-aging', icon: Building2, description: 'فواتير الموردين المفتوحة حسب مدة التأخر ومطابقة الذمم.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
-          screen({ title: 'المصروفات والعمولات', href: '/expense-management', icon: Calculator, description: 'مصروفات الشركة والموظفين والعمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
+          screen({ title: 'المصروفات', href: '/expense-management', icon: Calculator, description: 'مصروفات الشركة والموظفين والعمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الاعتمادات المالية', href: '/finance-approvals', icon: CheckCircle2, description: 'اعتماد السداد للموردين وطلبات الاسترداد.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, description: 'متابعة أوامر دفع الموردين واعتمادها وصرفها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
@@ -269,18 +271,62 @@ export const ERP_MODULES: ErpModule[] = [
     ],
   },
   {
+    id: 'employees',
+    label: 'الموظفون والعمولات',
+    shortLabel: 'الموظفون',
+    icon: Users,
+    description: 'ملفات الموظفين والعمولات المرتبطة بالحجوزات؛ إدارة الدخول والصلاحيات في إعدادات المؤسسة.',
+    receives: 'بيانات الموظفين والحجوزات المرتبطة بهم',
+    delivers: 'استحقاقات عمولات تراجع وتصرف من المالية',
+    overviewHref: '/modules/employees',
+    sections: [
+      {
+        title: 'الموظفون والاستحقاقات',
+        description: 'نفس سجلات الموظفين والعمولات المستخدمة في المالية.',
+        screens: [
+          screen({ title: 'ملفات الموظفين', href: '/employee-records', icon: Users, description: 'ملفات الموظفين المرتبطة بالمصروفات والحجوزات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
+          screen({ title: 'عمولات الموظفين', href: '/employee-commissions', icon: Calculator, description: 'إعداد وحساب ومراجعة استحقاقات العمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'growth',
+    label: 'التسويق والتواصل',
+    shortLabel: 'التواصل',
+    icon: Megaphone,
+    description: 'محادثات العملاء ورحلات التواصل مرتبطة بملفات العملاء والحجوزات.',
+    receives: 'محادثات العملاء وشرائحهم',
+    delivers: 'متابعات وفرص بيع للمبيعات',
+    overviewHref: '/modules/growth',
+    sections: [
+      {
+        title: 'المحادثات والتسويق',
+        description: 'صندوق موحد يخدم المبيعات وخدمة العملاء والتشغيل حسب الصلاحيات.',
+        screens: [
+          screen({ title: 'صندوق واتساب', href: '/whatsapp-inbox', icon: MessageSquare, description: 'محادثات العملاء المرتبطة بسجل العميل.', requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP, sidebar: true }),
+          screen({ title: 'رحلات التسويق', href: '/marketing/journeys', icon: Megaphone, description: 'تصميم رحلة تواصل مبنية على بيانات العميل.', requiredPermission: 'marketing_view', requiredFeature: PLAN_FEATURES.MARKETING, sidebar: true }),
+        ],
+      },
+    ],
+  },
+];
+
+// Shared workspaces are separate from the six business modules. Legacy URLs stay valid.
+export const SHARED_WORKSPACES: ErpModule[] = [
+  {
     id: 'management',
-    label: 'الإدارة والرقابة',
-    shortLabel: 'الإدارة',
-    icon: ShieldCheck,
-    description: 'متابعة أداء الشركة والفريق والصلاحيات والالتزام من مكان واحد.',
-    receives: 'بيانات المبيعات والتشغيل والمالية',
-    delivers: 'قرارات واعتمادات وتنبيهات للإدارات',
+    label: 'لوحة الإدارة والتقارير',
+    shortLabel: 'التقارير',
+    icon: BarChart3,
+    description: 'متابعة مؤشرات المبيعات والتشغيل والمالية والالتزام.',
+    receives: 'نتائج جميع الموديولات',
+    delivers: 'تقارير وتنبيهات لدعم القرار',
     overviewHref: '/modules/management',
     sections: [
       {
-        title: 'الأداء والتقارير',
-        description: 'مؤشرات الإدارة والربحية وجودة التنفيذ.',
+        title: 'الأداء والرقابة',
+        description: 'مؤشرات وتقارير مشتركة مع سجل العمليات.',
         screens: [
           screen({ title: 'التقارير', href: '/reports', icon: BarChart3, description: 'تقارير المبيعات والعملاء والحجوزات.', requiredPermission: 'reports_view', sidebar: true }),
           screen({ title: 'صحة الأعمال', href: '/reports/business-health', icon: Activity, description: 'تنبيهات تشغيلية ومؤشرات سلامة سير العمل.', requiredPermission: 'reports_view', requiredFeature: PLAN_FEATURES.ADVANCED_REPORTS, sidebar: true }),
@@ -289,11 +335,24 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'الالتزام التشغيلي', href: '/sop/compliance', icon: CheckCircle2, description: 'الالتزام بمراحل العمل ومواعيد التسليم.', requiredPermission: 'reports_view', requiredFeature: PLAN_FEATURES.ADVANCED_REPORTS }),
           screen({ title: 'مؤشرات السفر', href: '/travel-kpis', icon: TrendingUp, description: 'مؤشرات الحجوزات والخدمات والسفر.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'مركز التصدير', href: '/export-center', icon: Download, description: 'تصدير البيانات والتقارير المسموح بها.', requiredPermission: 'reports_view', requiredFeature: PLAN_FEATURES.ADVANCED_REPORTS }),
+          screen({ title: 'سجل التدقيق', href: '/audit-log', icon: Shield, description: 'سجل العمليات الحساسة ومن نفذها ومتى.', requiredPermission: 'audit_view', requiredFeature: PLAN_FEATURES.AUDIT_LOG, sidebar: true }),
         ],
       },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'إعدادات المؤسسة',
+    shortLabel: 'الإعدادات',
+    icon: Settings,
+    description: 'إدارة مستخدمي المؤسسة وصلاحياتهم وإعداداتها وتكاملاتها.',
+    receives: 'متطلبات الشركة والمستخدمين',
+    delivers: 'إعدادات المؤسسة ونطاقات الوصول',
+    overviewHref: '/modules/settings',
+    sections: [
       {
-        title: 'الفريق والمؤسسة',
-        description: 'المستخدمون والأدوار والفروع والأقسام وسياسات العمل.',
+        title: 'المؤسسة والمستخدمون',
+        description: 'إعداد عضوية النظام والأدوار والفروع والأقسام.',
         screens: [
           screen({ title: 'مركز المؤسسة', href: '/organization', icon: Building2, description: 'نقطة الدخول لإعدادات المؤسسة ومكوناتها.', requiredPermission: 'team_view', sidebar: true }),
           screen({ title: 'فريق العمل', href: '/team', icon: Users, description: 'المستخدمون والدعوات والأدوار وحالة العضوية.', requiredPermission: 'team_view', sidebar: true }),
@@ -304,11 +363,10 @@ export const ERP_MODULES: ErpModule[] = [
         ],
       },
       {
-        title: 'الحوكمة والإعدادات',
-        description: 'الأمان والمراجعة والهوية وإعدادات النظام.',
+        title: 'الإعدادات والتكاملات',
+        description: 'الهوية والأمان والقوالب واستيراد البيانات وقنوات الاتصال.',
         screens: [
           screen({ title: 'الإعدادات العامة', href: '/admin-settings', icon: Settings, description: 'بيانات المؤسسة والهوية والإعدادات الأساسية.', requiredPermission: 'admin_settings', sidebar: true }),
-          screen({ title: 'سجل التدقيق', href: '/audit-log', icon: Shield, description: 'سجل العمليات الحساسة ومن نفذها ومتى.', requiredPermission: 'audit_view', requiredFeature: PLAN_FEATURES.AUDIT_LOG, sidebar: true }),
           screen({ title: 'مركز الأمان', href: '/organization/security', icon: Lock, description: 'سياسات الدخول والحماية وإعدادات الأمان.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.ENTERPRISE_CONTROLS }),
           screen({ title: 'الهوية المخصصة', href: '/organization/white-label', icon: Palette, description: 'شعار وألوان المؤسسة على النظام والمستندات.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.WHITE_LABEL }),
           screen({ title: 'مركز القوالب', href: '/templates', icon: FileText, description: 'قوالب واتساب والبريد والعروض والفواتير والقسائم.', requiredPermission: 'admin_settings' }),
@@ -316,41 +374,36 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'الميزات المتقدمة', href: '/organization/feature-flags', icon: Zap, description: 'إدارة الميزات المتاحة داخل المؤسسة.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.ENTERPRISE_CONTROLS }),
           screen({ title: 'المراقبة', href: '/monitoring', icon: Activity, description: 'مراقبة الأخطاء والأداء والطلبات.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.ENTERPRISE_CONTROLS }),
           screen({ title: 'وضع العرض', href: '/organization/demo-mode', icon: Sparkles, description: 'إدارة بيانات العرض التوضيحي بأمان.', requiredPermission: 'admin_settings' }),
-        ],
-      },
-    ],
-  },
-  {
-    id: 'growth',
-    label: 'النمو والأتمتة',
-    shortLabel: 'النمو',
-    icon: Zap,
-    description: 'تشغيل المتابعات والحملات والمساعد الذكي وربطها بدورة العميل.',
-    receives: 'شرائح العملاء وحالات الحجوزات والأحداث',
-    delivers: 'متابعات آلية وفرص بيع جديدة إلى CRM',
-    overviewHref: '/modules/growth',
-    sections: [
-      {
-        title: 'التسويق والأتمتة',
-        description: 'حملات مترابطة مع العميل والحجز بدل أدوات منفصلة.',
-        screens: [
-          screen({ title: 'رحلات التسويق', href: '/marketing/journeys', icon: Megaphone, description: 'تصميم رحلة تواصل مبنية على بيانات العميل.', requiredPermission: 'marketing_view', requiredFeature: PLAN_FEATURES.MARKETING, sidebar: true }),
-          screen({ title: 'قواعد الأتمتة', href: '/automation', icon: Zap, description: 'تشغيل إجراء أو تنبيه عند حدوث شرط محدد.', requiredPermission: 'automation_view', requiredFeature: PLAN_FEATURES.AUTOMATION, sidebar: true }),
-        ],
-      },
-      {
-        title: 'قنوات وأدوات النمو',
-        description: 'إعدادات التواصل والمساعد الذكي وتجربة العلامة.',
-        screens: [
           screen({ title: 'إدارة واتساب', href: '/whatsapp-admin', icon: MessageSquare, description: 'إعداد الرقم والقوالب وحالة التكامل.', requiredPermission: 'whatsapp_admin', requiredFeature: PLAN_FEATURES.WHATSAPP, sidebar: true }),
-          screen({ title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, description: 'مساعد تحليلي داخل بيانات المؤسسة المسموح بها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.AI_ASSISTANT, sidebar: true, badge: 'AI' }),
           screen({ title: 'تخصيص واجهة الموقع', href: '/site-customization', icon: Palette, description: 'إدارة الشكل والمحتوى العام لواجهة المؤسسة.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.WHITE_LABEL }),
           screen({ title: 'إدارة صفحات الموقع', href: '/admin/cms', icon: FileText, description: 'صفحات ومكونات المحتوى العام للموقع.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.WHITE_LABEL }),
         ],
       },
     ],
   },
+  {
+    id: 'automation',
+    label: 'مركز الأتمتة والأدوات',
+    shortLabel: 'الأتمتة',
+    icon: Zap,
+    description: 'قواعد وأدوات مشتركة لخدمة المبيعات والتشغيل والمالية.',
+    receives: 'أحداث وشروط من الموديولات',
+    delivers: 'إجراءات وتنبيهات بحسب القواعد المفعلة',
+    overviewHref: '/modules/automation',
+    sections: [
+      {
+        title: 'الأتمتة والمساعدة',
+        description: 'قواعد التشغيل والمساعد التحليلي حسب الباقة والصلاحيات.',
+        screens: [
+          screen({ title: 'قواعد الأتمتة', href: '/automation', icon: Zap, description: 'تشغيل إجراء أو تنبيه عند حدوث شرط محدد.', requiredPermission: 'automation_view', requiredFeature: PLAN_FEATURES.AUTOMATION, sidebar: true }),
+          screen({ title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, description: 'مساعد تحليلي داخل بيانات المؤسسة المسموح بها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.AI_ASSISTANT, sidebar: true, badge: 'AI' }),
+        ],
+      },
+    ],
+  },
 ];
+
+export const ALL_WORKSPACES = [...ERP_MODULES, ...SHARED_WORKSPACES];
 
 export const HOME_SCREENS: NavigationScreen[] = [
   screen({
@@ -387,7 +440,7 @@ const moduleSidebarItems = (module: ErpModule): NavigationScreen[] => [
 
 export const NAVIGATION_GROUPS: NavigationGroup[] = [
   { label: 'الرئيسية', icon: LayoutDashboard, items: HOME_SCREENS },
-  ...ERP_MODULES.map((module) => ({
+  ...ALL_WORKSPACES.map((module) => ({
     label: module.label,
     icon: module.icon,
     moduleId: module.id,
@@ -400,16 +453,16 @@ export const getModuleScreens = (module: ErpModule): NavigationScreen[] =>
   module.sections.flatMap((section) => section.screens);
 
 export const getAllModuleScreens = (): NavigationScreen[] =>
-  ERP_MODULES.flatMap(getModuleScreens);
+  ALL_WORKSPACES.flatMap(getModuleScreens);
 
 export const findModuleById = (id: string | undefined): ErpModule | undefined =>
-  ERP_MODULES.find((module) => module.id === id);
+  ALL_WORKSPACES.find((module) => module.id === id);
 
 export const pathMatchesScreen = (pathname: string, href: string): boolean =>
   pathname === href || pathname.startsWith(`${href}/`);
 
 export const findModuleByPath = (pathname: string): ErpModule | undefined =>
-  ERP_MODULES.find((module) =>
+  ALL_WORKSPACES.find((module) =>
     pathname === module.overviewHref
     || getModuleScreens(module)
       .slice()

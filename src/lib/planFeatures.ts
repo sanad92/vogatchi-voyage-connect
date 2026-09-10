@@ -93,6 +93,8 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
     paths: [
       '/bank-accounts',
       '/expense-management',
+      '/employee-records',
+      '/employee-commissions',
       '/chart-of-accounts',
       '/account-routing',
       '/journal-entries',

@@ -45,7 +45,7 @@ const num = (key: string, label: string, extra: Partial<MetricDef> = {}): Metric
   ...extra,
 });
 
-export const MODULE_PULSE: Record<ModuleId, ModulePulseDef> = {
+export const MODULE_PULSE: Partial<Record<ModuleId, ModulePulseDef>> = {
   sales: {
     kpis: [
       num('leads_new', 'طلبات جديدة', { href: '/sop/pipeline', requiredPermission: 'crm_view' }),

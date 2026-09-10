@@ -13,8 +13,8 @@ const EnhancedEmployeesPage = () => {
       <div className="flex items-center gap-3">
         <Users className="h-7 w-7 text-primary" />
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-foreground">إدارة الموظفين المحسنة</h1>
-          <p className="text-muted-foreground">إدارة شاملة لبيانات الموظفين مع إمكانيات الإيقاف والحذف</p>
+          <h1 className="text-3xl font-bold text-foreground">ملفات الموظفين</h1>
+          <p className="text-muted-foreground">ملفات الموظفين المرتبطة بالحجوزات والمصروفات؛ حسابات الدخول والصلاحيات من إعدادات المؤسسة.</p>
         </div>
         
         {/* مؤشر الصلاحيات */}
