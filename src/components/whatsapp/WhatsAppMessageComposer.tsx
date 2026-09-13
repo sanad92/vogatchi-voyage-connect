@@ -48,6 +48,11 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     }
   }, [prefillText, prefillNonce]);
 
+  useEffect(() => {
+    setMessage(''); setPending(null); setTemplatePickerOpen(false);
+  }, [conversationId]);
+  useEffect(() => () => { if (pending?.preview) URL.revokeObjectURL(pending.preview); }, [pending?.preview]);
+
   const { sendTextMessage, sendMedia, sendTemplate, isSending } = useWhatsAppMessaging();
 
   const variables: VariableContext = {

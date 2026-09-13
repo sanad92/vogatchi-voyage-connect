@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export const WhatsAppChatbotSettings: React.FC = () => {
-  const { settings, interactions, isLoading, save, isSaving } = useWhatsAppChatbot();
+  const { settings, interactions, isLoading, settingsError, save, isSaving } = useWhatsAppChatbot();
   const [form, setForm] = useState(settings);
   const [keywordsText, setKeywordsText] = useState('');
 
@@ -33,6 +33,8 @@ export const WhatsAppChatbotSettings: React.FC = () => {
   if (isLoading) {
     return <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>;
   }
+
+  if (settingsError) return <p role="alert" className="text-destructive">تعذر تحميل إعدادات البوت. أعد تحميل الصفحة قبل تعديلها.</p>;
 
   return (
     <div className="space-y-6">
@@ -69,6 +71,20 @@ export const WhatsAppChatbotSettings: React.FC = () => {
                   onCheckedChange={(v) => setForm({ ...form, is_enabled: v })} />
               </div>
 
+              <div>
+                <Label>أسلوب عمل البوت</Label>
+                <Select value={form.bot_mode || 'ai'} onValueChange={v => setForm({ ...form, bot_mode: v as 'ai' | 'guided' })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
+                    <SelectItem value="guided">أسئلة ثابتة لجمع طلب الرحلة</SelectItem>
+                    <SelectItem value="ai">مساعد AI من معلومات الشركة</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">الأسئلة الثابتة تجمع الوجهة والتواريخ والمسافرين والميزانية والتفضيلات ثم تسلم الطلب للموظف. المساعد لا ينفّذ حجزًا أو دفعًا.</p>
+              </div>
+              <div><Label>معلومات الشركة المعتمدة للرد</Label>
+                <Textarea rows={5} maxLength={12000} value={form.knowledge_base || ''} placeholder="الخدمات، سياسة المتابعة، الأسئلة الشائعة، وما يحتاج تأكيد الموظف…"
+                  onChange={e => setForm({ ...form, knowledge_base: e.target.value })} />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>اسم البوت</Label>
@@ -80,7 +96,7 @@ export const WhatsAppChatbotSettings: React.FC = () => {
                   <Select value={form.model} onValueChange={(v) => setForm({ ...form, model: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (سريع، مجاني)</SelectItem>
+                      <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
                       <SelectItem value="google/gemini-2.5-pro">Gemini 2.5 Pro (متقدم)</SelectItem>
                       <SelectItem value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</SelectItem>
                     </SelectContent>
@@ -111,12 +127,12 @@ export const WhatsAppChatbotSettings: React.FC = () => {
                 <Input value={keywordsText} onChange={(e) => setKeywordsText(e.target.value)}
                   placeholder="موظف, بشري, agent" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  عند ذكر العميل لأي من هذه الكلمات يُحوَّل مباشرة لموظف
+                  عند ذكر العميل لأي من هذه الكلمات يدخل طابور الموظفين ويتوقف البوت عن الرد
                 </p>
               </div>
 
               <div>
-                <Label>أقصى عدد ردود قبل التحويل التلقائي</Label>
+                <Label>أقصى عدد ردود آلية خلال سجل المحادثة</Label>
                 <Input type="number" min={1} max={20} value={form.max_bot_replies}
                   onChange={(e) => setForm({ ...form, max_bot_replies: Number(e.target.value) })} />
               </div>

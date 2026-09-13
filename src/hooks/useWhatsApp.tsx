@@ -12,6 +12,7 @@ export const useWhatsApp = () => {
     data: conversations,
     isLoading: conversationsLoading,
     error: conversationsError,
+    refetch,
   } = useQuery({
     queryKey: ['whatsapp-conversations', orgId],
     queryFn: async () => {
@@ -94,5 +95,5 @@ export const useWhatsApp = () => {
     };
   }, [orgId, queryClient]);
 
-  return { conversations, conversationsLoading, conversationsError };
+  return { conversations, conversationsLoading, conversationsError, refetch };
 };

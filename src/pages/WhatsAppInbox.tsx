@@ -14,40 +14,54 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
+import { isQueuedConversation, isClosedConversation, orderQueue } from '@/lib/whatsappQueue';
+import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 
 const WhatsAppInboxContent: React.FC = () => {
-  const { conversations, conversationsLoading } = useWhatsApp();
+  const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
+  const { employee, canWork, claim, identityError, available, setAvailable, presenceError } = useWhatsAppQueue();
+  const { hasPermission } = useSupabasePermissions();
+  const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
+  const [showDetails, setShowDetails] = useState(false);
+  const [prefillText, setPrefillText] = useState('');
+  const [prefillNonce, setPrefillNonce] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    const list = conversations || [];
+    let list = conversations || [];
+    if (view === 'queue') list = orderQueue(list.filter(isQueuedConversation));
+    if (view === 'mine') list = list.filter(c => c.assigned_to === employee?.id && !isClosedConversation(c));
+    if (view === 'closed') list = list.filter(isClosedConversation);
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter((c: any) =>
       (c.phone_number || '').toLowerCase().includes(q) ||
       (c.customer?.name || '').toLowerCase().includes(q)
     );
-  }, [conversations, search]);
+  }, [conversations, search, view, employee?.id]);
 
-  // Auto-select first conversation
-  React.useEffect(() => {
-    if (!selectedId && filtered.length > 0) {
-      setSelectedId(filtered[0].id);
-    }
-  }, [filtered, selectedId]);
-
-  const selected = filtered.find((c: any) => c.id === selectedId);
-  const { messages, isLoading: messagesLoading } = useWhatsAppMessages(selectedId || undefined);
-
+  React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
+  const selected = (conversations || []).find((c: any) => c.id === selectedId);
+  const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
+  const queue = orderQueue((conversations || []).filter(isQueuedConversation));
+  const pickup = async (id: string) => {
+    try { const claimed = await claim.mutateAsync(id); setView('mine'); setSelectedId(claimed); }
+    catch { /* mutation displays the error and refreshes the list */ }
+  };
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
       {/* Header */}
       <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
         <MessageCircle className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold">صندوق رسائل واتساب</h1>
+        <h1 className="text-lg font-bold">مركز المحادثات</h1>
         <div className="ms-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} aria-label="تحديث المحادثات"><RefreshCw className="h-4 w-4" /></Button>
+          {canWork && <Button size="sm" variant={available ? 'default' : 'outline'} disabled={!employee}
+            onClick={() => setAvailable(v => !v)}>{available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
           <FollowupsBell />
           <Badge variant="secondary">
             {conversations?.length || 0} محادثة
@@ -55,10 +69,21 @@ const WhatsAppInboxContent: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[340px,1fr] overflow-hidden">
+      {presenceError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{presenceError}</p>}
+      {conversationsError && <div role="alert" className="p-3 bg-destructive/10 text-destructive">تعذر تحميل المحادثات. تحقق من الاتصال والصلاحيات ثم اضغط تحديث.</div>}
+      {canWork && !employee && <div role="status" className="px-4 py-2 text-sm bg-muted">{identityError ? 'تعذر التحقق من ملف الموظف؛ أعد المحاولة قبل الاستلام.' : 'لاستلام المحادثات، اربط حسابك بملف موظف نشط في المؤسسة من فريق العمل.'}</div>}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Conversations list */}
-        <aside className="border-l bg-muted/20 flex flex-col overflow-hidden">
-          <div className="p-3 border-b bg-card">
+        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] md:shrink-0 border-l bg-muted/20 flex-col overflow-hidden`}>
+          <div className="p-3 border-b bg-card space-y-3">
+            <div className="grid grid-cols-2 gap-1" aria-label="تصنيف المحادثات">
+              {([['queue', 'الطابور'], ['mine', 'محادثاتي'], ['all', 'الكل'], ['closed', 'المغلقة']] as const).map(([key, label]) =>
+                <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
+                  onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
+            </div>
+            {view === 'queue' && <Button className="w-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
+              onClick={() => pickup('')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
+            {view === 'queue' && <p className="text-xs text-muted-foreground">الأولوية أولًا، ثم الأقدم حسب تاريخ فتح المحادثة.</p>}
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -76,7 +101,7 @@ const WhatsAppInboxContent: React.FC = () => {
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   جاري التحميل...
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : conversationsError ? (<p className="p-4 text-sm text-destructive">القائمة غير متاحة حاليًا</p>) : filtered.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   لا توجد محادثات
                 </div>
@@ -117,7 +142,7 @@ const WhatsAppInboxContent: React.FC = () => {
                         <RefreshCw className="h-2.5 w-2.5" />
                         <span>
                           {c.last_inbound_at
-                            ? `آخر مزامنة ${formatDistanceToNow(new Date(c.last_inbound_at), { addSuffix: true, locale: ar })}`
+                            ? `آخر رسالة واردة ${formatDistanceToNow(new Date(c.last_inbound_at), { addSuffix: true, locale: ar })}`
                             : 'لا يوجد استلام بعد'}
                         </span>
                       </div>
@@ -151,7 +176,7 @@ const WhatsAppInboxContent: React.FC = () => {
         </aside>
 
         {/* Messages panel */}
-        <section className="flex flex-col overflow-hidden bg-muted/10">
+        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-muted/10`}>
           {!selected ? (
             <div className="flex-1 flex items-center justify-center text-center p-6">
               <div>
@@ -163,7 +188,8 @@ const WhatsAppInboxContent: React.FC = () => {
             <>
               {/* Conversation header */}
               <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Button className="md:hidden" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
@@ -176,7 +202,9 @@ const WhatsAppInboxContent: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
+                  <Button variant="outline" size="sm" onClick={() => setShowDetails(v => !v)}>ملف العميل</Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/whatsapp-inbox/${selected.id}`}>
                       <ExternalLink className="h-3.5 w-3.5 me-1" />
@@ -200,7 +228,7 @@ const WhatsAppInboxContent: React.FC = () => {
                     <div className="text-center text-sm text-muted-foreground py-8">
                       جاري تحميل الرسائل...
                     </div>
-                  ) : !messages || messages.length === 0 ? (
+                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : !messages || messages.length === 0 ? (
                     <div className="text-center text-sm text-muted-foreground py-8">
                       لا توجد رسائل في هذه المحادثة
                     </div>
@@ -273,14 +301,21 @@ const WhatsAppInboxContent: React.FC = () => {
 
               {/* Composer */}
               <div className="border-t bg-card p-3">
-                <WhatsAppMessageComposer
+                {canWork && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin')) ? <WhatsAppMessageComposer
                   conversationId={selected.id}
+                  prefillText={prefillText}
+                  prefillNonce={prefillNonce}
                   onMessageSent={() => {}}
-                />
+                /> : <p className="text-sm text-muted-foreground">{selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا للرد وإيقاف البوت.'}</p>}
               </div>
             </>
           )}
         </section>
+        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background md:static md:w-[350px] md:shrink-0 border-r overflow-y-auto">
+          <Button variant="ghost" className="m-2" onClick={() => setShowDetails(false)}>إغلاق التفاصيل</Button>
+          <ConversationRightPanel conversationId={selected.id} conversation={selected}
+            onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); setShowDetails(false); }} />
+        </aside>}
       </div>
     </div>
   );

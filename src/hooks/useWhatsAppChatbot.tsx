@@ -8,6 +8,8 @@ export interface ChatbotSettings {
   organization_id?: string;
   is_enabled: boolean;
   bot_name: string;
+  bot_mode: 'ai' | 'guided';
+  knowledge_base: string;
   system_prompt: string;
   welcome_message: string | null;
   handoff_keywords: string[];
@@ -19,8 +21,10 @@ export interface ChatbotSettings {
 
 const DEFAULTS: ChatbotSettings = {
   is_enabled: false,
-  bot_name: 'مساعد Vogatchi',
-  system_prompt: 'أنت مساعد ذكي لوكالة سفر Vogatchi. رد بلطف واحترافية.',
+  bot_name: 'مساعد السفر',
+  bot_mode: 'ai',
+  knowledge_base: '',
+  system_prompt: 'أنت مساعد خدمة عملاء لوكالة سفر. رد بلطف واحترافية والتزم بمعلومات الشركة المعتمدة.',
   welcome_message: 'مرحبًا! أنا مساعدك الذكي. كيف أستطيع مساعدتك؟',
   handoff_keywords: ['موظف', 'بشري', 'شخص حقيقي', 'agent', 'human'],
   max_bot_replies: 5,
@@ -33,14 +37,15 @@ export const useWhatsAppChatbot = () => {
   const orgId = useOrgId();
   const qc = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, error: settingsError } = useQuery({
     queryKey: ['whatsapp-chatbot-settings', orgId],
     queryFn: async () => {
       if (!orgId) return DEFAULTS;
-      const { data } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('whatsapp_chatbot_settings')
         .select('*').eq('organization_id', orgId).maybeSingle();
-      return (data as ChatbotSettings) || DEFAULTS;
+      if (error) throw error;
+      return data ? { ...DEFAULTS, ...data } as ChatbotSettings : DEFAULTS;
     },
     enabled: !!orgId,
   });
@@ -49,10 +54,11 @@ export const useWhatsAppChatbot = () => {
     queryKey: ['whatsapp-chatbot-interactions', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('whatsapp_chatbot_interactions')
         .select('*').eq('organization_id', orgId)
         .order('created_at', { ascending: false }).limit(50);
+      if (error) throw error;
       return data || [];
     },
     enabled: !!orgId,
@@ -61,6 +67,7 @@ export const useWhatsAppChatbot = () => {
   const save = useMutation({
     mutationFn: async (input: Partial<ChatbotSettings>) => {
       if (!orgId) throw new Error('no org');
+      if (settingsError) throw new Error('تعذر تحميل الإعدادات الحالية؛ لا يمكن الحفظ قبل تحديث الصفحة');
       const { error } = await (supabase as any)
         .from('whatsapp_chatbot_settings')
         .upsert({ ...DEFAULTS, ...settings, ...input, organization_id: orgId },
@@ -77,7 +84,7 @@ export const useWhatsAppChatbot = () => {
   return {
     settings: settings || DEFAULTS,
     interactions,
-    isLoading,
+    isLoading, settingsError,
     save: save.mutateAsync,
     isSaving: save.isPending,
   };

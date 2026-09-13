@@ -199,6 +199,33 @@ Deno.serve(async (req) => {
       return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
     }
 
+    const permission = async (key: string) => {
+      const { data, error } = await authClient.rpc('has_org_permission', { _org_id: conversation.organization_id, _permission: key });
+      if (error) throw error;
+      return data === true;
+    };
+    const isManager = await permission('whatsapp_admin');
+    if (!await permission('whatsapp_view') || (!isManager && !await permission('customer_service_edit'))) {
+      return fail('FORBIDDEN', 'لا تملك صلاحية إرسال رسائل واتساب', 403);
+    }
+    const { data: callerProfile } = await admin.from('profiles').select('linked_employee_id').eq('id', user.id).single();
+    const checkOwner = async () => {
+      const { data: current, error } = await admin.from('whatsapp_conversations').select('assigned_to')
+        .eq('id', conversationId!).eq('organization_id', conversation.organization_id).single();
+      if (error) throw error;
+      if (isManager) return true;
+      if (!callerProfile?.linked_employee_id || current.assigned_to !== callerProfile.linked_employee_id) return false;
+      const { data: activeEmployee } = await admin.from('employees').select('id')
+        .eq('id', callerProfile.linked_employee_id).eq('organization_id', conversation.organization_id).eq('is_active', true).maybeSingle();
+      return !!activeEmployee;
+    };
+    if (!await checkOwner()) return fail('CLAIM_REQUIRED', 'استلم المحادثة أولًا أو اطلب تحويلها إليك من المشرف', 409);
+    if (isManager) {
+      const { error: pauseError } = await admin.from('whatsapp_conversations')
+        .update({ status: 'pending', assignment_reason: 'human_queue' }).eq('id', conversationId!).is('assigned_to', null);
+      if (pauseError) throw pauseError;
+    }
+
     // ---------- idempotency ----------
     if (idempotencyKey) {
       const { data: dupe } = await admin
@@ -322,6 +349,10 @@ Deno.serve(async (req) => {
     messageRowId = pending?.id ?? null;
 
     // ---------- send ----------
+    if (!await checkOwner()) {
+      await admin.from('whatsapp_messages').update({ status: 'failed', error_message: 'تغير إسناد المحادثة قبل الإرسال' }).eq('id', messageRowId!);
+      return fail('ASSIGNMENT_CHANGED', 'تغير إسناد المحادثة؛ حدّث الصفحة', 409);
+    }
     const result = await graphSend(settings, payload, correlationId);
 
     if (!result.ok) {

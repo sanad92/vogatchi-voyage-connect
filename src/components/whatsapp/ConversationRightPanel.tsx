@@ -67,27 +67,22 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
   const [newTagColor, setNewTagColor] = useState('#6366f1');
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
 
-  // Org members for assignment
+  // Conversations reference employees, not auth/profile IDs.
   const { data: members } = useQuery({
-    queryKey: ['org-members-list', organizationId],
+    queryKey: ['wa-active-employees', organizationId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('organization_members')
-        .select('user_id, role')
-        .eq('organization_id', organizationId);
+      const { data, error } = await supabase.from('employees')
+        .select('id, full_name, email').eq('organization_id', organizationId!).eq('is_active', true).order('full_name');
       if (error) throw error;
-      const ids = (data || []).map((m: any) => m.user_id);
-      if (!ids.length) return [];
-      const { data: profiles } = await (supabase as any)
-        .from('profiles').select('id, full_name, email').in('id', ids);
-      return (profiles || []).map((p: any) => ({
-        ...p,
-        role: (data || []).find((m: any) => m.user_id === p.id)?.role,
-      }));
-    },
-    enabled: !!organizationId,
+      return data || [];
+    }, enabled: !!organizationId,
   });
 
+  const { data: intake } = useQuery({ queryKey: ['wa-intake', organizationId, conversationId],
+    queryFn: async () => { const { data, error } = await (supabase as any).from('wa_bot_intake').select('answers, completed')
+      .eq('organization_id', organizationId).eq('conversation_id', conversationId).maybeSingle(); if (error) throw error; return data; },
+    enabled: !!organizationId && !!conversationId,
+  });
   const assignedTagIds = assignments.map((a: any) => a.tag_id);
   const availableTags = tags.filter(t => !assignedTagIds.includes(t.id));
 
@@ -95,6 +90,11 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
 
   return (
     <div className="w-full h-full flex flex-col bg-card border-s">
+      {intake?.answers && <section className="rounded-lg border p-3 m-3 space-y-1" dir="rtl"><h3 className="font-bold">ملخص طلب البوت</h3>
+        {Object.entries({ initial_request: 'الطلب الأول', destination: 'الوجهة', dates: 'التواريخ', travelers: 'المسافرون', budget: 'الميزانية', style: 'التفضيلات' }).map(([key,label]) =>
+          intake.answers[key] ? <p key={key} className="text-sm"><strong>{label}: </strong>{String(intake.answers[key])}</p> : null)}
+        <p className="text-xs text-muted-foreground">{intake.completed ? 'اكتمل جمع الطلب؛ راجع التفاصيل مع العميل.' : 'بيانات جُمعت حتى الآن.'}</p>
+      </section>}
       {/* Action bar */}
       <div className="border-b p-3 space-y-2">
         <div className="flex items-center gap-2 flex-wrap">

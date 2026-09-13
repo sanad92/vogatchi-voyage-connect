@@ -34,17 +34,25 @@ export const useConversationActions = (conversationId: string) => {
 
   const assign = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string | null; reason?: string }) => {
-      const { data: current } = await (supabase as any)
-        .from('whatsapp_conversations')
-        .select('assigned_to, organization_id')
-        .eq('id', conversationId)
-        .maybeSingle();
-      const orgId = current?.organization_id || organizationId!;
-      const { error } = await (supabase as any)
-        .from('whatsapp_conversations')
-        .update({ assigned_to: userId, auto_assigned: false })
-        .eq('id', conversationId);
+      const { data: current, error: readError } = await supabase
+        .from('whatsapp_conversations').select('assigned_to, organization_id')
+        .eq('id', conversationId).eq('organization_id', organizationId!).single();
+      if (readError) throw readError;
+      const orgId = current.organization_id;
+      if (userId) {
+        const { data: target, error } = await supabase.from('employees').select('id')
+          .eq('id', userId).eq('organization_id', orgId).eq('is_active', true).maybeSingle();
+        if (error) throw error;
+        if (!target) throw new Error('الموظف غير نشط أو لا ينتمي إلى المؤسسة');
+      }
+      let update = supabase.from('whatsapp_conversations')
+        .update({ assigned_to: userId, auto_assigned: false, status: userId ? 'active' : 'pending',
+          assignment_reason: userId ? 'manual_assignment' : 'human_queue' })
+        .eq('id', conversationId).eq('organization_id', orgId);
+      update = current.assigned_to ? update.eq('assigned_to', current.assigned_to) : update.is('assigned_to', null);
+      const { data: changed, error } = await update.select('id').maybeSingle();
       if (error) throw error;
+      if (!changed) throw new Error('تغير التعيين بواسطة موظف آخر؛ حدّث المحادثة');
       await logHistory({
         conversation_id: conversationId,
         organization_id: orgId,
@@ -52,6 +60,7 @@ export const useConversationActions = (conversationId: string) => {
         from_user_id: current?.assigned_to || null,
         to_user_id: userId,
         reason: reason || null,
+        metadata: { identity_type: 'employee' },
       });
     },
     onSuccess: () => { toast.success('تم تحديث التخصيص'); invalidate(); },

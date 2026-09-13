@@ -27,17 +27,15 @@ import { WhatsAppInboxList } from './WhatsAppInboxList';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
 import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { WhatsAppChatbotSettings } from './WhatsAppChatbotSettings';
+import { WhatsAppRoutingSettings } from './WhatsAppRoutingSettings';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
 const TABS = [
-  { value: 'settings', label: 'الإعدادات', icon: Settings },
-  { value: 'sla', label: 'SLA', icon: Clock },
-  { value: 'chatbot', label: 'البوت', icon: Bot },
-  { value: 'automation', label: 'الأتمتة', icon: Workflow },
+  { value: 'settings', label: 'القنوات والخدمة', icon: Settings },
+  { value: 'chatbot', label: 'البوت والأتمتة', icon: Bot },
   { value: 'templates', label: 'مركز القوالب', icon: FileText },
-  { value: 'quick-replies', label: 'الردود السريعة', icon: Zap },
   { value: 'broadcasts', label: 'الحملات', icon: Megaphone },
-  { value: 'employees', label: 'الموظفون', icon: Users },
+  { value: 'employees', label: 'الفريق والتوزيع', icon: Users },
   { value: 'analytics', label: 'التحليلات', icon: BarChart3 },
 ];
 
@@ -53,7 +51,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
         actions={
           <>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/customer-service" className="gap-1.5">
+              <Link to="/whatsapp-inbox" className="gap-1.5">
                 <ExternalLink className="h-4 w-4" />
                 <span className="hidden sm:inline">لوحة المحادثات</span>
               </Link>
@@ -66,7 +64,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
       <Tabs defaultValue="settings" className="w-full">
         {/* Horizontally scrollable tabs on small screens, wrap-free on desktop */}
         <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
-          <TabsList className="inline-flex h-auto w-max lg:w-full lg:grid lg:grid-cols-9 gap-1 p-1 bg-muted/50">
+          <TabsList className="inline-flex h-auto w-max lg:w-full lg:grid lg:grid-cols-6 gap-1 p-1 bg-muted/50">
             {TABS.map(({ value, label, icon: Icon }) => (
               <TabsTrigger
                 key={value}
@@ -83,33 +81,25 @@ export const WhatsAppAdminTabs: React.FC = () => {
         <TabsContent value="settings" className="mt-6 space-y-6 animate-in fade-in">
           <WhatsAppInboxList />
           <WhatsAppSettings />
-        </TabsContent>
-
-        <TabsContent value="sla" className="mt-6 animate-in fade-in">
           <WhatsAppSLASettings />
         </TabsContent>
 
         <TabsContent value="chatbot" className="mt-6 animate-in fade-in">
           <WhatsAppChatbotSettings />
-        </TabsContent>
-
-        <TabsContent value="automation" className="mt-6 animate-in fade-in">
-          <WhatsAppAutomationBuilder />
+          <section className="pt-6 border-t mt-6"><h2 className="font-bold mb-4">قواعد الأتمتة</h2><WhatsAppAutomationBuilder /></section>
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6 animate-in fade-in">
           <TemplateCenter />
-        </TabsContent>
-
-        <TabsContent value="quick-replies" className="mt-6 animate-in fade-in">
-          <WhatsAppQuickReplies />
+          <section className="pt-6 border-t mt-6"><h2 className="font-bold mb-4">الردود السريعة للموظفين</h2><WhatsAppQuickReplies /></section>
         </TabsContent>
 
         <TabsContent value="broadcasts" className="mt-6 animate-in fade-in">
           <WhatsAppBroadcastManager />
         </TabsContent>
 
-        <TabsContent value="employees" className="mt-6 animate-in fade-in">
+        <TabsContent value="employees" className="mt-6 space-y-6 animate-in fade-in">
+          <WhatsAppRoutingSettings />
           <WhatsAppEmployeeManagement />
         </TabsContent>
 

@@ -16,7 +16,8 @@
     "test:navigation": "node scripts/verify-module-navigation.mjs",
     "test:backlog": "node scripts/verify-remaining-backlog.mjs",
     "preview": "vite preview",
-    "test:company-core": "node scripts/verify-company-core.mjs"
+    "test:company-core": "node scripts/verify-company-core.mjs",
+    "test:whatsapp": "node scripts/verify-whatsapp-queue.mjs && node scripts/verify-whatsapp-bot.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5",
@@ -104,6 +105,7 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "@electric-sql/pglite": "0.5.8"
   }
 }

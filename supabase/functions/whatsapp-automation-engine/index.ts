@@ -80,8 +80,13 @@ async function executeAction(supabase: any, action: Action, ctx: any, rule: Rule
       });
     }
     case 'assign_to': {
+      const { data: member } = await supabase.from('organization_members').select('user_id')
+        .eq('organization_id', rule.organization_id).eq('user_id', action.config.user_id).eq('is_active', true).maybeSingle();
+      if (!member) throw new Error('الموظف غير عضو نشط في المؤسسة');
+      const { data: profile } = await supabase.from('profiles').select('linked_employee_id').eq('id', member.user_id).single();
+      if (!profile?.linked_employee_id) throw new Error('الحساب غير مرتبط بملف موظف');
       return await supabase.from('whatsapp_conversations')
-        .update({ assigned_to: action.config.user_id, auto_assigned: true, assignment_reason: `automation:${rule.name}` })
+        .update({ assigned_to: profile.linked_employee_id, auto_assigned: true, assignment_reason: `automation:${rule.name}` })
         .eq('id', ctx.conversation.id);
     }
     case 'set_priority': {
@@ -176,12 +181,12 @@ Deno.serve(async (req) => {
     let conversation: any = null, message: any = null, customer: any = null;
     if (conversation_id) {
       const { data } = await supabase.from('whatsapp_conversations')
-        .select('*, customer:customer_id(*)').eq('id', conversation_id).maybeSingle();
+        .select('*, customer:customer_id(*)').eq('id', conversation_id).eq('organization_id', organization_id).maybeSingle();
       conversation = data;
       customer = data?.customer;
     }
     if (message_id) {
-      const { data } = await supabase.from('whatsapp_messages').select('*').eq('id', message_id).maybeSingle();
+      const { data } = await supabase.from('whatsapp_messages').select('*').eq('id', message_id).eq('organization_id', organization_id).maybeSingle();
       message = data;
     }
     const ctx = { conversation, message, customer, extra: extra || {} };
@@ -212,7 +217,7 @@ Deno.serve(async (req) => {
 
         await supabase.from('whatsapp_automation_executions').insert({
           organization_id, rule_id: rule.id, conversation_id, message_id,
-          trigger_type, status: 'success', actions_executed: results,
+          trigger_type, status: results.some(r => !r.ok) ? 'failed' : 'success', actions_executed: results,
           execution_time_ms: Date.now() - start,
         });
         await supabase.from('whatsapp_automation_rules_v2').update({

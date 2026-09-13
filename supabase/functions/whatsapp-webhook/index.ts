@@ -184,8 +184,6 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               organization_id: organizationId,
               whatsapp_settings_id: whatsappSettingsId,
               phone_number: phoneNumber,
-              status: 'active',
-              priority: 'normal',
               last_message_at: nowIso,
             },
             { onConflict: 'organization_id,phone_number' },
@@ -285,6 +283,8 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         let insertedMsg: { id: string } | null = null;
         let msgErr: unknown = null;
+        let concurrentDuplicate = false;
+        const isDuplicate = Boolean(existingMsg?.id);
         if (existingMsg?.id) {
           const res = await supabase
             .from('whatsapp_messages')
@@ -304,6 +304,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           msgErr = res.error;
           // Concurrent delivery of the same message: recover the existing row.
           if ((res.error as { code?: string } | null)?.code === '23505') {
+            concurrentDuplicate = true;
             const retry = await supabase
               .from('whatsapp_messages')
               .select('id')
@@ -314,7 +315,8 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
             msgErr = insertedMsg ? null : res.error;
           }
         }
-        if (msgErr) console.error('[wa-webhook] message write error:', msgErr);
+        if (msgErr) { console.error('[wa-webhook] message write error:', msgErr); continue; }
+        if (isDuplicate || concurrentDuplicate || !insertedMsg) continue;
 
 
         await supabase
@@ -322,9 +324,18 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           .update({ last_message_at: nowIso, last_activity_at: nowIso })
           .eq('id', conversationId);
 
-        // Fire-and-forget automation engine triggers
+        // Disabled bots and reopened conversations enter the human queue.
+        const { data: botConfig } = await supabase.from('whatsapp_chatbot_settings')
+          .select('is_enabled').eq('organization_id', organizationId).maybeSingle();
+        if (!botConfig?.is_enabled) {
+          await supabase.from('whatsapp_conversations').update({ status: 'pending', assignment_reason: 'human_queue' })
+            .eq('id', conversationId).is('assigned_to', null).in('status', ['open', 'active', 'pending', 'transferred']);
+        }
+        await supabase.from('whatsapp_conversations').update({ status: 'pending', assigned_to: null, assignment_reason: 'human_queue', closed_at: null, resolved_at: null })
+          .eq('id', conversationId).in('status', ['closed', 'resolved']);
+        // Await dispatch before acknowledging Meta; duplicate receipts do not rerun automations.
         try {
-          supabase.functions.invoke('whatsapp-automation-engine', {
+          await supabase.functions.invoke('whatsapp-automation-engine', {
             body: {
               trigger_type: 'message_received',
               organization_id: organizationId,
@@ -334,7 +345,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
             },
           }).catch((e: any) => console.error('[wa-webhook] automation trigger failed', e));
           if (contentText) {
-            supabase.functions.invoke('whatsapp-automation-engine', {
+            await supabase.functions.invoke('whatsapp-automation-engine', {
               body: {
                 trigger_type: 'keyword_match',
                 organization_id: organizationId,
@@ -344,7 +355,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               },
             }).catch(() => {});
             // Chatbot auto-reply
-            supabase.functions.invoke('whatsapp-chatbot-reply', {
+            await supabase.functions.invoke('whatsapp-chatbot-reply', {
               body: {
                 organization_id: organizationId,
                 conversation_id: conversationId,
@@ -356,6 +367,8 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
         } catch (e) {
           console.error('[wa-webhook] automation invoke error', e);
         }
+        const { error: routingError } = await supabase.rpc('wa_dispatch_queue', { _org_id: organizationId });
+        if (routingError) console.error('[wa-webhook] queue routing failed', routingError.message);
       }
     }
 
