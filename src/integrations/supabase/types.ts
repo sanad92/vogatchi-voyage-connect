@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -1481,6 +1481,86 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_creation_requests: {
+        Row: {
+          booking_id: string
+          created_at: string
+          created_by: string
+          invoice_id: string
+          organization_id: string
+          request_id: string
+          request_payload: Json
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          created_by: string
+          invoice_id: string
+          organization_id: string
+          request_id: string
+          request_payload: Json
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          created_by?: string
+          invoice_id?: string
+          organization_id?: string
+          request_id?: string
+          request_payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_creation_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_creation_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -8293,6 +8373,96 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_booking_conversions: {
+        Row: {
+          booking_id: string
+          created_at: string
+          created_by: string
+          discount_amount: number
+          invoice_id: string
+          organization_id: string
+          quote_id: string
+          source_snapshot: Json
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          created_by: string
+          discount_amount: number
+          invoice_id: string
+          organization_id: string
+          quote_id: string
+          source_snapshot: Json
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          created_by?: string
+          discount_amount?: number
+          invoice_id?: string
+          organization_id?: string
+          quote_id?: string
+          source_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_booking_conversions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: true
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_booking_conversions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           cost_price: number | null
@@ -8371,6 +8541,9 @@ export type Database = {
           assigned_employee_id: string | null
           created_at: string | null
           created_by: string | null
+          creation_request_hash: string | null
+          creation_request_id: string | null
+          currency: string | null
           customer_id: string | null
           customer_name: string | null
           destination: string | null
@@ -8397,6 +8570,9 @@ export type Database = {
           assigned_employee_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          creation_request_hash?: string | null
+          creation_request_id?: string | null
+          currency?: string | null
           customer_id?: string | null
           customer_name?: string | null
           destination?: string | null
@@ -8423,6 +8599,9 @@ export type Database = {
           assigned_employee_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          creation_request_hash?: string | null
+          creation_request_id?: string | null
+          currency?: string | null
           customer_id?: string | null
           customer_name?: string | null
           destination?: string | null
@@ -13612,6 +13791,10 @@ export type Database = {
         Args: { _confirmation: string; _org: string; _year: number }
         Returns: Json
       }
+      convert_quote_atomic: {
+        Args: { _org: string; _quote: string }
+        Returns: Json
+      }
       convert_quote_to_bookings: {
         Args: { p_quote_id: string }
         Returns: {
@@ -13638,6 +13821,10 @@ export type Database = {
           _statement_start: string
         }
         Returns: string
+      }
+      create_booking_atomic: {
+        Args: { _org: string; _payload: Json; _request_id: string }
+        Returns: Json
       }
       create_booking_commission: {
         Args: {
@@ -13682,6 +13869,10 @@ export type Database = {
           _slug?: string
         }
         Returns: string
+      }
+      create_quote_atomic: {
+        Args: { _org: string; _payload: Json; _request_id: string }
+        Returns: Json
       }
       create_refund_request: {
         Args: {
@@ -14593,6 +14784,10 @@ export type Database = {
       queue_organization_invitation_email: {
         Args: { _invitation_id: string }
         Returns: number
+      }
+      quote_booking_supplier_coverage: {
+        Args: { _booking: string; _cost: number; _org: string }
+        Returns: boolean
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
