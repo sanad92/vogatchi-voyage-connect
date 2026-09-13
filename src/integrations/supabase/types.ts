@@ -11627,6 +11627,123 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_bot_intake: {
+        Row: {
+          answers: Json
+          completed: boolean
+          conversation_id: string
+          last_message_id: string | null
+          organization_id: string
+          step: number
+        }
+        Insert: {
+          answers?: Json
+          completed?: boolean
+          conversation_id: string
+          last_message_id?: string | null
+          organization_id: string
+          step?: number
+        }
+        Update: {
+          answers?: Json
+          completed?: boolean
+          conversation_id?: string
+          last_message_id?: string | null
+          organization_id?: string
+          step?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_bot_intake_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_bot_intake_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_queue_agents: {
+        Row: {
+          available: boolean
+          employee_id: string
+          heartbeat_at: string
+          last_assigned_at: string | null
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          available?: boolean
+          employee_id: string
+          heartbeat_at?: string
+          last_assigned_at?: string | null
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          available?: boolean
+          employee_id?: string
+          heartbeat_at?: string
+          last_assigned_at?: string | null
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_queue_agents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_queue_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_queue_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_routing_settings: {
+        Row: {
+          max_conversations: number
+          mode: string
+          organization_id: string
+        }
+        Insert: {
+          max_conversations?: number
+          mode?: string
+          organization_id: string
+        }
+        Update: {
+          max_conversations?: number
+          mode?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_routing_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_automation_executions: {
         Row: {
           actions_executed: Json | null
@@ -12051,11 +12168,13 @@ export type Database = {
       whatsapp_chatbot_settings: {
         Row: {
           auto_handoff_on_error: boolean
+          bot_mode: string
           bot_name: string
           created_at: string
           handoff_keywords: Json
           id: string
           is_enabled: boolean
+          knowledge_base: string
           max_bot_replies: number
           model: string
           organization_id: string
@@ -12067,11 +12186,13 @@ export type Database = {
         }
         Insert: {
           auto_handoff_on_error?: boolean
+          bot_mode?: string
           bot_name?: string
           created_at?: string
           handoff_keywords?: Json
           id?: string
           is_enabled?: boolean
+          knowledge_base?: string
           max_bot_replies?: number
           model?: string
           organization_id: string
@@ -12083,11 +12204,13 @@ export type Database = {
         }
         Update: {
           auto_handoff_on_error?: boolean
+          bot_mode?: string
           bot_name?: string
           created_at?: string
           handoff_keywords?: Json
           id?: string
           is_enabled?: boolean
+          knowledge_base?: string
           max_bot_replies?: number
           model?: string
           organization_id?: string
@@ -15399,7 +15522,16 @@ export type Database = {
           issue: string
         }[]
       }
+      wa_claim_conversation: {
+        Args: { _conversation_id?: string; _org_id: string }
+        Returns: string
+      }
       wa_count_placeholders: { Args: { _text: string }; Returns: number }
+      wa_dispatch_queue: { Args: { _org_id: string }; Returns: number }
+      wa_intake_step: {
+        Args: { _conversation_id: string; _message_id: string; _org_id: string }
+        Returns: Json
+      }
       whatsapp_window_open: {
         Args: { _conversation_id: string }
         Returns: boolean
