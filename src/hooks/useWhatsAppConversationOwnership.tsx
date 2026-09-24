@@ -194,3 +194,100 @@ export const useWhatsAppConversationOwnership = (conversationId?: string | null)
 };
 
 export type WhatsAppConversationOwnership = ReturnType<typeof useWhatsAppConversationOwnership>;
+
+/**
+ * Phone-based helper for surfaces that send without an open conversation view
+ * (template suggestion panels, customer chat first message). It makes sure a
+ * conversation row exists and is assigned to the caller before sending, which is
+ * what the messaging service requires.
+ */
+export const useEnsureWhatsAppOwnership = () => {
+  const { user } = useOptimizedAuth() as any;
+  const { hasPermission } = useSupabasePermissions();
+  const isManager = hasPermission('whatsapp_admin');
+  const canWork =
+    hasPermission('whatsapp_view') && (isManager || hasPermission('customer_service_edit'));
+
+  /** Returns the conversation id when the caller may send, otherwise throws with an Arabic reason. */
+  const ensureOwned = async (params: {
+    organizationId?: string | null;
+    phone?: string | null;
+    customerId?: string | null;
+    conversationId?: string | null;
+  }): Promise<string | null> => {
+    const { organizationId, phone, customerId } = params;
+    if (!canWork) throw new Error('لا تملك صلاحية إرسال رسائل واتساب');
+    if (!organizationId) throw new Error('المؤسسة غير محددة');
+
+    let conversationId = params.conversationId ?? null;
+    let assignedTo: string | null = null;
+
+    if (conversationId) {
+      const { data, error } = await supabase
+        .from('whatsapp_conversations')
+        .select('id, assigned_to')
+        .eq('id', conversationId)
+        .maybeSingle();
+      if (error) throw error;
+      assignedTo = (data?.assigned_to as string | null) ?? null;
+    } else {
+      if (!phone) throw new Error('لا يوجد رقم واتساب لهذا العميل');
+      const { data, error } = await supabase
+        .from('whatsapp_conversations')
+        .select('id, assigned_to')
+        .eq('organization_id', organizationId)
+        .eq('phone_number', phone)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        conversationId = data.id as string;
+        assignedTo = (data.assigned_to as string | null) ?? null;
+      }
+    }
+
+    if (isManager) return conversationId;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('linked_employee_id')
+      .eq('id', user?.id)
+      .maybeSingle();
+    const employeeId = profile?.linked_employee_id as string | null | undefined;
+    if (!employeeId) {
+      throw new Error('حسابك غير مرتبط بملف موظف — اطلب من المشرف ربط حسابك قبل الإرسال');
+    }
+    if (assignedTo && assignedTo === employeeId) return conversationId;
+    if (assignedTo && assignedTo !== employeeId) {
+      throw new Error('المحادثة مسندة لموظف آخر — اطلب تحويلها إليك قبل الإرسال');
+    }
+
+    // Unassigned (or brand new contact): create when needed, then claim atomically.
+    if (!conversationId) {
+      const { data: created, error: createError } = await supabase
+        .from('whatsapp_conversations')
+        .insert({
+          organization_id: organizationId,
+          phone_number: phone!,
+          customer_id: customerId ?? null,
+          status: 'active',
+          priority: 'normal',
+          assigned_to: employeeId,
+          last_message_at: new Date().toISOString(),
+        } as any)
+        .select('id')
+        .single();
+      if (createError) throw createError;
+      return created.id as string;
+    }
+
+    const { data: claimed, error: claimError } = await (supabase as any).rpc('wa_claim_conversation', {
+      _org_id: organizationId,
+      _conversation_id: conversationId,
+    });
+    if (claimError) throw claimError;
+    if (!claimed) throw new Error('تعذر استلام المحادثة — قد تكون أُسندت لموظف آخر');
+    return conversationId;
+  };
+
+  return { ensureOwned, canWork, isManager };
+};
