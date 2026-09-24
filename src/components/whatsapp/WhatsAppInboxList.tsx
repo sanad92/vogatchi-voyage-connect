@@ -12,13 +12,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  CheckCircle2, Loader2, MessageCircle, Pencil, Plus, Star, Unplug, XCircle,
+  CheckCircle2, Loader2, MessageCircle, Pencil, Plus, RefreshCw, Star, Unplug, XCircle,
 } from 'lucide-react';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 import { ManualConnectDialog } from './ManualConnectDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { toast } from 'sonner';
 
 export const WhatsAppInboxList: React.FC = () => {
+  const orgId = useOrgId();
   const {
     inboxes, isLoading,
     setDefault, isSettingDefault,
@@ -28,6 +32,24 @@ export const WhatsAppInboxList: React.FC = () => {
   const [showConnect, setShowConnect] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+
+  const repairReception = async (id: string) => {
+    if (!orgId) return;
+    setCheckingId(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-inbox-health', {
+        body: { organization_id: orgId, whatsapp_settings_id: id, repair: true },
+      });
+      if (error) throw error;
+      if (!data?.subscribed) throw new Error('لم يظهر اشتراك استقبال نشط بعد الإصلاح');
+      toast.success('استقبال الرسائل مفعّل لهذا الرقم');
+    } catch (error: any) {
+      toast.error(error?.message || 'تعذر تفعيل استقبال الرسائل');
+    } finally {
+      setCheckingId(null);
+    }
+  };
 
   const activeInboxes = inboxes.filter((i) => i.onboarding_status !== 'disconnected');
 
@@ -157,6 +179,15 @@ export const WhatsAppInboxList: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => repairReception(inbox.id)}
+                              disabled={checkingId === inbox.id}
+                            >
+                              {checkingId === inbox.id ? <Loader2 className="w-3.5 h-3.5 ml-1 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 ml-1" />}
+                              فحص الاستقبال
+                            </Button>
                             {!inbox.is_default && (
                               <Button
                                 size="sm"
