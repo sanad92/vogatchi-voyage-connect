@@ -11,6 +11,7 @@ import { VariableInserter } from './VariableInserter';
 import { TemplatePreview } from './TemplatePreview';
 import { useWhatsAppTemplateCenter } from '@/hooks/useWhatsAppTemplateCenter';
 import { AiTemplateGeneratorDialog } from './AiTemplateGeneratorDialog';
+import { fixTemplateText, templateTextIssues } from '@/lib/whatsappTemplateRules';
 
 interface Props {
   open: boolean;
@@ -70,6 +71,8 @@ export const TemplateEditorDialog: React.FC<Props> = ({ open, onOpenChange, init
     });
   };
 
+  const bodyIssues = templateTextIssues(form.body_text);
+
   const submit = async () => {
     if (!form.name.trim() || !form.body_text.trim()) return;
     await saveTemplate.mutateAsync({
@@ -80,8 +83,8 @@ export const TemplateEditorDialog: React.FC<Props> = ({ open, onOpenChange, init
       category_key: form.category_key,
       category: form.category_key,
       description: form.description || null,
-      header_text: form.header_text || null,
-      body_text: form.body_text,
+      header_text: form.header_text ? fixTemplateText(form.header_text, form.locale) : null,
+      body_text: fixTemplateText(form.body_text, form.locale),
       footer_text: form.footer_text || null,
       tags: form.tags
         .split(',')
@@ -187,6 +190,19 @@ export const TemplateEditorDialog: React.FC<Props> = ({ open, onOpenChange, init
                 placeholder="مرحباً {{customer_first_name}} ..."
                 dir={form.locale === 'ar' ? 'rtl' : 'ltr'}
               />
+              {bodyIssues.length > 0 && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs">
+                  <span className="text-destructive">شروط Meta: {bodyIssues.join(' • ')}</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setForm((f) => ({ ...f, body_text: fixTemplateText(f.body_text, f.locale) }))}
+                  >
+                    إصلاح تلقائي
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
