@@ -32,9 +32,14 @@ interface Props {
   conversationId: string;
   organizationId?: string | null;
   isClosed?: boolean;
+  /** When false, closing is blocked until the agent owns the conversation. */
+  canClose?: boolean;
+  blockedReason?: string;
 }
 
-export const CloseConversationDialog: React.FC<Props> = ({ conversationId, organizationId, isClosed }) => {
+export const CloseConversationDialog: React.FC<Props> = ({
+  conversationId, organizationId, isClosed, canClose = true, blockedReason,
+}) => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ResolutionStatus>('done');
