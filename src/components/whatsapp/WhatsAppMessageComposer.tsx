@@ -67,7 +67,9 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 
   const { sendTextMessage, sendMedia, sendTemplate, isSending } = useWhatsAppMessaging();
 
-  const variables: VariableContext = {
+  // The organization name is the sender identity and the customer name comes
+  // from the registered customer record; both are derived here, never typed.
+  const variables: VariableContext = resolveVariableContext({
     customer_name: contextVars.customer_name || contactName || null,
     customer_phone: contextVars.customer_phone || contactPhone || null,
     agent_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
@@ -79,7 +81,7 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     invoice_number: contextVars.invoice_number || null,
     invoice_total: contextVars.invoice_total || null,
     invoice_currency: contextVars.invoice_currency || null,
-  };
+  });
 
   const handlePickFile = (accept: string, ref: React.RefObject<HTMLInputElement>) => {
     if (blockSend()) return;
