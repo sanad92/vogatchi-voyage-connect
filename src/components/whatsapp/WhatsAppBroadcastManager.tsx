@@ -20,7 +20,8 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useOrgId } from '@/hooks/useOrgId';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -38,6 +39,23 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     useWhatsAppBroadcasts();
   const { customers } = useCustomers();
   const { templates } = useWhatsAppTemplates();
+  const orgId = useOrgId();
+  const { data: senderNumbers = [] } = useQuery({
+    queryKey: ['wa-sender-numbers', orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from('whatsapp_settings')
+        .select('id,label,display_phone_number,is_default,is_active')
+        .eq('organization_id', orgId).eq('is_active', true)
+        .order('is_default', { ascending: false });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; label: string | null; display_phone_number: string | null; is_default: boolean }>;
+    },
+  });
+  const [senderId, setSenderId] = useState<string>('');
+  useEffect(() => {
+    if (!senderId && senderNumbers.length) setSenderId(senderNumbers[0].id);
+  }, [senderNumbers, senderId]);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -93,8 +111,9 @@ export const WhatsAppBroadcastManager: React.FC = () => {
 
   const approvedTemplates = useMemo(
     () => (templates || []).filter((t: any) =>
-      String(t.meta_status || t.status || '').toLowerCase() === 'approved'),
-    [templates],
+      String(t.meta_status || t.status || '').toLowerCase() === 'approved'
+      && (!t.whatsapp_settings_id || !senderId || t.whatsapp_settings_id === senderId)),
+    [templates, senderId],
   );
   const selectedTemplate = approvedTemplates.find((t: any) => t.id === form.template_id) as any;
 
@@ -110,6 +129,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
         description: form.description,
         message_body: form.message_body || selectedTemplate.body_text || selectedTemplate.name,
         template_id: selectedTemplate.id,
+        whatsapp_settings_id: senderId || null,
         audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
         scheduled_at: form.scheduled_at || null,
         recipients,
@@ -159,6 +179,19 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                   <Input type="datetime-local" value={form.scheduled_at}
                     onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })} />
                 </div>
+              </div>
+              <div>
+                <Label>الإرسال من رقم *</Label>
+                <Select value={senderId} onValueChange={(v) => { setSenderId(v); setForm((f) => ({ ...f, template_id: 'none' })); }}>
+                  <SelectTrigger><SelectValue placeholder="اختر رقم الإرسال" /></SelectTrigger>
+                  <SelectContent>
+                    {senderNumbers.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {(n.label || 'رقم واتساب')} {n.display_phone_number ? `— ${n.display_phone_number}` : ''}{n.is_default ? ' (افتراضي)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>الوصف</Label>
@@ -272,11 +305,11 @@ export const WhatsAppBroadcastManager: React.FC = () => {
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button variant="secondary" onClick={() => handleCreate(false)}
-                disabled={isCreating || !form.name || !selectedTemplate || recipients.length === 0}>
+                disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
                 حفظ كمسودة
               </Button>
               <Button onClick={() => handleCreate(true)}
-                disabled={isCreating || isSending || !form.name || !selectedTemplate || recipients.length === 0}>
+                disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
                 <Send className="w-4 h-4 ml-1" /> إنشاء وإرسال
               </Button>
             </DialogFooter>

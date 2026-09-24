@@ -69,7 +69,7 @@ export function useWhatsAppBroadcasts() {
   const createBroadcast = useMutation({
     mutationFn: async (payload: {
       name: string; description?: string; message_body: string;
-      template_id?: string | null; audience_type: WhatsAppBroadcast['audience_type'];
+      template_id?: string | null; whatsapp_settings_id?: string | null; audience_type: WhatsAppBroadcast['audience_type'];
       audience_filter?: any; scheduled_at?: string | null;
       recipients: Array<{ phone_number: string; customer_id?: string | null; customer_name?: string | null; personalization?: any }>;
     }) => {
@@ -82,6 +82,7 @@ export function useWhatsAppBroadcasts() {
           description: payload.description,
           message_body: payload.message_body,
           template_id: payload.template_id,
+          whatsapp_settings_id: payload.whatsapp_settings_id ?? null,
           audience_type: payload.audience_type,
           audience_filter: payload.audience_filter || {},
           scheduled_at: payload.scheduled_at,
