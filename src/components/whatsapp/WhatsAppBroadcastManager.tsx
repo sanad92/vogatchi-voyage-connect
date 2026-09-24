@@ -19,6 +19,10 @@ import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from
 import { useCustomers } from '@/hooks/useCustomers';
 import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
+import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
+import {
+  templateSlots, missingSlots, buildTemplateVariables, previewTemplate, slotStorageKey,
+} from '@/lib/whatsappTemplateVars';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
