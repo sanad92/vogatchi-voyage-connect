@@ -78,9 +78,10 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm truncate flex-1">
+            <span className="font-medium text-sm truncate flex-1" dir={c.customer?.name ? 'rtl' : 'ltr'}>
               {c.customer?.name || c.phone_number}
             </span>
+
             <span className="text-[10px] text-muted-foreground shrink-0">
               {c.last_message_at && formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: ar })}
             </span>
