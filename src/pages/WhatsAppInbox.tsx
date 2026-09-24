@@ -110,19 +110,24 @@ const WhatsAppInboxContent: React.FC = () => {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
       {/* Header */}
-      <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
-        <MessageCircle className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold">مركز المحادثات</h1>
+      <div className="border-b bg-card/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-[image:var(--gradient-brand)] flex items-center justify-center shadow-[var(--shadow-glow)]">
+          <MessageCircle className="h-4.5 w-4.5 text-primary-foreground" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-base font-bold leading-tight">مركز المحادثات</h1>
+          <p className="text-xs text-muted-foreground">{visibleConversations.length} محادثة · {queue.length} في الطابور</p>
+        </div>
         <div className="ms-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()} aria-label="تحديث المحادثات"><RefreshCw className="h-4 w-4" /></Button>
-          {canWork && <Button size="sm" variant={available ? 'default' : 'outline'} disabled={!employee}
-            onClick={() => setAvailable(v => !v)}>{available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
+          <Button variant="ghost" size="sm" onClick={() => refetch()} aria-label="تحديث المحادثات"><RefreshCw className="h-4 w-4" /></Button>
+          {canWork && <Button size="sm" variant={available ? 'default' : 'outline'} disabled={!employee} className="rounded-full"
+            onClick={() => setAvailable(v => !v)}>
+            <span className={`me-1.5 h-2 w-2 rounded-full ${available ? 'bg-success' : 'bg-muted-foreground'}`} />
+            {available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
           <FollowupsBell />
-          <Badge variant="secondary">
-            {visibleConversations.length} محادثة
-          </Badge>
         </div>
       </div>
+
 
       {presenceError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{presenceError}</p>}
       {conversationsError && <div role="alert" className="p-3 bg-destructive/10 text-destructive">تعذر تحميل المحادثات. تحقق من الاتصال والصلاحيات ثم اضغط تحديث.</div>}
