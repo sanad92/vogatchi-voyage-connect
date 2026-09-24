@@ -11,7 +11,7 @@ import { TemplatesPicker } from './TemplatesPicker';
 import { WindowStatusBadge } from './WindowStatusBadge';
 import { ConversationOwnershipBanner } from './ConversationOwnershipBanner';
 import { useWhatsAppConversationOwnership } from '@/hooks/useWhatsAppConversationOwnership';
-import type { VariableContext } from '@/lib/whatsappVariables';
+import { resolveVariableContext, type VariableContext } from '@/lib/whatsappVariables';
 import { toast } from 'sonner';
 
 interface Props {

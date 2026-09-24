@@ -220,7 +220,8 @@ async function mirrorToConversation(
   try {
     let convId: string | null = null;
     const { data: conv } = await admin.from('whatsapp_conversations')
-      .select('id').eq('organization_id', broadcast.organization_id).eq('phone_number', to).maybeSingle();
+      .select('id').eq('organization_id', broadcast.organization_id)
+      .eq('whatsapp_settings_id', settings.id).eq('phone_number', to).maybeSingle();
     if (conv) convId = conv.id;
     else {
       const { data: created } = await admin.from('whatsapp_conversations').insert({
