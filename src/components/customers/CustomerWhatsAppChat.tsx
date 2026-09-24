@@ -177,7 +177,8 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
 
       {/* Composer */}
       {conversationId && (
-        <div className="border-t p-3 bg-background">
+        <div className="border-t p-3 bg-background space-y-2">
+          <ConversationOwnershipBanner ownership={ownership} compact />
           <div className="flex gap-2">
             <Textarea
               value={draft}
@@ -188,11 +189,21 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
                   handleSend();
                 }
               }}
-              placeholder="اكتب رسالة... (Enter للإرسال، Shift+Enter لسطر جديد)"
+              placeholder={
+                ownership.canSend
+                  ? 'اكتب رسالة... (Enter للإرسال، Shift+Enter لسطر جديد)'
+                  : 'استلم المحادثة أولاً لتتمكن من الكتابة'
+              }
               className="min-h-[44px] max-h-32 resize-none"
-              disabled={isSending}
+              disabled={isSending || !ownership.canSend}
             />
-            <Button onClick={handleSend} disabled={isSending || !draft.trim()} size="icon" className="h-auto">
+            <Button
+              onClick={handleSend}
+              disabled={isSending || !draft.trim() || !ownership.canSend}
+              size="icon"
+              className="h-auto"
+              title={ownership.canSend ? undefined : 'استلم المحادثة أولاً'}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
