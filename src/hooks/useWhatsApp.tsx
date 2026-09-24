@@ -35,18 +35,21 @@ export const useWhatsApp = () => {
       const conversations = data || [];
       if (conversations.length === 0) return conversations;
 
-      // Enrich with last inbound (sync) timestamp per conversation
+      // Enrich with the last inbound timestamp and a preview of the newest message
       const ids = conversations.map((c: any) => c.id);
-      const { data: inboundRows } = await supabase
+      const { data: recentRows } = await supabase
         .from('whatsapp_messages')
-        .select('conversation_id, sent_at')
+        .select('conversation_id, sent_at, direction, content, message_type, template_name')
         .in('conversation_id', ids)
-        .eq('direction', 'inbound')
         .order('sent_at', { ascending: false });
 
       const lastInboundMap = new Map<string, string>();
-      (inboundRows || []).forEach((r: any) => {
-        if (!lastInboundMap.has(r.conversation_id)) {
+      const lastMessageMap = new Map<string, any>();
+      (recentRows || []).forEach((r: any) => {
+        if (!lastMessageMap.has(r.conversation_id)) {
+          lastMessageMap.set(r.conversation_id, r);
+        }
+        if (r.direction === 'inbound' && !lastInboundMap.has(r.conversation_id)) {
           lastInboundMap.set(r.conversation_id, r.sent_at);
         }
       });
@@ -54,7 +57,9 @@ export const useWhatsApp = () => {
       return conversations.map((c: any) => ({
         ...c,
         last_inbound_at: lastInboundMap.get(c.id) || null,
+        last_message: lastMessageMap.get(c.id) || null,
       }));
+
     },
     enabled: !!orgId,
     staleTime: 10_000,
