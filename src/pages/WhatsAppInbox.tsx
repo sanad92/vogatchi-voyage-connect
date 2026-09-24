@@ -32,7 +32,9 @@ const WhatsAppInboxContent: React.FC = () => {
   const { hasPermission } = useSupabasePermissions();
   const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
-  const [showDetails, setShowDetails] = useState(true);
+  // The tools drawer only starts open when the screen is wide enough for it.
+  const [showDetails, setShowDetails] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
+
   const [messageSearch, setMessageSearch] = useState('');
   const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [prefillText, setPrefillText] = useState('');
