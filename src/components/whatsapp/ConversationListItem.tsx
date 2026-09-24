@@ -91,7 +91,9 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
             {last?.direction === 'outbound' && <ArrowUpRight className="h-3 w-3 shrink-0" />}
             {PreviewIcon && <PreviewIcon className="h-3 w-3 shrink-0" />}
             <span className="truncate">{previewText(last)}</span>
-            {needsReply && !closed && (
+            {c.marked_unread ? (
+              <span className="ms-auto shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">غير مقروءة</span>
+            ) : needsReply && !closed && (
               <span className="ms-auto shrink-0 h-2 w-2 rounded-full bg-success" aria-label="بانتظار الرد" />
             )}
           </div>
