@@ -21,6 +21,7 @@ import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightP
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
@@ -179,6 +180,10 @@ const WhatsAppInboxContent: React.FC = () => {
                             ? 'مغلق'
                             : c.status}
                         </Badge>
+                        {isClosedConversation(c) && <ResolutionBadge status={c.resolution_status} className="text-[10px] py-0 h-4" />}
+                        {isClosedConversation(c) && c.resolution_notes && (
+                          <span className="text-[10px] text-muted-foreground truncate max-w-full" title={c.resolution_notes}>{c.resolution_notes}</span>
+                        )}
                         {c.sla_breached_first_response && (
                           <Badge variant="destructive" className="text-[10px] py-0 h-4">
                             خرق SLA
@@ -232,6 +237,8 @@ const WhatsAppInboxContent: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
+                  <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
+                    isClosed={isClosedConversation(selected)} />
                   <Button variant="outline" size="sm" onClick={() => setShowDetails(v => !v)}>ملف العميل</Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/whatsapp-inbox/${selected.id}`}>
