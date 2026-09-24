@@ -12291,7 +12291,10 @@ export type Database = {
           phone_number: string
           pinned_booking_id: string | null
           priority: string | null
+          resolution_notes: string | null
+          resolution_status: string | null
           resolved_at: string | null
+          resolved_by: string | null
           sla_breached_first_response: boolean
           sla_breached_resolution: boolean
           sla_first_response_deadline: string | null
@@ -12320,7 +12323,10 @@ export type Database = {
           phone_number: string
           pinned_booking_id?: string | null
           priority?: string | null
+          resolution_notes?: string | null
+          resolution_status?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           sla_breached_first_response?: boolean
           sla_breached_resolution?: boolean
           sla_first_response_deadline?: string | null
@@ -12349,7 +12355,10 @@ export type Database = {
           phone_number?: string
           pinned_booking_id?: string | null
           priority?: string | null
+          resolution_notes?: string | null
+          resolution_status?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           sla_breached_first_response?: boolean
           sla_breached_resolution?: boolean
           sla_first_response_deadline?: string | null
