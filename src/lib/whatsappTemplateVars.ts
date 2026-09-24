@@ -122,12 +122,10 @@ export const previewTemplate = (
     .filter(Boolean)
     .join('\n');
   const slots = templateSlots(tpl);
-  let positionalBody = 0;
   return parts.replace(/\{\{\s*([^}\s]+)\s*\}\}/g, (match, token: string) => {
     const key = String(token).toLowerCase();
     if (/^\d+$/.test(key)) {
       const s = slots.find((x) => x.token === key);
-      positionalBody++;
       const raw = s?.auto ? s.auto : manual[s ? slotKey(s) : ''] || '';
       return resolveSample(raw || match, sample);
     }

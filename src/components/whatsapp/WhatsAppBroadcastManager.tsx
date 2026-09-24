@@ -401,11 +401,11 @@ export const WhatsAppBroadcastManager: React.FC = () => {
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button variant="secondary" onClick={() => handleCreate(false)}
-                disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
+                disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
                 حفظ كمسودة
               </Button>
               <Button onClick={() => handleCreate(true)}
-                disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
+                disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
                 <Send className="w-4 h-4 ml-1" /> إنشاء وإرسال
               </Button>
             </DialogFooter>
