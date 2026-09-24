@@ -103,9 +103,10 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
               </Badge>
             )}
             {c.customer?.name && (
-              <Badge variant="outline" className="text-[10px] py-0 h-[18px] font-normal text-muted-foreground">
+              <Badge variant="outline" dir="ltr" className="text-[10px] py-0 h-[18px] font-normal text-muted-foreground">
                 {c.phone_number}
               </Badge>
+
             )}
             {closed && <ResolutionBadge status={c.resolution_status} className="text-[10px] py-0 h-[18px]" />}
             {c.sla_breached_first_response && (
