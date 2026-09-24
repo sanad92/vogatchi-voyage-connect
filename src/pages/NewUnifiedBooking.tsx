@@ -368,6 +368,7 @@ export const NewUnifiedBookingForm = () => {
                     <Label>التكلفة *</Label>
                     <Input type="number" value={wizard.formData.cost_price} onChange={e => wizard.updateField('cost_price', e.target.value)} />
                     <FieldError error={wizard.errors.cost_price} />
+                    <FieldError error={wizard.errors.supplier_id ? `${wizard.errors.supplier_id} (ارجع للخطوة السابقة)` : undefined} />
                   </div>
                   <div>
                     <Label>العملة</Label>
