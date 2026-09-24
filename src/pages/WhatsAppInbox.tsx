@@ -38,8 +38,16 @@ const WhatsAppInboxContent: React.FC = () => {
   const [search, setSearch] = useState('');
   const [inboxFilter, setInboxFilter] = useState('all');
 
+  // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
+  const isSupervisor = hasPermission('whatsapp_admin');
+  const visibleConversations = useMemo(() => {
+    const list = conversations || [];
+    if (isSupervisor) return list;
+    return list.filter((c: any) => c.assigned_to === employee?.id || (!c.assigned_to && isQueuedConversation(c)));
+  }, [conversations, isSupervisor, employee?.id]);
+
   const filtered = useMemo(() => {
-    let list = conversations || [];
+    let list = visibleConversations;
     if (inboxFilter !== 'all') list = list.filter(c => c.whatsapp_settings_id === inboxFilter);
     if (view === 'queue') list = orderQueue(list.filter(isQueuedConversation));
     if (view === 'mine') list = list.filter(c => c.assigned_to === employee?.id && !isClosedConversation(c));
@@ -50,13 +58,13 @@ const WhatsAppInboxContent: React.FC = () => {
       (c.phone_number || '').toLowerCase().includes(q) ||
       (c.customer?.name || '').toLowerCase().includes(q)
     );
-  }, [conversations, search, view, employee?.id, inboxFilter]);
+  }, [visibleConversations, search, view, employee?.id, inboxFilter]);
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
-  const selected = (conversations || []).find((c: any) => c.id === selectedId);
+  const selected = visibleConversations.find((c: any) => c.id === selectedId);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
-  const queue = orderQueue((conversations || []).filter(isQueuedConversation));
-  const ownsSelected = !!selected && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin'));
+  const queue = orderQueue(visibleConversations.filter(isQueuedConversation));
+  const ownsSelected = !!selected && (selected.assigned_to === employee?.id || isSupervisor);
   const visibleMessages = useMemo(() => {
     const list = messages || [];
     const q = messageSearch.trim().toLowerCase();
@@ -82,7 +90,7 @@ const WhatsAppInboxContent: React.FC = () => {
             onClick={() => setAvailable(v => !v)}>{available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
           <FollowupsBell />
           <Badge variant="secondary">
-            {conversations?.length || 0} محادثة
+            {visibleConversations.length} محادثة
           </Badge>
         </div>
       </div>
@@ -95,7 +103,7 @@ const WhatsAppInboxContent: React.FC = () => {
         <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] md:shrink-0 border-l bg-muted/20 flex-col overflow-hidden`}>
           <div className="p-3 border-b bg-card space-y-3">
             <div className="grid grid-cols-2 gap-1" aria-label="تصنيف المحادثات">
-              {([['queue', 'الطابور'], ['mine', 'محادثاتي'], ['all', 'الكل'], ['closed', 'المغلقة']] as const).map(([key, label]) =>
+              {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
                   onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
             </div>

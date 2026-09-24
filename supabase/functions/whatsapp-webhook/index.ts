@@ -348,8 +348,11 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           await supabase.from('whatsapp_conversations').update({ status: 'pending', assignment_reason: 'human_queue' })
             .eq('id', conversationId).is('assigned_to', null).in('status', ['open', 'active', 'pending', 'transferred']);
         }
-        await supabase.from('whatsapp_conversations').update({ status: 'pending', assigned_to: null, assignment_reason: 'human_queue', closed_at: null, resolved_at: null })
-          .eq('id', conversationId).in('status', ['closed', 'resolved']);
+        await supabase.from('whatsapp_conversations').update({
+          status: 'pending', assigned_to: null, assignment_reason: 'human_queue',
+          closed_at: null, resolved_at: null, resolution_status: null, resolved_by: null,
+        })
+          .eq('id', conversationId).in('status', ['closed', 'resolved', 'archived']);
         // Await dispatch before acknowledging Meta; duplicate receipts do not rerun automations.
         try {
           await supabase.functions.invoke('whatsapp-automation-engine', {
