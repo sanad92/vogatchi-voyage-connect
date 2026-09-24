@@ -107,7 +107,9 @@ export const useSupabasePermissions = () => {
     getPermissionScope,
     userRole,
     departments: permissionDepartments,
-    loading: organizationLoading || (userRole === 'agent' && departmentsLoading),
+    loading: organizationLoading || (userRole === 'agent' && departmentsLoading) ||
+      (companyPermissionsLoading && !profileFunctionMissing),
+    error: companyPermissionsFailed && !profileFunctionMissing,
     canViewCustomers: () => hasPermission('customers_view'),
     canCreateCustomers: () => hasPermission('customers_create'),
     canEditCustomers: () => hasPermission('customers_edit'),
