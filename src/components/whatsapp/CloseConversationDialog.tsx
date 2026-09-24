@@ -32,9 +32,14 @@ interface Props {
   conversationId: string;
   organizationId?: string | null;
   isClosed?: boolean;
+  /** When false, closing is blocked until the agent owns the conversation. */
+  canClose?: boolean;
+  blockedReason?: string;
 }
 
-export const CloseConversationDialog: React.FC<Props> = ({ conversationId, organizationId, isClosed }) => {
+export const CloseConversationDialog: React.FC<Props> = ({
+  conversationId, organizationId, isClosed, canClose = true, blockedReason,
+}) => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ResolutionStatus>('done');
@@ -75,8 +80,17 @@ export const CloseConversationDialog: React.FC<Props> = ({ conversationId, organ
 
   if (isClosed) {
     return (
-      <Button size="sm" variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+      <Button size="sm" variant="outline" disabled={mutation.isPending || !canClose}
+        title={canClose ? undefined : blockedReason} onClick={() => canClose && mutation.mutate(true)}>
         إعادة فتح
+      </Button>
+    );
+  }
+
+  if (!canClose) {
+    return (
+      <Button size="sm" variant="outline" disabled title={blockedReason || 'استلم المحادثة أولًا'}>
+        <CheckCircle2 className="h-4 w-4 me-1" />استلم المحادثة لإنهائها
       </Button>
     );
   }

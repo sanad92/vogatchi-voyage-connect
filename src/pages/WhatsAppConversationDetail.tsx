@@ -27,6 +27,8 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
 import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
 import { isClosedConversation } from '@/lib/whatsappQueue';
+import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 
 const highlight = (text: string, term: string) => {
   if (!term.trim()) return text;
@@ -50,6 +52,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const insertText = (text: string) => { setPrefillText(text); setPrefillNonce((n) => n + 1); };
+  const { employee } = useWhatsAppQueue();
+  const { hasPermission } = useSupabasePermissions();
 
 
   const { data: conversation, isLoading: convLoading } = useQuery({
@@ -165,7 +169,9 @@ const WhatsAppConversationDetailContent: React.FC = () => {
         <div className="ms-auto flex items-center gap-2 flex-wrap">
           <ResolutionBadge status={isClosedConversation(conversation as any) ? (conversation as any).resolution_status : null} />
           <CloseConversationDialog conversationId={conversation.id} organizationId={conversation.organization_id}
-            isClosed={isClosedConversation(conversation as any)} />
+            isClosed={isClosedConversation(conversation as any)}
+            canClose={(conversation as any).assigned_to === employee?.id || hasPermission('whatsapp_admin')}
+            blockedReason={(conversation as any).assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا قبل إنهائها.'} />
           <Badge variant="outline">{stats.total} رسالة</Badge>
           <Badge variant="secondary">
             <ArrowDownLeft className="h-3 w-3 me-1" /> {stats.inbound}

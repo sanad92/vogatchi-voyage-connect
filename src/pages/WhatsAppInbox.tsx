@@ -29,7 +29,9 @@ const WhatsAppInboxContent: React.FC = () => {
   const { hasPermission } = useSupabasePermissions();
   const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
+  const [messageSearch, setMessageSearch] = useState('');
+  const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -54,6 +56,16 @@ const WhatsAppInboxContent: React.FC = () => {
   const selected = (conversations || []).find((c: any) => c.id === selectedId);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue((conversations || []).filter(isQueuedConversation));
+  const ownsSelected = !!selected && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin'));
+  const visibleMessages = useMemo(() => {
+    const list = messages || [];
+    const q = messageSearch.trim().toLowerCase();
+    return list.filter((m: any) => {
+      if (directionFilter !== 'all' && m.direction !== directionFilter) return false;
+      if (!q) return true;
+      return (m.content || '').toLowerCase().includes(q) || (m.template_name || '').toLowerCase().includes(q);
+    });
+  }, [messages, messageSearch, directionFilter]);
   const pickup = async (id: string) => {
     try { const claimed = await claim.mutateAsync(id); setView('mine'); setSelectedId(claimed); }
     catch { /* mutation displays the error and refreshes the list */ }
@@ -238,22 +250,44 @@ const WhatsAppInboxContent: React.FC = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
-                    isClosed={isClosedConversation(selected)} />
-                  <Button variant="outline" size="sm" onClick={() => setShowDetails(v => !v)}>ملف العميل</Button>
+                    isClosed={isClosedConversation(selected)} canClose={ownsSelected}
+                    blockedReason={selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا قبل إنهائها.'} />
+                  <Button variant={showDetails ? 'default' : 'outline'} size="sm" onClick={() => setShowDetails(v => !v)}>
+                    {showDetails ? 'إخفاء الأدوات' : 'أدوات الواتساب'}
+                  </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/whatsapp-inbox/${selected.id}`}>
                       <ExternalLink className="h-3.5 w-3.5 me-1" />
-                      تفاصيل وبحث
+                      شاشة كاملة
                     </Link>
                   </Button>
-                  <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>الوارد</span>
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span>الصادر</span>
-                    <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  </div>
                 </div>
               </div>
+
+              {/* Inline message search & direction filter */}
+              <div className="px-4 py-2 border-b bg-card flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
+                    placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9" />
+                </div>
+                <div className="flex gap-1">
+                  {(['all', 'inbound', 'outbound'] as const).map((v) => (
+                    <Button key={v} size="sm" variant={directionFilter === v ? 'default' : 'outline'}
+                      onClick={() => setDirectionFilter(v)}>
+                      {v === 'all' ? 'الكل' : v === 'inbound' ? 'الوارد' : 'الصادر'}
+                    </Button>
+                  ))}
+                </div>
+                <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>الوارد</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span>الصادر</span>
+                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+                </div>
+              </div>
+
+
 
 
               {/* Messages */}
@@ -263,12 +297,12 @@ const WhatsAppInboxContent: React.FC = () => {
                     <div className="text-center text-sm text-muted-foreground py-8">
                       جاري تحميل الرسائل...
                     </div>
-                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : !messages || messages.length === 0 ? (
+                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
                     <div className="text-center text-sm text-muted-foreground py-8">
-                      لا توجد رسائل في هذه المحادثة
+                      {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
                     </div>
                   ) : (
-                    messages.map((m: any) => {
+                    visibleMessages.map((m: any) => {
                       const outbound = m.direction === 'outbound';
                       return (
                         <div
