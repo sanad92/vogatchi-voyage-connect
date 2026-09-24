@@ -27,6 +27,8 @@ import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
 import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
 import { isClosedConversation } from '@/lib/whatsappQueue';
+import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 
 const highlight = (text: string, term: string) => {
   if (!term.trim()) return text;
@@ -50,6 +52,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const insertText = (text: string) => { setPrefillText(text); setPrefillNonce((n) => n + 1); };
+  const { employee } = useWhatsAppQueue();
+  const { hasPermission } = useSupabasePermissions();
 
 
   const { data: conversation, isLoading: convLoading } = useQuery({
