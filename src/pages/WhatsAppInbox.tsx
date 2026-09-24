@@ -297,12 +297,12 @@ const WhatsAppInboxContent: React.FC = () => {
                     <div className="text-center text-sm text-muted-foreground py-8">
                       جاري تحميل الرسائل...
                     </div>
-                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : !messages || messages.length === 0 ? (
+                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
                     <div className="text-center text-sm text-muted-foreground py-8">
-                      لا توجد رسائل في هذه المحادثة
+                      {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
                     </div>
                   ) : (
-                    messages.map((m: any) => {
+                    visibleMessages.map((m: any) => {
                       const outbound = m.direction === 'outbound';
                       return (
                         <div
