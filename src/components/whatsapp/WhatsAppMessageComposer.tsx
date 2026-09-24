@@ -222,70 +222,70 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={
-              !canSend
-                ? 'استلم المحادثة أولاً لتتمكن من الكتابة'
-                : !isWindowOpen
-                  ? 'نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً'
-                  : pending
-                    ? 'اكتب تعليقاً (اختياري)...'
-                    : 'اكتب رسالتك هنا...'
-            }
-            className="min-h-[70px] resize-none"
-            disabled={isSending || !isWindowOpen || !canSend}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-1">
-            <QuickRepliesPicker variables={variables} onPick={(t) => setMessage(t)} />
-            {/* Freeform template pick (window open) */}
-            {isWindowOpen && canSend && (
-              <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق صورة' : 'مغلق — استخدم قالباً'}
-              onClick={() => handlePickFile('image/*', imageInputRef)}
-              disabled={isSending || !canSend}
-            >
-              <ImageIcon className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق ملف / صوت / فيديو' : 'مغلق — استخدم قالباً'}
-              onClick={() => handlePickFile('audio/*,video/*,application/*', fileInputRef)}
-              disabled={isSending || !canSend}
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
-          </div>
-
+      <div className="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-[var(--shadow-sm)] focus-within:border-primary/50 transition-colors">
+        <div className="flex items-center gap-0.5 pb-0.5">
+          <QuickRepliesPicker variables={variables} onPick={(t) => setMessage(t)} />
+          {isWindowOpen && canSend && (
+            <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
+          )}
           <Button
-            onClick={handleSend}
-            title={!canSend ? 'استلم المحادثة أولاً' : undefined}
-            disabled={isSending || !canSend || (isWindowOpen && !message.trim() && !pending)}
-            className="h-full min-h-[70px]"
-            variant={isWindowOpen ? 'default' : 'secondary'}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق صورة' : 'مغلق — استخدم قالباً'}
+            onClick={() => handlePickFile('image/*', imageInputRef)}
+            disabled={isSending || !canSend}
           >
-            {isSending ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-            ) : isWindowOpen ? (
-              <Send className="w-5 h-5" />
-            ) : (
-              <FileText className="w-5 h-5" />
-            )}
+            <ImageIcon className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق ملف / صوت / فيديو' : 'مغلق — استخدم قالباً'}
+            onClick={() => handlePickFile('audio/*,video/*,application/*', fileInputRef)}
+            disabled={isSending || !canSend}
+          >
+            <Paperclip className="w-4 h-4" />
           </Button>
         </div>
+
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder={
+            !canSend
+              ? 'استلم المحادثة أولاً لتتمكن من الكتابة'
+              : !isWindowOpen
+                ? 'نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً'
+                : pending
+                  ? 'اكتب تعليقاً (اختياري)...'
+                  : 'اكتب رسالتك هنا...'
+          }
+          className="flex-1 min-h-[42px] max-h-40 resize-none border-0 bg-transparent px-1 py-2.5 shadow-none focus-visible:ring-0"
+          rows={1}
+          disabled={isSending || !isWindowOpen || !canSend}
+        />
+
+        <Button
+          onClick={handleSend}
+          size="icon"
+          title={!canSend ? 'استلم المحادثة أولاً' : undefined}
+          disabled={isSending || !canSend || (isWindowOpen && !message.trim() && !pending)}
+          className="h-10 w-10 rounded-full shrink-0"
+          variant={isWindowOpen ? 'default' : 'secondary'}
+        >
+          {isSending ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+          ) : isWindowOpen ? (
+            <Send className="w-4 h-4" />
+          ) : (
+            <FileText className="w-4 h-4" />
+          )}
+        </Button>
       </div>
+
 
     </div>
   );
