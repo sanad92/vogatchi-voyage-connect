@@ -159,14 +159,22 @@ serve(async (req) => {
       }
     }
 
-    // 3) Subscribe app to WABA webhooks (idempotent, non-fatal)
-    try {
-      await fetch(appendProof(`${GRAPH()}/${waba_id}/subscribed_apps`, proof), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${access_token}` },
+    // 3) Subscribe app to WABA webhooks. A connected number without this
+    // subscription cannot receive messages, so do not report false success.
+    const subscriptionResponse = await fetchMetaJson(
+      appendProof(`${GRAPH()}/${waba_id}/subscribed_apps`, proof),
+      access_token,
+    );
+    if (!subscriptionResponse.ok || subscriptionResponse.json?.success !== true) {
+      await logEvent(admin, organization_id, "manual_connect_failed", {
+        step: "webhook_subscription",
+        status: subscriptionResponse.status,
+        error: subscriptionResponse.json?.error ?? subscriptionResponse.json,
       });
-    } catch (e) {
-      console.warn("subscribed_apps failed (non-fatal):", e);
+      return new Response(JSON.stringify({
+        error: "تم التحقق من الرقم، لكن Meta رفضت تفعيل استقبال الرسائل. راجع صلاحيات التوكن واشتراك التطبيق في حساب واتساب.",
+        details: subscriptionResponse.json,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 4) Upsert whatsapp_settings row

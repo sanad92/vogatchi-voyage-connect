@@ -114,14 +114,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No phone number found on WABA" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // 4) Subscribe app to WABA webhooks (idempotent)
-    try {
-      await fetch(`${GRAPH()}/${wabaId}/subscribed_apps`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+    // 4) Subscribe app to WABA webhooks. Do not mark the inbox connected
+    // when Meta rejected the subscription.
+    const subscriptionRes = await fetch(`${GRAPH()}/${wabaId}/subscribed_apps`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const subscriptionJson = await subscriptionRes.json().catch(() => null);
+    if (!subscriptionRes.ok || subscriptionJson?.success !== true) {
+      await logEvent(admin, organization_id, "oauth_subscription_failed", {
+        status: subscriptionRes.status,
+        error: subscriptionJson?.error ?? subscriptionJson,
       });
-    } catch (e) {
-      console.warn("subscribed_apps failed (non-fatal):", e);
+      return new Response(JSON.stringify({
+        error: "Meta لم تُفعّل استقبال الرسائل لهذا الرقم. أعد الربط وتأكد من منح صلاحيات إدارة ومراسلة WhatsApp.",
+        details: subscriptionJson,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 5) Upsert whatsapp_settings row for this org

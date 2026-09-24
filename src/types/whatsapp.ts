@@ -11,6 +11,13 @@ export interface WhatsAppConversation {
   assignment_reason?: string;
   created_at: string;
   updated_at: string;
+  whatsapp_settings_id?: string;
+  inbox?: {
+    id: string;
+    label?: string;
+    business_name?: string;
+    display_phone_number?: string;
+  };
   customer?: {
     name: string;
     email?: string;

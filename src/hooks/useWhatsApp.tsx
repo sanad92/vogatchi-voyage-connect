@@ -21,7 +21,8 @@ export const useWhatsApp = () => {
         .select(`
           *,
           customer:customers(name, email),
-          assigned_employee:employees(full_name, employee_code)
+          assigned_employee:employees(full_name, employee_code),
+          inbox:whatsapp_settings(id, label, business_name, display_phone_number)
         `)
         .eq('organization_id', orgId as string)
         .order('last_message_at', { ascending: false });
