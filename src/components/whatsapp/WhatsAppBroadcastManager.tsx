@@ -272,6 +272,61 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                   onChange={(e) => setForm({ ...form, message_body: e.target.value })} />
               </div>
 
+              {selectedTemplate && (
+                <div className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold">متغيرات القالب</h4>
+                    <Badge variant="outline" className="text-[10px]">
+                      {slots.length ? `${slots.length} متغير` : 'لا متغيرات'}
+                    </Badge>
+                  </div>
+
+                  {slots.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">هذا القالب لا يحتاج أي متغيرات.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {slots.map((s) => {
+                        const key = slotStorageKey(s);
+                        return (
+                          <div key={key} className="space-y-1">
+                            <Label className="text-xs">
+                              {s.label}
+                              {!s.auto && <span className="text-destructive"> *</span>}
+                            </Label>
+                            {s.auto ? (
+                              <div className="text-xs rounded-md bg-muted px-2 py-2 text-muted-foreground">
+                                يُملأ تلقائياً: {sampleValues[s.auto.replace(/[{}]/g, '')] || '—'}
+                              </div>
+                            ) : (
+                              <Input
+                                className="h-9 text-sm"
+                                value={manualVars[key] || ''}
+                                placeholder="اكتب القيمة المستخدمة في الحملة"
+                                onChange={(e) => setManualVars({ ...manualVars, [key]: e.target.value })}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">معاينة الرسالة كما تصل للعميل</Label>
+                    <div className="text-sm whitespace-pre-wrap rounded-md border bg-background p-2 leading-relaxed">
+                      {preview || '—'}
+                    </div>
+                  </div>
+
+                  {pendingSlots.length > 0 && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      أكمل {pendingSlots.length} متغير مطلوب قبل الإرسال.
+                    </p>
+                  )}
+                </div>
+              )}
+
+
               {!selectedTemplate && (
                 <Alert variant="default">
                   <AlertTriangle className="h-4 w-4" />
