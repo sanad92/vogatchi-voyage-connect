@@ -7,6 +7,7 @@ import { useWhatsAppTemplateCenter, suggestTemplatesForContext } from '@/hooks/u
 import { categoryMeta } from '@/data/travelTemplateCategories';
 import { interpolateVariables, type VariableContext } from '@/lib/whatsappVariables';
 import { throwEdgeError } from '@/lib/edgeError';
+import { useEnsureWhatsAppOwnership } from '@/hooks/useWhatsAppConversationOwnership';
 import { toast } from 'sonner';
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 /** Reusable context-aware suggestion block for Booking/Invoice/CRM screens. */
 export const TemplateSuggestions: React.FC<Props> = ({ context, variables, phone, organizationId }) => {
   const { templates } = useWhatsAppTemplateCenter();
+  const { ensureOwned } = useEnsureWhatsAppOwnership();
   const suggestions = useMemo(
     () => suggestTemplatesForContext(templates as any[], context),
     [templates, context],
@@ -41,11 +43,14 @@ export const TemplateSuggestions: React.FC<Props> = ({ context, variables, phone
       return;
     }
     try {
+      // The messaging service requires the conversation to be assigned to the sender.
+      const ownedConversationId = await ensureOwned({ organizationId, phone });
       // Field names must match the edge function contract exactly.
       const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
         body: {
           messageType: 'template',
           phoneNumber: phone,
+          conversationId: ownedConversationId ?? undefined,
           organizationId,
           templateId: t.id,
           templateName: t.name,

@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Phone, RefreshCw, Sparkles } from 'lucide-react';
 import { useCustomerWhatsApp } from '@/hooks/useCustomerWhatsApp';
 import { useWhatsAppMessaging } from '@/hooks/useWhatsAppMessaging';
+import { useWhatsAppConversationOwnership } from '@/hooks/useWhatsAppConversationOwnership';
+import { ConversationOwnershipBanner } from '@/components/whatsapp/ConversationOwnershipBanner';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -33,6 +35,7 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
   const { conversation, conversationId, messages, isLoading, hasPhone, createConversation, refetch } =
     useCustomerWhatsApp(customerId, customerPhone);
   const { sendTextMessage, isSending } = useWhatsAppMessaging();
+  const ownership = useWhatsAppConversationOwnership(conversationId);
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +46,12 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
   const handleSend = async () => {
     if (!conversationId) {
       toast.error('لا توجد محادثة نشطة');
+      return;
+    }
+    if (!ownership.canSend) {
+      toast.warning('استلم المحادثة أولاً قبل الإرسال', {
+        description: 'يجب أن تكون المحادثة مسندة إليك قبل إرسال أي رسالة.',
+      });
       return;
     }
     const text = draft.trim();
@@ -168,7 +177,8 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
 
       {/* Composer */}
       {conversationId && (
-        <div className="border-t p-3 bg-background">
+        <div className="border-t p-3 bg-background space-y-2">
+          <ConversationOwnershipBanner ownership={ownership} compact />
           <div className="flex gap-2">
             <Textarea
               value={draft}
@@ -179,11 +189,21 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
                   handleSend();
                 }
               }}
-              placeholder="اكتب رسالة... (Enter للإرسال، Shift+Enter لسطر جديد)"
+              placeholder={
+                ownership.canSend
+                  ? 'اكتب رسالة... (Enter للإرسال، Shift+Enter لسطر جديد)'
+                  : 'استلم المحادثة أولاً لتتمكن من الكتابة'
+              }
               className="min-h-[44px] max-h-32 resize-none"
-              disabled={isSending}
+              disabled={isSending || !ownership.canSend}
             />
-            <Button onClick={handleSend} disabled={isSending || !draft.trim()} size="icon" className="h-auto">
+            <Button
+              onClick={handleSend}
+              disabled={isSending || !draft.trim() || !ownership.canSend}
+              size="icon"
+              className="h-auto"
+              title={ownership.canSend ? undefined : 'استلم المحادثة أولاً'}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
