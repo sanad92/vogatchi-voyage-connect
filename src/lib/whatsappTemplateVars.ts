@@ -61,8 +61,22 @@ const headerIsText = (tpl: any): boolean => {
   return fmt === 'TEXT';
 };
 
-/** Sensible automatic value for the first positional slots of a template. */
-const POSITIONAL_AUTO = ['customer_name', 'company_name'];
+/** Suggested (not forced) source for the first positional slots. */
+export const POSITIONAL_AUTO = ['customer_name', 'company_name'];
+/** Positional slots are never locked: staff choose their meaning per campaign. */
+const POSITIONAL_LOCKED: string[] = [];
+
+/** Sources staff can map a positional slot to. */
+export const SLOT_SOURCES: { value: string; label: string }[] = [
+  { value: 'customer_name', label: 'اسم العميل' },
+  { value: 'customer_first_name', label: 'الاسم الأول للعميل' },
+  { value: 'company_name', label: 'اسم الشركة / المؤسسة' },
+  { value: 'agent_name', label: 'اسم الموظف (أنت)' },
+  { value: 'customer_phone', label: 'رقم هاتف العميل' },
+  { value: 'company_phone', label: 'رقم الإرسال' },
+  { value: 'date', label: 'تاريخ اليوم' },
+  { value: 'custom', label: 'نص مخصص' },
+];
 
 export const templateSlots = (tpl: any): TemplateSlot[] => {
   if (!tpl) return [];
@@ -73,7 +87,7 @@ export const templateSlots = (tpl: any): TemplateSlot[] => {
       const named = !/^\d+$/.test(token);
       const autoKey = named
         ? (AUTO_TOKENS[token.toLowerCase()] ? token.toLowerCase() : null)
-        : (section === 'body' ? POSITIONAL_AUTO[index] ?? null : null);
+        : (section === 'body' ? POSITIONAL_LOCKED[index] ?? null : null);
       slots.push({
         token,
         section,
