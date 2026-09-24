@@ -79,7 +79,15 @@
     --shadow-lg: 0 12px 32px -8px hsl(240 10% 10% / 0.12), 0 4px 8px -4px hsl(240 10% 10% / 0.06);
     --shadow-glow: 0 0 24px -4px hsl(245 70% 58% / 0.35);
     --shadow-brand: 0 10px 40px -10px hsl(245 70% 58% / 0.4);
+
+    /* Conversation surface — luxury WhatsApp-style chat */
+    --chat-canvas: 240 20% 98%;
+    --chat-out: 245 70% 58%;
+    --chat-out-foreground: 0 0% 100%;
+    --chat-in: 0 0% 100%;
+    --chat-in-foreground: 240 10% 12%;
   }
+
 
   /* Linear-inspired dark theme — DEFAULT for the app */
   .dark {
@@ -147,7 +155,15 @@
     --shadow-lg: 0 12px 32px -8px hsl(0 0% 0% / 0.6), 0 4px 8px -4px hsl(0 0% 0% / 0.4);
     --shadow-glow: 0 0 24px -4px hsl(245 75% 65% / 0.45);
     --shadow-brand: 0 10px 40px -10px hsl(245 75% 65% / 0.5);
+
+    /* Conversation surface — luxury WhatsApp-style chat */
+    --chat-canvas: 240 10% 5%;
+    --chat-out: 245 60% 42%;
+    --chat-out-foreground: 240 5% 98%;
+    --chat-in: 240 7% 11%;
+    --chat-in-foreground: 240 5% 94%;
   }
+
 }
 
 @layer base {

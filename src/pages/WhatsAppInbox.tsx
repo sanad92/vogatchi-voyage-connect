@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Phone, Search, ArrowDownLeft, ArrowUpRight, Clock, ExternalLink, RefreshCw, Check } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageComposer';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
-import { formatDistanceToNow, format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { format } from 'date-fns';
+
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
@@ -21,7 +21,10 @@ import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightP
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
+import { CloseConversationDialog } from '@/components/whatsapp/CloseConversationDialog';
+import { ConversationListItem } from '@/components/whatsapp/ConversationListItem';
+import { ChatDateDivider, dayKeyOf, dayLabelOf } from '@/components/whatsapp/ChatDateDivider';
+
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
@@ -29,7 +32,9 @@ const WhatsAppInboxContent: React.FC = () => {
   const { hasPermission } = useSupabasePermissions();
   const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
-  const [showDetails, setShowDetails] = useState(true);
+  // The tools drawer only starts open when the screen is wide enough for it.
+  const [showDetails, setShowDetails] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1536);
+
   const [messageSearch, setMessageSearch] = useState('');
   const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [prefillText, setPrefillText] = useState('');
@@ -37,6 +42,10 @@ const WhatsAppInboxContent: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [inboxFilter, setInboxFilter] = useState('all');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+
 
   // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
   const isSupervisor = hasPermission('whatsapp_admin');
@@ -74,6 +83,28 @@ const WhatsAppInboxContent: React.FC = () => {
       return (m.content || '').toLowerCase().includes(q) || (m.template_name || '').toLowerCase().includes(q);
     });
   }, [messages, messageSearch, directionFilter]);
+
+  const scrollToBottom = React.useCallback((behavior: ScrollBehavior = 'auto') => {
+    const el = scrollViewportRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  // Keep the newest message in view and surface a jump button while scrolled up.
+  React.useEffect(() => {
+    const el = scrollViewportRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+    };
+    el.addEventListener('scroll', onScroll);
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [selectedId]);
+
+  React.useEffect(() => {
+    if (!showScrollDown) scrollToBottom();
+  }, [visibleMessages.length, selectedId, scrollToBottom, showScrollDown]);
+
   const pickup = async (id: string) => {
     try { const claimed = await claim.mutateAsync(id); setView('mine'); setSelectedId(claimed); }
     catch { /* mutation displays the error and refreshes the list */ }
@@ -81,35 +112,50 @@ const WhatsAppInboxContent: React.FC = () => {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
       {/* Header */}
-      <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
-        <MessageCircle className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold">مركز المحادثات</h1>
+      <div className="border-b bg-card/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-[image:var(--gradient-brand)] flex items-center justify-center shadow-[var(--shadow-glow)]">
+          <MessageCircle className="h-4.5 w-4.5 text-primary-foreground" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-base font-bold leading-tight">مركز المحادثات</h1>
+          <p className="text-xs text-muted-foreground">{visibleConversations.length} محادثة · {queue.length} في الطابور</p>
+        </div>
         <div className="ms-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()} aria-label="تحديث المحادثات"><RefreshCw className="h-4 w-4" /></Button>
-          {canWork && <Button size="sm" variant={available ? 'default' : 'outline'} disabled={!employee}
-            onClick={() => setAvailable(v => !v)}>{available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
+          <Button variant="ghost" size="sm" onClick={() => refetch()} aria-label="تحديث المحادثات"><RefreshCw className="h-4 w-4" /></Button>
+          {canWork && <Button size="sm" variant={available ? 'default' : 'outline'} disabled={!employee} className="rounded-full"
+            onClick={() => setAvailable(v => !v)}>
+            <span className={`me-1.5 h-2 w-2 rounded-full ${available ? 'bg-success' : 'bg-muted-foreground'}`} />
+            {available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
           <FollowupsBell />
-          <Badge variant="secondary">
-            {visibleConversations.length} محادثة
-          </Badge>
         </div>
       </div>
+
 
       {presenceError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{presenceError}</p>}
       {conversationsError && <div role="alert" className="p-3 bg-destructive/10 text-destructive">تعذر تحميل المحادثات. تحقق من الاتصال والصلاحيات ثم اضغط تحديث.</div>}
       {canWork && !employee && <div role="status" className="px-4 py-2 text-sm bg-muted">{identityError ? 'تعذر التحقق من ملف الموظف؛ أعد المحاولة قبل الاستلام.' : 'لاستلام المحادثات، اربط حسابك بملف موظف نشط في المؤسسة من فريق العمل.'}</div>}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Conversations list */}
-        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] md:shrink-0 border-l bg-muted/20 flex-col overflow-hidden`}>
-          <div className="p-3 border-b bg-card space-y-3">
-            <div className="grid grid-cols-2 gap-1" aria-label="تصنيف المحادثات">
+        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] md:shrink-0 border-l bg-card/40 flex-col overflow-hidden`}>
+          <div className="p-3 border-b space-y-3">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث برقم أو اسم العميل..."
+                className="pr-9 rounded-full bg-muted/60 border-transparent focus-visible:bg-background"
+              />
+            </div>
+            <div className="flex gap-1 overflow-x-auto pb-0.5" aria-label="تصنيف المحادثات">
               {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
-                  onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
+                  className="h-7 rounded-full px-3 text-xs shrink-0"
+                  onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' && queue.length ? ` ${queue.length}` : ''}</Button>)}
             </div>
             {inboxes.length > 1 && (
               <Select value={inboxFilter} onValueChange={(value) => { setInboxFilter(value); setSelectedId(null); }}>
-                <SelectTrigger aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-full" aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الأرقام</SelectItem>
                   {inboxes.map(inbox => (
@@ -120,279 +166,215 @@ const WhatsAppInboxContent: React.FC = () => {
                 </SelectContent>
               </Select>
             )}
-            {view === 'queue' && <Button className="w-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
+            {view === 'queue' && <Button className="w-full rounded-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
               onClick={() => pickup('')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
             {view === 'queue' && <p className="text-xs text-muted-foreground">الأولوية أولًا، ثم الأقدم حسب تاريخ فتح المحادثة.</p>}
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="ابحث برقم أو اسم العميل..."
-                className="pr-9"
-              />
-            </div>
           </div>
+
 
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {conversationsLoading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  جاري التحميل...
+                <div className="p-4 space-y-2">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className="flex items-start gap-3 animate-pulse">
+                      <div className="h-10 w-10 rounded-full bg-muted" />
+                      <div className="flex-1 space-y-2 pt-1">
+                        <div className="h-3 w-1/2 rounded bg-muted" />
+                        <div className="h-2.5 w-3/4 rounded bg-muted" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : conversationsError ? (<p className="p-4 text-sm text-destructive">القائمة غير متاحة حاليًا</p>) : filtered.length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  لا توجد محادثات
+                <div className="p-8 text-center">
+                  <MessageCircle className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">لا توجد محادثات في هذا القسم</p>
                 </div>
               ) : (
-                filtered.map((c: any) => {
-                  const active = c.id === selectedId;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedId(c.id)}
-                      className={`w-full text-right p-3 rounded-lg border transition-colors ${
-                        active
-                          ? 'bg-primary/10 border-primary'
-                          : 'bg-card border-transparent hover:bg-accent'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="font-medium text-sm truncate">
-                            {c.phone_number}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {c.last_message_at &&
-                            formatDistanceToNow(new Date(c.last_message_at), {
-                              addSuffix: true,
-                              locale: ar,
-                            })}
-                        </span>
-                      </div>
-                      {c.customer?.name && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {c.customer.name}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
-                        <RefreshCw className="h-2.5 w-2.5" />
-                        <span>
-                          {c.last_inbound_at
-                            ? `آخر رسالة واردة ${formatDistanceToNow(new Date(c.last_inbound_at), { addSuffix: true, locale: ar })}`
-                            : 'لا يوجد استلام بعد'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1 flex-wrap">
-                        {c.inbox && (
-                          <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                            {c.inbox.label || c.inbox.display_phone_number || c.inbox.business_name || 'واتساب'}
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-[10px] py-0 h-4">
-                          {c.status === 'active'
-                            ? 'نشط'
-                            : c.status === 'pending'
-                            ? 'انتظار'
-                            : c.status === 'closed'
-                            ? 'مغلق'
-                            : c.status}
-                        </Badge>
-                        {isClosedConversation(c) && <ResolutionBadge status={c.resolution_status} className="text-[10px] py-0 h-4" />}
-                        {isClosedConversation(c) && c.resolution_notes && (
-                          <span className="text-[10px] text-muted-foreground truncate max-w-full" title={c.resolution_notes}>{c.resolution_notes}</span>
-                        )}
-                        {c.sla_breached_first_response && (
-                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
-                            خرق SLA
-                          </Badge>
-                        )}
-                        {c.priority === 'urgent' && (
-                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
-                            عاجل
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
+                filtered.map((c: any) => (
+                  <ConversationListItem
+                    key={c.id}
+                    conversation={c}
+                    active={c.id === selectedId}
+                    onSelect={() => setSelectedId(c.id)}
+                  />
+                ))
               )}
             </div>
           </ScrollArea>
         </aside>
 
+
         {/* Messages panel */}
-        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-muted/10`}>
+        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-chat-canvas`}>
           {!selected ? (
             <div className="flex-1 flex items-center justify-center text-center p-6">
-              <div>
-                <MessageCircle className="h-14 w-14 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">اختر محادثة لعرض الرسائل</p>
+              <div className="max-w-xs">
+                <div className="h-16 w-16 rounded-2xl bg-[image:var(--gradient-brand)] flex items-center justify-center mx-auto mb-4 shadow-[var(--shadow-brand)]">
+                  <MessageCircle className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <p className="font-medium">اختر محادثة لبدء الرد</p>
+                <p className="text-sm text-muted-foreground mt-1">كل محادثات عملائك في مكان واحد، مرتبة حسب الأحدث.</p>
               </div>
             </div>
           ) : (
             <>
               {/* Conversation header */}
-              <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Button className="md:hidden" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
+              <div className="px-3 py-2.5 border-b bg-card/80 backdrop-blur-md flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1 basis-[180px]">
+                  <Button className="md:hidden shrink-0" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
+                  <div className="h-9 w-9 rounded-full bg-[image:var(--gradient-brand)] text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+                    {(selected.customer?.name?.trim()?.split(/\s+/).slice(0, 2).map((p: string) => p[0]).join('')) || selected.phone_number?.slice(-2)}
                   </div>
-                  <div>
-                    <div className="font-semibold">{selected.phone_number}</div>
-                    {selected.customer?.name && (
-                      <div className="text-xs text-muted-foreground">
-                        {selected.customer.name}
-                      </div>
-                    )}
-                     {selected.inbox && (
-                       <div className="text-xs text-muted-foreground">
-                         عبر {selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}
-                       </div>
-                     )}
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate" dir={selected.customer?.name ? 'rtl' : 'ltr'}>
+                      {selected.customer?.name || selected.phone_number}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {selected.inbox
+                        ? `عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
+                        : 'واتساب'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {isQueuedConversation(selected) && canWork && <Button size="sm" className="rounded-full" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
                     isClosed={isClosedConversation(selected)} canClose={ownsSelected}
                     blockedReason={selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا قبل إنهائها.'} />
-                  <Button variant={showDetails ? 'default' : 'outline'} size="sm" onClick={() => setShowDetails(v => !v)}>
-                    {showDetails ? 'إخفاء الأدوات' : 'أدوات الواتساب'}
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowSearch(v => !v)} aria-label="بحث داخل المحادثة" aria-pressed={showSearch}>
+                    <Search className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/whatsapp-inbox/${selected.id}`}>
-                      <ExternalLink className="h-3.5 w-3.5 me-1" />
-                      شاشة كاملة
-                    </Link>
+                  <Button variant={showDetails ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" aria-label="أدوات الواتساب" aria-pressed={showDetails} onClick={() => setShowDetails(v => !v)}>
+                    <PanelRightClose className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild aria-label="شاشة كاملة">
+                    <Link to={`/whatsapp-inbox/${selected.id}`}><ExternalLink className="h-4 w-4" /></Link>
                   </Button>
                 </div>
+
               </div>
 
               {/* Inline message search & direction filter */}
-              <div className="px-4 py-2 border-b bg-card flex flex-wrap items-center gap-2">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
-                    placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9" />
+              {showSearch && (
+                <div className="px-4 py-2 border-b bg-card/60 backdrop-blur flex flex-wrap items-center gap-2">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
+                      placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9 rounded-full" />
+                  </div>
+                  <div className="inline-flex rounded-full bg-muted p-0.5">
+                    {(['all', 'inbound', 'outbound'] as const).map((v) => (
+                      <Button key={v} size="sm" variant={directionFilter === v ? 'default' : 'ghost'}
+                        className="h-7 rounded-full px-3 text-xs"
+                        onClick={() => setDirectionFilter(v)}>
+                        {v === 'all' ? 'الكل' : v === 'inbound' ? 'الوارد' : 'الصادر'}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  {(['all', 'inbound', 'outbound'] as const).map((v) => (
-                    <Button key={v} size="sm" variant={directionFilter === v ? 'default' : 'outline'}
-                      onClick={() => setDirectionFilter(v)}>
-                      {v === 'all' ? 'الكل' : v === 'inbound' ? 'الوارد' : 'الصادر'}
-                    </Button>
-                  ))}
-                </div>
-                <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>الوارد</span>
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>الصادر</span>
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
-                </div>
+              )}
+
+              {/* Messages */}
+              <div className="relative flex-1 min-h-0">
+                <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                  <div className="p-4 space-y-1.5 max-w-3xl mx-auto">
+                    {messagesLoading ? (
+                      <div className="space-y-3 py-6">
+                        {[0, 1, 2].map(i => (
+                          <div key={i} className={`flex ${i % 2 ? 'justify-start' : 'justify-end'}`}>
+                            <div className="h-14 w-52 rounded-2xl bg-muted animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-10">
+                        {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
+                      </div>
+                    ) : (
+                      visibleMessages.map((m: any, index: number) => {
+                        const outbound = m.direction === 'outbound';
+                        const prev = visibleMessages[index - 1] as any;
+                        const newDay = !prev || dayKeyOf(prev.sent_at) !== dayKeyOf(m.sent_at);
+                        const grouped = !newDay && prev?.direction === m.direction;
+                        return (
+                          <React.Fragment key={m.id}>
+                            {newDay && <ChatDateDivider label={dayLabelOf(m.sent_at)} />}
+                            <div className={`flex ${outbound ? 'justify-start' : 'justify-end'} ${grouped ? 'pt-0.5' : 'pt-2'}`}>
+                              <div
+                                className={`max-w-[78%] px-3 py-2 shadow-[var(--shadow-sm)] border text-sm leading-relaxed ${
+                                  outbound
+                                    ? 'bg-chat-out text-chat-out-foreground border-transparent rounded-2xl rounded-bl-md'
+                                    : 'bg-chat-in text-chat-in-foreground border-border rounded-2xl rounded-br-md'
+                                }`}
+                              >
+                                <WhatsAppMediaMessage message={m} outbound={outbound} />
+                                <div className={`flex items-center justify-end gap-1.5 text-[10px] mt-1 ${outbound ? 'text-chat-out-foreground/70' : 'text-muted-foreground'}`}>
+                                  <span>{format(new Date(m.sent_at), 'HH:mm')}</span>
+                                  {outbound && (
+                                    <span className="inline-flex items-center">
+                                      {m.read_at ? (
+                                        <><Check className="h-3 w-3 text-info" /><Check className="h-3 w-3 -ms-2 text-info" /></>
+                                      ) : m.delivered_at || m.status === 'delivered' ? (
+                                        <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2" /></>
+                                      ) : m.status === 'sent' ? (
+                                        <Check className="h-3 w-3" />
+                                      ) : (
+                                        <span className="uppercase">{m.status}</span>
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
+                                {m.status === 'failed' && m.error_message && (
+                                  <div className="text-[11px] bg-destructive/15 text-destructive rounded-lg p-1.5 mt-1">
+                                    {m.error_message}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+                {showScrollDown && (
+                  <Button size="icon" variant="secondary" aria-label="اذهب لآخر رسالة"
+                    className="absolute bottom-4 left-4 rounded-full shadow-[var(--shadow-lg)]"
+                    onClick={() => scrollToBottom('smooth')}>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
 
-
-
-              {/* Messages */}
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3 max-w-3xl mx-auto">
-                  {messagesLoading ? (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      جاري تحميل الرسائل...
-                    </div>
-                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
-                    </div>
-                  ) : (
-                    visibleMessages.map((m: any) => {
-                      const outbound = m.direction === 'outbound';
-                      return (
-                        <div
-                          key={m.id}
-                          className={`flex ${outbound ? 'justify-start' : 'justify-end'}`}
-                        >
-                          <Card
-                            className={`max-w-[75%] shadow-sm border ${
-                              outbound
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-emerald-50 border-emerald-200'
-                            }`}
-                          >
-                            <CardContent className="p-3 space-y-1.5">
-                              <div className="flex items-center gap-1.5 text-[11px] opacity-80">
-                                {outbound ? (
-                                  <>
-                                    <ArrowUpRight className="h-3 w-3" />
-                                    <span>صادر</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <ArrowDownLeft className="h-3 w-3 text-emerald-700" />
-                                    <span className="text-emerald-700">وارد</span>
-                                  </>
-                                )}
-                              </div>
-                              <WhatsAppMediaMessage message={m} outbound={outbound} />
-                              <div
-                                className={`flex items-center justify-between gap-2 text-[10px] pt-1 ${
-                                  outbound ? 'text-blue-100' : 'text-emerald-800/70'
-                                }`}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  <Clock className="h-2.5 w-2.5" />
-                                  {format(new Date(m.sent_at), 'yyyy/MM/dd HH:mm')}
-                                </span>
-                                {outbound && (
-                                  <span className="inline-flex items-center gap-0.5">
-                                    {m.read_at ? (
-                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2 text-sky-200" /></>
-                                    ) : m.delivered_at || m.status === 'delivered' ? (
-                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2" /></>
-                                    ) : m.status === 'sent' ? (
-                                      <Check className="h-3 w-3" />
-                                    ) : (
-                                      <span className="uppercase">{m.status}</span>
-                                    )}
-                                  </span>
-                                )}
-                              </div>
-                              {m.status === 'failed' && m.error_message && (
-                                <div className="text-[11px] bg-red-100 text-red-700 rounded p-1.5">
-                                  {m.error_message}
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-
               {/* Composer */}
-              <div className="border-t bg-card p-3">
+              <div className="border-t bg-card/80 backdrop-blur-md p-3">
                 {canWork && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin')) ? <WhatsAppMessageComposer
                   conversationId={selected.id}
                   prefillText={prefillText}
                   prefillNonce={prefillNonce}
-                  onMessageSent={() => {}}
-                /> : <p className="text-sm text-muted-foreground">{selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا للرد وإيقاف البوت.'}</p>}
+                  contactName={selected.customer?.name}
+                  contactPhone={selected.phone_number}
+                  onMessageSent={() => scrollToBottom('smooth')}
+                /> : <p className="text-sm text-muted-foreground text-center py-2">{selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا للرد وإيقاف البوت.'}</p>}
               </div>
             </>
           )}
         </section>
-        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background md:static md:w-[350px] md:shrink-0 border-r overflow-y-auto">
-          <Button variant="ghost" className="m-2" onClick={() => setShowDetails(false)}>إغلاق التفاصيل</Button>
+        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background 2xl:static 2xl:w-[340px] xl:shrink-0 border-r overflow-y-auto animate-in slide-in-from-left-4 duration-200">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 border-b bg-card/90 backdrop-blur">
+            <span className="text-sm font-semibold">أدوات الواتساب</span>
+            <Button variant="ghost" size="icon" aria-label="إغلاق الأدوات" onClick={() => setShowDetails(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <ConversationRightPanel conversationId={selected.id} conversation={selected}
-            onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); setShowDetails(false); }} />
+            onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); }} />
         </aside>}
+
       </div>
     </div>
   );
