@@ -156,6 +156,7 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     templateParameters: string[];
     previewText: string;
   }) => {
+    if (blockSend()) return;
     try {
       await sendTemplate(
         conversationId,
@@ -176,9 +177,11 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
       <input ref={fileInputRef} type="file" hidden onChange={handleFileChange} />
       <input ref={imageInputRef} type="file" hidden onChange={handleFileChange} />
 
+      <ConversationOwnershipBanner ownership={ownership} compact />
+
       <div className="flex items-center justify-between gap-2">
         <WindowStatusBadge state={windowState} />
-        {!isWindowOpen && (
+        {!isWindowOpen && canSend && (
           <TemplatesPicker
             variables={variables}
             onPick={() => {}}
