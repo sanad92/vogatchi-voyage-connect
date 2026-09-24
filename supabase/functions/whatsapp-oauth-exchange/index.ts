@@ -8,6 +8,18 @@ const corsHeaders = {
 
 const GRAPH = () => `https://graph.facebook.com/${Deno.env.get("META_GRAPH_API_VERSION") ?? "v22.0"}`;
 
+async function appsecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function logEvent(supabase: any, orgId: string, type: string, payload: unknown) {
   try {
     await supabase.from("whatsapp_connection_events").insert({
@@ -116,7 +128,8 @@ serve(async (req) => {
 
     // 4) Subscribe app to WABA webhooks. Do not mark the inbox connected
     // when Meta rejected the subscription.
-    const subscriptionRes = await fetch(`${GRAPH()}/${wabaId}/subscribed_apps`, {
+    const proof = await appsecretProof(accessToken, appSecret);
+    const subscriptionRes = await fetch(`${GRAPH()}/${wabaId}/subscribed_apps?appsecret_proof=${proof}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
     });

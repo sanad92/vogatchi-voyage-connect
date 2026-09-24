@@ -31,8 +31,9 @@ function normalizeDigits(value: unknown): string {
   return String(value ?? "").replace(/\D/g, "");
 }
 
-async function fetchMetaJson(url: string, accessToken: string): Promise<{ ok: boolean; status: number; json: any }> {
+async function fetchMetaJson(url: string, accessToken: string, method: "GET" | "POST" = "GET"): Promise<{ ok: boolean; status: number; json: any }> {
   const response = await fetch(url, {
+    method,
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const text = await response.text();
@@ -164,6 +165,7 @@ serve(async (req) => {
     const subscriptionResponse = await fetchMetaJson(
       appendProof(`${GRAPH()}/${waba_id}/subscribed_apps`, proof),
       access_token,
+      "POST",
     );
     if (!subscriptionResponse.ok || subscriptionResponse.json?.success !== true) {
       await logEvent(admin, organization_id, "manual_connect_failed", {
