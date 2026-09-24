@@ -111,7 +111,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setAudiencePreset('all');
     setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
-    setManualVars({});
+    setCustomVals({}); setSlotSource({});
   };
 
 
