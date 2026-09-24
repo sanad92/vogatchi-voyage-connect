@@ -25,6 +25,7 @@ interface Props {
 /** Reusable context-aware suggestion block for Booking/Invoice/CRM screens. */
 export const TemplateSuggestions: React.FC<Props> = ({ context, variables, phone, organizationId }) => {
   const { templates } = useWhatsAppTemplateCenter();
+  const { ensureOwned } = useEnsureWhatsAppOwnership();
   const suggestions = useMemo(
     () => suggestTemplatesForContext(templates as any[], context),
     [templates, context],
@@ -43,7 +44,7 @@ export const TemplateSuggestions: React.FC<Props> = ({ context, variables, phone
     }
     try {
       // The messaging service requires the conversation to be assigned to the sender.
-      const ownedConversationId = await ensureOwned({ organizationId, phone, customerId: variables?.customer_id as any });
+      const ownedConversationId = await ensureOwned({ organizationId, phone });
       // Field names must match the edge function contract exactly.
       const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
         body: {
