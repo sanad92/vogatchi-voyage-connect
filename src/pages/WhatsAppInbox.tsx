@@ -169,157 +169,146 @@ const WhatsAppInboxContent: React.FC = () => {
 
 
         {/* Messages panel */}
-        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-muted/10`}>
+        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-chat-canvas`}>
           {!selected ? (
             <div className="flex-1 flex items-center justify-center text-center p-6">
-              <div>
-                <MessageCircle className="h-14 w-14 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">اختر محادثة لعرض الرسائل</p>
+              <div className="max-w-xs">
+                <div className="h-16 w-16 rounded-2xl bg-[image:var(--gradient-brand)] flex items-center justify-center mx-auto mb-4 shadow-[var(--shadow-brand)]">
+                  <MessageCircle className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <p className="font-medium">اختر محادثة لبدء الرد</p>
+                <p className="text-sm text-muted-foreground mt-1">كل محادثات عملائك في مكان واحد، مرتبة حسب الأحدث.</p>
               </div>
             </div>
           ) : (
             <>
               {/* Conversation header */}
-              <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
+              <div className="px-4 py-2.5 border-b bg-card/80 backdrop-blur-md flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <Button className="md:hidden" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-full bg-[image:var(--gradient-brand)] text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+                    {(selected.customer?.name?.trim()?.split(/\s+/).slice(0, 2).map((p: string) => p[0]).join('')) || selected.phone_number?.slice(-2)}
                   </div>
-                  <div>
-                    <div className="font-semibold">{selected.phone_number}</div>
-                    {selected.customer?.name && (
-                      <div className="text-xs text-muted-foreground">
-                        {selected.customer.name}
-                      </div>
-                    )}
-                     {selected.inbox && (
-                       <div className="text-xs text-muted-foreground">
-                         عبر {selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}
-                       </div>
-                     )}
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">{selected.customer?.name || selected.phone_number}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {selected.customer?.name ? `${selected.phone_number} · ` : ''}
+                      {selected.inbox
+                        ? `عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
+                        : 'واتساب'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
                     isClosed={isClosedConversation(selected)} canClose={ownsSelected}
                     blockedReason={selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا قبل إنهائها.'} />
-                  <Button variant={showDetails ? 'default' : 'outline'} size="sm" onClick={() => setShowDetails(v => !v)}>
-                    {showDetails ? 'إخفاء الأدوات' : 'أدوات الواتساب'}
+                  <Button variant="ghost" size="sm" onClick={() => setShowSearch(v => !v)} aria-label="بحث داخل المحادثة" aria-pressed={showSearch}>
+                    <Search className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/whatsapp-inbox/${selected.id}`}>
-                      <ExternalLink className="h-3.5 w-3.5 me-1" />
-                      شاشة كاملة
-                    </Link>
+                  <Button variant={showDetails ? 'secondary' : 'ghost'} size="sm" onClick={() => setShowDetails(v => !v)}>
+                    <PanelRightClose className="h-4 w-4 me-1" />
+                    الأدوات
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild aria-label="شاشة كاملة">
+                    <Link to={`/whatsapp-inbox/${selected.id}`}><ExternalLink className="h-4 w-4" /></Link>
                   </Button>
                 </div>
               </div>
 
               {/* Inline message search & direction filter */}
-              <div className="px-4 py-2 border-b bg-card flex flex-wrap items-center gap-2">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
-                    placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9" />
+              {showSearch && (
+                <div className="px-4 py-2 border-b bg-card/60 backdrop-blur flex flex-wrap items-center gap-2">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
+                      placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9 rounded-full" />
+                  </div>
+                  <div className="inline-flex rounded-full bg-muted p-0.5">
+                    {(['all', 'inbound', 'outbound'] as const).map((v) => (
+                      <Button key={v} size="sm" variant={directionFilter === v ? 'default' : 'ghost'}
+                        className="h-7 rounded-full px-3 text-xs"
+                        onClick={() => setDirectionFilter(v)}>
+                        {v === 'all' ? 'الكل' : v === 'inbound' ? 'الوارد' : 'الصادر'}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  {(['all', 'inbound', 'outbound'] as const).map((v) => (
-                    <Button key={v} size="sm" variant={directionFilter === v ? 'default' : 'outline'}
-                      onClick={() => setDirectionFilter(v)}>
-                      {v === 'all' ? 'الكل' : v === 'inbound' ? 'الوارد' : 'الصادر'}
-                    </Button>
-                  ))}
-                </div>
-                <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>الوارد</span>
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>الصادر</span>
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
-                </div>
-              </div>
-
-
-
+              )}
 
               {/* Messages */}
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3 max-w-3xl mx-auto">
-                  {messagesLoading ? (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      جاري تحميل الرسائل...
-                    </div>
-                  ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
-                    </div>
-                  ) : (
-                    visibleMessages.map((m: any) => {
-                      const outbound = m.direction === 'outbound';
-                      return (
-                        <div
-                          key={m.id}
-                          className={`flex ${outbound ? 'justify-start' : 'justify-end'}`}
-                        >
-                          <Card
-                            className={`max-w-[75%] shadow-sm border ${
-                              outbound
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-emerald-50 border-emerald-200'
-                            }`}
-                          >
-                            <CardContent className="p-3 space-y-1.5">
-                              <div className="flex items-center gap-1.5 text-[11px] opacity-80">
-                                {outbound ? (
-                                  <>
-                                    <ArrowUpRight className="h-3 w-3" />
-                                    <span>صادر</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <ArrowDownLeft className="h-3 w-3 text-emerald-700" />
-                                    <span className="text-emerald-700">وارد</span>
-                                  </>
-                                )}
-                              </div>
-                              <WhatsAppMediaMessage message={m} outbound={outbound} />
+              <div className="relative flex-1 min-h-0">
+                <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                  <div className="p-4 space-y-1.5 max-w-3xl mx-auto">
+                    {messagesLoading ? (
+                      <div className="space-y-3 py-6">
+                        {[0, 1, 2].map(i => (
+                          <div key={i} className={`flex ${i % 2 ? 'justify-start' : 'justify-end'}`}>
+                            <div className="h-14 w-52 rounded-2xl bg-muted animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : messagesError ? (<p role="alert" className="text-destructive">تعذر تحميل الرسائل. أعد فتح المحادثة أو حدّث الصفحة.</p>) : visibleMessages.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-10">
+                        {messageSearch.trim() || directionFilter !== 'all' ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل في هذه المحادثة'}
+                      </div>
+                    ) : (
+                      visibleMessages.map((m: any, index: number) => {
+                        const outbound = m.direction === 'outbound';
+                        const prev = visibleMessages[index - 1] as any;
+                        const newDay = !prev || dayKeyOf(prev.sent_at) !== dayKeyOf(m.sent_at);
+                        const grouped = !newDay && prev?.direction === m.direction;
+                        return (
+                          <React.Fragment key={m.id}>
+                            {newDay && <ChatDateDivider label={dayLabelOf(m.sent_at)} />}
+                            <div className={`flex ${outbound ? 'justify-start' : 'justify-end'} ${grouped ? 'pt-0.5' : 'pt-2'}`}>
                               <div
-                                className={`flex items-center justify-between gap-2 text-[10px] pt-1 ${
-                                  outbound ? 'text-blue-100' : 'text-emerald-800/70'
+                                className={`max-w-[78%] px-3 py-2 shadow-[var(--shadow-sm)] border text-sm leading-relaxed ${
+                                  outbound
+                                    ? 'bg-chat-out text-chat-out-foreground border-transparent rounded-2xl rounded-bl-md'
+                                    : 'bg-chat-in text-chat-in-foreground border-border rounded-2xl rounded-br-md'
                                 }`}
                               >
-                                <span className="inline-flex items-center gap-1">
-                                  <Clock className="h-2.5 w-2.5" />
-                                  {format(new Date(m.sent_at), 'yyyy/MM/dd HH:mm')}
-                                </span>
-                                {outbound && (
-                                  <span className="inline-flex items-center gap-0.5">
-                                    {m.read_at ? (
-                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2 text-sky-200" /></>
-                                    ) : m.delivered_at || m.status === 'delivered' ? (
-                                      <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2" /></>
-                                    ) : m.status === 'sent' ? (
-                                      <Check className="h-3 w-3" />
-                                    ) : (
-                                      <span className="uppercase">{m.status}</span>
-                                    )}
-                                  </span>
+                                <WhatsAppMediaMessage message={m} outbound={outbound} />
+                                <div className={`flex items-center justify-end gap-1.5 text-[10px] mt-1 ${outbound ? 'text-chat-out-foreground/70' : 'text-muted-foreground'}`}>
+                                  <span>{format(new Date(m.sent_at), 'HH:mm')}</span>
+                                  {outbound && (
+                                    <span className="inline-flex items-center">
+                                      {m.read_at ? (
+                                        <><Check className="h-3 w-3 text-info" /><Check className="h-3 w-3 -ms-2 text-info" /></>
+                                      ) : m.delivered_at || m.status === 'delivered' ? (
+                                        <><Check className="h-3 w-3" /><Check className="h-3 w-3 -ms-2" /></>
+                                      ) : m.status === 'sent' ? (
+                                        <Check className="h-3 w-3" />
+                                      ) : (
+                                        <span className="uppercase">{m.status}</span>
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
+                                {m.status === 'failed' && m.error_message && (
+                                  <div className="text-[11px] bg-destructive/15 text-destructive rounded-lg p-1.5 mt-1">
+                                    {m.error_message}
+                                  </div>
                                 )}
                               </div>
-                              {m.status === 'failed' && m.error_message && (
-                                <div className="text-[11px] bg-red-100 text-red-700 rounded p-1.5">
-                                  {m.error_message}
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+                {showScrollDown && (
+                  <Button size="icon" variant="secondary" aria-label="اذهب لآخر رسالة"
+                    className="absolute bottom-4 left-4 rounded-full shadow-[var(--shadow-lg)]"
+                    onClick={() => scrollToBottom('smooth')}>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
 
               {/* Composer */}
               <div className="border-t bg-card p-3">
