@@ -106,6 +106,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setAudiencePreset('all');
     setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
+    setManualVars({});
   };
 
 
@@ -117,10 +118,44 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   );
   const selectedTemplate = approvedTemplates.find((t: any) => t.id === form.template_id) as any;
 
+  // Template variables: the system fills organization/customer values itself,
+  // anything else is typed once here and used for the whole campaign.
+  const [manualVars, setManualVars] = useState<Record<string, string>>({});
+  useEffect(() => { setManualVars({}); }, [form.template_id, senderId]);
+
+  const slots = useMemo(() => templateSlots(selectedTemplate), [selectedTemplate]);
+  const pendingSlots = useMemo(
+    () => (selectedTemplate ? missingSlots(selectedTemplate, manualVars) : []),
+    [selectedTemplate, manualVars],
+  );
+  const senderPhone = senderNumbers.find((n) => n.id === senderId)?.display_phone_number || '';
+  const sampleValues = useMemo(() => {
+    const sampleCustomer = recipients[0]?.customer_name || 'أحمد محمد';
+    return {
+      customer_name: sampleCustomer,
+      customer_first_name: String(sampleCustomer).split(/\s+/)[0],
+      customer_phone: recipients[0]?.phone_number || '',
+      customer_email: '',
+      company_name: currentOrg?.name || '',
+      organization_name: currentOrg?.name || '',
+      company_phone: senderPhone,
+      date: new Date().toISOString().slice(0, 10),
+    } as Record<string, string>;
+  }, [recipients, currentOrg?.name, senderPhone]);
+
+  const preview = useMemo(
+    () => (selectedTemplate ? previewTemplate(selectedTemplate, manualVars, sampleValues) : ''),
+    [selectedTemplate, manualVars, sampleValues],
+  );
+
   const handleCreate = async (sendNow: boolean) => {
     if (!form.name) return;
     if (!selectedTemplate) {
       toast.error('اختر قالباً معتمداً من Meta قبل إنشاء الحملة');
+      return;
+    }
+    if (pendingSlots.length) {
+      toast.error('أكمل متغيرات القالب المطلوبة قبل الإرسال');
       return;
     }
     try {
@@ -130,6 +165,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
         message_body: form.message_body || selectedTemplate.body_text || selectedTemplate.name,
         template_id: selectedTemplate.id,
         whatsapp_settings_id: senderId || null,
+        template_variables: buildTemplateVariables(selectedTemplate, manualVars),
         audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
         scheduled_at: form.scheduled_at || null,
         recipients,
