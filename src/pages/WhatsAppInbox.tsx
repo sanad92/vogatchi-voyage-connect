@@ -239,22 +239,22 @@ const WhatsAppInboxContent: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                  {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
+                <div className="flex items-center gap-1 shrink-0">
+                  {isQueuedConversation(selected) && canWork && <Button size="sm" className="rounded-full" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
                     isClosed={isClosedConversation(selected)} canClose={ownsSelected}
                     blockedReason={selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا قبل إنهائها.'} />
-                  <Button variant="ghost" size="sm" onClick={() => setShowSearch(v => !v)} aria-label="بحث داخل المحادثة" aria-pressed={showSearch}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowSearch(v => !v)} aria-label="بحث داخل المحادثة" aria-pressed={showSearch}>
                     <Search className="h-4 w-4" />
                   </Button>
-                  <Button variant={showDetails ? 'secondary' : 'ghost'} size="sm" onClick={() => setShowDetails(v => !v)}>
-                    <PanelRightClose className="h-4 w-4 me-1" />
-                    الأدوات
+                  <Button variant={showDetails ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" aria-label="أدوات الواتساب" aria-pressed={showDetails} onClick={() => setShowDetails(v => !v)}>
+                    <PanelRightClose className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" asChild aria-label="شاشة كاملة">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild aria-label="شاشة كاملة">
                     <Link to={`/whatsapp-inbox/${selected.id}`}><ExternalLink className="h-4 w-4" /></Link>
                   </Button>
                 </div>
+
               </div>
 
               {/* Inline message search & direction filter */}
