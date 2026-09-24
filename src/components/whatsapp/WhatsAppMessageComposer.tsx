@@ -227,14 +227,16 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={
-              !isWindowOpen
-                ? 'نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً'
-                : pending
-                  ? 'اكتب تعليقاً (اختياري)...'
-                  : 'اكتب رسالتك هنا...'
+              !canSend
+                ? 'استلم المحادثة أولاً لتتمكن من الكتابة'
+                : !isWindowOpen
+                  ? 'نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً'
+                  : pending
+                    ? 'اكتب تعليقاً (اختياري)...'
+                    : 'اكتب رسالتك هنا...'
             }
             className="min-h-[70px] resize-none"
-            disabled={isSending || !isWindowOpen}
+            disabled={isSending || !isWindowOpen || !canSend}
           />
         </div>
 
