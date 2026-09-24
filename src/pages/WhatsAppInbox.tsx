@@ -38,8 +38,16 @@ const WhatsAppInboxContent: React.FC = () => {
   const [search, setSearch] = useState('');
   const [inboxFilter, setInboxFilter] = useState('all');
 
+  // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
+  const isSupervisor = hasPermission('whatsapp_admin');
+  const visibleConversations = useMemo(() => {
+    const list = conversations || [];
+    if (isSupervisor) return list;
+    return list.filter((c: any) => c.assigned_to === employee?.id || (!c.assigned_to && isQueuedConversation(c)));
+  }, [conversations, isSupervisor, employee?.id]);
+
   const filtered = useMemo(() => {
-    let list = conversations || [];
+    let list = visibleConversations;
     if (inboxFilter !== 'all') list = list.filter(c => c.whatsapp_settings_id === inboxFilter);
     if (view === 'queue') list = orderQueue(list.filter(isQueuedConversation));
     if (view === 'mine') list = list.filter(c => c.assigned_to === employee?.id && !isClosedConversation(c));
@@ -50,7 +58,7 @@ const WhatsAppInboxContent: React.FC = () => {
       (c.phone_number || '').toLowerCase().includes(q) ||
       (c.customer?.name || '').toLowerCase().includes(q)
     );
-  }, [conversations, search, view, employee?.id, inboxFilter]);
+  }, [visibleConversations, search, view, employee?.id, inboxFilter]);
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
   const selected = (conversations || []).find((c: any) => c.id === selectedId);
