@@ -347,22 +347,30 @@ const WhatsAppInboxContent: React.FC = () => {
 
 
               {/* Composer */}
-              <div className="border-t bg-card p-3">
+              <div className="border-t bg-card/80 backdrop-blur-md p-3">
                 {canWork && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin')) ? <WhatsAppMessageComposer
                   conversationId={selected.id}
                   prefillText={prefillText}
                   prefillNonce={prefillNonce}
-                  onMessageSent={() => {}}
-                /> : <p className="text-sm text-muted-foreground">{selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا للرد وإيقاف البوت.'}</p>}
+                  contactName={selected.customer?.name}
+                  contactPhone={selected.phone_number}
+                  onMessageSent={() => scrollToBottom('smooth')}
+                /> : <p className="text-sm text-muted-foreground text-center py-2">{selected.assigned_to ? 'المحادثة مسندة لموظف آخر؛ اطلب التحويل من المشرف.' : 'استلم المحادثة أولًا للرد وإيقاف البوت.'}</p>}
               </div>
             </>
           )}
         </section>
-        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background md:static md:w-[350px] md:shrink-0 border-r overflow-y-auto">
-          <Button variant="ghost" className="m-2" onClick={() => setShowDetails(false)}>إغلاق التفاصيل</Button>
+        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background xl:static xl:w-[340px] xl:shrink-0 border-r overflow-y-auto animate-in slide-in-from-left-4 duration-200">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 border-b bg-card/90 backdrop-blur">
+            <span className="text-sm font-semibold">أدوات الواتساب</span>
+            <Button variant="ghost" size="icon" aria-label="إغلاق الأدوات" onClick={() => setShowDetails(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <ConversationRightPanel conversationId={selected.id} conversation={selected}
-            onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); setShowDetails(false); }} />
+            onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); }} />
         </aside>}
+
       </div>
     </div>
   );
