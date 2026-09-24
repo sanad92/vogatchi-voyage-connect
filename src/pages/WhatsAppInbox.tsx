@@ -21,7 +21,10 @@ import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightP
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
+import { CloseConversationDialog } from '@/components/whatsapp/CloseConversationDialog';
+import { ConversationListItem } from '@/components/whatsapp/ConversationListItem';
+import { ChatDateDivider, dayKeyOf, dayLabelOf } from '@/components/whatsapp/ChatDateDivider';
+
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
