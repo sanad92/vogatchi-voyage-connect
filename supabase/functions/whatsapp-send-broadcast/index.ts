@@ -92,6 +92,12 @@ Deno.serve(async (req) => {
     let sent = 0, failed = 0, skipped = 0;
     const defaults = (broadcast.template_variables || {}) as Record<string, any>;
 
+    // The organization name is the official sender identity for every message.
+    const { data: org } = await admin
+      .from('organizations').select('name').eq('id', broadcast.organization_id).maybeSingle();
+    const orgName = String(org?.name || '').trim();
+    const senderPhone = String((settings as any)?.display_phone_number || '').trim();
+
     for (const r of recipients ?? []) {
       const to = normalizePhone(r.phone_number);
       if (!to) {
@@ -101,8 +107,11 @@ Deno.serve(async (req) => {
       }
 
       // Respect opt-out
+      let customer: any = null;
       if (r.customer_id) {
-        const { data: cust } = await admin.from('customers').select('whatsapp_opt_out').eq('id', r.customer_id).maybeSingle();
+        const { data: cust } = await admin.from('customers')
+          .select('name,phone,email,whatsapp_opt_out').eq('id', r.customer_id).maybeSingle();
+        customer = cust;
         if (cust?.whatsapp_opt_out) {
           await markRecipient(admin, r.id, 'skipped', { error_code: 'OPTED_OUT', error_message: 'العميل ألغى الاشتراك | Customer opted out' });
           skipped++;
@@ -110,12 +119,27 @@ Deno.serve(async (req) => {
         }
       }
 
+      const customerName = String(customer?.name || r.customer_name || '').trim();
+      const autoVars: Record<string, string> = {
+        customer_name: customerName,
+        customer_first_name: customerName ? customerName.split(/\s+/)[0] : '',
+        customer_phone: String(customer?.phone || r.phone_number || '').trim(),
+        customer_email: String(customer?.email || '').trim(),
+        company_name: orgName,
+        organization_name: orgName,
+        company_phone: senderPhone,
+        date: new Date().toISOString().slice(0, 10),
+      };
+      const fill = (value: any) =>
+        String(value ?? '').replace(/\{\{\s*([a-z_0-9]+)\s*\}\}/gi, (match, key: string) => {
+          const v = autoVars[String(key).toLowerCase()];
+          return v ? v : match;
+        });
+
       const p = (r.personalization || {}) as Record<string, any>;
       const vars = {
-        body: (Array.isArray(p.body) ? p.body : Array.isArray(defaults.body) ? defaults.body : []).map((v: any) =>
-          String(v ?? '').replace(/\{\{customer_name\}\}/g, r.customer_name || '')),
-        header: (Array.isArray(p.header) ? p.header : Array.isArray(defaults.header) ? defaults.header : []).map((v: any) =>
-          String(v ?? '').replace(/\{\{customer_name\}\}/g, r.customer_name || '')),
+        body: (Array.isArray(p.body) ? p.body : Array.isArray(defaults.body) ? defaults.body : []).map(fill),
+        header: (Array.isArray(p.header) ? p.header : Array.isArray(defaults.header) ? defaults.header : []).map(fill),
       };
 
       let components;
