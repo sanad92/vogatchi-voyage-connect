@@ -341,7 +341,10 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <BroadcastDetailsButton broadcast={b} />
                           {(b.status === 'draft' || b.status === 'scheduled') && (
-                            <Button size="sm" variant="ghost" onClick={() => sendBroadcast(b.id)} disabled={isSending}>
+                            <Button size="sm" variant="ghost"
+                              title={b.template_id ? undefined : 'الحملة بدون قالب معتمد — لا يمكن إرسالها'}
+                              onClick={() => sendBroadcast(b.id).catch(() => {})}
+                              disabled={isSending || !b.template_id}>
                               <Send className="w-4 h-4" />
                             </Button>
                           )}
