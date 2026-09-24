@@ -44,6 +44,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const { customers } = useCustomers();
   const { templates } = useWhatsAppTemplates();
   const orgId = useOrgId();
+  const { data: currentOrg } = useCurrentOrganization() as any;
   const { data: senderNumbers = [] } = useQuery({
     queryKey: ['wa-sender-numbers', orgId],
     enabled: !!orgId,
