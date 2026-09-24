@@ -81,6 +81,28 @@ const WhatsAppInboxContent: React.FC = () => {
       return (m.content || '').toLowerCase().includes(q) || (m.template_name || '').toLowerCase().includes(q);
     });
   }, [messages, messageSearch, directionFilter]);
+
+  const scrollToBottom = React.useCallback((behavior: ScrollBehavior = 'auto') => {
+    const el = scrollViewportRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  // Keep the newest message in view and surface a jump button while scrolled up.
+  React.useEffect(() => {
+    const el = scrollViewportRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+    };
+    el.addEventListener('scroll', onScroll);
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [selectedId]);
+
+  React.useEffect(() => {
+    if (!showScrollDown) scrollToBottom();
+  }, [visibleMessages.length, selectedId, scrollToBottom, showScrollDown]);
+
   const pickup = async (id: string) => {
     try { const claimed = await claim.mutateAsync(id); setView('mine'); setSelectedId(claimed); }
     catch { /* mutation displays the error and refreshes the list */ }
