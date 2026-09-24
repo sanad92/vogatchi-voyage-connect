@@ -61,7 +61,7 @@ const WhatsAppInboxContent: React.FC = () => {
   }, [visibleConversations, search, view, employee?.id, inboxFilter]);
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
-  const selected = (conversations || []).find((c: any) => c.id === selectedId);
+  const selected = visibleConversations.find((c: any) => c.id === selectedId);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue((conversations || []).filter(isQueuedConversation));
   const ownsSelected = !!selected && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin'));
