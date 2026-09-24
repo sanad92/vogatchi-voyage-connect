@@ -21,7 +21,7 @@ import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
 import {
-  templateSlots, missingSlots, buildTemplateVariables, previewTemplate, slotStorageKey,
+  templateSlots, missingSlots, buildTemplateVariables, previewTemplate, slotStorageKey, SLOT_SOURCES, POSITIONAL_AUTO,
 } from '@/lib/whatsappTemplateVars';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -111,7 +111,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setAudiencePreset('all');
     setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
-    setManualVars({});
+    setCustomVals({}); setSlotSource({});
   };
 
 
@@ -125,10 +125,33 @@ export const WhatsAppBroadcastManager: React.FC = () => {
 
   // Template variables: the system fills organization/customer values itself,
   // anything else is typed once here and used for the whole campaign.
-  const [manualVars, setManualVars] = useState<Record<string, string>>({});
-  useEffect(() => { setManualVars({}); }, [form.template_id, senderId]);
+  const [slotSource, setSlotSource] = useState<Record<string, string>>({});
+  const [customVals, setCustomVals] = useState<Record<string, string>>({});
+  useEffect(() => { setSlotSource({}); setCustomVals({}); }, [form.template_id, senderId]);
+  const { data: agentName = '' } = useQuery({
+    queryKey: ['broadcast-agent-name'],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return '';
+      const { data: p } = await (supabase as any).from('profiles').select('full_name').eq('id', u.user.id).maybeSingle();
+      return String(p?.full_name || u.user.user_metadata?.full_name || '').trim();
+    },
+  });
 
   const slots = useMemo(() => templateSlots(selectedTemplate), [selectedTemplate]);
+  const sourceOf = (key: string, s: any) =>
+    slotSource[key] ?? (s.section === 'body' ? POSITIONAL_AUTO[s.index] ?? 'custom' : 'custom');
+  const manualVars = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const s of slots) {
+      if (s.auto) continue;
+      const key = slotStorageKey(s);
+      const src = sourceOf(key, s);
+      out[key] = src === 'custom' ? customVals[key] || '' : src === 'agent_name' ? agentName : `{{${src}}}`;
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots, slotSource, customVals, agentName]);
   const pendingSlots = useMemo(
     () => (selectedTemplate ? missingSlots(selectedTemplate, manualVars) : []),
     [selectedTemplate, manualVars],
@@ -299,12 +322,28 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                                 يُملأ تلقائياً: {sampleValues[s.auto.replace(/[{}]/g, '')] || '—'}
                               </div>
                             ) : (
-                              <Input
-                                className="h-9 text-sm"
-                                value={manualVars[key] || ''}
-                                placeholder="اكتب القيمة المستخدمة في الحملة"
-                                onChange={(e) => setManualVars({ ...manualVars, [key]: e.target.value })}
-                              />
+                              <div className="space-y-1">
+                                <Select value={sourceOf(key, s)} onValueChange={(v) => setSlotSource({ ...slotSource, [key]: v })}>
+                                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {SLOT_SOURCES.map((o) => (
+                                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {sourceOf(key, s) === 'custom' ? (
+                                  <Input
+                                    className="h-9 text-sm"
+                                    value={customVals[key] || ''}
+                                    placeholder="اكتب القيمة المستخدمة في الحملة"
+                                    onChange={(e) => setCustomVals({ ...customVals, [key]: e.target.value })}
+                                  />
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    مثال: {sourceOf(key, s) === 'agent_name' ? agentName || '—' : sampleValues[sourceOf(key, s)] || '—'}
+                                  </p>
+                                )}
+                              </div>
                             )}
                           </div>
                         );
