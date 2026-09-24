@@ -134,16 +134,26 @@ const WhatsAppInboxContent: React.FC = () => {
       {canWork && !employee && <div role="status" className="px-4 py-2 text-sm bg-muted">{identityError ? 'تعذر التحقق من ملف الموظف؛ أعد المحاولة قبل الاستلام.' : 'لاستلام المحادثات، اربط حسابك بملف موظف نشط في المؤسسة من فريق العمل.'}</div>}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Conversations list */}
-        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] md:shrink-0 border-l bg-muted/20 flex-col overflow-hidden`}>
-          <div className="p-3 border-b bg-card space-y-3">
-            <div className="grid grid-cols-2 gap-1" aria-label="تصنيف المحادثات">
+        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] md:shrink-0 border-l bg-card/40 flex-col overflow-hidden`}>
+          <div className="p-3 border-b space-y-3">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث برقم أو اسم العميل..."
+                className="pr-9 rounded-full bg-muted/60 border-transparent focus-visible:bg-background"
+              />
+            </div>
+            <div className="flex gap-1 overflow-x-auto pb-0.5" aria-label="تصنيف المحادثات">
               {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
-                  onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
+                  className="h-7 rounded-full px-3 text-xs shrink-0"
+                  onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' && queue.length ? ` ${queue.length}` : ''}</Button>)}
             </div>
             {inboxes.length > 1 && (
               <Select value={inboxFilter} onValueChange={(value) => { setInboxFilter(value); setSelectedId(null); }}>
-                <SelectTrigger aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-full" aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الأرقام</SelectItem>
                   {inboxes.map(inbox => (
@@ -154,19 +164,11 @@ const WhatsAppInboxContent: React.FC = () => {
                 </SelectContent>
               </Select>
             )}
-            {view === 'queue' && <Button className="w-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
+            {view === 'queue' && <Button className="w-full rounded-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
               onClick={() => pickup('')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
             {view === 'queue' && <p className="text-xs text-muted-foreground">الأولوية أولًا، ثم الأقدم حسب تاريخ فتح المحادثة.</p>}
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="ابحث برقم أو اسم العميل..."
-                className="pr-9"
-              />
-            </div>
           </div>
+
 
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
