@@ -29,7 +29,9 @@ const WhatsAppInboxContent: React.FC = () => {
   const { hasPermission } = useSupabasePermissions();
   const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
+  const [messageSearch, setMessageSearch] = useState('');
+  const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
