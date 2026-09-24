@@ -8,6 +8,18 @@ const corsHeaders = {
 
 const GRAPH = () => `https://graph.facebook.com/${Deno.env.get("META_GRAPH_API_VERSION") ?? "v22.0"}`;
 
+async function appsecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function logEvent(supabase: any, orgId: string, type: string, payload: unknown) {
   try {
     await supabase.from("whatsapp_connection_events").insert({
@@ -114,14 +126,23 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No phone number found on WABA" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // 4) Subscribe app to WABA webhooks (idempotent)
-    try {
-      await fetch(`${GRAPH()}/${wabaId}/subscribed_apps`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+    // 4) Subscribe app to WABA webhooks. Do not mark the inbox connected
+    // when Meta rejected the subscription.
+    const proof = await appsecretProof(accessToken, appSecret);
+    const subscriptionRes = await fetch(`${GRAPH()}/${wabaId}/subscribed_apps?appsecret_proof=${proof}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const subscriptionJson = await subscriptionRes.json().catch(() => null);
+    if (!subscriptionRes.ok || subscriptionJson?.success !== true) {
+      await logEvent(admin, organization_id, "oauth_subscription_failed", {
+        status: subscriptionRes.status,
+        error: subscriptionJson?.error ?? subscriptionJson,
       });
-    } catch (e) {
-      console.warn("subscribed_apps failed (non-fatal):", e);
+      return new Response(JSON.stringify({
+        error: "Meta لم تُفعّل استقبال الرسائل لهذا الرقم. أعد الربط وتأكد من منح صلاحيات إدارة ومراسلة WhatsApp.",
+        details: subscriptionJson,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 5) Upsert whatsapp_settings row for this org

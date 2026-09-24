@@ -19,20 +19,25 @@ import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
 import { isQueuedConversation, isClosedConversation, orderQueue } from '@/lib/whatsappQueue';
 import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
+import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
   const { employee, canWork, claim, identityError, available, setAvailable, presenceError } = useWhatsAppQueue();
   const { hasPermission } = useSupabasePermissions();
+  const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
   const [showDetails, setShowDetails] = useState(false);
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [inboxFilter, setInboxFilter] = useState('all');
 
   const filtered = useMemo(() => {
     let list = conversations || [];
+    if (inboxFilter !== 'all') list = list.filter(c => c.whatsapp_settings_id === inboxFilter);
     if (view === 'queue') list = orderQueue(list.filter(isQueuedConversation));
     if (view === 'mine') list = list.filter(c => c.assigned_to === employee?.id && !isClosedConversation(c));
     if (view === 'closed') list = list.filter(isClosedConversation);
@@ -42,7 +47,7 @@ const WhatsAppInboxContent: React.FC = () => {
       (c.phone_number || '').toLowerCase().includes(q) ||
       (c.customer?.name || '').toLowerCase().includes(q)
     );
-  }, [conversations, search, view, employee?.id]);
+  }, [conversations, search, view, employee?.id, inboxFilter]);
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
   const selected = (conversations || []).find((c: any) => c.id === selectedId);
@@ -81,6 +86,19 @@ const WhatsAppInboxContent: React.FC = () => {
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
                   onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
             </div>
+            {inboxes.length > 1 && (
+              <Select value={inboxFilter} onValueChange={(value) => { setInboxFilter(value); setSelectedId(null); }}>
+                <SelectTrigger aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل الأرقام</SelectItem>
+                  {inboxes.map(inbox => (
+                    <SelectItem key={inbox.id} value={inbox.id}>
+                      {inbox.label || inbox.display_phone_number || inbox.business_name || 'رقم واتساب'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {view === 'queue' && <Button className="w-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
               onClick={() => pickup('')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
             {view === 'queue' && <p className="text-xs text-muted-foreground">الأولوية أولًا، ثم الأقدم حسب تاريخ فتح المحادثة.</p>}
@@ -147,6 +165,11 @@ const WhatsAppInboxContent: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {c.inbox && (
+                          <Badge variant="secondary" className="text-[10px] py-0 h-4">
+                            {c.inbox.label || c.inbox.display_phone_number || c.inbox.business_name || 'واتساب'}
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-[10px] py-0 h-4">
                           {c.status === 'active'
                             ? 'نشط'
@@ -200,6 +223,11 @@ const WhatsAppInboxContent: React.FC = () => {
                         {selected.customer.name}
                       </div>
                     )}
+                     {selected.inbox && (
+                       <div className="text-xs text-muted-foreground">
+                         عبر {selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}
+                       </div>
+                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">

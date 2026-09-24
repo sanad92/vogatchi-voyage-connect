@@ -86,7 +86,10 @@ serve(async (req) => {
       }
 
       const body = JSON.parse(new TextDecoder().decode(rawBody));
-      console.log('WhatsApp Webhook received:', JSON.stringify(body));
+      console.log('[wa-webhook] delivery received', {
+        object: body?.object,
+        entries: Array.isArray(body?.entry) ? body.entry.length : 0,
+      });
 
       if (body.object === 'whatsapp_business_account') {
         for (const entry of body.entry ?? []) {
@@ -98,6 +101,12 @@ serve(async (req) => {
             // Route by phone_number_id (per-inbox). Falls back to waba_id
             // only when the payload does not include metadata.
             const phoneNumberId: string | undefined = change.value?.metadata?.phone_number_id;
+            console.log('[wa-webhook] routing delivery', {
+              phoneNumberId: phoneNumberId ?? null,
+              wabaId,
+              messages: Array.isArray(change.value?.messages) ? change.value.messages.length : 0,
+              statuses: Array.isArray(change.value?.statuses) ? change.value.statuses.length : 0,
+            });
             let settings: { id: string; organization_id: string } | null = null;
 
             if (phoneNumberId) {
@@ -186,7 +195,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               phone_number: phoneNumber,
               last_message_at: nowIso,
             },
-            { onConflict: 'organization_id,phone_number' },
+            { onConflict: 'organization_id,whatsapp_settings_id,phone_number' },
           )
           .select('id')
           .single();
@@ -315,8 +324,16 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
             msgErr = insertedMsg ? null : res.error;
           }
         }
-        if (msgErr) { console.error('[wa-webhook] message write error:', msgErr); continue; }
+        if (msgErr) { console.error('[wa-webhook] message write error:', { messageId: message.id, conversationId, error: msgErr }); continue; }
         if (isDuplicate || concurrentDuplicate || !insertedMsg) continue;
+
+        console.log('[wa-webhook] inbound saved', {
+          phoneNumberId: messageData?.metadata?.phone_number_id ?? null,
+          whatsappSettingsId,
+          conversationId,
+          messageId: message.id,
+          messageType: message.type,
+        });
 
 
         await supabase
@@ -394,7 +411,8 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           .from('whatsapp_messages')
           .update(msgPatch)
           .eq('message_id', status.id)
-          .eq('organization_id', organizationId);
+          .eq('organization_id', organizationId)
+          .eq('whatsapp_settings_id', whatsappSettingsId);
 
         // 2) Update broadcast recipient row (if this wamid came from a broadcast)
         const recipientPatch: Record<string, unknown> = { status: status.status };
