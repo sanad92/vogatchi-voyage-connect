@@ -84,6 +84,12 @@ const WhatsAppInboxContent: React.FC = () => {
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
   const selected = visibleConversations.find((c: any) => c.id === selectedId);
+  const setUnread = (unread: boolean) => { if (selected) setUnreadFor(selected.id, unread); };
+  // Opening a conversation clears a manual "unread" mark.
+  React.useEffect(() => {
+    if (selected?.marked_unread) setUnreadFor(selected.id, false, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue(visibleConversations.filter(isQueuedConversation));
   const ownsSelected = !!selected && (selected.assigned_to === employee?.id || isSupervisor);
