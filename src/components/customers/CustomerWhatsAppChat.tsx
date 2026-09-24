@@ -35,6 +35,7 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
   const { conversation, conversationId, messages, isLoading, hasPhone, createConversation, refetch } =
     useCustomerWhatsApp(customerId, customerPhone);
   const { sendTextMessage, isSending } = useWhatsAppMessaging();
+  const ownership = useWhatsAppConversationOwnership(conversationId);
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
