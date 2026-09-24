@@ -137,91 +137,36 @@ const WhatsAppInboxContent: React.FC = () => {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {conversationsLoading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  جاري التحميل...
+                <div className="p-4 space-y-2">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className="flex items-start gap-3 animate-pulse">
+                      <div className="h-10 w-10 rounded-full bg-muted" />
+                      <div className="flex-1 space-y-2 pt-1">
+                        <div className="h-3 w-1/2 rounded bg-muted" />
+                        <div className="h-2.5 w-3/4 rounded bg-muted" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : conversationsError ? (<p className="p-4 text-sm text-destructive">القائمة غير متاحة حاليًا</p>) : filtered.length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  لا توجد محادثات
+                <div className="p-8 text-center">
+                  <MessageCircle className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">لا توجد محادثات في هذا القسم</p>
                 </div>
               ) : (
-                filtered.map((c: any) => {
-                  const active = c.id === selectedId;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedId(c.id)}
-                      className={`w-full text-right p-3 rounded-lg border transition-colors ${
-                        active
-                          ? 'bg-primary/10 border-primary'
-                          : 'bg-card border-transparent hover:bg-accent'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="font-medium text-sm truncate">
-                            {c.phone_number}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {c.last_message_at &&
-                            formatDistanceToNow(new Date(c.last_message_at), {
-                              addSuffix: true,
-                              locale: ar,
-                            })}
-                        </span>
-                      </div>
-                      {c.customer?.name && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {c.customer.name}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
-                        <RefreshCw className="h-2.5 w-2.5" />
-                        <span>
-                          {c.last_inbound_at
-                            ? `آخر رسالة واردة ${formatDistanceToNow(new Date(c.last_inbound_at), { addSuffix: true, locale: ar })}`
-                            : 'لا يوجد استلام بعد'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1 flex-wrap">
-                        {c.inbox && (
-                          <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                            {c.inbox.label || c.inbox.display_phone_number || c.inbox.business_name || 'واتساب'}
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-[10px] py-0 h-4">
-                          {c.status === 'active'
-                            ? 'نشط'
-                            : c.status === 'pending'
-                            ? 'انتظار'
-                            : c.status === 'closed'
-                            ? 'مغلق'
-                            : c.status}
-                        </Badge>
-                        {isClosedConversation(c) && <ResolutionBadge status={c.resolution_status} className="text-[10px] py-0 h-4" />}
-                        {isClosedConversation(c) && c.resolution_notes && (
-                          <span className="text-[10px] text-muted-foreground truncate max-w-full" title={c.resolution_notes}>{c.resolution_notes}</span>
-                        )}
-                        {c.sla_breached_first_response && (
-                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
-                            خرق SLA
-                          </Badge>
-                        )}
-                        {c.priority === 'urgent' && (
-                          <Badge variant="destructive" className="text-[10px] py-0 h-4">
-                            عاجل
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
+                filtered.map((c: any) => (
+                  <ConversationListItem
+                    key={c.id}
+                    conversation={c}
+                    active={c.id === selectedId}
+                    onSelect={() => setSelectedId(c.id)}
+                  />
+                ))
               )}
             </div>
           </ScrollArea>
         </aside>
+
 
         {/* Messages panel */}
         <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-muted/10`}>
