@@ -40,6 +40,10 @@ const WhatsAppInboxContent: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [inboxFilter, setInboxFilter] = useState('all');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+
 
   // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
   const isSupervisor = hasPermission('whatsapp_admin');
