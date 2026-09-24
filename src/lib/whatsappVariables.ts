@@ -216,13 +216,52 @@ export const VARIABLE_GROUPS: VariableGroup[] = [
 // Legacy flat list, kept for backward compatibility with older UI code.
 export const AVAILABLE_VARIABLES = VARIABLE_GROUPS.flatMap((g) => g.variables);
 
-export const interpolateVariables = (template: string, ctx: VariableContext): string => {
+/**
+ * Variables the system always fills on its own from stored records:
+ * the organization name (sender) and the registered customer details.
+ * Staff never type these — they are derived here so every template,
+ * quick send and campaign uses exactly the same values.
+ */
+export const AUTO_FILLED_KEYS: Array<keyof VariableContext> = [
+  'customer_name',
+  'customer_first_name',
+  'customer_phone',
+  'customer_email',
+  'agent_name',
+  'company_name',
+  'organization_name',
+  'company_phone',
+  'date',
+  'time',
+];
+
+const firstNameOf = (full?: string | null): string | null => {
+  const t = (full || '').trim();
+  if (!t) return null;
+  return t.split(/\s+/)[0] || null;
+};
+
+/**
+ * Normalizes a context so the company/organization name and the customer's
+ * first name are always present and consistent, whichever one was supplied.
+ */
+export const resolveVariableContext = (ctx: VariableContext): VariableContext => {
   const now = new Date();
-  const merged: VariableContext = {
+  const orgName = ctx.organization_name || ctx.company_name || null;
+  const customerName = ctx.customer_name || null;
+  return {
     date: now.toISOString().slice(0, 10),
     time: now.toTimeString().slice(0, 5),
     ...ctx,
+    customer_name: customerName,
+    customer_first_name: ctx.customer_first_name || firstNameOf(customerName),
+    organization_name: orgName,
+    company_name: orgName,
   };
+};
+
+export const interpolateVariables = (template: string, ctx: VariableContext): string => {
+  const merged = resolveVariableContext(ctx);
   return template.replace(/\{\{\s*([a-z_0-9]+)\s*\}\}/gi, (match, key: string) => {
     const value = (merged as any)[key.toLowerCase()];
     return value != null && value !== '' ? String(value) : match;

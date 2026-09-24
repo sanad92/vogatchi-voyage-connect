@@ -70,7 +70,7 @@ export function useWhatsAppBroadcasts() {
     mutationFn: async (payload: {
       name: string; description?: string; message_body: string;
       template_id?: string | null; whatsapp_settings_id?: string | null; audience_type: WhatsAppBroadcast['audience_type'];
-      audience_filter?: any; scheduled_at?: string | null;
+      audience_filter?: any; scheduled_at?: string | null; template_variables?: any;
       recipients: Array<{ phone_number: string; customer_id?: string | null; customer_name?: string | null; personalization?: any }>;
     }) => {
       if (!orgId) throw new Error('org required');
@@ -83,6 +83,7 @@ export function useWhatsAppBroadcasts() {
           message_body: payload.message_body,
           template_id: payload.template_id,
           whatsapp_settings_id: payload.whatsapp_settings_id ?? null,
+          template_variables: payload.template_variables ?? {},
           audience_type: payload.audience_type,
           audience_filter: payload.audience_filter || {},
           scheduled_at: payload.scheduled_at,

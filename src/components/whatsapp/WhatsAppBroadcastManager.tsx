@@ -19,6 +19,10 @@ import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from
 import { useCustomers } from '@/hooks/useCustomers';
 import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
+import { useCurrentOrganization } from '@/hooks/useCurrentOrganization';
+import {
+  templateSlots, missingSlots, buildTemplateVariables, previewTemplate, slotStorageKey,
+} from '@/lib/whatsappTemplateVars';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -40,6 +44,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const { customers } = useCustomers();
   const { templates } = useWhatsAppTemplates();
   const orgId = useOrgId();
+  const { data: currentOrg } = useCurrentOrganization() as any;
   const { data: senderNumbers = [] } = useQuery({
     queryKey: ['wa-sender-numbers', orgId],
     enabled: !!orgId,
@@ -106,6 +111,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setAudiencePreset('all');
     setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
+    setManualVars({});
   };
 
 
@@ -117,10 +123,44 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   );
   const selectedTemplate = approvedTemplates.find((t: any) => t.id === form.template_id) as any;
 
+  // Template variables: the system fills organization/customer values itself,
+  // anything else is typed once here and used for the whole campaign.
+  const [manualVars, setManualVars] = useState<Record<string, string>>({});
+  useEffect(() => { setManualVars({}); }, [form.template_id, senderId]);
+
+  const slots = useMemo(() => templateSlots(selectedTemplate), [selectedTemplate]);
+  const pendingSlots = useMemo(
+    () => (selectedTemplate ? missingSlots(selectedTemplate, manualVars) : []),
+    [selectedTemplate, manualVars],
+  );
+  const senderPhone = senderNumbers.find((n) => n.id === senderId)?.display_phone_number || '';
+  const sampleValues = useMemo(() => {
+    const sampleCustomer = recipients[0]?.customer_name || 'أحمد محمد';
+    return {
+      customer_name: sampleCustomer,
+      customer_first_name: String(sampleCustomer).split(/\s+/)[0],
+      customer_phone: recipients[0]?.phone_number || '',
+      customer_email: '',
+      company_name: currentOrg?.name || '',
+      organization_name: currentOrg?.name || '',
+      company_phone: senderPhone,
+      date: new Date().toISOString().slice(0, 10),
+    } as Record<string, string>;
+  }, [recipients, currentOrg?.name, senderPhone]);
+
+  const preview = useMemo(
+    () => (selectedTemplate ? previewTemplate(selectedTemplate, manualVars, sampleValues) : ''),
+    [selectedTemplate, manualVars, sampleValues],
+  );
+
   const handleCreate = async (sendNow: boolean) => {
     if (!form.name) return;
     if (!selectedTemplate) {
       toast.error('اختر قالباً معتمداً من Meta قبل إنشاء الحملة');
+      return;
+    }
+    if (pendingSlots.length) {
+      toast.error('أكمل متغيرات القالب المطلوبة قبل الإرسال');
       return;
     }
     try {
@@ -130,6 +170,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
         message_body: form.message_body || selectedTemplate.body_text || selectedTemplate.name,
         template_id: selectedTemplate.id,
         whatsapp_settings_id: senderId || null,
+        template_variables: buildTemplateVariables(selectedTemplate, manualVars),
         audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
         scheduled_at: form.scheduled_at || null,
         recipients,
@@ -232,6 +273,61 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                   onChange={(e) => setForm({ ...form, message_body: e.target.value })} />
               </div>
 
+              {selectedTemplate && (
+                <div className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold">متغيرات القالب</h4>
+                    <Badge variant="outline" className="text-[10px]">
+                      {slots.length ? `${slots.length} متغير` : 'لا متغيرات'}
+                    </Badge>
+                  </div>
+
+                  {slots.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">هذا القالب لا يحتاج أي متغيرات.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {slots.map((s) => {
+                        const key = slotStorageKey(s);
+                        return (
+                          <div key={key} className="space-y-1">
+                            <Label className="text-xs">
+                              {s.label}
+                              {!s.auto && <span className="text-destructive"> *</span>}
+                            </Label>
+                            {s.auto ? (
+                              <div className="text-xs rounded-md bg-muted px-2 py-2 text-muted-foreground">
+                                يُملأ تلقائياً: {sampleValues[s.auto.replace(/[{}]/g, '')] || '—'}
+                              </div>
+                            ) : (
+                              <Input
+                                className="h-9 text-sm"
+                                value={manualVars[key] || ''}
+                                placeholder="اكتب القيمة المستخدمة في الحملة"
+                                onChange={(e) => setManualVars({ ...manualVars, [key]: e.target.value })}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">معاينة الرسالة كما تصل للعميل</Label>
+                    <div className="text-sm whitespace-pre-wrap rounded-md border bg-background p-2 leading-relaxed">
+                      {preview || '—'}
+                    </div>
+                  </div>
+
+                  {pendingSlots.length > 0 && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      أكمل {pendingSlots.length} متغير مطلوب قبل الإرسال.
+                    </p>
+                  )}
+                </div>
+              )}
+
+
               {!selectedTemplate && (
                 <Alert variant="default">
                   <AlertTriangle className="h-4 w-4" />
@@ -305,11 +401,11 @@ export const WhatsAppBroadcastManager: React.FC = () => {
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button variant="secondary" onClick={() => handleCreate(false)}
-                disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
+                disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
                 حفظ كمسودة
               </Button>
               <Button onClick={() => handleCreate(true)}
-                disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0}>
+                disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
                 <Send className="w-4 h-4 ml-1" /> إنشاء وإرسال
               </Button>
             </DialogFooter>
