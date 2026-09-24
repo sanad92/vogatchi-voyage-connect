@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Phone, RefreshCw, Sparkles } from 'lucide-react';
 import { useCustomerWhatsApp } from '@/hooks/useCustomerWhatsApp';
 import { useWhatsAppMessaging } from '@/hooks/useWhatsAppMessaging';
+import { useWhatsAppConversationOwnership } from '@/hooks/useWhatsAppConversationOwnership';
+import { ConversationOwnershipBanner } from '@/components/whatsapp/ConversationOwnershipBanner';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -43,6 +45,12 @@ export const CustomerWhatsAppChat: React.FC<Props> = ({ customerId, customerPhon
   const handleSend = async () => {
     if (!conversationId) {
       toast.error('لا توجد محادثة نشطة');
+      return;
+    }
+    if (!ownership.canSend) {
+      toast.warning('استلم المحادثة أولاً قبل الإرسال', {
+        description: 'يجب أن تكون المحادثة مسندة إليك قبل إرسال أي رسالة.',
+      });
       return;
     }
     const text = draft.trim();
