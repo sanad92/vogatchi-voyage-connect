@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,21 +91,36 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   };
 
 
+  const approvedTemplates = useMemo(
+    () => (templates || []).filter((t: any) =>
+      String(t.meta_status || t.status || '').toLowerCase() === 'approved'),
+    [templates],
+  );
+  const selectedTemplate = approvedTemplates.find((t: any) => t.id === form.template_id) as any;
+
   const handleCreate = async (sendNow: boolean) => {
-    if (!form.name || !form.message_body) return;
-    const created = await createBroadcast({
-      name: form.name,
-      description: form.description,
-      message_body: form.message_body,
-      template_id: form.template_id !== 'none' ? form.template_id : null,
-      audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
-      scheduled_at: form.scheduled_at || null,
-      recipients,
-    });
-    setOpen(false);
-    resetForm();
-    if (sendNow && created?.id) {
-      await sendBroadcast(created.id);
+    if (!form.name) return;
+    if (!selectedTemplate) {
+      toast.error('اختر قالباً معتمداً من Meta قبل إنشاء الحملة');
+      return;
+    }
+    try {
+      const created = await createBroadcast({
+        name: form.name,
+        description: form.description,
+        message_body: form.message_body || selectedTemplate.body_text || selectedTemplate.name,
+        template_id: selectedTemplate.id,
+        audience_type: audiencePreset === 'upcoming' ? 'custom' : audiencePreset,
+        scheduled_at: form.scheduled_at || null,
+        recipients,
+      });
+      setOpen(false);
+      resetForm();
+      if (sendNow && created?.id) {
+        await sendBroadcast(created.id);
+      }
+    } catch {
+      // errors are already shown as toasts by the mutation handlers
     }
   };
 
@@ -164,12 +180,12 @@ export const WhatsAppBroadcastManager: React.FC = () => {
 
                 </div>
                 <div>
-                  <Label>القالب (اختياري)</Label>
+                  <Label>القالب المعتمد *</Label>
                   <Select value={form.template_id} onValueChange={(v) => setForm({ ...form, template_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="بدون قالب" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="اختر قالباً" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">بدون قالب</SelectItem>
-                      {(templates || []).filter((t: any) => t.status === 'approved').map((t: any) => (
+                      <SelectItem value="none" disabled>اختر قالباً معتمداً</SelectItem>
+                      {approvedTemplates.map((t: any) => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -177,19 +193,19 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                 </div>
               </div>
               <div>
-                <Label>الرسالة * (يدعم {'{{customer_name}}'})</Label>
-                <Textarea rows={5} value={form.message_body}
+                <Label>ملاحظة داخلية (اختياري)</Label>
+                <Textarea rows={3} value={form.message_body}
+                  placeholder={selectedTemplate?.body_text || 'سيتم إرسال نص القالب المعتمد'}
                   onChange={(e) => setForm({ ...form, message_body: e.target.value })} />
               </div>
 
-              {form.template_id === 'none' && (
-                <Alert variant="default" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="text-amber-900 dark:text-amber-200">تنبيه: قيود نافذة الـ 24 ساعة</AlertTitle>
-                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-sm">
-                    الرسائل النصية الحرة تصل فقط للعملاء الذين راسلوا رقمك خلال آخر <strong>24 ساعة</strong>.
-                    باقي الأرقام سيرفضها واتساب بالخطأ <code className="text-xs">131047 (Re-engagement)</code>.
-                    <br />لإرسال حملة لجميع العملاء، اختر <strong>قالباً معتمداً</strong> من Meta بدلاً من الرسالة الحرة.
+              {!selectedTemplate && (
+                <Alert variant="default">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>القالب مطلوب</AlertTitle>
+                  <AlertDescription className="text-sm">
+                    واتساب لا يسمح بإرسال رسائل جماعية إلا بقالب معتمد من Meta.
+                    {approvedTemplates.length === 0 && ' لا توجد قوالب معتمدة حالياً — أنشئ قالباً من مركز القوالب وانتظر الموافقة.'}
                   </AlertDescription>
                 </Alert>
               )}
@@ -256,11 +272,11 @@ export const WhatsAppBroadcastManager: React.FC = () => {
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button variant="secondary" onClick={() => handleCreate(false)}
-                disabled={isCreating || !form.name || !form.message_body || recipients.length === 0}>
+                disabled={isCreating || !form.name || !selectedTemplate || recipients.length === 0}>
                 حفظ كمسودة
               </Button>
               <Button onClick={() => handleCreate(true)}
-                disabled={isCreating || isSending || !form.name || !form.message_body || recipients.length === 0}>
+                disabled={isCreating || isSending || !form.name || !selectedTemplate || recipients.length === 0}>
                 <Send className="w-4 h-4 ml-1" /> إنشاء وإرسال
               </Button>
             </DialogFooter>
@@ -325,7 +341,10 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <BroadcastDetailsButton broadcast={b} />
                           {(b.status === 'draft' || b.status === 'scheduled') && (
-                            <Button size="sm" variant="ghost" onClick={() => sendBroadcast(b.id)} disabled={isSending}>
+                            <Button size="sm" variant="ghost"
+                              title={b.template_id ? undefined : 'الحملة بدون قالب معتمد — لا يمكن إرسالها'}
+                              onClick={() => sendBroadcast(b.id).catch(() => {})}
+                              disabled={isSending || !b.template_id}>
                               <Send className="w-4 h-4" />
                             </Button>
                           )}
