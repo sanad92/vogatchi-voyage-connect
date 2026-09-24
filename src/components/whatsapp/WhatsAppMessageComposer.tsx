@@ -9,6 +9,8 @@ import { useWhatsAppWindow } from '@/hooks/useWhatsAppWindow';
 import { QuickRepliesPicker } from './QuickRepliesPicker';
 import { TemplatesPicker } from './TemplatesPicker';
 import { WindowStatusBadge } from './WindowStatusBadge';
+import { ConversationOwnershipBanner } from './ConversationOwnershipBanner';
+import { useWhatsAppConversationOwnership } from '@/hooks/useWhatsAppConversationOwnership';
 import type { VariableContext } from '@/lib/whatsappVariables';
 import { toast } from 'sonner';
 
@@ -41,6 +43,16 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 
   const windowState = useWhatsAppWindow(conversationId);
   const { isWindowOpen, contextVars } = windowState;
+
+  const ownership = useWhatsAppConversationOwnership(conversationId);
+  const canSend = ownership.canSend;
+  const blockSend = () => {
+    if (canSend) return false;
+    toast.warning('استلم المحادثة أولاً قبل الإرسال', {
+      description: 'سياسة الملكية تتطلب أن تكون المحادثة مسندة إليك قبل إرسال أي رسالة أو قالب.',
+    });
+    return true;
+  };
 
   useEffect(() => {
     if (prefillText !== undefined && prefillNonce !== undefined) {
