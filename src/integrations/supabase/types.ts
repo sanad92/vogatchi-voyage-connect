@@ -12287,6 +12287,7 @@ export type Database = {
           last_activity_at: string | null
           last_message_at: string | null
           last_note_preview: string | null
+          marked_unread: boolean
           organization_id: string | null
           phone_number: string
           pinned_booking_id: string | null
@@ -12319,6 +12320,7 @@ export type Database = {
           last_activity_at?: string | null
           last_message_at?: string | null
           last_note_preview?: string | null
+          marked_unread?: boolean
           organization_id?: string | null
           phone_number: string
           pinned_booking_id?: string | null
@@ -12351,6 +12353,7 @@ export type Database = {
           last_activity_at?: string | null
           last_message_at?: string | null
           last_note_preview?: string | null
+          marked_unread?: boolean
           organization_id?: string | null
           phone_number?: string
           pinned_booking_id?: string | null
