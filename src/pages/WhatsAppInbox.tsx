@@ -56,6 +56,16 @@ const WhatsAppInboxContent: React.FC = () => {
   const selected = (conversations || []).find((c: any) => c.id === selectedId);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue((conversations || []).filter(isQueuedConversation));
+  const ownsSelected = !!selected && (selected.assigned_to === employee?.id || hasPermission('whatsapp_admin'));
+  const visibleMessages = useMemo(() => {
+    const list = messages || [];
+    const q = messageSearch.trim().toLowerCase();
+    return list.filter((m: any) => {
+      if (directionFilter !== 'all' && m.direction !== directionFilter) return false;
+      if (!q) return true;
+      return (m.content || '').toLowerCase().includes(q) || (m.template_name || '').toLowerCase().includes(q);
+    });
+  }, [messages, messageSearch, directionFilter]);
   const pickup = async (id: string) => {
     try { const claimed = await claim.mutateAsync(id); setView('mine'); setSelectedId(claimed); }
     catch { /* mutation displays the error and refreshes the list */ }
