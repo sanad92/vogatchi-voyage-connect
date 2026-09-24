@@ -244,24 +244,24 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
           <div className="flex gap-1">
             <QuickRepliesPicker variables={variables} onPick={(t) => setMessage(t)} />
             {/* Freeform template pick (window open) */}
-            {isWindowOpen && (
+            {isWindowOpen && canSend && (
               <TemplatesPicker variables={variables} onPick={(t) => setMessage(t)} />
             )}
             <Button
               variant="outline"
               size="sm"
-              title={isWindowOpen ? 'إرفاق صورة' : 'مغلق — استخدم قالباً'}
+              title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق صورة' : 'مغلق — استخدم قالباً'}
               onClick={() => handlePickFile('image/*', imageInputRef)}
-              disabled={isSending}
+              disabled={isSending || !canSend}
             >
               <ImageIcon className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              title={isWindowOpen ? 'إرفاق ملف / صوت / فيديو' : 'مغلق — استخدم قالباً'}
+              title={!canSend ? 'استلم المحادثة أولاً' : isWindowOpen ? 'إرفاق ملف / صوت / فيديو' : 'مغلق — استخدم قالباً'}
               onClick={() => handlePickFile('audio/*,video/*,application/*', fileInputRef)}
-              disabled={isSending}
+              disabled={isSending || !canSend}
             >
               <Paperclip className="w-4 h-4" />
             </Button>
@@ -269,7 +269,8 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
 
           <Button
             onClick={handleSend}
-            disabled={isSending || (isWindowOpen && !message.trim() && !pending)}
+            title={!canSend ? 'استلم المحادثة أولاً' : undefined}
+            disabled={isSending || !canSend || (isWindowOpen && !message.trim() && !pending)}
             className="h-full min-h-[70px]"
             variant={isWindowOpen ? 'default' : 'secondary'}
           >
