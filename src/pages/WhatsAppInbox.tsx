@@ -90,7 +90,7 @@ const WhatsAppInboxContent: React.FC = () => {
             onClick={() => setAvailable(v => !v)}>{available ? 'متاح للتوزيع' : 'غير متاح'}</Button>}
           <FollowupsBell />
           <Badge variant="secondary">
-            {conversations?.length || 0} محادثة
+            {visibleConversations.length} محادثة
           </Badge>
         </div>
       </div>
