@@ -94,8 +94,16 @@ export default {
 				info: {
 					DEFAULT: 'hsl(var(--info))',
 					foreground: 'hsl(var(--info-foreground))'
+				},
+				chat: {
+					canvas: 'hsl(var(--chat-canvas))',
+					out: 'hsl(var(--chat-out))',
+					'out-foreground': 'hsl(var(--chat-out-foreground))',
+					in: 'hsl(var(--chat-in))',
+					'in-foreground': 'hsl(var(--chat-in-foreground))'
 				}
 			},
+
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
