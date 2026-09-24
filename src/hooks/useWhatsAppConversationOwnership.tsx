@@ -36,7 +36,9 @@ export const useWhatsAppConversationOwnership = (conversationId?: string | null)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('whatsapp_conversations')
-        .select('id, organization_id, assigned_to, status, assigned_employee:employees(full_name)')
+        .select(
+          'id, organization_id, assigned_to, status, assigned_employee:employees!fk_wa_conv_assigned(full_name)',
+        )
         .eq('id', conversationId!)
         .maybeSingle();
       if (error) throw error;
