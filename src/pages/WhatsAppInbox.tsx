@@ -221,22 +221,24 @@ const WhatsAppInboxContent: React.FC = () => {
           ) : (
             <>
               {/* Conversation header */}
-              <div className="px-4 py-2.5 border-b bg-card/80 backdrop-blur-md flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Button className="md:hidden" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
-                  <div className="h-10 w-10 rounded-full bg-[image:var(--gradient-brand)] text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+              <div className="px-3 py-2.5 border-b bg-card/80 backdrop-blur-md flex items-center gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Button className="md:hidden shrink-0" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
+                  <div className="h-9 w-9 rounded-full bg-[image:var(--gradient-brand)] text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                     {(selected.customer?.name?.trim()?.split(/\s+/).slice(0, 2).map((p: string) => p[0]).join('')) || selected.phone_number?.slice(-2)}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold truncate">{selected.customer?.name || selected.phone_number}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {selected.customer?.name ? `${selected.phone_number} · ` : ''}
+                    <div className="font-semibold text-sm truncate" dir={selected.customer?.name ? 'rtl' : 'ltr'}>
+                      {selected.customer?.name || selected.phone_number}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">
                       {selected.inbox
                         ? `عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
                         : 'واتساب'}
                     </div>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {isQueuedConversation(selected) && canWork && <Button size="sm" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
