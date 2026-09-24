@@ -33,7 +33,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const { inboxes } = useWhatsAppSettings();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
   // The tools drawer only starts open when the screen is wide enough for it.
-  const [showDetails, setShowDetails] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
+  const [showDetails, setShowDetails] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1536);
 
   const [messageSearch, setMessageSearch] = useState('');
   const [directionFilter, setDirectionFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
@@ -221,8 +221,8 @@ const WhatsAppInboxContent: React.FC = () => {
           ) : (
             <>
               {/* Conversation header */}
-              <div className="px-3 py-2.5 border-b bg-card/80 backdrop-blur-md flex items-center gap-2">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="px-3 py-2.5 border-b bg-card/80 backdrop-blur-md flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1 basis-[180px]">
                   <Button className="md:hidden shrink-0" variant="ghost" size="sm" onClick={() => setSelectedId(null)}>رجوع</Button>
                   <div className="h-9 w-9 rounded-full bg-[image:var(--gradient-brand)] text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                     {(selected.customer?.name?.trim()?.split(/\s+/).slice(0, 2).map((p: string) => p[0]).join('')) || selected.phone_number?.slice(-2)}
@@ -364,7 +364,7 @@ const WhatsAppInboxContent: React.FC = () => {
             </>
           )}
         </section>
-        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background xl:static xl:w-[340px] xl:shrink-0 border-r overflow-y-auto animate-in slide-in-from-left-4 duration-200">
+        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background 2xl:static 2xl:w-[340px] xl:shrink-0 border-r overflow-y-auto animate-in slide-in-from-left-4 duration-200">
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 border-b bg-card/90 backdrop-blur">
             <span className="text-sm font-semibold">أدوات الواتساب</span>
             <Button variant="ghost" size="icon" aria-label="إغلاق الأدوات" onClick={() => setShowDetails(false)}>
