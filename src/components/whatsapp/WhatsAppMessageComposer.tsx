@@ -82,6 +82,7 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
   };
 
   const handlePickFile = (accept: string, ref: React.RefObject<HTMLInputElement>) => {
+    if (blockSend()) return;
     if (!isWindowOpen) {
       toast.error('نافذة 24 ساعة مغلقة — استخدم قالباً معتمداً بدلاً من إرسال ملفات');
       setTemplatePickerOpen(true);
@@ -111,6 +112,8 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
   };
 
   const handleSend = async () => {
+    // Ownership must be satisfied BEFORE any Meta request.
+    if (blockSend()) return;
     // Intercept BEFORE any Meta request when the 24h window is closed.
     if (!isWindowOpen) {
       toast.warning('نافذة 24 ساعة مغلقة — اختر قالباً معتمداً لإكمال الإرسال', {
