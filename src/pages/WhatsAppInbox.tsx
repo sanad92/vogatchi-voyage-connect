@@ -103,7 +103,7 @@ const WhatsAppInboxContent: React.FC = () => {
         <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] md:shrink-0 border-l bg-muted/20 flex-col overflow-hidden`}>
           <div className="p-3 border-b bg-card space-y-3">
             <div className="grid grid-cols-2 gap-1" aria-label="تصنيف المحادثات">
-              {([['queue', 'الطابور'], ['mine', 'محادثاتي'], ['all', 'الكل'], ['closed', 'المغلقة']] as const).map(([key, label]) =>
+              {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
                   onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' ? ` (${queue.length})` : ''}</Button>)}
             </div>
