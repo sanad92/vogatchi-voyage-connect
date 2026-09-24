@@ -133,6 +133,21 @@ Deno.serve(async (req) => {
         results.push({ id: row.id, name: row.name, ok: true, skipped: 'already_on_meta' });
         continue;
       }
+      // Auto-fix Meta text rules (leading/trailing/adjacent variables) before validating.
+      const loc = String(row.locale || row.language || 'ar').toLowerCase().startsWith('en') ? 'en' : 'ar';
+      const fixText = (t: string) => {
+        let s = String(t || '').trim();
+        if (!s) return s;
+        s = s.replace(/\}\}(\s*)\{\{/g, '}} - {{');
+        if (/^\{\{\s*[^}]+\s*\}\}/.test(s)) s = (loc === 'ar' ? 'مرحباً ' : 'Hello ') + s;
+        if (/\{\{\s*[^}]+\s*\}\}$/.test(s)) s = s + '.';
+        return s;
+      };
+      if (row.body_text) row.body_text = fixText(row.body_text);
+      if (row.header_text) row.header_text = fixText(row.header_text);
+      await admin.from('whatsapp_templates').update({
+        body_text: row.body_text, header_text: row.header_text ?? null,
+      }).eq('id', row.id);
       const issues = validateRow(row);
       if (issues.length) {
         failed++;
