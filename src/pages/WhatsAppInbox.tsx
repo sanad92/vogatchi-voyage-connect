@@ -24,6 +24,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CloseConversationDialog } from '@/components/whatsapp/CloseConversationDialog';
 import { ConversationListItem } from '@/components/whatsapp/ConversationListItem';
 import { ChatDateDivider, dayKeyOf, dayLabelOf } from '@/components/whatsapp/ChatDateDivider';
+import { MessageActionsMenu, messageTextOf } from '@/components/whatsapp/MessageActionsMenu';
+import { ForwardMessageDialog } from '@/components/whatsapp/ForwardMessageDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 
 const WhatsAppInboxContent: React.FC = () => {
@@ -45,6 +50,14 @@ const WhatsAppInboxContent: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const [forwardMsg, setForwardMsg] = useState<any>(null);
+  const queryClient = useQueryClient();
+  const setUnreadFor = async (id: string, unread: boolean, silent = false) => {
+    const { error } = await (supabase as any).from('whatsapp_conversations').update({ marked_unread: unread }).eq('id', id);
+    if (error) { if (!silent) toast.error('تعذر تحديث حالة القراءة'); return; }
+    if (!silent) toast.success(unread ? 'تم التحديد كغير مقروءة' : 'تم التحديد كمقروءة');
+    queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+  };
 
 
   // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
@@ -71,6 +84,12 @@ const WhatsAppInboxContent: React.FC = () => {
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
   const selected = visibleConversations.find((c: any) => c.id === selectedId);
+  const setUnread = (unread: boolean) => { if (selected) setUnreadFor(selected.id, unread); };
+  // Opening a conversation clears a manual "unread" mark.
+  React.useEffect(() => {
+    if (selected?.marked_unread) setUnreadFor(selected.id, false, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue(visibleConversations.filter(isQueuedConversation));
   const ownsSelected = !!selected && (selected.assigned_to === employee?.id || isSupervisor);
@@ -304,7 +323,7 @@ const WhatsAppInboxContent: React.FC = () => {
                             {newDay && <ChatDateDivider label={dayLabelOf(m.sent_at)} />}
                             <div className={`flex ${outbound ? 'justify-start' : 'justify-end'} ${grouped ? 'pt-0.5' : 'pt-2'}`}>
                               <div
-                                className={`max-w-[78%] px-3 py-2 shadow-[var(--shadow-sm)] border text-sm leading-relaxed ${
+                                className={`group max-w-[78%] px-3 py-2 shadow-[var(--shadow-sm)] border text-sm leading-relaxed ${
                                   outbound
                                     ? 'bg-chat-out text-chat-out-foreground border-transparent rounded-2xl rounded-bl-md'
                                     : 'bg-chat-in text-chat-in-foreground border-border rounded-2xl rounded-br-md'
@@ -312,6 +331,13 @@ const WhatsAppInboxContent: React.FC = () => {
                               >
                                 <WhatsAppMediaMessage message={m} outbound={outbound} />
                                 <div className={`flex items-center justify-end gap-1.5 text-[10px] mt-1 ${outbound ? 'text-chat-out-foreground/70' : 'text-muted-foreground'}`}>
+                                  <MessageActionsMenu message={m} outbound={outbound} unread={!!selected?.marked_unread}
+                                    onReply={msg => {
+                                      const snippet = messageTextOf(msg).slice(0, 80);
+                                      setPrefillText(snippet ? `↩ «${snippet}»\n` : ''); setPrefillNonce(n => n + 1);
+                                    }}
+                                    onForward={setForwardMsg}
+                                    onToggleRead={setUnread} />
                                   <span>{format(new Date(m.sent_at), 'HH:mm')}</span>
                                   {outbound && (
                                     <span className="inline-flex items-center">
@@ -364,7 +390,8 @@ const WhatsAppInboxContent: React.FC = () => {
             </>
           )}
         </section>
-        {selected && showDetails && <aside className="absolute inset-0 z-20 bg-background 2xl:static 2xl:w-[340px] xl:shrink-0 border-r overflow-y-auto animate-in slide-in-from-left-4 duration-200">
+        {selected && showDetails && <div className="fixed inset-0 z-30 bg-background/40 backdrop-blur-[1px] 2xl:hidden" onClick={() => setShowDetails(false)} aria-hidden />}
+        {selected && showDetails && <aside className="fixed inset-y-0 left-0 z-40 w-[360px] max-w-[90vw] bg-background shadow-[var(--shadow-lg)] 2xl:static 2xl:z-auto 2xl:w-[340px] 2xl:shadow-none shrink-0 border-r overflow-y-auto animate-in slide-in-from-left duration-200">
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 py-2 border-b bg-card/90 backdrop-blur">
             <span className="text-sm font-semibold">أدوات الواتساب</span>
             <Button variant="ghost" size="icon" aria-label="إغلاق الأدوات" onClick={() => setShowDetails(false)}>
@@ -374,6 +401,14 @@ const WhatsAppInboxContent: React.FC = () => {
           <ConversationRightPanel conversationId={selected.id} conversation={selected}
             onInsertText={text => { setPrefillText(text); setPrefillNonce(n => n + 1); }} />
         </aside>}
+        <ForwardMessageDialog open={!!forwardMsg} onOpenChange={o => !o && setForwardMsg(null)}
+          conversations={visibleConversations} excludeId={selected?.id}
+          onPick={id => {
+            const text = messageTextOf(forwardMsg);
+            setForwardMsg(null);
+            setSelectedId(id);
+            setPrefillText(text); setPrefillNonce(n => n + 1);
+          }} />
 
       </div>
     </div>
