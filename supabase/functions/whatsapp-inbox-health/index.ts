@@ -13,6 +13,20 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function appsecretProof(accessToken: string): Promise<string | null> {
+  const secret = Deno.env.get("META_APP_SECRET") ?? Deno.env.get("WHATSAPP_APP_SECRET");
+  if (!secret) return null;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -50,7 +64,8 @@ serve(async (req) => {
     if (!settings.access_token || !settings.waba_id) return json({ error: "بيانات ربط الرقم غير مكتملة" }, 409);
 
     const version = settings.api_version || Deno.env.get("META_GRAPH_API_VERSION") || "v22.0";
-    const endpoint = `https://graph.facebook.com/${version}/${settings.waba_id}/subscribed_apps`;
+    const proof = await appsecretProof(settings.access_token);
+    const endpoint = `https://graph.facebook.com/${version}/${settings.waba_id}/subscribed_apps${proof ? `?appsecret_proof=${proof}` : ""}`;
     const callMeta = async (method: "GET" | "POST") => {
       const response = await fetch(endpoint, { method, headers: { Authorization: `Bearer ${settings.access_token}` } });
       const text = await response.text();
