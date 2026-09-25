@@ -14,7 +14,12 @@ import {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-const STALE_LOCK_MS = 10 * 60 * 1000;
+const STALE_LOCK_MS = 3 * 60 * 1000;
+// Large campaigns are sent in bounded batches: one run never exceeds the edge
+// runtime budget. Remaining recipients stay 'pending' and the scheduler (cron)
+// picks the campaign up again a minute later until the queue is drained.
+const BATCH_LIMIT = 120;
+const RUN_BUDGET_MS = 110 * 1000;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -87,7 +92,9 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('broadcast_id', broadcastId)
       .eq('status', 'pending')
-      .limit(2000);
+      .limit(BATCH_LIMIT);
+
+    const runStartedAt = Date.now();
 
     let sent = 0, failed = 0, skipped = 0;
     const defaults = (broadcast.template_variables || {}) as Record<string, any>;
