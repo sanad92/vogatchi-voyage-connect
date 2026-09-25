@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Megaphone, Plus, Send, Trash2, Ban, Users, Clock, CheckCircle2, XCircle, Loader2,
-  Eye, AlertTriangle, CheckCheck, Check,
+  Eye, AlertTriangle, CheckCheck, Check, PlayCircle,
 } from 'lucide-react';
 import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from '@/hooks/useWhatsAppBroadcasts';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -508,12 +508,16 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <BroadcastDetailsButton broadcast={b} />
-                          {(b.status === 'draft' || b.status === 'scheduled') && (
+                          {(b.status === 'draft' || b.status === 'scheduled' || b.status === 'sending') && (
                             <Button size="sm" variant="ghost"
-                              title={b.template_id ? undefined : 'الحملة بدون قالب معتمد — لا يمكن إرسالها'}
+                              title={!b.template_id
+                                ? 'الحملة بدون قالب معتمد — لا يمكن إرسالها'
+                                : b.status === 'sending' ? 'استئناف إرسال المتبقي' : 'إرسال الحملة'}
                               onClick={() => sendBroadcast(b.id).catch(() => {})}
                               disabled={isSending || !b.template_id}>
-                              <Send className="w-4 h-4" />
+                              {b.status === 'sending'
+                                ? <PlayCircle className="w-4 h-4" />
+                                : <Send className="w-4 h-4" />}
                             </Button>
                           )}
                           {(b.status === 'scheduled' || b.status === 'sending') && (

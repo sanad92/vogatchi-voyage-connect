@@ -30,8 +30,29 @@ Deno.serve(async (req) => {
       .is('locked_at', null)
       .limit(5);
 
-    for (const b of dueBroadcasts ?? []) {
-      await admin.functions.invoke('whatsapp-send-broadcast', { body: { broadcastId: b.id, internal: true } });
+    // ---------- 1b. Campaigns mid-flight whose batch ended: continue them ----------
+    // whatsapp-send-broadcast sends a bounded batch per run and releases its lock,
+    // leaving the campaign as 'sending' with recipients still pending.
+    const { data: stalled } = await admin
+      .from('whatsapp_broadcasts')
+      .select('id')
+      .eq('status', 'sending')
+      .or(`locked_at.is.null,locked_at.lt.${new Date(Date.now() - 3 * 60_000).toISOString()}`)
+      .limit(3);
+
+    for (const b of [...(dueBroadcasts ?? []), ...(stalled ?? [])]) {
+      // Fire-and-forget: the batch run is longer than this worker's own budget.
+      const task = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-send-broadcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({ broadcastId: b.id, internal: true }),
+      }).catch((e) => console.error('[whatsapp-scheduler] broadcast continue failed', b.id, e));
+      // deno-lint-ignore no-explicit-any
+      const runtime = (globalThis as any).EdgeRuntime;
+      if (runtime?.waitUntil) runtime.waitUntil(task);
       report.broadcastsStarted++;
     }
 
