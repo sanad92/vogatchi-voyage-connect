@@ -121,25 +121,25 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
   try {
     if (name === "get_financial_summary") {
       const [bk, pay, sup, exp, inv] = await Promise.all([
-        supabase.from("bookings").select("id, total_amount, cost_amount, status, booking_date")
-          .eq("organization_id", orgId).gte("booking_date", from).lte("booking_date", to),
+        supabase.from("bookings").select("id, selling_price, cost_price, status, created_at")
+          .eq("organization_id", orgId).gte("created_at", from).lte("created_at", to + "T23:59:59"),
         supabase.from("payment_transactions").select("amount, status, created_at")
           .eq("organization_id", orgId).eq("status", "completed").gte("created_at", from).lte("created_at", to + "T23:59:59"),
         supabase.from("supplier_payments").select("amount, status, payment_date")
           .eq("organization_id", orgId).gte("payment_date", from).lte("payment_date", to),
         supabase.from("expense_transactions").select("amount, expense_date")
           .eq("organization_id", orgId).gte("expense_date", from).lte("expense_date", to),
-        supabase.from("invoices").select("total_amount, paid_amount, status")
+        supabase.from("invoices").select("final_amount, total_paid_amount, status")
           .eq("organization_id", orgId),
       ]);
       const sum = (arr: any[], k: string) => (arr || []).reduce((a, b) => a + Number(b[k] || 0), 0);
-      const sales = sum(bk.data || [], "total_amount");
-      const cost = sum(bk.data || [], "cost_amount");
+      const sales = sum(bk.data || [], "selling_price");
+      const cost = sum(bk.data || [], "cost_price");
       const collected = sum(pay.data || [], "amount");
       const paidToSuppliers = sum(sup.data || [], "amount");
       const expenses = sum(exp.data || [], "amount");
       const ar = (inv.data || []).reduce((a: number, b: any) =>
-        a + Math.max(0, Number(b.total_amount || 0) - Number(b.paid_amount || 0)), 0);
+        a + Math.max(0, Number(b.final_amount || 0) - Number(b.total_paid_amount || 0)), 0);
       return {
         period: { from, to },
         sales, supplier_cost: cost, gross_profit: sales - cost,
@@ -154,13 +154,13 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
 
     if (name === "search_bookings") {
       let q = supabase.from("bookings")
-        .select("id, booking_reference, total_amount, cost_amount, status, booking_date, customer_id, customers(name, email)")
+        .select("id, booking_number, selling_price, cost_price, status, created_at, customer_id, customers(name, email)")
         .eq("organization_id", orgId)
-        .order("booking_date", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(Math.min(Number(args?.limit || 20), 50));
       if (args?.status) q = q.eq("status", args.status);
-      if (args?.from_date) q = q.gte("booking_date", args.from_date);
-      if (args?.to_date) q = q.lte("booking_date", args.to_date);
+      if (args?.from_date) q = q.gte("created_at", args.from_date);
+      if (args?.to_date) q = q.lte("created_at", args.to_date + "T23:59:59");
       const { data, error } = await q;
       if (error) return { error: error.message };
       let rows = data || [];
@@ -183,15 +183,15 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
       }
       if (!cust) return { error: "لم يتم العثور على العميل" };
       const [bk, inv] = await Promise.all([
-        supabase.from("bookings").select("total_amount, cost_amount, status")
+        supabase.from("bookings").select("selling_price, cost_price, status")
           .eq("organization_id", orgId).eq("customer_id", cust.id),
-        supabase.from("invoices").select("total_amount, paid_amount, status")
+        supabase.from("invoices").select("final_amount, total_paid_amount, status")
           .eq("organization_id", orgId).eq("customer_id", cust.id),
       ]);
-      const sales = (bk.data || []).reduce((a: number, b: any) => a + Number(b.total_amount || 0), 0);
-      const paid = (inv.data || []).reduce((a: number, b: any) => a + Number(b.paid_amount || 0), 0);
+      const sales = (bk.data || []).reduce((a: number, b: any) => a + Number(b.selling_price || 0), 0);
+      const paid = (inv.data || []).reduce((a: number, b: any) => a + Number(b.total_paid_amount || 0), 0);
       const outstanding = (inv.data || []).reduce((a: number, b: any) =>
-        a + Math.max(0, Number(b.total_amount || 0) - Number(b.paid_amount || 0)), 0);
+        a + Math.max(0, Number(b.final_amount || 0) - Number(b.total_paid_amount || 0)), 0);
       return {
         customer: { id: cust.id, name: cust.name, email: cust.email, phone: cust.phone },
         bookings_count: (bk.data || []).length,
@@ -201,7 +201,7 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
 
     if (name === "get_overdue_invoices") {
       const { data, error } = await supabase.from("invoices")
-        .select("id, invoice_number, total_amount, paid_amount, due_date, status, customer_id, customers(name)")
+        .select("id, invoice_number, final_amount, total_paid_amount, due_date, status, customer_id, customers(name)")
         .eq("organization_id", orgId).neq("status", "paid")
         .order("due_date", { ascending: true }).limit(Math.min(Number(args?.limit || 20), 50));
       if (error) return { error: error.message };
@@ -213,7 +213,7 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
         return (now - d) / 86400000 >= minDays;
       }).map((r: any) => ({
         ...r,
-        outstanding: Math.max(0, Number(r.total_amount || 0) - Number(r.paid_amount || 0)),
+        outstanding: Math.max(0, Number(r.final_amount || 0) - Number(r.total_paid_amount || 0)),
         days_overdue: Math.floor((now - new Date(r.due_date).getTime()) / 86400000),
       }));
       return { count: rows.length, invoices: rows };
@@ -238,15 +238,15 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
 
     if (name === "get_top_customers") {
       const { data, error } = await supabase.from("bookings")
-        .select("total_amount, customer_id, customers(name, email)")
-        .eq("organization_id", orgId).gte("booking_date", from).lte("booking_date", to);
+        .select("selling_price, customer_id, customers(name, email)")
+        .eq("organization_id", orgId).gte("created_at", from).lte("created_at", to + "T23:59:59");
       if (error) return { error: error.message };
       const map = new Map<string, { name: string; email: string; sales: number; count: number }>();
       for (const r of data || []) {
         const id = r.customer_id;
         if (!id) continue;
         const prev = map.get(id) || { name: r.customers?.name || "?", email: r.customers?.email || "", sales: 0, count: 0 };
-        prev.sales += Number(r.total_amount || 0); prev.count += 1;
+        prev.sales += Number(r.selling_price || 0); prev.count += 1;
         map.set(id, prev);
       }
       const rows = Array.from(map.entries())
