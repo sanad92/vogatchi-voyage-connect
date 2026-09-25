@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Megaphone, Plus, Send, Trash2, Ban, Users, Clock, CheckCircle2, XCircle, Loader2,
-  Eye, AlertTriangle, CheckCheck, Check,
+  Eye, AlertTriangle, CheckCheck, Check, PlayCircle,
 } from 'lucide-react';
 import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from '@/hooks/useWhatsAppBroadcasts';
 import { useCustomers } from '@/hooks/useCustomers';
