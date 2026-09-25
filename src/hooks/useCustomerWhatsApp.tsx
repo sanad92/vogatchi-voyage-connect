@@ -107,10 +107,19 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
   // 4. Create a fresh conversation if customer has phone but no conversation yet
   const createConversation = async () => {
     if (!phone) throw new Error('لا يوجد رقم هاتف صالح للعميل');
+    const { data: inbox } = await (supabase as any)
+      .from('whatsapp_settings')
+      .select('id')
+      .eq('organization_id', orgId)
+      .eq('is_active', true)
+      .order('is_default', { ascending: false })
+      .limit(1)
+      .maybeSingle();
     const { data, error } = await supabase
       .from('whatsapp_conversations')
       .insert({
         phone_number: phone,
+        whatsapp_settings_id: inbox?.id ?? null,
         customer_id: customerId,
         organization_id: orgId,
         status: 'active',
