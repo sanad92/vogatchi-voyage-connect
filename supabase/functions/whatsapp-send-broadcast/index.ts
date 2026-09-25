@@ -238,7 +238,10 @@ async function mirrorToConversation(
         whatsapp_settings_id: settings.id,
         phone_number: to,
         customer_id: recipient.customer_id ?? null,
-        status: 'active',
+        // Campaign-only thread: kept out of the queue until the customer replies
+        // (the webhook reopens closed threads into the human queue on inbound).
+        status: 'closed',
+        assignment_reason: 'campaign_outbound',
         priority: 'normal',
         last_message_at: new Date().toISOString(),
       }).select('id').maybeSingle();
