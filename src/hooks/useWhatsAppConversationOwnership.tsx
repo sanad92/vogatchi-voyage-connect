@@ -265,11 +265,20 @@ export const useEnsureWhatsAppOwnership = () => {
 
     // Unassigned (or brand new contact): create when needed, then claim atomically.
     if (!conversationId) {
+      const { data: inbox } = await (supabase as any)
+        .from('whatsapp_settings')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .order('is_default', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       const { data: created, error: createError } = await supabase
         .from('whatsapp_conversations')
         .insert({
           organization_id: organizationId,
           phone_number: phone!,
+          whatsapp_settings_id: inbox?.id ?? null,
           customer_id: customerId ?? null,
           status: 'active',
           priority: 'normal',

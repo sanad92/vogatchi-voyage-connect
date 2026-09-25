@@ -69,32 +69,30 @@ const TravelCalendar = () => {
       const from = toISO(range.start); const to = toISO(range.end);
 
       const [bookings, invoices, payments, poRes, tasks] = await Promise.all([
-        (supabase as any).from('bookings').select('id, booking_reference, customer_name, check_in_date, check_out_date, travel_date, return_date, booking_type').eq('organization_id', orgId).or(`check_in_date.gte.${from},travel_date.gte.${from}`).limit(500),
-        (supabase as any).from('invoices').select('id, invoice_number, customer_name, due_date, total_amount, currency, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
+        (supabase as any).from('bookings').select('id, booking_number, customer_name, start_date, end_date, booking_type').eq('organization_id', orgId).lte('start_date', to).or(`start_date.gte.${from},end_date.gte.${from}`).limit(500),
+        (supabase as any).from('invoices').select('id, invoice_number, customer_name, due_date, final_amount, currency, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
         (supabase as any).from('customer_payments').select('id, amount, currency, payment_date, booking_id, customer_id').eq('organization_id', orgId).gte('payment_date', from).lte('payment_date', to).limit(500),
         (supabase as any).from('supplier_payment_orders').select('id, amount, currency, due_date, supplier_id, booking_id, status').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
         (supabase as any).from('booking_tasks').select('id, title, due_date, booking_id, status').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
       ]);
 
       (bookings.data ?? []).forEach((b: any) => {
-        const ref = b.booking_reference || b.id.slice(0,8);
+        const ref = b.booking_number || b.id.slice(0,8);
         const name = b.customer_name || 'عميل';
         const href = `/bookings/${b.id}/workspace`;
-        if (b.check_in_date && b.check_in_date >= from && b.check_in_date <= to)
-          out.push({ id: `ci-${b.id}`, kind: 'checkin', date: b.check_in_date, title: `${name} — ${ref}`, href });
-        if (b.check_out_date && b.check_out_date >= from && b.check_out_date <= to)
-          out.push({ id: `co-${b.id}`, kind: 'checkout', date: b.check_out_date, title: `${name} — ${ref}`, href });
-        if (b.travel_date && b.travel_date >= from && b.travel_date <= to)
-          out.push({ id: `tr-${b.id}`, kind: b.booking_type === 'flight' ? 'flight' : 'departure', date: b.travel_date, title: `${name} — ${ref}`, href });
-        if (b.return_date && b.return_date >= from && b.return_date <= to)
-          out.push({ id: `rt-${b.id}`, kind: 'arrival', date: b.return_date, title: `${name} — ${ref}`, href });
+        const dep = b.booking_type === 'flight' ? 'flight' : b.booking_type === 'hotel' ? 'checkin' : 'departure';
+        const ret = b.booking_type === 'hotel' ? 'checkout' : 'arrival';
+        if (b.start_date && b.start_date >= from && b.start_date <= to)
+          out.push({ id: `st-${b.id}`, kind: dep, date: b.start_date, title: `${name} — ${ref}`, href });
+        if (b.end_date && b.end_date >= from && b.end_date <= to)
+          out.push({ id: `en-${b.id}`, kind: ret, date: b.end_date, title: `${name} — ${ref}`, href });
       });
 
       (invoices.data ?? []).forEach((i: any) => {
         out.push({
           id: `inv-${i.id}`, kind: 'reminder', date: i.due_date,
           title: `فاتورة ${i.invoice_number} — ${i.customer_name || ''}`,
-          amount: Number(i.total_amount || 0), currency: i.currency,
+          amount: Number(i.final_amount || 0), currency: i.currency,
           href: i.booking_id ? `/bookings/${i.booking_id}/workspace` : `/invoices`,
         });
       });

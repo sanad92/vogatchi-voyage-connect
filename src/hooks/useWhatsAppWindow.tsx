@@ -85,28 +85,28 @@ export const useWhatsAppWindow = (conversationId?: string | null): WhatsAppWindo
 
         const { data: booking } = await (supabase as any)
           .from('bookings')
-          .select('booking_reference, destination, check_in_date, check_out_date, travel_date')
+          .select('booking_number, start_date, end_date')
           .eq('customer_id', conv.customer_id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         if (booking) {
-          ctx.booking_reference = booking.booking_reference;
-          ctx.booking_destination = booking.destination;
-          ctx.booking_check_in = booking.check_in_date || booking.travel_date;
-          ctx.booking_check_out = booking.check_out_date;
+          ctx.booking_reference = booking.booking_number;
+          ctx.booking_destination = null;
+          ctx.booking_check_in = booking.start_date;
+          ctx.booking_check_out = booking.end_date;
         }
 
         const { data: invoice } = await (supabase as any)
           .from('invoices')
-          .select('invoice_number, total_amount, currency')
+          .select('invoice_number, final_amount, currency')
           .eq('customer_id', conv.customer_id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         if (invoice) {
           ctx.invoice_number = invoice.invoice_number;
-          ctx.invoice_total = invoice.total_amount != null ? String(invoice.total_amount) : null;
+          ctx.invoice_total = invoice.final_amount != null ? String(invoice.final_amount) : null;
           ctx.invoice_currency = invoice.currency;
         }
       }
