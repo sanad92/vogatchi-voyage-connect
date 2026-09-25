@@ -106,6 +106,8 @@ Deno.serve(async (req) => {
     const senderPhone = String((settings as any)?.display_phone_number || '').trim();
 
     for (const r of recipients ?? []) {
+      // Stop cleanly before the runtime budget ends; the rest stays pending.
+      if (Date.now() - runStartedAt > RUN_BUDGET_MS) break;
       const to = normalizePhone(r.phone_number);
       if (!to) {
         await markRecipient(admin, r.id, 'skipped', { error_code: 'INVALID_PHONE', error_message: 'رقم غير صالح | Invalid phone number' });
