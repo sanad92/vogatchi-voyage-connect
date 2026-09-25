@@ -3,6 +3,7 @@ import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import {
   WA_CORS as corsHeaders,
   WaError,
+  appSecretProof,
   buildTemplateComponents,
   graphSend,
   isWindowOpen,
@@ -472,7 +473,8 @@ async function uploadMediaToMeta(
   form.append('type', contentType);
   form.append('file', new File([await file.arrayBuffer()], name, { type: contentType }));
 
-  const res = await fetch(`https://graph.facebook.com/${gv}/${settings.phone_number_id}/media`, {
+  const proof = await appSecretProof(settings.access_token);
+  const res = await fetch(`https://graph.facebook.com/${gv}/${settings.phone_number_id}/media${proof ? `?appsecret_proof=${proof}` : ''}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${settings.access_token}` },
     body: form,
