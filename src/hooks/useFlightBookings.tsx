@@ -1,3 +1,4 @@
+import { pickWriteColumns, flightBookingColumns } from '@/lib/writeColumns';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +44,7 @@ export const useFlightBookings = () => {
         name ? classesList.find(c => c.name === name || c.name_ar === name) : null;
 
       const bookings = (data || []).map((booking: any) => ({
-        ...booking,
+        ...pickWriteColumns(booking, flightBookingColumns),
         departure_airport: findAirport(booking.departure_airport_code),
         arrival_airport: findAirport(booking.arrival_airport_code),
         airline: findAirline(booking.airline_name),
@@ -93,11 +94,12 @@ export const useFlightBookings = () => {
 
   const { mutateAsync: addFlightBooking, isPending: isAddingBooking } = useMutation({
     mutationFn: async (booking: NewFlightBooking) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const dbBooking = {
-        ...booking,
+        ...pickWriteColumns(booking, flightBookingColumns),
         organization_id: orgId,
-        passenger_details: booking.passenger_details ? JSON.stringify(booking.passenger_details) : null,
-        baggage_info: booking.baggage_info ? JSON.stringify(booking.baggage_info) : null,
+        passenger_details: booking.passenger_details?.map(passenger => ({ ...passenger })) ?? null,
+        baggage_info: booking.baggage_info ? { ...booking.baggage_info } : null,
         ticket_numbers: booking.ticket_numbers || []
       };
       const { data, error } = await supabase.from('flight_bookings').insert([withParentBooking(dbBooking)]).select().single();
@@ -110,9 +112,13 @@ export const useFlightBookings = () => {
   });
 
   const { mutateAsync: updateFlightBooking, isPending: isUpdatingBooking } = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<FlightBooking> & { id: string }) => {
-      const dbUpdates = { ...updates, passenger_details: updates.passenger_details ? JSON.stringify(updates.passenger_details) : undefined, baggage_info: updates.baggage_info ? JSON.stringify(updates.baggage_info) : undefined };
-      delete (dbUpdates as any).departure_airport; delete (dbUpdates as any).arrival_airport; delete (dbUpdates as any).airline; delete (dbUpdates as any).flight_class; delete (dbUpdates as any).booking_status;
+    mutationFn: async ({ id, departure_airport: _departure, arrival_airport: _arrival, airline: _airline, flight_class: _class, booking_status: _status, ...updates }: Partial<FlightBooking> & { id: string }) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const dbUpdates = {
+        ...pickWriteColumns(updates, flightBookingColumns),
+        passenger_details: updates.passenger_details === null ? null : updates.passenger_details?.map(passenger => ({ ...passenger })),
+        baggage_info: updates.baggage_info === undefined ? undefined : updates.baggage_info === null ? null : { ...updates.baggage_info },
+      };
       const { data, error } = await supabase.from('flight_bookings').update(dbUpdates).eq('id', id).eq('organization_id', orgId).select().single();
       if (error) throw error;
       return data;

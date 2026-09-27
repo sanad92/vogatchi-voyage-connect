@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { BlockType } from "@/types/blocks";
+import { useOrgId } from '@/hooks/useOrgId';
 
 interface PageRow {
   id: string;
-  name: string;
+  title: string;
   slug: string;
 }
 
@@ -37,6 +38,13 @@ const BLOCK_TYPES: BlockType[] = [
 ];
 
 const PageBlocks: React.FC = () => {
+  const orgId = useOrgId();
+  const { id } = useParams<{ id: string }>();
+  return <CompanyPageBlocks key={`${orgId}:${id}`} />;
+};
+
+const CompanyPageBlocks: React.FC = () => {
+  const orgId = useOrgId();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [page, setPage] = useState<PageRow | null>(null);
@@ -60,15 +68,16 @@ const PageBlocks: React.FC = () => {
   });
 
   const loadData = async () => {
-    if (!id) return;
+    if (!id || !orgId) return;
     setLoading(true);
 
     const [{ data: pageData, error: pageErr }, { data: blocksData, error: blocksErr }] = await Promise.all([
-      supabase.from("pages").select("id,name,slug").eq("id", id).maybeSingle<PageRow>(),
+      supabase.from("pages").select("id,title,slug").eq("id", id).eq('organization_id', orgId).maybeSingle<PageRow>(),
       supabase
         .from("blocks")
         .select("*")
         .eq("page_id", id)
+        .eq('organization_id', orgId)
         .order("order_index", { ascending: true })
         .returns<BlockRow[]>(),
     ]);
@@ -84,11 +93,11 @@ const PageBlocks: React.FC = () => {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, orgId]);
 
   const addBlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!id || !orgId || !page) return;
 
     let parsed: any;
     try {
@@ -101,6 +110,7 @@ const PageBlocks: React.FC = () => {
     setSaving(true);
     const { error } = await supabase.from("blocks").insert({
       page_id: id,
+      organization_id: orgId,
       type: form.type,
       title: form.title || null,
       content: parsed,
@@ -119,22 +129,25 @@ const PageBlocks: React.FC = () => {
   };
 
   const toggleActive = async (block: BlockRow) => {
+    if (!orgId || !id) return;
     const { error } = await supabase
       .from("blocks")
       .update({ is_active: !block.is_active })
-      .eq("id", block.id);
+      .eq("id", block.id).eq('organization_id', orgId).eq('page_id', id).select('id').single();
     if (error) return toast.error("فشل تحديث الحالة");
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, is_active: !b.is_active } : b)));
   };
 
   const removeBlock = async (blockId: string) => {
-    const { error } = await supabase.from("blocks").delete().eq("id", blockId);
+    if (!orgId || !id) return;
+    const { error } = await supabase.from("blocks").delete().eq("id", blockId).eq('organization_id', orgId).eq('page_id', id).select('id').single();
     if (error) return toast.error("تعذر حذف القسم");
     toast.success("تم حذف القسم");
     setBlocks((prev) => prev.filter((b) => b.id !== blockId));
   };
 
   const moveBlock = async (block: BlockRow, direction: "up" | "down") => {
+    if (!orgId || !id) return;
     const index = blocks.findIndex((b) => b.id === block.id);
     const swapWith = direction === "up" ? index - 1 : index + 1;
     if (swapWith < 0 || swapWith >= blocks.length) return;
@@ -142,8 +155,8 @@ const PageBlocks: React.FC = () => {
     const other = blocks[swapWith];
 
     const [res1, res2] = await Promise.all([
-      supabase.from("blocks").update({ order_index: other.order_index }).eq("id", block.id),
-      supabase.from("blocks").update({ order_index: block.order_index }).eq("id", other.id),
+      supabase.from("blocks").update({ order_index: other.order_index }).eq("id", block.id).eq('organization_id', orgId).eq('page_id', id).select('id').single(),
+      supabase.from("blocks").update({ order_index: block.order_index }).eq("id", other.id).eq('organization_id', orgId).eq('page_id', id).select('id').single(),
     ]);
 
     if (res1.error || res2.error) {
@@ -159,7 +172,7 @@ const PageBlocks: React.FC = () => {
         <h1 className="text-2xl font-bold">أقسام الصفحة</h1>
         {page && (
           <p className="text-muted-foreground mt-1">
-            الصفحة: {page.name} <span className="text-xs">/{page.slug}</span>
+            الصفحة: {page.title} <span className="text-xs">/{page.slug}</span>
           </p>
         )}
       </header>

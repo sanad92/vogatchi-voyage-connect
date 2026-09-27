@@ -32,8 +32,9 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
 
   const createUserRequestMutation = useMutation({
     mutationFn: async (userData: NewUser) => {
-      // Only allow valid database roles
-      // All roles in UserRole are valid now
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!auth.user) throw new Error('سجّل الدخول أولاً');
 
       const { error } = await supabase
         .from('user_creation_requests')
@@ -42,8 +43,8 @@ const CreateUserDialog = ({ isOpen, onOpenChange, onSuccess }: CreateUserDialogP
           full_name: userData.full_name,
           phone: userData.phone,
           department: userData.department,
-          requested_role: userData.role as DatabaseUserRole,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          role: userData.role as DatabaseUserRole,
+          requested_by: auth.user.id
         });
       
       if (error) throw error;

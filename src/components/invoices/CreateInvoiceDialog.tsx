@@ -145,7 +145,6 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
         vat_rate: financialBreakdown.vatRate,
         vat_amount: financialBreakdown.vatAmount,
         discount_amount: financialBreakdown.discountAmount,
-        total_amount: financialBreakdown.totalAmount,
         final_amount: financialBreakdown.totalAmount,
         payment_terms: formData.payment_terms,
         notes: formData.notes,

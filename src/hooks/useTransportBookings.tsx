@@ -1,3 +1,4 @@
+import { pickWriteColumns, transportBookingColumns } from '@/lib/writeColumns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -67,8 +68,10 @@ export const useTransportBookings = () => {
 
   const addTransportBookingMutation = useMutation({
     mutationFn: async (booking: Omit<TransportBooking, 'id' | 'created_at' | 'updated_at' | 'booking_reference'>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const { status: _status, ...row } = booking;
       const { data, error } = await supabase.from('transport_bookings')
-        .insert(withParentBooking({ ...booking, currency: booking.currency || 'EGP', organization_id: orgId }))
+        .insert(withParentBooking({ ...pickWriteColumns(row, transportBookingColumns), currency: booking.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
       await syncParent();
@@ -95,9 +98,10 @@ export const useTransportBookings = () => {
   });
 
   const updateTransportBookingMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TransportBooking>) => {
+    mutationFn: async ({ id, status: _status, ...updates }: { id: string } & Partial<TransportBooking>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const { data, error } = await supabase.from('transport_bookings')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...pickWriteColumns(updates, transportBookingColumns), updated_at: new Date().toISOString() })
         .eq('id', id)
         .eq('organization_id', orgId)
         .select().single();

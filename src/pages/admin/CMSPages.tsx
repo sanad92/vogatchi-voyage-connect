@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Zap, Plus } from 'lucide-react';
 import CMSGuide from '@/components/cms/CMSGuide';
+import { useOrgId } from '@/hooks/useOrgId';
 import { getExamplePage } from '@/utils/cmsExamples';
 
 interface PageRow {
@@ -20,6 +21,12 @@ interface PageRow {
 }
 
 const CMSPages: React.FC = () => {
+  const orgId = useOrgId();
+  return <CompanyCMSPages key={orgId} />;
+};
+
+const CompanyCMSPages: React.FC = () => {
+  const orgId = useOrgId();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -27,6 +34,7 @@ const CMSPages: React.FC = () => {
   const navigate = useNavigate();
 
   const addExamplePage = async (slug: string, pageName: string) => {
+    if (!orgId) return toast.error('لا توجد مؤسسة نشطة');
     const exampleBlocks = getExamplePage(slug);
     if (exampleBlocks.length === 0) {
       toast.error("لا توجد أمثلة متاحة لهذه الصفحة");
@@ -34,25 +42,27 @@ const CMSPages: React.FC = () => {
     }
 
     try {
-      const { data: pageData, error: pageError } = await (supabase
+      const { data: pageData, error: pageError } = await supabase
         .from("pages")
         .insert([{
+          organization_id: orgId,
           title: pageName,
           slug: slug,
           description: `صفحة ${pageName} في موقع Vogantra`
         }])
         .select()
-        .single() as any);
+        .single();
 
       if (pageError) throw pageError;
 
       const blocksToInsert = exampleBlocks.map(block => ({
         page_id: pageData.id,
+        organization_id: orgId,
         type: block.type,
         title: block.title,
-        content: JSON.stringify(block.content),
-        layout_settings: JSON.stringify(block.layout_settings),
-        style_settings: JSON.stringify(block.style_settings),
+        content: block.content,
+        layout_settings: { ...block.layout_settings },
+        style_settings: { ...block.style_settings },
         is_active: block.is_active,
         order_index: block.order_index,
         section: block.section
@@ -73,29 +83,35 @@ const CMSPages: React.FC = () => {
   };
 
   const loadPages = async () => {
+    if (!orgId) { setPages([]); return; }
     setLoading(true);
-    const { data, error } = await supabase.from("pages").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("pages").select("*").eq("organization_id", orgId).order("created_at", { ascending: false });
     if (error) {
       toast.error("فشل في جلب الصفحات");
     } else {
-      setPages((data || []) as unknown as PageRow[]);
+      setPages((data || []).map(row => ({ ...row, name: row.title, is_active: row.is_published })));
     }
     setLoading(false);
   };
 
   useEffect(() => {
     loadPages();
-  }, []);
+  }, [orgId]);
 
   const createPage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!orgId) return toast.error('لا توجد مؤسسة نشطة');
     if (!form.name || !form.slug) return toast.error("الاسم والـ slug مطلوبان");
     setCreating(true);
-    const { error } = await (supabase.from("pages").insert([{
+    const { error } = await supabase.from("pages").insert([{
+      organization_id: orgId,
+      is_published: form.is_active,
+      seo_title: form.seo_title || null,
+      seo_description: form.seo_description || null,
       title: form.name,
       slug: form.slug,
       description: form.seo_description || null,
-    }]) as any);
+    }]);
     setCreating(false);
     if (error) return toast.error("تعذر إنشاء الصفحة");
     toast.success("تم إنشاء الصفحة");
@@ -104,7 +120,8 @@ const CMSPages: React.FC = () => {
   };
 
   const toggleActive = async (id: string, next: boolean) => {
-    const { error } = await (supabase.from("pages").update({ is_published: next } as any).eq("id", id) as any);
+    if (!orgId) return toast.error('لا توجد مؤسسة نشطة');
+    const { error } = await supabase.from("pages").update({ is_published: next }).eq("id", id).eq("organization_id", orgId).select("id").single();
     if (error) return toast.error("تعذر التحديث");
     setPages(prev => prev.map(p => (p.id === id ? { ...p, is_active: next } : p)));
     toast.success("تم تحديث الحالة");

@@ -2,6 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { BlockData } from "@/types/blocks";
+import { useOrgId } from '@/hooks/useOrgId';
+import { normalizePage, normalizePageBlock } from '@/lib/cmsRecords';
 
 interface PageRecord {
   id: string;
@@ -18,15 +20,19 @@ interface PageRecord {
 }
 
 export const usePageBlocks = (slug: string) => {
-  const query = useQuery({
-    queryKey: ["page-blocks", slug],
+  const orgId = useOrgId();
+  const query = useQuery<{ page: PageRecord | null; blocks: BlockData[] }>({
+    queryKey: ["page-blocks", orgId, slug],
+    enabled: Boolean(orgId),
     queryFn: async () => {
+      if (!orgId) return { page: null, blocks: [] };
       console.log("[usePageBlocks] fetching page by slug:", slug);
       const { data: page, error: pageError } = await supabase
         .from("pages")
         .select("*")
         .eq("slug", slug)
-        .maybeSingle<PageRecord>();
+        .eq('organization_id', orgId)
+        .maybeSingle();
 
       if (pageError) {
         console.error("[usePageBlocks] page error:", pageError);
@@ -42,6 +48,7 @@ export const usePageBlocks = (slug: string) => {
         .from("blocks")
         .select("*")
         .eq("page_id", page.id)
+        .eq('organization_id', orgId)
         .eq("is_active", true)
         .order("order_index", { ascending: true });
 
@@ -52,8 +59,8 @@ export const usePageBlocks = (slug: string) => {
 
       console.log("[usePageBlocks] blocks loaded:", blocks?.length || 0);
       return {
-        page,
-        blocks: (blocks as unknown as BlockData[]) || [],
+        page: normalizePage(page),
+        blocks: (blocks ?? []).map(normalizePageBlock),
       };
     },
   });
@@ -65,4 +72,3 @@ export const usePageBlocks = (slug: string) => {
     error: query.error,
   };
 };
-

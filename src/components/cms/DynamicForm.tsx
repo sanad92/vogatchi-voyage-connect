@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useOrgId } from '@/hooks/useOrgId';
 
 interface DynamicFormProps {
   formKey: string;
@@ -15,13 +16,18 @@ interface DynamicFormProps {
 }
 
 const DynamicForm: React.FC<DynamicFormProps> = ({ formKey, onSuccess }) => {
+  const orgId = useOrgId();
   const { data: form } = useQuery({
-    queryKey: ["dynamic-form", formKey],
+    queryKey: ["dynamic-form", orgId, formKey],
+    enabled: Boolean(orgId),
     queryFn: async () => {
+      if (!orgId) return null;
       const { data: f, error: formErr } = await supabase
         .from("forms")
         .select("*")
         .eq("name", formKey)
+        .eq('organization_id', orgId)
+        .eq('is_active', true)
         .maybeSingle();
       if (formErr) throw formErr;
       if (!f) return null;
@@ -43,8 +49,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formKey, onSuccess }) => {
   const submitMutation = useMutation({
     mutationFn: async (values: any) => {
       if (!form?.form) throw new Error("Form not loaded");
+      if (!orgId || form.form.organization_id !== orgId) throw new Error('لا توجد مؤسسة مطابقة للنموذج');
       const payload = {
         form_id: form.form.id,
+        organization_id: orgId,
         data: values,
         user_agent: typeof window !== "undefined" ? navigator.userAgent : undefined,
         ip_address: null, // backend will set if needed
@@ -103,4 +111,3 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formKey, onSuccess }) => {
 };
 
 export default DynamicForm;
-

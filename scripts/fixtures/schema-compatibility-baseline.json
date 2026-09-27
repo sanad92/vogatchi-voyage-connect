@@ -1,0 +1,469 @@
+{
+  "captured_at": "2026-09-16",
+  "tables": [
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "name",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "name_ar",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "country",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "description",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "image_url",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": "true",
+          "generated": "NEVER",
+          "name": "is_active",
+          "nullable": "YES",
+          "type": "bool"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "updated_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "organization_id",
+          "nullable": "YES",
+          "type": "uuid"
+        }
+      ],
+      "table_name": "destinations"
+    },
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "form_id",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": "'{}'::jsonb",
+          "generated": "NEVER",
+          "name": "data",
+          "nullable": "NO",
+          "type": "jsonb"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "submitted_by",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "organization_id",
+          "nullable": "YES",
+          "type": "uuid"
+        }
+      ],
+      "table_name": "form_submissions"
+    },
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "name",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "destination_id",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": "3",
+          "generated": "NEVER",
+          "name": "star_rating",
+          "nullable": "YES",
+          "type": "int4"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "address",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "phone",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "email",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "description",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": "'[]'::jsonb",
+          "generated": "NEVER",
+          "name": "amenities",
+          "nullable": "YES",
+          "type": "jsonb"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "image_url",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": "true",
+          "generated": "NEVER",
+          "name": "is_active",
+          "nullable": "YES",
+          "type": "bool"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "updated_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "organization_id",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": "false",
+          "generated": "NEVER",
+          "name": "is_global",
+          "nullable": "NO",
+          "type": "bool"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "city",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "country",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "country_code",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "latitude",
+          "nullable": "YES",
+          "type": "numeric"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "longitude",
+          "nullable": "YES",
+          "type": "numeric"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "tbo_hotel_code",
+          "nullable": "YES",
+          "type": "text"
+        }
+      ],
+      "table_name": "hotels"
+    },
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "title",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "slug",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "description",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": "false",
+          "generated": "NEVER",
+          "name": "is_published",
+          "nullable": "YES",
+          "type": "bool"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "updated_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "organization_id",
+          "nullable": "YES",
+          "type": "uuid"
+        }
+      ],
+      "table_name": "pages"
+    },
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "supplier_id",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": "'EGP'::text",
+          "generated": "NEVER",
+          "name": "currency",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": "1",
+          "generated": "NEVER",
+          "name": "exchange_rate",
+          "nullable": "YES",
+          "type": "numeric"
+        },
+        {
+          "default": "false",
+          "generated": "NEVER",
+          "name": "is_primary",
+          "nullable": "YES",
+          "type": "bool"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "updated_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        }
+      ],
+      "table_name": "supplier_currencies"
+    },
+    {
+      "columns": [
+        {
+          "default": "gen_random_uuid()",
+          "generated": "NEVER",
+          "name": "id",
+          "nullable": "NO",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "page_id",
+          "nullable": "YES",
+          "type": "uuid"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "type",
+          "nullable": "NO",
+          "type": "text"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "title",
+          "nullable": "YES",
+          "type": "text"
+        },
+        {
+          "default": "'{}'::jsonb",
+          "generated": "NEVER",
+          "name": "content",
+          "nullable": "YES",
+          "type": "jsonb"
+        },
+        {
+          "default": "0",
+          "generated": "NEVER",
+          "name": "order_index",
+          "nullable": "YES",
+          "type": "int4"
+        },
+        {
+          "default": "true",
+          "generated": "NEVER",
+          "name": "is_active",
+          "nullable": "YES",
+          "type": "bool"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "created_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": "now()",
+          "generated": "NEVER",
+          "name": "updated_at",
+          "nullable": "YES",
+          "type": "timestamptz"
+        },
+        {
+          "default": null,
+          "generated": "NEVER",
+          "name": "organization_id",
+          "nullable": "YES",
+          "type": "uuid"
+        }
+      ],
+      "table_name": "blocks"
+    }
+  ]
+}

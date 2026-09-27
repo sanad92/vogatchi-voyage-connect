@@ -1,3 +1,4 @@
+import { pickWriteColumns, expenseColumns } from '@/lib/writeColumns';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,13 +56,17 @@ export const useExpenseTransactionsOptimized = (
   const addTransactionMutation = useMutation({
     mutationFn: async (transactionData: Partial<ExpenseTransaction>) => {
       if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const { expense_categories: _category, id: _id, created_at: _createdAt, updated_at: _updatedAt, created_by: _creator, ...fields } = transactionData;
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!auth.user) throw new Error('سجّل الدخول أولاً');
       const requiredData = {
+        ...pickWriteColumns(fields, expenseColumns),
         category_id: transactionData.category_id!,
         description: transactionData.description!,
         amount: transactionData.amount!,
-        created_by: (await supabase.auth.getUser()).data.user?.id!,
+        created_by: auth.user.id,
         organization_id: orgId,
-        ...transactionData
       };
       const { data, error } = await supabase.from('expense_transactions').insert([requiredData]).select(`*, expense_categories!inner(id, name, name_ar, color)`).single();
       if (error) throw error;
@@ -74,8 +79,8 @@ export const useExpenseTransactionsOptimized = (
   const updateTransactionMutation = useMutation({
     mutationFn: async (updateData: Partial<ExpenseTransaction> & { id: string }) => {
       if (!orgId) throw new Error('لا توجد منظمة نشطة');
-      const { id, ...dataToUpdate } = updateData;
-      const { data, error } = await supabase.from('expense_transactions').update({ ...dataToUpdate, updated_at: new Date().toISOString() }).eq('id', id).eq('organization_id', orgId).select(`*, expense_categories!inner(id, name, name_ar, color)`).single();
+      const { id, expense_categories: _category, created_at: _createdAt, created_by: _creator, ...dataToUpdate } = updateData;
+      const { data, error } = await supabase.from('expense_transactions').update({ ...pickWriteColumns(dataToUpdate, expenseColumns), updated_at: new Date().toISOString() }).eq('id', id).eq('organization_id', orgId).select(`*, expense_categories!inner(id, name, name_ar, color)`).single();
       if (error) throw error;
       return data;
     },

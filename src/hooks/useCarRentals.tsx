@@ -1,3 +1,4 @@
+import { pickWriteColumns, carRentalColumns } from '@/lib/writeColumns';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,9 +47,11 @@ export const useCarRentals = () => {
 
   const addCarRentalMutation = useMutation({
     mutationFn: async (rental: Omit<CarRental, 'id' | 'created_at' | 'updated_at' | 'rental_reference'>) => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const { status: _status, ...row } = rental;
       const { data, error } = await supabase
         .from('car_rentals')
-        .insert(withParentBooking({ ...rental, currency: rental.currency || 'EGP', organization_id: orgId }))
+        .insert(withParentBooking({ ...pickWriteColumns(row, carRentalColumns), currency: rental.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
       await syncParent();

@@ -18,6 +18,9 @@
     "preview": "vite preview",
     "test:company-core": "node scripts/verify-company-core.mjs",
     "test:onboarding": "node scripts/verify-onboarding.mjs",
+    "test:backup-status": "node scripts/verify-backup-status.mjs",
+    "test:schema-compatibility": "node scripts/verify-schema-compatibility.mjs && node scripts/verify-write-payloads.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json --pretty false",
     "test:whatsapp": "node scripts/verify-whatsapp-queue.mjs && node scripts/verify-whatsapp-bot.mjs"
   },
   "dependencies": {

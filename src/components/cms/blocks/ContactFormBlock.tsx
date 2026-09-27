@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgId } from '@/hooks/useOrgId';
 import { getSectionClasses, getContainerClass } from "@/utils/cms/layout";
 import { Send, CheckCircle } from "lucide-react";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
@@ -33,6 +34,7 @@ interface Props {
 }
 
 const ContactFormBlock: React.FC<Props> = ({ block }) => {
+  const orgId = useOrgId();
   const content = block.content as ContactFormBlockContent;
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,11 +50,19 @@ const ContactFormBlock: React.FC<Props> = ({ block }) => {
     setIsSubmitting(true);
 
     try {
+      if (!orgId) throw new Error('لا توجد مؤسسة نشطة');
+      if (!content.form_key) throw new Error('لم يتم ربط هذا القسم بنموذج');
+      const { data: form, error: formError } = await supabase.from('forms')
+        .select('id').eq('organization_id', orgId).eq('name', content.form_key)
+        .eq('is_active', true).single();
+      if (formError) throw formError;
+      if (!form) throw new Error('النموذج غير متاح');
       // حفظ البيانات في قاعدة البيانات
       const { error } = await supabase
         .from('form_submissions')
         .insert({
-          form_id: null, // سنربطه بنموذج محدد لاحقاً
+          form_id: form.id,
+          organization_id: orgId,
           data: formData,
           ip_address: null, // يمكن إضافة IP لاحقاً
           user_agent: navigator.userAgent,

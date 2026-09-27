@@ -1176,9 +1176,12 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          layout_settings: Json
           order_index: number | null
           organization_id: string | null
           page_id: string | null
+          section: string | null
+          style_settings: Json
           title: string | null
           type: string
           updated_at: string | null
@@ -1188,9 +1191,12 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          layout_settings?: Json
           order_index?: number | null
           organization_id?: string | null
           page_id?: string | null
+          section?: string | null
+          style_settings?: Json
           title?: string | null
           type: string
           updated_at?: string | null
@@ -1200,9 +1206,12 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          layout_settings?: Json
           order_index?: number | null
           organization_id?: string | null
           page_id?: string | null
+          section?: string | null
+          style_settings?: Json
           title?: string | null
           type?: string
           updated_at?: string | null
@@ -4029,39 +4038,66 @@ export type Database = {
       }
       destinations: {
         Row: {
+          attractions: Json | null
+          attractions_ar: Json | null
           country: string | null
+          country_ar: string | null
           created_at: string | null
           description: string | null
+          description_ar: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_featured: boolean | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
           name_ar: string | null
           organization_id: string | null
+          rating: number | null
+          sort_order: number | null
           updated_at: string | null
         }
         Insert: {
+          attractions?: Json | null
+          attractions_ar?: Json | null
           country?: string | null
+          country_ar?: string | null
           created_at?: string | null
           description?: string | null
+          description_ar?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
           name_ar?: string | null
           organization_id?: string | null
+          rating?: number | null
+          sort_order?: number | null
           updated_at?: string | null
         }
         Update: {
+          attractions?: Json | null
+          attractions_ar?: Json | null
           country?: string | null
+          country_ar?: string | null
           created_at?: string | null
           description?: string | null
+          description_ar?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
           name_ar?: string | null
           organization_id?: string | null
+          rating?: number | null
+          sort_order?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -5702,24 +5738,33 @@ export type Database = {
           data: Json
           form_id: string | null
           id: string
+          ip_address: string | null
           organization_id: string | null
+          status: string | null
           submitted_by: string | null
+          user_agent: string | null
         }
         Insert: {
           created_at?: string | null
           data?: Json
           form_id?: string | null
           id?: string
+          ip_address?: string | null
           organization_id?: string | null
+          status?: string | null
           submitted_by?: string | null
+          user_agent?: string | null
         }
         Update: {
           created_at?: string | null
           data?: Json
           form_id?: string | null
           id?: string
+          ip_address?: string | null
           organization_id?: string | null
+          status?: string | null
           submitted_by?: string | null
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -6269,21 +6314,35 @@ export type Database = {
           address: string | null
           amenities: Json | null
           city: string | null
+          contact_info: Json | null
           country: string | null
           country_code: string | null
           created_at: string | null
+          currency: string | null
           description: string | null
+          description_ar: string | null
           destination_id: string | null
           email: string | null
+          features: Json | null
+          features_ar: Json | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_featured: boolean | null
           is_global: boolean
           latitude: number | null
+          location: string | null
+          location_ar: string | null
           longitude: number | null
+          meta_description: string | null
+          meta_title: string | null
           name: string
+          name_ar: string | null
           organization_id: string | null
           phone: string | null
+          price_range: string | null
+          rating: number | null
+          sort_order: number | null
           star_rating: number | null
           tbo_hotel_code: string | null
           updated_at: string | null
@@ -6292,21 +6351,35 @@ export type Database = {
           address?: string | null
           amenities?: Json | null
           city?: string | null
+          contact_info?: Json | null
           country?: string | null
           country_code?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
+          description_ar?: string | null
           destination_id?: string | null
           email?: string | null
+          features?: Json | null
+          features_ar?: Json | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           is_global?: boolean
           latitude?: number | null
+          location?: string | null
+          location_ar?: string | null
           longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
+          name_ar?: string | null
           organization_id?: string | null
           phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          sort_order?: number | null
           star_rating?: number | null
           tbo_hotel_code?: string | null
           updated_at?: string | null
@@ -6315,21 +6388,35 @@ export type Database = {
           address?: string | null
           amenities?: Json | null
           city?: string | null
+          contact_info?: Json | null
           country?: string | null
           country_code?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
+          description_ar?: string | null
           destination_id?: string | null
           email?: string | null
+          features?: Json | null
+          features_ar?: Json | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           is_global?: boolean
           latitude?: number | null
+          location?: string | null
+          location_ar?: string | null
           longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
+          name_ar?: string | null
           organization_id?: string | null
           phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          sort_order?: number | null
           star_rating?: number | null
           tbo_hotel_code?: string | null
           updated_at?: string | null
@@ -8003,6 +8090,8 @@ export type Database = {
           id: string
           is_published: boolean | null
           organization_id: string | null
+          seo_description: string | null
+          seo_title: string | null
           slug: string
           title: string
           updated_at: string | null
@@ -8013,6 +8102,8 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           organization_id?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
           title: string
           updated_at?: string | null
@@ -8023,6 +8114,8 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           organization_id?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
           title?: string
           updated_at?: string | null
@@ -10473,6 +10566,7 @@ export type Database = {
           exchange_rate: number | null
           id: string
           is_primary: boolean | null
+          notes: string | null
           supplier_id: string | null
           updated_at: string | null
         }
@@ -10482,6 +10576,7 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           is_primary?: boolean | null
+          notes?: string | null
           supplier_id?: string | null
           updated_at?: string | null
         }
@@ -10491,6 +10586,7 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           is_primary?: boolean | null
+          notes?: string | null
           supplier_id?: string | null
           updated_at?: string | null
         }
