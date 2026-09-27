@@ -1,9 +1,16 @@
 
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import {
+  clearOnboardingRecordIds, completeOnboarding, loadCompanySetup, onboardingRecordId,
+  saveCompanySetup, saveOnboardingCustomer, saveOnboardingEmployee,
+  type CompanySetup, type OnboardingIdentity,
+} from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,112 +30,116 @@ const STEPS = [
 ];
 
 const OnboardingWizard = () => {
-  const navigate = useNavigate();
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
+  if (!orgId || !user?.id) {
+    return <div className="p-8 text-center" role="status" dir="rtl">جارٍ تحميل بيانات الشركة…</div>;
+  }
+  // Discard form state and pending UI callbacks when the company/user changes.
+  return <OrganizationOnboarding key={`${orgId}:${user.id}`} orgId={orgId} userId={user.id} />;
+};
+
+const OrganizationOnboarding = ({ orgId, userId }: OnboardingIdentity) => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { hasPermission } = useSupabasePermissions();
+  const identity = { orgId, userId };
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const busy = useRef(false);
+  const active = useRef(true);
+  useLayoutEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
-  // Step 1: Company info
-  const [company, setCompany] = useState({ website: '', tax_number: '', logo_url: '' });
-  // Step 2: Employee
+  const [company, setCompany] = useState<CompanySetup | null>(null);
   const [employee, setEmployee] = useState({ full_name: '', phone: '', email: '', position: '' });
-  // Step 3: Customer
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', nationality: '' });
-  // Step 4: Booking
-  const [booking, setBooking] = useState({
-    customer_name: '', hotel_name: '', destination_city: '',
-    check_in_date: '', check_out_date: '',
+  const companyQuery = useQuery({
+    queryKey: ['onboarding-company-settings', orgId, userId],
+    queryFn: () => loadCompanySetup(supabase, { orgId, userId }),
   });
+  useEffect(() => {
+    // Populate once; a background refresh must not overwrite the user's edits.
+    if (company === null && companyQuery.isSuccess && !companyQuery.isFetching) setCompany(companyQuery.data);
+  }, [company, companyQuery.isSuccess, companyQuery.isFetching, companyQuery.data]);
 
-  const finishOnboarding = async () => {
-    if (!orgId) return;
-    try {
-      await supabase
-        .from('organizations')
-        .update({ onboarding_completed: true })
-        .eq('id', orgId);
-      toast.success('🎉 مرحباً بك! تم إعداد النظام بنجاح');
-      window.location.href = '/dashboard';
-    } catch {
-      toast.error('حدث خطأ');
-    }
-  };
+  const canSaveStep = currentStep === 1 ? hasPermission('employees_create')
+    : currentStep === 2 ? hasPermission('customers_create') : true;
+  const canStartBooking = hasPermission('bookings_create');
+  const companyUnavailable = currentStep === 0 && company === null;
 
-  const handleSkipAll = async () => {
-    await finishOnboarding();
-  };
-
-  const handleNext = async () => {
+  const runAction = async (action: () => Promise<void>, failureMessage: string) => {
+    // State updates alone do not prevent two clicks in the same render.
+    if (busy.current || !active.current) return;
+    busy.current = true;
     setLoading(true);
+    setSaveError(null);
     try {
-      if (currentStep === 0) {
-        // Update org info
-        if (company.website || company.tax_number) {
-          await supabase
-            .from('organizations')
-            .update({
-              website: company.website || null,
-              tax_number: company.tax_number || null,
-              logo_url: company.logo_url || null,
-            })
-            .eq('id', orgId);
-        }
-      } else if (currentStep === 1) {
-        // Add employee
-        if (employee.full_name.trim()) {
-          const code = 'EMP-' + Date.now().toString().slice(-6);
-          await supabase.from('employees').insert({
-            full_name: employee.full_name.trim(),
-            phone: employee.phone || null,
-            email: employee.email || null,
-            position: employee.position || null,
-            employee_code: code,
-            organization_id: orgId,
-          });
-        }
-      } else if (currentStep === 2) {
-        // Add customer
-        if (customer.name.trim()) {
-          await supabase.from('customers').insert({
-            name: customer.name.trim(),
-            phone: customer.phone || null,
-            email: customer.email || null,
-            nationality: customer.nationality || null,
-            organization_id: orgId,
-          });
-        }
-      } else if (currentStep === 3) {
-        // Add booking
-        if (booking.customer_name.trim() && booking.check_in_date && booking.check_out_date) {
-          await supabase.from('hotel_bookings').insert({
-            customer_name: booking.customer_name.trim(),
-            hotel_name: booking.hotel_name || null,
-            destination_city: booking.destination_city || null,
-            check_in_date: booking.check_in_date,
-            check_out_date: booking.check_out_date,
-            organization_id: orgId,
-          });
-        }
-        await finishOnboarding();
-        return;
-      }
-
-      setCurrentStep(prev => prev + 1);
-    } catch (error: any) {
-      console.error('Onboarding step error:', error);
-      // Don't block progression on non-critical errors
-      if (currentStep < 3) {
-        setCurrentStep(prev => prev + 1);
+      await action();
+    } catch {
+      if (active.current) {
+        setSaveError(failureMessage);
+        toast.error(failureMessage);
       }
     } finally {
-      setLoading(false);
+      busy.current = false;
+      if (active.current) setLoading(false);
     }
+  };
+
+  const finishOnboarding = async (destination: string) => {
+    await completeOnboarding(supabase, identity);
+    if (!active.current) return;
+    // Cleanup is best effort; storage failure must not undo confirmed completion.
+    try { clearOnboardingRecordIds(sessionStorage, identity); } catch { /* IDs contain no form data. */ }
+    queryClient.setQueryData(['onboarding-status', orgId], false);
+    toast.success('تم إنهاء الإعداد بنجاح');
+    navigate(destination, { replace: true });
+  };
+
+  const handleSkipAll = () => runAction(
+    () => finishOnboarding('/dashboard'),
+    'تعذر إنهاء الإعداد. تحقق من الاتصال وصلاحية إدارة الشركة ثم أعد المحاولة.',
+  );
+
+  const handleNext = () => {
+    if (!canSaveStep || companyUnavailable) return;
+    if ((currentStep === 1 && !employee.full_name.trim()) || (currentStep === 2 && !customer.name.trim())) {
+      setSaveError('اكتب الاسم للمتابعة أو اختر تخطي هذه الخطوة.');
+      return;
+    }
+    return runAction(async () => {
+      if (currentStep === 0) {
+        await saveCompanySetup(supabase, identity, company!);
+        if (!active.current) return;
+        queryClient.setQueryData(['onboarding-company-settings', orgId, userId], company);
+        void queryClient.invalidateQueries({ queryKey: ['organization-settings', orgId] });
+      } else if (currentStep === 1) {
+        await saveOnboardingEmployee(supabase, identity, employee, onboardingRecordId(sessionStorage, identity, 'employee'));
+        if (!active.current) return;
+        void queryClient.invalidateQueries({ queryKey: ['employees'] });
+      } else if (currentStep === 2) {
+        await saveOnboardingCustomer(supabase, identity, customer, onboardingRecordId(sessionStorage, identity, 'customer'));
+        if (!active.current) return;
+        void queryClient.invalidateQueries({ queryKey: ['customers'] });
+      } else if (currentStep === 3) {
+        await finishOnboarding(canStartBooking ? '/bookings/new' : '/dashboard');
+        return;
+      }
+      if (active.current) setCurrentStep(prev => prev + 1);
+    }, currentStep === 3
+      ? 'تعذر إنهاء الإعداد. تحقق من الاتصال وصلاحية إدارة الشركة ثم أعد المحاولة.'
+      : 'لم يتم تأكيد الحفظ. بياناتك باقية في هذه الخطوة؛ تحقق من الاتصال والصلاحيات ثم أعد المحاولة.');
   };
 
   const handleSkipStep = () => {
+    if (busy.current || !active.current) return;
+    setSaveError(null);
     if (currentStep === 3) {
-      finishOnboarding();
+      return handleSkipAll();
     } else {
       setCurrentStep(prev => prev + 1);
     }
@@ -192,17 +203,28 @@ const OnboardingWizard = () => {
             {currentStep === 0 && 'أضف معلومات إضافية عن شركتك'}
             {currentStep === 1 && 'سجّل أول موظف في النظام'}
             {currentStep === 2 && 'أضف أول عميل لشركتك'}
-            {currentStep === 3 && 'أنشئ أول حجز فندقي'}
+            {currentStep === 3 && 'ابدأ حجزك الأول من نموذج الحجز الكامل'}
           </p>
 
+          {saveError && <p role="alert" className="mb-4 text-sm text-destructive">{saveError}</p>}
+          {currentStep === 0 && companyQuery.isError && company === null && (
+            <div role="alert" className="mb-4 space-y-2 text-sm text-destructive">
+              <p>تعذر تحميل إعدادات الشركة الحالية. أعد المحاولة قبل تعديلها.</p>
+              <Button variant="outline" size="sm" disabled={loading || companyQuery.isFetching} onClick={() => { void companyQuery.refetch(); }}>إعادة المحاولة</Button>
+            </div>
+          )}
+          {companyUnavailable && !companyQuery.isError && <p role="status" className="mb-4 text-sm">جارٍ تحميل إعدادات الشركة…</p>}
+          {!canSaveStep && <p role="status" className="mb-4 text-sm text-muted-foreground">إضافة هذا السجل تحتاج صلاحية من مسؤول الشركة. يمكنك تخطي الخطوة.</p>}
+
+          <fieldset className="min-w-0" disabled={loading || companyUnavailable || !canSaveStep}>
           {/* Step 1: Company */}
           {currentStep === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>الموقع الإلكتروني</Label>
                 <Input
-                  value={company.website}
-                  onChange={e => setCompany(p => ({ ...p, website: e.target.value }))}
+                  value={company?.website ?? ''}
+                  onChange={e => setCompany(p => ({ tax_number: p?.tax_number ?? '', website: e.target.value }))}
                   placeholder="https://example.com"
                   className="text-right"
                 />
@@ -210,8 +232,8 @@ const OnboardingWizard = () => {
               <div className="space-y-2">
                 <Label>الرقم الضريبي</Label>
                 <Input
-                  value={company.tax_number}
-                  onChange={e => setCompany(p => ({ ...p, tax_number: e.target.value }))}
+                  value={company?.tax_number ?? ''}
+                  onChange={e => setCompany(p => ({ website: p?.website ?? '', tax_number: e.target.value }))}
                   placeholder="الرقم الضريبي للشركة"
                   className="text-right"
                 />
@@ -307,58 +329,18 @@ const OnboardingWizard = () => {
             </div>
           )}
 
-          {/* Step 4: Booking */}
+          {/* Step 4 uses the same complete booking flow as the rest of the app. */}
           {currentStep === 3 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>اسم العميل *</Label>
-                <Input
-                  value={booking.customer_name}
-                  onChange={e => setBooking(p => ({ ...p, customer_name: e.target.value }))}
-                  placeholder="اسم العميل"
-                  className="text-right"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>اسم الفندق</Label>
-                  <Input
-                    value={booking.hotel_name}
-                    onChange={e => setBooking(p => ({ ...p, hotel_name: e.target.value }))}
-                    placeholder="فندق..."
-                    className="text-right"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>المدينة</Label>
-                  <Input
-                    value={booking.destination_city}
-                    onChange={e => setBooking(p => ({ ...p, destination_city: e.target.value }))}
-                    placeholder="شرم الشيخ"
-                    className="text-right"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>تاريخ الدخول *</Label>
-                  <Input
-                    type="date"
-                    value={booking.check_in_date}
-                    onChange={e => setBooking(p => ({ ...p, check_in_date: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>تاريخ الخروج *</Label>
-                  <Input
-                    type="date"
-                    value={booking.check_out_date}
-                    onChange={e => setBooking(p => ({ ...p, check_out_date: e.target.value }))}
-                  />
-                </div>
-              </div>
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
+              <p>في نموذج الحجز ستختار العميل والخدمات والموردين، وتراجع التواريخ والأسعار والتكاليف قبل الحفظ.</p>
+              <p className="text-muted-foreground">
+                {canStartBooking
+                  ? 'اضغط «فتح نموذج الحجز» لإنهاء الإعداد والبدء. يمكنك أيضاً تخطي الحجز الآن.'
+                  : 'يمكنك إنهاء الإعداد الآن. إنشاء الحجز يحتاج صلاحية من مسؤول الشركة.'}
+              </p>
             </div>
           )}
+          </fieldset>
 
           {/* Actions */}
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
@@ -391,7 +373,7 @@ const OnboardingWizard = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  onClick={() => { if (!busy.current) { setSaveError(null); setCurrentStep(prev => prev - 1); } }}
                   disabled={loading}
                 >
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -401,14 +383,14 @@ const OnboardingWizard = () => {
               <Button
                 onClick={handleNext}
                 size="sm"
-                disabled={loading}
+                disabled={loading || companyUnavailable || !canSaveStep}
                 className="bg-gradient-to-r from-primary to-blue-700 text-primary-foreground"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
                 ) : currentStep === 3 ? (
                   <>
-                    إنهاء الإعداد
+                    {canStartBooking ? 'فتح نموذج الحجز' : 'إنهاء الإعداد'}
                     <Check className="w-4 h-4 mr-1" />
                   </>
                 ) : (
