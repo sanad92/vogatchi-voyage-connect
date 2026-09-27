@@ -16,10 +16,15 @@ Deno.serve(async (req) => {
   }
   const db = createClient(Deno.env.get('SUPABASE_URL')!, key);
   const echo = await db.functions.invoke('wa-internal-auth-probe?echo=1', { body: {} });
-  const bot = await db.functions.invoke('whatsapp-chatbot-reply', { body: {} });
+  const bot = await db.functions.invoke('whatsapp-chatbot-reply', { body: { dry_run: true } });
+  const u = `${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-chatbot-reply`;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+  const noAuth = (await fetch(u, { method: 'POST', body: JSON.stringify({ dry_run: true }) })).status;
+  const anon = (await fetch(u, { method: 'POST', headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` }, body: JSON.stringify({ dry_run: true }) })).status;
+  const forged = (await fetch(u, { method: 'POST', headers: { apikey: 'sb_secret_forged' }, body: JSON.stringify({ dry_run: true }) })).status;
   return Response.json({
     envKeyKind: kind(key), internalSecretSet: !!Deno.env.get('INTERNAL_FUNCTION_SECRET'),
     echo: echo.data ?? null, echoErr: echo.error ? (echo.error as any).context?.status ?? 'err' : null,
-    chatbotStatus: bot.error ? (bot.error as any).context?.status ?? 'err' : 200,
+    chatbotStatus: bot.error ? (bot.error as any).context?.status ?? 'err' : 200, chatbotBody: bot.data ?? null, noAuth, anon, forged,
   });
 });
