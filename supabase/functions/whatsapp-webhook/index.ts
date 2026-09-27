@@ -374,15 +374,27 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
                 extra: { keyword: contentText },
               },
             }).catch(() => {});
-            // Chatbot auto-reply
-            await supabase.functions.invoke('whatsapp-chatbot-reply', {
-              body: {
-                organization_id: organizationId,
-                conversation_id: conversationId,
-                message_id: insertedMsg?.id,
-                user_message: contentText,
-              },
-            }).catch((e: any) => console.error('[wa-webhook] chatbot invoke failed', e));
+            // Chatbot auto-reply. invoke() resolves with {error} rather than throwing,
+            // so inspect it: a failed bot must be visible and fall back to humans.
+            if (botConfig?.is_enabled) {
+              const botRes = await supabase.functions.invoke('whatsapp-chatbot-reply', {
+                body: {
+                  organization_id: organizationId,
+                  conversation_id: conversationId,
+                  message_id: insertedMsg?.id,
+                },
+              }).catch((e: any) => ({ data: null, error: e }));
+              if (botRes.error) {
+                const status = (botRes.error as any)?.context?.status ?? null;
+                console.error('[wa-webhook] chatbot invoke failed', { conversationId, messageId: insertedMsg?.id, status });
+                // Only unclaimed, still-open conversations; never touch closed or owned ones.
+                const { error: qErr } = await supabase.from('whatsapp_conversations')
+                  .update({ status: 'pending', assignment_reason: 'chatbot_error' })
+                  .eq('id', conversationId).eq('organization_id', organizationId)
+                  .is('assigned_to', null).in('status', ['open', 'active']);
+                if (qErr) console.error('[wa-webhook] chatbot fallback routing failed', qErr.message);
+              }
+            }
           }
         } catch (e) {
           console.error('[wa-webhook] automation invoke error', e);
