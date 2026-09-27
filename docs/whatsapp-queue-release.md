@@ -1,5 +1,12 @@
 # WhatsApp queue and bot release
 
+## Live configuration records
+
+- [Vogatchi AI activation on 2026-09-27](whatsapp/vogatchi-activation-2026-09-27.md):
+  verified live settings, current/prior configuration snapshot, scope across both
+  connected accounts, and the remaining real-message acceptance check. These
+  records do not apply settings automatically or deploy application code.
+
 ## Included
 
 - Agent inbox: queue, mine, all and closed views; priority/oldest-created ordering; atomic “pick up next” and individual pickup; mobile list/chat navigation; customer panel and intake summary.
