@@ -76,7 +76,10 @@ export function requireInternalCaller(req: Request): void {
   const token = bearerToken(req);
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const internalSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
-  if (token && serviceKey && token === serviceKey) return;
+  if (serviceKey && token && token === serviceKey) return;
+  // New-format secret keys (sb_secret_…) are not JWTs: supabase-js sends them only in
+  // the `apikey` header, never as a Bearer token. Accept only the exact secret key.
+  if (serviceKey && serviceKey.startsWith('sb_secret_') && req.headers.get('apikey') === serviceKey) return;
   if (internalSecret && req.headers.get('x-internal-secret') === internalSecret) return;
   throw new AuthError('Unauthorized', 401);
 }

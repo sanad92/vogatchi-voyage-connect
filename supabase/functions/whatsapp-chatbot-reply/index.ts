@@ -17,7 +17,9 @@ Deno.serve(async (req) => {
   const started = Date.now();
   try {
     requireInternalCaller(req);
-    const { organization_id, conversation_id, message_id } = await req.json();
+    const { organization_id, conversation_id, message_id, dry_run } = await req.json();
+    // Authenticated no-op used for verification: no reads, writes or provider calls.
+    if (dry_run === true) return json({ ok: true, dry_run: true });
     orgId = organization_id; conversationId = conversation_id;
     if (!orgId || !conversationId || !message_id) return json({ error: 'missing params' }, 400);
     // Derive the prompt from the persisted inbound message, not caller-supplied text.
