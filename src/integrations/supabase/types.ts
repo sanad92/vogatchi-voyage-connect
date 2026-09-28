@@ -8687,6 +8687,88 @@ export type Database = {
           },
         ]
       }
+      quote_followups: {
+        Row: {
+          completed_by: string | null
+          created_at: string
+          customer_id: string | null
+          due_at: string
+          id: string
+          notified_at: string | null
+          organization_id: string
+          owner_user_id: string | null
+          phone: string | null
+          quote_id: string
+          responded_at: string | null
+          response_message_id: string | null
+          response_note: string | null
+          response_source: string | null
+          status: string
+          step: number
+          updated_at: string
+        }
+        Insert: {
+          completed_by?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_at: string
+          id?: string
+          notified_at?: string | null
+          organization_id: string
+          owner_user_id?: string | null
+          phone?: string | null
+          quote_id: string
+          responded_at?: string | null
+          response_message_id?: string | null
+          response_note?: string | null
+          response_source?: string | null
+          status?: string
+          step: number
+          updated_at?: string
+        }
+        Update: {
+          completed_by?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_at?: string
+          id?: string
+          notified_at?: string | null
+          organization_id?: string
+          owner_user_id?: string | null
+          phone?: string | null
+          quote_id?: string
+          responded_at?: string | null
+          response_message_id?: string | null
+          response_note?: string | null
+          response_source?: string | null
+          status?: string
+          step?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_followups_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_followups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_followups_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           cost_price: number | null
@@ -13899,6 +13981,7 @@ export type Database = {
         Args: { _reference_type: string; _source_type: string }
         Returns: string
       }
+      _digits: { Args: { t: string }; Returns: string }
       _ensure_account_routing_defaults: {
         Args: { _org_id: string }
         Returns: undefined
@@ -14314,6 +14397,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      dispatch_quote_followups: { Args: never; Returns: number }
       email_queue_dispatch: { Args: never; Returns: undefined }
       emit_event: {
         Args: {
@@ -15233,6 +15317,10 @@ export type Database = {
           _treasury_account_id?: string
         }
         Returns: string
+      }
+      record_quote_followup: {
+        Args: { _action: string; _followup: string; _note?: string }
+        Returns: undefined
       }
       record_supplier_payment: {
         Args: {
