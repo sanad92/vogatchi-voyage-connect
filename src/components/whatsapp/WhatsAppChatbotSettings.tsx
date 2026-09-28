@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Save, MessageCircle, Loader2, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { useWhatsAppChatbot } from '@/hooks/useWhatsAppChatbot';
+import { SalesAgentCard } from './SalesAgentCard';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -118,6 +119,13 @@ export const WhatsAppChatbotSettings: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          <SalesAgentCard
+            enabled={form.sales_agent_enabled}
+            onToggle={(v) => setForm({ ...form, sales_agent_enabled: v })}
+            priceSheet={form.price_sheet_id || ''}
+            onPriceSheetChange={(v) => setForm({ ...form, price_sheet_id: v })}
+          />
 
           <Card>
             <CardHeader><CardTitle>قواعد التحويل لموظف</CardTitle></CardHeader>
