@@ -64,7 +64,26 @@ Deno.serve(async (req) => {
       .eq('organization_id', orgId).eq('conversation_id', conversationId).not('content', 'is', null)
       .in('status', ['sent', 'delivered', 'read']).order('sent_at', { ascending: false }).limit(10);
     if (historyError) throw historyError;
-    const messages: ChatMessage[] = [{ role: 'system', content: `${settings.system_prompt}\nمرجع الشركة المعتمد (لا تفترض معلومات غير موجودة فيه):\n${settings.knowledge_base || "لا توجد معلومات معتمدة؛ اجمع الطلب وحوّله للموظف."}\nلا تخترع أسعارًا أو توافرًا أو تؤكد حجزًا. اجمع الوجهة والتواريخ وعدد المسافرين وأعمار الأطفال والميزانية بسؤال واحد في كل رسالة دون تكرار معلومة ذكرها العميل. اشرح أن التأكيد النهائي من الموظف. لا تطلب بيانات بطاقات دفع أو كلمات مرور.` },
+    const salesMode = settings.sales_agent_enabled === true && settings.bot_mode !== 'guided';
+    let brief = salesMode ? await loadBrief(db, orgId, conversationId) : null;
+    let systemPrompt: string;
+    if (salesMode && brief) {
+      const [{ data: orgSettings }, { data: org }] = await Promise.all([
+        db.from('organization_settings').select('company_name_ar, company_name').eq('organization_id', orgId).maybeSingle(),
+        db.from('organizations').select('name').eq('id', orgId).maybeSingle(),
+      ]);
+      const companyName = orgSettings?.company_name_ar || orgSettings?.company_name || org?.name || 'شركتنا';
+      const rows = await matchCatalog(db, orgId, brief, user_message);
+      const { data: destinations } = await db.from('ai_price_catalog').select('destination').eq('organization_id', orgId);
+      const available = Array.from(new Set((destinations || []).map((d: any) => d.destination))).filter(Boolean) as string[];
+      systemPrompt = salesSystemPrompt({
+        basePrompt: settings.system_prompt, knowledge: settings.knowledge_base,
+        brief, catalog: catalogText(rows, available), companyName,
+      });
+    } else {
+      systemPrompt = `${settings.system_prompt}\nمرجع الشركة المعتمد (لا تفترض معلومات غير موجودة فيه):\n${settings.knowledge_base || "لا توجد معلومات معتمدة؛ اجمع الطلب وحوّله للموظف."}\nلا تخترع أسعارًا أو توافرًا أو تؤكد حجزًا. اجمع الوجهة والتواريخ وعدد المسافرين وأعمار الأطفال والميزانية بسؤال واحد في كل رسالة دون تكرار معلومة ذكرها العميل. اشرح أن التأكيد النهائي من الموظف. لا تطلب بيانات بطاقات دفع أو كلمات مرور.`;
+    }
+    const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt },
       ...(history || []).reverse().map((m: any): ChatMessage => ({ role: m.direction === 'inbound' ? 'user' : 'assistant', content: m.content }))];
     if (messages[messages.length - 1].content !== user_message) messages.push({ role: 'user', content: user_message });
     // Reserve a unique outbound key BEFORE generating/sending. Retries cannot send twice.
