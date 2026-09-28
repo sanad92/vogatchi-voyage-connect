@@ -31,6 +31,7 @@ import { WhatsAppCRMPanel } from './WhatsAppCRMPanel';
 import { WhatsAppSOPPanel } from './WhatsAppSOPPanel';
 import { AIAssistantPanel } from './AIAssistantPanel';
 import { FollowupsPanel } from './FollowupsPanel';
+import { SalesBriefPanel } from './SalesBriefPanel';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
