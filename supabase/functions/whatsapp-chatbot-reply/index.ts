@@ -3,6 +3,7 @@ import { callLovableAI, corsHeaders, ChatMessage } from '../_shared/ai-gateway.t
 import { requireInternalCaller, authErrorResponse } from '../_shared/auth.ts';
 import { botMayReply } from '../_shared/whatsapp-bot-policy.ts';
 import { graphSend, isWindowOpen, resolveSettings, normalizePhone } from '../_shared/whatsapp.ts';
+import { loadBrief, matchCatalog, catalogText, salesSystemPrompt, extractBrief, mergeBrief } from '../_shared/sales-agent.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -63,7 +64,26 @@ Deno.serve(async (req) => {
       .eq('organization_id', orgId).eq('conversation_id', conversationId).not('content', 'is', null)
       .in('status', ['sent', 'delivered', 'read']).order('sent_at', { ascending: false }).limit(10);
     if (historyError) throw historyError;
-    const messages: ChatMessage[] = [{ role: 'system', content: `${settings.system_prompt}\nمرجع الشركة المعتمد (لا تفترض معلومات غير موجودة فيه):\n${settings.knowledge_base || "لا توجد معلومات معتمدة؛ اجمع الطلب وحوّله للموظف."}\nلا تخترع أسعارًا أو توافرًا أو تؤكد حجزًا. اجمع الوجهة والتواريخ وعدد المسافرين وأعمار الأطفال والميزانية بسؤال واحد في كل رسالة دون تكرار معلومة ذكرها العميل. اشرح أن التأكيد النهائي من الموظف. لا تطلب بيانات بطاقات دفع أو كلمات مرور.` },
+    const salesMode = settings.sales_agent_enabled === true && settings.bot_mode !== 'guided';
+    let brief = salesMode ? await loadBrief(db, orgId, conversationId) : null;
+    let systemPrompt: string;
+    if (salesMode && brief) {
+      const [{ data: orgSettings }, { data: org }] = await Promise.all([
+        db.from('organization_settings').select('company_name_ar, company_name').eq('organization_id', orgId).maybeSingle(),
+        db.from('organizations').select('name').eq('id', orgId).maybeSingle(),
+      ]);
+      const companyName = orgSettings?.company_name_ar || orgSettings?.company_name || org?.name || 'شركتنا';
+      const rows = await matchCatalog(db, orgId, brief, user_message);
+      const { data: destinations } = await db.from('ai_price_catalog').select('destination').eq('organization_id', orgId);
+      const available = Array.from(new Set((destinations || []).map((d: any) => d.destination))).filter(Boolean) as string[];
+      systemPrompt = salesSystemPrompt({
+        basePrompt: settings.system_prompt, knowledge: settings.knowledge_base,
+        brief, catalog: catalogText(rows, available), companyName,
+      });
+    } else {
+      systemPrompt = `${settings.system_prompt}\nمرجع الشركة المعتمد (لا تفترض معلومات غير موجودة فيه):\n${settings.knowledge_base || "لا توجد معلومات معتمدة؛ اجمع الطلب وحوّله للموظف."}\nلا تخترع أسعارًا أو توافرًا أو تؤكد حجزًا. اجمع الوجهة والتواريخ وعدد المسافرين وأعمار الأطفال والميزانية بسؤال واحد في كل رسالة دون تكرار معلومة ذكرها العميل. اشرح أن التأكيد النهائي من الموظف. لا تطلب بيانات بطاقات دفع أو كلمات مرور.`;
+    }
+    const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt },
       ...(history || []).reverse().map((m: any): ChatMessage => ({ role: m.direction === 'inbound' ? 'user' : 'assistant', content: m.content }))];
     if (messages[messages.length - 1].content !== user_message) messages.push({ role: 'user', content: user_message });
     // Reserve a unique outbound key BEFORE generating/sending. Retries cannot send twice.
@@ -107,6 +127,34 @@ Deno.serve(async (req) => {
     pendingId = undefined;
     await db.from('whatsapp_chatbot_interactions').insert({ organization_id: orgId, conversation_id: conversationId,
       message_id, user_message, bot_reply: reply, model_used: settings.bot_mode === 'guided' ? 'guided' : settings.model, latency_ms: Date.now() - started });
+    if (salesMode && brief) {
+      // Capture the qualification brief for the sales team. Never blocks the reply.
+      try {
+        const extracted = await extractBrief({
+          model: settings.model, current: brief,
+          history: [...messages.slice(1), { role: 'assistant', content: reply }],
+        });
+        if (extracted) {
+          const merged = mergeBrief(brief, extracted);
+          const { error: briefError } = await db.from('ai_sales_briefs').upsert({
+            organization_id: orgId, conversation_id: conversationId,
+            customer_id: convo.customer_id ?? null, ...merged,
+          }, { onConflict: 'organization_id,conversation_id' });
+          if (briefError) throw briefError;
+          if (merged.readiness === 'ready_for_quote') {
+            // Ready for a human quote: queue it for the sales team, never auto-assign or quote.
+            await db.from('whatsapp_conversations')
+              .update({ status: 'pending', priority: 'high', assignment_reason: 'sales_brief_ready' })
+              .eq('id', conversationId).eq('organization_id', orgId).is('assigned_to', null)
+              .in('status', ['open', 'active', 'pending']);
+            await db.from('ai_sales_briefs').update({ handed_off_at: new Date().toISOString() })
+              .eq('organization_id', orgId).eq('conversation_id', conversationId).is('handed_off_at', null);
+          }
+        }
+      } catch (briefErr) {
+        console.error('sales brief update failed', String((briefErr as any)?.message || briefErr));
+      }
+    }
     return json({ ok: true });
   } catch (e: any) {
     if (autoHandoffOnError && orgId && conversationId) {

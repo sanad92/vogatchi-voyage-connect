@@ -253,6 +253,230 @@ export type Database = {
           },
         ]
       }
+      ai_price_catalog: {
+        Row: {
+          board: string | null
+          category: string
+          created_at: string
+          currency: string
+          destination: string
+          extra: Json
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          price_double: number | null
+          price_single: number | null
+          price_triple: number | null
+          rating: string | null
+          source_row: number
+          source_tab: string
+          supplement: string | null
+          synced_at: string
+          unit: string
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          board?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          destination: string
+          extra?: Json
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          price_double?: number | null
+          price_single?: number | null
+          price_triple?: number | null
+          rating?: string | null
+          source_row: number
+          source_tab: string
+          supplement?: string | null
+          synced_at?: string
+          unit?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          board?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          destination?: string
+          extra?: Json
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          price_double?: number | null
+          price_single?: number | null
+          price_triple?: number | null
+          rating?: string | null
+          source_row?: number
+          source_tab?: string
+          supplement?: string | null
+          synced_at?: string
+          unit?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_price_catalog_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_price_catalog_syncs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          organization_id: string
+          rows_imported: number
+          spreadsheet_id: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tabs_imported: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          organization_id: string
+          rows_imported?: number
+          spreadsheet_id: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tabs_imported?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          organization_id?: string
+          rows_imported?: number
+          spreadsheet_id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tabs_imported?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_price_catalog_syncs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_sales_briefs: {
+        Row: {
+          adults: number | null
+          board_preference: string | null
+          budget_range: string | null
+          children: number | null
+          children_ages: string | null
+          conversation_id: string
+          created_at: string
+          customer_id: string | null
+          destination: string | null
+          handed_off_at: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          readiness: string
+          suggested_options: Json
+          travel_from: string | null
+          travel_to: string | null
+          trip_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          adults?: number | null
+          board_preference?: string | null
+          budget_range?: string | null
+          children?: number | null
+          children_ages?: string | null
+          conversation_id: string
+          created_at?: string
+          customer_id?: string | null
+          destination?: string | null
+          handed_off_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          readiness?: string
+          suggested_options?: Json
+          travel_from?: string | null
+          travel_to?: string | null
+          trip_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adults?: number | null
+          board_preference?: string | null
+          budget_range?: string | null
+          children?: number | null
+          children_ages?: string | null
+          conversation_id?: string
+          created_at?: string
+          customer_id?: string | null
+          destination?: string | null
+          handed_off_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          readiness?: string
+          suggested_options?: Json
+          travel_from?: string | null
+          travel_to?: string | null
+          trip_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_sales_briefs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_sales_briefs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_sales_briefs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       airlines: {
         Row: {
           country: string | null
@@ -12178,7 +12402,9 @@ export type Database = {
           max_bot_replies: number
           model: string
           organization_id: string
+          price_sheet_id: string | null
           respond_only_outside_hours: boolean
+          sales_agent_enabled: boolean
           system_prompt: string
           updated_at: string
           welcome_message: string | null
@@ -12196,7 +12422,9 @@ export type Database = {
           max_bot_replies?: number
           model?: string
           organization_id: string
+          price_sheet_id?: string | null
           respond_only_outside_hours?: boolean
+          sales_agent_enabled?: boolean
           system_prompt?: string
           updated_at?: string
           welcome_message?: string | null
@@ -12214,7 +12442,9 @@ export type Database = {
           max_bot_replies?: number
           model?: string
           organization_id?: string
+          price_sheet_id?: string | null
           respond_only_outside_hours?: boolean
+          sales_agent_enabled?: boolean
           system_prompt?: string
           updated_at?: string
           welcome_message?: string | null

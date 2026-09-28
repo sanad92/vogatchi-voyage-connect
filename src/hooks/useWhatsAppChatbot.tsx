@@ -17,6 +17,8 @@ export interface ChatbotSettings {
   model: string;
   respond_only_outside_hours: boolean;
   auto_handoff_on_error: boolean;
+  sales_agent_enabled: boolean;
+  price_sheet_id: string | null;
 }
 
 const DEFAULTS: ChatbotSettings = {
@@ -31,6 +33,8 @@ const DEFAULTS: ChatbotSettings = {
   model: 'google/gemini-2.5-flash',
   respond_only_outside_hours: false,
   auto_handoff_on_error: true,
+  sales_agent_enabled: false,
+  price_sheet_id: null,
 };
 
 export const useWhatsAppChatbot = () => {
