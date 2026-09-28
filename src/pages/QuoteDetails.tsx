@@ -10,6 +10,7 @@ import QuoteStatusBadge from '@/components/quotes/QuoteStatusBadge';
 import ConvertQuoteDialog from '@/components/quotes/ConvertQuoteDialog';
 import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
 import QuoteFollowupsPanel from '@/components/quotes/QuoteFollowupsPanel';
+import QuoteWhatsAppFollowupButton from '@/components/quotes/QuoteWhatsAppFollowupButton';
 import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,6 +85,7 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {quote.status !== 'draft' && <QuoteWhatsAppFollowupButton quote={quote as any} />}
           {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}
           {quote.status === 'draft' && canEdit && approved && (
             <Button variant="outline" size="sm" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'sent' })}>

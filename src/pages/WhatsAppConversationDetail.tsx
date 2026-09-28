@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -54,6 +56,23 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   const [prefillText, setPrefillText] = useState('');
   const [prefillNonce, setPrefillNonce] = useState(0);
   const insertText = (text: string) => { setPrefillText(text); setPrefillNonce((n) => n + 1); };
+  // Opened from a quote: prefill the follow-up text and log the message once it is sent.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const followupQuoteId = searchParams.get('quote');
+  const followupText = searchParams.get('text');
+  React.useEffect(() => {
+    if (followupText) insertText(followupText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, followupText]);
+  const handleMessageSent = async (sentText?: string) => {
+    if (!followupQuoteId || !sentText?.trim()) return;
+    const { error } = await callUntypedRpc('log_quote_followup_message', {
+      _quote: followupQuoteId, _conversation: conversationId, _message: sentText,
+    });
+    if (error) { toast.error('أُرسلت الرسالة لكن تعذّر تسجيلها على العرض: ' + error.message); return; }
+    toast.success('تم تسجيل رسالة المتابعة على عرض السعر');
+    setSearchParams({}, { replace: true });
+  };
   const { employee } = useWhatsAppQueue();
   const { hasPermission } = useSupabasePermissions();
 
@@ -321,7 +340,7 @@ const WhatsAppConversationDetailContent: React.FC = () => {
       <div className="border-t bg-card p-3">
         <WhatsAppMessageComposer
           conversationId={conversationId}
-          onMessageSent={() => {}}
+          onMessageSent={handleMessageSent}
           prefillText={prefillText}
           prefillNonce={prefillNonce}
           contactName={conversation.customer?.name || null}
