@@ -90,8 +90,8 @@ export function ConversationAgentIndicator({ conversation, compact }: Props) {
     label="الرد الآلي نشط" detail="البوت سيرد على رسائل العميل القادمة" compact={compact} />;
 };
 
-const StatePill = ({ tone, icon, label, detail, compact }: {
-  tone: string;
+const StatePill = ({ variant, icon, label, detail, compact }: {
+  variant: keyof typeof STATE_TONES;
   icon: React.ReactNode;
   label: string;
   detail?: string;
@@ -100,7 +100,7 @@ const StatePill = ({ tone, icon, label, detail, compact }: {
   <span
     role="status"
     title={detail}
-    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none shrink-0 ${tone[tone] ?? tone.disabled}`}
+    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none shrink-0 ${STATE_TONES[variant]}`}
   >
     {icon}
     <span className="truncate">{label}</span>
