@@ -20,7 +20,7 @@ export const useWhatsApp = () => {
         .from('whatsapp_conversations')
         .select(`
           *,
-          customer:customers(name, email),
+          customer:customers(id, name, email, phone),
           assigned_employee:employees(full_name, employee_code),
           inbox:whatsapp_settings(id, label, business_name, display_phone_number)
         `)
