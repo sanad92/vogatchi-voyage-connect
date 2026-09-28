@@ -8100,6 +8100,8 @@ export type Database = {
           organization_id: string
           phone: string | null
           primary_color: string | null
+          quote_followup_days: number[]
+          quote_followup_template: string
           secondary_color: string | null
           tax_number: string | null
           updated_at: string | null
@@ -8121,6 +8123,8 @@ export type Database = {
           organization_id: string
           phone?: string | null
           primary_color?: string | null
+          quote_followup_days?: number[]
+          quote_followup_template?: string
           secondary_color?: string | null
           tax_number?: string | null
           updated_at?: string | null
@@ -8142,6 +8146,8 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           primary_color?: string | null
+          quote_followup_days?: number[]
+          quote_followup_template?: string
           secondary_color?: string | null
           tax_number?: string | null
           updated_at?: string | null
@@ -8682,6 +8688,68 @@ export type Database = {
             foreignKeyName: "quote_booking_conversions_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_followup_messages: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          followup_id: string | null
+          id: string
+          message: string
+          organization_id: string
+          quote_id: string
+          sent_by: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          followup_id?: string | null
+          id?: string
+          message: string
+          organization_id: string
+          quote_id: string
+          sent_by?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          followup_id?: string | null
+          id?: string
+          message?: string
+          organization_id?: string
+          quote_id?: string
+          sent_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_followup_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_followup_messages_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "quote_followups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_followup_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_followup_messages_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
             referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
@@ -15146,6 +15214,10 @@ export type Database = {
           p_target_id?: string
           p_target_table?: string
         }
+        Returns: undefined
+      }
+      log_quote_followup_message: {
+        Args: { _conversation: string; _message: string; _quote: string }
         Returns: undefined
       }
       manage_organization_member: {
