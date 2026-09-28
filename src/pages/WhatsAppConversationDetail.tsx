@@ -23,6 +23,7 @@ import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageCo
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { ConversationBotNotice } from '@/components/whatsapp/ConversationBotNotice';
+import { ConversationAgentIndicator } from '@/components/whatsapp/ConversationAgentIndicator';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
@@ -169,6 +170,7 @@ const WhatsAppConversationDetailContent: React.FC = () => {
           )}
         </div>
         <div className="ms-auto flex items-center gap-2 flex-wrap">
+          <ConversationAgentIndicator conversation={conversation as any} />
           <ResolutionBadge status={isClosedConversation(conversation as any) ? (conversation as any).resolution_status : null} />
           <CloseConversationDialog conversationId={conversation.id} organizationId={conversation.organization_id}
             isClosed={isClosedConversation(conversation as any)}
