@@ -277,9 +277,10 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
         </div>
 
         <Textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder={
             !canSend
               ? 'استلم المحادثة أولاً لتتمكن من الكتابة'
@@ -291,8 +292,11 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
           }
           className="flex-1 min-h-[42px] max-h-40 resize-none border-0 bg-transparent px-1 py-2.5 shadow-none focus-visible:ring-0"
           rows={1}
-          disabled={isSending || !isWindowOpen || !canSend}
+          // Staying enabled while sending keeps the caret in the box.
+          readOnly={isSending}
+          disabled={!isWindowOpen || !canSend}
         />
+
 
         <Button
           onClick={handleSend}
