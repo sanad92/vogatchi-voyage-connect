@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import PageHeader from '@/components/layout/PageHeader';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import QuoteFollowupSettingsDialog from '@/components/quotes/QuoteFollowupSettingsDialog';
 
 export default function Quotes() {
   usePageTitle('عروض الأسعار');
@@ -31,10 +32,13 @@ export default function Quotes() {
         description="إنشاء وإدارة عروض الأسعار للعملاء"
         icon={FileSpreadsheet}
         actions={
-          <Button onClick={() => navigate('/quotes/new')}>
-            <Plus className="h-4 w-4 ml-1" />
-            عرض سعر جديد
-          </Button>
+          <div className="flex gap-2">
+            <QuoteFollowupSettingsDialog />
+            <Button onClick={() => navigate('/quotes/new')}>
+              <Plus className="h-4 w-4 ml-1" />
+              عرض سعر جديد
+            </Button>
+          </div>
         }
       />
 

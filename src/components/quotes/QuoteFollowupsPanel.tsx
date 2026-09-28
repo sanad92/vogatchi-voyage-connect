@@ -43,7 +43,19 @@ export default function QuoteFollowupsPanel({ quoteId, canEdit }: { quoteId: str
     refetchOnWindowFocus: true,
   });
 
-  if (!data.length) return null;
+  const { data: sent = [] } = useQuery({
+    queryKey: ['quote-followup-messages', orgId, quoteId],
+    queryFn: async (): Promise<{ id: string; message: string; created_at: string }[]> => {
+      const { data, error } = await (supabase as any).from('quote_followup_messages').select('id, message, created_at')
+        .eq('organization_id', orgId).eq('quote_id', quoteId).order('created_at', { ascending: false }).limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!orgId,
+    refetchOnWindowFocus: true,
+  });
+
+  if (!data.length && !sent.length) return null;
   const open = data.filter((f) => f.status === 'pending' || f.status === 'notified');
   const response = data.find((f) => f.status === 'responded' && f.responded_at);
 
@@ -93,6 +105,18 @@ export default function QuoteFollowupsPanel({ quoteId, canEdit }: { quoteId: str
             </div>
           ))}
         </div>
+
+        {sent.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground">رسائل المتابعة المرسلة</p>
+            {sent.map((m) => (
+              <div key={m.id} className="rounded-md border p-2 text-xs">
+                <div className="text-muted-foreground mb-0.5">{format(new Date(m.created_at), 'd MMM، HH:mm', { locale: ar })}</div>
+                <p className="whitespace-pre-wrap">{m.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {canEdit && open.length > 0 && (
           <div className="space-y-2">
