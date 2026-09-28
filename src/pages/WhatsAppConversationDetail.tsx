@@ -156,19 +156,25 @@ const WhatsAppConversationDetailContent: React.FC = () => {
           <Phone className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <div className="font-semibold truncate">{conversation.phone_number}</div>
-          {conversation.customer ? (
-            <Link
-              to={`/customers/${conversation.customer.id}`}
-              className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-            >
-              <UserIcon className="h-3 w-3" />
-              {conversation.customer.name}
-            </Link>
-          ) : (
-            <span className="text-xs text-muted-foreground">عميل غير مرتبط</span>
-          )}
+          <div className="font-semibold truncate" dir={conversation.customer?.name ? 'rtl' : 'ltr'}>
+            {conversation.customer?.name || conversation.phone_number}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+            <span dir="ltr" className="truncate">{conversation.phone_number}</span>
+            {conversation.customer ? (
+              <Link
+                to={`/customers/${conversation.customer.id}`}
+                className="hover:text-primary inline-flex items-center gap-1 shrink-0"
+              >
+                <UserIcon className="h-3 w-3" />
+                ملف العميل
+              </Link>
+            ) : (
+              <span className="shrink-0">عميل غير مرتبط</span>
+            )}
+          </div>
         </div>
+
         <div className="ms-auto flex items-center gap-2 flex-wrap">
           <ConversationAgentIndicator conversation={conversation as any} />
           <ResolutionBadge status={isClosedConversation(conversation as any) ? (conversation as any).resolution_status : null} />
