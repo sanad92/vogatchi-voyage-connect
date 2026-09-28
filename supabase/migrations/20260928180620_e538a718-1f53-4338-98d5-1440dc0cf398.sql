@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.void_quote_review_on_item_change() FROM PUBLIC, anon, authenticated;

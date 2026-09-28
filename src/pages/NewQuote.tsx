@@ -286,13 +286,10 @@ export default function NewQuote() {
                 <ArrowRight className="h-4 w-4 ml-1" />رجوع
               </Button>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={createQuote.isPending}>
+                <span className="text-xs text-muted-foreground self-center">الإرسال بعد اعتماد المراجعة من صفحة العرض</span>
+                <Button onClick={() => handleSubmit('draft')} disabled={createQuote.isPending}>
                   <Save className="h-4 w-4 ml-1" />
                   حفظ كمسودة
-                </Button>
-                <Button onClick={() => handleSubmit('sent')} disabled={createQuote.isPending}>
-                  <Send className="h-4 w-4 ml-1" />
-                  حفظ وإرسال
                 </Button>
               </div>
             </div>
