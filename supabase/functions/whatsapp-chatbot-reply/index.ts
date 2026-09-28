@@ -127,6 +127,34 @@ Deno.serve(async (req) => {
     pendingId = undefined;
     await db.from('whatsapp_chatbot_interactions').insert({ organization_id: orgId, conversation_id: conversationId,
       message_id, user_message, bot_reply: reply, model_used: settings.bot_mode === 'guided' ? 'guided' : settings.model, latency_ms: Date.now() - started });
+    if (salesMode && brief) {
+      // Capture the qualification brief for the sales team. Never blocks the reply.
+      try {
+        const extracted = await extractBrief({
+          model: settings.model, current: brief,
+          history: [...messages.slice(1), { role: 'assistant', content: reply }],
+        });
+        if (extracted) {
+          const merged = mergeBrief(brief, extracted);
+          const { error: briefError } = await db.from('ai_sales_briefs').upsert({
+            organization_id: orgId, conversation_id: conversationId,
+            customer_id: convo.customer_id ?? null, ...merged,
+          }, { onConflict: 'organization_id,conversation_id' });
+          if (briefError) throw briefError;
+          if (merged.readiness === 'ready_for_quote') {
+            // Ready for a human quote: queue it for the sales team, never auto-assign or quote.
+            await db.from('whatsapp_conversations')
+              .update({ status: 'pending', priority: 'high', assignment_reason: 'sales_brief_ready' })
+              .eq('id', conversationId).eq('organization_id', orgId).is('assigned_to', null)
+              .in('status', ['open', 'active', 'pending']);
+            await db.from('ai_sales_briefs').update({ handed_off_at: new Date().toISOString() })
+              .eq('organization_id', orgId).eq('conversation_id', conversationId).is('handed_off_at', null);
+          }
+        }
+      } catch (briefErr) {
+        console.error('sales brief update failed', String((briefErr as any)?.message || briefErr));
+      }
+    }
     return json({ ok: true });
   } catch (e: any) {
     if (autoHandoffOnError && orgId && conversationId) {
