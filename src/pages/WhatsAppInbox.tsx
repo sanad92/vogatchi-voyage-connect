@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X } from 'lucide-react';
+import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X, User as UserIcon } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -254,7 +254,15 @@ const WhatsAppInboxContent: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
                       {selected.customer?.name && selected.phone_number && <span dir="ltr">{selected.phone_number}</span>}
-
+                      {selected.customer?.id && (
+                        <Link
+                          to={`/customers/${selected.customer.id}`}
+                          className="hover:text-primary inline-flex items-center gap-1 shrink-0 font-medium"
+                        >
+                          <UserIcon className="h-3 w-3" />
+                          ملف العميل
+                        </Link>
+                      )}
                       <span className="opacity-60">
                         {selected.inbox
                           ? `· عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
