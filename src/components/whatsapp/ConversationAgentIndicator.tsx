@@ -11,7 +11,7 @@ type Conversation = Parameters<typeof botMayReply>[0] & {
 
 const CLOSED_STATUSES = ['closed', 'resolved', 'archived'];
 
-const tone: Record<string, string> = {
+const STATE_TONES: Record<string, string> = {
   bot: 'bg-success/10 text-success border-success/30',
   human: 'bg-primary/10 text-primary border-primary/30',
   waiting: 'bg-warning/15 text-warning-foreground/90 border-warning/40 dark:text-warning',
@@ -62,31 +62,31 @@ export function ConversationAgentIndicator({ conversation, compact }: Props) {
   });
 
   if (isClosed) {
-    return <StatePill tone="closed" icon={<Archive className="h-3.5 w-3.5" aria-hidden="true" />}
+    return <StatePill variant="closed" icon={<Archive className="h-3.5 w-3.5" aria-hidden="true" />}
       label="محادثة منتهية" detail="لا يرد البوت حتى يرسل العميل رسالة جديدة" compact={compact} />;
   }
 
   if (assignedTo) {
-    return <StatePill tone="human" icon={<UserCheck className="h-3.5 w-3.5" aria-hidden="true" />}
+    return <StatePill variant="human" icon={<UserCheck className="h-3.5 w-3.5" aria-hidden="true" />}
       label={`يتولى الرد: ${employeeName || 'موظف'}`} detail="الموظف المسؤول عن هذه المحادثة" compact={compact} />;
   }
 
   if (!botAllowed) {
-    return <StatePill tone="waiting" icon={<PauseCircle className="h-3.5 w-3.5" aria-hidden="true" />}
+    return <StatePill variant="waiting" icon={<PauseCircle className="h-3.5 w-3.5" aria-hidden="true" />}
       label="بانتظار استلام موظف" detail="الرد الآلي متوقف حتى يستلم موظف المحادثة" compact={compact} />;
   }
 
   if (botLoading || botEnabled === undefined) {
-    return <StatePill tone="disabled" icon={<Bot className="h-3.5 w-3.5 opacity-50" aria-hidden="true" />}
+    return <StatePill variant="disabled" icon={<Bot className="h-3.5 w-3.5 opacity-50" aria-hidden="true" />}
       label="جارٍ التحقق من حالة الرد الآلي…" compact={compact} />;
   }
 
   if (!botEnabled) {
-    return <StatePill tone="disabled" icon={<BotOff className="h-3.5 w-3.5" aria-hidden="true" />}
+    return <StatePill variant="disabled" icon={<BotOff className="h-3.5 w-3.5" aria-hidden="true" />}
       label="الرد الآلي معطّل" detail="الموظفون مسؤولون عن الرد على هذه المحادثة" compact={compact} />;
   }
 
-  return <StatePill tone="bot" icon={<Bot className="h-3.5 w-3.5" aria-hidden="true" />}
+  return <StatePill variant="bot" icon={<Bot className="h-3.5 w-3.5" aria-hidden="true" />}
     label="الرد الآلي نشط" detail="البوت سيرد على رسائل العميل القادمة" compact={compact} />;
 };
 
