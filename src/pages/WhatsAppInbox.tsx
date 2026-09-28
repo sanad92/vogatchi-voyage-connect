@@ -19,6 +19,7 @@ import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
 import { isQueuedConversation, isClosedConversation, orderQueue } from '@/lib/whatsappQueue';
 import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
 import { ConversationBotNotice } from '@/components/whatsapp/ConversationBotNotice';
+import { ConversationAgentIndicator } from '@/components/whatsapp/ConversationAgentIndicator';
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -259,6 +260,7 @@ const WhatsAppInboxContent: React.FC = () => {
                   </div>
                 </div>
 
+                <ConversationAgentIndicator conversation={selected} compact />
                 <div className="flex items-center gap-1 shrink-0">
                   {isQueuedConversation(selected) && canWork && <Button size="sm" className="rounded-full" disabled={!employee || claim.isPending} onClick={() => pickup(selected.id)}>استلام</Button>}
                   <CloseConversationDialog conversationId={selected.id} organizationId={selected.organization_id}
