@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, UserPlus, Tag as TagIcon, Trash2, Plus, X, MessageSquare, History as HistoryIcon,
-  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap, ShieldCheck,
+  Info, StickyNote, Send, User, Sparkles, Bell, Briefcase, Zap, ShieldCheck, ClipboardList,
 } from 'lucide-react';
 import { ConversationActionsPanel } from './ConversationActionsPanel';
 import { Customer360Panel } from './Customer360Panel';
