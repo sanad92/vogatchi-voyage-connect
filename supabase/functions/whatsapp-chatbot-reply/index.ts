@@ -3,6 +3,7 @@ import { callLovableAI, corsHeaders, ChatMessage } from '../_shared/ai-gateway.t
 import { requireInternalCaller, authErrorResponse } from '../_shared/auth.ts';
 import { botMayReply } from '../_shared/whatsapp-bot-policy.ts';
 import { graphSend, isWindowOpen, resolveSettings, normalizePhone } from '../_shared/whatsapp.ts';
+import { loadBrief, matchCatalog, catalogText, salesSystemPrompt, extractBrief, mergeBrief } from '../_shared/sales-agent.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
