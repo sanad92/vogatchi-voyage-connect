@@ -9,6 +9,7 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import QuoteStatusBadge from '@/components/quotes/QuoteStatusBadge';
 import ConvertQuoteDialog from '@/components/quotes/ConvertQuoteDialog';
 import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
+import QuoteFollowupsPanel from '@/components/quotes/QuoteFollowupsPanel';
 import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -213,6 +214,7 @@ export default function QuoteDetails() {
         </Card>
       )}
 
+      <QuoteFollowupsPanel quoteId={quote.id} canEdit={canEdit} />
       <QuoteBookingsPanel quoteId={quote.id} />
 
       <ConvertQuoteDialog
