@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import { useSalesBrief } from '@/hooks/useSalesBrief';
 import { usePriceCatalog } from '@/hooks/usePriceCatalog';
+import { SalesQuoteDraftBuilder } from './SalesQuoteDraftBuilder';
 
 interface Props { conversationId: string }
 
@@ -72,6 +73,8 @@ export const SalesBriefPanel: React.FC<Props> = ({ conversationId }) => {
           <p className="text-xs text-muted-foreground">السعر مبدئي ويخضع لتأكيد التوافر قبل إصدار عرض رسمي.</p>
         </div>
       )}
+
+      {!!rows.length && <SalesQuoteDraftBuilder conversationId={conversationId} brief={brief} rows={rows} />}
     </div>
   );
 };
