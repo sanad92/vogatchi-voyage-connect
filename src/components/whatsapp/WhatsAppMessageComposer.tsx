@@ -38,6 +38,9 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendingLockRef = useRef(false);
+
   const { user } = useOptimizedAuth() as any;
   const { data: currentOrg } = useCurrentOrganization() as any;
 
