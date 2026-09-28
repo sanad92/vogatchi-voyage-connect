@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 
 interface Props {
   conversationId: string;
-  onMessageSent?: () => void;
+  onMessageSent?: (sentText?: string) => void;
   prefillText?: string;
   prefillNonce?: number;
   contactName?: string | null;
@@ -155,10 +155,11 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
         onMessageSent?.();
         return;
       }
-      await sendTextMessage(conversationId, message);
+      const sentText = message;
+      await sendTextMessage(conversationId, sentText);
       // The draft is cleared only after the send is confirmed.
       setMessage('');
-      onMessageSent?.();
+      onMessageSent?.(sentText);
     } catch (err) {
       // Keep the text in place so the agent can edit or retry it.
       console.error('send failed:', err);
@@ -194,7 +195,7 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
       );
       setMessage('');
       clearPending();
-      onMessageSent?.();
+      onMessageSent?.(payload.previewText);
     } catch (err) {
       console.error('template send failed:', err);
     }
