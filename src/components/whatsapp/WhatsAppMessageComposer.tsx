@@ -113,7 +113,20 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
     setPending(null);
   };
 
+  // Returning the caret keeps the agent typing without reaching for the mouse.
+  const focusComposer = () => {
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      const end = el.value.length;
+      try { el.setSelectionRange(end, end); } catch { /* ignore */ }
+    });
+  };
+
   const handleSend = async () => {
+    // A synchronous lock stops a double Enter or double click from sending twice.
+    if (sendingLockRef.current) return;
     // Ownership must be satisfied BEFORE any Meta request.
     if (blockSend()) return;
     // Intercept BEFORE any Meta request when the 24h window is closed.
@@ -124,7 +137,13 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
       setTemplatePickerOpen(true);
       return;
     }
+    if (!pending && !message.trim()) {
+      toast.error('يرجى كتابة رسالة');
+      focusComposer();
+      return;
+    }
 
+    sendingLockRef.current = true;
     try {
       if (pending) {
         await sendMedia(conversationId, pending.file, message.trim() || undefined);
@@ -133,24 +152,28 @@ export const WhatsAppMessageComposer: React.FC<Props> = ({
         onMessageSent?.();
         return;
       }
-      if (!message.trim()) {
-        toast.error('يرجى كتابة رسالة');
-        return;
-      }
       await sendTextMessage(conversationId, message);
+      // The draft is cleared only after the send is confirmed.
       setMessage('');
       onMessageSent?.();
     } catch (err) {
+      // Keep the text in place so the agent can edit or retry it.
       console.error('send failed:', err);
+    } finally {
+      sendingLockRef.current = false;
+      focusComposer();
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Shift+Enter adds a new line; Enter sends. IME composition is never interrupted.
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    if ((e.nativeEvent as any)?.isComposing) return;
+    e.preventDefault();
+    if (isSending || sendingLockRef.current) return;
+    handleSend();
   };
+
 
   const handleDirectTemplateSend = async (payload: {
     templateName: string;
