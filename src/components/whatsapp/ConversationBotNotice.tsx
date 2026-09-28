@@ -1,7 +1,13 @@
-import { Bot } from 'lucide-react';
+import { Bot, Loader2, RotateCcw } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { botMayReply } from '../../../supabase/functions/_shared/whatsapp-bot-policy';
 
-type Conversation = Parameters<typeof botMayReply>[0];
+type Conversation = Parameters<typeof botMayReply>[0] & { id?: string };
 
 function pauseExplanation(conversation: Conversation): string {
   if (['closed', 'resolved', 'archived'].includes(conversation.status || '')) {
@@ -32,15 +38,83 @@ function pauseExplanation(conversation: Conversation): string {
 // allowed by that policy is not labelled "bot active": settings and the provider
 // messaging window still apply, and cannot be established from this row alone.
 export function ConversationBotNotice({ conversation }: { conversation: Conversation }) {
-  if (botMayReply(conversation)) return null;
+  const organizationId = useOrgId();
+  const qc = useQueryClient();
+  const { hasPermission } = useSupabasePermissions();
+  const conversationId = conversation.id;
+
+  const isClosed = ['closed', 'resolved', 'archived'].includes(conversation.status || '');
+  const paused = !botMayReply(conversation);
+  // Only an unassigned, still-open conversation may be handed back: never take a
+  // conversation away from the employee who owns it, and never reopen a closed one.
+  const eligible = paused && !isClosed && !conversation.assigned_to && !!conversationId
+    && !!organizationId && hasPermission('whatsapp_admin');
+
+  const { data: botEnabled } = useQuery({
+    queryKey: ['whatsapp-bot-enabled', organizationId],
+    enabled: eligible,
+    queryFn: async () => {
+      const { data } = await (supabase as any).from('whatsapp_chatbot_settings')
+        .select('is_enabled').eq('organization_id', organizationId).maybeSingle();
+      return !!data?.is_enabled;
+    },
+  });
+
+  const resume = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase as any).from('whatsapp_conversations')
+        .update({ status: 'open', assignment_reason: null, priority: 'normal' })
+        .eq('id', conversationId).eq('organization_id', organizationId)
+        .is('assigned_to', null).in('status', ['open', 'active', 'pending', 'transferred'])
+        .select('id').maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('تغيّرت حالة المحادثة؛ حدّث الصفحة وأعد المحاولة');
+      const { data: userData } = await supabase.auth.getUser();
+      await (supabase as any).from('conversation_assignments_history').insert({
+        conversation_id: conversationId,
+        organization_id: organizationId,
+        action: 'bot_resumed',
+        reason: 'إلغاء الإحالة البشرية وإعادة تشغيل الرد الآلي',
+        performed_by: userData.user?.id,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      qc.invalidateQueries({ queryKey: ['whatsapp-conversation-detail', conversationId] });
+      qc.invalidateQueries({ queryKey: ['conversation-history', conversationId] });
+      toast.success('تم تسليم المحادثة للرد الآلي؛ سيتولى البوت الرسالة القادمة من العميل');
+    },
+    onError: (e: any) => toast.error(e?.message || 'تعذر إعادة تشغيل الرد الآلي'),
+  });
+
+  if (!paused) return null;
 
   return (
     <div role="status" dir="rtl" className="shrink-0 border-b bg-muted/50 px-4 py-2.5 flex items-start gap-2">
       <Bot className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <div className="min-w-0 space-y-0.5 text-sm">
+      <div className="min-w-0 flex-1 space-y-0.5 text-sm">
         <p className="font-medium">الرد الآلي متوقف في هذه المحادثة</p>
         <p className="text-xs leading-relaxed text-muted-foreground">{pauseExplanation(conversation)}</p>
+        {eligible && botEnabled === false && (
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            الرد الآلي معطّل لكل المحادثات من إعدادات الواتساب؛ فعّله أولاً حتى يتولى البوت الرد.
+          </p>
+        )}
       </div>
+      {eligible && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0 gap-1.5"
+          disabled={resume.isPending}
+          onClick={() => resume.mutate()}
+        >
+          {resume.isPending
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            : <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+          إعادة تسليم المحادثة للبوت
+        </Button>
+      )}
     </div>
   );
 }
