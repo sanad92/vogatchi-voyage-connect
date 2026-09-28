@@ -9,6 +9,7 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import QuoteStatusBadge from '@/components/quotes/QuoteStatusBadge';
 import ConvertQuoteDialog from '@/components/quotes/ConvertQuoteDialog';
 import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
+import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -53,6 +54,7 @@ export default function QuoteDetails() {
 
   const { quote, items } = data;
   const canEdit = hasPermission('quotes_edit');
+  const approved = !!(quote as any).review_approved_at;
   const eligibleStatus = ['draft', 'sent', 'accepted'].includes(quote.status);
   const canConvert = eligibleStatus && hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
 
@@ -81,7 +83,8 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {quote.status === 'draft' && canEdit && (
+          {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}
+          {quote.status === 'draft' && canEdit && approved && (
             <Button variant="outline" size="sm" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'sent' })}>
               <Send className="h-4 w-4 ml-1" />
               إرسال
@@ -89,7 +92,9 @@ export default function QuoteDetails() {
           )}
           {['draft','sent'].includes(quote.status) && canEdit && (
             <>
-              <Button variant="outline" size="sm" className="text-green-600" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'accepted' })}>
+              <Button variant="outline" size="sm" className="text-success" disabled={quote.status === 'draft' && !approved}
+                title={quote.status === 'draft' && !approved ? 'اعتمد العرض أولاً' : undefined}
+                onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'accepted' })}>
                 <CheckCircle className="h-4 w-4 ml-1" />
                 قبول
               </Button>
