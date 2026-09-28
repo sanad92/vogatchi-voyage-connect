@@ -22,6 +22,7 @@ import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { WhatsAppMessageComposer } from '@/components/whatsapp/WhatsAppMessageComposer';
 import { WhatsAppMediaMessage } from '@/components/whatsapp/WhatsAppMediaMessage';
 import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
+import { ConversationBotNotice } from '@/components/whatsapp/ConversationBotNotice';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
@@ -72,6 +73,7 @@ const WhatsAppConversationDetailContent: React.FC = () => {
       return data;
     },
     enabled: !!conversationId,
+    refetchInterval: 30_000,
   });
 
   const { messages, isLoading: messagesLoading } = useWhatsAppMessages(conversationId);
@@ -181,6 +183,8 @@ const WhatsAppConversationDetailContent: React.FC = () => {
           </Badge>
         </div>
       </div>
+
+      <ConversationBotNotice conversation={conversation} />
 
       {/* Search & filters */}
       <div className="border-b bg-card px-4 py-3 flex flex-wrap items-center gap-2">

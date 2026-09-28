@@ -38,3 +38,11 @@ The earlier user test conversation had since been closed and was not reopened or
 - `verify-whatsapp-internal-auth.mjs`: 11 cases through the real transpiled auth helper and bot handler, covering modern service `apikey`, legacy bearer, configured internal secret, missing/public/forged/wrong credentials, an unset internal secret and rejection of a legacy key supplied only as `apikey`.
 
 The new auth checks assert zero database, AI and provider effects for both accepted no-op requests and rejected requests. Fixtures are fake; external operations are trapped. The local scripts do not validate the live gateway or provider network; the deployed no-op and production delivery records supply that separate evidence.
+
+## Follow-up: explain human handoff in the inbox
+
+A subsequent read-only review found three recently active conversations waiting for human pickup: one requested an employee, one reached the bot reply limit, and one was already in the human queue. Routing was manual; no agent had a current available heartbeat. There were no `failed` or `sending` bot outbound rows in the post-repair snapshot. Manual pickup is still required for those waiting conversations.
+
+The inbox and full conversation page now show the reason when the shared runtime conversation policy pauses the bot: closure, employee ownership, requested handoff, reply limit, generation error, completed intake or human-queue routing. The notice does not claim the bot is enabled when configuration and the messaging window have not been checked. The full conversation page refreshes its conversation state every 30 seconds.
+
+This frontend change does not alter routing, assignments, bot limits or any production conversation. Validation: production build and lint of the new component passed; the component also rendered with representative conversation states through React's server renderer. Local browser screenshots were unavailable because the browser executable was not installed.

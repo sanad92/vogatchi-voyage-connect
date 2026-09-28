@@ -18,6 +18,7 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
 import { isQueuedConversation, isClosedConversation, orderQueue } from '@/lib/whatsappQueue';
 import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightPanel';
+import { ConversationBotNotice } from '@/components/whatsapp/ConversationBotNotice';
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -275,6 +276,8 @@ const WhatsAppInboxContent: React.FC = () => {
                 </div>
 
               </div>
+
+              <ConversationBotNotice conversation={selected} />
 
               {/* Inline message search & direction filter */}
               {showSearch && (
