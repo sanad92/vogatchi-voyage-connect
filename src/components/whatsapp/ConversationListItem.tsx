@@ -87,6 +87,11 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
             </span>
           </div>
 
+          {c.customer?.name && c.phone_number && (
+            <div className="text-[11px] text-muted-foreground truncate" dir="ltr">{c.phone_number}</div>
+          )}
+
+
           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
             {last?.direction === 'outbound' && <ArrowUpRight className="h-3 w-3 shrink-0" />}
             {PreviewIcon && <PreviewIcon className="h-3 w-3 shrink-0" />}

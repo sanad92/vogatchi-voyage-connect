@@ -252,12 +252,17 @@ const WhatsAppInboxContent: React.FC = () => {
                     <div className="font-semibold text-sm truncate" dir={selected.customer?.name ? 'rtl' : 'ltr'}>
                       {selected.customer?.name || selected.phone_number}
                     </div>
-                    <div className="text-[11px] text-muted-foreground truncate">
-                      {selected.inbox
-                        ? `عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
-                        : 'واتساب'}
+                    <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
+                      {selected.customer?.name && selected.phone_number && <span dir="ltr">{selected.phone_number}</span>}
+
+                      <span className="opacity-60">
+                        {selected.inbox
+                          ? `· عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
+                          : '· واتساب'}
+                      </span>
                     </div>
                   </div>
+
                 </div>
 
                 <ConversationAgentIndicator conversation={selected} compact />
