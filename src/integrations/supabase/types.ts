@@ -8779,6 +8779,9 @@ export type Database = {
           organization_id: string | null
           quote_number: string
           return_date: string | null
+          review_approved_at: string | null
+          review_approved_by: string | null
+          review_checklist: Json
           status: string | null
           subtotal: number | null
           total_amount: number | null
@@ -8808,6 +8811,9 @@ export type Database = {
           organization_id?: string | null
           quote_number: string
           return_date?: string | null
+          review_approved_at?: string | null
+          review_approved_by?: string | null
+          review_checklist?: Json
           status?: string | null
           subtotal?: number | null
           total_amount?: number | null
@@ -8837,6 +8843,9 @@ export type Database = {
           organization_id?: string | null
           quote_number?: string
           return_date?: string | null
+          review_approved_at?: string | null
+          review_approved_by?: string | null
+          review_checklist?: Json
           status?: string | null
           subtotal?: number | null
           total_amount?: number | null
@@ -13957,6 +13966,47 @@ export type Database = {
       approve_bank_reconciliation: {
         Args: { _session: string; _tolerance?: number }
         Returns: Json
+      }
+      approve_quote_review: {
+        Args: { _checks: Json; _costs?: Json; _quote: string }
+        Returns: {
+          assigned_employee_id: string | null
+          created_at: string | null
+          created_by: string | null
+          creation_request_hash: string | null
+          creation_request_id: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          destination: string | null
+          discount_amount: number | null
+          id: string
+          is_demo: boolean
+          notes: string | null
+          number_of_travelers: number | null
+          organization_id: string | null
+          quote_number: string
+          return_date: string | null
+          review_approved_at: string | null
+          review_approved_by: string | null
+          review_checklist: Json
+          status: string | null
+          subtotal: number | null
+          total_amount: number | null
+          total_cost: number | null
+          total_profit: number | null
+          travel_date: string | null
+          updated_at: string | null
+          valid_until: string | null
+          vat_amount: number | null
+          vat_rate: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       approve_refund_request: {
         Args: { _approve?: boolean; _reason?: string; _refund_id: string }
