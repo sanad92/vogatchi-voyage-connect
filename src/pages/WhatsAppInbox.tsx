@@ -25,6 +25,7 @@ import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CloseConversationDialog } from '@/components/whatsapp/CloseConversationDialog';
 import { ConversationListItem } from '@/components/whatsapp/ConversationListItem';
+import { ConversationCustomerLink } from '@/components/whatsapp/ConversationCustomerLink';
 import { ChatDateDivider, dayKeyOf, dayLabelOf } from '@/components/whatsapp/ChatDateDivider';
 import { MessageActionsMenu, messageTextOf } from '@/components/whatsapp/MessageActionsMenu';
 import { ForwardMessageDialog } from '@/components/whatsapp/ForwardMessageDialog';
@@ -254,15 +255,8 @@ const WhatsAppInboxContent: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
                       {selected.customer?.name && selected.phone_number && <span dir="ltr">{selected.phone_number}</span>}
-                      {selected.customer?.id && (
-                        <Link
-                          to={`/customers/${selected.customer.id}`}
-                          className="hover:text-primary inline-flex items-center gap-1 shrink-0 font-medium"
-                        >
-                          <UserIcon className="h-3 w-3" />
-                          ملف العميل
-                        </Link>
-                      )}
+                      <ConversationCustomerLink conversation={selected as any} />
+
                       <span className="opacity-60">
                         {selected.inbox
                           ? `· عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
