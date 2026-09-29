@@ -96,6 +96,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const [manualSearch, setManualSearch] = useState('');
   const [manualRegion, setManualRegion] = useState<PhoneRegion | 'all'>('all');
   const [importOpen, setImportOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
     useUpcomingBookingCustomers(upcomingDays);
@@ -170,6 +171,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setSelectedCustomerIds(new Set());
     setManualSearch(''); setManualRegion('all');
     setCustomVals({}); setSlotSource({});
+    setConfirmOpen(false);
   };
 
 
@@ -555,9 +557,95 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                 disabled={isCreating || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
                 حفظ كمسودة
               </Button>
-              <Button onClick={() => handleCreate(true)}
+              <Button onClick={() => setConfirmOpen(true)}
                 disabled={isCreating || isSending || !form.name || !selectedTemplate || !senderId || recipients.length === 0 || pendingSlots.length > 0}>
-                <Send className="w-4 h-4 ml-1" /> إنشاء وإرسال
+                <Send className="w-4 h-4 ml-1" /> معاينة وإرسال
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Final review before sending: recipients after search/filters + message preview + explicit confirmation */}
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" /> مراجعة الحملة قبل الإرسال
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-md border p-3">
+                  <div className="text-muted-foreground text-xs">الحملة</div>
+                  <div className="font-medium">{form.name}</div>
+                </div>
+                <div className="rounded-md border p-3">
+                  <div className="text-muted-foreground text-xs">الإرسال من</div>
+                  <div className="font-medium" dir="ltr">{senderPhone || '—'}</div>
+                </div>
+                <div className="rounded-md border p-3">
+                  <div className="text-muted-foreground text-xs">القالب</div>
+                  <div className="font-medium">{selectedTemplate?.name || '—'}</div>
+                </div>
+                <div className="rounded-md border p-3">
+                  <div className="text-muted-foreground text-xs">عدد المستلمين</div>
+                  <div className="font-bold text-lg">{recipients.length}</div>
+                </div>
+              </div>
+
+              {form.scheduled_at && (
+                <p className="text-sm text-muted-foreground">
+                  مجدولة في: {format(new Date(form.scheduled_at), 'dd MMM yyyy HH:mm', { locale: ar })}
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <Label className="text-xs">نص الرسالة كما سيصل للعملاء</Label>
+                <div className="text-sm whitespace-pre-wrap rounded-md border bg-background p-3 leading-relaxed">
+                  {preview || '—'}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">قائمة المستلمين (بعد البحث والفلاتر)</Label>
+                <div className="border rounded-md max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10">#</TableHead>
+                        <TableHead>الاسم</TableHead>
+                        <TableHead>الرقم</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recipients.map((r, i) => (
+                        <TableRow key={r.customer_id || r.phone_number}>
+                          <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="text-sm">{r.customer_name || '—'}</TableCell>
+                          <TableCell className="text-xs font-mono" dir="ltr">{r.phone_number}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>تأكيد نهائي</AlertTitle>
+                <AlertDescription className="text-sm">
+                  سيتم إرسال الرسالة فوراً إلى {recipients.length} مستلم. لا يمكن التراجع بعد بدء الإرسال.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>رجوع للتعديل</Button>
+              <Button
+                onClick={async () => { setConfirmOpen(false); await handleCreate(true); }}
+                disabled={isCreating || isSending}
+              >
+                {(isCreating || isSending) && <Loader2 className="w-4 h-4 ml-1 animate-spin" />}
+                <Send className="w-4 h-4 ml-1" /> تأكيد وإرسال الآن
               </Button>
             </DialogFooter>
           </DialogContent>
