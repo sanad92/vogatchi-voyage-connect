@@ -2,6 +2,7 @@
 // with the correct number of variables — free-form bulk text is rejected by Meta
 // outside the 24h service window (error 131047) and is never attempted here.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isRetryableFailure } from '../_shared/broadcast-retry.ts';
 import {
   WA_CORS as corsHeaders,
   buildTemplateComponents,
