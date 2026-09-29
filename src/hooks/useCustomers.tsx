@@ -36,12 +36,12 @@ export const useCustomers = () => {
             .order('created_at', { ascending: false })
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
-          if (pageError) return { data: null, error: pageError, count: 0 };
+          if (pageError) return { data: null as any[] | null, error: pageError, count: 0 };
           if (from === 0) count = pageCount || 0;
           rows.push(...(page || []));
           if (!page || page.length < PAGE_SIZE || rows.length >= count) break;
         }
-        return { data: rows, error: null, count };
+        return { data: rows as any[] | null, error: null as any, count };
       };
 
       const [customerResult, metricsResult] = await Promise.all([
@@ -55,7 +55,7 @@ export const useCustomers = () => {
       const metricsByCustomer = new Map<string, CustomerBookingMetricRow>(
         ((metricsResult.data || []) as CustomerBookingMetricRow[]).map((row) => [row.customer_id, row]),
       );
-      const customers = (customerResult.data || []).map((customer) => {
+      const customers = (customerResult.data || []).map((customer: any) => {
         const metric = metricsByCustomer.get(customer.id);
         const spendByCurrency = parseCurrencyTotals(metric?.spend_by_currency);
         return {
