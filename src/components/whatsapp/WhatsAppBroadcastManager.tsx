@@ -28,6 +28,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { ImportContactsDialog } from './ImportContactsDialog';
 
 /** Group customers by the country their phone number belongs to, so campaigns can target one market. */
 type PhoneRegion = 'eg' | 'sa' | 'other';
@@ -94,6 +95,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
   const [manualSearch, setManualSearch] = useState('');
   const [manualRegion, setManualRegion] = useState<PhoneRegion | 'all'>('all');
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
     useUpcomingBookingCustomers(upcomingDays);
@@ -474,6 +476,12 @@ export const WhatsAppBroadcastManager: React.FC = () => {
 
               {audiencePreset === 'manual' && (
                 <div className="space-y-2">
+                  <ImportContactsDialog
+                    open={importOpen}
+                    onOpenChange={setImportOpen}
+                    customers={eligibleCustomers}
+                    onImported={(ids) => setSelectedCustomerIds((prev) => new Set([...prev, ...ids]))}
+                  />
                   <div className="relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -502,6 +510,10 @@ export const WhatsAppBroadcastManager: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs"
+                      onClick={() => setImportOpen(true)}>
+                      استيراد أرقام
+                    </Button>
                     <Button type="button" size="sm" variant="secondary" className="h-7 text-xs"
                       disabled={!manualCandidates.length} onClick={selectAllVisible}>
                       تحديد الكل ({manualCandidates.length})
