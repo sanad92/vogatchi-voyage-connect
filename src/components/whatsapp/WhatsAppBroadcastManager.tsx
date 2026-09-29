@@ -96,6 +96,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const [manualSearch, setManualSearch] = useState('');
   const [manualRegion, setManualRegion] = useState<PhoneRegion | 'all'>('all');
   const [importOpen, setImportOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
     useUpcomingBookingCustomers(upcomingDays);
@@ -170,6 +171,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setSelectedCustomerIds(new Set());
     setManualSearch(''); setManualRegion('all');
     setCustomVals({}); setSlotSource({});
+    setConfirmOpen(false);
   };
 
 
