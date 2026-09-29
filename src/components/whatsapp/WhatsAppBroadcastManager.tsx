@@ -861,7 +861,7 @@ const BroadcastDetailsDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Megaphone className="w-5 h-5" /> {broadcast.name}
@@ -957,7 +957,7 @@ const BroadcastDetailsDialog: React.FC<{
         ) : visibleRecipients.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">لا يوجد مستلمون مطابقون</div>
         ) : (
-          <div className="border rounded-md flex-1 min-h-0 overflow-auto">
+          <div className="border rounded-md max-h-64 overflow-auto">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-background">
                 <TableRow>
