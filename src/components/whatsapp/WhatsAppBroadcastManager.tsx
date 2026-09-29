@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Megaphone, Plus, Send, Trash2, Ban, Users, Clock, CheckCircle2, XCircle, Loader2,
-  Eye, AlertTriangle, CheckCheck, Check, PlayCircle, Search, RefreshCw,
+  Eye, AlertTriangle, CheckCheck, Check, PlayCircle, Search, RefreshCw, Download,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -836,6 +836,34 @@ const BroadcastDetailsDialog: React.FC<{
     return { retryable, excluded };
   }, [recipients]);
 
+  /** Download a CSV report of all recipients with status, failure reason, and whether the number can join a new campaign. */
+  const downloadReport = () => {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['الاسم', 'الرقم', 'الحالة', 'سبب الفشل', 'رمز الخطأ', 'ينفع في حملة جديدة'];
+    const rows = (recipients as any[]).map((r) => {
+      const failed = r.status === 'failed';
+      const retryable = failed && isRetryableFailure(r.error_code, r.error_message);
+      const reusable = !failed || retryable ? 'نعم' : 'لا — رقم غير صالح/غير مفعّل/محظور';
+      return [
+        r.customer_name || '—',
+        r.phone_number,
+        recipientStatusMeta[r.status]?.label ?? r.status,
+        failed ? (r.error_message || 'فشل غير محدد') : '',
+        failed ? (r.error_code || '') : '',
+        reusable,
+      ].map(esc).join(',');
+    });
+    const csv = '﻿' + [header.map(esc).join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير-حملة-${broadcast.name}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('تم تحميل التقرير');
+  };
+
   const [retryConfirm, setRetryConfirm] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const handleRetry = async () => {
@@ -946,6 +974,9 @@ const BroadcastDetailsDialog: React.FC<{
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={downloadReport} disabled={recipients.length === 0}>
+            <Download className="w-4 h-4 ml-1" /> تحميل التقرير
+          </Button>
         </div>
 
         <div className="text-xs text-muted-foreground">
