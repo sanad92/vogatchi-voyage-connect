@@ -11,6 +11,8 @@ export interface TemplateFilters {
   category?: TemplateCategoryKey | 'all';
   status?: 'all' | 'approved' | 'pending' | 'rejected' | 'draft';
   locale?: 'all' | 'ar' | 'en';
+  /** WhatsApp number (whatsapp_settings id). Drafts not yet tied to a number are always shown. */
+  settingsId?: string | null;
 }
 
 export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
@@ -29,6 +31,9 @@ export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
       const { data, error } = await q;
       if (error) throw error;
       let list = data || [];
+      if (filters.settingsId) {
+        list = list.filter((t: any) => !t.whatsapp_settings_id || t.whatsapp_settings_id === filters.settingsId);
+      }
       if (filters.search) {
         const s = filters.search.toLowerCase();
         list = list.filter(
@@ -141,7 +146,7 @@ export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
   const syncMeta = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('whatsapp-sync-templates', {
-        body: { organizationId: orgId },
+        body: { organizationId: orgId, settingsId: filters.settingsId || undefined },
       });
       if (error) throw error;
       return data;
@@ -158,7 +163,7 @@ export const useWhatsAppTemplateCenter = (filters: TemplateFilters = {}) => {
     mutationFn: async (input: { templateIds?: string[]; allDrafts?: boolean }) => {
       if (!orgId) throw new Error('No organization');
       const { data, error } = await supabase.functions.invoke('whatsapp-submit-template', {
-        body: { organizationId: orgId, ...input },
+        body: { organizationId: orgId, settingsId: filters.settingsId || undefined, ...input },
       });
       if (error) await throwEdgeError(error, 'فشل إرسال القالب إلى Meta');
       if ((data as any)?.error) throw new Error((data as any).error);

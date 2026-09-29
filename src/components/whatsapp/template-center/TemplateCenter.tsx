@@ -11,6 +11,9 @@ import { TemplateLibraryDialog } from './TemplateLibraryDialog';
 import { TemplateEditorDialog } from './TemplateEditorDialog';
 import { TemplateAnalyticsPanel } from './TemplateAnalyticsPanel';
 import { TemplatePreview } from './TemplatePreview';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const statusColors: Record<string, string> = {
@@ -31,7 +34,22 @@ export const TemplateCenter: React.FC = () => {
   const [editing, setEditing] = useState<any | null>(null);
   const [previewing, setPreviewing] = useState<any | null>(null);
 
-  const { templates, isLoading, syncMeta, submitToMeta, deleteTemplate } = useWhatsAppTemplateCenter(filters);
+  const orgId = useOrgId();
+  const { data: numbers = [] } = useQuery({
+    queryKey: ['wa-template-numbers', orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from('whatsapp_settings')
+        .select('id, display_phone_number, is_default').eq('organization_id', orgId)
+        .order('is_default', { ascending: false });
+      if (error) throw error;
+      return (data || []) as { id: string; display_phone_number: string | null; is_default: boolean }[];
+    },
+  });
+  const [settingsId, setSettingsId] = useState<string | null>(null);
+  const activeNumber = settingsId ?? numbers[0]?.id ?? null;
+
+  const { templates, isLoading, syncMeta, submitToMeta, deleteTemplate } = useWhatsAppTemplateCenter({ ...filters, settingsId: activeNumber });
 
   const pendingDrafts = templates.filter(
     (t: any) => !t.meta_template_id && ['draft', 'rejected'].includes((t.status || 'draft').toLowerCase()),
@@ -62,7 +80,20 @@ export const TemplateCenter: React.FC = () => {
             إدارة، توليد، ومزامنة قوالب WhatsApp Business لوكالات السفر — مع مكتبة جاهزة وتحليلات مباشرة.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {numbers.length > 1 && (
+            <Select value={activeNumber ?? undefined} onValueChange={setSettingsId}>
+              <SelectTrigger className="w-52" aria-label="رقم الواتساب"><SelectValue placeholder="اختر الرقم" /></SelectTrigger>
+              <SelectContent>
+                {numbers.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    <span dir="ltr">{n.display_phone_number || n.id.slice(0, 8)}</span>
+                    {n.is_default ? ' (الأساسي)' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button
             onClick={() => submitToMeta.mutate({ allDrafts: true })}
             disabled={submitToMeta.isPending || pendingDrafts.length === 0}
