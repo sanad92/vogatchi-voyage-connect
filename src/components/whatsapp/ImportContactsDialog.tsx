@@ -79,7 +79,7 @@ export const ImportContactsDialog: React.FC<Props> = ({ open, onOpenChange, onIm
 
   const byTail = useMemo(() => {
     const m = new Map<string, string>();
-    customers.forEach((c) => { const d = digitsOf(c.phone); if (d.length >= 9) m.set(d.slice(-9), c.id); });
+    (customers ?? []).forEach((c) => { const d = digitsOf(c.phone); if (d.length >= 9) m.set(d.slice(-9), c.id); });
     return m;
   }, [customers]);
 
