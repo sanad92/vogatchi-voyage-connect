@@ -157,6 +157,11 @@ Deno.serve(async (req) => {
       };
       if (row.body_text) row.body_text = fixText(row.body_text);
       if (row.header_text) row.header_text = fixText(row.header_text, true);
+      // Footers can't carry variables — strip them rather than fail the whole template.
+      if (row.footer_text && /\{\{/.test(String(row.footer_text))) {
+        row.footer_text = String(row.footer_text).replace(/\{\{[^}]*\}\}/g, '').replace(/\s{2,}/g, ' ').trim() || null;
+        await admin.from('whatsapp_templates').update({ footer_text: row.footer_text }).eq('id', row.id);
+      }
       await admin.from('whatsapp_templates').update({
         body_text: row.body_text, header_text: row.header_text ?? null,
       }).eq('id', row.id);
