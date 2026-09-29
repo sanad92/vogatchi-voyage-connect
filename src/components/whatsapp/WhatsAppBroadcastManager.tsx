@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Megaphone, Plus, Send, Trash2, Ban, Users, Clock, CheckCircle2, XCircle, Loader2,
-  Eye, AlertTriangle, CheckCheck, Check, PlayCircle,
+  Eye, AlertTriangle, CheckCheck, Check, PlayCircle, Search,
 } from 'lucide-react';
 import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from '@/hooks/useWhatsAppBroadcasts';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -28,6 +28,26 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+
+/** Group customers by the country their phone number belongs to, so campaigns can target one market. */
+type PhoneRegion = 'eg' | 'sa' | 'other';
+
+const digitsOf = (value?: string | null) => String(value ?? '').replace(/\D/g, '');
+
+const phoneRegionOf = (phone?: string | null): PhoneRegion => {
+  const d = digitsOf(phone);
+  if (d.startsWith('20') || d.startsWith('010') || d.startsWith('011') || d.startsWith('012') || d.startsWith('015')) return 'eg';
+  if (d.startsWith('966') || d.startsWith('05')) return 'sa';
+  return 'other';
+};
+
+const REGION_TABS: ReadonlyArray<readonly [PhoneRegion | 'all', string]> = [
+  ['all', 'كل الأرقام'],
+  ['eg', 'أرقام مصر'],
+  ['sa', 'أرقام السعودية'],
+  ['other', 'أرقام أخرى'],
+];
+
 
 const statusMap: Record<WhatsAppBroadcast['status'], { label: string; variant: any; icon: any }> = {
   draft: { label: 'مسودة', variant: 'secondary', icon: Clock },
@@ -72,6 +92,8 @@ export const WhatsAppBroadcastManager: React.FC = () => {
   const [audiencePreset, setAudiencePreset] = useState<'all' | 'upcoming' | 'manual'>('all');
   const [upcomingDays, setUpcomingDays] = useState(30);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
+  const [manualSearch, setManualSearch] = useState('');
+  const [manualRegion, setManualRegion] = useState<PhoneRegion | 'all'>('all');
 
   const { data: upcomingCustomers = [], isLoading: upcomingLoading } =
     useUpcomingBookingCustomers(upcomingDays);
@@ -80,6 +102,39 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     () => (customers || []).filter((c: any) => !!c.phone),
     [customers],
   );
+
+  /** Customers shown in the manual picker after the region filter and the search box. */
+  const manualCandidates = useMemo(() => {
+    const q = manualSearch.trim().toLowerCase();
+    const qDigits = digitsOf(manualSearch);
+    return eligibleCustomers.filter((c: any) => {
+      if (manualRegion !== 'all' && phoneRegionOf(c.phone) !== manualRegion) return false;
+      if (!q) return true;
+      if ((c.name || '').toLowerCase().includes(q)) return true;
+      return qDigits.length > 0 && digitsOf(c.phone).includes(qDigits);
+    });
+  }, [eligibleCustomers, manualSearch, manualRegion]);
+
+  const manualSelectedCount = useMemo(
+    () => manualCandidates.filter((c: any) => selectedCustomerIds.has(c.id)).length,
+    [manualCandidates, selectedCustomerIds],
+  );
+
+  const selectAllVisible = () => {
+    setSelectedCustomerIds((prev) => {
+      const next = new Set(prev);
+      manualCandidates.forEach((c: any) => next.add(c.id));
+      return next;
+    });
+  };
+
+  const clearVisibleSelection = () => {
+    setSelectedCustomerIds((prev) => {
+      const next = new Set(prev);
+      manualCandidates.forEach((c: any) => next.delete(c.id));
+      return next;
+    });
+  };
 
   const recipients = useMemo(() => {
     if (audiencePreset === 'all') {
@@ -111,6 +166,7 @@ export const WhatsAppBroadcastManager: React.FC = () => {
     setAudiencePreset('all');
     setUpcomingDays(30);
     setSelectedCustomerIds(new Set());
+    setManualSearch(''); setManualRegion('all');
     setCustomVals({}); setSlotSource({});
   };
 
@@ -417,18 +473,62 @@ export const WhatsAppBroadcastManager: React.FC = () => {
               )}
 
               {audiencePreset === 'manual' && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={manualSearch}
+                      onChange={(e) => setManualSearch(e.target.value)}
+                      placeholder="ابحث باسم العميل أو رقمه..."
+                      className="pr-9"
+                      aria-label="بحث في العملاء"
+                    />
+                  </div>
 
-                <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
-                  {eligibleCustomers.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">لا يوجد عملاء بأرقام هواتف</p>
-                  )}
-                  {eligibleCustomers.map((c: any) => (
-                    <label key={c.id} className="flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer text-sm">
-                      <input type="checkbox" checked={selectedCustomerIds.has(c.id)} onChange={() => toggleCustomer(c.id)} />
-                      <span className="flex-1">{c.name}</span>
-                      <span className="text-xs text-muted-foreground">{c.phone}</span>
-                    </label>
-                  ))}
+                  <div className="flex flex-wrap gap-1" aria-label="تصنيف الأرقام">
+                    {REGION_TABS.map(([key, label]) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        size="sm"
+                        variant={manualRegion === key ? 'default' : 'outline'}
+                        aria-pressed={manualRegion === key}
+                        className="h-7 rounded-full px-3 text-xs"
+                        onClick={() => setManualRegion(key)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" size="sm" variant="secondary" className="h-7 text-xs"
+                      disabled={!manualCandidates.length} onClick={selectAllVisible}>
+                      تحديد الكل ({manualCandidates.length})
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" className="h-7 text-xs"
+                      disabled={!manualSelectedCount} onClick={clearVisibleSelection}>
+                      إلغاء التحديد
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      محدد {manualSelectedCount} من {manualCandidates.length}
+                    </span>
+                  </div>
+
+                  <div className="border rounded-md p-2 max-h-52 overflow-y-auto space-y-1">
+                    {manualCandidates.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {eligibleCustomers.length === 0 ? 'لا يوجد عملاء بأرقام هواتف' : 'لا نتائج مطابقة للبحث أو التصنيف'}
+                      </p>
+                    )}
+                    {manualCandidates.map((c: any) => (
+                      <label key={c.id} className="flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer text-sm">
+                        <input type="checkbox" checked={selectedCustomerIds.has(c.id)} onChange={() => toggleCustomer(c.id)} />
+                        <span className="flex-1">{c.name}</span>
+                        <span className="text-xs text-muted-foreground" dir="ltr">{c.phone}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
 

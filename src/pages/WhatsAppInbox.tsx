@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X, User as UserIcon } from 'lucide-react';
+import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X, User as UserIcon, Plus } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import { ConversationCustomerLink } from '@/components/whatsapp/ConversationCust
 import { ChatDateDivider, dayKeyOf, dayLabelOf } from '@/components/whatsapp/ChatDateDivider';
 import { MessageActionsMenu, messageTextOf } from '@/components/whatsapp/MessageActionsMenu';
 import { ForwardMessageDialog } from '@/components/whatsapp/ForwardMessageDialog';
+import { NewConversationDialog } from '@/components/whatsapp/NewConversationDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -55,6 +56,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const [forwardMsg, setForwardMsg] = useState<any>(null);
+  const [showNewConversation, setShowNewConversation] = useState(false);
   const queryClient = useQueryClient();
   const setUnreadFor = async (id: string, unread: boolean, silent = false) => {
     const { error } = await (supabase as any).from('whatsapp_conversations').update({ marked_unread: unread }).eq('id', id);
@@ -161,14 +163,20 @@ const WhatsAppInboxContent: React.FC = () => {
         {/* Conversations list */}
         <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] md:shrink-0 border-l bg-card/40 flex-col overflow-hidden`}>
           <div className="p-3 border-b space-y-3">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="ابحث برقم أو اسم العميل..."
-                className="pr-9 rounded-full bg-muted/60 border-transparent focus-visible:bg-background"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ابحث برقم أو اسم العميل..."
+                  className="pr-9 rounded-full bg-muted/60 border-transparent focus-visible:bg-background"
+                />
+              </div>
+              <Button size="icon" className="rounded-full shrink-0" title="محادثة جديدة"
+                aria-label="محادثة جديدة" onClick={() => setShowNewConversation(true)}>
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
             <div className="flex gap-1 overflow-x-auto pb-0.5" aria-label="تصنيف المحادثات">
               {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
@@ -422,6 +430,11 @@ const WhatsAppInboxContent: React.FC = () => {
             setSelectedId(id);
             setPrefillText(text); setPrefillNonce(n => n + 1);
           }} />
+        <NewConversationDialog
+          open={showNewConversation}
+          onOpenChange={setShowNewConversation}
+          employeeId={employee?.id}
+          onStarted={(id) => { setView(isSupervisor ? 'all' : 'mine'); setSelectedId(id); refetch(); }} />
 
       </div>
     </div>
