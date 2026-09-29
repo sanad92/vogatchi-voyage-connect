@@ -957,7 +957,7 @@ const BroadcastDetailsDialog: React.FC<{
         ) : visibleRecipients.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">لا يوجد مستلمون مطابقون</div>
         ) : (
-          <div className="border rounded-md max-h-64 overflow-auto">
+          <div className="border rounded-md h-64 shrink-0 overflow-auto">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-background">
                 <TableRow>
