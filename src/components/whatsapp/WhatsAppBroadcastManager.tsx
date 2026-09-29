@@ -796,37 +796,106 @@ const BroadcastDetailsDialog: React.FC<{
     return c;
   }, [recipients]);
 
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const visibleRecipients = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const termDigits = term.replace(/\D/g, '');
+    return (recipients as any[]).filter((r) => {
+      if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+      if (!term) return true;
+      const name = String(r.customer_name ?? '').toLowerCase();
+      const phone = String(r.phone_number ?? '').replace(/\D/g, '');
+      return name.includes(term) || (!!termDigits && phone.includes(termDigits));
+    });
+  }, [recipients, search, statusFilter]);
+
+  /** Group identical failure reasons so the cause of a large failure batch is visible at a glance. */
+  const failureReasons = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of recipients as any[]) {
+      if (r.status !== 'failed') continue;
+      const key = String(r.error_message || 'فشل غير محدد');
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  }, [recipients]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Megaphone className="w-5 h-5" /> {broadcast.name}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-sm mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-sm">
           {(['pending','sent','delivered','read','failed','skipped'] as const).map((k) => {
             const meta = recipientStatusMeta[k];
             const Icon = meta.icon;
             return (
-              <div key={k} className={`rounded-md p-2 ${meta.className}`}>
+              <button
+                key={k}
+                type="button"
+                onClick={() => setStatusFilter((prev) => (prev === k ? 'all' : k))}
+                className={`rounded-md p-2 transition ${meta.className} ${statusFilter === k ? 'ring-2 ring-primary' : ''}`}>
                 <Icon className="w-4 h-4 mx-auto mb-1" />
                 <div className="font-bold">{counts[k] ?? 0}</div>
                 <div className="text-xs">{meta.label}</div>
-              </div>
+              </button>
             );
           })}
         </div>
 
+        {failureReasons.length > 0 && (
+          <div className="rounded-md border border-red-200 dark:border-red-900/50 bg-red-50/60 dark:bg-red-950/20 p-3 space-y-1">
+            <div className="text-sm font-semibold text-red-800 dark:text-red-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> ملخص أسباب الفشل
+            </div>
+            {failureReasons.slice(0, 6).map(([reason, count]) => (
+              <div key={reason} className="text-xs text-red-800/90 dark:text-red-200/90 flex gap-2">
+                <span className="font-bold shrink-0">{count}</span>
+                <span className="flex-1">{reason}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث بالاسم أو الرقم"
+              className="pr-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              {(['pending','sent','delivered','read','failed','skipped'] as const).map((k) => (
+                <SelectItem key={k} value={k}>{recipientStatusMeta[k].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+          يظهر {visibleRecipients.length} من {recipients.length} مستلم
+        </div>
+
         {isLoading ? (
           <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
-        ) : recipients.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">لا يوجد مستلمون</div>
+        ) : visibleRecipients.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">لا يوجد مستلمون مطابقون</div>
         ) : (
-          <div className="border rounded-md overflow-hidden">
+          <div className="border rounded-md flex-1 min-h-0 overflow-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-background">
                 <TableRow>
                   <TableHead>المستلم</TableHead>
                   <TableHead>الرقم</TableHead>
@@ -836,7 +905,8 @@ const BroadcastDetailsDialog: React.FC<{
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(recipients as any[]).map((r) => {
+                {visibleRecipients.map((r) => {
+
                   const meta = recipientStatusMeta[r.status] ?? recipientStatusMeta.pending;
                   const Icon = meta.icon;
                   const lastTs = r.read_at || r.delivered_at || r.failed_at || r.sent_at || r.updated_at || r.created_at;
