@@ -444,6 +444,13 @@ const Customers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImportContactsDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        customers={customers}
+        onImported={() => void refetch()}
+      />
     </div>
   );
 };
