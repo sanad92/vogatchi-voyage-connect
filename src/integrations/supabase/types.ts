@@ -15978,6 +15978,18 @@ export type Database = {
         Args: { _conversation_id?: string; _org_id: string }
         Returns: string
       }
+      wa_conversation_summaries: {
+        Args: { _org: string }
+        Returns: {
+          content: string
+          conversation_id: string
+          direction: string
+          last_inbound_at: string
+          message_type: string
+          sent_at: string
+          template_name: string
+        }[]
+      }
       wa_count_placeholders: { Args: { _text: string }; Returns: number }
       wa_dispatch_queue: { Args: { _org_id: string }; Returns: number }
       wa_intake_step: {
