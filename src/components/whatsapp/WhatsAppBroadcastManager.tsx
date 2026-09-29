@@ -822,6 +822,38 @@ const BroadcastDetailsDialog: React.FC<{
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }, [recipients]);
 
+  const retryStats = useMemo(() => {
+    let retryable = 0, excluded = 0;
+    for (const r of recipients as any[]) {
+      if (r.status !== 'failed') continue;
+      if (isRetryableFailure(r.error_code, r.error_message)) retryable++; else excluded++;
+    }
+    return { retryable, excluded };
+  }, [recipients]);
+
+  const [retryConfirm, setRetryConfirm] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-send-broadcast', {
+        body: { broadcastId: broadcast.id, retryFailed: true },
+      });
+      if (error) {
+        let msg = error.message;
+        try { const j = await (error as any).context?.json?.(); if (j?.error) msg = j.error; } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      toast.success(`بدأت إعادة الإرسال — أُرسلت ${data?.sent ?? 0} والباقي يكمل تلقائياً`);
+    } catch (e: any) {
+      toast.error(e?.message || 'تعذرت إعادة الإرسال');
+    } finally {
+      setRetrying(false);
+      qc.invalidateQueries({ queryKey: ['broadcast-recipients', broadcast.id] });
+      qc.invalidateQueries({ queryKey: ['whatsapp-broadcasts', broadcast.organization_id] });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -860,8 +892,35 @@ const BroadcastDetailsDialog: React.FC<{
                 <span className="flex-1">{reason}</span>
               </div>
             ))}
+            <div className="pt-2 mt-1 border-t border-red-200/70 dark:border-red-900/50 flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex-1 text-xs text-foreground/80">
+                <span className="font-bold">{retryStats.retryable}</span> رسالة قابلة لإعادة المحاولة (مشاكل الدفع أو أعطال Meta المؤقتة)
+                — سيتم استبعاد <span className="font-bold">{retryStats.excluded}</span> رقم غير صالح أو غير مفعّل أو محظور.
+              </div>
+              <Button size="sm" disabled={retryStats.retryable === 0 || retrying}
+                onClick={() => setRetryConfirm(true)}>
+                {retrying ? <Loader2 className="w-4 h-4 animate-spin ml-1" /> : <RefreshCw className="w-4 h-4 ml-1" />}
+                إعادة إرسال الفاشلة
+              </Button>
+            </div>
           </div>
         )}
+
+        <AlertDialog open={retryConfirm} onOpenChange={setRetryConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>إعادة إرسال {retryStats.retryable} رسالة؟</AlertDialogTitle>
+              <AlertDialogDescription>
+                تأكد أولاً أنك أصلحت إعدادات الفوترة والعملة ووسيلة الدفع لحساب واتساب في Meta، وإلا ستفشل الرسائل مرة أخرى.
+                لن يُعاد الإرسال إلى {retryStats.excluded} رقم غير صالح أو غير مفعّل أو تجاوز حد الرسائل التسويقية.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>رجوع</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRetry}>أصلحت الإعدادات — أعد الإرسال</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
