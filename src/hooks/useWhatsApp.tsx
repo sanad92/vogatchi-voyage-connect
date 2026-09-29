@@ -35,30 +35,23 @@ export const useWhatsApp = () => {
       const conversations = data || [];
       if (conversations.length === 0) return conversations;
 
-      // Enrich with the last inbound timestamp and a preview of the newest message
-      const ids = conversations.map((c: any) => c.id);
-      const { data: recentRows } = await supabase
-        .from('whatsapp_messages')
-        .select('conversation_id, sent_at, direction, content, message_type, template_name')
-        .in('conversation_id', ids)
-        .order('sent_at', { ascending: false });
+      // Enrich with the last inbound timestamp and newest message, computed server-side
+      // (a plain message query is capped at 1000 rows and silently dropped queue entries).
+      const { data: summaries, error: sumError } = await (supabase as any)
+        .rpc('wa_conversation_summaries', { _org: orgId });
+      if (sumError) throw sumError;
 
-      const lastInboundMap = new Map<string, string>();
-      const lastMessageMap = new Map<string, any>();
-      (recentRows || []).forEach((r: any) => {
-        if (!lastMessageMap.has(r.conversation_id)) {
-          lastMessageMap.set(r.conversation_id, r);
-        }
-        if (r.direction === 'inbound' && !lastInboundMap.has(r.conversation_id)) {
-          lastInboundMap.set(r.conversation_id, r.sent_at);
-        }
+      const byId = new Map<string, any>();
+      (summaries || []).forEach((r: any) => byId.set(r.conversation_id, r));
+
+      return conversations.map((c: any) => {
+        const s = byId.get(c.id);
+        return {
+          ...c,
+          last_inbound_at: s?.last_inbound_at || null,
+          last_message: s?.sent_at ? s : null,
+        };
       });
-
-      return conversations.map((c: any) => ({
-        ...c,
-        last_inbound_at: lastInboundMap.get(c.id) || null,
-        last_message: lastMessageMap.get(c.id) || null,
-      }));
 
     },
     enabled: !!orgId,
