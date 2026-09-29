@@ -29,6 +29,7 @@ import { ConversationAgentIndicator } from '@/components/whatsapp/ConversationAg
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
 import { format } from 'date-fns';
+import { formatWhatsAppErrorMessage } from '@/lib/whatsappErrors';
 import { CloseConversationDialog, ResolutionBadge } from '@/components/whatsapp/CloseConversationDialog';
 import { isClosedConversation } from '@/lib/whatsappQueue';
 import { useWhatsAppQueue } from '@/hooks/useWhatsAppQueue';
