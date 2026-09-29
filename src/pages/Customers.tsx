@@ -40,6 +40,7 @@ import {
 const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
