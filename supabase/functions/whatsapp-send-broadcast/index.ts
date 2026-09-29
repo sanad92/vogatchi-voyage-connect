@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   try {
-    const { broadcastId, internal } = await req.json();
+    const { broadcastId, internal, retryFailed } = await req.json();
     if (!broadcastId) return json({ error: 'broadcastId required' }, 400);
 
-    const { data: broadcast } = await admin
+    let { data: broadcast } = await admin
       .from('whatsapp_broadcasts').select('*').eq('id', broadcastId).maybeSingle();
     if (!broadcast) return json({ error: 'broadcast not found' }, 404);
 
@@ -49,7 +49,27 @@ Deno.serve(async (req) => {
 
     // Lock: prevents concurrent runs from double-sending
     const lockedRecently = broadcast.locked_at && Date.now() - new Date(broadcast.locked_at).getTime() < STALE_LOCK_MS;
-    if (broadcast.status === 'completed' || broadcast.status === 'cancelled' || lockedRecently) {
+
+    // Retry mode: move only retryable failures back to pending (invalid / unreachable numbers stay failed).
+    if (retryFailed === true && !internal) {
+      if (lockedRecently || broadcast.status === 'cancelled') {
+        return json({ error: 'الحملة قيد الإرسال حالياً أو ملغاة' }, 409);
+      }
+      const { data: failedRows } = await admin.from('whatsapp_broadcast_recipients')
+        .select('id,error_code,error_message').eq('broadcast_id', broadcastId).eq('status', 'failed');
+      const ids = (failedRows || []).filter((r: any) => isRetryableFailure(r.error_code, r.error_message)).map((r: any) => r.id);
+      if (ids.length === 0) return json({ error: 'لا توجد رسائل فاشلة قابلة لإعادة المحاولة' }, 400);
+      for (let i = 0; i < ids.length; i += 200) {
+        await admin.from('whatsapp_broadcast_recipients').update({
+          status: 'pending', error_code: null, error_message: null, error_details: null, failed_at: null,
+        }).in('id', ids.slice(i, i + 200));
+      }
+      await admin.from('whatsapp_broadcasts').update({
+        status: 'sending', completed_at: null, last_error: null,
+        failed_count: Math.max(0, (broadcast.failed_count || 0) - ids.length),
+      }).eq('id', broadcastId);
+      broadcast = { ...broadcast, status: 'sending', failed_count: Math.max(0, (broadcast.failed_count || 0) - ids.length) };
+    } else if (broadcast.status === 'completed' || broadcast.status === 'cancelled' || lockedRecently) {
       return json({ error: 'already processed or currently sending', status: broadcast.status }, 409);
     }
 
