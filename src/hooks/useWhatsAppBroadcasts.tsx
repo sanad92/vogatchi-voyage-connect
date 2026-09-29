@@ -124,8 +124,9 @@ export function useWhatsAppBroadcasts() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('بدء إرسال الحملة');
+    onSuccess: (data: any) => {
+      if (data?.alreadySending) toast.info('الحملة قيد الإرسال بالفعل — سيكتمل الإرسال تلقائيًا');
+      else toast.success('بدء إرسال الحملة');
       qc.invalidateQueries({ queryKey: ['whatsapp-broadcasts', orgId] });
     },
     onError: async (e: any) => {
