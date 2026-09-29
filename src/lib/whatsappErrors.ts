@@ -67,3 +67,23 @@ export const explainMetaError = (code?: string | number | null): MetaErrorExplan
   if (code === null || code === undefined) return null;
   return KNOWN_ERRORS[String(code)] ?? null;
 };
+
+const HTML_SIGNATURE = /<!doctype html|<html|<head|<body|<div|<script|<\/\w+>/i;
+const GENERIC_META_FAILURE =
+  'تعذر الإرسال: خطأ مؤقت من خوادم فيسبوك، يرجى إعادة المحاولة';
+
+/**
+ * ينظّف رسالة الخطأ قبل عرضها للموظف.
+ * أحياناً ترجع خوادم Meta صفحة HTML كاملة بدل نص الخطأ،
+ * فنستبدلها بتنبيه عربي واضح بدل إظهار كود فني داخل المحادثة.
+ */
+export const formatWhatsAppErrorMessage = (
+  raw?: string | null,
+  code?: string | number | null,
+): string | null => {
+  const known = explainMetaError(code);
+  const text = (raw ?? '').trim();
+  if (!text) return known ? known.title : null;
+  if (HTML_SIGNATURE.test(text)) return known ? known.title : GENERIC_META_FAILURE;
+  return text.length > 400 ? `${text.slice(0, 400)}…` : text;
+};

@@ -270,6 +270,24 @@ function safeSettingsMeta(settings: WaSettings, apiVersion: string) {
   };
 }
 
+/**
+ * Meta sometimes answers with a full HTML error page instead of JSON.
+ * Persisting that raw markup floods the agent's chat view with unreadable code,
+ * so collapse any HTML body into one clear bilingual notice.
+ */
+export function sanitizeProviderText(raw: string | null | undefined, httpStatus?: number): string {
+  const text = String(raw ?? '').trim();
+  if (!text) {
+    return 'تعذر الإرسال: استجابة فارغة من خوادم Meta، يرجى إعادة المحاولة | Empty response from Meta';
+  }
+  const looksLikeHtml = /<!doctype html|<html|<head|<body|<div|<script/i.test(text);
+  if (looksLikeHtml) {
+    const suffix = httpStatus ? ` (HTTP ${httpStatus})` : '';
+    return `تعذر الإرسال: خطأ مؤقت من خوادم Meta، يرجى إعادة المحاولة${suffix} | Temporary Meta server error, please retry`;
+  }
+  return text.slice(0, 500);
+}
+
 /** Single place where we actually talk to Meta. Never throws on API errors. */
 export async function graphSend(
   settings: WaSettings,
@@ -315,7 +333,7 @@ export async function graphSend(
   const text = await res.text();
   let json: any = null;
   try { json = JSON.parse(text); } catch { /* non-JSON */ }
-  const providerResponse = json ?? text.slice(0, 2000);
+  const providerResponse = json ?? sanitizeProviderText(text);
 
   if (!res.ok) {
     const err = json?.error ?? null;
@@ -323,8 +341,8 @@ export async function graphSend(
       ok: false,
       providerMessageId: null,
       errorCode: err?.code != null ? String(err.code) : String(res.status),
-      errorMessage: humanizeMetaError(err) || text.slice(0, 500),
-      errorDetails: err ?? text.slice(0, 1000),
+      errorMessage: humanizeMetaError(err) || sanitizeProviderText(text, res.status),
+      errorDetails: err ?? sanitizeProviderText(text, res.status),
       httpStatus: res.status,
       providerResponse,
       correlationId,

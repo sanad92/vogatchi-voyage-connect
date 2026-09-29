@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { WhatsAppMessage } from '@/types/whatsapp';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { explainMetaError } from '@/lib/whatsappErrors';
+import { explainMetaError, formatWhatsAppErrorMessage } from '@/lib/whatsappErrors';
 
 interface MessagesListProps {
   messages: WhatsAppMessage[];
@@ -129,6 +129,7 @@ export const MessagesList: React.FC<MessagesListProps> = ({
                 {/* Error Message */}
                 {message.status === 'failed' && (() => {
                   const known = explainMetaError(message.error_code);
+                  const clean = formatWhatsAppErrorMessage(message.error_message, message.error_code);
                   return (
                     <div className="text-xs text-red-600 bg-red-50 p-2 rounded space-y-1">
                       {known ? (
@@ -137,7 +138,7 @@ export const MessagesList: React.FC<MessagesListProps> = ({
                           {known.action && <div>{known.action}</div>}
                         </>
                       ) : (
-                        message.error_message && <div>خطأ: {message.error_message}</div>
+                        clean && <div>خطأ: {clean}</div>
                       )}
                       {message.error_code && (
                         <div className="text-red-400">كود Meta: {message.error_code}</div>

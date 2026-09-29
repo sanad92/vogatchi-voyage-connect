@@ -32,6 +32,7 @@ import { ForwardMessageDialog } from '@/components/whatsapp/ForwardMessageDialog
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { formatWhatsAppErrorMessage } from '@/lib/whatsappErrors';
 
 
 const WhatsAppInboxContent: React.FC = () => {
@@ -365,9 +366,9 @@ const WhatsAppInboxContent: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
-                                {m.status === 'failed' && m.error_message && (
+                                {m.status === 'failed' && formatWhatsAppErrorMessage(m.error_message, (m as any).error_code) && (
                                   <div className="text-[11px] bg-destructive/15 text-destructive rounded-lg p-1.5 mt-1">
-                                    {m.error_message}
+                                    {formatWhatsAppErrorMessage(m.error_message, (m as any).error_code)}
                                   </div>
                                 )}
                               </div>
