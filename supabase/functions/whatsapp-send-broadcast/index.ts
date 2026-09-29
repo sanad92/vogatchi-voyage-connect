@@ -70,8 +70,11 @@ Deno.serve(async (req) => {
         failed_count: Math.max(0, (broadcast.failed_count || 0) - ids.length),
       }).eq('id', broadcastId);
       broadcast = { ...broadcast, status: 'sending', failed_count: Math.max(0, (broadcast.failed_count || 0) - ids.length) };
-    } else if (broadcast.status === 'completed' || broadcast.status === 'cancelled' || lockedRecently) {
+    } else if (broadcast.status === 'completed' || broadcast.status === 'cancelled') {
       return json({ error: 'already processed or currently sending', status: broadcast.status }, 409);
+    } else if (lockedRecently) {
+      // Another batch is already sending this campaign — not an error for the caller.
+      return json({ ok: true, alreadySending: true, status: broadcast.status });
     }
 
     let settings;
