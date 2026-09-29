@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Users, Star, Grid, Table, Archive } from "lucide-react";
+import { Plus, Users, Star, Grid, Table, Archive, Upload } from "lucide-react";
+import { ImportContactsDialog } from "@/components/whatsapp/ImportContactsDialog";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import PaginationControlsUI from "@/components/ui/pagination-controls";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
