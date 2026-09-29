@@ -322,9 +322,9 @@ const WhatsAppConversationDetailContent: React.FC = () => {
                           <span className="uppercase tracking-wide">{m.status}</span>
                         )}
                       </div>
-                      {m.status === 'failed' && m.error_message && (
+                      {m.status === 'failed' && formatWhatsAppErrorMessage(m.error_message, (m as any).error_code) && (
                         <div className="text-[11px] bg-red-100 text-red-700 rounded p-1.5">
-                          {m.error_message}
+                          {formatWhatsAppErrorMessage(m.error_message, (m as any).error_code)}
                         </div>
                       )}
                     </CardContent>
