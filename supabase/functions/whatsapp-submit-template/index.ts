@@ -132,7 +132,11 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     let submitted = 0, failed = 0;
 
+    const startedAt = Date.now();
+    let remaining = 0;
     for (const row of rows) {
+      // Stay well inside the 150s gateway limit; caller can re-run for the rest.
+      if (Date.now() - startedAt > 100_000) { remaining++; continue; }
       if (row.whatsapp_settings_id && row.whatsapp_settings_id !== settings.id) {
         results.push({ id: row.id, name: row.name, ok: true, skipped: 'other_number' });
         continue;
@@ -153,6 +157,11 @@ Deno.serve(async (req) => {
       };
       if (row.body_text) row.body_text = fixText(row.body_text);
       if (row.header_text) row.header_text = fixText(row.header_text, true);
+      // Footers can't carry variables — strip them rather than fail the whole template.
+      if (row.footer_text && /\{\{/.test(String(row.footer_text))) {
+        row.footer_text = String(row.footer_text).replace(/\{\{[^}]*\}\}/g, '').replace(/\s{2,}/g, ' ').trim() || null;
+        await admin.from('whatsapp_templates').update({ footer_text: row.footer_text }).eq('id', row.id);
+      }
       await admin.from('whatsapp_templates').update({
         body_text: row.body_text, header_text: row.header_text ?? null,
       }).eq('id', row.id);
@@ -214,7 +223,7 @@ Deno.serve(async (req) => {
       results.push({ id: row.id, name, ok: true, metaId: j?.id ?? null, status });
     }
 
-    return json({ ok: true, submitted, failed, results });
+    return json({ ok: true, remaining, submitted, failed, results });
   } catch (err) {
     return json({ error: String((err as Error)?.message || err) }, 500);
   }
