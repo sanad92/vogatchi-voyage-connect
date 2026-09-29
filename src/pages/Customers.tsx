@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Users, Star, Grid, Table, Archive } from "lucide-react";
+import { Plus, Users, Star, Grid, Table, Archive, Upload } from "lucide-react";
+import { ImportContactsDialog } from "@/components/whatsapp/ImportContactsDialog";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import PaginationControlsUI from "@/components/ui/pagination-controls";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
@@ -39,6 +40,7 @@ import {
 const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
@@ -284,6 +286,12 @@ const Customers = () => {
             customers={filteredCustomers}
             selectedCustomers={selectedCustomers}
           />}
+          {canCreateCustomers() && (
+            <Button variant="outline" className="whitespace-nowrap" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              استيراد أرقام
+            </Button>
+          )}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
@@ -436,6 +444,13 @@ const Customers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImportContactsDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        customers={customers}
+        onImported={() => void refetch()}
+      />
     </div>
   );
 };
