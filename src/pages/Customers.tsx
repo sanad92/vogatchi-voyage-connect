@@ -286,6 +286,12 @@ const Customers = () => {
             customers={filteredCustomers}
             selectedCustomers={selectedCustomers}
           />}
+          {canCreateCustomers() && (
+            <Button variant="outline" className="whitespace-nowrap" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              استيراد أرقام
+            </Button>
+          )}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
