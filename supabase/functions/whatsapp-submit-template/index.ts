@@ -132,7 +132,11 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     let submitted = 0, failed = 0;
 
+    const startedAt = Date.now();
+    let remaining = 0;
     for (const row of rows) {
+      // Stay well inside the 150s gateway limit; caller can re-run for the rest.
+      if (Date.now() - startedAt > 100_000) { remaining++; continue; }
       if (row.whatsapp_settings_id && row.whatsapp_settings_id !== settings.id) {
         results.push({ id: row.id, name: row.name, ok: true, skipped: 'other_number' });
         continue;
@@ -214,7 +218,7 @@ Deno.serve(async (req) => {
       results.push({ id: row.id, name, ok: true, metaId: j?.id ?? null, status });
     }
 
-    return json({ ok: true, submitted, failed, results });
+    return json({ ok: true, remaining, submitted, failed, results });
   } catch (err) {
     return json({ error: String((err as Error)?.message || err) }, 500);
   }
