@@ -13,8 +13,13 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Megaphone, Plus, Send, Trash2, Ban, Users, Clock, CheckCircle2, XCircle, Loader2,
-  Eye, AlertTriangle, CheckCheck, Check, PlayCircle, Search,
+  Eye, AlertTriangle, CheckCheck, Check, PlayCircle, Search, RefreshCw,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { isRetryableFailure } from '@/lib/broadcastRetry';
 import { useWhatsAppBroadcasts, useBroadcastRecipients, WhatsAppBroadcast } from '@/hooks/useWhatsAppBroadcasts';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useUpcomingBookingCustomers } from '@/hooks/useUpcomingBookingCustomers';
