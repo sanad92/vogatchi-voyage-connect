@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    const { organizationId, templateIds, allDrafts } = await req.json();
+    const { organizationId, templateIds, allDrafts, settingsId } = await req.json();
     if (!organizationId) return json({ error: 'organizationId required' }, 400);
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     if (rowsErr) return json({ error: rowsErr.message }, 500);
     if (!rows?.length) return json({ ok: true, submitted: 0, failed: 0, results: [] });
 
-    const settings = await resolveSettings(admin, organizationId);
+    const settings = await resolveSettings(admin, organizationId, settingsId);
     if (!settings.waba_id) {
       return json({ error: 'WABA ID غير متوفر — أعد ربط واتساب | WABA id missing, reconnect WhatsApp' }, 400);
     }
@@ -129,6 +129,10 @@ Deno.serve(async (req) => {
     let submitted = 0, failed = 0;
 
     for (const row of rows) {
+      if (row.whatsapp_settings_id && row.whatsapp_settings_id !== settings.id) {
+        results.push({ id: row.id, name: row.name, ok: true, skipped: 'other_number' });
+        continue;
+      }
       if (row.meta_template_id) {
         results.push({ id: row.id, name: row.name, ok: true, skipped: 'already_on_meta' });
         continue;
@@ -194,6 +198,7 @@ Deno.serve(async (req) => {
         category: payload.category,
         components: payload.components,
         meta_template_id: j?.id ?? null,
+        whatsapp_settings_id: settings.id,
         meta_status: status,
         status: status === 'approved' ? 'approved' : 'pending',
         approval_status: status,

@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    const { organizationId } = await req.json();
+    const { organizationId, settingsId } = await req.json();
     if (!organizationId) return json({ error: 'organizationId required' }, 400);
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       .eq('organization_id', organizationId).eq('user_id', user.id).maybeSingle();
     if (!member) return json({ error: 'Forbidden' }, 403);
 
-    const settings = await resolveSettings(admin, organizationId);
+    const settings = await resolveSettings(admin, organizationId, settingsId);
     if (!settings.waba_id) return json({ error: 'WABA ID غير متوفر — أعد ربط واتساب | WABA id missing, reconnect WhatsApp' }, 400);
 
     const proof = await appSecretProof(settings.access_token);
@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
 
       const { data: existing } = await admin.from('whatsapp_templates')
         .select('id').eq('organization_id', organizationId)
+        .eq('whatsapp_settings_id', settings.id)
         .eq('name', mt.name).eq('language', mt.language).maybeSingle();
 
       if (existing) {
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
       await admin.from('whatsapp_templates')
         .update({ meta_status: 'deleted', status: 'rejected', meta_synced_at: new Date().toISOString() })
         .eq('organization_id', organizationId)
+        .eq('whatsapp_settings_id', settings.id)
         .not('meta_template_id', 'is', null)
         .not('id', 'in', `(${seen.join(',')})`);
     }
