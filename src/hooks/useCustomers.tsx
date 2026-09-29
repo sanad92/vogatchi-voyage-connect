@@ -20,17 +20,32 @@ export const useCustomers = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['customers', orgId],
     queryFn: async () => {
-      const [customerResult, metricsResult] = await Promise.all([
-        supabase
-          .from('customers')
-          .select(`
+      const PAGE_SIZE = 1000;
+      const fetchAllCustomers = async () => {
+        const rows: any[] = [];
+        let count = 0;
+        for (let from = 0; ; from += PAGE_SIZE) {
+          const { data: page, error: pageError, count: pageCount } = await supabase
+            .from('customers')
+            .select(`
           *,
           segment:customer_segments(id, name, name_ar, color, description, minimum_bookings, minimum_total_spent, is_active, created_at, updated_at)
         `, { count: 'exact' })
-          .eq('organization_id', orgId!)
-          .eq('is_demo', false)
-          .order('created_at', { ascending: false })
-          .limit(5000),
+            .eq('organization_id', orgId!)
+            .eq('is_demo', false)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+          if (pageError) return { data: null, error: pageError, count: 0 };
+          if (from === 0) count = pageCount || 0;
+          rows.push(...(page || []));
+          if (!page || page.length < PAGE_SIZE || rows.length >= count) break;
+        }
+        return { data: rows, error: null, count };
+      };
+
+      const [customerResult, metricsResult] = await Promise.all([
+        fetchAllCustomers(),
         callUntypedRpc<CustomerBookingMetricRow[]>('crm_customer_booking_metrics', { _org_id: orgId! }),
       ]);
 
