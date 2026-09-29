@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     await admin.from('whatsapp_broadcasts').update({
       status: 'sending', started_at: broadcast.started_at ?? new Date().toISOString(),
       locked_at: new Date().toISOString(), last_error: null,
-    }).eq('id', broadcastId);
+    }).eq('id', broadcastId).neq('status', 'cancelled');
 
     const { data: recipients } = await admin
       .from('whatsapp_broadcast_recipients')
@@ -126,7 +126,14 @@ Deno.serve(async (req) => {
     const orgName = String(org?.name || '').trim();
     const senderPhone = String((settings as any)?.display_phone_number || '').trim();
 
+    let processed = 0;
+    let wasCancelled = false;
     for (const r of recipients ?? []) {
+      // Honor a cancel pressed mid-run: re-check the campaign status regularly.
+      if (processed++ % 5 === 0) {
+        const { data: cur } = await admin.from('whatsapp_broadcasts').select('status').eq('id', broadcastId).maybeSingle();
+        if (cur?.status === 'cancelled') { wasCancelled = true; break; }
+      }
       // Stop cleanly before the runtime budget ends; the rest stays pending.
       if (Date.now() - runStartedAt > RUN_BUDGET_MS) break;
       const to = normalizePhone(r.phone_number);
@@ -221,11 +228,18 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('broadcast_id', broadcastId).eq('status', 'pending');
 
+    if (wasCancelled) {
+      await admin.from('whatsapp_broadcasts').update({ locked_at: null }).eq('id', broadcastId);
+      await admin.rpc('recompute_broadcast_counters', { _broadcast_id: broadcastId });
+      return json({ ok: true, cancelled: true, sent, failed, skipped });
+    }
+
+    // Never overwrite a cancel that happened during this run.
     await admin.from('whatsapp_broadcasts').update({
       status: stillPending ? 'sending' : (sent === 0 && failed > 0 ? 'failed' : 'completed'),
       completed_at: stillPending ? null : new Date().toISOString(),
       locked_at: null,
-    }).eq('id', broadcastId);
+    }).eq('id', broadcastId).neq('status', 'cancelled');
 
     await admin.rpc('recompute_broadcast_counters', { _broadcast_id: broadcastId });
 
