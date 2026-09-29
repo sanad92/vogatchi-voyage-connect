@@ -42,12 +42,16 @@ function positionalize(text: string | null | undefined, previews: Record<string,
   return { text: out, examples };
 }
 
+// Meta treats a variable surrounded only by punctuation/emoji at the edges as leading/trailing.
+const LEAD_VAR = /^[\s\p{P}\p{S}]*\{\{\s*[^}]+\s*\}\}/u;
+const TRAIL_VAR = /\{\{\s*[^}]+\s*\}\}[\s\p{P}\p{S}]*$/u;
+
 /** Meta rejects templates whose text starts or ends with a variable. */
 function textIssues(label: string, text: string): string[] {
   const issues: string[] = [];
   const t = text.trim();
-  if (/^\{\{\s*[^}]+\s*\}\}/.test(t)) issues.push(`${label}: لا يمكن أن يبدأ النص بمتغير — أضف كلمة قبله`);
-  if (/\{\{\s*[^}]+\s*\}\}$/.test(t)) issues.push(`${label}: لا يمكن أن ينتهي النص بمتغير — أضف كلمة أو علامة بعده`);
+  if (LEAD_VAR.test(t)) issues.push(`${label}: لا يمكن أن يبدأ النص بمتغير — أضف كلمة قبله`);
+  if (TRAIL_VAR.test(t)) issues.push(`${label}: لا يمكن أن ينتهي النص بمتغير — أضف كلمة أو علامة بعده`);
   if (/\}\}\s*\{\{/.test(t)) issues.push(`${label}: لا يمكن وضع متغيرين متتاليين بدون نص بينهما`);
   return issues;
 }
@@ -139,16 +143,16 @@ Deno.serve(async (req) => {
       }
       // Auto-fix Meta text rules (leading/trailing/adjacent variables) before validating.
       const loc = String(row.locale || row.language || 'ar').toLowerCase().startsWith('en') ? 'en' : 'ar';
-      const fixText = (t: string) => {
+      const fixText = (t: string, header = false) => {
         let s = String(t || '').trim();
         if (!s) return s;
         s = s.replace(/\}\}(\s*)\{\{/g, '}} - {{');
-        if (/^\{\{\s*[^}]+\s*\}\}/.test(s)) s = (loc === 'ar' ? 'مرحباً ' : 'Hello ') + s;
-        if (/\{\{\s*[^}]+\s*\}\}$/.test(s)) s = s + '.';
+        if (LEAD_VAR.test(s)) s = (loc === 'ar' ? 'مرحباً ' : 'Hello ') + s;
+        if (TRAIL_VAR.test(s)) s = s + (header ? (loc === 'ar' ? ' معنا' : ' with us') : (loc === 'ar' ? '\nمع تحيات فريقنا.' : '\nBest regards.'));
         return s;
       };
       if (row.body_text) row.body_text = fixText(row.body_text);
-      if (row.header_text) row.header_text = fixText(row.header_text);
+      if (row.header_text) row.header_text = fixText(row.header_text, true);
       await admin.from('whatsapp_templates').update({
         body_text: row.body_text, header_text: row.header_text ?? null,
       }).eq('id', row.id);
