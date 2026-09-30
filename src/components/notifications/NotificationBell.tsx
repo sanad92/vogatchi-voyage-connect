@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, CheckCircle, AlertTriangle, Info, X, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { playAlertSound } from '@/lib/soundAlerts';
 
 const NotificationBell = () => {
   const { user } = useOptimizedAuth();
@@ -44,6 +45,7 @@ const NotificationBell = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`,
       }, () => {
+        playAlertSound('notification');
         queryClient.invalidateQueries({ queryKey: ['user-notifications'] });
       })
       .subscribe();

@@ -7,6 +7,7 @@ import {
 import { Menu, LogOut, Settings, Search } from 'lucide-react';
 import OrgSwitcher from '@/components/org/OrgSwitcher';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import SoundToggleButton from '@/components/notifications/SoundToggleButton';
 import { Link } from 'react-router-dom';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
@@ -65,6 +66,7 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
             <Search className="h-5 w-5" />
           </Button>
           <NotificationBell />
+          <SoundToggleButton />
           <div className="hidden sm:block h-6 w-px bg-border/60 mx-1" />
           <OrgSwitcher />
 
