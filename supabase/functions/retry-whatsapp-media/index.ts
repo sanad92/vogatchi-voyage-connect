@@ -127,12 +127,34 @@ serve(async (req) => {
       });
     }
 
-    // Fetch org settings for access token
-    const { data: settings } = await supabase
-      .from('whatsapp_settings')
-      .select('access_token, api_version')
-      .eq('organization_id', message.organization_id)
+    // Resolve the WhatsApp number (settings) the conversation belongs to.
+    // Orgs can have multiple numbers, so never assume a single settings row.
+    const { data: conv } = await supabase
+      .from('whatsapp_conversations')
+      .select('whatsapp_settings_id')
+      .eq('id', message.conversation_id)
       .maybeSingle();
+
+    let settings: { access_token: string | null; api_version: string | null } | null = null;
+    if (conv?.whatsapp_settings_id) {
+      const { data } = await supabase
+        .from('whatsapp_settings')
+        .select('access_token, api_version')
+        .eq('id', conv.whatsapp_settings_id)
+        .eq('organization_id', message.organization_id)
+        .maybeSingle();
+      settings = data;
+    }
+    if (!settings?.access_token) {
+      const { data } = await supabase
+        .from('whatsapp_settings')
+        .select('access_token, api_version')
+        .eq('organization_id', message.organization_id)
+        .not('access_token', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      settings = data?.[0] ?? null;
+    }
 
     if (!settings?.access_token) {
       await supabase
