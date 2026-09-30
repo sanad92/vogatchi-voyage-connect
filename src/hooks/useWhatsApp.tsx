@@ -16,44 +16,66 @@ export const useWhatsApp = () => {
   } = useQuery({
     queryKey: ['whatsapp-conversations', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_conversations')
-        .select(`
-          *,
-          customer:customers(id, name, email, phone),
-          assigned_employee:employees(full_name, employee_code),
-          inbox:whatsapp_settings(id, label, business_name, display_phone_number)
-        `)
-        .eq('organization_id', orgId as string)
-        .order('last_message_at', { ascending: false });
+      // PostgREST caps every request at 1000 rows — fetch conversations in pages
+      // (ordered by id for stable pagination, re-sorted by activity afterwards).
+      const PAGE_SIZE = 1000;
+      const allConversations: any[] = [];
+      let from = 0;
+      for (;;) {
+        const { data, error } = await supabase
+          .from('whatsapp_conversations')
+          .select(`
+            *,
+            customer:customers(id, name, email, phone),
+            assigned_employee:employees(full_name, employee_code),
+            inbox:whatsapp_settings(id, label, business_name, display_phone_number)
+          `)
+          .eq('organization_id', orgId as string)
+          .order('id', { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
 
-      if (error) {
-        console.error('خطأ في جلب محادثات WhatsApp:', error);
-        throw error;
+        if (error) {
+          console.error('خطأ في جلب محادثات WhatsApp:', error);
+          throw error;
+        }
+
+        const page = data || [];
+        allConversations.push(...page);
+        if (page.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
       }
 
-      const conversations = data || [];
-      if (conversations.length === 0) return conversations;
+      if (allConversations.length === 0) return allConversations;
 
-      // Enrich with the last inbound timestamp and newest message, computed server-side
-      // (a plain message query is capped at 1000 rows and silently dropped queue entries).
-      const { data: summaries, error: sumError } = await (supabase as any)
-        .rpc('wa_conversation_summaries', { _org: orgId });
-      if (sumError) throw sumError;
-
+      // Summaries are also capped per request — page through them the same way.
       const byId = new Map<string, any>();
-      (summaries || []).forEach((r: any) => byId.set(r.conversation_id, r));
+      let sumFrom = 0;
+      for (;;) {
+        const { data: summaries, error: sumError } = await (supabase as any)
+          .rpc('wa_conversation_summaries', { _org: orgId })
+          .order('conversation_id', { ascending: true })
+          .range(sumFrom, sumFrom + PAGE_SIZE - 1);
+        if (sumError) throw sumError;
 
-      return conversations.map((c: any) => {
-        const s = byId.get(c.id);
-        return {
-          ...c,
-          last_inbound_at: s?.last_inbound_at || null,
-          last_message: s?.sent_at ? s : null,
-          unread_count: s?.unread_count ?? 0,
-        };
-      });
+        const page = summaries || [];
+        page.forEach((r: any) => byId.set(r.conversation_id, r));
+        if (page.length < PAGE_SIZE) break;
+        sumFrom += PAGE_SIZE;
+      }
 
+      return allConversations
+        .map((c: any) => {
+          const s = byId.get(c.id);
+          return {
+            ...c,
+            last_inbound_at: s?.last_inbound_at || null,
+            last_message: s?.sent_at ? s : null,
+            unread_count: s?.unread_count ?? 0,
+          };
+        })
+        .sort((a: any, b: any) =>
+          (b.last_message_at || '').localeCompare(a.last_message_at || '')
+        );
     },
     enabled: !!orgId,
     staleTime: 10_000,
