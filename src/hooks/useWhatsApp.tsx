@@ -63,6 +63,15 @@ export const useWhatsApp = () => {
   // Realtime — new conversations and new messages both refresh the list
   useEffect(() => {
     if (!orgId) return;
+    // Campaigns insert many messages per second; coalesce refreshes to one every 3s.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
+      }, 3000);
+    };
     const channel = supabase
       .channel(`whatsapp_conversations:${orgId}`)
       .on(
@@ -73,9 +82,7 @@ export const useWhatsApp = () => {
           table: 'whatsapp_conversations',
           filter: `organization_id=eq.${orgId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
-        }
+        refresh
       )
       .on(
         'postgres_changes',
@@ -83,14 +90,14 @@ export const useWhatsApp = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'whatsapp_messages',
+          filter: `organization_id=eq.${orgId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
-        }
+        refresh
       )
       .subscribe();
 
     return () => {
+      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [orgId, queryClient]);
