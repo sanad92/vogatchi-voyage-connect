@@ -59,7 +59,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const [showNewConversation, setShowNewConversation] = useState(false);
   const queryClient = useQueryClient();
   const setUnreadFor = async (id: string, unread: boolean, silent = false) => {
-    const { error } = await (supabase as any).from('whatsapp_conversations').update({ marked_unread: unread }).eq('id', id);
+    const { error } = await (supabase as any).from('whatsapp_conversations').update(unread ? { marked_unread: true } : { marked_unread: false, last_read_at: new Date().toISOString() }).eq('id', id);
     if (error) { if (!silent) toast.error('تعذر تحديث حالة القراءة'); return; }
     if (!silent) toast.success(unread ? 'تم التحديد كغير مقروءة' : 'تم التحديد كمقروءة');
     queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
@@ -93,7 +93,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const setUnread = (unread: boolean) => { if (selected) setUnreadFor(selected.id, unread); };
   // Opening a conversation clears a manual "unread" mark.
   React.useEffect(() => {
-    if (selected?.marked_unread) setUnreadFor(selected.id, false, true);
+    if (selected && (selected.marked_unread || selected.unread_count > 0)) setUnreadFor(selected.id, false, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
@@ -229,6 +229,7 @@ const WhatsAppInboxContent: React.FC = () => {
                     conversation={c}
                     active={c.id === selectedId}
                     onSelect={() => setSelectedId(c.id)}
+                    onToggleRead={(unread) => setUnreadFor(c.id, unread)}
                   />
                 ))
               )}

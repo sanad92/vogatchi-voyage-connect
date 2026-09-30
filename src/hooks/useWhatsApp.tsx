@@ -50,6 +50,7 @@ export const useWhatsApp = () => {
           ...c,
           last_inbound_at: s?.last_inbound_at || null,
           last_message: s?.sent_at ? s : null,
+          unread_count: s?.unread_count ?? 0,
         };
       });
 
