@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Image as ImageIcon, FileText, Mic, Video, ArrowUpRight, Clock } from 'lucide-react';
+import { Image as ImageIcon, FileText, Mic, Video, ArrowUpRight, Clock, Mail, MailOpen } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { isClosedConversation } from '@/lib/whatsappQueue';
@@ -44,16 +44,20 @@ interface Props {
   conversation: any;
   active: boolean;
   onSelect: () => void;
+  onToggleRead?: (unread: boolean) => void;
 }
 
-export const ConversationListItem: React.FC<Props> = ({ conversation: c, active, onSelect }) => {
+export const ConversationListItem: React.FC<Props> = ({ conversation: c, active, onSelect, onToggleRead }) => {
   const closed = isClosedConversation(c);
   const windowOpen = !!c.last_inbound_at && Date.now() - new Date(c.last_inbound_at).getTime() < WINDOW_MS;
   const last = c.last_message;
   const needsReply = last?.direction === 'inbound';
   const PreviewIcon = previewIcon(last?.message_type);
+  const unreadCount = active ? 0 : Number(c.unread_count || 0);
+  const isUnread = !active && (unreadCount > 0 || !!c.marked_unread);
 
   return (
+    <div className="group relative">
     <button
       onClick={onSelect}
       aria-current={active}
@@ -78,11 +82,11 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm truncate flex-1" dir={c.customer?.name ? 'rtl' : 'ltr'}>
+            <span className={`${isUnread ? 'font-bold' : 'font-medium'} text-sm truncate flex-1`} dir={c.customer?.name ? 'rtl' : 'ltr'}>
               {c.customer?.name || c.phone_number}
             </span>
 
-            <span className="text-[10px] text-muted-foreground shrink-0">
+            <span className={`text-[10px] shrink-0 ${isUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}>
               {c.last_message_at && formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: ar })}
             </span>
           </div>
@@ -96,11 +100,13 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
             {last?.direction === 'outbound' && <ArrowUpRight className="h-3 w-3 shrink-0" />}
             {PreviewIcon && <PreviewIcon className="h-3 w-3 shrink-0" />}
             <span className="truncate">{previewText(last)}</span>
-            {c.marked_unread ? (
-              <span className="ms-auto shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">غير مقروءة</span>
-            ) : needsReply && !closed && (
-              <span className="ms-auto shrink-0 h-2 w-2 rounded-full bg-success" aria-label="بانتظار الرد" />
-            )}
+            {unreadCount > 0 ? (
+              <span className="ms-auto shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-success text-success-foreground text-[11px] font-bold flex items-center justify-center" aria-label={`${unreadCount} رسائل غير مقروءة`}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            ) : isUnread ? (
+              <span className="ms-auto shrink-0 h-3 w-3 rounded-full bg-success" aria-label="غير مقروءة" />
+            ) : null}
           </div>
 
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
@@ -134,5 +140,17 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
         </div>
       </div>
     </button>
+    {onToggleRead && (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggleRead(!isUnread); }}
+        title={isUnread ? 'تحديد كمقروءة' : 'تحديد كغير مقروءة'}
+        aria-label={isUnread ? 'تحديد كمقروءة' : 'تحديد كغير مقروءة'}
+        className="absolute top-2 start-2 h-7 w-7 rounded-full bg-card border border-border text-muted-foreground hover:text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+      >
+        {isUnread ? <MailOpen className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
+      </button>
+    )}
+    </div>
   );
 };

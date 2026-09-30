@@ -12676,6 +12676,7 @@ export type Database = {
           last_activity_at: string | null
           last_message_at: string | null
           last_note_preview: string | null
+          last_read_at: string | null
           marked_unread: boolean
           organization_id: string | null
           phone_number: string
@@ -12709,6 +12710,7 @@ export type Database = {
           last_activity_at?: string | null
           last_message_at?: string | null
           last_note_preview?: string | null
+          last_read_at?: string | null
           marked_unread?: boolean
           organization_id?: string | null
           phone_number: string
@@ -12742,6 +12744,7 @@ export type Database = {
           last_activity_at?: string | null
           last_message_at?: string | null
           last_note_preview?: string | null
+          last_read_at?: string | null
           marked_unread?: boolean
           organization_id?: string | null
           phone_number?: string
@@ -15988,6 +15991,7 @@ export type Database = {
           message_type: string
           sent_at: string
           template_name: string
+          unread_count: number
         }[]
       }
       wa_count_placeholders: { Args: { _text: string }; Returns: number }
