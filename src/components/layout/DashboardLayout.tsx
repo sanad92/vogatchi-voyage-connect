@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, ShieldAlert } from 'lucide-react';
 import ImpersonationBanner from '@/components/platform-admin/ImpersonationBanner';
 import { useWhiteLabel } from '@/hooks/useWhiteLabel';
+import { useWhatsAppSoundAlerts } from '@/hooks/useWhatsAppSoundAlerts';
 
 
 interface DashboardLayoutProps {
@@ -18,6 +19,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isImpersonating, impersonatingOrgName, stop } = useOrgImpersonation();
   useWhiteLabel(); // apply org branding at runtime
+  useWhatsAppSoundAlerts(); // sound alert on incoming customer messages
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
