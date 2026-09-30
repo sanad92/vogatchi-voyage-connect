@@ -96,7 +96,8 @@ serve(async (req) => {
           const wabaId: string = entry.id;
 
           for (const change of entry.changes ?? []) {
-            if (change.field !== 'messages') continue;
+            const isEcho = change.field === 'smb_message_echoes';
+            if (change.field !== 'messages' && !isEcho) continue;
 
             // Route by phone_number_id (per-inbox). Falls back to waba_id
             // only when the payload does not include metadata.
@@ -132,7 +133,11 @@ serve(async (req) => {
               continue;
             }
 
-            await processMessage(change.value, supabase, settings.organization_id, settings.id);
+            if (isEcho) {
+              await processEchoes(change.value, supabase, settings.organization_id, settings.id);
+            } else {
+              await processMessage(change.value, supabase, settings.organization_id, settings.id);
+            }
           }
         }
       }
@@ -149,6 +154,62 @@ serve(async (req) => {
 
 function normalizePhone(phone: string | null | undefined): string {
   return (phone ?? '').replace(/\D/g, '');
+}
+
+// Replies typed in the WhatsApp Business phone app (coexistence) arrive as
+// `smb_message_echoes`. Save them as outbound only — no bot, automations,
+// queue changes or media downloads.
+async function processEchoes(value: any, supabase: any, organizationId: string, whatsappSettingsId: string) {
+  const echoes = Array.isArray(value?.message_echoes) ? value.message_echoes : [];
+  for (const echo of echoes) {
+    try {
+      const phoneNumber = normalizePhone(echo.to);
+      if (!phoneNumber || !echo.id) continue;
+      const sentAt = echo.timestamp
+        ? new Date(parseInt(echo.timestamp) * 1000).toISOString()
+        : new Date().toISOString();
+
+      const { data: existing } = await supabase.from('whatsapp_messages').select('id')
+        .eq('organization_id', organizationId).eq('message_id', echo.id).maybeSingle();
+      if (existing?.id) continue;
+
+      const { data: convo, error: convErr } = await supabase
+        .from('whatsapp_conversations')
+        .upsert(
+          { organization_id: organizationId, whatsapp_settings_id: whatsappSettingsId, phone_number: phoneNumber, last_message_at: sentAt },
+          { onConflict: 'organization_id,whatsapp_settings_id,phone_number' },
+        )
+        .select('id').single();
+      if (convErr || !convo?.id) { console.error('[wa-webhook] echo conversation error', convErr); continue; }
+
+      const type = echo.type ?? 'text';
+      const media = echo[type] ?? {};
+      const content = echo.text?.body ?? media.caption ?? (type !== 'text' ? `[${type}]` : null);
+
+      const { error } = await supabase.from('whatsapp_messages').insert({
+        organization_id: organizationId,
+        whatsapp_settings_id: whatsappSettingsId,
+        conversation_id: convo.id,
+        message_id: echo.id,
+        direction: 'outbound',
+        message_type: type,
+        content,
+        media_caption: media.caption ?? null,
+        media_mime_type: media.mime_type ?? null,
+        media_file_name: media.filename ?? null,
+        media_provider_id: media.id ?? null,
+        sent_at: sentAt,
+        status: 'sent',
+      });
+      if (error && (error as { code?: string }).code !== '23505') {
+        console.error('[wa-webhook] echo write error', { messageId: echo.id, error });
+        continue;
+      }
+      console.log('[wa-webhook] app echo saved', { whatsappSettingsId, conversationId: convo.id, type });
+    } catch (e) {
+      console.error('[wa-webhook] echo error', e);
+    }
+  }
 }
 
 async function recomputeBroadcastCounters(supabase: any, broadcastId: string) {
