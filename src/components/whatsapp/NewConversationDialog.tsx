@@ -28,6 +28,8 @@ export const normalizeWhatsAppPhone = (raw: string, countryCode: string): string
   if (d.startsWith('00')) d = d.slice(2);
   if (!countryCode || countryCode === 'intl') return d;
   if (d.startsWith(countryCode)) return d;
+  // Already a full international number (no leading 0, 11+ digits, e.g. 9665…): keep as is.
+  if (!d.startsWith('0') && d.length >= 11) return d;
   if (d.startsWith('0')) d = d.slice(1);
   return `${countryCode}${d}`;
 };

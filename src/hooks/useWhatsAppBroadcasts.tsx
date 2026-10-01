@@ -187,13 +187,22 @@ export function useBroadcastRecipients(broadcastId?: string) {
     queryKey: ['broadcast-recipients', broadcastId],
     enabled: !!broadcastId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('whatsapp_broadcast_recipients')
-        .select('*')
-        .eq('broadcast_id', broadcastId)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data || []) as BroadcastRecipient[];
+      // Page through all recipients: a single request is capped at 1000 rows.
+      const PAGE = 1000;
+      const rows: BroadcastRecipient[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await (supabase as any)
+          .from('whatsapp_broadcast_recipients')
+          .select('*')
+          .eq('broadcast_id', broadcastId)
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        rows.push(...((data || []) as BroadcastRecipient[]));
+        if (!data || data.length < PAGE) break;
+      }
+      return rows;
     },
   });
 }
