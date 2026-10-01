@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { setActiveConversation } from '@/lib/soundAlerts';
 import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X, User as UserIcon, Plus } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -96,6 +97,13 @@ const WhatsAppInboxContent: React.FC = () => {
     if (selected && (selected.marked_unread || selected.unread_count > 0)) setUnreadFor(selected.id, false, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
+  // Messages that arrive while the chat is open on screen count as read.
+  React.useEffect(() => {
+    if (selected && selected.unread_count > 0 && !selected.marked_unread) setUnreadFor(selected.id, false, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.unread_count]);
+  // Lets the message chime skip the chat that is already on screen.
+  React.useEffect(() => { setActiveConversation(selectedId); return () => setActiveConversation(null); }, [selectedId]);
   const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
   const queue = orderQueue(visibleConversations.filter(isQueuedConversation));
   const ownsSelected = !!selected && (selected.assigned_to === employee?.id || isSupervisor);
