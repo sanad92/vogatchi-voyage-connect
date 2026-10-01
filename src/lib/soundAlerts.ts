@@ -93,3 +93,8 @@ export const playAlertSound = (sound: AlertSound): void => {
   }
   start();
 };
+
+// Conversation currently open on screen; its inbound messages don't chime.
+let activeConversationId: string | null = null;
+export const setActiveConversation = (id: string | null) => { activeConversationId = id; };
+export const getActiveConversation = () => activeConversationId;
