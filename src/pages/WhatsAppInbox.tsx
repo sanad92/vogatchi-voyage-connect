@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { setActiveConversation } from '@/lib/soundAlerts';
 import { MessageCircle, Search, ExternalLink, RefreshCw, Check, ChevronDown, PanelRightClose, X, User as UserIcon, Plus } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
