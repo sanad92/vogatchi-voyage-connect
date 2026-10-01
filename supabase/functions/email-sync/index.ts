@@ -5,14 +5,35 @@ import { requireUser, requireInternalCaller, authErrorResponse, AuthError } from
 import { Imap, decryptSecret, friendlyMailError, normalizeSubject } from '../_shared/mail.ts';
 
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-const MAX_PER_RUN = 60;
+const MAX_PER_RUN = 25;
 const imapDate = (d: Date) => `${d.getUTCDate()}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]}-${d.getUTCFullYear()}`;
+
+// The scheduled job sends the vault-stored service_role JWT, which differs from this
+// function's env key. Accept it only after the auth admin API confirms it is valid.
+async function isLegacyServiceRoleJwt(req: Request): Promise<boolean> {
+  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const claims = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (claims?.role !== 'service_role') return false;
+  } catch { return false; }
+  const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/admin/users?per_page=1`, {
+    headers: { Authorization: `Bearer ${token}`, apikey: token },
+  }).catch(() => null);
+  if (res) await res.body?.cancel();
+  return !!res?.ok;
+}
 
 // deno-lint-ignore no-explicit-any
 async function syncAccount(admin: SupabaseClient, acc: any) {
-  const lockCutoff = new Date(Date.now() - 5 * 60_000).toISOString();
-  const { data: locked } = await admin.from('email_accounts').update({ sync_locked_at: new Date().toISOString() })
-    .eq('id', acc.id).or(`sync_locked_at.is.null,sync_locked_at.lt.${lockCutoff}`).select('id');
+  // Take the lock only if free or stale (>3 min, e.g. a run killed by the platform).
+  const prev = acc.sync_locked_at as string | null;
+  if (prev && Date.now() - new Date(prev).getTime() < 3 * 60_000) return { skipped: true };
+  let lockQ = admin.from('email_accounts').update({ sync_locked_at: new Date().toISOString() }).eq('id', acc.id);
+  lockQ = prev ? lockQ.eq('sync_locked_at', prev) : lockQ.is('sync_locked_at', null);
+  const { data: locked, error: lockErr } = await lockQ.select('id');
+  if (lockErr) console.error('email-sync lock', lockErr.message);
   if (!locked?.length) return { skipped: true };
   let imported = 0;
   try {
@@ -27,13 +48,18 @@ async function syncAccount(admin: SupabaseClient, acc: any) {
     uids.sort((a, b) => a - b);
     if (lastUid === 0 && uids.length > 200) uids = uids.slice(-200);
     uids = uids.slice(0, MAX_PER_RUN);
-    for (let i = 0; i < uids.length; i += 10) {
-      const batch = await im.fetchRaw(uids.slice(i, i + 10));
+    // One message at a time and a time budget, so big mailboxes stay within edge limits.
+    const started = Date.now();
+    for (const u of uids) {
+      if (Date.now() - started > 40_000) break;
+      const batch = await im.fetchRaw([u]);
       for (const { uid, raw } of batch) {
         try { if (await storeMessage(admin, acc, uid, raw)) imported++; }
         catch (e) { console.error('store failed', uid, e); }
-        if (uid > lastUid) lastUid = uid;
       }
+      if (u > lastUid) lastUid = u;
+      // Persist progress so a killed run doesn't refetch everything.
+      if (imported % 5 === 0) await admin.from('email_accounts').update({ last_uid: lastUid, uid_validity: validity }).eq('id', acc.id);
     }
     await im.logout();
     await admin.from('email_accounts').update({ last_uid: lastUid, uid_validity: validity, last_synced_at: new Date().toISOString(), sync_error: null, sync_locked_at: null }).eq('id', acc.id);
@@ -112,6 +138,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     let internal = false;
     try { requireInternalCaller(req); internal = true; } catch { /* user call */ }
+    if (!internal) internal = await isLegacyServiceRoleJwt(req);
 
     let query = admin.from('email_accounts').select('*').eq('is_active', true);
     if (!internal) {

@@ -28,33 +28,53 @@ export async function decryptSecret(stored: string): Promise<string> {
 export const toBase64 = b64;
 
 // ---------- buffered TLS reader ----------
+// Growable buffer with a read offset: avoids re-copying/re-scanning on every chunk,
+// which made large mailboxes blow the edge function's CPU/memory limit.
 class Wire {
-  buf = new Uint8Array(0);
+  private data = new Uint8Array(1 << 16);
+  private start = 0;
+  private end = 0;
+  private scan = 0;
+  private chunk = new Uint8Array(65536);
   constructor(public conn: Deno.TlsConn) {}
+  private get size() { return this.end - this.start; }
   async more() {
-    const chunk = new Uint8Array(65536);
-    const n = await this.conn.read(chunk);
+    const n = await this.conn.read(this.chunk);
     if (n === null) throw new Error('Connection closed by server');
-    const next = new Uint8Array(this.buf.length + n);
-    next.set(this.buf); next.set(chunk.subarray(0, n), this.buf.length);
-    this.buf = next;
+    if (this.end + n > this.data.length) {
+      const live = this.size;
+      if (live + n <= this.data.length / 2) {
+        this.data.copyWithin(0, this.start, this.end);
+      } else {
+        let cap = this.data.length * 2;
+        while (cap < live + n) cap *= 2;
+        const next = new Uint8Array(cap);
+        next.set(this.data.subarray(this.start, this.end));
+        this.data = next;
+      }
+      this.scan -= this.start; this.start = 0; this.end = live;
+    }
+    this.data.set(this.chunk.subarray(0, n), this.end);
+    this.end += n;
   }
   async line(): Promise<string> {
+    if (this.scan < this.start) this.scan = this.start;
     for (;;) {
-      for (let i = 0; i + 1 < this.buf.length; i++) {
-        if (this.buf[i] === 13 && this.buf[i + 1] === 10) {
-          const l = dec.decode(this.buf.subarray(0, i));
-          this.buf = this.buf.slice(i + 2);
+      for (let i = this.scan; i + 1 < this.end; i++) {
+        if (this.data[i] === 13 && this.data[i + 1] === 10) {
+          const l = dec.decode(this.data.subarray(this.start, i));
+          this.start = i + 2; this.scan = this.start;
           return l;
         }
       }
+      this.scan = Math.max(this.start, this.end - 1);
       await this.more();
     }
   }
   async bytes(n: number): Promise<Uint8Array> {
-    while (this.buf.length < n) await this.more();
-    const out = this.buf.slice(0, n);
-    this.buf = this.buf.slice(n);
+    while (this.size < n) await this.more();
+    const out = this.data.slice(this.start, this.start + n);
+    this.start += n; this.scan = this.start;
     return out;
   }
   async write(s: string | Uint8Array) {
