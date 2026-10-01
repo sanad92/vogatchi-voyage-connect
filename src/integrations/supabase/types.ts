@@ -4536,6 +4536,226 @@ export type Database = {
         }
         Relationships: []
       }
+      email_accounts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_name: string | null
+          email_address: string
+          id: string
+          imap_host: string
+          imap_port: number
+          is_active: boolean
+          last_synced_at: string | null
+          last_uid: number
+          organization_id: string
+          password_ciphertext: string
+          provider: string
+          smtp_host: string
+          smtp_port: number
+          sync_error: string | null
+          sync_locked_at: string | null
+          uid_validity: number | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          email_address: string
+          id?: string
+          imap_host: string
+          imap_port?: number
+          is_active?: boolean
+          last_synced_at?: string | null
+          last_uid?: number
+          organization_id: string
+          password_ciphertext: string
+          provider?: string
+          smtp_host: string
+          smtp_port?: number
+          sync_error?: string | null
+          sync_locked_at?: string | null
+          uid_validity?: number | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          email_address?: string
+          id?: string
+          imap_host?: string
+          imap_port?: number
+          is_active?: boolean
+          last_synced_at?: string | null
+          last_uid?: number
+          organization_id?: string
+          password_ciphertext?: string
+          provider?: string
+          smtp_host?: string
+          smtp_port?: number
+          sync_error?: string | null
+          sync_locked_at?: string | null
+          uid_validity?: number | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_messages: {
+        Row: {
+          account_id: string
+          body_html: string | null
+          body_text: string | null
+          cc_emails: string[]
+          created_at: string
+          direction: string
+          from_email: string | null
+          from_name: string | null
+          id: string
+          imap_uid: number | null
+          in_reply_to: string | null
+          message_id: string
+          organization_id: string
+          references_header: string | null
+          sent_at: string
+          sent_by: string | null
+          subject: string | null
+          thread_id: string
+          to_emails: string[]
+        }
+        Insert: {
+          account_id: string
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          created_at?: string
+          direction: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          imap_uid?: number | null
+          in_reply_to?: string | null
+          message_id: string
+          organization_id: string
+          references_header?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          thread_id: string
+          to_emails?: string[]
+        }
+        Update: {
+          account_id?: string
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          created_at?: string
+          direction?: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          imap_uid?: number | null
+          in_reply_to?: string | null
+          message_id?: string
+          organization_id?: string
+          references_header?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          thread_id?: string
+          to_emails?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_queue: {
         Row: {
           attempts: number
@@ -4660,6 +4880,98 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      email_threads: {
+        Row: {
+          account_id: string
+          assigned_at: string | null
+          assigned_to: string | null
+          closed_at: string | null
+          contact_email: string
+          contact_name: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          last_inbound_at: string | null
+          last_message_at: string
+          last_read_at: string | null
+          marked_unread: boolean
+          organization_id: string
+          snippet: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          assigned_at?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          contact_email: string
+          contact_name?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_inbound_at?: string | null
+          last_message_at?: string
+          last_read_at?: string | null
+          marked_unread?: boolean
+          organization_id: string
+          snippet?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          assigned_at?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          contact_email?: string
+          contact_name?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_inbound_at?: string | null
+          last_message_at?: string
+          last_read_at?: string | null
+          marked_unread?: boolean
+          organization_id?: string
+          snippet?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_unsubscribe_tokens: {
         Row: {
@@ -13795,6 +14107,65 @@ export type Database = {
           },
         ]
       }
+      email_accounts_public: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email_address: string | null
+          id: string | null
+          imap_host: string | null
+          imap_port: number | null
+          is_active: boolean | null
+          last_synced_at: string | null
+          organization_id: string | null
+          provider: string | null
+          smtp_host: string | null
+          smtp_port: number | null
+          sync_error: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email_address?: string | null
+          id?: string | null
+          imap_host?: string | null
+          imap_port?: number | null
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          organization_id?: string | null
+          provider?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          sync_error?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email_address?: string | null
+          id?: string | null
+          imap_host?: string | null
+          imap_port?: number | null
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          organization_id?: string | null
+          provider?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          sync_error?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_bookings_unified: {
         Row: {
           airline_name: string | null
@@ -14298,6 +14669,10 @@ export type Database = {
       can_manage_customers: { Args: never; Returns: boolean }
       can_org_write: { Args: { _org_id: string }; Returns: boolean }
       can_process_org_payments: { Args: { _org_id: string }; Returns: boolean }
+      can_see_email_thread: {
+        Args: { _assigned: string; _org: string }
+        Returns: boolean
+      }
       cancel_commission: {
         Args: { p_commission_id: string; p_reason?: string }
         Returns: boolean
@@ -14354,6 +14729,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_email_thread: { Args: { _thread: string }; Returns: undefined }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
       close_bank_reconciliation: { Args: { _session: string }; Returns: Json }
       close_fiscal_year: {
@@ -15425,6 +15801,10 @@ export type Database = {
       }
       refresh_supplier_invoice_payment_state: {
         Args: { _invoice_id: string }
+        Returns: undefined
+      }
+      release_email_thread: {
+        Args: { _close?: boolean; _thread: string }
         Returns: undefined
       }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
