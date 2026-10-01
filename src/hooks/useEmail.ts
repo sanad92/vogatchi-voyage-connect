@@ -86,7 +86,9 @@ export async function invokeEmailFn(name: string, body: unknown) {
   const { data, error } = await supabase.functions.invoke(name, { body });
   if (error) {
     let msg = error.message;
-    try { const t = await (error as any).context?.json?.(); if (t?.error) msg = t.error; } catch { /* keep */ }
+    const status = (error as any).context?.status;
+    if (status === 546 || status === 504) msg = 'الصندوق كبير والتحديث بياخد وقت. التحديث التلقائي هيكمل خلال دقيقتين.';
+    else try { const t = await (error as any).context?.json?.(); if (t?.error) msg = t.error; } catch { /* keep */ }
     throw new Error(msg);
   }
   if (data?.error) throw new Error(data.error);
