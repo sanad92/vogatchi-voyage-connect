@@ -112,6 +112,7 @@ const CRM = lazy(() => import("@/pages/CRM"));
 
 const WhatsAppAdmin = lazy(() => import("@/pages/WhatsAppAdmin"));
 const WhatsAppInbox = lazy(() => import("@/pages/WhatsAppInbox"));
+const EmailInbox = lazy(() => import("@/pages/EmailInbox"));
 const WhatsAppConversationDetail = lazy(() => import("@/pages/WhatsAppConversationDetail"));
 
 // Admin
@@ -365,6 +366,7 @@ function App() {
                               <Route path="/database-manager" element={<PlatformAdminGuard><DatabaseManager /></PlatformAdminGuard>} />
                               <Route path="/team" element={<PermissionRouteGuard requiredPermission="team_view"><TeamManagement /></PermissionRouteGuard>} />
                              <Route path="/whatsapp" element={<Navigate to="/whatsapp-inbox" replace />} />
+                             <Route path="/email-inbox" element={<EmailInbox />} />
                              <Route path="/whatsapp-inbox" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppInbox /></PermissionRouteGuard>} />
                              <Route path="/whatsapp-inbox/:conversationId" element={<PermissionRouteGuard requiredPermission="whatsapp_view"><WhatsAppConversationDetail /></PermissionRouteGuard>} />
                              <Route path="/whatsapp-admin" element={<PermissionRouteGuard requiredPermission="whatsapp_admin"><WhatsAppAdmin /></PermissionRouteGuard>} />

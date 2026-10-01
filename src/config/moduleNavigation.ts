@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 import {
   Activity,
+  Mail,
   AlertTriangle,
   BarChart3,
   BookOpen,
@@ -305,6 +306,7 @@ export const ERP_MODULES: ErpModule[] = [
         description: 'صندوق موحد يخدم المبيعات وخدمة العملاء والتشغيل حسب الصلاحيات.',
         screens: [
           screen({ title: 'صندوق واتساب', href: '/whatsapp-inbox', icon: MessageSquare, description: 'محادثات العملاء المرتبطة بسجل العميل.', requiredPermission: 'whatsapp_view', requiredFeature: PLAN_FEATURES.WHATSAPP, sidebar: true }),
+          screen({ title: 'صندوق البريد', href: '/email-inbox', icon: Mail, description: 'بريد الشركة: قراءة ورد وإرسال مع الاستلام والتسليم.', sidebar: true }),
           screen({ title: 'رحلات التسويق', href: '/marketing/journeys', icon: Megaphone, description: 'تصميم رحلة تواصل مبنية على بيانات العميل.', requiredPermission: 'marketing_view', requiredFeature: PLAN_FEATURES.MARKETING, sidebar: true }),
         ],
       },
