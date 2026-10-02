@@ -13,7 +13,7 @@ from playwright.async_api import async_playwright
 APP = os.environ.get("APP_URL", "http://localhost:8080")
 SUPA = "https://gvozalurfthzxpuasplo.supabase.co"
 ANON = open(".env").read().split("VITE_SUPABASE_PUBLISHABLE_KEY=")[1].split("\n")[0].strip('"')
-CONV = os.environ.get("TEST_CONVERSATION_ID", "dea26d8d")
+CONV = os.environ.get("TEST_CONVERSATION_ID", "dea26d8d-fe56-491d-895b-2a26e9280386")
 
 
 def load_session():
@@ -48,7 +48,7 @@ window.AudioContext = class extends Real {
 async def main():
     storage_key, session = load_session()
     token = session["access_token"]
-    conv = rest(token, "GET", f"whatsapp_conversations?id=like.{CONV}*&select=id,organization_id,phone_number&limit=1")
+    conv = rest(token, "GET", f"whatsapp_conversations?id=eq.{CONV}&select=id,organization_id&limit=1")
     assert conv, "test conversation not found"
     conv_id, org_id = conv[0]["id"], conv[0]["organization_id"]
     inserted, failures = [], []
