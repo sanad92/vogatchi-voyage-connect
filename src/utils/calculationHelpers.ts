@@ -169,7 +169,7 @@ export const calculateFinancialBreakdown = ({
   const discountedAmount = Math.max(0, safeSubtotal - safeDiscountAmount);
   const vatAmount = roundAmount(discountedAmount * (safeVatRate / 100));
   const totalAmount = roundAmount(discountedAmount + vatAmount);
-  const remainingAmount = Math.max(0, totalAmount - safePaidAmount);
+  const remainingAmount = Math.max(0, roundAmount(totalAmount - safePaidAmount));
   const paymentPercentage = totalAmount > 0
     ? Math.min(100, roundAmount((safePaidAmount / totalAmount) * 100))
     : 0;
@@ -182,7 +182,8 @@ export const calculateFinancialBreakdown = ({
     vatAmount,
     totalAmount,
     totalCost: roundAmount(safeTotalCost),
-    totalProfit: roundAmount(totalAmount - safeTotalCost),
+    // VAT is collected on behalf of the tax authority, so it is never profit.
+    totalProfit: roundAmount(discountedAmount - safeTotalCost),
     remainingAmount: roundAmount(remainingAmount),
     paymentPercentage,
   };
