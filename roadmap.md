@@ -1,6 +1,6 @@
 # Launch execution
 
-- [ ] Apply approved SafarERP name, original logo, palette and typography; preserve tenant identities and verify public screens.
+- [x] Apply approved SafarERP name, original logo, palette and typography; preserve tenant identities; public home/login/pricing and navigation verified. Authenticated dashboard visual check remains unavailable without a session.
 - [x] Fix queued email read/unread persistence; reproduce old denial and verify staff persistence, unchanged ownership/workflow and tenant isolation in isolated PostgreSQL.
 - [ ] Verify queued email read/unread in the authenticated live UI (blocked: signed out; requesting user's account could not be matched for session restoration).
 - [x] Check live Cloud health after the approved resize.

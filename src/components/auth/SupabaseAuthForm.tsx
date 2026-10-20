@@ -8,6 +8,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAuthErrorMessage } from '@/lib/authErrorMessage';
+import SafarLogo from '@/components/brand/VogantraLogo';
 
 interface SupabaseAuthFormProps {
   defaultTab?: string;
@@ -60,9 +61,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center mb-8">
         <Link to="/" className="inline-flex items-center gap-2 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">V</span>
-          </div>
+          <SafarLogo variant="mark" size="lg" />
         </Link>
         <h1 className="text-3xl font-bold text-foreground mb-2">مرحباً بك في SafarERP</h1>
         <p className="text-muted-foreground">منصة إدارة شركات السياحة والسفر</p>

@@ -46,7 +46,7 @@ const HeroDashboardMock = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-warning/70" />
             <div className="w-2.5 h-2.5 rounded-full bg-success/70" />
           </div>
-          <div className="text-[10px] text-muted-foreground font-mono">Vogantra ERP — Dashboard</div>
+          <div className="text-[10px] text-muted-foreground font-mono">SafarERP — Dashboard</div>
         </div>
 
         {/* KPI row */}
