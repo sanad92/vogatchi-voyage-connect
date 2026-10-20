@@ -8,8 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, CalendarPlus, Building2, LogIn } from 'lucide-react';
+import { Ban, CheckCircle, CalendarPlus, Building2, LogIn, Search, Trash2, XCircle } from 'lucide-react';
 import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
+import { Input } from '@/components/ui/input';
+import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
+
+type OrgSort = 'newest' | 'oldest' | 'name' | 'bookings' | 'members' | 'expiry';
 
 interface OrgRow {
   id: string;
@@ -116,15 +120,80 @@ const PlatformAdminOrganizations = () => {
     onError: () => toast.error('فشل في تمديد الفترة التجريبية'),
   });
 
+  const cancelSub = useMutation({
+    mutationFn: async (subId: string) => {
+      const { error } = await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', subId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
+      toast.success('تم إلغاء الاشتراك');
+    },
+    onError: () => toast.error('فشل في إلغاء الاشتراك'),
+  });
+
+  const deleteOrg = useMutation({
+    mutationFn: async (id: string) => {
+      const { error, count } = await supabase.from('organizations').delete({ count: 'exact' }).eq('id', id);
+      if (error) throw error;
+      if (!count) throw new Error('not-deleted');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
+      toast.success('تم حذف الشركة');
+    },
+    onError: () => toast.error('تعذّر حذف الشركة — غالبًا لديها بيانات مرتبطة. يمكنك تعليقها بدلًا من الحذف.'),
+  });
+
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<OrgSort>('newest');
+
+  const term = search.trim().toLowerCase();
+  const visibleOrgs = (orgs ?? [])
+    .filter((o) => !term || [o.name, o.slug, o.email].some((v) => v?.toLowerCase().includes(term)))
+    .sort((a, b) => {
+      switch (sort) {
+        case 'oldest': return a.created_at.localeCompare(b.created_at);
+        case 'name': return a.name.localeCompare(b.name, 'ar');
+        case 'bookings': return b.booking_count - a.booking_count;
+        case 'members': return b.member_count - a.member_count;
+        case 'expiry': return (a.subscription_expires_at ?? '9999').localeCompare(b.subscription_expires_at ?? '9999');
+        default: return b.created_at.localeCompare(a.created_at);
+      }
+    });
+
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
       <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             قائمة المؤسسات
+            <Badge variant="secondary">{visibleOrgs.length}</Badge>
           </CardTitle>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث بالاسم أو البريد..."
+                className="h-9 w-full pr-9 sm:w-64"
+              />
+            </div>
+            <Select value={sort} onValueChange={(v) => setSort(v as OrgSort)}>
+              <SelectTrigger className="h-9 w-full sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">الأحدث تسجيلًا</SelectItem>
+                <SelectItem value="oldest">الأقدم تسجيلًا</SelectItem>
+                <SelectItem value="name">الاسم أبجديًا</SelectItem>
+                <SelectItem value="bookings">الأكثر حجوزات</SelectItem>
+                <SelectItem value="members">الأكثر مستخدمين</SelectItem>
+                <SelectItem value="expiry">الأقرب لانتهاء الاشتراك</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -149,7 +218,7 @@ const PlatformAdminOrganizations = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orgs?.map((org) => (
+                  {visibleOrgs.map((org) => (
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
@@ -238,10 +307,41 @@ const PlatformAdminOrganizations = () => {
                               <CalendarPlus className="h-3 w-3 ml-1" /> تمديد
                             </Button>
                           )}
+                          {org.subscription_id && (
+                            <ConfirmAction
+                              title="إلغاء الاشتراك"
+                              description={`سيتم إلغاء اشتراك «${org.name}». يمكنك إعادة تفعيله لاحقًا من صفحة الاشتراكات.`}
+                              confirmLabel="إلغاء الاشتراك"
+                              onConfirm={() => cancelSub.mutate(org.subscription_id!)}
+                              trigger={
+                                <Button size="sm" variant="outline" className="h-7 text-xs">
+                                  <XCircle className="h-3 w-3 ml-1" /> إلغاء
+                                </Button>
+                              }
+                            />
+                          )}
+                          <ConfirmAction
+                            title="حذف الشركة نهائيًا"
+                            description={`سيتم حذف «${org.name}» نهائيًا ولا يمكن التراجع. إذا كانت لديها بيانات تشغيلية، الأفضل تعليقها بدلًا من الحذف.`}
+                            confirmLabel="حذف نهائي"
+                            onConfirm={() => deleteOrg.mutate(org.id)}
+                            trigger={
+                              <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive">
+                                <Trash2 className="h-3 w-3 ml-1" /> حذف
+                              </Button>
+                            }
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {!visibleOrgs.length && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        لا توجد شركات مطابقة
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
