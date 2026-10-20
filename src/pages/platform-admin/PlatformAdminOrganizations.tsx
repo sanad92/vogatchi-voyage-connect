@@ -12,6 +12,7 @@ import { Ban, CheckCircle, CalendarPlus, Building2, LogIn, Search, Trash2, XCirc
 import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
+import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
 
 type OrgSort = 'newest' | 'oldest' | 'name' | 'bookings' | 'members' | 'expiry';
 
@@ -146,6 +147,7 @@ const PlatformAdminOrganizations = () => {
   });
 
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [sort, setSort] = useState<OrgSort>('newest');
 
   const term = search.trim().toLowerCase();
@@ -162,6 +164,8 @@ const PlatformAdminOrganizations = () => {
       }
     });
 
+  const pager = paginate(visibleOrgs ?? [], page);
+
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
       <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
@@ -177,7 +181,7 @@ const PlatformAdminOrganizations = () => {
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="ابحث بالاسم أو البريد..."
                 className="h-9 w-full pr-9 sm:w-64"
               />
@@ -203,8 +207,8 @@ const PlatformAdminOrganizations = () => {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <>
+              <Table containerClassName={PLATFORM_TABLE_CONTAINER}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right min-w-[150px]">المؤسسة</TableHead>
@@ -218,7 +222,7 @@ const PlatformAdminOrganizations = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleOrgs.map((org) => (
+                  {pager.pageRows.map((org) => (
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
@@ -344,7 +348,8 @@ const PlatformAdminOrganizations = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+              <TablePager page={pager.current} pageCount={pager.pageCount} total={(visibleOrgs ?? []).length} onChange={setPage} />
+            </>
           )}
         </CardContent>
       </Card>
