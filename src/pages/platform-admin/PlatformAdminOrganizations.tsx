@@ -218,7 +218,7 @@ const PlatformAdminOrganizations = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orgs?.map((org) => (
+                  {visibleOrgs.map((org) => (
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
@@ -307,10 +307,41 @@ const PlatformAdminOrganizations = () => {
                               <CalendarPlus className="h-3 w-3 ml-1" /> تمديد
                             </Button>
                           )}
+                          {org.subscription_id && (
+                            <ConfirmAction
+                              title="إلغاء الاشتراك"
+                              description={`سيتم إلغاء اشتراك «${org.name}». يمكنك إعادة تفعيله لاحقًا من صفحة الاشتراكات.`}
+                              confirmLabel="إلغاء الاشتراك"
+                              onConfirm={() => cancelSub.mutate(org.subscription_id!)}
+                              trigger={
+                                <Button size="sm" variant="outline" className="h-7 text-xs">
+                                  <XCircle className="h-3 w-3 ml-1" /> إلغاء
+                                </Button>
+                              }
+                            />
+                          )}
+                          <ConfirmAction
+                            title="حذف الشركة نهائيًا"
+                            description={`سيتم حذف «${org.name}» نهائيًا ولا يمكن التراجع. إذا كانت لديها بيانات تشغيلية، الأفضل تعليقها بدلًا من الحذف.`}
+                            confirmLabel="حذف نهائي"
+                            onConfirm={() => deleteOrg.mutate(org.id)}
+                            trigger={
+                              <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive">
+                                <Trash2 className="h-3 w-3 ml-1" /> حذف
+                              </Button>
+                            }
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {!visibleOrgs.length && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        لا توجد شركات مطابقة
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
