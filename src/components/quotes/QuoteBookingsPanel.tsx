@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useOrgId } from '@/hooks/useOrgId';
 
 const typeLabels: Record<string, string> = {
   hotel: 'فندق', flight: 'طيران', car_rental: 'سيارة', transport: 'نقل',
@@ -12,14 +13,19 @@ const typeLabels: Record<string, string> = {
 
 export default function QuoteBookingsPanel({ quoteId }: { quoteId: string }) {
   const navigate = useNavigate();
+  const orgId = useOrgId();
   const { data: bookings } = useQuery({
-    queryKey: ['quote-bookings', quoteId],
+    queryKey: ['quote-bookings', orgId, quoteId],
+    enabled: !!orgId && !!quoteId,
     queryFn: async () => {
-      const { data } = await supabase
+      if (!orgId) throw new Error('لا توجد مؤسسة نشطة');
+      const { data, error } = await supabase
         .from('bookings')
         .select('id, booking_number, booking_type, status, selling_price, currency')
+        .eq('organization_id', orgId)
         .eq('quote_id', quoteId)
         .order('created_at', { ascending: false });
+      if (error) throw error;
       return data ?? [];
     },
   });
