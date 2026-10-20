@@ -196,7 +196,7 @@ const DashboardPreview = () => (
                 <p className="text-[10px] font-medium text-muted-foreground sm:text-xs">نظرة سريعة</p>
                 <h3 className="mt-0.5 text-sm font-bold text-foreground sm:text-base">صباح الخير، فريق العمليات</h3>
               </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-brand-ivory">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Sparkles className="h-4 w-4" />
               </div>
             </div>
@@ -366,7 +366,7 @@ const SaaSLanding = () => {
               </Button>
             </Link>
             <Link to="/signup">
-              <Button className="h-10 rounded-xl bg-primary px-4 text-xs font-bold text-brand-ivory shadow-lg shadow-soft-md hover:bg-primary sm:px-5 sm:text-sm">
+              <Button className="h-10 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg shadow-soft-md hover:bg-primary sm:px-5 sm:text-sm">
                 ابدأ مجانًا
                 <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
@@ -407,7 +407,7 @@ const SaaSLanding = () => {
                       <Button variant="outline" className="w-full rounded-xl">تسجيل الدخول</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full rounded-xl bg-primary text-brand-ivory hover:bg-primary">ابدأ التجربة</Button>
+                      <Button className="w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary">ابدأ التجربة</Button>
                     </Link>
                   </div>
                 </div>
@@ -528,7 +528,7 @@ const SaaSLanding = () => {
                   }`}
                 >
                   <div className={`relative mb-5 flex h-12 w-12 items-center justify-center rounded-lg ${
-                    index === 0 || index === 3 ? 'bg-primary text-brand-ivory' : 'border border-border bg-muted text-brand-gold'
+                    index === 0 || index === 3 ? 'bg-primary text-primary-foreground' : 'border border-border bg-muted text-brand-gold'
                   }`}>
                     <feature.icon className="h-5 w-5" />
                   </div>

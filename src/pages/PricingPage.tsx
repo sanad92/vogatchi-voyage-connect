@@ -249,10 +249,10 @@ const PricingPage = () => {
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="font-bold">تسجيل الدخول</Button>
+              <Button variant="ghost" size="sm" className="font-bold text-foreground">تسجيل الدخول</Button>
             </Link>
             <Link to="/signup">
-              <Button size="sm" className="rounded-lg bg-primary font-bold text-brand-ivory hover:bg-primary">
+              <Button size="sm" className="rounded-lg bg-primary font-bold text-primary-foreground hover:bg-primary">
                 ابدأ التجربة
               </Button>
             </Link>
@@ -375,7 +375,7 @@ const PricingPage = () => {
                       <Link to={checkoutUrl} className="mt-7">
                         <Button
                           size="lg"
-                          className={`w-full rounded-xl font-black ${recommended ? 'bg-primary text-brand-ivory hover:bg-primary' : ''}`}
+                          className={`w-full rounded-xl font-black ${recommended ? 'bg-primary text-primary-foreground hover:bg-primary' : ''}`}
                           variant={recommended ? 'default' : 'outline'}
                         >
                           {user ? 'اشترك الآن' : 'ابدأ تجربة 14 يومًا'}
@@ -418,7 +418,7 @@ const PricingPage = () => {
                         <tr className="border-t border-border bg-muted/80">
                           <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
                             <div className="flex items-center gap-3">
-                              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-brand-ivory">
+                              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                 <GroupIcon className="h-4 w-4" />
                               </span>
                               <div>
@@ -459,7 +459,7 @@ const PricingPage = () => {
                   <tr className="border-t border-border bg-muted/80">
                     <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-brand-ivory">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                           <Users className="h-4 w-4" />
                         </span>
                         <div>
