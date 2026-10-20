@@ -24,6 +24,16 @@ export interface EmailMessage {
 export const isThreadUnread = (t: EmailThread) =>
   t.marked_unread || (!!t.last_inbound_at && (!t.last_read_at || t.last_inbound_at > t.last_read_at));
 
+export async function setEmailThreadReadState(organizationId: string, threadId: string, markedUnread: boolean) {
+  const { data, error } = await db.rpc('set_email_thread_read_state', {
+    _organization: organizationId,
+    _thread: threadId,
+    _marked_unread: markedUnread,
+  });
+  if (error) throw error;
+  if (data !== true) throw new Error('Email read state was not saved');
+}
+
 export function useEmailAccounts() {
   const orgId = useOrgId();
   return useQuery({
