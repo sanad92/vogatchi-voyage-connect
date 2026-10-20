@@ -19,20 +19,25 @@ const CancelBookingDialog: React.FC<CancelBookingDialogProps> = ({ open, booking
   const queryClient = useQueryClient();
 
   const handleCancel = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       // احصل على id الحالة "ملغي" (cancelled)
-      const { data: statuses } = await supabase
+      const { data: statuses, error: statusError } = await supabase
         .from("booking_statuses")
         .select("id")
         .or("name.eq.cancelled,name_ar.eq.ملغي");
+      if (statusError) throw statusError;
       const cancelledStatus = statuses?.[0];
       if (!cancelledStatus) throw new Error("لم يتم العثور على حالة الإلغاء");
-      await supabase.rpc("update_booking_status", {
+      const { data: updated, error } = await supabase.rpc("update_booking_status", {
         p_booking_id: bookingId,
+        p_booking_type: 'flight',
         p_status_id: cancelledStatus.id,
         p_notes: notes || "إلغاء عن طريق النظام"
       });
+      if (error) throw error;
+      if (updated !== true) throw new Error('لم يتم تأكيد تحديث حالة الحجز');
       toast.success("تم إلغاء الحجز بنجاح");
       queryClient.invalidateQueries();
       onClose();

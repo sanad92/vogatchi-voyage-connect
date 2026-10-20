@@ -19,20 +19,25 @@ const RefundBookingDialog: React.FC<RefundBookingDialogProps> = ({ open, booking
   const queryClient = useQueryClient();
 
   const handleRefund = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       // احصل على id الحالة "مسترد" (refunded)
-      const { data: statuses } = await supabase
+      const { data: statuses, error: statusError } = await supabase
         .from("booking_statuses")
         .select("id")
         .or("name.eq.refunded,name_ar.eq.مسترد");
+      if (statusError) throw statusError;
       const refundedStatus = statuses?.[0];
       if (!refundedStatus) throw new Error("لم يتم العثور على حالة الاسترداد");
-      await supabase.rpc("update_booking_status", {
+      const { data: updated, error } = await supabase.rpc("update_booking_status", {
         p_booking_id: bookingId,
+        p_booking_type: 'flight',
         p_status_id: refundedStatus.id,
         p_notes: notes?.trim() || "استرداد عن طريق النظام"
       });
+      if (error) throw error;
+      if (updated !== true) throw new Error('لم يتم تأكيد تحديث حالة الحجز');
       toast.success("تم تحويل الحجز إلى مسترد");
       queryClient.invalidateQueries();
       onClose();

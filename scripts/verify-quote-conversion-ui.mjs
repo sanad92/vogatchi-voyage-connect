@@ -65,6 +65,9 @@ const pageImports={
  '@/components/quotes/QuoteStatusBadge':{default:'QuoteStatusBadge'},
  '@/components/quotes/ConvertQuoteDialog':{default:'ConvertQuoteDialog'},
  '@/components/quotes/QuoteBookingsPanel':{default:'QuoteBookingsPanel'},
+ '@/components/quotes/QuoteFollowupsPanel':{default:'QuoteFollowupsPanel'},
+ '@/components/quotes/QuoteWhatsAppFollowupButton':{default:'QuoteWhatsAppFollowupButton'},
+ '@/components/quotes/QuoteReviewDialog':{default:'QuoteReviewDialog'},
  'lucide-react':Object.fromEntries(['ArrowRight','Send','CheckCircle','XCircle','ArrowLeftRight'].map(x=>[x,x])),
  'date-fns':{format:()=>''},'date-fns/locale':{ar:{}},
 };

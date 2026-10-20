@@ -16,10 +16,11 @@ export interface LedgerRow {
   balance: number;
 }
 
-export const useCustomerLedgerRpc = (customerId?: string | null, from?: string, to?: string) =>
-  useQuery({
-    queryKey: ['customer-ledger-rpc', customerId, from, to],
-    enabled: !!customerId,
+export const useCustomerLedgerRpc = (customerId?: string | null, from?: string, to?: string) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['customer-ledger-rpc', orgId, customerId, from, to],
+    enabled: !!orgId && !!customerId,
     queryFn: async (): Promise<LedgerRow[]> => {
       const { data, error } = await sb.rpc('get_customer_ledger', {
         _customer_id: customerId, _from: from || null, _to: to || null,
@@ -28,11 +29,13 @@ export const useCustomerLedgerRpc = (customerId?: string | null, from?: string, 
       return (data || []) as LedgerRow[];
     },
   });
+};
 
-export const useSupplierLedgerRpc = (supplierId?: string | null, from?: string, to?: string) =>
-  useQuery({
-    queryKey: ['supplier-ledger-rpc', supplierId, from, to],
-    enabled: !!supplierId,
+export const useSupplierLedgerRpc = (supplierId?: string | null, from?: string, to?: string) => {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['supplier-ledger-rpc', orgId, supplierId, from, to],
+    enabled: !!orgId && !!supplierId,
     queryFn: async (): Promise<LedgerRow[]> => {
       const { data, error } = await sb.rpc('get_supplier_ledger', {
         _supplier_id: supplierId, _from: from || null, _to: to || null,
@@ -41,6 +44,7 @@ export const useSupplierLedgerRpc = (supplierId?: string | null, from?: string, 
       return (data || []) as LedgerRow[];
     },
   });
+};
 
 export const useCashFlow = (from?: string, to?: string) => {
   const orgId = useOrgId();
