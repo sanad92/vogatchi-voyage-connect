@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 /* ============================================================
- * Vogantra ERP — Design System
+ * SafarERP — Design System
  * Linear / Vercel-inspired professional dark UI
  * All colors are HSL. Use semantic tokens — never hardcoded.
  * ============================================================ */
@@ -13,28 +13,28 @@
 @layer base {
   :root {
     /* Light theme — refined neutral with indigo accent */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 10%;
+    --background: 43.64 44.00% 95.10%;
+    --foreground: 215.09 67.09% 15.49%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
-    --card-elevated: 240 10% 99%;
+    --card-foreground: 215.09 67.09% 15.49%;
+    --card-elevated: 43.64 44.00% 95.10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 215.09 67.09% 15.49%;
 
-    --primary: 245 70% 58%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 245 80% 68%;
+    --primary: 215.09 67.09% 15.49%;
+    --primary-foreground: 43.64 44.00% 95.10%;
+    --primary-glow: 214.74 15.45% 48.24%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 15%;
+    --secondary: 212.73 29.73% 92.75%;
+    --secondary-foreground: 215.09 67.09% 15.49%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 212.73 29.73% 92.75%;
+    --muted-foreground: 214.74 15.45% 48.24%;
 
-    --accent: 245 70% 58%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 212.73 29.73% 92.75%;
+    --accent-foreground: 215.09 67.09% 15.49%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -46,73 +46,78 @@
     --info: 217 91% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 245 70% 58%;
+    --border: 212.73 29.73% 92.75%;
+    --input: 212.73 29.73% 92.75%;
+    --ring: 38.61 40.56% 51.18%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 240 10% 98%;
-    --sidebar-foreground: 240 6% 25%;
-    --sidebar-primary: 245 70% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 94%;
-    --sidebar-accent-foreground: 240 10% 15%;
-    --sidebar-border: 240 6% 90%;
-    --sidebar-ring: 245 70% 58%;
-    --sidebar-muted: 240 4% 50%;
+    --sidebar-background: 215.09 67.09% 15.49%;
+    --sidebar-foreground: 43.64 44.00% 95.10%;
+    --sidebar-primary: 38.61 40.56% 51.18%;
+    --sidebar-primary-foreground: 215.09 67.09% 15.49%;
+    --sidebar-accent: 213 30% 25%;
+    --sidebar-accent-foreground: 43.64 44.00% 95.10%;
+    --sidebar-border: 213 35% 24%;
+    --sidebar-ring: 38.61 40.56% 51.18%;
+    --sidebar-muted: 214 22% 70%;
 
-    --chart-1: 245 70% 58%;
+    --chart-1: 215.09 67.09% 15.49%;
     --chart-2: 152 65% 45%;
     --chart-3: 217 91% 60%;
-    --chart-4: 38 92% 55%;
-    --chart-5: 280 65% 60%;
+    --chart-4: 38.61 40.56% 51.18%;
+    --chart-5: 214.74 15.45% 48.24%;
 
-    --gradient-brand: linear-gradient(135deg, hsl(245 70% 58%), hsl(280 65% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(245 70% 58%) 0%, hsl(217 91% 55%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(245 70% 58%), hsl(152 65% 45%));
-    --gradient-subtle: linear-gradient(180deg, hsl(240 5% 99%), hsl(240 5% 96%));
+    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
 
     --shadow-xs: 0 1px 2px 0 hsl(240 10% 10% / 0.04);
     --shadow-sm: 0 1px 3px 0 hsl(240 10% 10% / 0.06), 0 1px 2px 0 hsl(240 10% 10% / 0.04);
     --shadow-md: 0 4px 12px -2px hsl(240 10% 10% / 0.08), 0 2px 4px -2px hsl(240 10% 10% / 0.04);
     --shadow-lg: 0 12px 32px -8px hsl(240 10% 10% / 0.12), 0 4px 8px -4px hsl(240 10% 10% / 0.06);
-    --shadow-glow: 0 0 24px -4px hsl(245 70% 58% / 0.35);
-    --shadow-brand: 0 10px 40px -10px hsl(245 70% 58% / 0.4);
+    --shadow-glow: 0 8px 24px -12px hsl(var(--brand-navy) / 0.15);
+    --shadow-brand: 0 8px 24px -12px hsl(var(--brand-navy) / 0.15);
 
     /* Conversation surface — luxury WhatsApp-style chat */
-    --chat-canvas: 240 20% 98%;
-    --chat-out: 245 70% 58%;
-    --chat-out-foreground: 0 0% 100%;
+    --chat-canvas: 43.64 44.00% 95.10%;
+    --chat-out: 215.09 67.09% 15.49%;
+    --chat-out-foreground: 43.64 44.00% 95.10%;
     --chat-in: 0 0% 100%;
-    --chat-in-foreground: 240 10% 12%;
+    --chat-in-foreground: 215.09 67.09% 15.49%;
+    --brand-navy: 215.09 67.09% 15.49%;
+    --brand-gold: 38.61 40.56% 51.18%;
+    --brand-ivory: 43.64 44.00% 95.10%;
+    --brand-slate: 214.74 15.45% 48.24%;
+    --brand-mist: 212.73 29.73% 92.75%;
   }
 
 
   /* Linear-inspired dark theme — DEFAULT for the app */
   .dark {
-    --background: 240 10% 4%;        /* #0A0A0B */
-    --foreground: 240 5% 96%;
+    --background: 213 50% 9%;        /* #0A0A0B */
+    --foreground: 43.64 44.00% 95.10%;
 
-    --card: 240 8% 6%;               /* #0F0F11 */
-    --card-foreground: 240 5% 96%;
-    --card-elevated: 240 7% 9%;      /* slightly lifted surface */
+    --card: 213 42% 13%;               /* #0F0F11 */
+    --card-foreground: 43.64 44.00% 95.10%;
+    --card-elevated: 213 35% 17%;      /* slightly lifted surface */
 
-    --popover: 240 8% 7%;
-    --popover-foreground: 240 5% 96%;
+    --popover: 213 42% 13%;
+    --popover-foreground: 43.64 44.00% 95.10%;
 
-    --primary: 245 75% 65%;          /* refined violet/indigo */
-    --primary-foreground: 240 10% 4%;
-    --primary-glow: 245 85% 72%;
+    --primary: 38.61 40.56% 51.18%;          /* refined violet/indigo */
+    --primary-foreground: 215.09 67.09% 15.49%;
+    --primary-glow: 214.74 15.45% 48.24%;
 
-    --secondary: 240 6% 12%;
-    --secondary-foreground: 240 5% 96%;
+    --secondary: 213 30% 20%;
+    --secondary-foreground: 43.64 44.00% 95.10%;
 
-    --muted: 240 6% 11%;
-    --muted-foreground: 240 5% 60%;
+    --muted: 213 30% 18%;
+    --muted-foreground: 214 22% 70%;
 
-    --accent: 245 75% 65%;
-    --accent-foreground: 240 10% 4%;
+    --accent: 213 30% 23%;
+    --accent-foreground: 43.64 44.00% 95.10%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
@@ -124,44 +129,49 @@
     --info: 217 90% 65%;
     --info-foreground: 240 10% 4%;
 
-    --border: 240 6% 14%;            /* subtle */
-    --input: 240 6% 14%;
-    --ring: 245 75% 65%;
+    --border: 213 28% 26%;            /* subtle */
+    --input: 213 28% 26%;
+    --ring: 38.61 40.56% 51.18%;
 
-    --sidebar-background: 240 10% 3%;
-    --sidebar-foreground: 240 5% 80%;
-    --sidebar-primary: 245 75% 65%;
-    --sidebar-primary-foreground: 240 10% 4%;
-    --sidebar-accent: 240 6% 10%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 6% 12%;
-    --sidebar-ring: 245 75% 65%;
-    --sidebar-muted: 240 5% 50%;
+    --sidebar-background: 215.09 67.09% 15.49%;
+    --sidebar-foreground: 43.64 44.00% 95.10%;
+    --sidebar-primary: 38.61 40.56% 51.18%;
+    --sidebar-primary-foreground: 215.09 67.09% 15.49%;
+    --sidebar-accent: 213 30% 25%;
+    --sidebar-accent-foreground: 43.64 44.00% 95.10%;
+    --sidebar-border: 213 35% 24%;
+    --sidebar-ring: 38.61 40.56% 51.18%;
+    --sidebar-muted: 214 22% 70%;
 
-    --chart-1: 245 75% 65%;
+    --chart-1: 38.61 40.56% 51.18%;
     --chart-2: 152 60% 55%;
     --chart-3: 217 90% 65%;
-    --chart-4: 38 95% 60%;
-    --chart-5: 280 70% 65%;
+    --chart-4: 38.61 40.56% 51.18%;
+    --chart-5: 214.74 15.45% 48.24%;
 
-    --gradient-brand: linear-gradient(135deg, hsl(245 75% 65%), hsl(280 70% 65%));
-    --gradient-hero: linear-gradient(135deg, hsl(240 10% 4%) 0%, hsl(245 30% 12%) 50%, hsl(245 75% 35%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(245 75% 65%), hsl(217 90% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(240 8% 6%), hsl(240 8% 5%));
+    --gradient-brand: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-slate)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
 
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.5), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 12px 32px -8px hsl(0 0% 0% / 0.6), 0 4px 8px -4px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 24px -4px hsl(245 75% 65% / 0.45);
-    --shadow-brand: 0 10px 40px -10px hsl(245 75% 65% / 0.5);
+    --shadow-glow: 0 8px 24px -12px hsl(var(--brand-navy) / 0.15);
+    --shadow-brand: 0 8px 24px -12px hsl(var(--brand-navy) / 0.15);
 
     /* Conversation surface — luxury WhatsApp-style chat */
-    --chat-canvas: 240 10% 5%;
-    --chat-out: 245 60% 42%;
-    --chat-out-foreground: 240 5% 98%;
-    --chat-in: 240 7% 11%;
-    --chat-in-foreground: 240 5% 94%;
+    --chat-canvas: 213 50% 9%;
+    --chat-out: 215.09 67.09% 15.49%;
+    --chat-out-foreground: 43.64 44.00% 95.10%;
+    --chat-in: 213 30% 20%;
+    --chat-in-foreground: 43.64 44.00% 95.10%;
+    --brand-navy: 215.09 67.09% 15.49%;
+    --brand-gold: 38.61 40.56% 51.18%;
+    --brand-ivory: 43.64 44.00% 95.10%;
+    --brand-slate: 214.74 15.45% 48.24%;
+    --brand-mist: 212.73 29.73% 92.75%;
   }
 
 }
@@ -180,20 +190,21 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1, "ss01" 1;
-    font-family: 'Inter', 'Cairo', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
   }
 
   /* Numbers, IDs, codes — monospace for that Linear/Vercel feel */
   .font-mono,
   [data-numeric="true"],
   code, kbd, samp, pre {
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', 'Noto Sans Arabic', sans-serif;
+    font-variant-numeric: tabular-nums;
     font-feature-settings: "calt" 1, "ss01" 1, "ss02" 1;
   }
 
   /* Tighter, more refined headings */
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
+    letter-spacing: 0;
     font-feature-settings: "ss01" 1;
   }
 }
