@@ -21,6 +21,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
+				serif: ['Playfair Display', 'Georgia', 'serif'],
 				sans: ['Inter', 'Noto Sans Arabic', 'system-ui', '-apple-system', 'sans-serif'],
 				cairo: ['Noto Sans Arabic', 'system-ui', 'sans-serif'],
 				inter: ['Inter', 'system-ui', 'sans-serif'],
