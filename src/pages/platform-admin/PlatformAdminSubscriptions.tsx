@@ -11,6 +11,7 @@ import { CreditCard, CheckCircle, XCircle, Clock, CalendarPlus, Filter, Search, 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
+import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'نشط', variant: 'default' },
@@ -98,6 +99,7 @@ const PlatformAdminSubscriptions = () => {
   });
 
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [sort, setSort] = useState<'newest' | 'expiry_asc' | 'expiry_desc' | 'start' | 'name'>('newest');
   const term = search.trim().toLowerCase();
 
@@ -127,6 +129,8 @@ const PlatformAdminSubscriptions = () => {
     trialing: subscriptions?.filter(s => s.status === 'trialing').length ?? 0,
     expired: subscriptions?.filter(s => s.status === 'expired').length ?? 0,
   };
+
+  const pager = paginate(filtered ?? [], page);
 
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
@@ -162,7 +166,7 @@ const PlatformAdminSubscriptions = () => {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)}
+              <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="ابحث بالشركة أو الخطة..." className="h-9 w-full pr-9 sm:w-60" />
             </div>
             <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
@@ -198,8 +202,8 @@ const PlatformAdminSubscriptions = () => {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <>
+              <Table containerClassName={PLATFORM_TABLE_CONTAINER}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right min-w-[160px]">المؤسسة</TableHead>
@@ -211,7 +215,7 @@ const PlatformAdminSubscriptions = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered?.map((sub) => {
+                  {pager.pageRows.map((sub) => {
                     const org = sub.organizations as any;
                     const plan = sub.subscription_plans as any;
                     const st = statusLabels[sub.status] || { label: sub.status, variant: 'outline' as const };
@@ -297,7 +301,8 @@ const PlatformAdminSubscriptions = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+              <TablePager page={pager.current} pageCount={pager.pageCount} total={(filtered ?? []).length} onChange={setPage} />
+            </>
           )}
         </CardContent>
       </Card>
