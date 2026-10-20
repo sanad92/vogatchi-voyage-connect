@@ -15877,6 +15877,14 @@ export type Database = {
         Args: { _archived: boolean; _customer_id: string; _org_id: string }
         Returns: Json
       }
+      set_email_thread_read_state: {
+        Args: {
+          _marked_unread: boolean
+          _organization: string
+          _thread: string
+        }
+        Returns: boolean
+      }
       set_org_account_route: {
         Args: {
           _account_id: string
