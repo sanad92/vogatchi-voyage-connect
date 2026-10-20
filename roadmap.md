@@ -7,4 +7,6 @@
 - [x] Run financial, booking, conversion and access regression tests; fix failures.
 - [x] Check authenticated operational screens and real booking/customer/paid-invoice read-back.
 - [x] Record verified results and remaining launch blockers without claiming 100% readiness.
-- [ ] Execute a newly created full financial journey in an isolated test organization/environment (blocked: safe test scope and recipient not designated; current backend also serves production).
+- [ ] Execute a newly created full financial journey in an isolated test organization/environment (blocked: safe test scope and recipient not designated; current backend also serves production).- [x] Refund posting reverses VAT proportionally from the source invoice (net to sales returns, VAT to tax account, cash credited in full).
+- [x] Onboarding audit: new company gets owner role, 14-day trial on an active paid plan, chart of accounts and routing; all existing companies have a subscription and accounts.
+- [ ] Live test of a paid refund and a new-company signup + Paymob/bank-transfer activation (blocked: needs a designated test company and test payment).
