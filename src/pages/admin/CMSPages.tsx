@@ -39,7 +39,7 @@ const CMSPages: React.FC = () => {
         .insert([{
           title: pageName,
           slug: slug,
-          description: `صفحة ${pageName} في موقع Vogantra`
+          description: `صفحة ${pageName} في موقع SafarERP`
         }])
         .select()
         .single() as any);

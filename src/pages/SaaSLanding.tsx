@@ -205,7 +205,7 @@ const DashboardPreview = () => (
               {[
                 { label: 'طلبات مفتوحة', value: '18', icon: MessageSquareText, tone: 'bg-muted text-brand-gold' },
                 { label: 'حجوزات الشهر', value: '42', icon: FileCheck2, tone: 'bg-muted text-brand-gold' },
-                { label: 'تحصيل منتظر', value: '7', icon: WalletCards, tone: 'bg-success text-success' },
+                { label: 'تحصيل منتظر', value: '7', icon: WalletCards, tone: 'bg-success/10 text-success' },
               ].map(item => (
                 <div key={item.label} className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:p-3">
                   <div className={`mb-2 flex h-7 w-7 items-center justify-center rounded-lg ${item.tone}`}>
@@ -287,7 +287,7 @@ const DashboardPreview = () => (
 
           <aside className="order-1 hidden border-l border-border bg-card p-3 sm:order-2 sm:block">
             <div className="mb-5 flex items-center gap-2 px-1">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary text-sm font-black text-brand-ivory">V</div>
+              <SafarERPLogo variant="mark" size="sm" />
               <span className="text-[10px] font-black tracking-normal text-foreground">SafarERP</span>
             </div>
             <div className="space-y-1">

@@ -181,7 +181,7 @@ const AIAssistant = () => {
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <div className="text-sm font-semibold">Vogatchi AI</div>
+            <div className="text-sm font-semibold">SafarERP AI</div>
             <div className="text-[10px] text-muted-foreground">مساعد مالي وتشغيلي — يقرأ بياناتك الفعلية</div>
           </div>
         </div>

@@ -21,7 +21,7 @@ const IndustriesSection = () => {
             متخصصون في السياحة. فقط.
           </h2>
           <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
-            بدل سيستم عام يخدم كل المجالات بسطحية — Vogantra مبني من الأساس لشركات السياحة.
+            بدل سيستم عام يخدم كل المجالات بسطحية — SafarERP مبني من الأساس لشركات السياحة.
           </p>
         </div>
 

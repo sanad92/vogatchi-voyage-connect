@@ -7,37 +7,37 @@ import {
 const products = [
   {
     icon: Hotel,
-    name: 'Vogantra Booking Engine',
+    name: 'SafarERP Booking Engine',
     desc: 'حجوزات فنادق، طيران، نقل، رحلات وعمرة في واجهة موحدة مع تتبع الحالات تلقائياً.',
     color: 'from-primary to-primary-glow',
   },
   {
     icon: Receipt,
-    name: 'Vogantra Finance',
+    name: 'SafarERP Finance',
     desc: 'فواتير احترافية، عمولات، مدفوعات موردين، حسابات بنكية، وتقارير أرباح لحظية.',
     color: 'from-accent to-primary',
   },
   {
     icon: Users,
-    name: 'Vogantra CRM',
+    name: 'SafarERP CRM',
     desc: 'قاعدة بيانات عملاء، تكامل واتساب، Segments ذكية، ومتابعة دقيقة لكل تواصل.',
     color: 'from-primary-glow to-accent',
   },
   {
     icon: Briefcase,
-    name: 'Vogantra HR',
+    name: 'SafarERP HR',
     desc: 'موظفين، حضور، رواتب، عمولات شهرية، وصلاحيات دقيقة لكل دور.',
     color: 'from-secondary to-primary',
   },
   {
     icon: Building2,
-    name: 'Vogantra Suppliers',
+    name: 'SafarERP Suppliers',
     desc: 'إدارة الموردين، عقود الأسعار، الـ Allotments، وعملات متعددة لكل مورد.',
     color: 'from-primary to-accent',
   },
   {
     icon: BarChart3,
-    name: 'Vogantra Analytics',
+    name: 'SafarERP Analytics',
     desc: 'لوحات قياس KPIs لحظية، تقارير مالية مفصلة، وتحليل ربحية كل قسم وفرع.',
     color: 'from-accent to-primary-glow',
   },
@@ -49,7 +49,7 @@ const ServicesSection = () => {
       <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-10">
         <div className="text-center mb-14 max-w-2xl mx-auto">
           <p className="text-xs font-inter font-semibold uppercase tracking-[0.2em] text-primary mb-3">
-            The Vogantra Suite
+            The SafarERP Suite
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight">
             منظومة واحدة. كل أعمالك السياحية.

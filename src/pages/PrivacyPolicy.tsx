@@ -11,7 +11,7 @@ const PrivacyPolicy: React.FC = () => {
         <section className="space-y-4 text-sm leading-7">
           <h2 className="text-xl font-semibold">من نحن</h2>
           <p>
-            Vogatchi Trips منصة SaaS لإدارة عمليات وكالات السفر، تشمل خدمة WhatsApp Business لإدارة محادثات العملاء.
+            SafarERP منصة SaaS لإدارة عمليات وكالات السفر، تشمل خدمة WhatsApp Business لإدارة محادثات العملاء.
           </p>
 
           <h2 className="text-xl font-semibold">البيانات التي نجمعها</h2>

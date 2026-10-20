@@ -84,7 +84,7 @@ const OAuthConsent = () => {
           </div>
           <CardDescription>
             {details
-              ? `يطلب ${clientName} الوصول إلى بيانات Vogatchi نيابةً عنك.`
+              ? `يطلب ${clientName} الوصول إلى بيانات SafarERP نيابةً عنك.`
               : "جارٍ تحميل طلب الموافقة..."}
           </CardDescription>
         </CardHeader>
