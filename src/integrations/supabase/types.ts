@@ -15659,6 +15659,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      platform_table_counts: {
+        Args: never
+        Returns: {
+          row_count: number
+          table_name: string
+        }[]
+      }
       post_booking_cost: { Args: { _booking_id: string }; Returns: string }
       post_commission_period_accrual: {
         Args: { _period_id: string }
