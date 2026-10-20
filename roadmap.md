@@ -1,5 +1,6 @@
 # Launch execution
 
+- [ ] Fix queued email read/unread persistence without widening assignment/status permissions; verify staff and tenant isolation.
 - [x] Check live Cloud health after the approved resize.
 - [x] Run financial, booking, conversion and access regression tests; fix failures.
 - [x] Check authenticated operational screens and real booking/customer/paid-invoice read-back.
