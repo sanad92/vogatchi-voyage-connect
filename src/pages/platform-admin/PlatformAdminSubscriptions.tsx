@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { CreditCard, CheckCircle, XCircle, Clock, CalendarPlus, Filter } from 'lucide-react';
+import { CreditCard, CheckCircle, XCircle, Clock, CalendarPlus, Filter, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'نشط', variant: 'default' },
@@ -82,9 +84,42 @@ const PlatformAdminSubscriptions = () => {
     onError: () => toast.error('فشل في تمديد الاشتراك'),
   });
 
-  const filtered = subscriptions?.filter(s =>
-    statusFilter === 'all' || s.status === statusFilter
-  );
+  const deleteSub = useMutation({
+    mutationFn: async (subId: string) => {
+      const { error, count } = await supabase.from('subscriptions').delete({ count: 'exact' }).eq('id', subId);
+      if (error) throw error;
+      if (!count) throw new Error('not-deleted');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
+      toast.success('تم حذف الاشتراك');
+    },
+    onError: () => toast.error('تعذّر حذف الاشتراك — قد تكون عليه فواتير أو مدفوعات مرتبطة.'),
+  });
+
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<'newest' | 'expiry_asc' | 'expiry_desc' | 'start' | 'name'>('newest');
+  const term = search.trim().toLowerCase();
+
+  const filtered = (subscriptions ?? [])
+    .filter((s) => statusFilter === 'all' || s.status === statusFilter)
+    .filter((s) => {
+      if (!term) return true;
+      const org = s.organizations as any;
+      const plan = s.subscription_plans as any;
+      return [org?.name, org?.email, org?.slug, plan?.name, plan?.name_ar]
+        .some((v) => typeof v === 'string' && v.toLowerCase().includes(term));
+    })
+    .sort((a, b) => {
+      const name = (x: any) => (x.organizations as any)?.name ?? '';
+      switch (sort) {
+        case 'expiry_asc': return (a.expires_at ?? '9999').localeCompare(b.expires_at ?? '9999');
+        case 'expiry_desc': return (b.expires_at ?? '').localeCompare(a.expires_at ?? '');
+        case 'start': return (b.starts_at ?? '').localeCompare(a.starts_at ?? '');
+        case 'name': return name(a).localeCompare(name(b), 'ar');
+        default: return (b.created_at ?? '').localeCompare(a.created_at ?? '');
+      }
+    });
 
   const stats = {
     total: subscriptions?.length ?? 0,
@@ -124,8 +159,23 @@ const PlatformAdminSubscriptions = () => {
             <CreditCard className="h-5 w-5 text-primary" />
             جميع الاشتراكات
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث بالشركة أو الخطة..." className="h-9 w-full pr-9 sm:w-60" />
+            </div>
+            <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+              <SelectTrigger className="h-9 w-full sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">الأحدث إنشاءً</SelectItem>
+                <SelectItem value="expiry_asc">الأقرب انتهاءً</SelectItem>
+                <SelectItem value="expiry_desc">الأبعد انتهاءً</SelectItem>
+                <SelectItem value="start">تاريخ البدء</SelectItem>
+                <SelectItem value="name">اسم الشركة</SelectItem>
+              </SelectContent>
+            </Select>
+            <Filter className="hidden h-4 w-4 text-muted-foreground sm:block" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-36">
                 <SelectValue />
