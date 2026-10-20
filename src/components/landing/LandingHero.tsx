@@ -35,7 +35,7 @@ const LandingHero = ({ onWhatsAppClick }: LandingHeroProps) => {
             </h1>
 
             <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              <span className="font-semibold text-foreground">Vogantra ERP</span> — حجوزات،
+              <span className="font-semibold text-foreground">SafarERP</span> — حجوزات،
               عمولات، فواتير، CRM، موردين، تقارير. منصة واحدة ذكية مصممة
               <span className="font-semibold text-foreground"> خصيصاً لشركات السياحة</span>.
             </p>

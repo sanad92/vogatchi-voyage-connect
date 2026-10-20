@@ -18,6 +18,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, X, Shield, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import SafarLogo from '@/components/brand/VogantraLogo';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
@@ -113,14 +114,10 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         "flex items-center gap-3 px-4 py-5 border-b border-sidebar-border",
         collapsed && "justify-center px-2"
       )}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 flex items-center justify-center shadow-lg flex-shrink-0">
-          <span className="text-sidebar-primary-foreground font-bold text-lg">V</span>
-        </div>
-        {!collapsed && (
-          <span className="text-sidebar-foreground font-bold text-lg truncate">
-            Vogantra
-          </span>
-        )}
+        <Link to="/dashboard" aria-label="SafarERP" className="flex items-center gap-3 min-w-0">
+          <SafarLogo variant="mark" size="md" />
+          {!collapsed && <span className="text-sidebar-foreground font-semibold text-lg" dir="ltr">SafarERP</span>}
+        </Link>
       </div>
 
       {/* User Profile */}
@@ -151,7 +148,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
             to="/platform"
             className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
-              "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:scale-[1.02]",
+              "bg-sidebar-primary text-sidebar-primary-foreground shadow-md hover:shadow-lg hover:scale-[1.02]",
               collapsed && "justify-center px-2"
             )}
             title={collapsed ? 'الذهاب إلى لوحة المنصة' : undefined}

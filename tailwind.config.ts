@@ -21,8 +21,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Inter', 'Cairo', 'system-ui', '-apple-system', 'sans-serif'],
-				cairo: ['Cairo', 'system-ui', 'sans-serif'],
+				serif: ['Playfair Display', 'Georgia', 'serif'],
+				sans: ['Inter', 'Noto Sans Arabic', 'system-ui', '-apple-system', 'sans-serif'],
+				cairo: ['Noto Sans Arabic', 'system-ui', 'sans-serif'],
 				inter: ['Inter', 'system-ui', 'sans-serif'],
 				mono: ['JetBrains Mono', 'SF Mono', 'ui-monospace', 'monospace'],
 			},
@@ -33,6 +34,7 @@ export default {
 				'gradient-subtle': 'var(--gradient-subtle)',
 			},
 			colors: {
+                brand: { navy: 'hsl(var(--brand-navy))', gold: 'hsl(var(--brand-gold))', ivory: 'hsl(var(--brand-ivory))', slate: 'hsl(var(--brand-slate))', mist: 'hsl(var(--brand-mist))' },
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

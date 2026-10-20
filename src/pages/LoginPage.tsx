@@ -63,7 +63,7 @@ const LoginPage = () => {
         <Link to="/" className="inline-flex">
           <VogantraLogo size="lg" />
         </Link>
-        <p className="text-muted-foreground text-sm mt-2">ERP السياحة الذكي</p>
+        <p className="text-muted-foreground text-sm mt-2">نظام إدارة شركات السياحة</p>
       </div>
 
       <div className="space-y-6">

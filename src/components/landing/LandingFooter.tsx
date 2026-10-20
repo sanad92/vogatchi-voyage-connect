@@ -36,11 +36,11 @@ const LandingFooter = ({ onWhatsAppClick: _onWhatsAppClick }: LandingFooterProps
           <div>
             <h3 className="text-lg font-semibold mb-4">المنتجات</h3>
             <ul className="space-y-2 text-white/70 text-sm">
-              <li>Vogantra Booking Engine</li>
-              <li>Vogantra Finance</li>
-              <li>Vogantra CRM</li>
-              <li>Vogantra HR</li>
-              <li>Vogantra Analytics</li>
+              <li>SafarERP Booking Engine</li>
+              <li>SafarERP Finance</li>
+              <li>SafarERP CRM</li>
+              <li>SafarERP HR</li>
+              <li>SafarERP Analytics</li>
             </ul>
           </div>
 
@@ -64,7 +64,7 @@ const LandingFooter = ({ onWhatsAppClick: _onWhatsAppClick }: LandingFooterProps
         </div>
 
         <div className="border-t border-white/10 mt-10 pt-6 text-center text-white/60 text-sm">
-          <p>© {new Date().getFullYear()} Vogantra. جميع الحقوق محفوظة. — The Operating System for Travel</p>
+          <p>© {new Date().getFullYear()} SafarERP. جميع الحقوق محفوظة. — The Operating System for Travel</p>
         </div>
       </div>
     </footer>

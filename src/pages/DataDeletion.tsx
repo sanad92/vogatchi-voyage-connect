@@ -20,7 +20,7 @@ const DataDeletion: React.FC = () => {
 
         <section className="space-y-4 text-sm leading-7">
           <p>
-            يمكنك طلب حذف كافة بياناتك المرتبطة بخدمة WhatsApp Business على منصة Vogatchi Trips عبر إحدى الطرق التالية:
+            يمكنك طلب حذف كافة بياناتك المرتبطة بخدمة WhatsApp Business على منصة SafarERP عبر إحدى الطرق التالية:
           </p>
           <ol className="list-decimal pr-6 space-y-2">
             <li>
