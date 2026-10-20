@@ -166,11 +166,34 @@ const PlatformAdminOrganizations = () => {
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
       <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             قائمة المؤسسات
+            <Badge variant="secondary">{visibleOrgs.length}</Badge>
           </CardTitle>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث بالاسم أو البريد..."
+                className="h-9 w-full pr-9 sm:w-64"
+              />
+            </div>
+            <Select value={sort} onValueChange={(v) => setSort(v as OrgSort)}>
+              <SelectTrigger className="h-9 w-full sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">الأحدث تسجيلًا</SelectItem>
+                <SelectItem value="oldest">الأقدم تسجيلًا</SelectItem>
+                <SelectItem value="name">الاسم أبجديًا</SelectItem>
+                <SelectItem value="bookings">الأكثر حجوزات</SelectItem>
+                <SelectItem value="members">الأكثر مستخدمين</SelectItem>
+                <SelectItem value="expiry">الأقرب لانتهاء الاشتراك</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
