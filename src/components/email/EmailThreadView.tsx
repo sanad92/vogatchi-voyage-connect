@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Hand, LogOut, CheckCheck, Paperclip, User, Mail, MailOpen, Loader2 } fr
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
-import { EmailThread, useEmailMessages } from '@/hooks/useEmail';
+import { EmailThread, setEmailThreadReadState, useEmailMessages } from '@/hooks/useEmail';
 import { EmailComposer } from './EmailComposer';
 
 const db = supabase as any;
@@ -27,24 +27,41 @@ export function EmailThreadView({ thread, userId, ownerName, isSupervisor }: Pro
   const orgId = useOrgId();
   const qc = useQueryClient();
   const { data: messages = [], isLoading } = useEmailMessages(thread.id);
+  const [savingReadState, setSavingReadState] = useState(false);
   const mine = thread.assigned_to === userId;
   const refresh = () => { qc.invalidateQueries({ queryKey: ['email-threads', orgId] }); qc.invalidateQueries({ queryKey: ['email-messages', thread.id] }); };
 
   useEffect(() => {
+    if (!orgId) return;
     if (thread.marked_unread || !thread.last_read_at || (thread.last_inbound_at && thread.last_inbound_at > thread.last_read_at)) {
-      db.from('email_threads').update({ last_read_at: new Date().toISOString(), marked_unread: false }).eq('id', thread.id).then(refresh);
+      setSavingReadState(true);
+      setEmailThreadReadState(orgId, thread.id, false)
+        .then(refresh)
+        .catch(() => toast.error('تعذر حفظ حالة قراءة البريد'))
+        .finally(() => setSavingReadState(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [thread.id]);
+  }, [orgId, thread.id, thread.last_inbound_at]);
 
   const rpc = async (fn: string, args: any, ok: string) => {
     const { error } = await db.rpc(fn, args);
     if (error) toast.error(error.message.includes('already') ? 'موظف تاني استلم المحادثة' : error.message); else { toast.success(ok); refresh(); }
   };
-  const markUnread = async () => { await db.from('email_threads').update({ marked_unread: true }).eq('id', thread.id); refresh(); };
+  const markUnread = async () => {
+    if (!orgId || savingReadState) return;
+    setSavingReadState(true);
+    try {
+      await setEmailThreadReadState(orgId, thread.id, true);
+      refresh();
+    } catch {
+      toast.error('تعذر حفظ حالة قراءة البريد');
+    } finally {
+      setSavingReadState(false);
+    }
+  };
 
   const last = messages[messages.length - 1];
-  const reSubject = (thread.subject || '').match(/^\s*re:/i) ? thread.subject! : `Re: ${thread.subject || ''}`;
+  const reSubject = (thread.subject || '').match(/^\s*re:/i) ? (thread.subject || '') : `Re: ${thread.subject || ''}`;
 
   return (
     <div className="flex h-full flex-col">
@@ -55,7 +72,7 @@ export function EmailThreadView({ thread, userId, ownerName, isSupervisor }: Pro
           <div className="text-xs text-muted-foreground" dir="ltr">{thread.contact_email}</div>
         </div>
         {thread.customer_id && <Button asChild size="sm" variant="outline"><Link to={`/customers/${thread.customer_id}`}><User className="h-4 w-4 ml-1" />ملف العميل</Link></Button>}
-        <Button size="sm" variant="ghost" onClick={markUnread}><Mail className="h-4 w-4 ml-1" />غير مقروء</Button>
+        <Button size="sm" variant="ghost" onClick={markUnread} disabled={!orgId || savingReadState}><Mail className="h-4 w-4 ml-1" />غير مقروء</Button>
         {!thread.assigned_to && <Button size="sm" onClick={() => rpc('claim_email_thread', { _thread: thread.id }, 'استلمت المحادثة')}><Hand className="h-4 w-4 ml-1" />استلام</Button>}
         {thread.assigned_to && !mine && <Badge variant="secondary">يتولاها: {ownerName || 'موظف آخر'}</Badge>}
         {(mine || (thread.assigned_to && isSupervisor)) && <>
