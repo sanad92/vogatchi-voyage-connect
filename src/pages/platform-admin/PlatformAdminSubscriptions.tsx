@@ -255,16 +255,35 @@ const PlatformAdminSubscriptions = () => {
                                 <CheckCircle className="h-3 w-3 ml-1" /> تفعيل
                               </Button>
                             )}
-                            {sub.status === 'active' && (
-                              <Button size="sm" variant="destructive" className="h-7 text-xs"
-                                onClick={() => changeStatus.mutate({ subId: sub.id, status: 'cancelled' })}>
-                                <XCircle className="h-3 w-3 ml-1" /> إلغاء
-                              </Button>
+                            {(sub.status === 'active' || sub.status === 'trialing') && (
+                              <ConfirmAction
+                                title="إلغاء الاشتراك"
+                                description={`سيتم إلغاء اشتراك «${org?.name ?? ''}». يمكنك إعادة تفعيله لاحقًا.`}
+                                confirmLabel="إلغاء الاشتراك"
+                                onConfirm={() => changeStatus.mutate({ subId: sub.id, status: 'cancelled' })}
+                                trigger={
+                                  <Button size="sm" variant="destructive" className="h-7 text-xs">
+                                    <XCircle className="h-3 w-3 ml-1" /> إلغاء
+                                  </Button>
+                                }
+                              />
                             )}
                             <Button size="sm" variant="outline" className="h-7 text-xs"
                               onClick={() => extendSub.mutate({ subId: sub.id, days: 30 })}>
                               <CalendarPlus className="h-3 w-3 ml-1" /> +30 يوم
                             </Button>
+                            <ConfirmAction
+                              title="حذف الاشتراك نهائيًا"
+                              description={`سيتم حذف سجل اشتراك «${org?.name ?? ''}» نهائيًا ولا يمكن التراجع.`}
+                              confirmLabel="حذف نهائي"
+                              onConfirm={() => deleteSub.mutate(sub.id)}
+                              trigger={
+                                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive">
+                                  <Trash2 className="h-3 w-3 ml-1" /> حذف
+                                </Button>
+                              }
+                            />
+                          </div>
                           </div>
                         </TableCell>
                       </TableRow>
