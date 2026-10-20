@@ -1,72 +1,26 @@
 import { cn } from '@/lib/utils';
-import logoUrl from '@/assets/vogantra-logo.png';
+import lightLogo from '@/assets/safar-logo-light.asset.json';
+import darkLogo from '@/assets/safar-logo-dark.asset.json';
+import markLogo from '@/assets/safar-mark.asset.json';
 
-interface VogantraLogoProps {
+interface SafarLogoProps {
   variant?: 'full' | 'mark' | 'white';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showTagline?: boolean;
   className?: string;
 }
-
 const sizeMap = {
-  sm: { full: 'h-8', mark: 'h-7 w-7' },
-  md: { full: 'h-10', mark: 'h-9 w-9' },
-  lg: { full: 'h-14', mark: 'h-12 w-12' },
-  xl: { full: 'h-20', mark: 'h-16 w-16' },
+  sm: { full: 'h-10', mark: 'h-8 w-8' },
+  md: { full: 'h-12', mark: 'h-9 w-9' },
+  lg: { full: 'h-16', mark: 'h-12 w-12' },
+  xl: { full: 'h-24', mark: 'h-16 w-16' },
 };
-
-/**
- * Vogantra brand logo (official asset).
- * - `full`  → full lockup (mark + wordmark + tagline baked in the artwork)
- * - `mark`  → V monogram only (cropped from the same asset)
- * - `white` → inverted version on dark surfaces (uses CSS filter for now)
- */
-const VogantraLogo = ({
-  variant = 'full',
-  size = 'md',
-  showTagline: _showTagline,
-  className,
-}: VogantraLogoProps) => {
-  const s = sizeMap[size];
-  const isWhite = variant === 'white';
-
-  if (variant === 'mark') {
-    return (
-      <span
-        className={cn(
-          'inline-block overflow-hidden flex-shrink-0',
-          s.mark,
-          className
-        )}
-        aria-label="Vogantra"
-      >
-        <img
-          src={logoUrl}
-          alt="Vogantra"
-          className="h-full w-auto max-w-none object-cover object-left"
-          style={{
-            // Crop to the V mark area (top portion of the artwork)
-            objectPosition: 'center 18%',
-            transform: 'scale(2.4)',
-            transformOrigin: 'center 22%',
-          }}
-        />
-      </span>
-    );
-  }
-
-  return (
-    <img
-      src={logoUrl}
-      alt="Vogantra — Smart Solutions. Better Business."
-      className={cn(
-        s.full,
-        'w-auto object-contain',
-        isWhite && 'brightness-0 invert',
-        className
-      )}
-    />
-  );
-};
-
-export default VogantraLogo;
+// Original bilingual artwork; both variants retain the gold details.
+export default function SafarLogo({ variant = 'full', size = 'md', className }: SafarLogoProps) {
+  if (variant === 'mark') return <img src={markLogo.url} alt="SafarERP" className={cn('shrink-0 object-contain', sizeMap[size].mark, className)} />;
+  if (variant === 'white') return <img src={darkLogo.url} alt="SafarERP — نظام إدارة شركات السياحة" className={cn('w-auto object-contain shrink-0', sizeMap[size].full, className)} />;
+  return <span className={cn('inline-flex shrink-0', className)}>
+    <img src={lightLogo.url} alt="SafarERP — نظام إدارة شركات السياحة" className={cn('w-auto object-contain dark:hidden', sizeMap[size].full)} />
+    <img src={darkLogo.url} alt="SafarERP — نظام إدارة شركات السياحة" className={cn('hidden w-auto object-contain dark:block', sizeMap[size].full)} />
+  </span>;
+}

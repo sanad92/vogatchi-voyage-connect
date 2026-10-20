@@ -23,7 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import VogantraLogo from '@/components/brand/VogantraLogo';
+import SafarERPLogo from '@/components/brand/VogantraLogo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -241,22 +241,18 @@ const PricingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-slate-950" dir="rtl">
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      <header className="sticky top-0 z-50 border-b border-border/80 bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-3" aria-label="Vogantra">
-            <VogantraLogo variant="mark" className="h-9 w-9" />
-            <div className="text-left" dir="ltr">
-              <div className="text-base font-black tracking-[0.16em] text-[#07192f]">VOGANTRA</div>
-              <div className="text-[10px] font-semibold tracking-[0.11em] text-slate-500">TRAVEL OPERATING SYSTEM</div>
-            </div>
+          <Link to="/" className="flex items-center gap-3" aria-label="SafarERP">
+            <SafarERPLogo size="md" />
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login">
               <Button variant="ghost" size="sm" className="font-bold">تسجيل الدخول</Button>
             </Link>
             <Link to="/signup">
-              <Button size="sm" className="rounded-lg bg-blue-600 font-bold text-white hover:bg-blue-700">
+              <Button size="sm" className="rounded-lg bg-primary font-bold text-brand-ivory hover:bg-primary">
                 ابدأ التجربة
               </Button>
             </Link>
@@ -265,31 +261,30 @@ const PricingPage = () => {
       </header>
 
       <main>
-        <section className="relative overflow-hidden border-b border-slate-200 bg-[#07192f] py-20 text-white sm:py-24">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.28),transparent_32%),radial-gradient(circle_at_85%_30%,rgba(79,70,229,0.2),transparent_30%)]" />
+        <section className="relative overflow-hidden border-b border-border bg-brand-navy py-20 text-brand-ivory sm:py-24">
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
-            <Badge className="border border-blue-400/30 bg-blue-500/15 px-4 py-1.5 text-blue-100 hover:bg-blue-500/15">
+            <Badge className="border border-border/30 bg-primary/15 px-4 py-1.5 text-brand-gold hover:bg-primary/15">
               <Sparkles className="ml-1.5 h-4 w-4" />
               14 يوم تجربة كاملة — وليست خطة مجانية دائمة
             </Badge>
             <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
               سعر واضح على قد حجم شركتك.
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
               كل باقة تشمل عدد مستخدمين كامل بسعر واحد؛ بدون تسعير مفاجئ لكل موظف وبدون رسوم على كل حجز.
             </p>
-            <div className="mt-9 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2">
-              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${!isYearly ? 'bg-white text-slate-950' : 'text-slate-300'}`}>شهري</span>
+            <div className="mt-9 inline-flex items-center gap-3 rounded-lg border border-brand-ivory/10 bg-card/5 p-2">
+              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${!isYearly ? 'bg-card text-foreground' : 'text-muted-foreground'}`}>شهري</span>
               <Switch checked={isYearly} onCheckedChange={setIsYearly} aria-label="التبديل بين الدفع الشهري والسنوي" />
-              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${isYearly ? 'bg-white text-slate-950' : 'text-slate-300'}`}>سنوي</span>
-              <Badge className="hidden bg-emerald-500 text-white hover:bg-emerald-500 sm:inline-flex">شهران هدية</Badge>
+              <span className={`rounded-xl px-4 py-2 text-sm font-bold ${isYearly ? 'bg-card text-foreground' : 'text-muted-foreground'}`}>سنوي</span>
+              <Badge className="hidden bg-success text-brand-ivory hover:bg-success sm:inline-flex">شهران هدية</Badge>
             </div>
           </div>
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           {isLoading ? (
-            <div className="py-24 text-center text-slate-500">جارٍ تحميل الخطط...</div>
+            <div className="py-24 text-center text-muted-foreground">جارٍ تحميل الخطط...</div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
               {plans.map((plan) => {
@@ -310,62 +305,62 @@ const PricingPage = () => {
                 return (
                   <article
                     key={plan.id}
-                    className={`relative flex flex-col overflow-hidden rounded-3xl border bg-white ${
+                    className={`relative flex flex-col overflow-hidden rounded-lg border bg-card ${
                       recommended
-                        ? 'border-blue-500 shadow-2xl shadow-blue-950/10 lg:-translate-y-3'
-                        : 'border-slate-200 shadow-lg shadow-slate-950/5'
+                        ? 'border-border shadow-2xl shadow-soft-md lg:-translate-y-3'
+                        : 'border-border shadow-lg shadow-soft-md'
                     }`}
                   >
                     {recommended && (
-                      <div className="bg-blue-600 py-2 text-center text-xs font-black tracking-wide text-white">
+                      <div className="bg-primary py-2 text-center text-xs font-black tracking-normal text-brand-ivory">
                         الأكثر اختيارًا للشركات النامية
                       </div>
                     )}
                     <div className="flex flex-1 flex-col p-6 sm:p-7">
                       <div>
-                        <p className="text-sm font-bold text-blue-700">{meta.audience}</p>
-                        <h2 className="mt-2 text-3xl font-black text-[#07192f]">{plan.name_ar}</h2>
-                        <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600">{meta.description}</p>
+                        <p className="text-sm font-bold text-brand-gold">{meta.audience}</p>
+                        <h2 className="mt-2 text-3xl font-black text-foreground">{plan.name_ar}</h2>
+                        <p className="mt-3 min-h-[72px] text-sm leading-6 text-muted-foreground">{meta.description}</p>
                       </div>
 
-                      <div className="mt-7 rounded-2xl bg-slate-50 p-5">
+                      <div className="mt-7 rounded-lg bg-muted p-5">
                         <div className="flex items-end gap-2">
-                          <span className="text-4xl font-black tracking-tight text-[#07192f]">
+                          <span className="text-4xl font-black tracking-normal text-foreground">
                             {monthlyEquivalent.toLocaleString('ar-EG')}
                           </span>
-                          <span className="pb-1 text-sm font-semibold text-slate-500">ج.م / شهر</span>
+                          <span className="pb-1 text-sm font-semibold text-muted-foreground">ج.م / شهر</span>
                         </div>
                         {isYearly ? (
                           <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-                            <span className="text-slate-500">يُدفع {Number(plan.price_yearly).toLocaleString('ar-EG')} ج.م سنويًا</span>
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">وفّر {yearlyDiscount(plan)}%</Badge>
+                            <span className="text-muted-foreground">يُدفع {Number(plan.price_yearly).toLocaleString('ar-EG')} ج.م سنويًا</span>
+                            <Badge className="bg-success text-success hover:bg-success">وفّر {yearlyDiscount(plan)}%</Badge>
                           </div>
                         ) : (
-                          <p className="mt-2 text-xs text-slate-500">دفع شهري مرن</p>
+                          <p className="mt-2 text-xs text-muted-foreground">دفع شهري مرن</p>
                         )}
                       </div>
 
                       <div className="mt-6 grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-xl border border-slate-200 p-3">
-                          <div className="text-lg font-black text-slate-950">{plan.max_users}</div>
-                          <div className="mt-1 text-[11px] text-slate-500">مستخدم</div>
+                        <div className="rounded-xl border border-border p-3">
+                          <div className="text-lg font-black text-foreground">{plan.max_users}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">مستخدم</div>
                         </div>
-                        <div className="rounded-xl border border-slate-200 p-3">
-                          <div className="text-lg font-black text-slate-950">{Number(plan.max_bookings_per_month).toLocaleString('ar-EG')}</div>
-                          <div className="mt-1 text-[11px] text-slate-500">حجز/شهر</div>
+                        <div className="rounded-xl border border-border p-3">
+                          <div className="text-lg font-black text-foreground">{Number(plan.max_bookings_per_month).toLocaleString('ar-EG')}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">حجز/شهر</div>
                         </div>
-                        <div className="rounded-xl border border-slate-200 p-3">
-                          <div className="text-lg font-black text-slate-950">{formatStorage(plan.max_storage_mb)}</div>
-                          <div className="mt-1 text-[11px] text-slate-500">تخزين</div>
+                        <div className="rounded-xl border border-border p-3">
+                          <div className="text-lg font-black text-foreground">{formatStorage(plan.max_storage_mb)}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">تخزين</div>
                         </div>
                       </div>
 
                       <div className="mt-7 flex-1">
-                        <p className="text-sm font-black text-slate-950">أهم ما يشمله:</p>
+                        <p className="text-sm font-black text-foreground">أهم ما يشمله:</p>
                         <ul className="mt-4 space-y-3">
                           {included.slice(0, 8).map((feature) => (
-                            <li key={feature.label} className="flex items-start gap-2.5 text-sm leading-6 text-slate-700">
-                              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                            <li key={feature.label} className="flex items-start gap-2.5 text-sm leading-6 text-foreground">
+                              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success text-success">
                                 <Check className="h-3.5 w-3.5" />
                               </span>
                               {feature.label}
@@ -373,21 +368,21 @@ const PricingPage = () => {
                           ))}
                         </ul>
                         {included.length > 8 && (
-                          <p className="mt-3 text-xs font-bold text-blue-700">+ {included.length - 8} مميزات إضافية</p>
+                          <p className="mt-3 text-xs font-bold text-brand-gold">+ {included.length - 8} مميزات إضافية</p>
                         )}
                       </div>
 
                       <Link to={checkoutUrl} className="mt-7">
                         <Button
                           size="lg"
-                          className={`w-full rounded-xl font-black ${recommended ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                          className={`w-full rounded-xl font-black ${recommended ? 'bg-primary text-brand-ivory hover:bg-primary' : ''}`}
                           variant={recommended ? 'default' : 'outline'}
                         >
                           {user ? 'اشترك الآن' : 'ابدأ تجربة 14 يومًا'}
                           <ArrowLeft className="mr-2 h-4 w-4" />
                         </Button>
                       </Link>
-                      <p className="mt-3 text-center text-xs text-slate-500">بدون بطاقة للتجربة • لا تجديد تلقائي</p>
+                      <p className="mt-3 text-center text-xs text-muted-foreground">بدون بطاقة للتجربة • لا تجديد تلقائي</p>
                     </div>
                   </article>
                 );
@@ -396,20 +391,20 @@ const PricingPage = () => {
           )}
         </section>
 
-        <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+        <section className="border-y border-border bg-card py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-black text-blue-700">مقارنة الموديولات والشاشات</p>
-              <h2 className="mt-3 text-3xl font-black text-[#07192f] sm:text-4xl">كل وظيفة في مكانها، وكل خطة واضحة.</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-600">المميزات مجمعة حسب دورة العمل داخل شركة السياحة، من المبيعات حتى الإدارة والربحية.</p>
+              <p className="text-sm font-black text-brand-gold">مقارنة الموديولات والشاشات</p>
+              <h2 className="mt-3 text-3xl font-black text-foreground sm:text-4xl">كل وظيفة في مكانها، وكل خطة واضحة.</h2>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">المميزات مجمعة حسب دورة العمل داخل شركة السياحة، من المبيعات حتى الإدارة والربحية.</p>
             </div>
-            <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200">
+            <div className="mt-10 overflow-x-auto rounded-lg border border-border">
               <table className="w-full min-w-[760px] border-collapse text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="sticky right-0 z-20 bg-slate-50 px-5 py-4 text-right font-black text-slate-950">الشاشة أو الوظيفة</th>
+                    <th className="sticky right-0 z-20 bg-muted px-5 py-4 text-right font-black text-foreground">الشاشة أو الوظيفة</th>
                     {plans.map((plan) => (
-                      <th key={plan.id} className={`px-4 py-4 text-center font-black ${plan.name === RECOMMENDED_PLAN ? 'text-blue-700' : 'text-slate-950'}`}>
+                      <th key={plan.id} className={`px-4 py-4 text-center font-black ${plan.name === RECOMMENDED_PLAN ? 'text-brand-gold' : 'text-foreground'}`}>
                         {plan.name_ar}
                       </th>
                     ))}
@@ -420,15 +415,15 @@ const PricingPage = () => {
                     const GroupIcon = group.icon;
                     return (
                       <Fragment key={group.label}>
-                        <tr className="border-t border-slate-200 bg-slate-100/80">
+                        <tr className="border-t border-border bg-muted/80">
                           <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
                             <div className="flex items-center gap-3">
-                              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+                              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-brand-ivory">
                                 <GroupIcon className="h-4 w-4" />
                               </span>
                               <div>
-                                <div className="font-black text-[#07192f]">{group.label}</div>
-                                <div className="mt-0.5 text-xs font-medium text-slate-500">{group.description}</div>
+                                <div className="font-black text-foreground">{group.label}</div>
+                                <div className="mt-0.5 text-xs font-medium text-muted-foreground">{group.description}</div>
                               </div>
                             </div>
                           </th>
@@ -436,10 +431,10 @@ const PricingPage = () => {
                         {group.features.map((feature) => {
                           const Icon = feature.icon;
                           return (
-                            <tr key={feature.label} className="border-t border-slate-200 bg-white">
-                              <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                            <tr key={feature.label} className="border-t border-border bg-card">
+                              <td className="sticky right-0 z-10 bg-card px-5 py-4 text-foreground shadow-[-1px_0_0_0_rgb(226_232_240)]">
                                 <div className="flex items-center gap-2.5">
-                                  <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                                   {feature.label}
                                 </div>
                               </td>
@@ -448,9 +443,9 @@ const PricingPage = () => {
                                 return (
                                   <td key={plan.id} className="px-4 py-4 text-center">
                                     {included ? (
-                                      <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+                                      <CheckCircle2 className="mx-auto h-5 w-5 text-success" />
                                     ) : (
-                                      <X className="mx-auto h-5 w-5 text-slate-300" />
+                                      <X className="mx-auto h-5 w-5 text-muted-foreground" />
                                     )}
                                   </td>
                                 );
@@ -461,15 +456,15 @@ const PricingPage = () => {
                       </Fragment>
                     );
                   })}
-                  <tr className="border-t border-slate-200 bg-slate-100/80">
+                  <tr className="border-t border-border bg-muted/80">
                     <th colSpan={plans.length + 1} className="px-5 py-4 text-right">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-brand-ivory">
                           <Users className="h-4 w-4" />
                         </span>
                         <div>
-                          <div className="font-black text-[#07192f]">حدود الخطة والدعم</div>
-                          <div className="mt-0.5 text-xs font-medium text-slate-500">أرقام واضحة لطاقتك التشغيلية داخل النظام</div>
+                          <div className="font-black text-foreground">حدود الخطة والدعم</div>
+                          <div className="mt-0.5 text-xs font-medium text-muted-foreground">أرقام واضحة لطاقتك التشغيلية داخل النظام</div>
                         </div>
                       </div>
                     </th>
@@ -477,25 +472,25 @@ const PricingPage = () => {
                   {PLAN_LIMITS.map((limit) => {
                     const Icon = limit.icon;
                     return (
-                      <tr key={limit.label} className="border-t border-slate-200 bg-white">
-                        <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                      <tr key={limit.label} className="border-t border-border bg-card">
+                        <td className="sticky right-0 z-10 bg-card px-5 py-4 text-foreground shadow-[-1px_0_0_0_rgb(226_232_240)]">
                           <div className="flex items-center gap-2.5">
-                            <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                             {limit.label}
                           </div>
                         </td>
                         {plans.map((plan) => (
-                          <td key={plan.id} className="px-4 py-4 text-center font-bold text-slate-700">
+                          <td key={plan.id} className="px-4 py-4 text-center font-bold text-foreground">
                             {limit.getValue(plan)}
                           </td>
                         ))}
                       </tr>
                     );
                   })}
-                  <tr className="border-t border-slate-200 bg-white">
-                    <td className="sticky right-0 z-10 bg-white px-5 py-4 text-slate-700 shadow-[-1px_0_0_0_rgb(226_232_240)]">
+                  <tr className="border-t border-border bg-card">
+                    <td className="sticky right-0 z-10 bg-card px-5 py-4 text-foreground shadow-[-1px_0_0_0_rgb(226_232_240)]">
                       <div className="flex items-center gap-2.5">
-                        <Headphones className="h-4 w-4 shrink-0 text-slate-500" />
+                        <Headphones className="h-4 w-4 shrink-0 text-muted-foreground" />
                         {PRIORITY_SUPPORT.label}
                       </div>
                     </td>
@@ -504,9 +499,9 @@ const PricingPage = () => {
                       return (
                         <td key={plan.id} className="px-4 py-4 text-center">
                           {included ? (
-                            <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+                            <CheckCircle2 className="mx-auto h-5 w-5 text-success" />
                           ) : (
-                            <X className="mx-auto h-5 w-5 text-slate-300" />
+                            <X className="mx-auto h-5 w-5 text-muted-foreground" />
                           )}
                         </td>
                       );
@@ -534,27 +529,27 @@ const PricingPage = () => {
                 answer: 'نجهّز عرضًا مخصصًا حسب عدد الفروع والمستخدمين وحجم التشغيل، مع خطة انتقال واضحة بدون فقد بيانات.',
               },
             ].map((item) => (
-              <div key={item.question} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <FileText className="h-5 w-5 text-blue-600" />
-                <h3 className="mt-4 font-black text-slate-950">{item.question}</h3>
-                <p className="mt-2 text-sm leading-7 text-slate-600">{item.answer}</p>
+              <div key={item.question} className="rounded-lg border border-border bg-card p-6 shadow-sm">
+                <FileText className="h-5 w-5 text-brand-gold" />
+                <h3 className="mt-4 font-black text-foreground">{item.question}</h3>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.answer}</p>
               </div>
             ))}
           </div>
-          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-slate-500">
-            <Headphones className="h-4 w-4 text-blue-600" />
+          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Headphones className="h-4 w-4 text-brand-gold" />
             التجهيز الأساسي ودعم بدء التشغيل مشمولان في كل الخطط.
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-sm text-slate-500 sm:flex-row sm:px-6 lg:px-8">
-          <p>© {new Date().getFullYear()} Vogantra. جميع الحقوق محفوظة.</p>
+      <footer className="border-t border-border bg-card py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+          <p>© {new Date().getFullYear()} SafarERP. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-5">
-            <Link to="/" className="hover:text-blue-700">الرئيسية</Link>
-            <Link to="/privacy" className="hover:text-blue-700">الخصوصية</Link>
-            <Link to="/login" className="hover:text-blue-700">تسجيل الدخول</Link>
+            <Link to="/" className="hover:text-brand-gold">الرئيسية</Link>
+            <Link to="/privacy" className="hover:text-brand-gold">الخصوصية</Link>
+            <Link to="/login" className="hover:text-brand-gold">تسجيل الدخول</Link>
           </div>
         </div>
       </footer>
