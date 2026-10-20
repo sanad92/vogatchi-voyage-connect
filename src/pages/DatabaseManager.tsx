@@ -22,7 +22,7 @@ const CORE_TABLES: { name: string; description: string }[] = [
 ];
 
 const DatabaseManager = () => {
-  const { isPlatformAdmin, loading: roleLoading } = usePlatformAdmin() as any;
+  const { isPlatformAdmin, loading: roleLoading } = usePlatformAdmin();
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
