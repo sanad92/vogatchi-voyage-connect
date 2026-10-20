@@ -218,9 +218,10 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                     <button
                       onClick={() => toggleGroup(group.label)}
                       className={cn(
-                        "flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors rounded-lg",
-                        hasActiveItem ? "text-sidebar-primary" : "",
-                        "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        "flex items-center justify-between w-full px-3 py-2.5 text-[13px] font-semibold tracking-wide transition-colors rounded-lg border border-sidebar-border/60 bg-sidebar-accent/30 hover:bg-sidebar-accent/60",
+                        hasActiveItem
+                          ? "text-sidebar-primary border-sidebar-primary/40"
+                          : "text-sidebar-foreground/90 hover:text-sidebar-foreground"
                       )}
                     >
                       <span className="flex items-center gap-2">
