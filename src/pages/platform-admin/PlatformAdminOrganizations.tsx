@@ -8,8 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, CalendarPlus, Building2, LogIn } from 'lucide-react';
+import { Ban, CheckCircle, CalendarPlus, Building2, LogIn, Search, Trash2, XCircle } from 'lucide-react';
 import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
+import { Input } from '@/components/ui/input';
+import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
+
+type OrgSort = 'newest' | 'oldest' | 'name' | 'bookings' | 'members' | 'expiry';
 
 interface OrgRow {
   id: string;
