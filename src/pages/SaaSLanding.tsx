@@ -429,7 +429,7 @@ const SaaSLanding = () => {
               </div>
               <h1 className="text-4xl font-black leading-[1.25] tracking-normal sm:text-5xl lg:text-[4.15rem] lg:leading-[1.18]">
                 SafarERP
-                <span className="block bg-gradient-to-l from-primary via-primary to-primary bg-clip-text text-transparent">
+                <span className="block text-brand-gold text-2xl sm:text-3xl mt-3">
                   نظام إدارة شركات السياحة
                 </span>
               </h1>
@@ -439,7 +439,7 @@ const SaaSLanding = () => {
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
                 <Link to="/signup">
-                  <Button size="lg" className="h-[52px] w-full rounded-xl bg-primary px-7 text-base font-extrabold text-brand-ivory shadow-xl shadow-soft-md hover:bg-primary sm:w-auto">
+                  <Button size="lg" className="h-[52px] w-full rounded-lg bg-brand-gold px-7 text-base font-semibold text-brand-navy hover:bg-brand-gold/90 sm:w-auto">
                     ابدأ تجربة 14 يومًا
                     <ArrowLeft className="mr-2 h-5 w-5" />
                   </Button>
@@ -527,8 +527,6 @@ const SaaSLanding = () => {
                     index === 0 || index === 3 ? 'bg-brand-navy text-brand-ivory' : 'bg-muted text-foreground'
                   }`}
                 >
-                  {(index === 0 || index === 3) && (
-                  )}
                   <div className={`relative mb-5 flex h-12 w-12 items-center justify-center rounded-lg ${
                     index === 0 || index === 3 ? 'bg-primary text-brand-ivory' : 'border border-border bg-muted text-brand-gold'
                   }`}>

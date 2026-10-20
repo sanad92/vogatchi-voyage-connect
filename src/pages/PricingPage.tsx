@@ -270,7 +270,7 @@ const PricingPage = () => {
             <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
               سعر واضح على قد حجم شركتك.
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-brand-ivory/80 sm:text-lg">
               كل باقة تشمل عدد مستخدمين كامل بسعر واحد؛ بدون تسعير مفاجئ لكل موظف وبدون رسوم على كل حجز.
             </p>
             <div className="mt-9 inline-flex items-center gap-3 rounded-lg border border-brand-ivory/10 bg-card/5 p-2">
@@ -333,7 +333,7 @@ const PricingPage = () => {
                         {isYearly ? (
                           <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                             <span className="text-muted-foreground">يُدفع {Number(plan.price_yearly).toLocaleString('ar-EG')} ج.م سنويًا</span>
-                            <Badge className="bg-success text-success hover:bg-success">وفّر {yearlyDiscount(plan)}%</Badge>
+                            <Badge className="bg-success/10 text-success hover:bg-success/10">وفّر {yearlyDiscount(plan)}%</Badge>
                           </div>
                         ) : (
                           <p className="mt-2 text-xs text-muted-foreground">دفع شهري مرن</p>
@@ -360,7 +360,7 @@ const PricingPage = () => {
                         <ul className="mt-4 space-y-3">
                           {included.slice(0, 8).map((feature) => (
                             <li key={feature.label} className="flex items-start gap-2.5 text-sm leading-6 text-foreground">
-                              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success text-success">
+                              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
                                 <Check className="h-3.5 w-3.5" />
                               </span>
                               {feature.label}
