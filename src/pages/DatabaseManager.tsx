@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldOff, Database, Table2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,28 +22,23 @@ const CORE_TABLES: { name: string; description: string }[] = [
 ];
 
 const DatabaseManager = () => {
-  const { isSuperAdmin } = useOptimizedAuth();
+  const { isPlatformAdmin, loading: roleLoading } = usePlatformAdmin() as any;
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const { data: counts, isLoading } = useQuery({
+  const { data: counts, isLoading, isError } = useQuery({
     queryKey: ["platform-db-counts"],
-    enabled: isSuperAdmin(),
+    enabled: !!isPlatformAdmin,
     staleTime: 60_000,
     queryFn: async () => {
-      const results = await Promise.all(
-        CORE_TABLES.map(async (t) => {
-          const { count, error } = await (supabase as any)
-            .from(t.name)
-            .select("*", { count: "exact", head: true });
-          return [t.name, error ? null : count ?? 0] as const;
-        })
-      );
-      return Object.fromEntries(results) as Record<string, number | null>;
+      const { data, error } = await (supabase as any).rpc("platform_table_counts");
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map((r: any) => [r.table_name, Number(r.row_count)])) as Record<string, number>;
     },
   });
 
-  if (!isSuperAdmin()) {
+  if (roleLoading) return null;
+  if (!isPlatformAdmin) {
     return (
       <div className="w-full px-4 md:px-6 py-10 flex justify-center items-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
@@ -55,8 +50,9 @@ const DatabaseManager = () => {
     );
   }
 
+  const q = search.trim().toLowerCase();
   const filtered = CORE_TABLES.filter(
-    (t) => t.name.includes(search.toLowerCase()) || t.description.includes(search)
+    (t) => !q || t.name.toLowerCase().includes(q) || t.description.includes(search.trim())
   );
 
   return (
@@ -67,7 +63,7 @@ const DatabaseManager = () => {
         </div>
         <div>
           <h2 className="text-xl font-semibold text-foreground">قاعدة البيانات</h2>
-          <p className="text-sm text-muted-foreground">استعراض الجداول الأساسية وعدد السجلات الفعلي.</p>
+          <p className="text-sm text-muted-foreground">عدد السجلات الفعلي لكل جدول على مستوى كل الشركات.</p>
         </div>
         <Badge variant="outline" className="ms-auto border-accent/40 text-accent">مديرو المنصة فقط</Badge>
       </div>
@@ -101,7 +97,11 @@ const DatabaseManager = () => {
                 </Card>
               );
             })}
+            {!filtered.length && (
+              <div className="col-span-full text-center text-sm text-muted-foreground py-10">لا توجد جداول مطابقة للبحث</div>
+            )}
           </div>
+          {isError && <div className="text-sm text-destructive">تعذّر تحميل أعداد السجلات.</div>}
         </>
       )}
     </div>
