@@ -120,6 +120,48 @@ const PlatformAdminOrganizations = () => {
     onError: () => toast.error('فشل في تمديد الفترة التجريبية'),
   });
 
+  const cancelSub = useMutation({
+    mutationFn: async (subId: string) => {
+      const { error } = await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', subId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
+      toast.success('تم إلغاء الاشتراك');
+    },
+    onError: () => toast.error('فشل في إلغاء الاشتراك'),
+  });
+
+  const deleteOrg = useMutation({
+    mutationFn: async (id: string) => {
+      const { error, count } = await supabase.from('organizations').delete({ count: 'exact' }).eq('id', id);
+      if (error) throw error;
+      if (!count) throw new Error('not-deleted');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
+      toast.success('تم حذف الشركة');
+    },
+    onError: () => toast.error('تعذّر حذف الشركة — غالبًا لديها بيانات مرتبطة. يمكنك تعليقها بدلًا من الحذف.'),
+  });
+
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<OrgSort>('newest');
+
+  const term = search.trim().toLowerCase();
+  const visibleOrgs = (orgs ?? [])
+    .filter((o) => !term || [o.name, o.slug, o.email].some((v) => v?.toLowerCase().includes(term)))
+    .sort((a, b) => {
+      switch (sort) {
+        case 'oldest': return a.created_at.localeCompare(b.created_at);
+        case 'name': return a.name.localeCompare(b.name, 'ar');
+        case 'bookings': return b.booking_count - a.booking_count;
+        case 'members': return b.member_count - a.member_count;
+        case 'expiry': return (a.subscription_expires_at ?? '9999').localeCompare(b.subscription_expires_at ?? '9999');
+        default: return b.created_at.localeCompare(a.created_at);
+      }
+    });
+
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
       <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
