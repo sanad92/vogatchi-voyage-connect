@@ -225,7 +225,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                       )}
                     >
                       <span className="flex items-center gap-2">
-                        <GroupIcon className="h-3.5 w-3.5" />
+                        <GroupIcon className="h-4 w-4" />
                         {group.label}
                       </span>
                       <ChevronDown className={cn(
