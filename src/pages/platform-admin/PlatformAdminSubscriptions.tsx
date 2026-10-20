@@ -284,6 +284,7 @@ const PlatformAdminSubscriptions = () => {
                               }
                             />
                           </div>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
