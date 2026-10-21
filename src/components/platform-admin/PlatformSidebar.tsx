@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Shield, Building2, CreditCard, BanknoteIcon, Settings,
   UserCog, ScrollText, Database, Activity, Package, ChevronRight,
-  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen
+  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -34,6 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'الاشتراكات', href: '/platform/subscriptions', icon: CreditCard },
       { title: 'خطط الاشتراك', href: '/platform/plans', icon: Package },
       { title: 'التحويلات البنكية', href: '/platform/transfers', icon: BanknoteIcon },
+      { title: 'تذاكر الدعم', href: '/platform/support', icon: LifeBuoy },
     ],
   },
   {

@@ -121,6 +121,9 @@ const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const AdminImportExport = lazy(() => import("@/pages/AdminImportExport"));
 const SiteCustomization = lazy(() => import("@/pages/SiteCustomization"));
 const MonitoringDashboard = lazy(() => import("@/pages/MonitoringDashboard"));
+const SupportTickets = lazy(() => import("@/pages/SupportTickets"));
+const PilgrimagePage = lazy(() => import("@/pages/Pilgrimage"));
+const PlatformSupport = lazy(() => import("@/pages/platform-admin/PlatformSupport"));
 const DatabaseManager = lazy(() => import("@/pages/DatabaseManager"));
 const TeamManagement = lazy(() => import("@/pages/TeamManagement"));
 const AutomationRules = lazy(() => import("@/pages/AutomationRules"));
@@ -285,6 +288,7 @@ function App() {
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="settings" element={<PlatformAdminSettings />} />
                             <Route path="database" element={<DatabaseManager />} />
+                            <Route path="support" element={<PlatformSupport />} />
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
                             <Route path="monitoring" element={<MonitoringDashboard />} />
                             <Route path="act-as" element={<PlatformActAsPage />} />
@@ -327,6 +331,8 @@ function App() {
                               <Route path="/new-flight-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewFlightBooking /></PermissionRouteGuard>} />
                               <Route path="/car-rentals" element={<PermissionRouteGuard requiredPermission="bookings_view"><CarRentals /></PermissionRouteGuard>} />
                               <Route path="/transport-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><TransportBookings /></PermissionRouteGuard>} />
+                              <Route path="/support" element={<SupportTickets />} />
+                              <Route path="/pilgrimage" element={<PermissionRouteGuard requiredPermission="bookings_view"><PilgrimagePage /></PermissionRouteGuard>} />
                               <Route path="/quotes" element={<PermissionRouteGuard requiredPermission="quotes_view"><Quotes /></PermissionRouteGuard>} />
                               <Route path="/quotes/new" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
                               <Route path="/quotes/:id" element={<PermissionRouteGuard requiredPermission="quotes_view"><QuoteDetails /></PermissionRouteGuard>} />
