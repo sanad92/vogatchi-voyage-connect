@@ -26,7 +26,7 @@ const readInitial = (): AppLanguage => {
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<AppLanguage>(readInitial);
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const dir: 'rtl' | 'ltr' = language === 'ar' ? 'rtl' : 'ltr';
 
   useEffect(() => {
     document.documentElement.lang = language;
