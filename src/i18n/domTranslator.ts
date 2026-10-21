@@ -17,8 +17,14 @@ const dirOriginals = new Set<Element>();
 const lookup = (raw: string): string | null => {
   const key = raw.trim();
   if (!key || !ARABIC.test(key)) return null;
-  const hit = dict[key];
-  if (!hit) return null;
+  let hit = dict[key];
+  if (!hit) {
+    // "3 فواتير" / "متبقي 13" — translate the label part, keep the numbers.
+    const m = key.match(/^([\d٠-٩.,%\s]*)(.*?[\u0600-\u06FF].*?)([\d٠-٩.,%\s:]*)$/);
+    const label = m?.[2]?.trim();
+    if (!m || !label || !dict[label] || (!m[1].trim() && !m[3].trim())) return null;
+    hit = `${m[1]}${dict[label]}${m[3]}`;
+  }
   const lead = raw.slice(0, raw.indexOf(key));
   const tail = raw.slice(raw.indexOf(key) + key.length);
   return lead + hit + tail;
