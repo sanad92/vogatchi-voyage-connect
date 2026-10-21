@@ -73,6 +73,7 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
             variant="ghost"
             size="sm"
             onClick={toggleLanguage}
+            data-no-translate
             className="gap-1.5 px-2 text-xs font-semibold"
             aria-label={language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
           >
