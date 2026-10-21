@@ -71,6 +71,13 @@
       "when": 1792607561346,
       "tag": "0009_delete_organization_cascade_resilient_loop",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792608817000,
+      "tag": "0010_pilgrimage_operations",
+      "breakpoints": true
     }
   ]
 }

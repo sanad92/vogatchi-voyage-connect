@@ -3858,6 +3858,7 @@ export type Database = {
           organization_id: string
           payment_date: string
           payment_method: string
+          pilgrim_id: string | null
           reference_number: string | null
           status: string
           treasury_account_id: string | null
@@ -3880,6 +3881,7 @@ export type Database = {
           organization_id: string
           payment_date?: string
           payment_method?: string
+          pilgrim_id?: string | null
           reference_number?: string | null
           status?: string
           treasury_account_id?: string | null
@@ -3902,6 +3904,7 @@ export type Database = {
           organization_id?: string
           payment_date?: string
           payment_method?: string
+          pilgrim_id?: string | null
           reference_number?: string | null
           status?: string
           treasury_account_id?: string | null
@@ -3962,6 +3965,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_pilgrim_id_fkey"
+            columns: ["pilgrim_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrims"
             referencedColumns: ["id"]
           },
           {
@@ -8863,6 +8873,7 @@ export type Database = {
           return_date: string | null
           season: string | null
           status: string
+          terms: string | null
           transport_details: string | null
           updated_at: string
         }
@@ -8890,6 +8901,7 @@ export type Database = {
           return_date?: string | null
           season?: string | null
           status?: string
+          terms?: string | null
           transport_details?: string | null
           updated_at?: string
         }
@@ -8917,6 +8929,7 @@ export type Database = {
           return_date?: string | null
           season?: string | null
           status?: string
+          terms?: string | null
           transport_details?: string | null
           updated_at?: string
         }
@@ -8933,6 +8946,9 @@ export type Database = {
       pilgrims: {
         Row: {
           birth_date: string | null
+          bus_number: string | null
+          cancellation_fee: number
+          cancelled_at: string | null
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -8940,8 +8956,11 @@ export type Database = {
           full_name: string
           gender: string | null
           id: string
+          madinah_room: string | null
           mahram_name: string | null
           mahram_relation: string | null
+          makkah_room: string | null
+          name_en: string | null
           national_id: string | null
           nationality: string | null
           notes: string | null
@@ -8950,10 +8969,12 @@ export type Database = {
           passport_expiry: string | null
           passport_number: string | null
           phone: string | null
+          portal_barcode: string | null
           program_id: string
           room_group: string | null
           room_type: string
           status: string
+          supervisor: string | null
           total_price: number
           updated_at: string
           vaccination_done: boolean
@@ -8962,6 +8983,9 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          bus_number?: string | null
+          cancellation_fee?: number
+          cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -8969,8 +8993,11 @@ export type Database = {
           full_name: string
           gender?: string | null
           id?: string
+          madinah_room?: string | null
           mahram_name?: string | null
           mahram_relation?: string | null
+          makkah_room?: string | null
+          name_en?: string | null
           national_id?: string | null
           nationality?: string | null
           notes?: string | null
@@ -8979,10 +9006,12 @@ export type Database = {
           passport_expiry?: string | null
           passport_number?: string | null
           phone?: string | null
+          portal_barcode?: string | null
           program_id: string
           room_group?: string | null
           room_type?: string
           status?: string
+          supervisor?: string | null
           total_price?: number
           updated_at?: string
           vaccination_done?: boolean
@@ -8991,6 +9020,9 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          bus_number?: string | null
+          cancellation_fee?: number
+          cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -8998,8 +9030,11 @@ export type Database = {
           full_name?: string
           gender?: string | null
           id?: string
+          madinah_room?: string | null
           mahram_name?: string | null
           mahram_relation?: string | null
+          makkah_room?: string | null
+          name_en?: string | null
           national_id?: string | null
           nationality?: string | null
           notes?: string | null
@@ -9008,10 +9043,12 @@ export type Database = {
           passport_expiry?: string | null
           passport_number?: string | null
           phone?: string | null
+          portal_barcode?: string | null
           program_id?: string
           room_group?: string | null
           room_type?: string
           status?: string
+          supervisor?: string | null
           total_price?: number
           updated_at?: string
           vaccination_done?: boolean
