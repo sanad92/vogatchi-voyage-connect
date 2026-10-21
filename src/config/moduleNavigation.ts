@@ -444,16 +444,32 @@ const moduleSidebarItems = (module: ErpModule): NavigationScreen[] => [
   ...module.sections.flatMap((section) => section.screens.filter((item) => item.sidebar)),
 ];
 
-export const NAVIGATION_GROUPS: NavigationGroup[] = [
-  { label: 'الرئيسية', icon: LayoutDashboard, items: HOME_SCREENS },
-  ...ALL_WORKSPACES.map((module) => ({
-    label: module.label,
-    icon: module.icon,
-    moduleId: module.id,
-    items: moduleSidebarItems(module),
-  })),
-  { label: 'إدارة النظام', icon: Settings, items: SYSTEM_SCREENS },
+// Sidebar follows the daily travel-agency workflow; module overview pages stay reachable via /modules/*.
+const SIDEBAR_LAYOUT: { label: string; icon: ElementType; hrefs: string[] }[] = [
+  { label: 'الرئيسية', icon: LayoutDashboard, hrefs: ['/dashboard', '/pilgrimage', '/bookings', '/travel-calendar', '/operations/queue', '/operations', '/document-center'] },
+  { label: 'المبيعات والعملاء', icon: Users, hrefs: ['/sop/pipeline', '/quotes', '/customers', '/sop/pricing'] },
+  { label: 'قنوات التواصل', icon: MessageSquare, hrefs: ['/whatsapp-inbox', '/email-inbox', '/marketing/journeys'] },
+  { label: 'المالية والمحاسبة', icon: Wallet, hrefs: ['/invoices', '/treasury', '/expense-management', '/accounting-reports', '/executive-finance'] },
+  { label: 'الموردون والتعاقدات', icon: Building2, hrefs: ['/suppliers', '/supplier-rates', '/supplier-allotments'] },
+  { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/employee-records', '/employee-commissions', '/audit-log', '/automation', '/ai-assistant'] },
+  { label: 'الإعدادات والدعم', icon: Settings, hrefs: ['/organization', '/team', '/admin-settings', '/whatsapp-admin', '/support', '/subscription'] },
 ];
+
+const SIDEBAR_SCREEN_INDEX = new Map(
+  [...HOME_SCREENS, ...SYSTEM_SCREENS, ...ALL_WORKSPACES.flatMap((m) => m.sections.flatMap((s) => s.screens))]
+    .map((item) => [item.href, item] as const),
+);
+
+export const NAVIGATION_GROUPS: NavigationGroup[] = SIDEBAR_LAYOUT.map((group) => ({
+  label: group.label,
+  icon: group.icon,
+  items: group.hrefs
+    .map((href) => SIDEBAR_SCREEN_INDEX.get(href))
+    .filter((item): item is NavigationScreen => !!item),
+}));
+
+// Kept for module overview pages that list sidebar items per module.
+export const moduleSidebarScreens = moduleSidebarItems;
 
 export const getModuleScreens = (module: ErpModule): NavigationScreen[] =>
   module.sections.flatMap((section) => section.screens);
