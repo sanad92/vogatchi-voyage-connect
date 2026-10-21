@@ -34,6 +34,20 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     try { localStorage.setItem(STORAGE_KEY, language); } catch { /* ignore */ }
   }, [language, dir]);
 
+  // Page content: the full English dictionary loads only when English is chosen.
+  useEffect(() => {
+    let cancelled = false;
+    if (language === 'en') {
+      Promise.all([import('@/i18n/en-auto.json'), import('@/i18n/domTranslator')]).then(([auto, dom]) => {
+        if (cancelled) return;
+        dom.startDomTranslation({ ...(auto.default as Record<string, string>), ...EN_DICTIONARY });
+      });
+    } else {
+      import('@/i18n/domTranslator').then((dom) => dom.stopDomTranslation());
+    }
+    return () => { cancelled = true; };
+  }, [language]);
+
   const setLanguage = useCallback((lang: AppLanguage) => setLanguageState(lang), []);
   const toggleLanguage = useCallback(() => setLanguageState((l) => (l === 'ar' ? 'en' : 'ar')), []);
   const t = useCallback(
