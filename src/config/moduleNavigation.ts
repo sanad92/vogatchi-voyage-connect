@@ -21,6 +21,8 @@ import {
   History,
   Hotel,
   Landmark,
+  LifeBuoy,
+  Moon,
   LayoutDashboard,
   ListTodo,
   Lock,
@@ -185,6 +187,7 @@ export const ERP_MODULES: ErpModule[] = [
         title: 'الحجوزات',
         description: 'السجل الموحد للحجوزات مع طرق عرض حسب نوع الخدمة.',
         screens: [
+          screen({ title: 'الحج والعمرة', href: '/pilgrimage', icon: Moon, description: 'برامج الحج والعمرة والحجاج والتأشيرات والغرف والتحصيل.', requiredPermission: 'bookings_view', sidebar: true }),
           screen({ title: 'كل الحجوزات', href: '/bookings', icon: ClipboardList, description: 'الحجوزات الموحدة ومساحة عمل كل حجز.', requiredPermission: 'bookings_view', sidebar: true }),
           screen({ title: 'حجوزات الفنادق', href: '/hotel-bookings', icon: Hotel, description: 'عرض حجوزات الإقامة ومواعيد الدخول والخروج.', requiredPermission: 'bookings_view' }),
           screen({ title: 'حجوزات الطيران', href: '/flight-bookings', icon: Plane, description: 'عرض حجوزات الطيران ومواعيد الرحلات.', requiredPermission: 'bookings_view' }),
@@ -368,6 +371,7 @@ export const SHARED_WORKSPACES: ErpModule[] = [
         title: 'الإعدادات والتكاملات',
         description: 'الهوية والأمان والقوالب واستيراد البيانات وقنوات الاتصال.',
         screens: [
+          screen({ title: 'الدعم الفني', href: '/support', icon: LifeBuoy, description: 'تذاكر الدعم مع فريق SafarERP ومتابعة حلها.', sidebar: true }),
           screen({ title: 'الإعدادات العامة', href: '/admin-settings', icon: Settings, description: 'بيانات المؤسسة والهوية والإعدادات الأساسية.', requiredPermission: 'admin_settings', sidebar: true }),
           screen({ title: 'مركز الأمان', href: '/organization/security', icon: Lock, description: 'سياسات الدخول والحماية وإعدادات الأمان.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.ENTERPRISE_CONTROLS }),
           screen({ title: 'الهوية المخصصة', href: '/organization/white-label', icon: Palette, description: 'شعار وألوان المؤسسة على النظام والمستندات.', requiredPermission: 'admin_settings', requiredFeature: PLAN_FEATURES.WHITE_LABEL }),
