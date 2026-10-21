@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
@@ -230,6 +231,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <Router>
         <OptimizedAuthProvider>
@@ -448,6 +450,7 @@ function App() {
           </OptimizedAuthProvider>
       </Router>
     </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 

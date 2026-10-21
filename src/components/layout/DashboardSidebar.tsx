@@ -18,6 +18,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, X, Shield, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLanguage } from '@/contexts/LanguageContext';
 import SafarLogo from '@/components/brand/VogantraLogo';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -33,6 +34,7 @@ interface DashboardSidebarProps {
 
 const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: DashboardSidebarProps) => {
   const location = useLocation();
+  const { t, dir } = useLanguage();
   const { user, profile } = useOptimizedAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { canAccessScreen } = useNavigationAccess();
@@ -151,10 +153,10 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
               "bg-sidebar-primary text-sidebar-primary-foreground shadow-md hover:shadow-lg hover:scale-[1.02]",
               collapsed && "justify-center px-2"
             )}
-            title={collapsed ? 'الذهاب إلى لوحة المنصة' : undefined}
+            title={collapsed ? t('الذهاب إلى لوحة المنصة') : undefined}
           >
             <Shield className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>لوحة المنصة</span>}
+            {!collapsed && <span>{t('لوحة المنصة')}</span>}
           </Link>
         </div>
       )}
@@ -168,7 +170,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
               <div className="mb-3 pb-3 border-b border-sidebar-border">
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
                   <Star className="h-3.5 w-3.5 text-warning" />
-                  المفضلة
+                  {t('المفضلة')}
                 </div>
                 <div className="space-y-0.5 mt-0.5">
                   {favoriteItems.map((item) => {
@@ -187,13 +189,13 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                         )}
                       >
                         {active && (
-                          <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                          <span className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-sidebar-primary" />
                         )}
                         <Icon className={cn(
                           "h-[18px] w-[18px] flex-shrink-0",
                           active ? "text-sidebar-primary" : "text-sidebar-foreground/60"
                         )} />
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate">{t(item.title)}</span>
                       </Link>
                     );
                   })}
@@ -226,7 +228,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                     >
                       <span className="flex items-center gap-2">
                         <GroupIcon className="h-4 w-4" />
-                        {group.label}
+                        {t(group.label)}
                       </span>
                       <ChevronDown className={cn(
                         "h-3.5 w-3.5 transition-transform duration-200",
@@ -257,15 +259,15 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                             )}
                           >
                             {active && !collapsed && (
-                              <span className="absolute inset-y-1.5 right-0 w-0.5 rounded-full bg-sidebar-primary" />
+                              <span className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-sidebar-primary" />
                             )}
                             <Icon className={cn(
                               "h-[18px] w-[18px] flex-shrink-0",
                               active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-foreground"
                             )} />
-                            {!collapsed && <span className="truncate">{item.title}</span>}
+                            {!collapsed && <span className="truncate">{t(item.title)}</span>}
                             {!collapsed && (item.badge || (item.href === '/sop/handovers' && pendingHandovers > 0)) && (
-                              <span className="mr-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
+                              <span className="ms-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
                                 {item.href === '/sop/handovers' && pendingHandovers > 0 ? pendingHandovers : item.badge}
                               </span>
                             )}
@@ -273,7 +275,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                               <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.href); }}
-                                aria-label={isFav ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                                aria-label={isFav ? t('إزالة من المفضلة') : t('إضافة إلى المفضلة')}
                                 className={cn(
                                   "ms-auto p-0.5 rounded transition-opacity",
                                   isFav ? "opacity-100 text-warning" : "opacity-0 group-hover/nav:opacity-60 hover:opacity-100 text-sidebar-muted"
@@ -289,8 +291,8 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
                           return (
                             <Tooltip key={item.href}>
                               <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                              <TooltipContent side="left" className="font-medium">
-                                {item.title}
+                              <TooltipContent side={dir === 'rtl' ? 'left' : 'right'} className="font-medium">
+                                {t(item.title)}
                               </TooltipContent>
                             </Tooltip>
                           );
@@ -318,7 +320,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
           ) : (
             <>
               <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-              <span>طي القائمة</span>
+              <span>{t('طي القائمة')}</span>
             </>
           )}
         </button>
@@ -337,12 +339,12 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
       {/* Mobile sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 w-72 bg-sidebar transition-transform duration-300 lg:hidden shadow-2xl",
-        mobileOpen ? "translate-x-0" : "translate-x-full"
+        "fixed inset-y-0 start-0 z-50 w-72 bg-sidebar transition-transform duration-300 lg:hidden shadow-2xl",
+        mobileOpen ? "translate-x-0" : "ltr:-translate-x-full rtl:translate-x-full"
       )}>
         <button
           onClick={onMobileClose}
-          className="absolute top-4 left-4 p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
+          className="absolute top-4 end-4 p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
         >
           <X className="h-5 w-5" />
         </button>
@@ -351,7 +353,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
       {/* Desktop sidebar */}
       <aside className={cn(
-        "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:right-0 bg-sidebar border-l border-sidebar-border transition-all duration-300 z-30",
+        "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:start-0 bg-sidebar border-e border-sidebar-border transition-all duration-300 z-30",
         collapsed ? "lg:w-[68px]" : "lg:w-64"
       )}>
         {sidebarContent}
