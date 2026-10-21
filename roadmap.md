@@ -13,7 +13,7 @@
 - [ ] Live test of a paid refund and a new-company signup + Paymob/bank-transfer activation (blocked: needs a designated test company and test payment).
 
 - [x] Arabic/English switch foundation: language toggle in top bar, saved per browser, page direction RTL/LTR, side menu flips sides, menu and top bar translated.
-- [ ] Translate inner page content (~145 screens still fixed Arabic/RTL) — next batches by module.
+- [x] Inner page content translated to English (~10.7k interface strings) and fixed RTL blocks flip to LTR in English; switching back restores Arabic. Remaining: dates still in Arabic format, some text alignment classes stay right-aligned.
 - [x] English/Arabic switch verified signed in (QA company): direction, side menu and top bar flip correctly.
 - [x] New-company signup via real screens: owner, 14-day trial, chart of accounts and default currency now seeded automatically (two onboarding gaps fixed); owner cannot self-activate; bank-transfer request submitted.
 - [ ] Platform approval of the QA bank transfer and a real Paymob payment (blocked: needs a platform-admin session and a real card payment).
