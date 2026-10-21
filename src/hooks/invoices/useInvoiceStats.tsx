@@ -1,6 +1,10 @@
 
 import { useMemo } from 'react';
 
+// The database stores 'paid' / 'partial'; older screens used 'fully_paid' / 'partially_paid'.
+const PAID_STATUSES = new Set(['paid', 'fully_paid']);
+const PARTIAL_STATUSES = new Set(['partial', 'partially_paid']);
+
 export const useInvoiceStats = (invoices: any[]) => {
   const invoiceStats = useMemo(() => {
     if (!invoices || invoices.length === 0) {
@@ -18,8 +22,8 @@ export const useInvoiceStats = (invoices: any[]) => {
 
     const stats = {
       totalInvoices: invoices.length,
-      paidInvoices: invoices.filter(inv => inv.payment_status === 'fully_paid').length,
-      partiallyPaidInvoices: invoices.filter(inv => inv.payment_status === 'partially_paid').length,
+      paidInvoices: invoices.filter(inv => PAID_STATUSES.has(inv.payment_status)).length,
+      partiallyPaidInvoices: invoices.filter(inv => PARTIAL_STATUSES.has(inv.payment_status)).length,
       unpaidInvoices: invoices.filter(inv => inv.payment_status === 'unpaid').length,
       overdueInvoices: invoices.filter(inv => inv.status === 'overdue').length,
       totalAmount: invoices.reduce((sum, inv) => sum + (inv.final_amount || 0), 0),
