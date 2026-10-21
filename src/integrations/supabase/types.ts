@@ -8799,6 +8799,249 @@ export type Database = {
           },
         ]
       }
+      pilgrimage_program_costs: {
+        Row: {
+          cost_notes: string | null
+          cost_per_person: number
+          organization_id: string
+          program_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost_notes?: string | null
+          cost_per_person?: number
+          organization_id: string
+          program_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost_notes?: string | null
+          cost_per_person?: number
+          organization_id?: string
+          program_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_program_costs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_program_costs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: true
+            referencedRelation: "pilgrimage_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_programs: {
+        Row: {
+          airline: string | null
+          capacity: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          departure_date: string | null
+          flight_details: string | null
+          id: string
+          madinah_hotel: string | null
+          madinah_nights: number
+          makkah_hotel: string | null
+          makkah_nights: number
+          name: string
+          notes: string | null
+          organization_id: string
+          price_double: number
+          price_quad: number
+          price_single: number
+          price_triple: number
+          program_type: string
+          return_date: string | null
+          season: string | null
+          status: string
+          transport_details: string | null
+          updated_at: string
+        }
+        Insert: {
+          airline?: string | null
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          departure_date?: string | null
+          flight_details?: string | null
+          id?: string
+          madinah_hotel?: string | null
+          madinah_nights?: number
+          makkah_hotel?: string | null
+          makkah_nights?: number
+          name: string
+          notes?: string | null
+          organization_id: string
+          price_double?: number
+          price_quad?: number
+          price_single?: number
+          price_triple?: number
+          program_type: string
+          return_date?: string | null
+          season?: string | null
+          status?: string
+          transport_details?: string | null
+          updated_at?: string
+        }
+        Update: {
+          airline?: string | null
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          departure_date?: string | null
+          flight_details?: string | null
+          id?: string
+          madinah_hotel?: string | null
+          madinah_nights?: number
+          makkah_hotel?: string | null
+          makkah_nights?: number
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          price_double?: number
+          price_quad?: number
+          price_single?: number
+          price_triple?: number
+          program_type?: string
+          return_date?: string | null
+          season?: string | null
+          status?: string
+          transport_details?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_programs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrims: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          documents_complete: boolean
+          full_name: string
+          gender: string | null
+          id: string
+          mahram_name: string | null
+          mahram_relation: string | null
+          national_id: string | null
+          nationality: string | null
+          notes: string | null
+          organization_id: string
+          paid_amount: number
+          passport_expiry: string | null
+          passport_number: string | null
+          phone: string | null
+          program_id: string
+          room_group: string | null
+          room_type: string
+          status: string
+          total_price: number
+          updated_at: string
+          vaccination_done: boolean
+          visa_number: string | null
+          visa_status: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          documents_complete?: boolean
+          full_name: string
+          gender?: string | null
+          id?: string
+          mahram_name?: string | null
+          mahram_relation?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          notes?: string | null
+          organization_id: string
+          paid_amount?: number
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          program_id: string
+          room_group?: string | null
+          room_type?: string
+          status?: string
+          total_price?: number
+          updated_at?: string
+          vaccination_done?: boolean
+          visa_number?: string | null
+          visa_status?: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          documents_complete?: boolean
+          full_name?: string
+          gender?: string | null
+          id?: string
+          mahram_name?: string | null
+          mahram_relation?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          notes?: string | null
+          organization_id?: string
+          paid_amount?: number
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          program_id?: string
+          room_group?: string | null
+          room_type?: string
+          status?: string
+          total_price?: number
+          updated_at?: string
+          vaccination_done?: boolean
+          visa_number?: string | null
+          visa_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrims_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrims_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_roles: {
         Row: {
           assigned_by: string | null
@@ -11848,6 +12091,116 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_messages: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          is_staff: boolean
+          organization_id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          is_staff?: boolean
+          organization_id: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          is_staff?: boolean
+          organization_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          first_response_at: string | null
+          id: string
+          organization_id: string
+          priority: string
+          resolved_at: string | null
+          sla_due_at: string | null
+          status: string
+          subject: string
+          ticket_number: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          status?: string
+          subject: string
+          ticket_number?: never
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: never
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
