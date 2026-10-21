@@ -325,7 +325,7 @@ const PlatformAdminOrganizations = () => {
                           )}
                           <ConfirmAction
                             title="حذف الشركة نهائيًا"
-                            description={`سيتم حذف «${org.name}» نهائيًا ولا يمكن التراجع. إذا كانت لديها بيانات تشغيلية، الأفضل تعليقها بدلًا من الحذف.`}
+                            description={`سيتم حذف «${org.name}» وكل بياناتها (حجوزات، فواتير، عملاء، قيود محاسبية) نهائيًا ولا يمكن التراجع. إذا أردت الاحتفاظ بالبيانات، علّق الشركة بدلًا من حذفها.`}
                             confirmLabel="حذف نهائي"
                             onConfirm={() => deleteOrg.mutate(org.id)}
                             trigger={
