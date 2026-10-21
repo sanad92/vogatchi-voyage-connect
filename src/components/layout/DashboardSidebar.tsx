@@ -55,9 +55,11 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
   });
 
   useEffect(() => {
-    if (!activeModule) return;
-    setOpenGroups((current) => ({ ...current, [activeModule.label]: true }));
-  }, [activeModule]);
+    const owner = allGroups.find((group) =>
+      group.items.some((item) => pathMatchesScreen(location.pathname, item.href)));
+    if (!owner) return;
+    setOpenGroups((current) => ({ ...current, [owner.label]: true }));
+  }, [allGroups, location.pathname]);
 
   // Client-side favorites (per-browser). No schema change.
   const [favorites, setFavorites] = useState<string[]>(() => {
