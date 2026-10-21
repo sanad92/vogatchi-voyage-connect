@@ -77,7 +77,9 @@ const Invoices = () => {
   const getPaymentStatusLabel = (status) => {
     const statuses = {
       unpaid: "غير مدفوعة",
+      partial: "مدفوعة جزئياً",
       partially_paid: "مدفوعة جزئياً",
+      paid: "مدفوعة بالكامل",
       fully_paid: "مدفوعة بالكامل",
     };
     return statuses[status] || status;
@@ -97,7 +99,9 @@ const Invoices = () => {
   const getPaymentStatusColor = (status) => {
     const colors = {
       unpaid: "destructive",
+      partial: "outline",
       partially_paid: "outline",
+      paid: "default",
       fully_paid: "default",
     };
     return colors[status] || "default";
