@@ -57,6 +57,13 @@
       "when": 1792599007974,
       "tag": "0007_delete_organization_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792607453581,
+      "tag": "0008_fix_delete_organization_cascade_impersonation",
+      "breakpoints": true
     }
   ]
 }
