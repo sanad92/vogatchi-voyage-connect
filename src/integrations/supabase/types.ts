@@ -15197,6 +15197,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      delete_organization_cascade: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
       dispatch_quote_followups: { Args: never; Returns: number }
       email_queue_dispatch: { Args: never; Returns: undefined }
       emit_event: {
