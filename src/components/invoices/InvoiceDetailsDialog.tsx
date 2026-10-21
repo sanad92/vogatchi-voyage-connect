@@ -153,7 +153,7 @@ const InvoiceDetailsDialog = ({
                 </Button>
               )}
 
-              {invoice.payment_status !== 'fully_paid' && onUpdateStatus && (
+              {!['paid', 'fully_paid'].includes(invoice.payment_status) && onUpdateStatus && (
                 <Button variant="default" onClick={handleMarkAsPaid} className="w-full">
                   <CheckCircle className="h-4 w-4 mr-2" />
                   تأكيد الدفع الكامل
