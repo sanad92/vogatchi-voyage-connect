@@ -19,3 +19,7 @@
 - [ ] Platform approval of the QA bank transfer and a real Paymob payment (blocked: needs a platform-admin session and a real card payment).
 - [x] Launch review: tenant isolation verified, DB healthy (memory 43%, disk 12%), managed daily backups (in-app backup log unused).
 - [ ] Security hardening: 278 signed-in-callable privileged database functions to review (non-blocking for pilot).
+
+- [x] Platform support tickets (company /support + platform /platform/support)
+- [x] Hajj & Umrah module (/pilgrimage)
+- [ ] English translations for support & Hajj/Umrah screens; ticket attachments
