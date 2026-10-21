@@ -66,4 +66,8 @@ apiError = new Error('permission denied'); await assert.rejects(query.queryFn(),
 org = null; panel.default({ quoteId: 'quote-1' });
 assert.equal(query.enabled, false);
 await assert.rejects(query.queryFn());
+const { useInvoiceStats } = await load('../src/hooks/invoices/useInvoiceStats.tsx', { react: { useMemo: fn => fn() } });
+const stats = useInvoiceStats([{ payment_status: 'paid' }, { payment_status: 'partial' }, { payment_status: 'unpaid' }]);
+assert.equal(stats.paidInvoices, 1, "database 'paid' status counts as fully paid");
+assert.equal(stats.partiallyPaidInvoices, 1, "database 'partial' status counts as partly paid");
 console.log('Launch regressions passed: real financial helpers, company-isolated ledger caches and quote-booking reads.');

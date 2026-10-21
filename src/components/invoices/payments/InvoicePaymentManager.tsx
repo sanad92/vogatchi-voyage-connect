@@ -67,8 +67,10 @@ const InvoicePaymentManager = ({ invoice }: InvoicePaymentManagerProps) => {
 
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
+      case 'paid':
       case 'fully_paid':
         return <Badge className="bg-green-100 text-green-800">مدفوعة بالكامل</Badge>;
+      case 'partial':
       case 'partially_paid':
         return <Badge className="bg-yellow-100 text-yellow-800">مدفوعة جزئياً</Badge>;
       case 'unpaid':
@@ -128,7 +130,7 @@ const InvoicePaymentManager = ({ invoice }: InvoicePaymentManagerProps) => {
             <CardTitle>سجل المدفوعات</CardTitle>
             <Dialog open={showAddPayment} onOpenChange={setShowAddPayment}>
               <DialogTrigger asChild>
-                <Button disabled={invoice?.payment_status === 'fully_paid'}>
+                <Button disabled={['paid', 'fully_paid'].includes(invoice?.payment_status)}>
                   <Plus className="h-4 w-4 mr-2" />
                   إضافة دفعة
                 </Button>
