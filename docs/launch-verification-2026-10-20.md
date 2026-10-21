@@ -38,3 +38,12 @@ The status SQL test executes the applied migration in isolated PostgreSQL and te
 6. No customer message was sent, no ownership was changed, and no fresh external WhatsApp delivery was tested. A designated internal test recipient is required for outbound communication checks.
 
 **Decision:** operational availability verified; full public launch not approved. No 100% readiness claim or numerical readiness score can be justified by this review.
+## Live QA cycle — 2026-10-21 (company "SafarERP QA", user qa.launch@safarerp.com)
+- Quote: 10,000 sale + 1,400 VAT = 11,400; profit 2,000 (VAT excluded).
+- Conversion → booking + invoice INV-2026-00187 + supplier order (8,000).
+- Journals: cost 8,000 Dr 5000 / Cr 2000; invoice Dr 1100 11,400 / Cr 4000 10,000 + Cr 2100 1,400; payment 5,700 Dr 1010 / Cr 1100.
+- Refund 1,140: Dr 4050 1,000 + Dr 2100 140 / Cr 1010 1,140; treasury 5,700 → 4,560.
+- Fixed: new companies had no chart of accounts and no settings/currency (quotes blocked) — now seeded on creation and backfilled for 38 companies.
+- Fixed: invoice "paid / partly paid" counters and badges ignored the stored statuses.
+- Isolation: QA user sees 0 foreign customers/invoices/companies; cannot self-activate subscription or approve its own transfer.
+- Not tested: platform approval of transfer, real Paymob payment.
