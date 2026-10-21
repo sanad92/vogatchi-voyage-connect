@@ -22,8 +22,20 @@ const lookup = (raw: string): string | null => {
     // "3 فواتير" / "متبقي 13" — translate the label part, keep the numbers.
     const m = key.match(/^([\d٠-٩.,%\s]*)(.*?[\u0600-\u06FF].*?)([\d٠-٩.,%\s:]*)$/);
     const label = m?.[2]?.trim();
-    if (!m || !label || !dict[label] || (!m[1].trim() && !m[3].trim())) return null;
-    hit = `${m[1]}${dict[label]}${m[3]}`;
+    if (m && label && dict[label] && (m[1].trim() || m[3].trim())) {
+      hit = `${m[1]}${dict[label]}${m[3]}`;
+    } else {
+      // Mixed text such as "الإيرادات (EGP)": translate each known Arabic phrase.
+      let changed = false;
+      const replaced = key.replace(/[\u0600-\u06FF][\u0600-\u06FF\s]*[\u0600-\u06FF]|[\u0600-\u06FF]/g, (phrase) => {
+        const en = dict[phrase.trim()];
+        if (!en) return phrase;
+        changed = true;
+        return en;
+      });
+      if (!changed) return null;
+      hit = replaced;
+    }
   }
   const lead = raw.slice(0, raw.indexOf(key));
   const tail = raw.slice(raw.indexOf(key) + key.length);
