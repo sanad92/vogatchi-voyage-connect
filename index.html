@@ -27,7 +27,28 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static fallback for search engines and no-JS visitors. React replaces this on mount. -->
+      <main style="max-width: 960px; margin: 0 auto; padding: 48px 24px; font-family: 'Noto Sans Arabic', sans-serif; color: #0D2342;">
+        <h1>SafarERP — نظام إدارة شركات السياحة والسفر</h1>
+        <p>
+          منصة ERP متكاملة لشركات السياحة: الحجوزات (فنادق، طيران، سيارات، انتقالات)، برامج الحج والعمرة،
+          عروض الأسعار، الفواتير والمحاسبة، الموردون، الـ CRM، واتساب، والتقارير — كلها في مكان واحد.
+        </p>
+        <h2>الأسعار والباقات</h2>
+        <p>كل باقة تشمل عدد مستخدمين كامل بسعر واحد؛ بدون تسعير لكل موظف وبدون رسوم على كل حجز. تجربة كاملة 14 يومًا بدون بطاقة.</p>
+        <ul>
+          <li><strong>باقة الانطلاق (Basic):</strong> 2,490 ج.م شهريًا أو 24,900 ج.م سنويًا — حتى 5 مستخدمين و300 حجز شهريًا.</li>
+          <li><strong>باقة النمو (Pro):</strong> 4,990 ج.م شهريًا أو 49,900 ج.م سنويًا — حتى 15 مستخدمًا و1,500 حجز شهريًا، مع المالية والأتمتة وواتساب.</li>
+          <li><strong>باقة الأعمال (Enterprise):</strong> 9,990 ج.م شهريًا أو 99,900 ج.م سنويًا — حتى 50 مستخدمًا و5,000 حجز شهريًا، مع الفروع والهوية المخصصة.</li>
+        </ul>
+        <p>
+          <a href="/pricing">تفاصيل الأسعار</a> ·
+          <a href="/signup">ابدأ تجربة 14 يومًا</a> ·
+          <a href="/booking-request">اطلب عرضًا</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
