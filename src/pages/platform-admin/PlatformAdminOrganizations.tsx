@@ -135,15 +135,14 @@ const PlatformAdminOrganizations = () => {
 
   const deleteOrg = useMutation({
     mutationFn: async (id: string) => {
-      const { error, count } = await supabase.from('organizations').delete({ count: 'exact' }).eq('id', id);
+      const { error } = await supabase.rpc('delete_organization_cascade', { _org_id: id });
       if (error) throw error;
-      if (!count) throw new Error('not-deleted');
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-orgs'] });
-      toast.success('تم حذف الشركة');
+      toast.success('تم حذف الشركة وكل بياناتها');
     },
-    onError: () => toast.error('تعذّر حذف الشركة — غالبًا لديها بيانات مرتبطة. يمكنك تعليقها بدلًا من الحذف.'),
+    onError: () => toast.error('تعذّر حذف الشركة — يمكنك تعليقها بدلًا من الحذف.'),
   });
 
   const [search, setSearch] = useState('');
@@ -326,7 +325,7 @@ const PlatformAdminOrganizations = () => {
                           )}
                           <ConfirmAction
                             title="حذف الشركة نهائيًا"
-                            description={`سيتم حذف «${org.name}» نهائيًا ولا يمكن التراجع. إذا كانت لديها بيانات تشغيلية، الأفضل تعليقها بدلًا من الحذف.`}
+                            description={`سيتم حذف «${org.name}» وكل بياناتها (حجوزات، فواتير، عملاء، قيود محاسبية) نهائيًا ولا يمكن التراجع. إذا أردت الاحتفاظ بالبيانات، علّق الشركة بدلًا من حذفها.`}
                             confirmLabel="حذف نهائي"
                             onConfirm={() => deleteOrg.mutate(org.id)}
                             trigger={
