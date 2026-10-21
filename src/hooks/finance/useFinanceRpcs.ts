@@ -97,7 +97,7 @@ export const useRefundRequests = () => {
     enabled: !!orgId,
     queryFn: async () => {
       const { data, error } = await sb.from('refund_requests')
-        .select('*, bookings(booking_number, destination), customers(name)')
+        .select('*, bookings(booking_number), customers(name)')
         .eq('organization_id', orgId).order('created_at', { ascending: false });
       if (error) throw error;
       return data as any[];
