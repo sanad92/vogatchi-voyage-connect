@@ -64,6 +64,13 @@
       "when": 1792607453581,
       "tag": "0008_fix_delete_organization_cascade_impersonation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792607561346,
+      "tag": "0009_delete_organization_cascade_resilient_loop",
+      "breakpoints": true
     }
   ]
 }
