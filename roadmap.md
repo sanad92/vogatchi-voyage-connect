@@ -10,3 +10,9 @@
 - [ ] Execute a newly created full financial journey in an isolated test organization/environment (blocked: safe test scope and recipient not designated; current backend also serves production).- [x] Refund posting reverses VAT proportionally from the source invoice (net to sales returns, VAT to tax account, cash credited in full).
 - [x] Onboarding audit: new company gets owner role, 14-day trial on an active paid plan, chart of accounts and routing; all existing companies have a subscription and accounts.
 - [ ] Live test of a paid refund and a new-company signup + Paymob/bank-transfer activation (blocked: needs a designated test company and test payment).
+
+- [x] Arabic/English switch foundation: language toggle in top bar, saved per browser, page direction RTL/LTR, side menu flips sides, menu and top bar translated.
+- [ ] Translate inner page content (~145 screens still fixed Arabic/RTL) — next batches by module.
+- [ ] Visual check of English mode while signed in (blocked: no preview session for the requesting account).
+- [ ] Live financial cycle + new-company signup/payment test (blocked: needs approval to create a labelled test company on the live backend).
+- [ ] Final launch review: permissions, backups, performance, support paths.
