@@ -56,7 +56,9 @@ export const WhatsAppQuickReplies: React.FC = () => {
     deleteQuickReply,
     isCreating,
     isUpdating,
-    isDeleting
+    isDeleting,
+    restoreDefaults,
+    isRestoring
   } = useWhatsAppQuickReplies();
 
   const quickReplies = rawQuickReplies as QuickReply[] | undefined;
@@ -159,7 +161,10 @@ export const WhatsAppQuickReplies: React.FC = () => {
             إدارة الردود السريعة لتسريع الاستجابة للعملاء
           </p>
         </div>
-        
+        <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={() => restoreDefaults()} disabled={isRestoring}>
+          {isRestoring ? 'جارٍ الاستعادة...' : 'استعادة الردود القياسية'}
+        </Button>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()} className="flex items-center gap-2">
