@@ -156,6 +156,8 @@ export const useWhatsAppQuickReplies = () => {
     deleteQuickReply: deleteQuickReplyMutation.mutate,
     isCreating: createQuickReplyMutation.isPending,
     isUpdating: updateQuickReplyMutation.isPending,
-    isDeleting: deleteQuickReplyMutation.isPending
+    isDeleting: deleteQuickReplyMutation.isPending,
+    restoreDefaults: restoreDefaultsMutation.mutate,
+    isRestoring: restoreDefaultsMutation.isPending
   };
 };
