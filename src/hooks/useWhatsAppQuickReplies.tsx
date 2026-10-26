@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOrgId } from '@/hooks/useOrgId';
 
 interface QuickReplyData {
   id?: string;
@@ -13,18 +14,21 @@ interface QuickReplyData {
 
 export const useWhatsAppQuickReplies = () => {
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
-  // جلب جميع الردود السريعة
+  // ردود الشركة الحالية فقط
   const { 
     data: quickReplies, 
     isLoading, 
     error 
   } = useQuery({
-    queryKey: ['whatsapp-quick-replies'],
+    queryKey: ['whatsapp-quick-replies', orgId],
+    enabled: !!orgId,
     queryFn: async () => {
       const { data, error } = await (supabase
         .from('quick_replies' as any)
         .select('*')
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false }) as any);
 
       if (error) {
@@ -37,21 +41,26 @@ export const useWhatsAppQuickReplies = () => {
     staleTime: 30000 // 30 seconds
   });
 
+  const restoreDefaultsMutation = useMutation({
+    mutationFn: async () => {
+      if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      const { data, error } = await (supabase.rpc as any)('restore_default_quick_replies', { _org_id: orgId });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-quick-replies'] });
+      toast.success(count ? `تمت إضافة ${count} ردود قياسية باسم الشركة` : 'الردود القياسية موجودة بالفعل');
+    },
+    onError: () => toast.error('تعذّر استعادة الردود القياسية'),
+  });
+
   // إنشاء رد سريع جديد
   const createQuickReplyMutation = useMutation({
     mutationFn: async (replyData: QuickReplyData) => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) throw new Error('يجب تسجيل الدخول أولاً');
-
-      // Get current organization for scoping
-      const { data: orgRow, error: orgErr } = await (supabase
-        .from('organization_members' as any)
-        .select('organization_id')
-        .eq('user_id', authData.user.id)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle() as any);
-      if (orgErr) throw orgErr;
+      const orgRow = { organization_id: orgId };
       if (!orgRow?.organization_id) throw new Error('لا توجد منظمة نشطة');
 
       const { data, error } = await (supabase
@@ -147,6 +156,8 @@ export const useWhatsAppQuickReplies = () => {
     deleteQuickReply: deleteQuickReplyMutation.mutate,
     isCreating: createQuickReplyMutation.isPending,
     isUpdating: updateQuickReplyMutation.isPending,
-    isDeleting: deleteQuickReplyMutation.isPending
+    isDeleting: deleteQuickReplyMutation.isPending,
+    restoreDefaults: restoreDefaultsMutation.mutate,
+    isRestoring: restoreDefaultsMutation.isPending
   };
 };

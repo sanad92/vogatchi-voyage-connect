@@ -14856,6 +14856,10 @@ export type Database = {
         Args: { _code: string; _org: string }
         Returns: string
       }
+      _seed_quick_replies_for_org: {
+        Args: { _org_id: string }
+        Returns: number
+      }
       _workflow_check_condition: {
         Args: { cond: Json; ctx: Json }
         Returns: boolean
@@ -16230,6 +16234,10 @@ export type Database = {
       reset_org_account_route: {
         Args: { _org_id: string; _routing_key: string }
         Returns: undefined
+      }
+      restore_default_quick_replies: {
+        Args: { _org_id: string }
+        Returns: number
       }
       retry_booking_automation_step: {
         Args: { p_step_id: string }
