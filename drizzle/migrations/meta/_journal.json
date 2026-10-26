@@ -85,6 +85,13 @@
       "when": 1793003170862,
       "tag": "0011_org_quick_replies_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793003285220,
+      "tag": "0012_booking_statuses_scoped_read",
+      "breakpoints": true
     }
   ]
 }
