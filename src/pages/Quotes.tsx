@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Search, Eye, Trash2, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -17,6 +18,7 @@ import QuoteFollowupSettingsDialog from '@/components/quotes/QuoteFollowupSettin
 export default function Quotes() {
   usePageTitle('عروض الأسعار');
   const navigate = useNavigate();
+  const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
@@ -34,7 +36,7 @@ export default function Quotes() {
         actions={
           <div className="flex gap-2">
             <QuoteFollowupSettingsDialog />
-            <Button onClick={() => navigate('/quotes/new')}>
+            <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 ml-1" />
               عرض سعر جديد
             </Button>
@@ -43,6 +45,15 @@ export default function Quotes() {
       />
 
 
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent dir="rtl" className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>إنشاء عرض سعر</DialogTitle><DialogDescription>اختار طريقة إعداد العرض حسب طلب العميل.</DialogDescription></DialogHeader>
+          <div className="grid gap-3">
+            <Button variant="outline" className="h-auto py-5 justify-start text-right" onClick={() => navigate('/quotes/new')}>عرض سعر عادي — للخدمات والعروض السريعة</Button>
+            <Button variant="outline" className="h-auto py-5 justify-start text-right" onClick={() => navigate('/quotes/itinerary-builder')}>برنامج سياحي — طيران، فنادق وانتقالات</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-3">
