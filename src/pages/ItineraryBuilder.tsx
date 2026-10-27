@@ -62,7 +62,7 @@ export default function ItineraryBuilder() {
   }), [lines, rates, currency]);
   const totalCost = round(amounts.reduce((sum, x) => sum + x.base, 0));
   const totalSale = round(amounts.reduce((sum, x) => sum + x.sale, 0));
-  const valid = !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost >= 0 && Number.isFinite(l.markup) && l.markup >= 0 && Number.isFinite(rates[l.currency]) && rates[l.currency] > 0 && Number.isFinite(amounts[i].base) && Number.isFinite(amounts[i].sale));
+  const valid = !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost >= 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && Number.isFinite(amounts[i].sale));
   const addFlightFares = () => {
     const cost = round(flightAdultFare * adults + flightChildFare * children + flightInfantFare * infants);
     if (cost <= 0) return toast.error('أدخل أسعار تذاكر الطيران أولاً');
