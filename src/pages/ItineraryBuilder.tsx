@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuotes, type QuoteItem } from '@/hooks/useQuotes';
 import { useOrgId } from '@/hooks/useOrgId';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +30,16 @@ export default function ItineraryBuilder() {
   const navigate = useNavigate();
   const orgId = useOrgId();
   const { createQuote } = useQuotes();
+  const { data: orgCurrency, isLoading: currencyLoading } = useQuery({
+    queryKey: ['itinerary-org-currency', orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('organization_settings').select('currency').eq('organization_id', orgId!).single();
+      if (error) throw error;
+      return data.currency as string;
+    },
+  });
+  const supportedOrgCurrency = currencies.includes(orgCurrency as Currency) ? orgCurrency as Currency : null;
   const [packageType, setPackageType] = useState<PackageType>('flight_hotel');
   const [customer, setCustomer] = useState('');
   const [destination, setDestination] = useState('');
@@ -36,7 +48,7 @@ export default function ItineraryBuilder() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const [currency, setCurrency] = useState<Currency>('EGP');
+  const currency = supportedOrgCurrency ?? 'EGP';
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 });
   const [lines, setLines] = useState<Line[]>([newLine('flight'), newLine('hotel')]);
@@ -62,15 +74,18 @@ export default function ItineraryBuilder() {
   }), [lines, rates, currency]);
   const totalCost = round(amounts.reduce((sum, x) => sum + x.base, 0));
   const totalSale = round(amounts.reduce((sum, x) => sum + x.sale, 0));
-  const valid = !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost >= 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && Number.isFinite(amounts[i].sale));
+  const hasLoss = amounts.some(x => x.sale < x.base);
+  const valid = !!supportedOrgCurrency && !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost >= 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && Number.isFinite(amounts[i].sale));
   const addFlightFares = () => {
     const cost = round(flightAdultFare * adults + flightChildFare * children + flightInfantFare * infants);
+    if (!supportedOrgCurrency) return toast.error('عملة الشركة غير متاحة');
     if (cost <= 0) return toast.error('أدخل أسعار تذاكر الطيران أولاً');
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
     if (errors.length) return toast.error(errors[0]);
+    if (!supportedOrgCurrency) return toast.error('تعذر تحديد عملة الشركة المدعومة؛ راجع إعدادات الشركة');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].base / line.quantity,
@@ -102,7 +117,7 @@ export default function ItineraryBuilder() {
     <Card><CardHeader><CardTitle>2. بيانات الرحلة والمسافرين</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-4">
       <div><Label>اسم العميل</Label><Input value={customer} onChange={e => setCustomer(e.target.value)}/></div>
       <div><Label>الوجهة</Label><Input value={destination} onChange={e => setDestination(e.target.value)}/></div>
-      <div><Label>عملة البيع</Label><Select value={currency} onValueChange={v => setCurrency(v as Currency)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+      <div><Label>عملة البيع (عملة الشركة)</Label><Input value={currencyLoading ? 'جاري تحميل عملة الشركة...' : supportedOrgCurrency ?? 'عملة غير مدعومة'} disabled /><p className="text-xs text-muted-foreground mt-1">يتم حفظ عروض الأسعار بعملة الشركة المعتمدة. يمكنك إدخال تكلفة المورد بعملة مختلفة وتحديد سعر تحويلها.</p></div>
       <div><Label>المغادرة</Label><Input type="date" value={start} onChange={e => setStart(e.target.value)}/></div><div><Label>العودة</Label><Input type="date" value={end} onChange={e => setEnd(e.target.value)}/></div>
       {([['بالغين', adults, setAdults], ['أطفال', children, setChildren], ['رضع', infants, setInfants]] as const).map(([label, value, setter]) => <div key={label}><Label>{label}</Label><Input type="number" min={0} value={value} onChange={e => setter(Math.max(0, Number(e.target.value) || 0))}/></div>)}
     </CardContent></Card>
@@ -127,6 +142,7 @@ export default function ItineraryBuilder() {
       </div>)}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>الملخص الداخلي</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-3"><div>التكلفة: <b>{totalCost.toLocaleString()} {currency}</b></div><div>البيع: <b>{totalSale.toLocaleString()} {currency}</b></div><div>الربح: <b>{round(totalSale-totalCost).toLocaleString()} {currency}</b></div></CardContent></Card>
+    {hasLoss && <p role="alert" className="text-destructive font-medium">تنبيه: يوجد بند سعر بيعه أقل من تكلفته. راجع هامش الربح قبل الحفظ.</p>}
     <div className="flex gap-3 flex-wrap"><Button disabled={!valid || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
     <section dir={language === 'ar' ? 'rtl' : 'ltr'} className="bg-white text-slate-900 rounded-xl p-8 border print:border-0 print:p-0" id="customer-itinerary" aria-label="Customer-only itinerary preview">
       <h2 className="text-3xl font-bold tracking-wide">SAFAR</h2><p className="text-sm italic">Travel smarter. Manage better.</p><hr className="my-4"/>
