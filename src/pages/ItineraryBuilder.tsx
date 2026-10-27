@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { validateItinerary } from '@/lib/itineraryValidation';
 
 type Currency = 'EGP' | 'SAR' | 'USD' | 'EUR' | 'AED';
 type ServiceType = 'hotel' | 'flight' | 'transport' | 'service';
@@ -67,6 +68,8 @@ export default function ItineraryBuilder() {
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: JSON.stringify({ adult_fare: flightAdultFare, child_fare: flightChildFare, infant_fare: flightInfantFare, adults, children, infants }) }]);
   };
   const save = async () => {
+    const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
+    if (errors.length) return toast.error(errors[0]);
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].base / line.quantity,
