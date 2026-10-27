@@ -92,7 +92,7 @@ export default function ItineraryBuilder() {
     } catch { /* Existing mutation displays the error toast. */ }
   };
   return <div dir="rtl" className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
-    <div className="flex items-center justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-bold">Vogatchi Itinerary Builder</h1><p className="text-muted-foreground">منشئ البرامج السياحية وعروض الأسعار</p></div><Button variant="outline" onClick={() => navigate('/quotes')}>عروض الأسعار</Button></div>
+    <div className="flex items-center justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-bold">Safar Itinerary Builder</h1><p className="text-muted-foreground">منشئ البرامج السياحية وعروض الأسعار</p></div><Button variant="outline" onClick={() => navigate('/quotes')}>عروض الأسعار</Button></div>
     <Card><CardHeader><CardTitle>1. اختر نوع عرض السعر</CardTitle></CardHeader><CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {packageOptions.map(option => <button key={option.value} type="button" aria-pressed={packageType === option.value} onClick={() => selectPackage(option.value)} className={`rounded-xl border-2 p-4 text-right transition-colors ${packageType === option.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
         <strong className="block mb-2">{option.title}</strong><span className="text-xs text-muted-foreground">{option.description}</span>
@@ -129,7 +129,7 @@ export default function ItineraryBuilder() {
     <Card><CardHeader><CardTitle>الملخص الداخلي</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-3"><div>التكلفة: <b>{totalCost.toLocaleString()} {currency}</b></div><div>البيع: <b>{totalSale.toLocaleString()} {currency}</b></div><div>الربح: <b>{round(totalSale-totalCost).toLocaleString()} {currency}</b></div></CardContent></Card>
     <div className="flex gap-3 flex-wrap"><Button disabled={!valid || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
     <section dir={language === 'ar' ? 'rtl' : 'ltr'} className="bg-white text-slate-900 rounded-xl p-8 border print:border-0 print:p-0" id="customer-itinerary" aria-label="Customer-only itinerary preview">
-      <h2 className="text-3xl font-bold tracking-wide">VOGATCHI</h2><p className="text-sm italic">Come to see world with us</p><hr className="my-4"/>
+      <h2 className="text-3xl font-bold tracking-wide">SAFAR</h2><p className="text-sm italic">Travel smarter. Manage better.</p><hr className="my-4"/>
       <h3 className="text-xl font-semibold">{language === 'ar' ? 'برنامج الرحلة وعرض السعر' : 'Travel Itinerary & Quotation'}</h3>
       <p>{language === 'ar' ? 'العميل' : 'Customer'}: {customer} | {language === 'ar' ? 'الوجهة' : 'Destination'}: {destination}</p>
       <p>{start} — {end} | {adults} Adults / {children} Children / {infants} Infants</p>
