@@ -74,7 +74,7 @@ export default function QuoteDetails() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl mx-auto print:p-0 print:max-w-none">
-      <style>{`@media print { body * { visibility: hidden !important; } #quote-customer-print, #quote-customer-print * { visibility: visible !important; } #quote-customer-print { position: absolute; inset: 0; width: 100%; padding: 24px; direction: rtl; color: #111; background: #fff; } @page { size: A4; margin: 12mm; } }`}</style>
+      <style>{`@media print { body * { visibility: hidden !important; } #quote-customer-print, #quote-customer-print * { visibility: visible !important; } #quote-customer-print { display: block !important; position: absolute; top: 0; right: 0; left: 0; width: 100%; padding: 24px; direction: rtl; color: #111; background: #fff; } #quote-customer-print tr { break-inside: avoid; } @page { size: A4; margin: 12mm; } }`}</style>
       <section id="quote-customer-print" className="hidden print:block space-y-5" dir="rtl">
         <h1 className="text-2xl font-bold">عرض سعر رحلة — {quote.quote_number}</h1>
         <p>العميل: {quote.customer_name || quote.customers?.name || '—'}</p>
