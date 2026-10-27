@@ -55,6 +55,7 @@ export default function QuoteDetails() {
   if (!data) return <div className="p-6 text-center text-muted-foreground">عرض السعر غير موجود</div>;
 
   const { quote, items } = data;
+  const quoteCurrency = quote.currency || '—';
   const canEdit = hasPermission('quotes_edit');
   const approved = !!(quote as any).review_approved_at;
   const eligibleStatus = ['draft', 'sent', 'accepted'].includes(quote.status);
@@ -141,7 +142,7 @@ export default function QuoteDetails() {
 
       {/* Items */}
       <Card>
-        <CardHeader><CardTitle className="text-base">عناصر العرض ({items.length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">عناصر العرض ({items.length}) — {quoteCurrency}</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
@@ -178,7 +179,7 @@ export default function QuoteDetails() {
 
       {/* Financial Summary */}
       <Card>
-        <CardHeader><CardTitle className="text-base">الملخص المالي</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">الملخص المالي ({quoteCurrency})</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
             <div className="p-3 rounded-lg bg-muted">

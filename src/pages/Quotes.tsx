@@ -110,7 +110,7 @@ export default function Quotes() {
                         <TableCell>{q.customer_name || q.customers?.name || '—'}</TableCell>
                         <TableCell>{q.destination || '—'}</TableCell>
                         <TableCell><QuoteStatusBadge status={q.status} /></TableCell>
-                        <TableCell className="font-semibold">{q.total_amount?.toLocaleString()} ج.م</TableCell>
+                        <TableCell className="font-semibold">{q.total_amount?.toLocaleString()} {q.currency || '—'}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {q.created_at ? format(new Date(q.created_at), 'dd MMM yyyy', { locale: ar }) : '—'}
                         </TableCell>
