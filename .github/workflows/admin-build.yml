@@ -1,0 +1,24 @@
+name: Validate isolated admin build
+on:
+  pull_request:
+    paths:
+      - 'src/AdminApp.tsx'
+      - 'src/admin-main.tsx'
+      - 'src/pages/platform-admin/**'
+      - 'src/components/platform-admin/**'
+      - 'vite.admin.config.ts'
+      - 'admin.html'
+      - 'package.json'
+      - '.github/workflows/admin-build.yml'
+  workflow_dispatch:
+jobs:
+  admin-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build:admin
+      - run: test -s dist-admin/index.html
