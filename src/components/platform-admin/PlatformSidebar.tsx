@@ -130,7 +130,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
         <NavLink
-          to="/dashboard"
+          to="https://safarerp.com/dashboard"
           title={isCollapsed ? 'العودة إلى لوحة الشركة' : undefined}
           className={cn(
             'flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors',
