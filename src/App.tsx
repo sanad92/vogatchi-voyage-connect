@@ -336,6 +336,7 @@ function App() {
                               <Route path="/pilgrimage" element={<PermissionRouteGuard requiredPermission="bookings_view"><PilgrimagePage /></PermissionRouteGuard>} />
                               <Route path="/quotes" element={<PermissionRouteGuard requiredPermission="quotes_view"><Quotes /></PermissionRouteGuard>} />
                               <Route path="/quotes/new" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
+                              <Route path="/quotes/itinerary-builder" element={<PermissionRouteGuard requiredPermission="quotes_create"><ItineraryBuilder /></PermissionRouteGuard>} />
                               <Route path="/quotes/:id" element={<PermissionRouteGuard requiredPermission="quotes_view"><QuoteDetails /></PermissionRouteGuard>} />
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
                               <Route path="/new-invoice" element={<PermissionRouteGuard requiredPermission="invoices_create"><NewInvoice /></PermissionRouteGuard>} />
