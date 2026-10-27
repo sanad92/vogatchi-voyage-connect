@@ -697,6 +697,8 @@ const SaaSLanding = () => {
             <a href="#workflow" className="hover:text-brand-gold">دورة العمل</a>
             <a href="#platform" className="hover:text-brand-gold">المنصة</a>
             <Link to="/pricing" className="hover:text-brand-gold">الأسعار</Link>
+            <Link to="/terms" className="hover:text-brand-gold">الشروط والأحكام</Link>
+            <Link to="/refund-policy" className="hover:text-brand-gold">سياسة الاسترداد</Link>
             <Link to="/privacy" className="hover:text-brand-gold">الخصوصية</Link>
           </div>
         </div>
