@@ -548,6 +548,8 @@ const PricingPage = () => {
           <p>© {new Date().getFullYear()} SafarERP. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-5">
             <Link to="/" className="hover:text-brand-gold">الرئيسية</Link>
+            <Link to="/terms" className="hover:text-brand-gold">الشروط والأحكام</Link>
+            <Link to="/refund-policy" className="hover:text-brand-gold">سياسة الاسترداد</Link>
             <Link to="/privacy" className="hover:text-brand-gold">الخصوصية</Link>
             <Link to="/login" className="hover:text-brand-gold">تسجيل الدخول</Link>
           </div>

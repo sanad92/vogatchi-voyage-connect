@@ -48,6 +48,8 @@ const RegisterOrganization = lazy(() => import("@/pages/RegisterOrganization"));
 const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
 const AcceptInvite = lazy(() => import("@/pages/AcceptInvite"));
 const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const TermsAndConditions = lazy(() => import("@/pages/TermsAndConditions"));
+const RefundPolicy = lazy(() => import("@/pages/RefundPolicy"));
 const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
 
 // Dashboard & Core
@@ -268,6 +270,9 @@ function App() {
                 } />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/data-deletion" element={<DataDeletion />} />
 
                 {/* Platform Admin — separate layout, no DashboardLayout */}
