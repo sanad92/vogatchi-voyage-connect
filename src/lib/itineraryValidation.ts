@@ -23,7 +23,7 @@ export function validateItinerary(input: ItineraryValidationInput): string[] {
   input.lines.forEach((line, index) => {
     if (!line.description.trim()) errors.push('وصف الخدمة ' + (index + 1) + ' مطلوب');
     if (!Number.isInteger(line.quantity) || line.quantity < 1) errors.push('كمية الخدمة ' + (index + 1) + ' غير صحيحة');
-    if (![line.cost, line.markup].every(n => Number.isFinite(n) && n >= 0 && n <= 1e12)) errors.push('تسعير الخدمة ' + (index + 1) + ' غير صحيح');
+    if (!Number.isFinite(line.cost) || line.cost <= 0 || line.cost > 1e12 || !Number.isFinite(line.markup) || line.markup < 0 || line.markup > 1e12) errors.push('تسعير الخدمة ' + (index + 1) + ' غير صحيح');
     if (line.currency !== input.quoteCurrency && !(Number.isFinite(input.rates[line.currency]) && input.rates[line.currency] > 0)) {
       errors.push('سعر صرف ' + line.currency + ' غير محدد');
     }
