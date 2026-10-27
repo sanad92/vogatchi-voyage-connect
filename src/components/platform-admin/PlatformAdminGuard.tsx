@@ -3,9 +3,10 @@ import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 interface Props {
   children: React.ReactNode;
+  fallbackPath?: string;
 }
 
-const PlatformAdminGuard = ({ children }: Props) => {
+const PlatformAdminGuard = ({ children, fallbackPath = '/dashboard' }: Props) => {
   const { isPlatformAdmin, loading } = usePlatformAdmin();
 
   if (loading) {
@@ -20,7 +21,7 @@ const PlatformAdminGuard = ({ children }: Props) => {
   }
 
   if (!isPlatformAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={fallbackPath} replace />;
   }
 
   return <>{children}</>;
