@@ -19,7 +19,7 @@ const packageOptions: { value: PackageType; title: string; description: string; 
   { value: 'flight_hotel', title: 'طيران + فنادق', description: 'تذاكر الطيران والإقامة', types: ['flight', 'hotel'] },
   { value: 'full', title: 'طيران + فنادق + انتقالات', description: 'برنامج سفر شامل', types: ['flight', 'hotel', 'transport'] },
 ];
-type Line = { id: string; type: ServiceType; description: string; currency: Currency; cost: number; quantity: number; markupType: 'percent' | 'fixed' | 'manual'; markup: number; details: string };
+type Line = { id: string; type: ServiceType; description: string; currency: Currency; cost: number; quantity: number; markupType: 'percent' | 'fixed' | 'manual'; markup: number; details: string; hotel?: { checkIn: string; checkOut: string; room: string; board: string }; flight?: { from: string; to: string; airline: string; number: string }; transport?: { pickup: string; dropoff: string; date: string } };
 const currencies: Currency[] = ['EGP', 'SAR', 'USD', 'EUR', 'AED'];
 const labels: Record<ServiceType, string> = { hotel: 'فندق وغرف', flight: 'طيران', transport: 'انتقالات', service: 'خدمة أخرى' };
 const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -54,6 +54,7 @@ export default function ItineraryBuilder() {
   const [flightChildFare, setFlightChildFare] = useState(0);
   const [flightInfantFare, setFlightInfantFare] = useState(0);
   const change = (id: string, patch: Partial<Line>) => setLines(old => old.map(line => line.id === id ? { ...line, ...patch } : line));
+  const changeExtra = (line: Line, kind: 'hotel' | 'flight' | 'transport', key: string, value: string) => change(line.id, { [kind]: { ...line[kind], [key]: value } });
   const amounts = useMemo(() => lines.map(line => {
     const base = round(line.cost * line.quantity * (line.currency === currency ? 1 : rates[line.currency]));
     const sale = line.markupType === 'manual' ? round(line.markup) : line.markupType === 'fixed' ? round(base + line.markup) : round(base * (1 + line.markup / 100));
@@ -75,7 +76,7 @@ export default function ItineraryBuilder() {
       item_type: line.type, description: line.description, cost_price: amounts[i].base / line.quantity,
       selling_price: amounts[i].sale / line.quantity, quantity: line.quantity,
       total_cost: amounts[i].base, total_selling: amounts[i].sale, sort_order: i,
-      details: { itinerary_builder: true, service_details: line.details, source_currency: line.currency,
+      details: { itinerary_builder: true, service_details: line.details, hotel: line.hotel, flight: line.flight, transport: line.transport, source_currency: line.currency,
         source_cost: line.cost, exchange_rate: line.currency === currency ? 1 : rates[line.currency],
         quote_currency: currency, markup_type: line.markupType, markup_value: line.markup,
         travelers: { adults, children, infants }, fx_snapshot: rates }
