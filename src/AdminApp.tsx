@@ -39,9 +39,10 @@ export default function AdminApp() {
       <Suspense fallback={<div dir="rtl" className="p-8">جارٍ التحميل...</div>}>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/access-denied" element={<main dir="rtl" className="p-10"><h1 className="text-2xl font-bold">غير مصرح بالدخول</h1><p className="mt-4">هذا الحساب ليس لديه صلاحية إدارة منصة SafarERP.</p></main>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/platform/*" element={<SupabaseProtectedRoute><PlatformAdminGuard><PlatformLayout>
+          <Route path="/platform/*" element={<SupabaseProtectedRoute><PlatformAdminGuard fallbackPath="/access-denied"><PlatformLayout>
             <Routes>
               <Route index element={<Dashboard />} />
               <Route path="organizations" element={<Organizations />} />
