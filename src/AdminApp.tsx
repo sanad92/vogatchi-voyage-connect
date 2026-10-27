@@ -5,7 +5,7 @@ import { Toaster } from 'sonner';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { OptimizedAuthProvider } from '@/hooks/useOptimizedAuth';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
-import SupabaseProtectedRoute from '@/components/SupabaseProtectedRoute';
+import AdminAuthGuard from '@/components/platform-admin/AdminAuthGuard';
 import PlatformAdminGuard from '@/components/platform-admin/PlatformAdminGuard';
 import PlatformLayout from '@/components/platform-admin/PlatformLayout';
 import OptimizedErrorBoundary from '@/components/common/OptimizedErrorBoundary';
@@ -27,7 +27,7 @@ const GlobalData = lazy(() => import('@/pages/platform-admin/PlatformAdminGlobal
 const Monitoring = lazy(() => import('@/pages/MonitoringDashboard'));
 const ActAs = lazy(() => import('@/pages/platform-admin/PlatformActAsPage'));
 const WorkflowRules = lazy(() => import('@/pages/platform-admin/PlatformWorkflowRules'));
-const Login = lazy(() => import('@/pages/LoginPage'));
+const Login = lazy(() => import('@/pages/platform-admin/AdminLoginPage'));
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
@@ -42,7 +42,7 @@ export default function AdminApp() {
           <Route path="/access-denied" element={<main dir="rtl" className="p-10"><h1 className="text-2xl font-bold">غير مصرح بالدخول</h1><p className="mt-4">هذا الحساب ليس لديه صلاحية إدارة منصة SafarERP.</p></main>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/platform/*" element={<SupabaseProtectedRoute><PlatformAdminGuard fallbackPath="/access-denied"><PlatformLayout>
+          <Route path="/platform/*" element={<AdminAuthGuard><PlatformAdminGuard fallbackPath="/access-denied"><PlatformLayout>
             <Routes>
               <Route index element={<Dashboard />} />
               <Route path="organizations" element={<Organizations />} />
@@ -63,7 +63,7 @@ export default function AdminApp() {
               <Route path="workflow-rules" element={<WorkflowRules />} />
               <Route path="*" element={<Navigate to="/platform" replace />} />
             </Routes>
-          </PlatformLayout></PlatformAdminGuard></SupabaseProtectedRoute>} />
+          </PlatformLayout></PlatformAdminGuard></AdminAuthGuard>} />
           <Route path="*" element={<Navigate to="/platform" replace />} />
         </Routes>
       </Suspense>
