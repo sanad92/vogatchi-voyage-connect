@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuotes, type QuoteItem } from '@/hooks/useQuotes';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export default function ItineraryBuilder() {
   const loadedRevision = useRef<string | null>(null);
   const orgId = useOrgId();
   const { createQuote } = useQuotes();
+  const { hasPermission } = useSupabasePermissions();
   const { data: orgCurrency, isLoading: currencyLoading } = useQuery({
     queryKey: ['itinerary-org-currency', orgId],
     enabled: !!orgId,
@@ -130,11 +132,13 @@ export default function ItineraryBuilder() {
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
+    if (sourceQuoteId && !hasPermission('quotes_edit')) return toast.error('ليس لديك صلاحية مراجعة عروض الأسعار');
     if (sourceQuoteId && (revisionLoading || revisionError || !revision)) return toast.error('تعذر تحميل العرض الأصلي للمراجعة');
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
     if (errors.length) return toast.error(errors[0]);
     if (invalidCalculatedAmount) return toast.error('يوجد مبلغ غير صحيح أو يتجاوز الحد المسموح؛ راجع الأسعار وسعر الصرف');
     if (!supportedOrgCurrency) return toast.error('تعذر تحديد عملة الشركة المدعومة؛ راجع إعدادات الشركة');
+    if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('تغيرت عملة الشركة منذ إنشاء العرض الأصلي؛ راجع الأسعار قبل إنشاء نسخة جديدة');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
