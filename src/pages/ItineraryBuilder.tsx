@@ -75,8 +75,8 @@ export default function ItineraryBuilder() {
   const totalCost = round(amounts.reduce((sum, x) => sum + x.base, 0));
   const totalSale = round(amounts.reduce((sum, x) => sum + x.sale, 0));
   const hasLoss = amounts.some(x => x.sale < x.base);
-  const invalidCalculatedAmount = amounts.some(x => !Number.isFinite(x.base) || !Number.isFinite(x.sale) || x.base < 0 || x.sale < 0 || x.base > 1e12 || x.sale > 1e12);
-  const valid = !invalidCalculatedAmount && !!supportedOrgCurrency && !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost >= 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && Number.isFinite(amounts[i].sale));
+  const invalidCalculatedAmount = amounts.some(x => !Number.isFinite(x.base) || !Number.isFinite(x.sale) || x.base <= 0 || x.sale <= 0 || x.base > 1e12 || x.sale > 1e12);
+  const valid = !invalidCalculatedAmount && !!supportedOrgCurrency && !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost > 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && amounts[i].base > 0 && Number.isFinite(amounts[i].sale) && amounts[i].sale > 0);
   const addFlightFares = () => {
     const fares = [flightAdultFare, flightChildFare, flightInfantFare];
     if (fares.some(fare => !Number.isFinite(fare) || fare < 0)) return toast.error('أسعار الطيران غير صحيحة');
