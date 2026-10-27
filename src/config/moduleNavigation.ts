@@ -123,6 +123,7 @@ export const ERP_MODULES: ErpModule[] = [
         description: 'تجهيز العرض واعتماده بعد تأهيل الطلب داخل مساحة العملاء المحتملين.',
         screens: [
           screen({ title: 'عروض الأسعار', href: '/quotes', icon: FileCheck, description: 'إنشاء وإرسال ومتابعة عروض الأسعار.', requiredPermission: 'quotes_view', sidebar: true }),
+          screen({ title: 'منشئ البرامج السياحية', href: '/quotes/itinerary-builder', icon: Plane, description: 'برامج سفر وعروض أسعار متعددة العملات.', requiredPermission: 'quotes_create', sidebar: true }),
         ],
       },
       {
