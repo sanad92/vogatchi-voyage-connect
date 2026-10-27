@@ -65,7 +65,7 @@ export default function ItineraryBuilder() {
   const addFlightFares = () => {
     const cost = round(flightAdultFare * adults + flightChildFare * children + flightInfantFare * infants);
     if (cost <= 0) return toast.error('أدخل أسعار تذاكر الطيران أولاً');
-    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: JSON.stringify({ adult_fare: flightAdultFare, child_fare: flightChildFare, infant_fare: flightInfantFare, adults, children, infants }) }]);
+    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
