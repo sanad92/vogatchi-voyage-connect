@@ -20,7 +20,8 @@
     "preview": "vite preview",
     "test:company-core": "node scripts/verify-company-core.mjs",
     "test:whatsapp": "node scripts/verify-whatsapp-queue.mjs && node scripts/verify-whatsapp-bot.mjs && node scripts/verify-whatsapp-internal-auth.mjs",
-    "test:itinerary": "node scripts/verify-itinerary-pricing.mjs"
+    "test:itinerary": "node scripts/verify-itinerary-pricing.mjs",
+    "build:admin": "vite build --config vite.admin.config.ts && node -e \"require('node:fs').copyFileSync('dist-admin/admin.html','dist-admin/index.html')\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5",
