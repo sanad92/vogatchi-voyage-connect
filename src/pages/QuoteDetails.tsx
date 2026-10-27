@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/useQuotes';
 import { useQuoteConversion } from '@/hooks/useQuoteConversion';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
@@ -15,7 +16,7 @@ import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight, Printer } from 'lucide-react';
+import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight, Printer, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -32,6 +33,7 @@ export default function QuoteDetails() {
   const navigate = useNavigate();
   const orgId = useOrgId();
   const { updateQuoteStatus } = useQuotes();
+  const { settings: company } = useOrganizationSettings();
   const { convertToBooking } = useQuoteConversion();
   const { hasAllPermissions, hasPermission } = useSupabasePermissions();
   const [convertOpen, setConvertOpen] = useState(false);
@@ -76,6 +78,16 @@ export default function QuoteDetails() {
     <div className="p-4 md:p-6 space-y-4 max-w-5xl mx-auto print:p-0 print:max-w-none">
       <style>{`@media print { body * { visibility: hidden !important; } #quote-customer-print, #quote-customer-print * { visibility: visible !important; } #quote-customer-print { display: block !important; position: absolute; top: 0; right: 0; left: 0; width: 100%; padding: 24px; direction: rtl; color: #111; background: #fff; } #quote-customer-print tr { break-inside: avoid; } @page { size: A4; margin: 12mm; } }`}</style>
       <section id="quote-customer-print" className="hidden print:block space-y-5" dir="rtl">
+        <header className="flex items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h2 className="text-xl font-bold">{company?.company_name_ar || company?.company_name || 'الشركة'}</h2>
+            {company?.phone && <p>{company.phone}</p>}
+            {company?.email && <p>{company.email}</p>}
+            {company?.website && <p>{company.website}</p>}
+            {company?.address && <p>{company.address}</p>}
+          </div>
+          {company?.logo_url && <img src={company.logo_url} alt="شعار الشركة" className="max-h-20 max-w-36 object-contain" />}
+        </header>
         <h1 className="text-2xl font-bold">عرض سعر رحلة — {quote.quote_number}</h1>
         <p>العميل: {quote.customer_name || quote.customers?.name || '—'}</p>
         <p>الوجهة: {quote.destination || '—'} | المسافرون: {quote.number_of_travelers}</p>
@@ -83,6 +95,7 @@ export default function QuoteDetails() {
         <table className="w-full text-sm border-collapse"><thead><tr><th className="border p-2 text-right">الخدمة</th><th className="border p-2 text-right">التفاصيل</th><th className="border p-2">الكمية</th><th className="border p-2">السعر</th></tr></thead><tbody>{items.map(item => <tr key={item.id}><td className="border p-2">{itemTypeLabels[item.item_type] || item.item_type}</td><td className="border p-2">{item.description}</td><td className="border p-2">{item.quantity}</td><td className="border p-2">{item.total_selling?.toLocaleString()} {quoteCurrency}</td></tr>)}</tbody></table>
         <p className="text-lg font-bold">الإجمالي: {quote.total_amount?.toLocaleString()} {quoteCurrency}</p>
         {quote.valid_until && <p>العرض صالح حتى: {quote.valid_until}</p>}
+        {company?.footer_text && <footer className="border-t pt-3 text-sm">{company.footer_text}</footer>}
       </section>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -96,6 +109,7 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
+          {canEdit && items.length > 0 && items.every(item => item.details?.itinerary_builder === true) && <Button variant="outline" size="sm" onClick={() => navigate('/quotes/itinerary-builder?revise=' + encodeURIComponent(quote.id))}><Pencil className="h-4 w-4 ml-1" />نسخة قابلة للتعديل</Button>}
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 ml-1" />طباعة نسخة العميل</Button>
           {quote.status !== 'draft' && <QuoteWhatsAppFollowupButton quote={quote as any} />}
           {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}

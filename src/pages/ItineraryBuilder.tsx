@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuotes, type QuoteItem } from '@/hooks/useQuotes';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -29,8 +30,12 @@ const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const newLine = (type: ServiceType): Line => ({ id: crypto.randomUUID(), type, description: '', currency: 'EGP', cost: 0, quantity: 1, markupType: 'percent', markup: 15, details: '' });
 export default function ItineraryBuilder() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sourceQuoteId = searchParams.get('revise');
+  const loadedRevision = useRef<string | null>(null);
   const orgId = useOrgId();
   const { createQuote } = useQuotes();
+  const { hasPermission } = useSupabasePermissions();
   const { data: orgCurrency, isLoading: currencyLoading } = useQuery({
     queryKey: ['itinerary-org-currency', orgId],
     enabled: !!orgId,
@@ -53,6 +58,47 @@ export default function ItineraryBuilder() {
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 });
   const [lines, setLines] = useState<Line[]>([newLine('flight'), newLine('hotel')]);
+  const { data: revision, isLoading: revisionLoading, isError: revisionError } = useQuery({
+    queryKey: ['itinerary-revision', orgId, sourceQuoteId],
+    enabled: !!orgId && !!sourceQuoteId,
+    queryFn: async () => {
+      const { data: quote, error } = await supabase.from('quotes').select('*').eq('organization_id', orgId!).eq('id', sourceQuoteId!).single();
+      if (error) throw error;
+      const { data: items, error: itemsError } = await supabase.from('quote_items').select('*').eq('organization_id', orgId!).eq('quote_id', sourceQuoteId!).order('sort_order');
+      if (itemsError) throw itemsError;
+      if (!items?.length || !items.every(item => (item.details as Record<string, unknown> | null)?.itinerary_builder === true)) throw new Error('هذا العرض ليس برنامجًا سياحيًا قابلًا للمراجعة');
+      return { quote, items };
+    },
+  });
+  useEffect(() => {
+    if (!sourceQuoteId || !revision || loadedRevision.current === sourceQuoteId) return;
+    loadedRevision.current = sourceQuoteId;
+    const { quote, items } = revision;
+    setCustomer(quote.customer_name || '');
+    setDestination(quote.destination || '');
+    setStart(quote.travel_date || '');
+    setEnd(quote.return_date || '');
+    const first = (items[0].details || {}) as Record<string, any>;
+    const travelers = first.travelers || {};
+    setAdults(Number(travelers.adults ?? quote.number_of_travelers ?? 1));
+    setChildren(Number(travelers.children ?? 0));
+    setInfants(Number(travelers.infants ?? 0));
+    const savedRates = first.fx_snapshot as Record<Currency, number> | undefined;
+    if (savedRates) setRates(savedRates);
+    const types = items.map(item => item.item_type);
+    setPackageType(types.includes('transport') ? 'full' : types.includes('flight') && types.includes('hotel') ? 'flight_hotel' : types.includes('flight') ? 'flight' : 'hotel');
+    setLines(items.map(item => {
+      const details = (item.details || {}) as Record<string, any>;
+      return {
+        id: crypto.randomUUID(), type: item.item_type as ServiceType, description: item.description,
+        currency: currencies.includes(details.source_currency) ? details.source_currency as Currency : currency,
+        cost: Number(details.source_cost ?? item.cost_price), quantity: item.quantity,
+        markupType: ['percent', 'fixed', 'manual'].includes(details.markup_type) ? details.markup_type : 'manual',
+        markup: Number(details.markup_value ?? item.total_selling),
+        details: String(details.service_details || ''), hotel: details.hotel, flight: details.flight, transport: details.transport,
+      };
+    }));
+  }, [revision, sourceQuoteId]);
   const selectedPackage = packageOptions.find(option => option.value === packageType)!;
   const selectPackage = (value: PackageType) => {
     setPackageType(value);
@@ -86,10 +132,13 @@ export default function ItineraryBuilder() {
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
+    if (sourceQuoteId && !hasPermission('quotes_edit')) return toast.error('ليس لديك صلاحية مراجعة عروض الأسعار');
+    if (sourceQuoteId && (revisionLoading || revisionError || !revision)) return toast.error('تعذر تحميل العرض الأصلي للمراجعة');
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
     if (errors.length) return toast.error(errors[0]);
     if (invalidCalculatedAmount) return toast.error('يوجد مبلغ غير صحيح أو يتجاوز الحد المسموح؛ راجع الأسعار وسعر الصرف');
     if (!supportedOrgCurrency) return toast.error('تعذر تحديد عملة الشركة المدعومة؛ راجع إعدادات الشركة');
+    if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('تغيرت عملة الشركة منذ إنشاء العرض الأصلي؛ راجع الأسعار قبل إنشاء نسخة جديدة');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
@@ -104,13 +153,14 @@ export default function ItineraryBuilder() {
       await createQuote.mutateAsync({
         customer_id: null, customer_name: customer.trim(), destination: destination.trim(),
         travel_date: start || null, return_date: end || null, number_of_travelers: adults + children + infants,
-        notes: 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
+        notes: (sourceQuoteId ? 'Revised from quote: ' + sourceQuoteId + ' | ' : '') + 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
         discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
       navigate('/quotes');
     } catch { /* Existing mutation displays the error toast. */ }
   };
   return <div dir="rtl" className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
+    {sourceQuoteId && <div className="rounded-lg border p-3 text-sm">{revisionLoading ? 'جاري تحميل العرض للمراجعة...' : revisionError ? 'تعذر تحميل العرض الأصلي؛ لن يتم السماح بالحفظ' : 'أنت تنشئ نسخة جديدة قابلة للتعديل من العرض الأصلي؛ لن يتم تغيير العرض القديم أو الموافقات عليه.'}</div>}
     <div className="flex items-center justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-bold">Safar Itinerary Builder</h1><p className="text-muted-foreground">منشئ البرامج السياحية وعروض الأسعار</p></div><Button variant="outline" onClick={() => navigate('/quotes')}>عروض الأسعار</Button></div>
     <Card><CardHeader><CardTitle>1. اختر نوع عرض السعر</CardTitle></CardHeader><CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {packageOptions.map(option => <button key={option.value} type="button" aria-pressed={packageType === option.value} onClick={() => selectPackage(option.value)} className={`rounded-xl border-2 p-4 text-right transition-colors ${packageType === option.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
