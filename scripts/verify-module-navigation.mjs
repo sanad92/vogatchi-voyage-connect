@@ -101,4 +101,11 @@ for (const path of ['/employee-records', '/employee-commissions']) {
   assert.equal(registry.getAllModuleScreens().find(s => s.href === path)?.requiredPermission, 'expenses_view');
 }
 assert.equal(registry.getAllModuleScreens().filter(s => s.href === '/whatsapp-inbox').length, 1);
+const paymentOrderGroups = registry.NAVIGATION_GROUPS.filter(group => group.items.some(item => item.href === '/payment-orders'));
+assert.equal(paymentOrderGroups.length, 1, 'supplier payment orders appear once in the sidebar');
+assert.equal(paymentOrderGroups[0]?.icon, 'Wallet', 'supplier payment orders belong to the finance sidebar group');
+const paymentOrders = paymentOrderGroups[0]?.items.find(item => item.href === '/payment-orders');
+assert.equal(paymentOrders?.sidebar, true);
+assert.equal(paymentOrders?.requiredPermission, 'financial_view', 'payment orders retain the financial permission gate');
+assert.equal(paymentOrders?.requiredFeature, features.PLAN_FEATURES.FINANCE, 'payment orders retain the finance plan gate');
 console.log('Workspace ownership, legacy overviews and employee access-envelope checks passed.');
