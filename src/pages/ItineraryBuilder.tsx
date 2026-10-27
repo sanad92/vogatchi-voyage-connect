@@ -29,7 +29,7 @@ export default function ItineraryBuilder() {
   const [infants, setInfants] = useState(0);
   const [currency, setCurrency] = useState<Currency>('EGP');
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
-  const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 1, SAR: 1, USD: 1, EUR: 1, AED: 1 });
+  const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 });
   const [lines, setLines] = useState<Line[]>([newLine('hotel')]);
   const [flightAdultFare, setFlightAdultFare] = useState(0);
   const [flightChildFare, setFlightChildFare] = useState(0);
@@ -46,7 +46,7 @@ export default function ItineraryBuilder() {
   const addFlightFares = () => {
     const cost = round(flightAdultFare * adults + flightChildFare * children + flightInfantFare * infants);
     if (cost <= 0) return toast.error('أدخل أسعار تذاكر الطيران أولاً');
-    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', cost, quantity: 1, details: JSON.stringify({ adult_fare: flightAdultFare, child_fare: flightChildFare, infant_fare: flightInfantFare, adults, children, infants }) }]);
+    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: JSON.stringify({ adult_fare: flightAdultFare, child_fare: flightChildFare, infant_fare: flightInfantFare, adults, children, infants }) }]);
   };
   const save = async () => {
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
