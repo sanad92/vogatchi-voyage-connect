@@ -16,7 +16,7 @@ import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight, Printer } from 'lucide-react';
+import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight, Printer, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -109,6 +109,7 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
+          {canEdit && items.length > 0 && items.every(item => item.details?.itinerary_builder === true) && <Button variant="outline" size="sm" onClick={() => navigate('/quotes/itinerary-builder?revise=' + encodeURIComponent(quote.id))}><Pencil className="h-4 w-4 ml-1" />نسخة قابلة للتعديل</Button>}
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 ml-1" />طباعة نسخة العميل</Button>
           {quote.status !== 'draft' && <QuoteWhatsAppFollowupButton quote={quote as any} />}
           {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}
