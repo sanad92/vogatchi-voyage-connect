@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { validateItinerary } from '@/lib/itineraryValidation';
+import { priceItineraryLine } from '@/lib/itineraryPricing';
 
 type Currency = 'EGP' | 'SAR' | 'USD' | 'EUR' | 'AED';
 type ServiceType = 'hotel' | 'flight' | 'transport' | 'service';
@@ -68,9 +69,8 @@ export default function ItineraryBuilder() {
   const change = (id: string, patch: Partial<Line>) => setLines(old => old.map(line => line.id === id ? { ...line, ...patch } : line));
   const changeExtra = (line: Line, kind: 'hotel' | 'flight' | 'transport', key: string, value: string) => change(line.id, { [kind]: { ...line[kind], [key]: value } });
   const amounts = useMemo(() => lines.map(line => {
-    const base = round(line.cost * line.quantity * (line.currency === currency ? 1 : rates[line.currency]));
-    const sale = line.markupType === 'manual' ? round(line.markup) : line.markupType === 'fixed' ? round(base + line.markup) : round(base * (1 + line.markup / 100));
-    return { base, sale };
+    const priced = priceItineraryLine({ cost: line.cost, quantity: line.quantity, exchangeRate: line.currency === currency ? 1 : rates[line.currency], markupType: line.markupType, markup: line.markup });
+    return { base: priced.totalCost, sale: priced.totalSale, costPrice: priced.costPrice, sellingPrice: priced.sellingPrice };
   }), [lines, rates, currency]);
   const totalCost = round(amounts.reduce((sum, x) => sum + x.base, 0));
   const totalSale = round(amounts.reduce((sum, x) => sum + x.sale, 0));
@@ -92,8 +92,8 @@ export default function ItineraryBuilder() {
     if (!supportedOrgCurrency) return toast.error('تعذر تحديد عملة الشركة المدعومة؛ راجع إعدادات الشركة');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
-      item_type: line.type, description: line.description, cost_price: amounts[i].base / line.quantity,
-      selling_price: amounts[i].sale / line.quantity, quantity: line.quantity,
+      item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
+      selling_price: amounts[i].sellingPrice, quantity: line.quantity,
       total_cost: amounts[i].base, total_selling: amounts[i].sale, sort_order: i,
       details: { itinerary_builder: true, service_details: line.details, hotel: line.hotel, flight: line.flight, transport: line.transport, source_currency: line.currency,
         source_cost: line.cost, exchange_rate: line.currency === currency ? 1 : rates[line.currency],
