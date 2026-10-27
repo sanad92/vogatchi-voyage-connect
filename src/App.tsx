@@ -84,6 +84,7 @@ const LeadCycleTime = lazy(() => import("@/pages/reports/LeadCycleTime"));
 // Quotes
 const Quotes = lazy(() => import("@/pages/Quotes"));
 const NewQuote = lazy(() => import("@/pages/NewQuote"));
+const ItineraryBuilder = lazy(() => import("@/pages/ItineraryBuilder"));
 const QuoteDetails = lazy(() => import("@/pages/QuoteDetails"));
 
 // Finance
