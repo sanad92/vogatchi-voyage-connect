@@ -19,7 +19,8 @@
     "test:backlog": "node scripts/verify-remaining-backlog.mjs",
     "preview": "vite preview",
     "test:company-core": "node scripts/verify-company-core.mjs",
-    "test:whatsapp": "node scripts/verify-whatsapp-queue.mjs && node scripts/verify-whatsapp-bot.mjs && node scripts/verify-whatsapp-internal-auth.mjs"
+    "test:whatsapp": "node scripts/verify-whatsapp-queue.mjs && node scripts/verify-whatsapp-bot.mjs && node scripts/verify-whatsapp-internal-auth.mjs",
+    "test:itinerary": "node scripts/verify-itinerary-pricing.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5",
