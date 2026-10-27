@@ -11,6 +11,13 @@ import { toast } from 'sonner';
 
 type Currency = 'EGP' | 'SAR' | 'USD' | 'EUR' | 'AED';
 type ServiceType = 'hotel' | 'flight' | 'transport' | 'service';
+type PackageType = 'flight' | 'hotel' | 'flight_hotel' | 'full';
+const packageOptions: { value: PackageType; title: string; description: string; types: ServiceType[] }[] = [
+  { value: 'flight', title: 'طيران فقط', description: 'تذاكر الطيران والمسافرون', types: ['flight'] },
+  { value: 'hotel', title: 'فنادق فقط', description: 'الفنادق والغرف والوجبات', types: ['hotel'] },
+  { value: 'flight_hotel', title: 'طيران + فنادق', description: 'تذاكر الطيران والإقامة', types: ['flight', 'hotel'] },
+  { value: 'full', title: 'طيران + فنادق + انتقالات', description: 'برنامج سفر شامل', types: ['flight', 'hotel', 'transport'] },
+];
 type Line = { id: string; type: ServiceType; description: string; currency: Currency; cost: number; quantity: number; markupType: 'percent' | 'fixed' | 'manual'; markup: number; details: string };
 const currencies: Currency[] = ['EGP', 'SAR', 'USD', 'EUR', 'AED'];
 const labels: Record<ServiceType, string> = { hotel: 'فندق وغرف', flight: 'طيران', transport: 'انتقالات', service: 'خدمة أخرى' };
@@ -20,6 +27,7 @@ export default function ItineraryBuilder() {
   const navigate = useNavigate();
   const orgId = useOrgId();
   const { createQuote } = useQuotes();
+  const [packageType, setPackageType] = useState<PackageType>('flight_hotel');
   const [customer, setCustomer] = useState('');
   const [destination, setDestination] = useState('');
   const [start, setStart] = useState('');
@@ -30,7 +38,17 @@ export default function ItineraryBuilder() {
   const [currency, setCurrency] = useState<Currency>('EGP');
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 });
-  const [lines, setLines] = useState<Line[]>([newLine('hotel')]);
+  const [lines, setLines] = useState<Line[]>([newLine('flight'), newLine('hotel')]);
+  const selectedPackage = packageOptions.find(option => option.value === packageType)!;
+  const selectPackage = (value: PackageType) => {
+    setPackageType(value);
+    const selected = packageOptions.find(option => option.value === value)!;
+    setLines(current => {
+      const kept = current.filter(line => selected.types.includes(line.type) || line.type === 'service');
+      const missing = selected.types.filter(type => !kept.some(line => line.type === type));
+      return [...kept, ...missing.map(type => newLine(type))];
+    });
+  };
   const [flightAdultFare, setFlightAdultFare] = useState(0);
   const [flightChildFare, setFlightChildFare] = useState(0);
   const [flightInfantFare, setFlightInfantFare] = useState(0);
@@ -63,7 +81,7 @@ export default function ItineraryBuilder() {
       await createQuote.mutateAsync({
         customer_id: null, customer_name: customer.trim(), destination: destination.trim(),
         travel_date: start || null, return_date: end || null, number_of_travelers: adults + children + infants,
-        notes: 'Itinerary Builder | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
+        notes: 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
         discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
       navigate('/quotes');
@@ -71,7 +89,13 @@ export default function ItineraryBuilder() {
   };
   return <div dir="rtl" className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
     <div className="flex items-center justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-bold">Vogatchi Itinerary Builder</h1><p className="text-muted-foreground">منشئ البرامج السياحية وعروض الأسعار</p></div><Button variant="outline" onClick={() => navigate('/quotes')}>عروض الأسعار</Button></div>
-    <Card><CardHeader><CardTitle>بيانات الرحلة والمسافرين</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-4">
+    <Card><CardHeader><CardTitle>1. اختر نوع عرض السعر</CardTitle></CardHeader><CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {packageOptions.map(option => <button key={option.value} type="button" aria-pressed={packageType === option.value} onClick={() => selectPackage(option.value)} className={`rounded-xl border-2 p-4 text-right transition-colors ${packageType === option.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+        <strong className="block mb-2">{option.title}</strong><span className="text-xs text-muted-foreground">{option.description}</span>
+      </button>)}
+      <p className="col-span-full text-xs text-muted-foreground">عند تغيير النوع، يتم الاحتفاظ ببيانات الخدمات المشتركة والخدمات الإضافية، وإزالة البنود غير الداخلة في النوع الجديد.</p>
+    </CardContent></Card>
+    <Card><CardHeader><CardTitle>2. بيانات الرحلة والمسافرين</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-4">
       <div><Label>اسم العميل</Label><Input value={customer} onChange={e => setCustomer(e.target.value)}/></div>
       <div><Label>الوجهة</Label><Input value={destination} onChange={e => setDestination(e.target.value)}/></div>
       <div><Label>عملة البيع</Label><Select value={currency} onValueChange={v => setCurrency(v as Currency)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
@@ -79,9 +103,9 @@ export default function ItineraryBuilder() {
       {([['بالغين', adults, setAdults], ['أطفال', children, setChildren], ['رضع', infants, setInfants]] as const).map(([label, value, setter]) => <div key={label}><Label>{label}</Label><Input type="number" min={0} value={value} onChange={e => setter(Math.max(0, Number(e.target.value) || 0))}/></div>)}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>أسعار الصرف إلى {currency} (تُحفظ مع العرض)</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-5 gap-3">{currencies.map(c => <div key={c}><Label>1 {c} = {currency}</Label><Input type="number" min="0.000001" step="any" disabled={c === currency} value={c === currency ? 1 : rates[c]} onChange={e => setRates(prev => ({ ...prev, [c]: Number(e.target.value) }))}/></div>)}</CardContent></Card>
-    <Card><CardHeader><CardTitle>تسعير تذاكر الطيران حسب الفئة</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end"><div><Label>البالغ</Label><Input type="number" min={0} value={flightAdultFare} onChange={e => setFlightAdultFare(Number(e.target.value))}/></div><div><Label>الطفل</Label><Input type="number" min={0} value={flightChildFare} onChange={e => setFlightChildFare(Number(e.target.value))}/></div><div><Label>الرضيع</Label><Input type="number" min={0} value={flightInfantFare} onChange={e => setFlightInfantFare(Number(e.target.value))}/></div><Button variant="outline" onClick={addFlightFares}>إضافة أسعار الطيران كبند ({currency})</Button></CardContent></Card>
+    {selectedPackage.types.includes('flight') && <Card><CardHeader><CardTitle>تسعير تذاكر الطيران حسب الفئة</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end"><div><Label>البالغ</Label><Input type="number" min={0} value={flightAdultFare} onChange={e => setFlightAdultFare(Number(e.target.value))}/></div><div><Label>الطفل</Label><Input type="number" min={0} value={flightChildFare} onChange={e => setFlightChildFare(Number(e.target.value))}/></div><div><Label>الرضيع</Label><Input type="number" min={0} value={flightInfantFare} onChange={e => setFlightInfantFare(Number(e.target.value))}/></div><Button variant="outline" onClick={addFlightFares}>إضافة أسعار الطيران كبند ({currency})</Button></CardContent></Card>}
     <Card><CardHeader><CardTitle>خدمات البرنامج</CardTitle></CardHeader><CardContent className="space-y-4">
-      <div className="flex gap-2 flex-wrap">{(Object.keys(labels) as ServiceType[]).map(t => <Button key={t} variant="outline" size="sm" onClick={() => setLines(old => [...old, newLine(t)])}>+ {labels[t]}</Button>)}</div>
+      <div className="flex gap-2 flex-wrap">{([...selectedPackage.types, 'service'] as ServiceType[]).map(t => <Button key={t} variant="outline" size="sm" onClick={() => setLines(old => [...old, newLine(t)])}>+ {labels[t]}</Button>)}</div>
       {lines.map((line, i) => <div key={line.id} className="rounded-xl border p-4 space-y-3">
         <div className="flex justify-between items-center"><strong>{labels[line.type]} #{i + 1}</strong><Button size="sm" variant="ghost" onClick={() => setLines(old => old.filter(x => x.id !== line.id))}>حذف</Button></div>
         <div className="grid sm:grid-cols-3 gap-3">
