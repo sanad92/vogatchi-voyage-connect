@@ -15,7 +15,7 @@ import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight } from 'lucide-react';
+import { ArrowRight, Send, CheckCircle, XCircle, ArrowLeftRight, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -73,7 +73,17 @@ export default function QuoteDetails() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 max-w-5xl mx-auto print:p-0 print:max-w-none">
+      <style>{`@media print { body * { visibility: hidden !important; } #quote-customer-print, #quote-customer-print * { visibility: visible !important; } #quote-customer-print { position: absolute; inset: 0; width: 100%; padding: 24px; direction: rtl; color: #111; background: #fff; } @page { size: A4; margin: 12mm; } }`}</style>
+      <section id="quote-customer-print" className="hidden print:block space-y-5" dir="rtl">
+        <h1 className="text-2xl font-bold">عرض سعر رحلة — {quote.quote_number}</h1>
+        <p>العميل: {quote.customer_name || quote.customers?.name || '—'}</p>
+        <p>الوجهة: {quote.destination || '—'} | المسافرون: {quote.number_of_travelers}</p>
+        <p>المغادرة: {quote.travel_date || '—'} | العودة: {quote.return_date || '—'}</p>
+        <table className="w-full text-sm border-collapse"><thead><tr><th className="border p-2 text-right">الخدمة</th><th className="border p-2 text-right">التفاصيل</th><th className="border p-2">الكمية</th><th className="border p-2">السعر</th></tr></thead><tbody>{items.map(item => <tr key={item.id}><td className="border p-2">{itemTypeLabels[item.item_type] || item.item_type}</td><td className="border p-2">{item.description}</td><td className="border p-2">{item.quantity}</td><td className="border p-2">{item.total_selling?.toLocaleString()} {quoteCurrency}</td></tr>)}</tbody></table>
+        <p className="text-lg font-bold">الإجمالي: {quote.total_amount?.toLocaleString()} {quoteCurrency}</p>
+        {quote.valid_until && <p>العرض صالح حتى: {quote.valid_until}</p>}
+      </section>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/quotes')}>
@@ -85,7 +95,8 @@ export default function QuoteDetails() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 ml-1" />طباعة نسخة العميل</Button>
           {quote.status !== 'draft' && <QuoteWhatsAppFollowupButton quote={quote as any} />}
           {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}
           {quote.status === 'draft' && canEdit && approved && (
