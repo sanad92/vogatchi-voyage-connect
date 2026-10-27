@@ -1,0 +1,27 @@
+name: Itinerary pricing tests
+on:
+  pull_request:
+    paths:
+      - 'src/lib/itineraryPricing.ts'
+      - 'src/pages/ItineraryBuilder.tsx'
+      - 'scripts/verify-itinerary-pricing.mjs'
+      - 'package.json'
+      - '.github/workflows/itinerary-pricing.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/itineraryPricing.ts'
+      - 'src/pages/ItineraryBuilder.tsx'
+      - 'scripts/verify-itinerary-pricing.mjs'
+      - 'package.json'
+      - '.github/workflows/itinerary-pricing.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run test:itinerary
+      - run: bunx tsc --noEmit
+      - run: bun run build
