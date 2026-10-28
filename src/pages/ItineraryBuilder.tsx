@@ -142,7 +142,6 @@ export default function ItineraryBuilder() {
     if (invalidCalculatedAmount) return toast.error('يوجد مبلغ غير صحيح أو يتجاوز الحد المسموح؛ راجع الأسعار وسعر الصرف');
     if (!currencies.includes(currency)) return toast.error('عملة البرنامج غير مدعومة');
     if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('عملة نسخة العرض تختلف عن الأصل؛ راجع الأسعار قبل الحفظ');
-    if (currency !== supportedOrgCurrency) return toast.error('حفظ البرنامج بعملة مختلفة يتطلب تحديث خدمة حفظ عروض الأسعار أولاً؛ يمكنك معاينة البرنامج بهذه العملة الآن');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
@@ -158,7 +157,7 @@ export default function ItineraryBuilder() {
         customer_id: null, customer_name: customer.trim(), destination: destination.trim(),
         travel_date: start || null, return_date: end || null, number_of_travelers: adults + children + infants,
         notes: (sourceQuoteId ? 'Revised from quote: ' + sourceQuoteId + ' | ' : '') + 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
-        discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
+        currency, discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
       navigate('/quotes');
     } catch { /* Existing mutation displays the error toast. */ }
