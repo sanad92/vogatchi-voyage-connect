@@ -92,6 +92,13 @@
       "when": 1793003285220,
       "tag": "0012_booking_statuses_scoped_read",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793184528761,
+      "tag": "0013_quote_atomic_optional_currency",
+      "breakpoints": true
     }
   ]
 }
