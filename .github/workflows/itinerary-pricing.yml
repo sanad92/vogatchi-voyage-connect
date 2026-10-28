@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/lib/itineraryPricing.ts'
       - 'src/pages/ItineraryBuilder.tsx'
+      - 'src/hooks/useQuotes.ts'
+      - 'scripts/deploy-itinerary-quote-currency.sql'
       - 'scripts/verify-itinerary-pricing.mjs'
       - 'package.json'
       - '.github/workflows/itinerary-pricing.yml'
