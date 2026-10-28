@@ -51,6 +51,8 @@ export interface Quote {
 }
 
 export interface QuoteFormData {
+  /** Optional override; atomic quote creation defaults to organization currency when absent. */
+  currency?: 'EGP' | 'SAR' | 'USD' | 'EUR' | 'AED';
   customer_id: string | null;
   customer_name: string;
   travel_date: string | null;

@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const sql = readFileSync('scripts/deploy-itinerary-quote-currency.sql', 'utf8');
+const ui = readFileSync('src/pages/ItineraryBuilder.tsx', 'utf8');
+const hook = readFileSync('src/hooks/useQuotes.ts', 'utf8');
+assert.match(sql, /IF _payload \? 'currency'/);
+assert.match(sql, /currency_code := upper\(btrim\(_payload->>'currency'\)\)/);
+assert.match(sql, /currency_code NOT IN \('EGP','SAR','USD','EUR','AED'\)/);
+assert.match(sql, /public\.has_org_permission\(_org,'quotes_create'\)/);
+assert.match(sql, /creation_request_hash IS DISTINCT FROM md5\(_payload::text\)/);
+assert.match(sql, /auth\.uid\(\)/);
+assert.match(ui, /currency, discount_amount: 0/);
+assert.match(ui, /currency: flightFareCurrency, cost/);
+assert.match(ui, /setProgramCurrency/);
+assert.match(hook, /currency\?: 'EGP' \| 'SAR' \| 'USD'/);
+console.log('Itinerary currency SQL contract and UI wiring checks passed.');

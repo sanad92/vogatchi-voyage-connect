@@ -4,6 +4,9 @@ on:
     paths:
       - 'src/lib/itineraryPricing.ts'
       - 'src/pages/ItineraryBuilder.tsx'
+      - 'src/hooks/useQuotes.ts'
+      - 'scripts/deploy-itinerary-quote-currency.sql'
+      - 'scripts/verify-itinerary-currency-contract.mjs'
       - 'scripts/verify-itinerary-pricing.mjs'
       - 'package.json'
       - '.github/workflows/itinerary-pricing.yml'
@@ -23,5 +26,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run test:itinerary
+      - run: node scripts/verify-itinerary-currency-contract.mjs
       - run: bunx tsc --noEmit
       - run: bun run build
