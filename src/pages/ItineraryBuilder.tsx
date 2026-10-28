@@ -54,7 +54,8 @@ export default function ItineraryBuilder() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const currency = supportedOrgCurrency ?? 'EGP';
+  const [programCurrency, setProgramCurrency] = useState<Currency | null>(null);
+  const currency = programCurrency ?? supportedOrgCurrency ?? 'EGP';
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [rates, setRates] = useState<Record<Currency, number>>({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 });
   const [lines, setLines] = useState<Line[]>([newLine('flight'), newLine('hotel')]);
@@ -85,6 +86,7 @@ export default function ItineraryBuilder() {
     setInfants(Number(travelers.infants ?? 0));
     const savedRates = first.fx_snapshot as Record<Currency, number> | undefined;
     if (savedRates) setRates(savedRates);
+    if (currencies.includes(quote.currency as Currency)) setProgramCurrency(quote.currency as Currency);
     const types = items.map(item => item.item_type);
     setPackageType(types.includes('transport') ? 'full' : types.includes('flight') && types.includes('hotel') ? 'flight_hotel' : types.includes('flight') ? 'flight' : 'hotel');
     setLines(items.map(item => {
@@ -112,6 +114,7 @@ export default function ItineraryBuilder() {
   const [flightAdultFare, setFlightAdultFare] = useState(0);
   const [flightChildFare, setFlightChildFare] = useState(0);
   const [flightInfantFare, setFlightInfantFare] = useState(0);
+  const [flightFareCurrency, setFlightFareCurrency] = useState<Currency>('EGP');
   const change = (id: string, patch: Partial<Line>) => setLines(old => old.map(line => line.id === id ? { ...line, ...patch } : line));
   const changeExtra = (line: Line, kind: 'hotel' | 'flight' | 'transport', key: string, value: string) => change(line.id, { [kind]: { ...line[kind], [key]: value } });
   const amounts = useMemo(() => lines.map(line => {
@@ -122,14 +125,14 @@ export default function ItineraryBuilder() {
   const totalSale = round(amounts.reduce((sum, x) => sum + x.sale, 0));
   const hasLoss = amounts.some(x => x.sale < x.base);
   const invalidCalculatedAmount = amounts.some(x => !Number.isFinite(x.base) || !Number.isFinite(x.sale) || x.base <= 0 || x.sale <= 0 || x.base > 1e12 || x.sale > 1e12);
-  const valid = !invalidCalculatedAmount && !!supportedOrgCurrency && !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost > 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && amounts[i].base > 0 && Number.isFinite(amounts[i].sale) && amounts[i].sale > 0);
+  const valid = !invalidCalculatedAmount && !!orgId && !!customer.trim() && !!destination.trim() && adults + children + infants > 0 && (!start || !end || end >= start) && lines.length > 0 && lines.every((l, i) => l.description.trim() && Number.isInteger(l.quantity) && l.quantity > 0 && Number.isFinite(l.cost) && l.cost > 0 && Number.isFinite(l.markup) && l.markup >= 0 && (l.currency === currency || (Number.isFinite(rates[l.currency]) && rates[l.currency] > 0)) && Number.isFinite(amounts[i].base) && amounts[i].base > 0 && Number.isFinite(amounts[i].sale) && amounts[i].sale > 0);
   const addFlightFares = () => {
     const fares = [flightAdultFare, flightChildFare, flightInfantFare];
     if (fares.some(fare => !Number.isFinite(fare) || fare < 0)) return toast.error('أسعار الطيران غير صحيحة');
     const cost = round(flightAdultFare * adults + flightChildFare * children + flightInfantFare * infants);
-    if (!supportedOrgCurrency) return toast.error('عملة الشركة غير متاحة');
+    if (flightFareCurrency !== currency && (!Number.isFinite(rates[flightFareCurrency]) || rates[flightFareCurrency] <= 0)) return toast.error('أدخل سعر صرف عملة الطيران إلى عملة البرنامج');
     if (cost <= 0) return toast.error('أدخل أسعار تذاكر الطيران أولاً');
-    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
+    setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency: flightFareCurrency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
     if (sourceQuoteId && !hasPermission('quotes_edit')) return toast.error('ليس لديك صلاحية مراجعة عروض الأسعار');
@@ -137,8 +140,8 @@ export default function ItineraryBuilder() {
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
     if (errors.length) return toast.error(errors[0]);
     if (invalidCalculatedAmount) return toast.error('يوجد مبلغ غير صحيح أو يتجاوز الحد المسموح؛ راجع الأسعار وسعر الصرف');
-    if (!supportedOrgCurrency) return toast.error('تعذر تحديد عملة الشركة المدعومة؛ راجع إعدادات الشركة');
-    if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('تغيرت عملة الشركة منذ إنشاء العرض الأصلي؛ راجع الأسعار قبل إنشاء نسخة جديدة');
+    if (!currencies.includes(currency)) return toast.error('عملة البرنامج غير مدعومة');
+    if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('عملة نسخة العرض تختلف عن الأصل؛ راجع الأسعار قبل الحفظ');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
@@ -154,7 +157,7 @@ export default function ItineraryBuilder() {
         customer_id: null, customer_name: customer.trim(), destination: destination.trim(),
         travel_date: start || null, return_date: end || null, number_of_travelers: adults + children + infants,
         notes: (sourceQuoteId ? 'Revised from quote: ' + sourceQuoteId + ' | ' : '') + 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
-        discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
+        currency, discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
       navigate('/quotes');
     } catch { /* Existing mutation displays the error toast. */ }
@@ -171,12 +174,12 @@ export default function ItineraryBuilder() {
     <Card><CardHeader><CardTitle>2. بيانات الرحلة والمسافرين</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-4">
       <div><Label>اسم العميل</Label><Input value={customer} onChange={e => setCustomer(e.target.value)}/></div>
       <div><Label>الوجهة</Label><Input value={destination} onChange={e => setDestination(e.target.value)}/></div>
-      <div><Label>عملة البيع (عملة الشركة)</Label><Input value={currencyLoading ? 'جاري تحميل عملة الشركة...' : supportedOrgCurrency ?? 'عملة غير مدعومة'} disabled /><p className="text-xs text-muted-foreground mt-1">يتم حفظ عروض الأسعار بعملة الشركة المعتمدة. يمكنك إدخال تكلفة المورد بعملة مختلفة وتحديد سعر تحويلها.</p></div>
+      <div><Label>عملة البرنامج وعرض السعر</Label><Select value={currency} onValueChange={v => { setProgramCurrency(v as Currency); setRates({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 }); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(['EGP', 'SAR', 'USD'] as Currency[]).map(c => <SelectItem key={c} value={c}>{c === 'EGP' ? 'جنيه مصري (EGP)' : c === 'SAR' ? 'ريال سعودي (SAR)' : 'دولار أمريكي (USD)'}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground mt-1">اختر عملة بيع البرنامج بشكل مستقل عن عملة الطيران. عند تغييرها أدخل أسعار الصرف من جديد.</p></div>
       <div><Label>المغادرة</Label><Input type="date" value={start} onChange={e => setStart(e.target.value)}/></div><div><Label>العودة</Label><Input type="date" value={end} onChange={e => setEnd(e.target.value)}/></div>
       {([['بالغين', adults, setAdults], ['أطفال', children, setChildren], ['رضع', infants, setInfants]] as const).map(([label, value, setter]) => <div key={label}><Label>{label}</Label><Input type="number" min={0} value={value} onChange={e => setter(Math.max(0, Number(e.target.value) || 0))}/></div>)}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>أسعار الصرف إلى {currency} (تُحفظ مع العرض)</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-5 gap-3">{currencies.map(c => <div key={c}><Label>1 {c} = {currency}</Label><Input type="number" min="0.000001" step="any" disabled={c === currency} value={c === currency ? 1 : rates[c]} onChange={e => setRates(prev => ({ ...prev, [c]: Number(e.target.value) }))}/></div>)}</CardContent></Card>
-    {selectedPackage.types.includes('flight') && <Card><CardHeader><CardTitle>تسعير تذاكر الطيران حسب الفئة</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end"><div><Label>البالغ</Label><Input type="number" min={0} value={flightAdultFare} onChange={e => setFlightAdultFare(Number(e.target.value))}/></div><div><Label>الطفل</Label><Input type="number" min={0} value={flightChildFare} onChange={e => setFlightChildFare(Number(e.target.value))}/></div><div><Label>الرضيع</Label><Input type="number" min={0} value={flightInfantFare} onChange={e => setFlightInfantFare(Number(e.target.value))}/></div><Button variant="outline" onClick={addFlightFares}>إضافة أسعار الطيران كبند ({currency})</Button></CardContent></Card>}
+    {selectedPackage.types.includes('flight') && <Card><CardHeader><CardTitle>تسعير تذاكر الطيران حسب الفئة</CardTitle></CardHeader><CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end"><div><Label>عملة أسعار الطيران</Label><Select value={flightFareCurrency} onValueChange={v => setFlightFareCurrency(v as Currency)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(['EGP', 'SAR', 'USD'] as Currency[]).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div><div><Label>البالغ</Label><Input type="number" min={0} value={flightAdultFare} onChange={e => setFlightAdultFare(Number(e.target.value))}/></div><div><Label>الطفل</Label><Input type="number" min={0} value={flightChildFare} onChange={e => setFlightChildFare(Number(e.target.value))}/></div><div><Label>الرضيع</Label><Input type="number" min={0} value={flightInfantFare} onChange={e => setFlightInfantFare(Number(e.target.value))}/></div><Button variant="outline" onClick={addFlightFares}>إضافة أسعار الطيران كبند ({flightFareCurrency})</Button></CardContent></Card>}
     <Card><CardHeader><CardTitle>خدمات البرنامج</CardTitle></CardHeader><CardContent className="space-y-4">
       <div className="flex gap-2 flex-wrap">{([...selectedPackage.types, 'service'] as ServiceType[]).map(t => <Button key={t} variant="outline" size="sm" onClick={() => setLines(old => [...old, newLine(t)])}>+ {labels[t]}</Button>)}</div>
       {lines.map((line, i) => <div key={line.id} className="rounded-xl border p-4 space-y-3">
