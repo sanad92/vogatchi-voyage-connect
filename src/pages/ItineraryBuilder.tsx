@@ -142,6 +142,7 @@ export default function ItineraryBuilder() {
     if (invalidCalculatedAmount) return toast.error('يوجد مبلغ غير صحيح أو يتجاوز الحد المسموح؛ راجع الأسعار وسعر الصرف');
     if (!currencies.includes(currency)) return toast.error('عملة البرنامج غير مدعومة');
     if (sourceQuoteId && revision?.quote.currency !== currency) return toast.error('عملة نسخة العرض تختلف عن الأصل؛ راجع الأسعار قبل الحفظ');
+    if (currency !== supportedOrgCurrency) return toast.error('حفظ البرنامج بعملة مختلفة يتطلب تحديث خدمة حفظ عروض الأسعار أولاً؛ يمكنك معاينة البرنامج بهذه العملة الآن');
     if (!valid) return toast.error('راجع العميل والوجهة والبنود وأسعار الصرف');
     const items: QuoteItem[] = lines.map((line, i) => ({
       item_type: line.type, description: line.description, cost_price: amounts[i].costPrice,
