@@ -38,13 +38,20 @@ export function useOpsCommandCenter(date?: string) {
     queryKey: ['ops-command-center', orgId, d],
     enabled: !!orgId,
     queryFn: async (): Promise<OpsCommandCenter> => {
-      const { data, error } = await (supabase as any).rpc('get_ops_command_center', { p_date: d });
-      if (error) throw error;
+      if (!orgId) throw new Error('لم يتم تحديد الشركة الحالية');
+      const { data, error } = await (supabase as any).rpc('get_ops_command_center_v2', {
+        p_organization_id: orgId,
+        p_date: d,
+      });
+      if (error) {
+        if (error.code === 'PGRST202') {
+          throw new Error('يلزم تطبيق تحديث قاعدة البيانات الخاص بمركز العمليات');
+        }
+        throw error;
+      }
       if (!data || (data as any).error) {
         throw new Error((data as any)?.error || 'تعذر تحميل مؤشرات العمليات');
       }
-      // Legacy RPC selects the first organization membership. A tenant-explicit
-      // replacement is needed before multi-organization KPI accuracy is certified.
       return data as OpsCommandCenter;
     },
     refetchInterval: 60_000,
