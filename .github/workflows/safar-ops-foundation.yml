@@ -8,7 +8,7 @@ on:
       - 'src/pages/OperationsQueue.tsx'
       - 'src/pages/OperationsCommandCenter.tsx'
       - 'src/components/bookings/workspace/ItineraryTab.tsx'
-      - 'scripts/verify-ops-task-contract.mjs'
+      - 'scripts/verify-ops-task-contract.mjs'\n      - 'supabase/migrations/20261106224500_ops_command_center_scoped_v2.sql'
       - '.github/workflows/safar-ops-foundation.yml'
   push:
     branches: [main]
@@ -19,7 +19,7 @@ on:
       - 'src/pages/OperationsQueue.tsx'
       - 'src/pages/OperationsCommandCenter.tsx'
       - 'src/components/bookings/workspace/ItineraryTab.tsx'
-      - 'scripts/verify-ops-task-contract.mjs'
+      - 'scripts/verify-ops-task-contract.mjs'\n      - 'supabase/migrations/20261106224500_ops_command_center_scoped_v2.sql'
       - '.github/workflows/safar-ops-foundation.yml'
 jobs:
   verify:
