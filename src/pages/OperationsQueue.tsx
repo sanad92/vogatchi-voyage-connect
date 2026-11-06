@@ -4,8 +4,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, ExternalLink, MessageCircle, Clock } from 'lucide-react';
-import { useOpsQueue, type QueueFilter } from '@/hooks/useOpsCommandCenter';
+import { CheckCircle2, ExternalLink, MessageCircle, Clock, RefreshCw } from 'lucide-react';
+import {
+  useOpsQueue,
+  ACTIVE_TASK_STATUSES,
+  COMPLETED_TASK_STATUSES,
+  type QueueFilter,
+} from '@/hooks/useOpsCommandCenter';
+import { useOrgId } from '@/hooks/useOrgId';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,22 +28,61 @@ const FILTERS: { key: QueueFilter; label: string }[] = [
   { key: 'completed_today',  label: 'مكتمل اليوم' },
 ];
 
-const QueueList = ({ filter }: { filter: QueueFilter }) => {
-  const { data, isLoading } = useOpsQueue(filter);
-  const qc = useQueryClient();
+const statusLabels: Record<string, string> = {
+  open: 'مفتوحة',
+  in_progress: 'قيد التنفيذ',
+  pending: 'معلقة',
+  done: 'مكتملة',
+  completed: 'مكتملة',
+  cancelled: 'ملغاة',
+};
 
-  const markDone = async (id: string) => {
-    const { error } = await (supabase as any)
-      .from('booking_tasks')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) return toast.error(error.message);
-    toast.success('تم إنجاز المهمة');
-    qc.invalidateQueries({ queryKey: ['ops-queue'] });
-    qc.invalidateQueries({ queryKey: ['ops-command-center'] });
+const QueueList = ({ filter }: { filter: QueueFilter }) => {
+  const { data, isLoading, isError, error, refetch } = useOpsQueue(filter);
+  const orgId = useOrgId();
+  const qc = useQueryClient();
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const markDone = async (id: string, bookingId?: string) => {
+    if (!orgId || savingId) return;
+    setSavingId(id);
+    try {
+      const { data: updated, error: updateError } = await (supabase as any)
+        .from('booking_tasks')
+        .update({ status: 'done', completed_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('organization_id', orgId)
+        .in('status', [...ACTIVE_TASK_STATUSES])
+        .select('id')
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (!updated?.id) throw new Error('تعذر إكمال المهمة؛ ربما تغيرت حالتها أو صلاحياتك');
+      toast.success('تم إنجاز المهمة');
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['ops-queue', orgId] }),
+        qc.invalidateQueries({ queryKey: ['ops-command-center', orgId] }),
+        bookingId
+          ? qc.invalidateQueries({ queryKey: ['workspace-tasks', bookingId] })
+          : Promise.resolve(),
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message || 'تعذر إكمال المهمة');
+    } finally {
+      setSavingId(null);
+    }
   };
 
   if (isLoading) return <p className="text-muted-foreground py-8 text-center">جاري التحميل…</p>;
+  if (isError) {
+    return (
+      <div className="py-8 text-center space-y-3">
+        <p className="text-destructive text-sm">تعذر تحميل المهام: {(error as Error)?.message || 'خطأ غير معروف'}</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4 ml-1" /> إعادة المحاولة
+        </Button>
+      </div>
+    );
+  }
   if (!data || data.length === 0)
     return <p className="text-muted-foreground py-8 text-center">لا توجد مهام في هذا القسم.</p>;
 
@@ -49,14 +94,16 @@ const QueueList = ({ filter }: { filter: QueueFilter }) => {
             <div className="flex-1 min-w-[220px]">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-medium">{t.title}</p>
-                <Badge variant="outline" className="text-[10px]">{t.status}</Badge>
+                <Badge variant="outline" className="text-[10px]">{statusLabels[t.status] || t.status}</Badge>
                 {t.booking?.booking_number && (
                   <Badge variant="secondary" className="text-[10px]">{t.booking.booking_number}</Badge>
                 )}
               </div>
               <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                 <Clock className="h-3 w-3" />
-                {t.due_at ? formatDistanceToNow(new Date(t.due_at), { addSuffix: true, locale: ar }) : '—'}
+                {t.due_at && !Number.isNaN(new Date(t.due_at).getTime())
+                  ? formatDistanceToNow(new Date(t.due_at), { addSuffix: true, locale: ar })
+                  : 'بدون موعد'}
                 {t.booking?.customer_name && <span>· {t.booking.customer_name}</span>}
               </div>
             </div>
@@ -75,9 +122,14 @@ const QueueList = ({ filter }: { filter: QueueFilter }) => {
                   </Button>
                 </Link>
               )}
-              {t.status !== 'completed' && (
-                <Button size="sm" onClick={() => markDone(t.id)}>
-                  <CheckCircle2 className="h-3.5 w-3.5 ml-1" /> إنجاز
+              {!COMPLETED_TASK_STATUSES.includes(t.status as any) && (
+                <Button
+                  size="sm"
+                  disabled={!!savingId}
+                  onClick={() => markDone(t.id, t.booking?.id)}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 ml-1" />
+                  {savingId === t.id ? 'جاري الإغلاق…' : 'إنجاز'}
                 </Button>
               )}
             </div>
@@ -94,7 +146,7 @@ const OperationsQueue = () => {
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4" dir="rtl">
       <div>
         <h1 className="text-2xl font-bold">قائمة العمليات اليومية</h1>
-        <p className="text-sm text-muted-foreground">كل المهام في مكان واحد — بإجراء بنقرة واحدة</p>
+        <p className="text-sm text-muted-foreground">كل المهام في مكان واحد، مع تحديث حالة المهام داخل ملف الحجز</p>
       </div>
       <Card>
         <CardHeader className="pb-2">

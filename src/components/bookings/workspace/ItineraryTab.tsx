@@ -33,7 +33,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
   const bookingId: string | undefined = booking?.id;
   const [openKind, setOpenKind] = useState<ServiceKind | null>(null);
 
-  const { data: services = [], isLoading } = useBookingServices(bookingId);
+  const { data: services = [], isLoading, isError, error, refetch } = useBookingServices(bookingId);
   const legacy = workspace.itinerary;
 
   const handleSaved = () => {
@@ -70,6 +70,11 @@ export const ItineraryTab = ({ workspace }: Props) => {
             {isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" /> جاري التحميل...
+              </div>
+            ) : isError ? (
+              <div className="rounded-md border border-destructive/30 p-4 space-y-2">
+                <p className="text-sm text-destructive">{(error as Error)?.message || 'تعذر تحميل خدمات البرنامج'}</p>
+                <Button size="sm" variant="outline" onClick={() => refetch()}>إعادة المحاولة</Button>
               </div>
             ) : services.length === 0 ? (
               <p className="text-sm text-muted-foreground">

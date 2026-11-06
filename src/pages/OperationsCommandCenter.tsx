@@ -6,6 +6,7 @@ import {
   ClipboardCheck, AlertOctagon, MessageSquareWarning, RefreshCcw, Sparkles, TrendingUp,
 } from 'lucide-react';
 import { useOpsCommandCenter } from '@/hooks/useOpsCommandCenter';
+import { useOrgId } from '@/hooks/useOrgId';
 
 const money = (n: number) => new Intl.NumberFormat('ar-EG', { maximumFractionDigits: 0 }).format(n || 0);
 
@@ -40,7 +41,8 @@ const KPI = ({ label, value, icon: Icon, to, tone = 'default' }: KpiProps) => {
 };
 
 const OperationsCommandCenter = () => {
-  const { data, isLoading, refetch, isFetching } = useOpsCommandCenter();
+  const { data, isLoading, isError, error, refetch, isFetching } = useOpsCommandCenter();
+  const orgId = useOrgId();
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6" dir="rtl">
@@ -61,8 +63,15 @@ const OperationsCommandCenter = () => {
         </div>
       </div>
 
-      {isLoading || !data ? (
+      {!orgId ? (
+        <p className="text-muted-foreground text-center py-16">اختر شركة أولًا لعرض بيانات عملياتها.</p>
+      ) : isLoading ? (
         <p className="text-muted-foreground text-center py-16">جاري تحميل بيانات العمليات…</p>
+      ) : isError || !data ? (
+        <div className="text-center py-16 space-y-3">
+          <p className="text-destructive">تعذر تحميل مؤشرات العمليات: {(error as Error)?.message || 'الخدمة غير متاحة'}</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCcw className="h-4 w-4 ml-1" /> إعادة المحاولة</Button>
+        </div>
       ) : (
         <>
           {/* Today */}
@@ -83,7 +92,7 @@ const OperationsCommandCenter = () => {
               <KPI label="مستحقات على العملاء" value={money(data.pending_customer_payments)} icon={Wallet} to="/invoices" tone="warn" />
               <KPI label="أوامر دفع للموردين" value={data.pending_supplier_pos} icon={HandCoins} to="/finance-approvals" tone="warn" />
               <KPI label="طلبات استرداد للاعتماد" value={data.refund_approvals} icon={ClipboardCheck} to="/finance-approvals" />
-              <KPI label="إيرادات اليوم" value={money(data.revenue_today)} icon={TrendingUp} to="/reports/business-health" tone="success" />
+              <KPI label="تحصيلات العملاء اليوم" value={money(data.revenue_today)} icon={TrendingUp} to="/reports/business-health" tone="success" />
             </div>
           </section>
 
@@ -94,7 +103,7 @@ const OperationsCommandCenter = () => {
               <KPI label="مهام متأخرة" value={data.overdue_tasks} icon={AlertOctagon} to="/operations/queue" tone="danger" />
               <KPI label="فشل رسائل واتساب (24س)" value={data.whatsapp_failures_24h} icon={MessageSquareWarning} to="/whatsapp-admin" tone="danger" />
               <KPI label="أحداث فاشلة" value={data.failed_events} icon={Sparkles} to="/platform/event-bus" tone="danger" />
-              <KPI label="ربح مبدئي اليوم" value={money(data.profit_today)} icon={TrendingUp} to="/reports/business-health" tone="success" />
+              <KPI label="ربح حجوزات حُدثت اليوم (مبدئي)" value={money(data.profit_today)} icon={TrendingUp} to="/reports/business-health" tone="success" />
             </div>
           </section>
 
