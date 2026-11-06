@@ -305,17 +305,35 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success('تمت إضافة المهمة'),
+    onSuccess: () => {
+      toast.success('تمت إضافة المهمة');
+      qc.invalidateQueries({ queryKey: ['workspace-tasks', bookingId] });
+      qc.invalidateQueries({ queryKey: ['ops-queue', booking?.organization_id] });
+      qc.invalidateQueries({ queryKey: ['ops-command-center', booking?.organization_id] });
+    },
     onError: (e: any) => toast.error(e?.message || 'تعذر إضافة المهمة'),
   });
 
   const completeTask = useMutation({
     mutationFn: async (taskId: string) => {
-      const { error } = await anyClient
+      if (!bookingId || !booking?.organization_id) throw new Error('No booking');
+      const { data, error } = await anyClient
         .from('booking_tasks')
         .update({ status: 'done', completed_at: new Date().toISOString() })
-        .eq('id', taskId);
+        .eq('id', taskId)
+        .eq('booking_id', bookingId)
+        .eq('organization_id', booking.organization_id)
+        .in('status', ['open', 'in_progress', 'pending'])
+        .select('id')
+        .maybeSingle();
       if (error) throw error;
+      if (!data?.id) throw new Error('المهمة لم تعد متاحة للإغلاق');
+    },
+    onSuccess: () => {
+      toast.success('تم إنجاز المهمة');
+      qc.invalidateQueries({ queryKey: ['workspace-tasks', bookingId] });
+      qc.invalidateQueries({ queryKey: ['ops-queue', booking?.organization_id] });
+      qc.invalidateQueries({ queryKey: ['ops-command-center', booking?.organization_id] });
     },
     onError: (e: any) => toast.error(e?.message || 'تعذر إغلاق المهمة'),
   });
