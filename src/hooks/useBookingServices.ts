@@ -52,6 +52,15 @@ export const useBookingServices = (bookingId?: string) =>
           .eq('booking_id', bookingId),
       ]);
 
+      // Never display a partial trip as if all four service sources loaded.
+      const failed = [
+        { label: 'الفنادق', result: hotels },
+        { label: 'الطيران', result: flights },
+        { label: 'الانتقالات', result: transports },
+        { label: 'السيارات', result: cars },
+      ].find(({ result }) => result.error);
+      if (failed) throw new Error(`تعذر تحميل خدمات ${failed.label}: ${failed.result.error.message}`);
+
       const rows: LinkedServiceBooking[] = [];
 
       (hotels.data || []).forEach((h: any) =>
