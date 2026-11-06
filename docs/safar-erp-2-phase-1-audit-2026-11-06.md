@@ -12,7 +12,7 @@ Repository: sanad92/vogatchi-voyage-connect
 - Existing automation rules, event bus, WhatsApp automation, quote and itinerary tools should be extended, not duplicated.
 - booking_tasks schema in 20260716104944 migration has statuses open/in_progress/done/cancelled and a timeline trigger for done.
 - In previous code, OperationsQueue wrote completed, while BookingWorkspace wrote done. The old ops queue also filtered for pending, and the old KPI RPC excluded only completed.
-- get_ops_command_center SQL chooses the *first* membership organization, while UI query key uses selected orgId. This is not sufficient to certify metrics for users with access to multiple companies.
+- Legacy get_ops_command_center SQL chooses the *first* membership organization, while UI query key uses selected orgId. Added a v2 member-authorized RPC that uses the selected organization explicitly.
 
 ## Implemented on this feature branch
 1. Operations queue reads only the selected organization, uses correct task states, correct completed_at for completion filters, and local date boundaries.
@@ -20,11 +20,11 @@ Repository: sanad92/vogatchi-voyage-connect
 3. BookingWorkspace add/complete task mutations refresh both Workspace and Operations queries; completion is additionally scoped by booking and organization.
 4. Linked-service loading now surfaces provider-table query errors, rather than wrongly claiming a trip has no services.
 5. Operations dashboard displays errors/retry and distinguishes cash collected today from revenue. No financial formulas changed.
-6. Added static contract regression and TypeScript/build CI configuration.
+6. Added versioned get_ops_command_center_v2 SQL for explicitly authorized organization metrics and correct task states; UI now calls the v2 signature only. Migration has NOT been applied to the live database.\n7. Added static contract regression and TypeScript/build CI configuration.
 
 ## Important blockers (NOT implemented or verified)
 - Lovable Cloud DB SELECT was unavailable during this audit; no live schema change, data write, seed, publish, or payment was performed.
-- SQL get_ops_command_center requires an explicit, authenticated organization argument and task state correction, followed by cross-tenant verification. Do not treat legacy KPI figures as certified multi-org numbers.
+- Versioned get_ops_command_center_v2 migration is staged but NOT applied; production will require deployment + cross-tenant verification before the UI change may be merged. Never fall back to the legacy ambiguous-company RPC.
 - Waiting customer/supplier/payment filters currently rely on Arabic task title text, because structured waiting reasons are absent from the original schema. Replace with enum/category fields in a later migration.
 - A full Trip File / amendment ledger is not yet introduced. Existing BookingWorkspace remains the foundation for this work.
 - Safar Flow reliable server-side orchestration, queues, retries, deduplication and AI approvals remain in future sprints.
@@ -39,7 +39,7 @@ Repository: sanad92/vogatchi-voyage-connect
 - Run CI TypeScript/build tests, then signed-in mobile/desktop review before merging.
 
 ## Next sprint
-- Explicit-org RPC + secure tenancy checks.
+- Apply and verify the staged explicit-org RPC with authenticated cross-tenant SQL/browser checks.
 - Structured action center buckets; reliable due dates and assignee role actions.
 - Formal trip amendment and versioned quotation lifecycle.
 - Safar Flow event contract and worker design, without external n8n runtime dependency.
