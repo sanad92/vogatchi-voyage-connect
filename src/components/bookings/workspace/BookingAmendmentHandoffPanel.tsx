@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, ClipboardCheck, ExternalLink, RefreshCw, ShieldAlert } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
