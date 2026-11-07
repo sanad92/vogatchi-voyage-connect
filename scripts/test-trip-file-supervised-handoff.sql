@@ -280,4 +280,22 @@ BEGIN
  THEN RAISE EXCEPTION 'Handoff secretly changed source booking status'; END IF;
 END $$;
 
+
+-- A privileged accidental cross-tenant INSERT must also fail at the FK level.
+DO $
+DECLARE req uuid; rejected boolean:=false;
+BEGIN
+  SELECT id INTO req FROM public.booking_change_requests
+  WHERE request_key='00000000-0000-4000-8000-000000000201';
+  BEGIN
+    INSERT INTO public.booking_change_handoffs(
+      organization_id,booking_id,change_request_id
+    ) VALUES (
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000102',req
+    );
+  EXCEPTION WHEN foreign_key_violation THEN rejected:=true; END;
+  IF NOT rejected THEN RAISE EXCEPTION 'Cross-company service handoff row accepted'; END IF;
+END $;
+
 SELECT 'Trip File supervised handoff security, order and rollback tests passed' AS result;
