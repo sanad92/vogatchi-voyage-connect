@@ -5,6 +5,7 @@ on:
       - 'src/lib/safarFlow/**'
       - 'src/pages/SafarFlowStudio.tsx'
       - 'src/hooks/useSafarFlowFollowups.ts'
+      - 'src/hooks/useSafarFlowJobHealth.ts'
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
       - 'scripts/test-safar-flow-followup-dispatch.sql'
@@ -19,6 +20,7 @@ on:
       - 'src/lib/safarFlow/**'
       - 'src/pages/SafarFlowStudio.tsx'
       - 'src/hooks/useSafarFlowFollowups.ts'
+      - 'src/hooks/useSafarFlowJobHealth.ts'
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
       - 'scripts/test-safar-flow-followup-dispatch.sql'
@@ -70,3 +72,4 @@ jobs:
         run: |
           psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE safar_flow_test;'
           psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-job-queue.sql
+          psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-monitor.sql

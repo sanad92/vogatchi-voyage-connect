@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { simulateFlow, validateFlowTemplate, type FlowPreview } from '@/lib/safarFlow/engine';
 import { SAFAR_FLOW_TEMPLATES, SAFAR_FLOW_SAMPLES } from '@/lib/safarFlow/templates';
 import { SafarFlowLiveFollowups } from '@/components/safar-flow/SafarFlowLiveFollowups';
+import { SafarFlowQueueHealth } from '@/components/safar-flow/SafarFlowQueueHealth';
 
 const CATEGORY_LABELS: Record<string, string> = {
   sales: 'المبيعات', operations: 'التشغيل', finance: 'الحسابات', ai: 'الذكاء الاصطناعي',
@@ -43,11 +44,11 @@ const SafarFlowStudio = () => {
           <div className="flex items-center gap-2">
             <Workflow className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold">Safar Flow Studio</h1>
-            <Badge variant="secondary">نسخة تجريبية — محاكاة فقط</Badge>
+            <Badge variant="secondary">محاكاة + مراقبة قراءة فقط</Badge>
           </div>
           <p className="text-sm text-muted-foreground max-w-3xl">
-            مكتبة لأتمتة عمليات شركات السياحة. اختبر القواعد على بيانات افتراضية قبل بناء محرك التنفيذ الآمن.
-            لا يتم إرسال واتساب أو بريد، أو إجراء حجوزات أو مدفوعات من هذه الشاشة.
+            مكتبة لأتمتة عمليات شركات السياحة، مع محاكاة القواعد على بيانات افتراضية ومراقبة حالة المهام المسجلة لشركتك عند توفر قاعدة البيانات.
+            الشاشة لا ترسل واتساب أو بريدًا، ولا تنفذ حجوزات أو مدفوعات أو تعيد تشغيل المهام.
           </p>
         </div>
         <Button variant="outline" asChild>
@@ -71,6 +72,7 @@ const SafarFlowStudio = () => {
       </div>
 
       <SafarFlowLiveFollowups />
+      <SafarFlowQueueHealth />
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit">
