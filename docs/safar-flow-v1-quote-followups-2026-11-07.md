@@ -26,7 +26,11 @@ Date: 2026-11-07.
 4. `scripts/activate-safar-flow-followup-cron.sql`: **separate manual opt-in**
    every-five-minute cron schedule. It is not automatically deployed.
 5. `scripts/disable-safar-flow-followup-cron.sql`: rollback schedule, preserving data.
-6. CI static source guards, TypeScript validation and build.
+6. CI source guards, TypeScript validation and build.
+7. Ephemeral PostgreSQL 16 integration test `scripts/test-safar-flow-followup-dispatch.sql`
+   exercises draft->sent, initial sent insert, cross-organization notifications,
+   due selection, duplicate run, expired quote, invalid owner, accepted/cancelled quotes.
+   The GitHub Actions run succeeded; this does NOT verify the user's live database.
 
 ## Operations & safety notes
 - The message templates are manual WhatsApp drafts, not automatic sends.
@@ -44,7 +48,7 @@ Date: 2026-11-07.
 - The cron service runs inside the database as a privileged scheduler;
   its function must not be exposed as user-invokable RPC.
 
-## Acceptance checklist for test database (NOT YET VERIFIED)
+## Acceptance checklist for the user's hosted test database (NOT YET VERIFIED)
 1. Confirm latest existing quote_followup migrations have actually been applied.
 2. Review current `cron.job` before adding a new schedule (avoid duplicate dispatchers).
 3. Execute deploy script on test DB, then verify trigger/function permissions.
