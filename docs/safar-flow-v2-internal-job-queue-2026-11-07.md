@@ -30,9 +30,11 @@ this queue is an optional **action executor**, not an alternative source of trut
 
 ## Deliberate limitations
 
-- No automatic event subscription is connected yet: simply creating a booking
-  does **not** enqueue a job. A later trusted adapter must wire relevant
-  domain events into `enqueue_booking_task` after production DB QA.
+- No existing event-dispatcher subscription is modified. Instead, the **opt-in**
+  scheduler calls `dispatch_booking_tasks()`, which scans trusted recent
+  `booking.created` and `booking.pre_travel` domain events, enqueues matching
+  jobs, then processes due internal tasks. Until explicitly activated, creating
+  a booking does **not** start this new queue.
 - This executor performs SQL-only task writes within the same transaction;
   therefore it is not a generic external worker with leases. For outside
   services, use an outbox/action-key and idempotent provider integration later.
@@ -45,6 +47,19 @@ this queue is an optional **action executor**, not an alternative source of trut
   permanently invalid, the job may remain `dead` until corrected.
 - Data retention and internal alerting for dead-letter jobs require a later
   operational implementation.
+
+## Event scanning rules
+
+- The opt-in scheduler scans a **one-day lookback** (max 50 new candidate events
+  per invocation) and ignores events already represented by a job for the
+  same organization/booking/template. Old events beyond that window require
+  controlled backfill via service-role procedures; they are not silently replayed.
+- New booking task actions are limited to `booking.created` while status is
+  `pending`, and `booking.pre_travel` when travel is within the upcoming week.
+- The worker rechecks booking ownership, status and travel date at dispatch;
+  it creates only internal booking tasks.
+- The scheduled task queue is distinct from quote-followup notifications:
+  neither system sends external messages in this phase.
 
 ## SQL deployment order (ONLY after test DB recovery)
 
@@ -63,7 +78,7 @@ this queue is an optional **action executor**, not an alternative source of trut
 
 The `scripts/test-safar-flow-job-queue.sql` PostgreSQL test runs in its
 **own ephemeral database**, never connected to customer data. It exercises:
-- unique idempotent enqueue
+- event-to-queue ingestion, replay filtering and idempotent enqueue
 - org mismatch and event/template authorization denial
 - status/travel-day recheck, cancellation and skipped jobs
 - exactly one internal task per action on repeated dispatch
