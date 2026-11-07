@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { BookingAmendmentHandoffPanel } from './BookingAmendmentHandoffPanel';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, ClipboardList, RefreshCw, Send, ShieldCheck, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -320,6 +321,10 @@ export function BookingAmendmentsTab({
           )}
         </CardContent>
       </Card>
+      <BookingAmendmentHandoffPanel
+        bookingId={bookingId}
+        approvedRequests={requests.filter(x => x.status === 'approved')}
+      />
     </div>
   );
 }

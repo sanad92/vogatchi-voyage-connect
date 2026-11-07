@@ -34,7 +34,8 @@ AS $$
     SELECT 1 FROM public.organization_members m
     WHERE m.organization_id=p_org AND m.user_id=auth.uid() AND m.is_active IS TRUE
       AND (p_permission IN ('bookings_view','bookings_edit')
-        OR (p_permission='bookings_confirm' AND m.role IN ('owner','admin','manager')))
+        OR (p_permission='bookings_confirm' AND m.role IN ('owner','admin','manager'))
+        OR (p_permission IN ('financial_view','financial_edit') AND m.role IN ('owner','manager','admin')))
   )
 $$;
 GRANT EXECUTE ON FUNCTION public.has_org_permission(uuid,text) TO authenticated;
