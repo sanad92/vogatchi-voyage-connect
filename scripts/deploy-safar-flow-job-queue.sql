@@ -214,6 +214,63 @@ BEGIN
 END;
 $$;
 
+-- Internal adapter for existing Safar domain events; the queue remains optional.
+-- Designed for a bounded polling window rather than modifying the existing
+-- shared event dispatcher. The unique queue key absorbs concurrent scans.
+CREATE OR REPLACE FUNCTION safar_flow.enqueue_recent_booking_events(
+  p_limit integer DEFAULT 50,
+  p_since timestamptz DEFAULT now() - interval '1 day'
+) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = safar_flow, public, pg_temp AS $
+DECLARE
+  ev record;
+  v_count integer := 0;
+BEGIN
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR p_since IS NULL THEN
+    RAISE EXCEPTION 'invalid source scan window or limit' USING ERRCODE='22023';
+  END IF;
+
+  FOR ev IN
+    SELECT e.id, e.event_type
+    FROM public.domain_events e
+    JOIN public.bookings b
+      ON b.id = e.aggregate_id AND b.organization_id = e.organization_id
+    WHERE e.aggregate_type = 'booking'
+      AND e.organization_id IS NOT NULL
+      AND e.occurred_at >= p_since
+      AND (
+        (e.event_type = 'booking.created' AND b.status = 'pending')
+        OR (
+          e.event_type = 'booking.pre_travel'
+          AND b.status IN ('pending', 'confirmed')
+          AND b.start_date BETWEEN CURRENT_DATE AND CURRENT_DATE + 7
+        )
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM safar_flow.jobs j
+        WHERE j.organization_id = e.organization_id
+          AND j.booking_id = e.aggregate_id
+          AND j.template_key = CASE
+            WHEN e.event_type = 'booking.created' THEN 'supplier_confirmation'
+            ELSE 'pretravel_checklist'
+          END
+      )
+    ORDER BY e.occurred_at, e.id
+    LIMIT p_limit
+  LOOP
+    PERFORM safar_flow.enqueue_booking_task(
+      ev.id,
+      CASE WHEN ev.event_type = 'booking.created'
+        THEN 'supplier_confirmation' ELSE 'pretravel_checklist' END
+    );
+    v_count := v_count + 1;
+  END LOOP;
+  -- Number of candidate events attempted; concurrent scans may overlap.
+  RETURN v_count;
+END;
+$;
+
 -- Internal execution only. Do not grant these capabilities to authenticated.
 REVOKE ALL ON FUNCTION safar_flow.enqueue_booking_task(uuid, text, integer)
   FROM PUBLIC, anon, authenticated;
@@ -221,11 +278,15 @@ REVOKE ALL ON FUNCTION safar_flow.process_due_booking_tasks(integer)
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION safar_flow.retry_dead_booking_task(uuid)
   FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION safar_flow.enqueue_recent_booking_events(integer, timestamptz)
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION safar_flow.enqueue_booking_task(uuid, text, integer)
   TO service_role;
 GRANT EXECUTE ON FUNCTION safar_flow.process_due_booking_tasks(integer)
   TO service_role;
 GRANT EXECUTE ON FUNCTION safar_flow.retry_dead_booking_task(uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION safar_flow.enqueue_recent_booking_events(integer, timestamptz)
   TO service_role;
 
 COMMIT;
