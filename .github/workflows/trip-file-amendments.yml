@@ -1,0 +1,53 @@
+name: Trip File amendment regression checks
+on:
+  pull_request:
+    paths:
+      - 'src/components/bookings/workspace/**'
+      - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - '.github/workflows/trip-file-amendments.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/bookings/workspace/**'
+      - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - '.github/workflows/trip-file-amendments.yml'
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bun run build
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if absent
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Test organization separation, review, deduplication, and audit
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-amendments.sql
