@@ -50,4 +50,4 @@ jobs:
       - name: Test organization separation, review, deduplication, and audit
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-amendments.sql
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-supervised-handoff.sql
