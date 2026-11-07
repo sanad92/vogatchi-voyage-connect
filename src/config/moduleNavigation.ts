@@ -403,6 +403,7 @@ export const SHARED_WORKSPACES: ErpModule[] = [
         description: 'قواعد التشغيل والمساعد التحليلي حسب الباقة والصلاحيات.',
         screens: [
           screen({ title: 'قواعد الأتمتة', href: '/automation', icon: Zap, description: 'تشغيل إجراء أو تنبيه عند حدوث شرط محدد.', requiredPermission: 'automation_view', requiredFeature: PLAN_FEATURES.AUTOMATION, sidebar: true }),
+          screen({ title: 'Safar Flow Studio', href: '/safar-flow', icon: GitBranch, description: 'تجربة قوالب الأتمتة ومحاكاتها بأمان قبل تشغيلها الحقيقي.', requiredPermission: 'automation_view', requiredFeature: PLAN_FEATURES.AUTOMATION, sidebar: true }),
           screen({ title: 'المساعد الذكي', href: '/ai-assistant', icon: Sparkles, description: 'مساعد تحليلي داخل بيانات المؤسسة المسموح بها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.AI_ASSISTANT, sidebar: true, badge: 'AI' }),
         ],
       },
@@ -452,7 +453,7 @@ const SIDEBAR_LAYOUT: { label: string; icon: ElementType; hrefs: string[] }[] = 
   { label: 'قنوات التواصل', icon: MessageSquare, hrefs: ['/whatsapp-inbox', '/email-inbox', '/marketing/journeys'] },
   { label: 'المالية والمحاسبة', icon: Wallet, hrefs: ['/invoices', '/payment-orders', '/treasury', '/expense-management', '/accounting-reports', '/executive-finance'] },
   { label: 'الموردون والتعاقدات', icon: Building2, hrefs: ['/suppliers', '/supplier-rates', '/supplier-allotments'] },
-  { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/employee-records', '/employee-commissions', '/audit-log', '/automation', '/ai-assistant'] },
+  { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/employee-records', '/employee-commissions', '/audit-log', '/automation', '/safar-flow', '/ai-assistant'] },
   { label: 'الإعدادات والدعم', icon: Settings, hrefs: ['/organization', '/team', '/admin-settings', '/whatsapp-admin', '/support', '/subscription'] },
 ];
 
