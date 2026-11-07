@@ -3,12 +3,31 @@
 -- Staged only; requires deploy-trip-file-amendments.sql on TEST/STAGING first.
 BEGIN;
 
+-- Defense in depth: prevent even a privileged integration from attaching a
+-- request to a different company/booking ID by accident.
+DO $
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid='public.booking_change_requests'::regclass
+      AND conname='booking_change_requests_id_org_booking_unique'
+  ) THEN
+    ALTER TABLE public.booking_change_requests
+      ADD CONSTRAINT booking_change_requests_id_org_booking_unique
+      UNIQUE (id,organization_id,booking_id);
+  END IF;
+END $;
+
 CREATE TABLE IF NOT EXISTS public.booking_change_handoffs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL,
   booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE RESTRICT,
   change_request_id uuid NOT NULL UNIQUE
     REFERENCES public.booking_change_requests(id) ON DELETE RESTRICT,
+  CONSTRAINT handoff_parent_company_consistent
+    FOREIGN KEY (change_request_id,organization_id,booking_id)
+    REFERENCES public.booking_change_requests(id,organization_id,booking_id)
+    ON DELETE RESTRICT,
   status text NOT NULL DEFAULT 'supplier_pending' CHECK (
     status IN ('supplier_pending','supplier_confirmed',
                'finance_reviewed','execution_reported','blocked')
@@ -35,6 +54,10 @@ CREATE TABLE IF NOT EXISTS public.booking_change_handoff_events (
   organization_id uuid NOT NULL,
   booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE RESTRICT,
   change_request_id uuid NOT NULL REFERENCES public.booking_change_requests(id) ON DELETE RESTRICT,
+  CONSTRAINT handoff_event_parent_company_consistent
+    FOREIGN KEY (change_request_id,organization_id,booking_id)
+    REFERENCES public.booking_change_requests(id,organization_id,booking_id)
+    ON DELETE RESTRICT,
   action text NOT NULL CHECK (action IN ('supplier_confirm','finance_verify','report_execution','block')),
   actor_id uuid NOT NULL,
   evidence_reference text CHECK (evidence_reference IS NULL OR char_length(evidence_reference) BETWEEN 4 AND 120),
