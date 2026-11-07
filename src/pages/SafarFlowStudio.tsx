@@ -9,6 +9,7 @@ import { simulateFlow, validateFlowTemplate, type FlowPreview } from '@/lib/safa
 import { SAFAR_FLOW_TEMPLATES, SAFAR_FLOW_SAMPLES } from '@/lib/safarFlow/templates';
 import { SafarFlowLiveFollowups } from '@/components/safar-flow/SafarFlowLiveFollowups';
 import { SafarFlowQueueHealth } from '@/components/safar-flow/SafarFlowQueueHealth';
+import { SafarFlowAlerts } from '@/components/safar-flow/SafarFlowAlerts';
 
 const CATEGORY_LABELS: Record<string, string> = {
   sales: 'المبيعات', operations: 'التشغيل', finance: 'الحسابات', ai: 'الذكاء الاصطناعي',
@@ -73,6 +74,7 @@ const SafarFlowStudio = () => {
 
       <SafarFlowLiveFollowups />
       <SafarFlowQueueHealth />
+      <SafarFlowAlerts />
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit">
