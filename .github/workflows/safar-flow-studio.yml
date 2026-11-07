@@ -4,6 +4,9 @@ on:
     paths:
       - 'src/lib/safarFlow/**'
       - 'src/pages/SafarFlowStudio.tsx'
+      - 'src/hooks/useSafarFlowFollowups.ts'
+      - 'src/components/safar-flow/**'
+      - 'scripts/*safar-flow*'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -12,6 +15,9 @@ on:
     paths:
       - 'src/lib/safarFlow/**'
       - 'src/pages/SafarFlowStudio.tsx'
+      - 'src/hooks/useSafarFlowFollowups.ts'
+      - 'src/components/safar-flow/**'
+      - 'scripts/*safar-flow*'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -24,5 +30,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: node scripts/verify-ops-task-contract.mjs
       - run: bun src/lib/safarFlow/engine.test.ts
+      - run: node scripts/verify-safar-flow-runtime.mjs
       - run: bunx tsc --noEmit
       - run: bun run build
