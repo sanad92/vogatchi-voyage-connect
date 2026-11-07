@@ -81,3 +81,28 @@ jobs:
           psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-pretravel-reliability.sql
           psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE safar_approval_test;'
           psql -h localhost -p 5432 -U postgres -d safar_approval_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-sop-approvals.sql
+      - name: Prepare ephemeral fixture RLS for release gates
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -c 'ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY; ALTER TABLE public.booking_tasks ENABLE ROW LEVEL SECURITY; ALTER TABLE public.domain_events ENABLE ROW LEVEL SECURITY; ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY; ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;'
+          psql -h localhost -p 5432 -U postgres -d safar_approval_test -v ON_ERROR_STOP=1 -c 'ALTER TABLE public.sop_approvals ENABLE ROW LEVEL SECURITY;'
+      - name: Fail-closed release gates must PASS on safe isolated fixtures
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/verify-safar-flow-queue-release-gate.sql
+          psql -h localhost -p 5432 -U postgres -d safar_approval_test -v ON_ERROR_STOP=1 -f scripts/verify-safar-flow-sop-release-gate.sql
+      - name: Release gates must REJECT exposed private schema and direct SOP status writes
+        env:
+          PGPASSWORD: postgres
+        run: |
+          if psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-queue-gate-rejects-unsafe.sql; then
+            echo 'Release queue gate incorrectly accepted an exposed schema'
+            exit 1
+          fi
+          if psql -h localhost -p 5432 -U postgres -d safar_approval_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-sop-gate-rejects-unsafe.sql; then
+            echo 'Release SOP gate incorrectly accepted direct browser writes'
+            exit 1
+          fi
+          echo 'Both release gates rejected the intentional vulnerabilities.'
