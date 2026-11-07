@@ -14,7 +14,8 @@ CREATE TABLE public.domain_events (
   organization_id uuid,
   aggregate_type text NOT NULL,
   aggregate_id uuid,
-  event_type text NOT NULL
+  event_type text NOT NULL,
+  occurred_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE public.bookings (
   id uuid PRIMARY KEY,
@@ -41,6 +42,7 @@ BEGIN
   IF has_schema_privilege('authenticated', 'safar_flow', 'USAGE') OR
      has_function_privilege('authenticated', 'safar_flow.enqueue_booking_task(uuid,text,integer)', 'EXECUTE') OR
      has_function_privilege('authenticated', 'safar_flow.process_due_booking_tasks(integer)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'safar_flow.enqueue_recent_booking_events(integer,timestamptz)', 'EXECUTE')
   THEN
     RAISE EXCEPTION 'Public/user execution access was exposed';
   END IF;
@@ -185,5 +187,33 @@ BEGIN
   r := safar_flow.process_due_booking_tasks();
   IF r->>'succeeded' <> '0' THEN RAISE EXCEPTION 'Duplicate side effects: %', r; END IF;
 END $$;
+
+-- Scan existing trusted domain events for new jobs (no dispatcher code modification).
+INSERT INTO public.bookings(id,organization_id,status,start_date) VALUES
+('00000000-0000-4000-8000-000000000107','00000000-0000-4000-8000-000000000001','pending', CURRENT_DATE+2),
+('00000000-0000-4000-8000-000000000108','00000000-0000-4000-8000-000000000002','confirmed', CURRENT_DATE+2);
+INSERT INTO public.domain_events(id,organization_id,aggregate_type,aggregate_id,event_type) VALUES
+('00000000-0000-4000-8000-000000000209','00000000-0000-4000-8000-000000000001','booking','00000000-0000-4000-8000-000000000107','booking.created'),
+('00000000-0000-4000-8000-000000000210','00000000-0000-4000-8000-000000000002','booking','00000000-0000-4000-8000-000000000108','booking.pre_travel');
+
+DO $
+DECLARE n integer; result jsonb;
+BEGIN
+  SELECT safar_flow.enqueue_recent_booking_events(50, now()-interval '1 day') INTO n;
+  IF n <> 2 THEN RAISE EXCEPTION 'Event scan expected two new jobs, got %', n; END IF;
+  SELECT safar_flow.enqueue_recent_booking_events(50, now()-interval '1 day') INTO n;
+  IF n <> 0 THEN RAISE EXCEPTION 'Repeated event scan did not dedupe: %', n; END IF;
+
+  result := safar_flow.process_due_booking_tasks(50);
+  IF result->>'succeeded' <> '2' THEN
+    RAISE EXCEPTION 'New domain event tasks did not execute: %', result;
+  END IF;
+  IF (SELECT count(*) FROM public.booking_tasks) <> 7 THEN
+    RAISE EXCEPTION 'Unexpected total booking task count after event adapter';
+  END IF;
+  IF (SELECT count(*) FROM safar_flow.jobs WHERE status='succeeded') <> 7 THEN
+    RAISE EXCEPTION 'Unexpected completed job count';
+  END IF;
+END $;
 
 SELECT 'Safar Flow queue integration checks passed' AS result;
