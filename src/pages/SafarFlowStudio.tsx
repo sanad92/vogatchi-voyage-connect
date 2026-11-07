@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { simulateFlow, validateFlowTemplate, type FlowPreview } from '@/lib/safarFlow/engine';
 import { SAFAR_FLOW_TEMPLATES, SAFAR_FLOW_SAMPLES } from '@/lib/safarFlow/templates';
+import { SafarFlowLiveFollowups } from '@/components/safar-flow/SafarFlowLiveFollowups';
 
 const CATEGORY_LABELS: Record<string, string> = {
   sales: 'المبيعات', operations: 'التشغيل', finance: 'الحسابات', ai: 'الذكاء الاصطناعي',
@@ -68,6 +69,8 @@ const SafarFlowStudio = () => {
           <div><p className="font-semibold">التفعيل مؤجل</p><p className="text-xs text-muted-foreground">حتى اختبار المحرك والصلاحيات</p></div>
         </CardContent></Card>
       </div>
+
+      <SafarFlowLiveFollowups />
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit">
