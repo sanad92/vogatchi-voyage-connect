@@ -282,7 +282,7 @@ END $$;
 
 
 -- A privileged accidental cross-tenant INSERT must also fail at the FK level.
-DO $
+DO $fk_guard$
 DECLARE req uuid; rejected boolean:=false;
 BEGIN
   SELECT id INTO req FROM public.booking_change_requests
@@ -296,6 +296,6 @@ BEGIN
     );
   EXCEPTION WHEN foreign_key_violation THEN rejected:=true; END;
   IF NOT rejected THEN RAISE EXCEPTION 'Cross-company service handoff row accepted'; END IF;
-END $;
+END $fk_guard$;
 
 SELECT 'Trip File supervised handoff security, order and rollback tests passed' AS result;
