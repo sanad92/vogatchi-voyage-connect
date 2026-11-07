@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/components/bookings/workspace/**'
       - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/hooks/useBookingChangeHandoffs.ts'
+      - 'src/hooks/useBookingChangeSourceEvidence.ts'
       - 'src/pages/BookingWorkspace.tsx'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'src/components/bookings/workspace/**'
       - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/hooks/useBookingChangeHandoffs.ts'
+      - 'src/hooks/useBookingChangeSourceEvidence.ts'
       - 'src/pages/BookingWorkspace.tsx'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -50,4 +54,4 @@ jobs:
       - name: Test organization separation, review, deduplication, and audit
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-supervised-handoff.sql
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-source-evidence-links.sql
