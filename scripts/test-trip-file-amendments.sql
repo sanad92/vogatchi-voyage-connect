@@ -56,6 +56,12 @@ CREATE TABLE public.booking_timeline_events(
 );
 
 \i scripts/deploy-trip-file-amendments.sql
+-- Fixture-only lookup to test a user who knows another company's UUID.
+CREATE FUNCTION public.test_lookup_change_id(p_request_key uuid)
+RETURNS uuid LANGUAGE sql SECURITY DEFINER SET search_path=''
+AS $ SELECT id FROM public.booking_change_requests WHERE request_key=p_request_key $;
+GRANT EXECUTE ON FUNCTION public.test_lookup_change_id(uuid) TO authenticated;
+
 
 INSERT INTO public.organization_members VALUES
  ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000011','agent',true),
@@ -158,29 +164,28 @@ BEGIN
   RAISE EXCEPTION 'Agent cannot see own amendment'; END IF;
 END $$;
 
--- Agent cannot approve; company B manager cannot approve company A.
+-- An agent has no review authority.
 DO $$
 DECLARE id uuid; denied boolean:=false;
 BEGIN
- SELECT id INTO id FROM public.booking_change_requests LIMIT 1;
+ id:=public.test_lookup_change_id('00000000-0000-4000-8000-000000000201');
  BEGIN PERFORM public.decide_booking_change_request(id,true);
  EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Agent approved amendment'; END IF;
 END $$;
 
+-- B manager knows A's request UUID, but still cannot review or even list it.
 SET test.user_id='00000000-0000-4000-8000-000000000021';
 DO $$
 DECLARE id uuid; denied boolean:=false;
 BEGIN
- SELECT id INTO id FROM public.booking_change_requests LIMIT 1;
- -- Read directly through table in a definer helper below because RLS should hide org A.
- IF id IS NOT NULL THEN RAISE EXCEPTION 'Cross-organization RLS leak'; END IF;
- -- Known test ID as a constant for a cross-company decision.
- BEGIN
-  PERFORM public.decide_booking_change_request(
-   (SELECT request_id FROM (SELECT null::uuid AS request_id) x LIMIT 1), true);
- EXCEPTION WHEN OTHERS THEN denied:=true; END;
- -- The actual wrong-company decision is validated separately using a known UUID.
+ IF (SELECT count(*) FROM public.booking_change_requests)<>0 THEN
+   RAISE EXCEPTION 'Cross-organization RLS leak'; END IF;
+ id:=public.test_lookup_change_id('00000000-0000-4000-8000-000000000201');
+ IF id IS NULL THEN RAISE EXCEPTION 'Fixture lookup missing request ID'; END IF;
+ BEGIN PERFORM public.decide_booking_change_request(id,true);
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Manager from org B reviewed org A request'; END IF;
 END $$;
 
 -- Owner's own request cannot be self-reviewed; a distinct manager can review.
