@@ -3,11 +3,13 @@ import { AlertTriangle, FileCheck2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useBookingFinancials } from '@/hooks/useBookingFinancials';
+import { assessEvidenceReconciliation } from '@/lib/tripFile/evidenceReconciliation';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
 import {
   useBookingChangeSourceEvidence,
   useLinkBookingChangeSourceEvidence,
   type SourceEvidenceType,
+  type BookingSourceEvidence,
 } from '@/hooks/useBookingChangeSourceEvidence';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,6 +99,22 @@ export function BookingAmendmentEvidencePanel({
   }, [financials, orgId, bookingId]);
 
   const selected = options.find(o => `${o.type}|${o.id}` === documentKey);
+  const currentEvidenceMessage = (item: BookingSourceEvidence) => {
+    const current = options.find(o => o.type === item.source_type && o.id === item.source_id);
+    const comparison = assessEvidenceReconciliation(item, current ? {
+      status: current.type === 'generated_document' ? 'document_record' : current.status,
+      currency: current.currency,
+      amount: current.amount,
+    } : undefined);
+    if (comparison === 'not_in_current_records') {
+      return 'تنبيه: المستند مش ظاهر ضمن سجلات الحجز المحمّلة حاليًا. راجع حالة المستند الأصلي.';
+    }
+    if (comparison === 'details_changed') {
+      return 'تنبيه: حالة أو عملة أو قيمة المستند تغيّرت مقارنة بوقت ربطه. راجع السجل الأصلي.';
+    }
+    return 'القيم المعروضة مطابقة لوقت الربط؛ ده مش إثبات تسوية مالية.';
+  };
+
 
   const submit = () => {
     const current = approvedRequests.find(r => r.id === requestId);
@@ -207,6 +225,7 @@ export function BookingAmendmentEvidencePanel({
                     القيمة وقت الربط: {fmtAmount(item.amount_at_link,item.currency_at_link)}
                     {' · '}الحالة وقت الربط: {item.status_at_link || 'غير محددة'}
                   </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400">{currentEvidenceMessage(item)}</p>
                 </div>
               ))}
             </div>
