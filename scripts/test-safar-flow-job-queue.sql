@@ -43,6 +43,7 @@ BEGIN
      has_function_privilege('authenticated', 'safar_flow.enqueue_booking_task(uuid,text,integer)', 'EXECUTE') OR
      has_function_privilege('authenticated', 'safar_flow.process_due_booking_tasks(integer)', 'EXECUTE')
      OR has_function_privilege('authenticated', 'safar_flow.enqueue_recent_booking_events(integer,timestamptz)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'safar_flow.dispatch_booking_tasks(integer)', 'EXECUTE')
   THEN
     RAISE EXCEPTION 'Public/user execution access was exposed';
   END IF;
@@ -196,17 +197,18 @@ INSERT INTO public.domain_events(id,organization_id,aggregate_type,aggregate_id,
 ('00000000-0000-4000-8000-000000000209','00000000-0000-4000-8000-000000000001','booking','00000000-0000-4000-8000-000000000107','booking.created'),
 ('00000000-0000-4000-8000-000000000210','00000000-0000-4000-8000-000000000002','booking','00000000-0000-4000-8000-000000000108','booking.pre_travel');
 
-DO $
-DECLARE n integer; result jsonb;
+DO $$
+DECLARE result jsonb;
 BEGIN
-  SELECT safar_flow.enqueue_recent_booking_events(50, now()-interval '1 day') INTO n;
-  IF n <> 2 THEN RAISE EXCEPTION 'Event scan expected two new jobs, got %', n; END IF;
-  SELECT safar_flow.enqueue_recent_booking_events(50, now()-interval '1 day') INTO n;
-  IF n <> 0 THEN RAISE EXCEPTION 'Repeated event scan did not dedupe: %', n; END IF;
-
-  result := safar_flow.process_due_booking_tasks(50);
-  IF result->>'succeeded' <> '2' THEN
-    RAISE EXCEPTION 'New domain event tasks did not execute: %', result;
+  result := safar_flow.dispatch_booking_tasks(50);
+  IF result->>'scanned_new_events' <> '2'
+     OR result->'jobs'->>'succeeded' <> '2' THEN
+    RAISE EXCEPTION 'Event dispatch expected two new successful tasks: %', result;
+  END IF;
+  result := safar_flow.dispatch_booking_tasks(50);
+  IF result->>'scanned_new_events' <> '0'
+     OR result->'jobs'->>'succeeded' <> '0' THEN
+    RAISE EXCEPTION 'Repeated event dispatch did not dedupe: %', result;
   END IF;
   IF (SELECT count(*) FROM public.booking_tasks) <> 7 THEN
     RAISE EXCEPTION 'Unexpected total booking task count after event adapter';
@@ -214,6 +216,6 @@ BEGIN
   IF (SELECT count(*) FROM safar_flow.jobs WHERE status='succeeded') <> 7 THEN
     RAISE EXCEPTION 'Unexpected completed job count';
   END IF;
-END $;
+END $$;
 
 SELECT 'Safar Flow queue integration checks passed' AS result;
