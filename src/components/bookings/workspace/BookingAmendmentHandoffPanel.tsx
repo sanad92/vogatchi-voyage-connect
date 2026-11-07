@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, ClipboardCheck, ExternalLink, RefreshCw, S
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
+import { BookingAmendmentEvidencePanel } from './BookingAmendmentEvidencePanel';
 import {
   useBookingChangeHandoffs,
   useBookingHandoffAudit,
@@ -114,6 +115,7 @@ export function BookingAmendmentHandoffPanel({
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="space-y-1">
@@ -275,5 +277,18 @@ export function BookingAmendmentHandoffPanel({
         </p>
       </CardContent>
     </Card>
+    {canRead && handoffs.isSuccess && approvedRequests.some(r => {
+      const status = byRequest.get(r.id)?.status;
+      return status && status !== 'supplier_pending';
+    }) && (
+      <BookingAmendmentEvidencePanel
+        bookingId={bookingId}
+        approvedRequests={approvedRequests.filter(r => {
+          const status = byRequest.get(r.id)?.status;
+          return status && status !== 'supplier_pending';
+        })}
+      />
+    )}
+    </>
   );
 }
