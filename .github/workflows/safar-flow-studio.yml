@@ -78,5 +78,6 @@ jobs:
           psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-job-queue.sql
           psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-monitor.sql
           psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-failure-alerts.sql
+          psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-pretravel-reliability.sql
           psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE safar_approval_test;'
           psql -h localhost -p 5432 -U postgres -d safar_approval_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-sop-approvals.sql
