@@ -118,7 +118,7 @@ export function validateFlowTemplate(flow: FlowTemplate): string[] {
   for (const condition of flow.conditions) {
     if (!OPERATORS.includes(condition.operator)) issues.push('عملية مقارنة غير مدعومة');
     const pathParts = condition.path.split('.');
-    if (!/^[A-Za-z_][\\w]*(\\.[A-Za-z_][\\w]*)*$/.test(condition.path)
+    if (!/^[A-Za-z_][\w]*(\.[A-Za-z_][\w]*)*$/.test(condition.path)
         || pathParts.some(part => ['__proto__', 'prototype', 'constructor'].includes(part))) {
       issues.push('مسار بيانات غير صالح');
     }
