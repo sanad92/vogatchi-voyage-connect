@@ -5,7 +5,7 @@ BEGIN;
 
 -- Defense in depth: prevent even a privileged integration from attaching a
 -- request to a different company/booking ID by accident.
-DO $
+DO $guard$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
@@ -16,7 +16,7 @@ BEGIN
       ADD CONSTRAINT booking_change_requests_id_org_booking_unique
       UNIQUE (id,organization_id,booking_id);
   END IF;
-END $;
+END $guard$;
 
 CREATE TABLE IF NOT EXISTS public.booking_change_handoffs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
