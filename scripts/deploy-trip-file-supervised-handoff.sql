@@ -167,6 +167,15 @@ BEGIN
     THEN RAISE EXCEPTION 'handoff_management_only' USING ERRCODE='42501'; END IF;
   END IF;
 
+  -- Managers may block an approved request even before the supplier step,
+  -- for example if a supplier reports no availability.
+  IF p_action = 'block' THEN
+    INSERT INTO public.booking_change_handoffs
+      (organization_id,booking_id,change_request_id)
+    VALUES (r.organization_id,r.booking_id,r.id)
+    ON CONFLICT (change_request_id) DO NOTHING;
+  END IF;
+
   SELECT * INTO h FROM public.booking_change_handoffs
   WHERE change_request_id=r.id AND organization_id=r.organization_id
   FOR UPDATE;
