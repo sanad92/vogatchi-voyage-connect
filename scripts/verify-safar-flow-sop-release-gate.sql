@@ -29,21 +29,12 @@ BEGIN
     RAISE EXCEPTION 'Release BLOCKED: RLS disabled on SOP approvals';
   END IF;
 
-  FOREACH v_oid IN ARRAY ARRAY[
-    to_regprocedure('public.sop_decide_approval(uuid,boolean,text)'),
-    to_regprocedure('public.sop_request_approval(uuid,text,uuid,numeric,text)')
-  ] LOOP
-    -- Request RPC signature is not standardized across project migrations;
-    -- only assert the decision RPC strictly, and validate creation separately.
-    IF v_oid IS NULL THEN CONTINUE; END IF;
-    IF has_function_privilege('anon',v_oid,'EXECUTE') THEN
-      RAISE EXCEPTION 'Release BLOCKED: SOP approval RPC callable anonymously';
-    END IF;
-  END LOOP;
-
   v_oid := to_regprocedure('public.sop_decide_approval(uuid,boolean,text)');
   IF v_oid IS NULL THEN
     RAISE EXCEPTION 'Release BLOCKED: decision RPC is missing';
+  END IF;
+  IF has_function_privilege('anon', v_oid, 'EXECUTE') THEN
+    RAISE EXCEPTION 'Release BLOCKED: anonymous user can execute SOP decision RPC';
   END IF;
   IF NOT has_function_privilege('authenticated', v_oid, 'EXECUTE') THEN
     RAISE EXCEPTION 'Release BLOCKED: authorized manager cannot call decision RPC';
