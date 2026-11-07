@@ -59,7 +59,7 @@ CREATE TABLE public.booking_timeline_events(
 -- Fixture-only lookup to test a user who knows another company's UUID.
 CREATE FUNCTION public.test_lookup_change_id(p_request_key uuid)
 RETURNS uuid LANGUAGE sql SECURITY DEFINER SET search_path=''
-AS $ SELECT id FROM public.booking_change_requests WHERE request_key=p_request_key $;
+AS $lookup$ SELECT id FROM public.booking_change_requests WHERE request_key=p_request_key $lookup$;
 GRANT EXECUTE ON FUNCTION public.test_lookup_change_id(uuid) TO authenticated;
 
 
