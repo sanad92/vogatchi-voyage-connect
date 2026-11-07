@@ -48,6 +48,18 @@ BEGIN
     RAISE EXCEPTION 'Release BLOCKED: private queue schema exposed';
   END IF;
 
+  -- Public-facing operational records must also be RLS-protected.
+  FOREACH v_name IN ARRAY ARRAY[
+    'public.bookings', 'public.booking_tasks', 'public.domain_events',
+    'public.organization_members', 'public.notifications'
+  ] LOOP
+    SELECT c.relrowsecurity INTO v_rls
+    FROM pg_class c WHERE c.oid = to_regclass(v_name);
+    IF NOT COALESCE(v_rls, false) THEN
+      RAISE EXCEPTION 'Release BLOCKED: RLS disabled on public table %', v_name;
+    END IF;
+  END LOOP;
+
   FOREACH v_name IN ARRAY ARRAY[
     'safar_flow.jobs', 'safar_flow.job_alerts'
   ] LOOP
