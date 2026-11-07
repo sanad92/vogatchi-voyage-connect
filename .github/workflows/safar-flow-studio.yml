@@ -1,0 +1,27 @@
+name: Safar Flow Studio checks
+on:
+  pull_request:
+    paths:
+      - 'src/lib/safarFlow/**'
+      - 'src/pages/SafarFlowStudio.tsx'
+      - 'src/App.tsx'
+      - 'src/config/moduleNavigation.ts'
+      - '.github/workflows/safar-flow-studio.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/safarFlow/**'
+      - 'src/pages/SafarFlowStudio.tsx'
+      - 'src/App.tsx'
+      - 'src/config/moduleNavigation.ts'
+      - '.github/workflows/safar-flow-studio.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun src/lib/safarFlow/engine.test.ts
+      - run: bunx tsc --noEmit
+      - run: bun run build
