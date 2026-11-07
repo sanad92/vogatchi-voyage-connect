@@ -7,6 +7,7 @@ on:
       - 'src/hooks/useSafarFlowFollowups.ts'
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
+      - 'scripts/test-safar-flow-followup-dispatch.sql'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -18,6 +19,7 @@ on:
       - 'src/hooks/useSafarFlowFollowups.ts'
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
+      - 'scripts/test-safar-flow-followup-dispatch.sql'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -33,3 +35,28 @@ jobs:
       - run: node scripts/verify-safar-flow-runtime.mjs
       - run: bunx tsc --noEmit
       - run: bun run build
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if absent
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Test followup trigger, row claiming and notifications in isolated Postgres
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-followup-dispatch.sql
