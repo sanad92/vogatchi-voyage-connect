@@ -8,6 +8,8 @@ on:
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
       - 'scripts/test-safar-flow-followup-dispatch.sql'
+      - 'scripts/deploy-safar-flow-job-queue.sql'
+      - 'scripts/test-safar-flow-job-queue.sql'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -20,6 +22,8 @@ on:
       - 'src/components/safar-flow/**'
       - 'scripts/*safar-flow*'
       - 'scripts/test-safar-flow-followup-dispatch.sql'
+      - 'scripts/deploy-safar-flow-job-queue.sql'
+      - 'scripts/test-safar-flow-job-queue.sql'
       - 'src/App.tsx'
       - 'src/config/moduleNavigation.ts'
       - '.github/workflows/safar-flow-studio.yml'
@@ -60,3 +64,9 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-followup-dispatch.sql
+      - name: Test durable booking task queue in separate ephemeral database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE safar_flow_test;'
+          psql -h localhost -p 5432 -U postgres -d safar_flow_test -v ON_ERROR_STOP=1 -f scripts/test-safar-flow-job-queue.sql
