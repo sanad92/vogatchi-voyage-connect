@@ -271,6 +271,24 @@ BEGIN
 END;
 $;
 
+-- One bounded invocation for a privileged scheduler (not exposed to browser).
+CREATE OR REPLACE FUNCTION safar_flow.dispatch_booking_tasks(p_limit integer DEFAULT 50)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = safar_flow, public, pg_temp AS $
+DECLARE
+  v_enqueued integer;
+  v_processed jsonb;
+BEGIN
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN
+    RAISE EXCEPTION 'batch limit must be 1..100' USING ERRCODE='22023';
+  END IF;
+  v_enqueued := safar_flow.enqueue_recent_booking_events(p_limit);
+  v_processed := safar_flow.process_due_booking_tasks(p_limit);
+  RETURN jsonb_build_object('scanned_new_events', v_enqueued, 'jobs', v_processed);
+END;
+$;
+
 -- Internal execution only. Do not grant these capabilities to authenticated.
 REVOKE ALL ON FUNCTION safar_flow.enqueue_booking_task(uuid, text, integer)
   FROM PUBLIC, anon, authenticated;
@@ -280,6 +298,8 @@ REVOKE ALL ON FUNCTION safar_flow.retry_dead_booking_task(uuid)
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION safar_flow.enqueue_recent_booking_events(integer, timestamptz)
   FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION safar_flow.dispatch_booking_tasks(integer)
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION safar_flow.enqueue_booking_task(uuid, text, integer)
   TO service_role;
 GRANT EXECUTE ON FUNCTION safar_flow.process_due_booking_tasks(integer)
@@ -287,6 +307,8 @@ GRANT EXECUTE ON FUNCTION safar_flow.process_due_booking_tasks(integer)
 GRANT EXECUTE ON FUNCTION safar_flow.retry_dead_booking_task(uuid)
   TO service_role;
 GRANT EXECUTE ON FUNCTION safar_flow.enqueue_recent_booking_events(integer, timestamptz)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION safar_flow.dispatch_booking_tasks(integer)
   TO service_role;
 
 COMMIT;
