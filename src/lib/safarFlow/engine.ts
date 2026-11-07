@@ -117,8 +117,9 @@ export function validateFlowTemplate(flow: FlowTemplate): string[] {
   }
   for (const condition of flow.conditions) {
     if (!OPERATORS.includes(condition.operator)) issues.push('عملية مقارنة غير مدعومة');
-    if (safePath({ customer: { replied: true } }, condition.path) === undefined
-        && !/^[A-Za-z_][\w]*(\.[A-Za-z_][\w]*)*$/.test(condition.path)) {
+    const pathParts = condition.path.split('.');
+    if (!/^[A-Za-z_][\\w]*(\\.[A-Za-z_][\\w]*)*$/.test(condition.path)
+        || pathParts.some(part => ['__proto__', 'prototype', 'constructor'].includes(part))) {
       issues.push('مسار بيانات غير صالح');
     }
     if (condition.operator !== 'exists' && condition.value === undefined) issues.push('شرط بلا قيمة');
