@@ -222,7 +222,7 @@ CREATE OR REPLACE FUNCTION safar_flow.enqueue_recent_booking_events(
   p_since timestamptz DEFAULT now() - interval '1 day'
 ) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = safar_flow, public, pg_temp AS $
+SET search_path = safar_flow, public, pg_temp AS $$
 DECLARE
   ev record;
   v_count integer := 0;
@@ -269,13 +269,13 @@ BEGIN
   -- Number of candidate events attempted; concurrent scans may overlap.
   RETURN v_count;
 END;
-$;
+$$;
 
 -- One bounded invocation for a privileged scheduler (not exposed to browser).
 CREATE OR REPLACE FUNCTION safar_flow.dispatch_booking_tasks(p_limit integer DEFAULT 50)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = safar_flow, public, pg_temp AS $
+SET search_path = safar_flow, public, pg_temp AS $$
 DECLARE
   v_enqueued integer;
   v_processed jsonb;
@@ -287,7 +287,7 @@ BEGIN
   v_processed := safar_flow.process_due_booking_tasks(p_limit);
   RETURN jsonb_build_object('scanned_new_events', v_enqueued, 'jobs', v_processed);
 END;
-$;
+$$;
 
 -- Internal execution only. Do not grant these capabilities to authenticated.
 REVOKE ALL ON FUNCTION safar_flow.enqueue_booking_task(uuid, text, integer)
