@@ -130,6 +130,7 @@ const PlatformSupport = lazy(() => import("@/pages/platform-admin/PlatformSuppor
 const DatabaseManager = lazy(() => import("@/pages/DatabaseManager"));
 const TeamManagement = lazy(() => import("@/pages/TeamManagement"));
 const AutomationRules = lazy(() => import("@/pages/AutomationRules"));
+const SafarFlowStudio = lazy(() => import("@/pages/SafarFlowStudio"));
 const Documents = lazy(() => import("@/pages/Documents"));
 const AuditLog = lazy(() => import("@/pages/AuditLog"));
 const ExportCenter = lazy(() => import("@/components/export/ExportCenter"));
@@ -389,6 +390,7 @@ function App() {
                               <Route path="/admin/cms/pages/:id/blocks" element={<PermissionRouteGuard requiredPermission="admin_settings"><PageBlocks /></PermissionRouteGuard>} />
                               <Route path="/monitoring" element={<PermissionRouteGuard requiredPermission="admin_settings"><MonitoringDashboard /></PermissionRouteGuard>} />
                               <Route path="/automation" element={<PermissionRouteGuard requiredPermission="automation_view"><AutomationRules /></PermissionRouteGuard>} />
+                              <Route path="/safar-flow" element={<PermissionRouteGuard requiredPermission="automation_view"><SafarFlowStudio /></PermissionRouteGuard>} />
                               <Route path="/documents" element={<PermissionRouteGuard requiredPermission="documents_view"><Documents /></PermissionRouteGuard>} />
                               <Route path="/document-center" element={<PermissionRouteGuard requiredPermission="documents_view"><DocumentCenter /></PermissionRouteGuard>} />
                               <Route path="/marketing/journeys" element={<PermissionRouteGuard requiredPermission="marketing_view"><MarketingJourneys /></PermissionRouteGuard>} />
