@@ -6,6 +6,7 @@ on:
       - 'src/hooks/useBookingChangeRequests.ts'
       - 'src/hooks/useBookingChangeHandoffs.ts'
       - 'src/hooks/useBookingChangeSourceEvidence.ts'
+      - 'src/hooks/useBookingAllocationReview.ts'
       - 'src/pages/BookingWorkspace.tsx'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -17,6 +18,7 @@ on:
       - 'src/hooks/useBookingChangeRequests.ts'
       - 'src/hooks/useBookingChangeHandoffs.ts'
       - 'src/hooks/useBookingChangeSourceEvidence.ts'
+      - 'src/hooks/useBookingAllocationReview.ts'
       - 'src/pages/BookingWorkspace.tsx'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -29,6 +31,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun src/lib/tripFile/evidenceReconciliation.test.ts
+      - run: bun src/lib/tripFile/allocationReview.test.ts
       - run: bunx tsc --noEmit
       - run: bun run build
 
