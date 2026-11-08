@@ -1,0 +1,81 @@
+name: Trip File 2.0 integrated QA
+on:
+  pull_request:
+    paths:
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/bookings/workspace/**'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useBooking**'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/trip-file-integrated.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/bookings/workspace/**'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useBooking**'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/trip-file-integrated.yml'
+jobs:
+  frontend-integrated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
+      - run: bun install --frozen-lockfile
+      - name: Verify all integrated Trip File UI and guarded SQL contracts
+        run: node scripts/verify-trip-file-integrated.mjs
+      - name: Run immutable snapshot and currency/finance tests
+        run: |
+          bun src/lib/tripFile/serviceSummary.test.ts
+          bun src/lib/tripFile/evidenceReconciliation.test.ts
+          bun src/lib/tripFile/allocationReview.test.ts
+      - name: TypeScript check
+        run: bunx tsc --noEmit
+      - name: Production app build
+        run: bun run build
+
+  database-integrated:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Postgres client
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Create isolated fixture databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE tripfile_amendments_qa;'
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE tripfile_quoteversions_qa;'
+      - name: Test amendments, handoff and original finance evidence
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -f scripts/test-trip-file-source-evidence-links.sql
+      - name: Test immutable quote version archive and tenant isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_quoteversions_qa -v ON_ERROR_STOP=1 -f scripts/test-quote-version-snapshots.sql
