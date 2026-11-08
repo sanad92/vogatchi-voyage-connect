@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useBookingFinancials } from '@/hooks/useBookingFinancials';
 import { assessEvidenceReconciliation } from '@/lib/tripFile/evidenceReconciliation';
+import { BookingAmendmentFinancialReview } from './BookingAmendmentFinancialReview';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
 import {
   useBookingChangeSourceEvidence,
@@ -138,6 +139,7 @@ export function BookingAmendmentEvidencePanel({
   const linked = evidence.data || [];
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="space-y-1">
@@ -238,5 +240,13 @@ export function BookingAmendmentEvidencePanel({
         </p>
       </CardContent>
     </Card>
+    {financials && evidence.isSuccess && !financialError && (
+      <BookingAmendmentFinancialReview
+        bookingId={bookingId}
+        financials={financials}
+        evidence={linked}
+      />
+    )}
+    </>
   );
 }
