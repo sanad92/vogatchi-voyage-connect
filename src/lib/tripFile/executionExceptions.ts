@@ -9,7 +9,7 @@ export type ExceptionCode =
   | 'request_not_approved' | 'handoff_missing' | 'handoff_blocked'
   | 'supplier_reference_missing' | 'finance_review_missing'
   | 'independent_review_missing' | 'operations_attestation_missing'
-  | 'financial_impact_unassessed' | 'currency_missing'
+  | 'financial_impact_unassessed' | 'currency_missing' | 'amendment_amount_not_reconciled'
   | 'customer_document_missing' | 'supplier_document_missing'
   | 'source_document_changed' | 'source_document_invalid'
   | 'source_allocation_unverified' | 'evidence_tenant_mismatch'
@@ -116,6 +116,12 @@ export function assessAmendmentExecutionExceptions(input: ExecutionReviewInput):
     const hasMoneyDelta = (selling != null && Number.isFinite(selling) && selling !== 0) ||
       (cost != null && Number.isFinite(cost) && cost !== 0);
     const currency = request.estimate_currency?.trim().toUpperCase();
+    if (hasMoneyDelta) {
+      // The source document may belong to the entire booking; the amount
+      // does NOT establish the delta for this specific amendment.
+      add('amendment_amount_not_reconciled', 'review',
+        'المستندات الحالية لا تثبت وحدها فرق سعر هذا التعديل؛ يلزم مطابقة المستند مع فرق التعديل يدويًا');
+    }
     if (hasMoneyDelta && (!currency || !/^[A-Z]{3}$/.test(currency))) {
       add('currency_missing', 'block', 'فرق المبلغ لا يتضمن عملة صحيحة؛ لا تُجرِ جمعًا أو تحويلًا مفترضًا');
     }
