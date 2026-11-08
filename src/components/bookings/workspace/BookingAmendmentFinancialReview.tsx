@@ -1,6 +1,9 @@
 import { AlertTriangle, Calculator, RefreshCw } from 'lucide-react';
 import { useBookingProfitCockpit } from '@/hooks/useBookingProfitCockpit';
 import type { BookingFinancials } from '@/hooks/useBookingFinancials';
+import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
+import type { BookingChangeHandoff } from '@/hooks/useBookingChangeHandoffs';
+import { BookingAmendmentExecutionExceptions } from './BookingAmendmentExecutionExceptions';
 import type { BookingSourceEvidence, SourceEvidenceType } from '@/hooks/useBookingChangeSourceEvidence';
 import { useBookingAllocationReview } from '@/hooks/useBookingAllocationReview';
 import type { EvidenceAllocationState } from '@/lib/tripFile/allocationReview';
@@ -35,11 +38,15 @@ const money = (v: number | null | undefined, ccy: string | null | undefined) =>
 
 export function BookingAmendmentFinancialReview({
   bookingId,
+  requests,
+  handoffs,
   financials,
   evidence,
   onRefreshSource,
 }: {
   bookingId: string;
+  requests: BookingChangeRequest[];
+  handoffs: BookingChangeHandoff[];
   financials: BookingFinancials;
   evidence: BookingSourceEvidence[];
   onRefreshSource: () => void;
@@ -48,6 +55,7 @@ export function BookingAmendmentFinancialReview({
   const cockpit = useBookingProfitCockpit(bookingId);
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="space-y-1">
@@ -174,5 +182,18 @@ export function BookingAmendmentFinancialReview({
         </p>
       </CardContent>
     </Card>
+    <BookingAmendmentExecutionExceptions
+      orgId={financials.booking.organization_id}
+      bookingId={bookingId}
+      bookingStatus={financials.booking.status}
+      workflowStage={financials.booking.workflow_stage}
+      requests={requests}
+      handoffs={handoffs}
+      evidence={evidence}
+      allocations={allocations.review}
+      dataComplete={Boolean(allocations.isSuccess && !allocations.incompleteData
+        && cockpit.isSuccess && financials)}
+    />
+    </>
   );
 }
