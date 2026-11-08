@@ -6,6 +6,7 @@ import { useBookingFinancials } from '@/hooks/useBookingFinancials';
 import { assessEvidenceReconciliation } from '@/lib/tripFile/evidenceReconciliation';
 import { BookingAmendmentFinancialReview } from './BookingAmendmentFinancialReview';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
+import type { BookingChangeHandoff } from '@/hooks/useBookingChangeHandoffs';
 import {
   useBookingChangeSourceEvidence,
   useLinkBookingChangeSourceEvidence,
@@ -48,9 +49,11 @@ const isVoided = (status: string | null | undefined) =>
 export function BookingAmendmentEvidencePanel({
   bookingId,
   approvedRequests,
+  handoffs,
 }: {
   bookingId: string;
   approvedRequests: BookingChangeRequest[];
+  handoffs: BookingChangeHandoff[];
 }) {
   const orgId = useOrgId();
   const { data: financials, isLoading: loadingFinancials, isError: financialError,
@@ -243,6 +246,8 @@ export function BookingAmendmentEvidencePanel({
     {financials && evidence.isSuccess && !financialError && (
       <BookingAmendmentFinancialReview
         bookingId={bookingId}
+        requests={approvedRequests}
+        handoffs={handoffs}
         financials={financials}
         evidence={linked}
         onRefreshSource={() => { void refreshFinancials(); void evidence.refetch(); }}
