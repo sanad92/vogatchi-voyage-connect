@@ -28,7 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
       - run: bun install --frozen-lockfile
       - name: Verify all integrated Trip File UI and guarded SQL contracts
         run: node scripts/verify-trip-file-integrated.mjs
