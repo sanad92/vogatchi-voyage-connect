@@ -37,10 +37,12 @@ export function BookingAmendmentFinancialReview({
   bookingId,
   financials,
   evidence,
+  onRefreshSource,
 }: {
   bookingId: string;
   financials: BookingFinancials;
   evidence: BookingSourceEvidence[];
+  onRefreshSource: () => void;
 }) {
   const allocations = useBookingAllocationReview(bookingId, financials, evidence);
   const cockpit = useBookingProfitCockpit(bookingId);
@@ -58,7 +60,7 @@ export function BookingAmendmentFinancialReview({
           </p>
         </div>
         <Button variant="outline" size="sm" disabled={allocations.isFetching || cockpit.isFetching}
-          onClick={() => { void allocations.refetch(); void cockpit.refetch(); }}>
+          onClick={() => { onRefreshSource(); void allocations.refetch(); void cockpit.refetch(); }}>
           <RefreshCw className="h-4 w-4 ml-1" /> تحديث
         </Button>
       </CardHeader>
