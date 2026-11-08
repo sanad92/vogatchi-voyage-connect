@@ -245,6 +245,7 @@ export function BookingAmendmentEvidencePanel({
         bookingId={bookingId}
         financials={financials}
         evidence={linked}
+        onRefreshSource={() => { void refreshFinancials(); void evidence.refetch(); }}
       />
     )}
     </>
