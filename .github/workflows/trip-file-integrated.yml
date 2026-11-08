@@ -40,6 +40,7 @@ jobs:
           bun src/lib/tripFile/serviceSummary.test.ts
           bun src/lib/tripFile/evidenceReconciliation.test.ts
           bun src/lib/tripFile/allocationReview.test.ts
+          bun src/lib/tripFile/executionExceptions.test.ts
       - name: TypeScript check
         run: bunx tsc --noEmit
       - name: Production app build
