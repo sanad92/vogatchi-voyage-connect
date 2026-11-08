@@ -7,6 +7,8 @@ const amendmentUi = read('src/components/bookings/workspace/BookingAmendmentsTab
 const handoffUi = read('src/components/bookings/workspace/BookingAmendmentHandoffPanel.tsx');
 const sourceEvidenceUi = read('src/components/bookings/workspace/BookingAmendmentEvidencePanel.tsx');
 const financialReviewUi = read('src/components/bookings/workspace/BookingAmendmentFinancialReview.tsx');
+const executionExceptionsUi = read('src/components/bookings/workspace/BookingAmendmentExecutionExceptions.tsx');
+const executionExceptionsEngine = read('src/lib/tripFile/executionExceptions.ts');
 const itinerary = read('src/components/bookings/workspace/ItineraryTab.tsx');
 const serviceHook = read('src/hooks/useBookingServices.ts');
 const quotes = read('src/pages/QuoteDetails.tsx');
@@ -21,6 +23,9 @@ assert.match(amendmentUi, /BookingAmendmentHandoffPanel/, 'approved amendments m
 assert.match(handoffUi, /BookingAmendmentEvidencePanel/, 'handoffs must expose original document links');
 assert.match(sourceEvidenceUi, /BookingAmendmentFinancialReview/, 'document links must lead to finance reconciliation');
 assert.match(financialReviewUi, /useBookingProfitCockpit/, 'existing authoritative booking finance RPC is reused');
+assert.match(financialReviewUi, /BookingAmendmentExecutionExceptions/, 'amendments must display execution exceptions');
+assert.match(executionExceptionsUi, /غير متصل|غير متحقق/, 'missing external provider verification must be visible');
+assert.match(executionExceptionsEngine, /externalProviderVerification: 'not_implemented'/, 'system must never claim external verification');
 
 assert.match(itinerary, /TripServicesMoneySummary/, 'existing itinerary must expose currency-safe service overview');
 assert.match(serviceHook, /if \(failed\) throw new Error/, 'service queries must not silently return an empty list on errors');
@@ -39,6 +44,8 @@ for (const [label, sql] of [
   assert.match(sql, /SECURITY DEFINER/, label + ' must guard privileged operations');
   assert.match(sql, /auth\.uid\(\)/, label + ' must check authenticated actor');
 }
+assert.match(evidenceSql, /supplier_confirmed','finance_reviewed','execution_reported'/,
+  'source evidence linkage must explicitly exclude blocked handoffs');
 assert.doesNotMatch(evidenceSql, /UPDATE public\.(?:invoices|supplier_invoices|customer_payments|supplier_payments|bookings)\s+SET/i,
   'linking source evidence must not mutate core finance/booking rows');
 assert.doesNotMatch(handoffSql, /UPDATE public\.(?:invoices|supplier_invoices|customer_payments|supplier_payments|bookings)\s+SET/i,

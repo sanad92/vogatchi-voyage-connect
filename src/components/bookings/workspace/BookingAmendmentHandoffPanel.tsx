@@ -283,6 +283,7 @@ export function BookingAmendmentHandoffPanel({
     }) && (
       <BookingAmendmentEvidencePanel
         bookingId={bookingId}
+        handoffs={handoffs.data ?? []}
         approvedRequests={approvedRequests.filter(r => {
           const status = byRequest.get(r.id)?.status;
           return status && status !== 'supplier_pending';

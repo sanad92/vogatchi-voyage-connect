@@ -6,6 +6,7 @@ import { useBookingFinancials } from '@/hooks/useBookingFinancials';
 import { assessEvidenceReconciliation } from '@/lib/tripFile/evidenceReconciliation';
 import { BookingAmendmentFinancialReview } from './BookingAmendmentFinancialReview';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
+import type { BookingChangeHandoff } from '@/hooks/useBookingChangeHandoffs';
 import {
   useBookingChangeSourceEvidence,
   useLinkBookingChangeSourceEvidence,
@@ -48,9 +49,11 @@ const isVoided = (status: string | null | undefined) =>
 export function BookingAmendmentEvidencePanel({
   bookingId,
   approvedRequests,
+  handoffs,
 }: {
   bookingId: string;
   approvedRequests: BookingChangeRequest[];
+  handoffs: BookingChangeHandoff[];
 }) {
   const orgId = useOrgId();
   const { data: financials, isLoading: loadingFinancials, isError: financialError,
@@ -99,6 +102,12 @@ export function BookingAmendmentEvidencePanel({
     return candidates;
   }, [financials, orgId, bookingId]);
 
+  // Blocked handoffs remain visible in the audit/exceptions view, but
+  // cannot receive new document links.
+  const linkableRequests = approvedRequests.filter(r => {
+    const h = handoffs.find(handoff => handoff.change_request_id === r.id);
+    return h && ['supplier_confirmed','finance_reviewed','execution_reported'].includes(h.status);
+  });
   const selected = options.find(o => `${o.type}|${o.id}` === documentKey);
   const currentEvidenceMessage = (item: BookingSourceEvidence) => {
     const current = options.find(o => o.type === item.source_type && o.id === item.source_id);
@@ -118,7 +127,7 @@ export function BookingAmendmentEvidencePanel({
 
 
   const submit = () => {
-    const current = approvedRequests.find(r => r.id === requestId);
+    const current = linkableRequests.find(r => r.id === requestId);
     if (!current || !selected) {
       toast.error('اختار طلب التعديل والمستند المرتبطين بنفس الحجز');
       return;
@@ -173,7 +182,7 @@ export function BookingAmendmentEvidencePanel({
                 <Select value={requestId} onValueChange={v => { setRequestId(v); setDocumentKey(''); }}>
                   <SelectTrigger><SelectValue placeholder="اختر طلب تعديل" /></SelectTrigger>
                   <SelectContent>
-                    {approvedRequests.map(r => (
+                    {linkableRequests.map(r => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.description.slice(0, 65)}{r.description.length > 65 ? '…' : ''}
                       </SelectItem>
@@ -243,6 +252,8 @@ export function BookingAmendmentEvidencePanel({
     {financials && evidence.isSuccess && !financialError && (
       <BookingAmendmentFinancialReview
         bookingId={bookingId}
+        requests={approvedRequests}
+        handoffs={handoffs}
         financials={financials}
         evidence={linked}
         onRefreshSource={() => { void refreshFinancials(); void evidence.refetch(); }}

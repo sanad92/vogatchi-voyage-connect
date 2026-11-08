@@ -108,8 +108,9 @@ BEGIN
   SELECT * INTO h FROM public.booking_change_handoffs
   WHERE change_request_id=r.id AND organization_id=r.organization_id
     AND booking_id=r.booking_id;
-  IF NOT FOUND OR h.status='supplier_pending' THEN
-    RAISE EXCEPTION 'source_evidence_requires_supplier_handoff'
+  IF NOT FOUND OR h.status NOT IN
+      ('supplier_confirmed','finance_reviewed','execution_reported') THEN
+    RAISE EXCEPTION 'source_evidence_requires_active_supplier_handoff'
       USING ERRCODE='22023';
   END IF;
 
