@@ -279,14 +279,14 @@ export function BookingAmendmentHandoffPanel({
     </Card>
     {canRead && handoffs.isSuccess && approvedRequests.some(r => {
       const status = byRequest.get(r.id)?.status;
-      return status && status !== 'supplier_pending' && status !== 'blocked';
+      return status && status !== 'supplier_pending';
     }) && (
       <BookingAmendmentEvidencePanel
         bookingId={bookingId}
         handoffs={handoffs.data ?? []}
         approvedRequests={approvedRequests.filter(r => {
           const status = byRequest.get(r.id)?.status;
-          return status && status !== 'supplier_pending' && status !== 'blocked';
+          return status && status !== 'supplier_pending';
         })}
       />
     )}
