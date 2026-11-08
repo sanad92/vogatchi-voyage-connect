@@ -85,7 +85,7 @@ BEGIN
 END $$;
 
 SET test.user_id='00000000-0000-4000-8000-000000000012';
-DO $$
+DO $evidence_case$
 DECLARE req uuid; first jsonb; replay jsonb; denied boolean:=false;
 BEGIN
  req:=public.test_lookup_change_id('00000000-0000-4000-8000-000000000201');
@@ -153,7 +153,7 @@ BEGIN
    'customer_invoice','00000000-0000-4000-8000-000000000501');
  EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Blocked amendment accepted a new finance link'; END IF;
-END $;
+END $evidence_case$;
 
 SET test.user_id='00000000-0000-4000-8000-000000000021';
 DO $$
