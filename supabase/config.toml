@@ -17,3 +17,7 @@ verify_jwt = false
 
 [functions.whatsapp-queue-dispatch]
 verify_jwt = true
+
+# Read-only Trip File supplier observation; user JWT required.
+[functions.trip-file-hotelbeds-status]
+verify_jwt = true

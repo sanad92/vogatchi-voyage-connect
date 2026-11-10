@@ -6,6 +6,10 @@ on:
       - 'src/pages/QuoteDetails.tsx'
       - 'src/components/bookings/workspace/**'
       - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useHotelbedsBookingObservation.ts'
+      - 'supabase/functions/trip-file-hotelbeds-status/**'
+      - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/config.toml'
       - 'src/hooks/useBooking**'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -18,6 +22,10 @@ on:
       - 'src/pages/QuoteDetails.tsx'
       - 'src/components/bookings/workspace/**'
       - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useHotelbedsBookingObservation.ts'
+      - 'supabase/functions/trip-file-hotelbeds-status/**'
+      - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/config.toml'
       - 'src/hooks/useBooking**'
       - 'src/lib/tripFile/**'
       - 'scripts/*trip-file*'
@@ -35,6 +43,10 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Verify all integrated Trip File UI and guarded SQL contracts
         run: node scripts/verify-trip-file-integrated.mjs
+      - name: Verify Hotelbeds JWT, tenant and no-write contracts
+        run: node scripts/verify-trip-file-hotelbeds-contract.mjs
+      - name: Test Hotelbeds sanitized booking observation parser
+        run: bun supabase/functions/_shared/trip-file-hotelbeds.test.ts
       - name: Run immutable snapshot and currency/finance tests
         run: |
           bun src/lib/tripFile/serviceSummary.test.ts
