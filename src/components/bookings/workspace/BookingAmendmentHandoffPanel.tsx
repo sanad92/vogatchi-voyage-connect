@@ -5,6 +5,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
 import { BookingAmendmentEvidencePanel } from './BookingAmendmentEvidencePanel';
+import { BookingHotelbedsObservation } from './BookingHotelbedsObservation';
 import {
   useBookingChangeHandoffs,
   useBookingHandoffAudit,
@@ -277,6 +278,12 @@ export function BookingAmendmentHandoffPanel({
         </p>
       </CardContent>
     </Card>
+    {canRead && handoffs.isSuccess && (
+      <BookingHotelbedsObservation
+        requests={approvedRequests}
+        handoffs={handoffs.data ?? []}
+      />
+    )}
     {canRead && handoffs.isSuccess && approvedRequests.some(r => {
       const status = byRequest.get(r.id)?.status;
       return status && status !== 'supplier_pending';
