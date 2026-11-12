@@ -22,4 +22,12 @@ const ready={
 assert.deepEqual(readinessIssues(ready,program),[]);
 assert.ok(readinessIssues({...ready,passport_expiry:'2026-12-30'},program).includes('الجواز ينتهي قبل العودة'));
 assert.ok(readinessIssues({...ready,makkah_room:''},program).includes('غرفة مكة غير محددة'));
+assert.deepEqual(readinessIssues({
+  full_name:'Domestic',national_id:'TEST-IQAMA',documents_complete:true,
+  visa_status:'not_required'
+}, {...program,travel_scope:'domestic',makkah_nights:0,madinah_nights:0}),[]);
+assert.ok(readinessIssues({
+  full_name:'Domestic',national_id:'',documents_complete:true
+}, {...program,travel_scope:'domestic',makkah_nights:0,madinah_nights:0}).includes('رقم الهوية / الإقامة ناقص'));
+assert.deepEqual(readinessIssues({...ready,visa_status:'not_required'},program),[]);
 console.log('Pilgrimage occupancy, exposure, draft validation and readiness tests passed.');
