@@ -46,7 +46,7 @@ ${table(['الاسم', 'رقم الجواز', 'الرقم القومي', 'اله
 ${table(['البرنامج', 'السفر', 'العودة', 'مكة', 'المدينة', 'الطيران'], [[prog.name, prog.departure_date, prog.return_date, `${prog.makkah_hotel || '—'} (${prog.makkah_nights} ليالٍ)`, `${prog.madinah_hotel || '—'} (${prog.madinah_nights} ليالٍ)`, `${prog.airline || ''} ${prog.flight_details || ''}`]])}
 <p>النقل: ${esc(prog.transport_details || '—')}</p>
 <h2>القيمة المالية</h2><p>سعر البرنامج: <b>${esc(money(g.total_price, prog.currency))}</b> · المدفوع: ${esc(money(g.paid_amount, prog.currency))} · المتبقي: ${esc(money(Math.max(0, g.total_price - g.paid_amount), prog.currency))}</p>
-<h2>الشروط والأحكام</h2><div class="box" style="white-space:pre-wrap">${esc(prog.terms || 'تخضع الرحلة لأنظمة وزارة السياحة ووزارة الحج والعمرة. يلتزم العميل بتسليم المستندات المطلوبة في المواعيد المحددة. تطبق سياسة الإلغاء المعلنة من الشركة.')}</div>
+<h2>الشروط والأحكام</h2><div class="box" style="white-space:pre-wrap">${esc(prog.terms || 'تُطبق الشروط والسياسات التي جرى اعتمادها كتابيًا بين الشركة والعميل لهذا البرنامج، ويجب التأكد من المتطلبات الرسمية السارية قبل السفر. لا تُعدّ هذه الوثيقة تأشيرة أو تصريح سفر.')}</div>
 <div class="sign"><span>توقيع العميل: ............</span><span>عن الشركة: ............</span></div>`;
 
 export const manifestRows = (list: any[]) =>
@@ -59,11 +59,17 @@ export function exportExcel(fileName: string, sheets: { name: string; headers: s
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 }
 
-/** Room validation: mixed genders allowed only when every occupant shares a mahram/family group. */
+/** Operational room checks only; a family label is not legal proof of kinship. */
 export function roomIssues(occupants: any[], roomType: string) {
   const issues: string[] = [];
   if (occupants.length > (ROOM_SIZE[roomType] ?? 4)) issues.push('العدد أكبر من سعة الغرفة');
+  const categories = new Set(occupants.map((o) => o.room_type));
+  if (categories.size > 1) issues.push('فئات غرف مختلفة داخل نفس الغرفة');
   const genders = new Set(occupants.map((o) => o.gender));
-  if (genders.size > 1 && !occupants.every((o) => o.mahram_name || o.room_group)) issues.push('رجال ونساء بدون محرم/عائلة');
+  if (genders.size > 1) {
+    const familyIds = occupants.map((o) => String(o.room_group || '').trim().toLocaleLowerCase());
+    if (!familyIds[0] || familyIds.some((group) => group !== familyIds[0]))
+      issues.push('تسكين مختلط دون مجموعة عائلية موحدة — يلزم التأكد يدويًا');
+  }
   return issues;
 }
