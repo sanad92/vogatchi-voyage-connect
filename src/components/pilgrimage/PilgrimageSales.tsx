@@ -78,7 +78,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
     ()=>sb.from('suppliers').select('id,name').eq('organization_id',orgId)
       .eq('is_active',true).order('name').limit(200),canManage);
   const programsQ=useRows('pilgrimage-sale-programs',orgId,null,
-    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,departure_date,return_date')
+    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date')
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
   const itemsQ=useRows('pilgrimage-sale-items',orgId,saleId,
@@ -194,6 +194,12 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
       if(!canManage||!selected)throw new Error('ليس لديك صلاحية');
       if(status==='quoted'){
         const issues=quoteReadiness(selected as SaleDraft,items);
+        if(selected.program_id){
+          const p=programs.find((x:any)=>x.id===selected.program_id);
+          if(!p||p.status!=='open')issues.push('البرنامج الجماعي ليس مفتوحًا للتسجيل');
+          if(p&&p.capacity>0&&selected.party_size>p.capacity-(pilgrimsQ.data||[]).length)
+            issues.push('العدد المطلوب أكبر من المقاعد المتاحة حاليًا');
+        }
         if(issues.length)throw new Error(issues.join('، '));
       }
       const {data,error}=await sb.from('pilgrimage_sales').update({status})
@@ -285,6 +291,12 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         <h3 className="font-semibold">{selected.name}</h3>
         <p className="text-sm">{SALE_MODELS[selected.sale_model as SaleModel]} · {FULFILLMENT[selected.fulfillment_role as keyof typeof FULFILLMENT]}</p>
         <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
+        {selected.program_id&&<p className="text-xs text-muted-foreground">
+          المتاح في البرنامج الآن (دون حجوزات مخصصة بهذه الشاشة): {
+            (()=>{const p=programs.find((x:any)=>x.id===selected.program_id);
+              return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length):'غير محدود';})()
+          } — رقم تقديري قابل للتغير.
+        </p>}
         {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
           هذه نسخة مراجعة لعرض سابق، مع حفظ العرض الأصلي دون تعديل.</p>}
         <p className="text-xs text-muted-foreground">العرض لا يخصم مقاعد من السعة ولا ينشئ فاتورة أو عملية تحصيل. إصداره يقفل تعديل الأسعار؛ للتعديل يُنشأ عرض جديد.</p>
