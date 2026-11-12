@@ -203,6 +203,18 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
     },onSuccess:()=>{refresh();toast({title:'تم تحديث حالة العرض'});},onError:fail,
   });
 
+  const cloneQuote=useMutation({
+    mutationFn:async()=>{
+      if(!canManage||selected?.status!=='quoted')throw new Error('يلزم عرض صادر وصلاحية مدير');
+      const {data,error}=await sb.rpc('clone_pilgrimage_sale',{_sale_id:selected.id});
+      if(error)throw error;
+      if(typeof data!=='string')throw new Error('لم يرجع النظام رقم المسودة الجديدة');
+      return data;
+    },
+    onSuccess:(id:string)=>{
+      refresh();setSaleId(id);toast({title:'تم إنشاء نسخة جديدة قابلة للتعديل من عرض السعر'});
+    },onError:fail,
+  });
   const printQuote=()=>{
     if(!selected)return;
     const buyer=selected.buyer_agency_id
@@ -263,6 +275,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
               rows:items.map((x:any)=>[x.item_kind,x.description,x.quantity,x.unit_sell,x.line_sell])}
           ])}><FileSpreadsheet className="h-4 w-4 me-1"/>Excel</Button>
           {canEdit&&<Button disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('quoted')}>إصدار عرض السعر</Button>}
+          {canManage&&selected.status==='quoted'&&<Button variant="outline"
+            disabled={cloneQuote.isPending} onClick={()=>cloneQuote.mutate()}>إنشاء نسخة معدلة</Button>}
           {canManage&&selected.status!=='cancelled'&&<Button variant="destructive"
             disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('cancelled')}>إلغاء العرض</Button>}
         </div>
@@ -271,6 +285,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         <h3 className="font-semibold">{selected.name}</h3>
         <p className="text-sm">{SALE_MODELS[selected.sale_model as SaleModel]} · {FULFILLMENT[selected.fulfillment_role as keyof typeof FULFILLMENT]}</p>
         <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
+        {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
+          هذه نسخة مراجعة لعرض سابق، مع حفظ العرض الأصلي دون تعديل.</p>}
         <p className="text-xs text-muted-foreground">العرض لا يخصم مقاعد من السعة ولا ينشئ فاتورة أو عملية تحصيل. إصداره يقفل تعديل الأسعار؛ للتعديل يُنشأ عرض جديد.</p>
       </Card>
       <div className="grid gap-3 sm:grid-cols-3">
