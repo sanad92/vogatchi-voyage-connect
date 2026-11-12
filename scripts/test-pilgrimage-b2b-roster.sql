@@ -18,14 +18,14 @@ SET test.user_id='00000000-0000-4000-8000-000000000011';
 
 DO $$
 DECLARE
- agreement_id uuid;
+ v_agreement_id uuid;
  entry_id uuid;
  again_id uuid;
  client_id uuid;
  i int;
  blocked boolean:=false;
 BEGIN
- SELECT id INTO agreement_id FROM public.pilgrimage_b2b_agreements
+ SELECT id INTO v_agreement_id FROM public.pilgrimage_b2b_agreements
   WHERE sale_id='00000000-0000-4000-8000-000000000303';
 
  -- 10 names can be added after internal agreement approval (no passports,
@@ -33,16 +33,16 @@ BEGIN
  FOR i IN 1..10 LOOP
   client_id:=('00000000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid;
   entry_id:=public.add_pilgrimage_b2b_roster_name(
-    agreement_id,client_id,'Agency Traveler '||i,'quad');
+    v_agreement_id,client_id,'Agency Traveler '||i,'quad');
  END LOOP;
  entry_id:=(SELECT id FROM public.pilgrimage_b2b_roster_entries
-  WHERE agreement_id=agreement_id AND display_name='Agency Traveler 1');
+  WHERE agreement_id=v_agreement_id AND display_name='Agency Traveler 1');
  again_id:=public.add_pilgrimage_b2b_roster_name(
-  agreement_id,'00000000-0000-4000-8000-000000000001',
+  v_agreement_id,'00000000-0000-4000-8000-000000000001',
   'Agency Traveler 1','quad');
  IF entry_id<>again_id THEN RAISE EXCEPTION 'Idempotent roster retry inserted duplicate'; END IF;
  IF (SELECT count(*) FROM public.pilgrimage_b2b_roster_entries
-     WHERE agreement_id=agreement_id AND status='active')<>10 THEN
+     WHERE agreement_id=v_agreement_id AND status='active')<>10 THEN
    RAISE EXCEPTION 'Wrong B2B active manifest size'; END IF;
  IF (SELECT count(*) FROM public.pilgrimage_b2b_roster_events
      WHERE action='added')<>10 THEN
@@ -50,7 +50,7 @@ BEGIN
 
  BEGIN
   PERFORM public.add_pilgrimage_b2b_roster_name(
-   agreement_id,'00000000-0000-4000-8000-000000000001',
+   v_agreement_id,'00000000-0000-4000-8000-000000000001',
    'Different Traveler Name','quad');
  EXCEPTION WHEN invalid_parameter_value THEN blocked:=true; END;
  IF NOT blocked THEN RAISE EXCEPTION 'Client reference reused with different name'; END IF;
@@ -58,7 +58,7 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.add_pilgrimage_b2b_roster_name(
-   agreement_id,'00000000-0000-4000-8000-000000000011',
+   v_agreement_id,'00000000-0000-4000-8000-000000000011',
    'Overbooked 11th Passenger','quad');
  EXCEPTION WHEN invalid_parameter_value THEN blocked:=true; END;
  IF NOT blocked THEN RAISE EXCEPTION 'B2B manifest exceeded contracted 10 places'; END IF;
@@ -66,12 +66,12 @@ BEGIN
  PERFORM public.remove_pilgrimage_b2b_roster_name(entry_id);
  PERFORM public.remove_pilgrimage_b2b_roster_name(entry_id);
  PERFORM public.add_pilgrimage_b2b_roster_name(
-  agreement_id,'00000000-0000-4000-8000-000000000011',
+  v_agreement_id,'00000000-0000-4000-8000-000000000011',
   'Agency Replacement Passenger','double');
  IF (SELECT count(*) FROM public.pilgrimage_b2b_roster_entries
-     WHERE agreement_id=agreement_id AND status='active')<>10
+     WHERE agreement_id=v_agreement_id AND status='active')<>10
  OR (SELECT count(*) FROM public.pilgrimage_b2b_roster_entries
-     WHERE agreement_id=agreement_id AND status='removed')<>1
+     WHERE agreement_id=v_agreement_id AND status='removed')<>1
  OR (SELECT count(*) FROM public.pilgrimage_b2b_roster_events)<>12 THEN
   RAISE EXCEPTION 'B2B removal / replacement audit failed'; END IF;
 
