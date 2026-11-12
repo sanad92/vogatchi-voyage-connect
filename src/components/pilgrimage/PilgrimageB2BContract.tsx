@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { money, printDocument, table, ROOM } from './pilgrimage-documents';
+import { validateB2BInstallments } from '@/lib/pilgrimage/b2b';
 
 const sb = supabase as any;
 type Installment = { due_date: string; amount: number };
@@ -91,12 +92,8 @@ export default function PilgrimageB2BContract({
       if(sale.status!=='quoted'||sale.sale_model!=='b2b_group')throw new Error('لا يوجد عرض B2B صادر');
       if(!debtor)throw new Error('اختر حساب شركة السياحة المشترية من دليل عملاء CRM');
       if(terms.trim().length<5)throw new Error('أدخل شروط الاتفاق التجاري');
-      if(schedule.length<1||schedule.length>12)throw new Error('عدد الدفعات من 1 إلى 12');
-      if(schedule.some(x=>!x.due_date || !Number.isFinite(x.amount) ||
-        x.amount<=0 || Math.round(x.amount*100)!==x.amount*100))
-        throw new Error('تأكد من تواريخ الدفعات ومبالغها بدقتين عشريتين');
-      const sum=Math.round(schedule.reduce((n,x)=>n+x.amount,0)*100)/100;
-      if(Math.abs(sum-total)>0.001)throw new Error('مجموع الدفعات لا يساوي إجمالي عرض السعر');
+      const issues=validateB2BInstallments(schedule,total);
+      if(issues.length)throw new Error(issues.join('؛ '));
       const {data,error}=await sb.rpc('prepare_pilgrimage_b2b_agreement',{
         _sale_id:sale.id,_debtor_customer_id:debtor,
         _terms:terms.trim(),_installments:schedule,
