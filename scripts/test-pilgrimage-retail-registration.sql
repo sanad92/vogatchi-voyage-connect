@@ -279,7 +279,7 @@ SELECT public.transition_pilgrimage_seat_allocation(
   '00000000-0000-4000-8000-000000000404','hold',120);
 SELECT public.transition_pilgrimage_seat_allocation(
   '00000000-0000-4000-8000-000000000404','allocate',120);
-DO $
+DO $$
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
@@ -292,7 +292,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM public.pilgrimage_retail_conversions
     WHERE sale_id='00000000-0000-4000-8000-000000000404') THEN
     RAISE EXCEPTION 'Tariff mismatch partially converted allocation'; END IF;
-END $;
+END $$;
 
 -- No unauthenticated conversion and no externally issued visa is invented.
 SET test.user_id='';
