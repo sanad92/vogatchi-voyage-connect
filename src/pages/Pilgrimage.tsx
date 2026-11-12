@@ -112,8 +112,9 @@ const Pilgrimage = () => {
         if (error) throw error;
         id = data.id;
       }
-      if (canManage && Number(pf.cost_per_person) > 0) {
+      if (canManage && Number.isFinite(Number(pf.cost_per_person)) && Number(pf.cost_per_person) >= 0) {
         const existing = costs.find((c) => c.program_id === id);
+        if (!existing && Number(pf.cost_per_person) === 0) return;
         const { error } = existing
           ? await sb.from('pilgrimage_program_costs').update({ cost_per_person: pf.cost_per_person }).eq('program_id', id).eq('organization_id', orgId)
           : await sb.from('pilgrimage_program_costs').insert({ program_id: id, organization_id: orgId, cost_per_person: pf.cost_per_person });
@@ -217,7 +218,9 @@ const Pilgrimage = () => {
         const prior = await sb.from('customer_payments').select('*')
           .eq('organization_id', orgId).eq('client_ref', pay.clientRef).maybeSingle();
         if (prior.error || !prior.data ||
-          prior.data.pilgrim_id !== g.id || Number(prior.data.amount) !== Number(pay.amount))
+          prior.data.pilgrim_id !== g.id || Number(prior.data.amount) !== Number(pay.amount) ||
+          prior.data.currency !== program.currency || prior.data.status !== 'completed' ||
+          prior.data.treasury_account_id !== pay.treasury)
           throw error;
         return { p: prior.data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
       }
