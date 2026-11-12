@@ -41,7 +41,11 @@ checks AS (
         OR has_table_privilege('authenticated',t.table_oid,'DELETE')
         OR has_table_privilege('authenticated',t.table_oid,'TRUNCATE')
       ),false)
-      ELSE coalesce(p.proconfig @> ARRAY['search_path=']::text[],false)
+      ELSE coalesce(EXISTS (
+        SELECT 1
+        FROM unnest(p.proconfig) AS config_setting
+        WHERE config_setting IN ('search_path=', 'search_path=""')
+      ),false)
     END AS locked_write_or_search_path,
     CASE WHEN t.kind='table' THEN coalesce(NOT (
         has_table_privilege('anon',t.table_oid,'SELECT')
