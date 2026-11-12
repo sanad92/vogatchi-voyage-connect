@@ -9,6 +9,7 @@ on:
       - 'src/hooks/useHotelbedsBookingObservation.ts'
       - 'supabase/functions/trip-file-hotelbeds-status/**'
       - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/functions/_shared/trip-file-air-gds*'
       - 'supabase/config.toml'
       - 'src/hooks/useBooking**'
       - 'src/lib/tripFile/**'
@@ -25,6 +26,7 @@ on:
       - 'src/hooks/useHotelbedsBookingObservation.ts'
       - 'supabase/functions/trip-file-hotelbeds-status/**'
       - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/functions/_shared/trip-file-air-gds*'
       - 'supabase/config.toml'
       - 'src/hooks/useBooking**'
       - 'src/lib/tripFile/**'
@@ -49,6 +51,8 @@ jobs:
         run: bun supabase/functions/_shared/trip-file-hotelbeds.test.ts
       - name: Test Hotelbeds provider-versus-local date diagnostics
         run: bun supabase/functions/_shared/trip-file-hotelbeds-detail.test.ts
+      - name: Test Amadeus and Travelport air reservation observation adapters
+        run: bun supabase/functions/_shared/trip-file-air-gds.test.ts
       - name: Run immutable snapshot and currency/finance tests
         run: |
           bun src/lib/tripFile/serviceSummary.test.ts
