@@ -57,13 +57,14 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const [saleId,setSaleId]=useState<string|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [agencyOpen,setAgencyOpen]=useState(false);
+  const [confirmConversionOpen,setConfirmConversionOpen]=useState(false);
   const [draft,setDraft]=useState<SaleDraft>(()=>fresh(initialType,initialProgram));
   const [agency,setAgency]=useState({name:'',contact_name:'',phone:'',email:''});
   const [line,setLine]=useState({item_kind:'program_seat' as SaleItemKind,description:'',
     room_type:'quad',quantity:1,unit_sell:0});
   const [costLine,setCostLine]=useState<any>(null);
   const [costInput,setCostInput]=useState({unit_cost:0,supplier_id:''});
-  const [traveler,setTraveler]=useState({display_name:'',customer_id:'',pilgrim_id:''});
+  const [traveler,setTraveler]=useState({display_name:'',customer_id:'',pilgrim_id:'',room_type:''});
 
   const salesQ=useRows('pilgrimage-sales',orgId,null,
     ()=>sb.from('pilgrimage_sales').select('*').eq('organization_id',orgId)
@@ -91,6 +92,11 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const travelersQ=useRows('pilgrimage-sale-travelers',orgId,saleId,
     ()=>sb.from('pilgrimage_sale_travelers').select('*').eq('organization_id',orgId)
       .eq('sale_id',saleId).order('created_at'),!!saleId);
+  const conversionsQ=useRows('pilgrimage-retail-conversions',orgId,saleId,
+    ()=>sb.from('pilgrimage_retail_conversions')
+      .select('id,registered_count,converted_at')
+      .eq('organization_id',orgId).eq('sale_id',saleId),!!saleId);
+  const conversion=conversionsQ.data?.[0]||null;
   const allocationsQ=useRows('pilgrimage-seat-allocations',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrimage_seat_allocations')
       .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at')
@@ -126,7 +132,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:error?.message||'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
-    'pilgrimage-seat-allocations','pilgrimage-seat-events'].forEach(key=>
+    'pilgrimage-seat-allocations','pilgrimage-seat-events',
+    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs'].forEach(key=>
     qc.invalidateQueries({queryKey:[key,orgId]}));
 
   const createSale=useMutation({
@@ -192,14 +199,18 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
       if(!canEdit)throw new Error('لا يمكن تعديل كشف الأسماء بعد إصدار العرض');
       if(!traveler.display_name.trim()&&!traveler.customer_id&&!traveler.pilgrim_id)
         throw new Error('أدخل اسمًا أو اربطه بملف موجود');
+      if(selected?.sale_model==='group_seat' && !traveler.pilgrim_id &&
+        (traveler.display_name.trim().length<3 || !traveler.room_type))
+        throw new Error('تسجيل مقاعد التجزئة يحتاج اسم كل مسافر وفئة غرفته');
       const {error}=await sb.from('pilgrimage_sale_travelers').insert({
         organization_id:orgId,sale_id:saleId,
         display_name:traveler.display_name.trim()||null,
         customer_id:traveler.customer_id||null,pilgrim_id:traveler.pilgrim_id||null,
+        room_type:traveler.room_type||null,
       });
       if(error)throw error;
     },
-    onSuccess:()=>{refresh();setTraveler({display_name:'',customer_id:'',pilgrim_id:''});},onError:fail,
+    onSuccess:()=>{refresh();setTraveler({display_name:'',customer_id:'',pilgrim_id:'',room_type:''});},onError:fail,
   });
   const removeTraveler=useMutation({
     mutationFn:async(id:string)=>{
@@ -211,6 +222,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const changeStatus=useMutation({
     mutationFn:async(status:'quoted'|'cancelled')=>{
       if(!canManage||!selected)throw new Error('ليس لديك صلاحية');
+      if(status==='cancelled' && conversion)
+        throw new Error('لا يمكن إلغاء عرض تم تحويله لتسجيلات فعلية دون دورة إلغاء ومراجعة مالية');
       if(status==='cancelled' && allocationIsActive)
         throw new Error('حرّر التخصيص الداخلي للمقاعد قبل إلغاء عرض السعر');
       if(status==='quoted'){
@@ -249,6 +262,22 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         'تم تحرير المقاعد داخليًا'});
     },
     onError:fail,
+  });
+  const convertRetail=useMutation({
+    mutationFn:async()=>{
+      if(!canManage || selected?.sale_model!=='group_seat' ||
+        selected?.status!=='quoted' || allocation?.status!=='allocated' || conversion)
+        throw new Error('يلزم عرض أفراد صادر ومقاعد مخصصة داخليًا وغير محوّلة');
+      const {data,error}=await sb.rpc('convert_pilgrimage_retail_group',{_sale_id:selected.id});
+      if(error)throw error;
+      if(!data)throw new Error('تعذر استلام مرجع تحويل المجموعة');
+      return data as string;
+    },
+    onSuccess:()=>{
+      setConfirmConversionOpen(false);refresh();
+      toast({title:'تم تحويل المقاعد إلى تسجيلات معتمرين داخل البرنامج',
+        description:'لم تُصدر فاتورة أو تأشيرة أو تصريح تلقائيًا. راجع المستندات والمحاسبة.'});
+    },onError:fail,
   });
   const cloneQuote=useMutation({
     mutationFn:async()=>{
@@ -335,6 +364,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         {selected.program_id&&<p className="text-xs text-muted-foreground">
           المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
             (()=>{const p=programs.find((x:any)=>x.id===selected.program_id);
+              if(!canManage||pilgrimsQ.isLoading||pilgrimsQ.error||allocationsQ.isLoading||allocationsQ.error)
+                return 'بانتظار تحديث بيانات التوافر';
               return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount):'غير محدود';})()
           }. التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.
         </p>}
@@ -347,6 +378,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
             <Badge variant="outline">{!allocation?'لم يُحجز':
+              conversion?'تم تسجيل المعتمرين':
               allocation.status==='allocated'?'مخصص داخليًا':
               allocation.status==='released'?'تم تحرير المقاعد':
               allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
@@ -354,6 +386,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           <p className="text-sm text-muted-foreground">
             {allocation?.status==='held' && allocationIsActive
               ? 'ينتهي الحجز المؤقت: '+new Date(allocation.hold_expires_at).toLocaleString('ar-EG')
+              : conversion
+              ? 'نُقلت المقاعد إلى ملفات المعتمرين؛ التسجيل ليس فاتورة أو تأشيرة.'
               : allocation?.status==='allocated'
               ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
               : 'المقاعد غير مخصصة حاليًا.'}
@@ -361,17 +395,24 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           {allocationsQ.error&&<p className="text-sm text-destructive">
             تعذر قراءة المقاعد؛ لا تعتمد على التوافر قبل التأكد من جاهزية قاعدة البيانات.
           </p>}
-          {canManage && selected.status==='quoted' && !allocationsQ.error &&
+          {canManage && selected.status==='quoted' && !allocationsQ.error && !conversionsQ.error &&
             <div className="flex flex-wrap gap-2">
-              {!allocationIsActive&&<Button disabled={allocateSeat.isPending}
+              {!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('hold')}>حجز مقاعد مؤقت — ساعتان</Button>}
               {allocation?.status==='held' && allocationIsActive &&
                 <Button disabled={allocateSeat.isPending}
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
               {allocationIsActive&&<Button variant="outline" disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
+              {selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
+                !conversion && <Button disabled={convertRetail.isPending}
+                  onClick={()=>setConfirmConversionOpen(true)}>
+                  تحويل إلى تسجيلات معتمرين
+                </Button>}
             </div>}
           <p className="text-xs text-amber-700 dark:text-amber-300">
+            تحويل تسجيلات الأفراد مشروط بمطابقة عدد الأسماء والغرف مع أسعار البرنامج؛
+            عروض B2B تحتاج حسابات العقد والشركة قبل تحويلها إلى ملفات مالية فردية.
             هذه العملية تخصّ سعة البرنامج داخل Safar ERP فقط. ليست تأكيدًا من فندق أو شركة طيران،
             ولا حجزًا رسميًا للحج أو العمرة، ولا إصدار تأشيرة أو فاتورة.
             عرض الأسماء المرتبطة بمعتمرين مسجلين سابقًا يحتاج تسوية قبل تخصيص مقاعد جديدة.
@@ -379,7 +420,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           {(eventsQ.data||[]).length>0&&<div className="space-y-1">
             <p className="text-sm font-medium">آخر سجل تغييرات المقاعد</p>
             {(eventsQ.data||[]).map((ev:any)=><p key={ev.id} className="text-xs text-muted-foreground">
-              {ev.action==='held'?'حجز مؤقت':
+              {ev.action==='converted'?'تسجيل المعتمرين':
+              ev.action==='held'?'حجز مؤقت':
                 ev.action==='reheld'?'تجديد الحجز المؤقت':
                 ev.action==='allocated'?'تثبيت داخلي':'تحرير'} ·
               {' '+ev.seat_count+' مقاعد · '+new Date(ev.event_at).toLocaleString('ar-EG')}
@@ -453,13 +495,21 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         <p className="text-xs text-muted-foreground">كشف مبدئي لا يحجز مقاعد أو يضيف معتمرين للبرنامج تلقائيًا.</p>
         {travelers.map((x:any)=><div key={x.id} className="flex items-center justify-between gap-2 text-sm border-b pb-2">
           <span>{x.display_name||pilgrimsQ.data?.find((p:any)=>p.id===x.pilgrim_id)?.full_name||
-            customers.find((c:any)=>c.id===x.customer_id)?.name||'ملف مسافر مرتبط'}</span>
+            customers.find((c:any)=>c.id===x.customer_id)?.name||'ملف مسافر مرتبط'}
+            {x.room_type?' · '+ROOM[x.room_type]:''}</span>
           {canEdit&&<Button size="icon" variant="ghost" onClick={()=>removeTraveler.mutate(x.id)}><Trash2 className="h-4 w-4"/></Button>}
         </div>)}
         {canEdit&&travelers.length<selected.party_size&&<div className="space-y-2">
           <div className="grid gap-3 sm:grid-cols-3">
             <Field name="اسم المسافر"><Input value={traveler.display_name}
               onChange={e=>setTraveler({...traveler,display_name:e.target.value})}/></Field>
+            <Field name="فئة الغرفة لكل مسافر"><Select value={selection(traveler.room_type)}
+              onValueChange={v=>setTraveler({...traveler,room_type:resolved(v)||''})}>
+              <SelectTrigger><SelectValue placeholder="اختر فئة الغرفة" /></SelectTrigger>
+              <SelectContent><SelectItem value={NONE}>غير محددة</SelectItem>
+                {Object.entries(ROOM).map(([k,t])=><SelectItem key={k} value={k}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select></Field>
             <Field name="ملف عميل موجود (اختياري)"><Select value={selection(traveler.customer_id)}
               onValueChange={v=>setTraveler({...traveler,customer_id:resolved(v)||''})}>
               <SelectTrigger><SelectValue/></SelectTrigger><SelectContent>
@@ -551,6 +601,29 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
             onChange={e=>setDraft({...draft,notes:e.target.value||null})}/></Field></div>
         </div>
         <Button disabled={createSale.isPending||!canManage} onClick={()=>createSale.mutate()}>حفظ مسودة العرض</Button>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={confirmConversionOpen} onOpenChange={setConfirmConversionOpen}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>تأكيد تسجيل المعتمرين داخل البرنامج</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm">
+            تحويل {selected?.party_size||0} مقاعد من التخصيص الداخلي إلى ملفات
+            معتمرين مسجلة في البرنامج. الإجراء ذري ويحتفظ بسجل المسافرين ومرجع العرض.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            يُنفّذ فقط إذا كانت الأسماء والغرف وأسعار البيع تطابق تعرفة البرنامج
+            ولم يوجد أي معتمر مسجل سابقًا على نفس المقاعد.
+          </p>
+          <p className="text-sm text-destructive">
+            لا يمكن إلغاء هذا التحويل بإلغاء عرض السعر مباشرةً.
+            الفواتير والمدفوعات والموردون والتأشيرات والتصاريح خطوات مستقلة.
+          </p>
+          <Button disabled={convertRetail.isPending} onClick={()=>convertRetail.mutate()}>
+            تأكيد تحويل المقاعد إلى تسجيلات
+          </Button>
+          <Button variant="outline" onClick={()=>setConfirmConversionOpen(false)}>رجوع</Button>
+        </div>
       </DialogContent>
     </Dialog>
     <Dialog open={agencyOpen} onOpenChange={setAgencyOpen}>
