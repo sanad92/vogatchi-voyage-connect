@@ -184,6 +184,7 @@ DECLARE
   v_lines int;
   v_total numeric;
   v_seats numeric;
+  v_registered bigint;
 BEGIN
   IF TG_OP='INSERT' AND NEW.status<>'draft' THEN
     RAISE EXCEPTION 'sale_starts_as_draft' USING ERRCODE='22023';
@@ -231,6 +232,21 @@ BEGIN
     RAISE EXCEPTION 'sale_revision_source_mismatch' USING ERRCODE='23503';
   END IF;
   IF TG_OP='UPDATE' AND OLD.status='draft' AND NEW.status='quoted' THEN
+    -- Quoting linked group seats is conditional on current open status and
+    -- current occupancy. This is a PRE-CHECK, not a seat reservation.
+    IF NEW.program_id IS NOT NULL AND NEW.sale_model IN ('group_seat','b2b_group') THEN
+      SELECT * INTO pg FROM public.pilgrimage_programs p
+        WHERE p.id=NEW.program_id AND p.organization_id=NEW.organization_id;
+      IF pg.status<>'open' THEN
+        RAISE EXCEPTION 'program_not_open_for_quote' USING ERRCODE='22023';
+      END IF;
+      SELECT count(*) INTO v_registered FROM public.pilgrims g
+        WHERE g.program_id=NEW.program_id AND g.status<>'cancelled';
+      IF pg.capacity>0 AND NEW.party_size>(pg.capacity-v_registered) THEN
+        RAISE EXCEPTION 'program_quote_exceeds_current_available_seats'
+          USING ERRCODE='22023';
+      END IF;
+    END IF;
     SELECT count(*),coalesce(sum(line_sell),0),
       coalesce(sum(quantity) FILTER (WHERE item_kind='program_seat'),0)
     INTO v_lines,v_total,v_seats
