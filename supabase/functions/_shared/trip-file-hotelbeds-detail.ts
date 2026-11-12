@@ -42,9 +42,12 @@ export function compareHotelbedsStayDates(
   return {
     checkIn,
     checkOut,
+    // A known mismatch must never be hidden just because the other date
+    // is absent or malformed in the provider response.
     allComparableDatesMatch:
-      checkIn === 'not_available' || checkOut === 'not_available'
-        ? null : checkIn === 'match' && checkOut === 'match',
+      checkIn === 'mismatch' || checkOut === 'mismatch'
+        ? false
+        : checkIn === 'match' && checkOut === 'match' ? true : null,
     // Matching current stored dates does NOT establish that requested
     // amendments were fulfilled or that the provider accepted changes.
     amendmentExecutionVerified: false,
