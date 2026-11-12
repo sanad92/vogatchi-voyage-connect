@@ -99,6 +99,13 @@
       "when": 1793184528761,
       "tag": "0013_quote_atomic_optional_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794489436372,
+      "tag": "0014_pin_email_queue_search_path",
+      "breakpoints": true
     }
   ]
 }
