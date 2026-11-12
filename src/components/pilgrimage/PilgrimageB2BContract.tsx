@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { money, printDocument, table } from './pilgrimage-documents';
+import { money, printDocument, table, ROOM } from './pilgrimage-documents';
 
 const sb = supabase as any;
 type Installment = { due_date: string; amount: number };
@@ -186,7 +186,7 @@ export default function PilgrimageB2BContract({
     </div>
     <p className="text-sm text-muted-foreground">
       الشركة المشترية: {agencyName||'—'} · إجمالي العرض {money(total,sale.currency)}
-      . المدين هو **الشركة المشترية** بحساب CRM مستقل، وليس المسافرين واحدًا واحدًا.
+      . المدين هو شركة السياحة المشترية بحساب CRM مستقل، وليس المسافرين واحدًا واحدًا.
     </p>
     {agreementQ.error&&<p className="text-destructive text-sm">
       تعذر تحميل بيانات العقد. لا يتم اعتماد أي اتفاق قبل تجهيز مخطط B2B في قاعدة اختبار منفصلة.
@@ -269,6 +269,53 @@ export default function PilgrimageB2BContract({
           قبل الموافقة الداخلية يجب تثبيت تخصيص مقاعد المجموعة في نفس البرنامج.
           لا يمكن اعتماد مجموعات غير مرتبطة ببرنامج دون مسار عقود الموردين.
         </p>}
+      {agreement.status==='approved_internal'&&<div className="space-y-3 border-t pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label>كشف أسماء الشركة المبدئي</Label>
+          <Badge variant="outline">{activeRoster.length} / {sale.party_size} اسم</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          الاسم هنا مرتبط بمقاعد المجموعة فقط. لا ينشئ معتمرًا مسجلًا،
+          ولا فاتورة فردية أو تأكيدًا خارجيًا، ولا يخزن رقم جواز أو تصريح.
+        </p>
+        {rosterQ.error&&<p className="text-sm text-destructive">
+          تعذر تحميل كشف الأسماء؛ لا يمكن إضافتها حتى تكتمل قاعدة البيانات.
+        </p>}
+        {(rosterQ.data||[]).map((x:any)=><div key={x.id}
+          className="flex items-center justify-between gap-2 border-b py-2 text-sm">
+          <span className={x.status==='removed'?'text-muted-foreground line-through':''}>
+            {x.display_name} · {ROOM[x.room_type]||'غرفة غير محددة'}
+            {x.status==='removed'?' (مشطوب)':''}
+          </span>
+          {x.status==='active'&&<Button size="sm" variant="outline"
+            disabled={removeRosterName.isPending}
+            onClick={()=>removeRosterName.mutate(x.id)}>شطب</Button>}
+        </div>)}
+        {!rosterQ.error&&activeRoster.length<sale.party_size&&<div className="grid gap-2 sm:grid-cols-3">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>اسم المسافر في كشف الشركة</Label>
+            <Input value={rosterName} onChange={e=>setRosterName(e.target.value)}
+              placeholder="اسم المسافر بالكامل"/>
+          </div>
+          <div className="space-y-1.5">
+            <Label>فئة الغرفة المبدئية</Label>
+            <Select value={rosterRoom||'__none__'}
+              onValueChange={v=>setRosterRoom(v==='__none__'?'':v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="__none__">غير محددة</SelectItem>
+                {Object.entries(ROOM).map(([k,t])=><SelectItem key={k} value={k}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button disabled={addRosterName.isPending||rosterName.trim().length<3}
+            onClick={()=>addRosterName.mutate()}>
+            <Plus className="h-4 w-4 me-1"/>إضافة اسم للكشف
+          </Button>
+        </div>}
+        <p className="text-xs text-muted-foreground">
+          تغيير اسم سابق يتم بشطبه وإضافة نسخة جديدة مع الاحتفاظ بسجل الإجراءات.
+        </p>
+      </div>}
     </div>}
     <p className="text-xs text-amber-700 dark:text-amber-300">
       هذه جدولة تعاقدية مبدئية وليست ذممًا أو إيرادًا محاسبيًا. إصدار الفاتورة،
