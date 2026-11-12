@@ -159,3 +159,26 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: bash scripts/test-pilgrimage-b2b-concurrency.sh
+
+  pilgrimage-b2b-roster:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test B2B traveler roster bounds, audit and private tenant names
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-b2b-roster.sql
