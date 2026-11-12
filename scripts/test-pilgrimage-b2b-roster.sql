@@ -76,10 +76,17 @@ BEGIN
   RAISE EXCEPTION 'B2B removal / replacement audit failed'; END IF;
 
  -- Name registry is NOT the operational pilgrim list; no revenue posting.
+END $;
+
+-- Inspect the fixture-only underlying pilgrim table as its owner,
+-- not by increasing the application role's direct permissions.
+RESET ROLE;
+DO $
+BEGIN
  IF (SELECT count(*) FROM public.pilgrims)<>1 THEN
   RAISE EXCEPTION 'B2B roster created or deleted actual program pilgrims'; END IF;
-END $$;
-
+END $;
+SET ROLE authenticated;
 SET test.user_id='00000000-0000-4000-8000-000000000012';
 DO $$
 DECLARE blocked boolean:=false;
