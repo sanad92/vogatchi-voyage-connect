@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import PilgrimageSales from '@/components/pilgrimage/PilgrimageSales';
 import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram } from '@/lib/pilgrimage/operations';
 import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
@@ -59,6 +60,7 @@ const Pilgrimage = () => {
   const { toast } = useToast();
   const [type, setType] = useState<'umrah' | 'hajj'>('umrah');
   const [programId, setProgramId] = useState<string | null>(null);
+  const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
   const [pilgrimOpen, setPilgrimOpen] = useState(false);
@@ -237,6 +239,9 @@ const Pilgrimage = () => {
   const passportWarning = (g: any) =>
     Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
 
+  // Unified commercial quote workspace (Group seats / FIT / B2B).
+  if (salesOpen) return <PilgrimageSales initialType={type} initialProgram={program} onBack={() => setSalesOpen(false)} />;
+
   // ===== Program detail =====
   if (program) {
     const active = programPilgrims.filter(isActivePilgrim);
@@ -264,6 +269,7 @@ const Pilgrimage = () => {
           icon={Moon}
           badge={<Badge variant="outline">{PROGRAM_STATUS[program.status]}</Badge>}
           actions={<div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSalesOpen(true)}>عروض البيع Group / FIT / B2B</Button>
             {canManage && <Button variant="outline" onClick={() => { setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
             <Button disabled={!!canRegisterPilgrim(program, programPilgrims)} title={canRegisterPilgrim(program, programPilgrims) || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
           </div>}
@@ -532,7 +538,10 @@ const Pilgrimage = () => {
         title="الحج والعمرة"
         description="إدارة برامج الحج والعمرة، التسجيل، التحصيل بسندات قبض، التسكين، وكشوفات السفر والعقود."
         icon={Moon}
-        actions={canManage && <Button onClick={() => { setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
+        actions={<div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setSalesOpen(true)}>مبيعات Group / FIT / B2B</Button>
+          {canManage && <Button onClick={() => { setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
+        </div>}
       />
       <Tabs value={type} onValueChange={(v) => setType(v as any)}>
         <TabsList><TabsTrigger value="umrah">العمرة</TabsTrigger><TabsTrigger value="hajj">الحج</TabsTrigger></TabsList>
