@@ -77,15 +77,13 @@ DECLARE
   s public.pilgrimage_sales%ROWTYPE;
   p public.pilgrimage_programs%ROWTYPE;
   a public.pilgrimage_seat_allocations%ROWTYPE;
-  t public.pilgrimage_sale_travelers%ROWTYPE;
-  item public.pilgrimage_sale_items%ROWTYPE;
+  traveler_row public.pilgrimage_sale_travelers%ROWTYPE;
   result_id uuid;
   new_pilgrim_id uuid;
   v_count bigint;
   v_item_count bigint;
   v_other_seats bigint;
   v_registered bigint;
-  v_tariff numeric;
   v_time timestamptz;
 BEGIN
   IF actor IS NULL OR _sale_id IS NULL THEN
@@ -225,18 +223,18 @@ BEGIN
     s.organization_id,s.id,p.id,a.id,s.party_size,actor
   ) RETURNING id INTO result_id;
 
-  FOR t IN SELECT * FROM public.pilgrimage_sale_travelers x
+  FOR traveler_row IN SELECT * FROM public.pilgrimage_sale_travelers x
     WHERE x.sale_id=s.id AND x.organization_id=s.organization_id ORDER BY x.id
   LOOP
     INSERT INTO public.pilgrims(
       organization_id,program_id,customer_id,full_name,room_type,status,created_by
     ) VALUES(
-      s.organization_id,p.id,coalesce(t.customer_id,s.buyer_customer_id),
-      btrim(t.display_name),t.room_type,'registered',actor
+      s.organization_id,p.id,coalesce(traveler_row.customer_id,s.buyer_customer_id),
+      btrim(traveler_row.display_name),traveler_row.room_type,'registered',actor
     ) RETURNING id INTO new_pilgrim_id;
     INSERT INTO public.pilgrimage_retail_conversion_travelers(
       organization_id,conversion_id,quote_traveler_id,pilgrim_id
-    ) VALUES (s.organization_id,result_id,t.id,new_pilgrim_id);
+    ) VALUES (s.organization_id,result_id,traveler_row.id,new_pilgrim_id);
   END LOOP;
 
   INSERT INTO public.pilgrimage_seat_allocation_events(
