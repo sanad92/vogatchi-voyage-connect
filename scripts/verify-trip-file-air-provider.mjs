@@ -26,6 +26,11 @@ assert.match(edge,/TRAVELPORT_VERIFY_ALLOWED_ORG_ID/);
 assert.match(edge,/TRAVELPORT_VERIFY_PRODUCTION_ACK/);
 assert.match(edge,/enterprise_contract_required/, 'Amadeus must not be called without enterprise contract');
 assert.match(edge,/obtainTravelportToken\(environment\)/);
+assert.match(edge,/readBoundedJsonBody\(request\.body,2000\)/);
+assert.match(edge,/readBoundedJsonBody\(tokenResponse\.body,16000\)/);
+assert.match(edge,/readBoundedJsonBody\(response\.body,262144\)/);
+assert.doesNotMatch(edge,/request\.json\(\)|tokenResponse\.text\(\)|response\.text\(\)/,
+  'untrusted JSON must not be buffered without a byte limit');
 assert.match(edge,/method:'GET'/, 'supplier reservation must only be read');
 assert.match(edge,/redirect:'error'/, 'no provider redirects');
 assert.doesNotMatch(edge,/SUPABASE_SERVICE_ROLE_KEY/,'must not bypass RLS');
