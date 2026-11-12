@@ -181,7 +181,7 @@ END $$;
 
 -- International traveler readiness must fail closed until documentation
 -- is present. This tests the database trigger, not a statutory visa grant.
-DO $
+DO $$
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
@@ -189,7 +189,7 @@ BEGIN
    WHERE id='00000000-0000-4000-8000-000000000302';
  EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Undocumented international traveler marked ready'; END IF;
-END $;
+END $$;
 
 UPDATE public.pilgrims SET name_en='SAMPLE B',
   passport_number='P12345',passport_expiry='2028-01-01',
@@ -210,7 +210,7 @@ VALUES ('00000000-0000-4000-8000-000000000304',
 '00000000-0000-4000-8000-000000000101',
 'Domestic Sample','quad');
 
-DO $
+DO $$
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
@@ -218,14 +218,14 @@ BEGIN
   WHERE id='00000000-0000-4000-8000-000000000304';
  EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Domestic traveler without identity marked ready'; END IF;
-END $;
+END $$;
 
 UPDATE public.pilgrims SET national_id='TEST-IQAMA-123',
  documents_complete=true,visa_status='not_required',status='ready'
 WHERE id='00000000-0000-4000-8000-000000000304';
 
 SET test.user_id='00000000-0000-4000-8000-000000000099';
-DO $
+DO $$
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
