@@ -10,6 +10,7 @@ on:
       - 'src/hooks/useAirReservationObservation.ts'
       - 'supabase/functions/trip-file-air-reservation-status/**'
       - 'supabase/functions/_shared/trip-file-air-provider*'
+      - 'supabase/functions/_shared/trip-file-bounded-json*'
       - 'supabase/functions/trip-file-hotelbeds-status/**'
       - 'supabase/functions/_shared/trip-file-hotelbeds*'
       - 'supabase/config.toml'
@@ -29,6 +30,7 @@ on:
       - 'src/hooks/useAirReservationObservation.ts'
       - 'supabase/functions/trip-file-air-reservation-status/**'
       - 'supabase/functions/_shared/trip-file-air-provider*'
+      - 'supabase/functions/_shared/trip-file-bounded-json*'
       - 'supabase/functions/trip-file-hotelbeds-status/**'
       - 'supabase/functions/_shared/trip-file-hotelbeds*'
       - 'supabase/config.toml'
@@ -59,6 +61,8 @@ jobs:
         run: node scripts/verify-trip-file-air-provider.mjs
       - name: Test Travelport locator and sanitized reservation retrieval
         run: bun supabase/functions/_shared/trip-file-air-provider.test.ts
+      - name: Test streaming JSON byte limits and cancellation
+        run: bun supabase/functions/_shared/trip-file-bounded-json.test.ts
       - name: Run immutable snapshot and currency/finance tests
         run: |
           bun src/lib/tripFile/serviceSummary.test.ts
