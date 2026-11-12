@@ -86,7 +86,11 @@ BEGIN
     RAISE EXCEPTION 'hold_must_be_5_to_1440_minutes' USING ERRCODE='22023'; END IF;
 
   -- Read quote and check current tenant membership BEFORE privileged inventory reads.
-  SELECT * INTO s FROM public.pilgrimage_sales WHERE id=_sale_id;
+  -- Lock the tenant-authorized quote BEFORE program inventory. A concurrent
+  -- cancellation must wait and then see the newly created active allocation.
+  SELECT * INTO s FROM public.pilgrimage_sales
+    WHERE id=_sale_id AND public.user_belongs_to_org(actor,organization_id)
+    FOR UPDATE;
   IF NOT FOUND OR public.get_user_org_role(actor,s.organization_id)::text
       NOT IN ('owner','admin','manager') THEN
     RAISE EXCEPTION 'quote_not_found_or_not_authorized' USING ERRCODE='42501';
@@ -113,8 +117,8 @@ BEGIN
       WHERE id=a.id;
     v_event:='released';
   ELSIF _action='allocate' THEN
-    IF s.status<>'quoted' THEN
-      RAISE EXCEPTION 'issued_quote_required' USING ERRCODE='22023'; END IF;
+    IF s.status<>'quoted' OR p.status<>'open' THEN
+      RAISE EXCEPTION 'issued_quote_and_open_program_required' USING ERRCODE='22023'; END IF;
     IF NOT FOUND THEN RAISE EXCEPTION 'active_hold_required' USING ERRCODE='22023'; END IF;
     IF a.status='allocated' THEN RETURN a.id; END IF;
     IF a.status<>'held' OR a.hold_expires_at<=v_now THEN
@@ -198,8 +202,10 @@ DECLARE
   v_registered bigint;
   v_allocated bigint;
 BEGIN
-  IF NEW.status='cancelled' OR
-     (TG_OP='UPDATE' AND OLD.status<>'cancelled') THEN RETURN NEW; END IF;
+  IF NEW.status='cancelled' THEN RETURN NEW; END IF;
+  IF TG_OP='UPDATE' THEN
+    IF OLD.status<>'cancelled' THEN RETURN NEW; END IF;
+  END IF;
   SELECT * INTO p FROM public.pilgrimage_programs
     WHERE id=NEW.program_id AND organization_id=NEW.organization_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'program_not_found' USING ERRCODE='23503'; END IF;
