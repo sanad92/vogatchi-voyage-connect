@@ -61,9 +61,13 @@ DECLARE
   v_active bigint;
 BEGIN
   -- Lock the parent: concurrent inserts to the same program serialize.
-  SELECT * INTO p FROM public.pilgrimage_programs
-  WHERE id=NEW.program_id AND organization_id=NEW.organization_id
-  FOR UPDATE;
+  IF TG_OP='INSERT' THEN
+    SELECT * INTO p FROM public.pilgrimage_programs
+    WHERE id=NEW.program_id AND organization_id=NEW.organization_id FOR UPDATE;
+  ELSE
+    SELECT * INTO p FROM public.pilgrimage_programs
+    WHERE id=NEW.program_id AND organization_id=NEW.organization_id;
+  END IF;
   IF NOT FOUND THEN RAISE EXCEPTION 'program_company_mismatch'
     USING ERRCODE='23503'; END IF;
 
@@ -104,6 +108,8 @@ BEGIN
       RAISE EXCEPTION 'cancelled_pilgrim_must_not_be_reopened'
         USING ERRCODE='22023'; END IF;
 
+    IF NEW.cancellation_fee IS DISTINCT FROM OLD.cancellation_fee AND NEW.status<>'cancelled' THEN
+      RAISE EXCEPTION 'cancellation_fee_requires_cancellation' USING ERRCODE='22023'; END IF;
     IF NEW.status='cancelled' AND (
       NEW.cancellation_fee < 0 OR NEW.cancellation_fee>OLD.total_price
     ) THEN RAISE EXCEPTION 'invalid_cancellation_fee'
@@ -161,8 +167,17 @@ DECLARE
   g public.pilgrims%ROWTYPE;
   p public.pilgrimage_programs%ROWTYPE;
   v_paid numeric;
+  v_old_id uuid;
+  v_recheck boolean;
 BEGIN
   IF NEW.pilgrim_id IS NULL THEN RETURN NEW; END IF;
+  v_recheck := TG_OP='INSERT';
+  IF TG_OP='UPDATE' THEN
+    v_old_id := OLD.id;
+    v_recheck := OLD.status IS DISTINCT FROM 'completed'
+      OR NEW.amount IS DISTINCT FROM OLD.amount
+      OR NEW.pilgrim_id IS DISTINCT FROM OLD.pilgrim_id;
+  END IF;
   SELECT * INTO g FROM public.pilgrims
     WHERE id=NEW.pilgrim_id AND organization_id=NEW.organization_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'payment_pilgrim_company_mismatch'
@@ -179,15 +194,12 @@ BEGIN
     RAISE EXCEPTION 'cannot_collect_cancelled_pilgrim'
       USING ERRCODE='22023'; END IF;
 
-  IF NEW.status='completed' AND (
-    TG_OP='INSERT' OR OLD.status IS DISTINCT FROM 'completed'
-    OR NEW.amount IS DISTINCT FROM OLD.amount
-  ) THEN
+  IF NEW.status='completed' AND v_recheck THEN
     SELECT coalesce(sum(c.amount),0) INTO v_paid
     FROM public.customer_payments c
     WHERE c.pilgrim_id=g.id AND c.organization_id=g.organization_id
       AND c.status='completed'
-      AND (TG_OP='INSERT' OR c.id<>OLD.id);
+      AND (v_old_id IS NULL OR c.id<>v_old_id);
     IF NEW.amount <= 0 OR NEW.amount > greatest(g.total_price-v_paid,0) THEN
       RAISE EXCEPTION 'pilgrimage_payment_exceeds_balance'
         USING ERRCODE='22023'; END IF;
