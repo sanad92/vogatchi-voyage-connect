@@ -215,8 +215,10 @@ INSERT INTO public.pilgrimage_sale_travelers(
  '00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000304',
  '00000000-0000-4000-8000-000000000211');
 
+RESET ROLE;
 UPDATE public.pilgrimage_programs SET status='closed'
 WHERE id='00000000-0000-4000-8000-000000000201';
+SET ROLE authenticated;
 DO $$
 DECLARE denied boolean:=false;
 BEGIN
@@ -226,8 +228,10 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Quote issued on a closed group program'; END IF;
 END $$;
+RESET ROLE;
 UPDATE public.pilgrimage_programs SET status='open',capacity=1
 WHERE id='00000000-0000-4000-8000-000000000201';
+SET ROLE authenticated;
 DO $$
 DECLARE denied boolean:=false;
 BEGIN
@@ -237,8 +241,10 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Group quote ignored no available seats'; END IF;
 END $$;
+RESET ROLE;
 UPDATE public.pilgrimage_programs SET capacity=30
 WHERE id='00000000-0000-4000-8000-000000000201';
+SET ROLE authenticated;
 
 DO $$
 DECLARE denied boolean:=false;
