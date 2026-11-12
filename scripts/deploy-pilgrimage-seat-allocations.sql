@@ -107,6 +107,8 @@ BEGIN
 
   SELECT * INTO a FROM public.pilgrimage_seat_allocations
     WHERE sale_id=s.id AND organization_id=s.organization_id FOR UPDATE;
+  -- Take current time only after waiting on both serialization locks.
+  v_now:=clock_timestamp();
 
   IF _action='release' THEN
     IF NOT FOUND THEN RAISE EXCEPTION 'no_allocation_to_release' USING ERRCODE='22023'; END IF;
