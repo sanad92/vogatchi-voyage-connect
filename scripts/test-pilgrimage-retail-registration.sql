@@ -4,6 +4,8 @@
 -- Never run against a live/customer/hosted database.
 \set ON_ERROR_STOP on
 \i scripts/test-pilgrimage-guardrails.sql
+-- Restore the production pilgrims.id identity default omitted by the narrow PR #41 fixture.
+ALTER TABLE public.pilgrims ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
 CREATE TABLE public.suppliers(
   id uuid PRIMARY KEY,organization_id uuid NOT NULL,name text NOT NULL
