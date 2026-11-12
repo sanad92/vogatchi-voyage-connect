@@ -36,6 +36,11 @@ const partial = compareHotelbedsStayDates(booking('2027-01-03',null),original);
 assert.equal(partial.checkIn,'match');
 assert.equal(partial.checkOut,'not_available');
 assert.equal(partial.allComparableDatesMatch,null);
+const mismatchWithMissingOtherDate = compareHotelbedsStayDates(
+  booking('2027-01-04',null),original);
+assert.equal(mismatchWithMissingOtherDate.checkIn,'mismatch');
+assert.equal(mismatchWithMissingOtherDate.checkOut,'not_available');
+assert.equal(mismatchWithMissingOtherDate.allComparableDatesMatch,false);
 assert.equal(compareHotelbedsStayDates(
   booking('2027-02-29','2027-03-01'), original).checkIn,'not_available');
 assert.equal(compareHotelbedsStayDates(
