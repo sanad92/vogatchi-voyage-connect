@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.pilgrimage_sales (
   buyer_customer_id uuid REFERENCES public.customers(id) ON DELETE RESTRICT,
   buyer_agency_id uuid REFERENCES public.pilgrimage_agencies(id) ON DELETE RESTRICT,
   upstream_supplier_id uuid REFERENCES public.suppliers(id) ON DELETE RESTRICT,
+  supersedes_sale_id uuid REFERENCES public.pilgrimage_sales(id) ON DELETE RESTRICT,
   party_size int NOT NULL CHECK (party_size BETWEEN 1 AND 10000),
   currency text NOT NULL CHECK (currency IN ('EGP','SAR','USD','EUR')),
   departure_date date, return_date date,
@@ -221,6 +222,14 @@ BEGIN
     (SELECT 1 FROM public.suppliers s
      WHERE s.id=NEW.upstream_supplier_id AND s.organization_id=NEW.organization_id) THEN
     RAISE EXCEPTION 'sale_upstream_org_mismatch' USING ERRCODE='23503'; END IF;
+  IF NEW.supersedes_sale_id IS NOT NULL AND
+     (NEW.supersedes_sale_id=NEW.id OR NOT EXISTS
+       (SELECT 1 FROM public.pilgrimage_sales previous
+        WHERE previous.id=NEW.supersedes_sale_id
+          AND previous.organization_id=NEW.organization_id
+          AND previous.status='quoted')) THEN
+    RAISE EXCEPTION 'sale_revision_source_mismatch' USING ERRCODE='23503';
+  END IF;
   IF TG_OP='UPDATE' AND OLD.status='draft' AND NEW.status='quoted' THEN
     SELECT count(*),coalesce(sum(line_sell),0),
       coalesce(sum(quantity) FILTER (WHERE item_kind='program_seat'),0)
@@ -326,4 +335,83 @@ CREATE TRIGGER pilgrimage_sale_cost_guard BEFORE INSERT OR UPDATE
 REVOKE EXECUTE ON FUNCTION public._pilgrimage_sale_guard() FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public._pilgrimage_sale_child_guard() FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public._pilgrimage_sale_cost_guard() FROM PUBLIC,anon,authenticated;
+
+-- Transactional quote revision: preserve all selling services, optional costs
+-- and preliminary traveler names while allocating fresh IDs. No financial
+-- posting, passport issuance, inventory hold or vendor action takes place.
+CREATE OR REPLACE FUNCTION public.clone_pilgrimage_sale(_sale_id uuid)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $fn$
+DECLARE
+  old_sale public.pilgrimage_sales%ROWTYPE;
+  new_sale_id uuid;
+  old_item public.pilgrimage_sale_items%ROWTYPE;
+  new_item_id uuid;
+  old_cost public.pilgrimage_sale_item_costs%ROWTYPE;
+  t public.pilgrimage_sale_travelers%ROWTYPE;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  SELECT * INTO old_sale FROM public.pilgrimage_sales
+    WHERE id=_sale_id;
+  IF NOT FOUND OR
+    public.get_user_org_role(auth.uid(),old_sale.organization_id)::text
+       NOT IN ('owner','admin','manager') THEN
+    RAISE EXCEPTION 'quote_not_found_or_not_authorized' USING ERRCODE='42501';
+  END IF;
+  IF old_sale.status<>'quoted' THEN
+    RAISE EXCEPTION 'only_issued_quotes_can_be_revised' USING ERRCODE='22023'; END IF;
+
+  INSERT INTO public.pilgrimage_sales(
+    organization_id,program_type,sale_model,fulfillment_role,status,name,
+    program_id,buyer_customer_id,buyer_agency_id,upstream_supplier_id,
+    supersedes_sale_id,party_size,currency,departure_date,return_date,notes,
+    created_by
+  ) VALUES (
+    old_sale.organization_id,old_sale.program_type,old_sale.sale_model,
+    old_sale.fulfillment_role,'draft',old_sale.name,
+    old_sale.program_id,old_sale.buyer_customer_id,old_sale.buyer_agency_id,
+    old_sale.upstream_supplier_id,old_sale.id,old_sale.party_size,
+    old_sale.currency,old_sale.departure_date,old_sale.return_date,
+    old_sale.notes,auth.uid()
+  ) RETURNING id INTO new_sale_id;
+
+  FOR old_item IN SELECT * FROM public.pilgrimage_sale_items
+    WHERE sale_id=old_sale.id
+  LOOP
+    INSERT INTO public.pilgrimage_sale_items(
+      organization_id,sale_id,item_kind,description,room_type,
+      quantity,unit_sell,notes
+    ) VALUES (
+      old_sale.organization_id,new_sale_id,old_item.item_kind,
+      old_item.description,old_item.room_type,old_item.quantity,
+      old_item.unit_sell,old_item.notes
+    ) RETURNING id INTO new_item_id;
+    SELECT * INTO old_cost FROM public.pilgrimage_sale_item_costs
+      WHERE item_id=old_item.id;
+    IF FOUND THEN
+      INSERT INTO public.pilgrimage_sale_item_costs(
+        item_id,organization_id,unit_cost,supplier_id,cost_notes
+      ) VALUES (
+        new_item_id,old_sale.organization_id,old_cost.unit_cost,
+        old_cost.supplier_id,old_cost.cost_notes
+      );
+    END IF;
+  END LOOP;
+
+  FOR t IN SELECT * FROM public.pilgrimage_sale_travelers
+    WHERE sale_id=old_sale.id
+  LOOP
+    INSERT INTO public.pilgrimage_sale_travelers(
+      organization_id,sale_id,customer_id,pilgrim_id,display_name,room_type
+    ) VALUES (
+      old_sale.organization_id,new_sale_id,t.customer_id,t.pilgrim_id,
+      t.display_name,t.room_type
+    );
+  END LOOP;
+  RETURN new_sale_id;
+END;
+$fn$;
+REVOKE EXECUTE ON FUNCTION public.clone_pilgrimage_sale(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.clone_pilgrimage_sale(uuid) TO authenticated;
 COMMIT;
