@@ -248,7 +248,9 @@ DECLARE
   v_item_org uuid;
   v_traveler_org uuid;
   v_traveler_program uuid;
+  v_old_id uuid;
 BEGIN
+  IF TG_OP='UPDATE' THEN v_old_id:=OLD.id; END IF;
   IF TG_OP='DELETE' THEN
     v_sale_id:=OLD.sale_id; v_org_id:=OLD.organization_id;
   ELSE
@@ -277,7 +279,7 @@ BEGIN
          USING ERRCODE='23503'; END IF;
     END IF;
     SELECT count(*) INTO v_count FROM public.pilgrimage_sale_travelers
-      WHERE sale_id=NEW.sale_id AND (TG_OP='INSERT' OR id<>OLD.id);
+      WHERE sale_id=NEW.sale_id AND (v_old_id IS NULL OR id<>v_old_id);
     IF v_count>=s.party_size THEN
       RAISE EXCEPTION 'sale_traveler_limit_reached' USING ERRCODE='22023'; END IF;
   END IF;
