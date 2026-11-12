@@ -15,9 +15,9 @@ CREATE TABLE public.customers(id uuid PRIMARY KEY,organization_id uuid NOT NULL,
 CREATE TABLE public.suppliers(id uuid PRIMARY KEY,organization_id uuid NOT NULL,name text NOT NULL);
 CREATE TABLE public.pilgrimage_programs(
   id uuid PRIMARY KEY,organization_id uuid NOT NULL,program_type text NOT NULL,
-  currency text NOT NULL DEFAULT 'EGP',capacity int NOT NULL DEFAULT 30
+  currency text NOT NULL DEFAULT 'EGP',status text NOT NULL DEFAULT 'open',capacity int NOT NULL DEFAULT 30
 );
-CREATE TABLE public.pilgrims(id uuid PRIMARY KEY,organization_id uuid NOT NULL,program_id uuid NOT NULL);
+CREATE TABLE public.pilgrims(id uuid PRIMARY KEY,organization_id uuid NOT NULL,program_id uuid NOT NULL,status text NOT NULL DEFAULT 'registered');
 CREATE FUNCTION public.user_belongs_to_org(u uuid, org uuid)
 RETURNS boolean LANGUAGE sql STABLE SET search_path=''
 AS $$
@@ -214,6 +214,31 @@ INSERT INTO public.pilgrimage_sale_travelers(
 ) VALUES(
  '00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000304',
  '00000000-0000-4000-8000-000000000211');
+
+UPDATE public.pilgrimage_programs SET status='closed'
+WHERE id='00000000-0000-4000-8000-000000000201';
+DO $$
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+   UPDATE public.pilgrimage_sales SET status='quoted'
+   WHERE id='00000000-0000-4000-8000-000000000304';
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Quote issued on a closed group program'; END IF;
+END $$;
+UPDATE public.pilgrimage_programs SET status='open',capacity=1
+WHERE id='00000000-0000-4000-8000-000000000201';
+DO $$
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+   UPDATE public.pilgrimage_sales SET status='quoted'
+   WHERE id='00000000-0000-4000-8000-000000000304';
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Group quote ignored no available seats'; END IF;
+END $$;
+UPDATE public.pilgrimage_programs SET capacity=30
+WHERE id='00000000-0000-4000-8000-000000000201';
 
 DO $$
 DECLARE denied boolean:=false;
