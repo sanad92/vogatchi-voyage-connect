@@ -28,6 +28,8 @@ jobs:
         run: bun src/lib/pilgrimage/operations.test.ts
       - name: Test Group / FIT / B2B quote validators and margin calculation
         run: bun src/lib/pilgrimage/sales.test.ts
+      - name: Test B2B installment cents, due dates and totals
+        run: bun src/lib/pilgrimage/b2b.test.ts
       - name: Check TypeScript
         run: bunx tsc --noEmit
       - name: Build
@@ -132,3 +134,53 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: bash scripts/test-pilgrimage-retail-concurrency.sh
+
+  pilgrimage-b2b-agreement:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test B2B buyer CRM debtor link, installments, approval and RLS
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-b2b-agreements.sql
+      - name: Race approved agency group contract against concurrent seat release
+        env:
+          PGPASSWORD: postgres
+        run: bash scripts/test-pilgrimage-b2b-concurrency.sh
+
+  pilgrimage-b2b-roster:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test B2B traveler roster bounds, audit and private tenant names
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-b2b-roster.sql
