@@ -11,6 +11,12 @@ export interface HotelbedsBookingStatusObservation {
   environment?: 'test' | 'production';
   providerBookingStatus?: 'CONFIRMED' | 'CANCELLED' | 'MODIFIED' | 'UNKNOWN';
   checkedAt?: string;
+  datesComparedToCurrentLocalBooking?: {
+    checkIn: 'match' | 'mismatch' | 'not_available';
+    checkOut: 'match' | 'mismatch' | 'not_available';
+    allComparableDatesMatch: boolean | null;
+    amendmentExecutionVerified: false;
+  };
   externalProviderVerification: 'not_performed' | 'booking_status_only';
   amendmentExecutionVerified: false;
   message?: string;
