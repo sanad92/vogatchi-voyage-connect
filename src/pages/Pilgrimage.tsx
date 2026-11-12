@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram } from '@/lib/pilgrimage/operations';
 import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
 } from '@/components/pilgrimage/pilgrimage-documents';
@@ -29,19 +31,19 @@ const PROGRAM_STATUS: Record<string, string> = {
   draft: 'مسودة', open: 'التسجيل مفتوح', full: 'مكتمل العدد', closed: 'مغلق', departed: 'غادر', completed: 'انتهى', cancelled: 'ملغي',
 };
 const PROGRAM_FIELDS = ['name', 'season', 'departure_date', 'return_date', 'makkah_hotel', 'makkah_nights', 'madinah_hotel', 'madinah_nights',
-  'airline', 'flight_details', 'transport_details', 'capacity', 'price_quad', 'price_triple', 'price_double', 'price_single', 'notes', 'terms', 'status'];
+  'airline', 'flight_details', 'transport_details', 'capacity', 'price_quad', 'price_triple', 'price_double', 'price_single', 'currency', 'notes', 'terms', 'status'];
 const PILGRIM_FIELDS = ['full_name', 'name_en', 'phone', 'gender', 'birth_date', 'nationality', 'national_id', 'passport_number', 'passport_expiry',
-  'mahram_name', 'mahram_relation', 'room_type', 'room_group', 'visa_number', 'portal_barcode', 'makkah_room', 'madinah_room', 'bus_number', 'supervisor', 'notes'];
+  'mahram_name', 'mahram_relation', 'room_type', 'room_group', 'vaccination_done', 'documents_complete', 'visa_number', 'portal_barcode', 'makkah_room', 'madinah_room', 'bus_number', 'supervisor', 'notes'];
 
 const EMPTY_PROGRAM: any = {
   name: '', season: '', departure_date: '', return_date: '', makkah_hotel: '', makkah_nights: 0,
   madinah_hotel: '', madinah_nights: 0, airline: '', flight_details: '', transport_details: '', capacity: 0,
-  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, notes: '', terms: '', status: 'open', cost_per_person: 0,
+  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, currency: 'EGP', notes: '', terms: '', status: 'open', cost_per_person: 0,
 };
 const EMPTY_PILGRIM: any = {
   full_name: '', name_en: '', phone: '', gender: 'male', birth_date: '', nationality: 'مصري', national_id: '',
   passport_number: '', passport_expiry: '', mahram_name: '', mahram_relation: '', room_type: 'quad', room_group: '',
-  visa_number: '', portal_barcode: '', makkah_room: '', madinah_room: '', bus_number: '', supervisor: '', notes: '',
+  vaccination_done: false, documents_complete: false, visa_number: '', portal_barcode: '', makkah_room: '', madinah_room: '', bus_number: '', supervisor: '', notes: '',
 };
 const pick = (o: any, keys: string[]) => Object.fromEntries(keys.map((k) => [k, o[k] === '' && /date|expiry/.test(k) ? null : o[k] ?? null]));
 
@@ -64,6 +66,7 @@ const Pilgrimage = () => {
   const [payFor, setPayFor] = useState<any>(null);
   const [cancelFor, setCancelFor] = useState<any>(null);
   const [fee, setFee] = useState(0);
+  const [search, setSearch] = useState('');
   const [pay, setPay] = useState({ amount: 0, method: 'cash', treasury: '', reference: '', date: new Date().toISOString().slice(0, 10) });
   const [pf, setPf] = useState<any>({ ...EMPTY_PROGRAM });
   const [gf, setGf] = useState<any>({ ...EMPTY_PILGRIM });
@@ -89,6 +92,14 @@ const Pilgrimage = () => {
 
   const saveProgram = useMutation({
     mutationFn: async () => {
+      const issues = validatePilgrimageProgram(pf, pf.name || '');
+      if (issues.length) throw new Error(issues.join('، '));
+      if (editingProgram && program) {
+        if (programPilgrims.length && pf.currency !== program.currency)
+          throw new Error('لا يمكن تغيير عملة البرنامج بعد تسجيل أشخاص عليه');
+        if (Number(pf.capacity) > 0 && Number(pf.capacity) < programPilgrims.filter(isActivePilgrim).length)
+          throw new Error('السعة الجديدة أقل من عدد المسجلين الفعلي');
+      }
       const row: any = pick(pf, PROGRAM_FIELDS);
       let id = programId;
       if (editingProgram && id) {
@@ -127,14 +138,24 @@ const Pilgrimage = () => {
 
   const savePilgrim = useMutation({
     mutationFn: async () => {
+      if (!program) throw new Error('اختر برنامجًا أولاً');
+      if (gf.full_name.trim().length < 3) throw new Error('أدخل الاسم الكامل');
       const row: any = pick(gf, PILGRIM_FIELDS);
-      row.total_price = priceFor(program, gf.room_type);
       if (editingPilgrim) {
-        const { error } = await sb.from('pilgrims').update(row).eq('id', editingPilgrim).eq('organization_id', orgId);
+        const previous = programPilgrims.find((g) => g.id === editingPilgrim);
+        if (!previous) throw new Error('ملف المسافر غير موجود');
+        if (previous.room_type !== gf.room_type) {
+          if (Number(previous.paid_amount) > 0) throw new Error('لا يمكن تغيير سعر فئة الغرفة بعد التحصيل. استخدم إجراء تعديل مالي معتمد.');
+          row.total_price = priceFor(program, gf.room_type);
+        }
+        const { error } = await sb.from('pilgrims').update(row).eq('id', editingPilgrim).eq('organization_id', orgId).eq('program_id', programId);
         if (error) throw error;
         return;
       }
-      if (programPilgrims.filter((g) => g.status !== 'cancelled').length >= (program?.capacity || Infinity)) throw new Error('البرنامج مكتمل العدد');
+      const block = canRegisterPilgrim(program, programPilgrims);
+      if (block) throw new Error(block);
+      row.total_price = priceFor(program, gf.room_type);
+      if (row.total_price <= 0) throw new Error('حدد سعر بيع صالح لفئة الغرفة قبل التسجيل');
       const customer_id = await linkCustomer();
       const { error } = await sb.from('pilgrims').insert({ ...row, customer_id, organization_id: orgId, program_id: programId });
       if (error) throw error;
@@ -145,7 +166,13 @@ const Pilgrimage = () => {
 
   const patchPilgrim = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
-      const { error } = await sb.from('pilgrims').update(patch).eq('id', id).eq('organization_id', orgId);
+      const current = programPilgrims.find((g) => g.id === id);
+      if (!current) throw new Error('المسافر غير موجود داخل البرنامج');
+      if (['ready', 'traveled', 'completed'].includes(patch.status)) {
+        const issues = readinessIssues({ ...current, ...patch }, program);
+        if (issues.length) throw new Error('يجب استكمال البيانات قبل تغيير الحالة: ' + issues.join('، '));
+      }
+      const { error } = await sb.from('pilgrims').update(patch).eq('id', id).eq('organization_id', orgId).eq('program_id', programId);
       if (error) throw error;
     },
     onSuccess: refresh,
@@ -154,10 +181,17 @@ const Pilgrimage = () => {
 
   const collect = useMutation({
     mutationFn: async () => {
+      if (!canManage) throw new Error('ليس لديك صلاحية تحصيل دفعة من هذا القسم');
       const g = payFor;
-      const remaining = Math.max(0, g.total_price - g.paid_amount);
-      if (pay.amount <= 0 || pay.amount > remaining) throw new Error(`المبلغ يجب أن يكون بين 1 و ${remaining}`);
+      if (!program || !g || g.status === 'cancelled') throw new Error('لا يمكن التحصيل لهذه الحالة');
+      const remaining = outstanding(g);
+      if (!Number.isFinite(pay.amount) || pay.amount <= 0 || pay.amount > remaining)
+        throw new Error(`المبلغ يجب أن يكون بين 0 و ${remaining}`);
+      if (!pay.date) throw new Error('تاريخ التحصيل مطلوب');
       if (pay.method !== 'cash' && !pay.treasury) throw new Error('اختر الخزينة أو الحساب البنكي');
+      const treasury = treasuries.find((t) => t.id === pay.treasury);
+      if (pay.treasury && (!treasury || treasury.currency !== program.currency))
+        throw new Error('الخزينة ليست نشطة أو عملتها لا تطابق البرنامج');
       const { data, error } = await sb.from('customer_payments').insert({
         organization_id: orgId, pilgrim_id: g.id, customer_id: g.customer_id, amount: pay.amount, amount_base: pay.amount,
         currency: program.currency || 'EGP', payment_method: pay.method, treasury_account_id: pay.treasury || null,
@@ -167,24 +201,23 @@ const Pilgrimage = () => {
       return { p: data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
     },
     onSuccess: ({ p, g }) => {
-      setPayFor(null); refresh(); toast({ title: 'تم تسجيل سند القبض وترحيله للخزينة' });
+      setPayFor(null); refresh(); toast({ title: 'تم تسجيل دفعة العميل؛ راجع القيد والتسوية من قسم المالية' });
       printDocument(currentOrganization, 'سند قبض', receiptHtml(p, g, program));
     },
     onError: fail,
   });
 
   const label = type === 'hajj' ? 'الحاج' : 'المعتمر';
-  const passportWarning = (g: any) => {
-    if (!g.passport_expiry || !program?.return_date) return false;
-    const limit = new Date(program.return_date); limit.setMonth(limit.getMonth() + 6);
-    return new Date(g.passport_expiry) < limit;
-  };
+  const passportWarning = (g: any) =>
+    Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
 
   // ===== Program detail =====
   if (program) {
-    const active = programPilgrims.filter((g) => g.status !== 'cancelled');
-    const total = active.reduce((s, g) => s + Number(g.total_price), 0) + programPilgrims.filter((g) => g.status === 'cancelled').reduce((s, g) => s + Number(g.cancellation_fee), 0);
-    const paid = programPilgrims.reduce((s, g) => s + Number(g.paid_amount), 0);
+    const active = programPilgrims.filter(isActivePilgrim);
+    const totals = pilgrimageTotals(programPilgrims);
+    const filteredPilgrims = programPilgrims.filter((g) =>
+      [g.full_name, g.name_en, g.phone, g.passport_number, g.room_group].some((v: unknown) => String(v ?? '').toLowerCase().includes(search.trim().toLowerCase()))
+    );
     const cost = costs.find((c) => c.program_id === program.id);
     const groupBy = (key: string) => {
       const m = new Map<string, any[]>();
@@ -206,26 +239,34 @@ const Pilgrimage = () => {
           badge={<Badge variant="outline">{PROGRAM_STATUS[program.status]}</Badge>}
           actions={<div className="flex gap-2">
             {canManage && <Button variant="outline" onClick={() => { setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
-            <Button onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
+            <Button disabled={!!canRegisterPilgrim(program, programPilgrims)} title={canRegisterPilgrim(program, programPilgrims) || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
           </div>}
         />
         <div className="grid gap-3 sm:grid-cols-4">
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المسجلون / السعة</p><p className="text-2xl font-semibold">{active.length} / {program.capacity || '∞'}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">إجمالي المبيعات</p><p className="text-xl font-semibold">{fmt(total, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل</p><p className="text-xl font-semibold">{fmt(paid, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي</p><p className="text-xl font-semibold">{fmt(Math.max(0, total - paid), program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المسجلون / السعة</p><p className="text-2xl font-semibold">{totals.registered} / {program.capacity || '∞'}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">إجمالي المبيعات</p><p className="text-xl font-semibold">{fmt(totals.grossDue, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل</p><p className="text-xl font-semibold">{fmt(totals.collected, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي</p><p className="text-xl font-semibold">{fmt(totals.outstanding, program.currency)}</p></Card>
         </div>
+        {totals.refundExposure > 0 && (
+          <Card className="p-4 text-sm border-amber-500/60">
+            <span className="font-medium">مبالغ محتملة للرد تحتاج مراجعة المالية: </span>
+            {fmt(totals.refundExposure, program.currency)}
+            <span className="text-muted-foreground ms-2">هذا ليس إثباتًا لتنفيذ استرداد.</span>
+          </Card>
+        )}
         {canManage && cost && (
           <Card className="p-4 text-sm">
-            <span className="text-muted-foreground">للإدارة فقط · التكلفة للفرد: </span>{fmt(cost.cost_per_person, program.currency)}
-            <span className="text-muted-foreground ms-4">الربح التقديري: </span>{fmt(total - cost.cost_per_person * active.length, program.currency)}
+            <span className="text-muted-foreground">للإدارة فقط · التكلفة التقديرية للفرد: </span>{fmt(cost.cost_per_person, program.currency)}
+            <span className="text-muted-foreground ms-4">الهامش التقديري قبل المصروفات والتسويات: </span>{fmt(totals.grossDue - cost.cost_per_person * active.length, program.currency)}
           </Card>
         )}
 
         <Tabs defaultValue="pilgrims">
           <TabsList><TabsTrigger value="pilgrims">المسجلون</TabsTrigger><TabsTrigger value="rooming">التسكين</TabsTrigger><TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
 
-          <TabsContent value="pilgrims">
+          <TabsContent value="pilgrims" className="space-y-3">
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الجواز أو الهاتف أو المجموعة" aria-label="بحث المسجلين" />
             <Card className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
@@ -233,17 +274,18 @@ const Pilgrimage = () => {
                   <TableHead>التأشيرة</TableHead><TableHead>الحالة</TableHead><TableHead>السعر</TableHead><TableHead>المدفوع</TableHead><TableHead>المتبقي</TableHead><TableHead />
                 </TableRow></TableHeader>
                 <TableBody>
-                  {programPilgrims.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">لا يوجد مسجلون بعد.</TableCell></TableRow>}
-                  {programPilgrims.map((g) => {
+                  {filteredPilgrims.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">لا توجد نتائج مطابقة.</TableCell></TableRow>}
+                  {filteredPilgrims.map((g) => {
                     const cancelled = g.status === 'cancelled';
-                    const due = cancelled ? Number(g.cancellation_fee) : Number(g.total_price);
+                    const due = pilgrimDue(g);
+                    const issues = readinessIssues(g, program);
                     return (
                       <TableRow key={g.id} className={cancelled ? 'opacity-60' : ''}>
                         <TableCell className="font-medium">{g.full_name}{g.mahram_name && <p className="text-xs text-muted-foreground">المحرم: {g.mahram_name} ({g.mahram_relation})</p>}</TableCell>
                         <TableCell dir="ltr">{g.phone}</TableCell>
                         <TableCell>
                           {g.passport_number || <span className="text-destructive text-xs">ناقص</span>}
-                          {passportWarning(g) && <p className="text-xs text-destructive">الصلاحية أقل من 6 أشهر</p>}
+                          {passportWarning(g) && <p className="text-xs text-destructive">الجواز ينتهي قبل العودة</p>}
                         </TableCell>
                         <TableCell>{ROOM[g.room_type]}{g.makkah_room && <p className="text-xs text-muted-foreground">مكة {g.makkah_room} · المدينة {g.madinah_room || '—'}</p>}</TableCell>
                         <TableCell>
@@ -260,14 +302,14 @@ const Pilgrimage = () => {
                             </Select>
                           )}
                         </TableCell>
-                        <TableCell>{fmt(due, program.currency)}</TableCell>
+                        <TableCell>{fmt(due, program.currency)}{!cancelled && issues.length > 0 && <p className="text-xs text-amber-600">{issues.length} نواقص تشغيلية</p>}</TableCell>
                         <TableCell>{fmt(g.paid_amount, program.currency)}</TableCell>
                         <TableCell>
-                          {fmt(Math.max(0, due - g.paid_amount), program.currency)}
-                          {cancelled && g.paid_amount > due && <p className="text-xs text-destructive">مستحق رد {fmt(g.paid_amount - due, program.currency)}</p>}
+                          {fmt(outstanding(g), program.currency)}
+                          {refundable(g) > 0 && <p className="text-xs text-destructive">مستحق مراجعة رد {fmt(refundable(g), program.currency)}</p>}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {!cancelled && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ ...pay, amount: Math.max(0, g.total_price - g.paid_amount), reference: '' }); }}><Wallet className="h-4 w-4" /></Button>}
+                          {!cancelled && canManage && outstanding(g) > 0 && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ ...pay, amount: outstanding(g), reference: '' }); }}><Wallet className="h-4 w-4" /></Button>}
                           <Button size="icon" variant="ghost" title="طباعة العقد" onClick={() => printDocument(currentOrganization, `عقد برنامج ${program.name}`, contractHtml(g, program))}><FileText className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>
                           {!cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => { setCancelFor(g); setFee(0); }}><Ban className="h-4 w-4 text-destructive" /></Button>}
@@ -321,13 +363,17 @@ const Pilgrimage = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reports">
+          <TabsContent value="reports" className="space-y-3">
+            <p className="text-xs text-muted-foreground">الكشوفات التشغيلية داخل الشركة فقط؛ تأكد من مستندات السفر وشروط الموسم المعتمدة قبل مشاركتها خارجيًا.</p>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 { t: 'كشف الطيران والجوازات', h: MANIFEST_HEADERS, r: () => manifestRows(active), ltr: true },
                 { t: 'كشف تسكين مكة', h: ['الغرفة', 'الاسم', 'النوع', 'الفئة', 'العائلة', 'المحرم'], r: () => roomingRows('makkah_room') },
                 { t: 'كشف تسكين المدينة', h: ['الغرفة', 'الاسم', 'النوع', 'الفئة', 'العائلة', 'المحرم'], r: () => roomingRows('madinah_room') },
                 { t: 'كشف الحافلات والمشرفين', h: ['الحافلة', 'المشرف', 'الاسم', 'الهاتف'], r: () => busRows },
+                { t: 'كشف حالة التأشيرات', h: ['الاسم', 'رقم الجواز', 'التأشيرة', 'رقم التأشيرة', 'باركود المنصة'], r: () => active.map((g) => [g.full_name, g.passport_number || '', VISA[g.visa_status] || '', g.visa_number || '', g.portal_barcode || '']) },
+                { t: 'كشف النواقص والجاهزية', h: ['الاسم', 'الحالة', 'النواقص'], r: () => active.map((g) => [g.full_name, PILGRIM_STATUS[g.status] || '', readinessIssues(g, program).join('؛ ') || 'مكتمل تشغيليًا']) },
+                { t: 'كشف التحصيل والمتبقي', h: ['الاسم', 'المستحق', 'المدفوع', 'المتبقي', 'مراجعة رد'], r: () => programPilgrims.map((g) => [g.full_name, pilgrimDue(g), g.paid_amount, outstanding(g), refundable(g)]) },
               ].map((rep) => (
                 <Card key={rep.t} className="p-4 space-y-3">
                   <p className="font-medium">{rep.t}</p>
@@ -363,6 +409,12 @@ const Pilgrimage = () => {
                 <Select value={gf.room_type} onValueChange={(v) => setGf({ ...gf, room_type: v })}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(ROOM).map(([k, v]) => <SelectItem key={k} value={k}>{v} · {fmt(priceFor(program, k), program.currency)}</SelectItem>)}</SelectContent></Select>
               </F>
+              <F label="ملف المستندات مكتمل">
+                <div className="flex items-center gap-2 pt-2"><Checkbox checked={!!gf.documents_complete} onCheckedChange={(v) => setGf({ ...gf, documents_complete: v === true })} /><span className="text-sm">تمت مراجعة المستندات يدويًا</span></div>
+              </F>
+              <F label="حالة التطعيمات (تسجيل إداري)">
+                <div className="flex items-center gap-2 pt-2"><Checkbox checked={!!gf.vaccination_done} onCheckedChange={(v) => setGf({ ...gf, vaccination_done: v === true })} /><span className="text-sm">تمت مراجعة المستندات الطبية المطلوبة للموسم</span></div>
+              </F>
               <F label="ملاحظات" wide><Textarea value={gf.notes ?? ''} onChange={(e) => setGf({ ...gf, notes: e.target.value })} /></F>
             </div>
             {!editingPilgrim && <p className="text-xs text-muted-foreground">سيتم ربطه بملف العميل الحالي بنفس رقم الهاتف أو إنشاء ملف عميل جديد. الدفعات تُسجَّل من زر التحصيل.</p>}
@@ -373,7 +425,7 @@ const Pilgrimage = () => {
         <Dialog open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)}>
           <DialogContent>
             <DialogHeader><DialogTitle>سند قبض · {payFor?.full_name}</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">المتبقي: {payFor && fmt(Math.max(0, payFor.total_price - payFor.paid_amount), program.currency)}</p>
+            <p className="text-sm text-muted-foreground">المتبقي: {payFor && fmt(outstanding(payFor), program.currency)}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <F label="المبلغ"><Input type="number" value={pay.amount} onChange={(e) => setPay({ ...pay, amount: Number(e.target.value) })} /></F>
               <F label="التاريخ"><Input type="date" value={pay.date} onChange={(e) => setPay({ ...pay, date: e.target.value })} /></F>
@@ -395,8 +447,8 @@ const Pilgrimage = () => {
           <DialogContent>
             <DialogHeader><DialogTitle>إلغاء تسجيل {cancelFor?.full_name}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">المدفوع: {cancelFor && fmt(cancelFor.paid_amount, program.currency)}. أدخل رسوم الإلغاء حسب سياسة الشركة؛ الفرق يظهر كمستحق رد ويُصرف من طلبات الاسترداد في المالية.</p>
-            <F label="رسوم الإلغاء"><Input type="number" value={fee} onChange={(e) => setFee(Math.max(0, Number(e.target.value)))} /></F>
-            <Button variant="destructive" className="w-full" onClick={() => { patchPilgrim.mutate({ id: cancelFor.id, patch: { status: 'cancelled', cancellation_fee: fee, cancelled_at: new Date().toISOString() } }); setCancelFor(null); }}>تأكيد الإلغاء</Button>
+            <F label="رسوم الإلغاء"><Input type="number" min="0" max={cancelFor?.total_price || 0} value={fee} onChange={(e) => setFee(Math.max(0, Number(e.target.value)))} /></F>
+            <Button variant="destructive" className="w-full" disabled={patchPilgrim.isPending || fee > Number(cancelFor?.total_price ?? 0)} onClick={() => { patchPilgrim.mutate({ id: cancelFor.id, patch: { status: 'cancelled', cancellation_fee: fee, cancelled_at: new Date().toISOString() } }); setCancelFor(null); }}>تأكيد الإلغاء</Button>
           </DialogContent>
         </Dialog>
         {programDialog()}
@@ -412,6 +464,11 @@ const Pilgrimage = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <F label="اسم البرنامج" wide><Input value={pf.name} onChange={(e) => setPf({ ...pf, name: e.target.value })} placeholder="مثال: عمرة رجب 15 يوم" /></F>
             <F label="الموسم"><Input value={pf.season ?? ''} onChange={(e) => setPf({ ...pf, season: e.target.value })} placeholder="1448 هـ" /></F>
+            <F label="عملة البرنامج">
+              <Select value={pf.currency || 'EGP'} disabled={editingProgram && programPilgrims.length > 0} onValueChange={(v) => setPf({ ...pf, currency: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{['EGP', 'SAR', 'USD', 'EUR'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+              </Select>
+            </F>
             <F label="الحالة">
               <Select value={pf.status} onValueChange={(v) => setPf({ ...pf, status: v })}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(PROGRAM_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select>
