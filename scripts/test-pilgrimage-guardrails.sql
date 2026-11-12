@@ -224,6 +224,16 @@ UPDATE public.pilgrims SET national_id='TEST-IQAMA-123',
  documents_complete=true,visa_status='not_required',status='ready'
 WHERE id='00000000-0000-4000-8000-000000000304';
 
+DO $$
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+  UPDATE public.pilgrims SET documents_complete=false
+  WHERE id='00000000-0000-4000-8000-000000000304';
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Already-ready traveler lost required documents'; END IF;
+END $$;
+
 SET test.user_id='00000000-0000-4000-8000-000000000099';
 DO $$
 DECLARE denied boolean:=false;
