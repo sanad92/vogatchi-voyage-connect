@@ -47,6 +47,8 @@ jobs:
         run: node scripts/verify-trip-file-hotelbeds-contract.mjs
       - name: Test Hotelbeds sanitized booking observation parser
         run: bun supabase/functions/_shared/trip-file-hotelbeds.test.ts
+      - name: Test Hotelbeds provider-versus-local date diagnostics
+        run: bun supabase/functions/_shared/trip-file-hotelbeds-detail.test.ts
       - name: Run immutable snapshot and currency/finance tests
         run: |
           bun src/lib/tripFile/serviceSummary.test.ts
