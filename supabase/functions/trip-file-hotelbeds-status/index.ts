@@ -18,6 +18,7 @@ import {
   matchesRegisteredHotelbedsService,
   parseHotelbedsBookingObservation,
 } from '../_shared/trip-file-hotelbeds.ts';
+import { compareHotelbedsStayDates } from '../_shared/trip-file-hotelbeds-detail.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -123,7 +124,7 @@ Deno.serve(async (request) => {
       .select('status').eq('change_request_id', a.id)
       .eq('booking_id', a.booking_id).eq('organization_id', a.organization_id).maybeSingle(),
     client.from('hotel_bookings')
-      .select('id,organization_id,booking_id,booking_reference_supplier,booking_source,supplier_name')
+      .select('id,organization_id,booking_id,booking_reference_supplier,booking_source,supplier_name,check_in_date,check_out_date')
       .eq('booking_id', a.booking_id)
       .eq('organization_id', a.organization_id)
       .eq('booking_reference_supplier', a.service_reference)
@@ -189,10 +190,21 @@ Deno.serve(async (request) => {
     }
     const raw = await response.text();
     if (raw.length > 131_072) {
-      return json({ state: 'provider_unavailable', amendmentExecutionVerified: false }, 502);
+      return json({
+        state: 'provider_unavailable',
+        externalProviderVerification: 'not_performed',
+        amendmentExecutionVerified: false,
+      }, 502);
     }
+    const providerResponse = JSON.parse(raw);
     const observation = parseHotelbedsBookingObservation(
-      JSON.parse(raw), a.service_reference,
+      providerResponse, a.service_reference,
+    );
+    const datesComparedToCurrentLocalBooking = compareHotelbedsStayDates(
+      providerResponse, {
+        check_in_date: linkedHotel[0].check_in_date,
+        check_out_date: linkedHotel[0].check_out_date,
+      },
     );
     return json({
       state: 'provider_booking_observed',
@@ -200,6 +212,7 @@ Deno.serve(async (request) => {
       environment,
       checkedAt: new Date().toISOString(),
       providerBookingStatus: observation.providerStatus,
+      datesComparedToCurrentLocalBooking,
       referenceMatchesRegisteredService: true,
       externalProviderVerification: 'booking_status_only',
       amendmentExecutionVerified: false,
