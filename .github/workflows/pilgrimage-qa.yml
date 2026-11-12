@@ -26,6 +26,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Test pilgrim pricing, cancellation, capacity and operational readiness
         run: bun src/lib/pilgrimage/operations.test.ts
+      - name: Test Group / FIT / B2B quote validators and margin calculation
+        run: bun src/lib/pilgrimage/sales.test.ts
       - name: Check TypeScript
         run: bunx tsc --noEmit
       - name: Build
@@ -53,3 +55,26 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-guardrails.sql
+
+  pilgrimage-sales-database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test tenant isolation, Group/FIT/B2B models and internal cost privacy
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-sales-models.sql
