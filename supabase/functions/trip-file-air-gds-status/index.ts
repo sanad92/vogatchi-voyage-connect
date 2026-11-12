@@ -152,7 +152,7 @@ Deno.serve(async (request) => {
     flights.data[0],a.organization_id,a.booking_id,a.service_reference,provider,
   ))return json({
     state:'reference_not_linked',provider,externalProviderVerification:'not_performed',
-  },409);
+  });
 
   // Platform opt-in is scoped to one company, never shared across agencies.
   if(Deno.env.get('AIR_GDS_VERIFY_ENABLED')!=='true'
