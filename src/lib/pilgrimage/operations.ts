@@ -13,6 +13,7 @@ export type PilgrimRecord = {
   name_en?: string | null;
   passport_number?: string | null;
   passport_expiry?: string | null;
+  national_id?: string | null;
   documents_complete?: boolean | null;
   vaccination_done?: boolean | null;
   visa_status?: string | null;
@@ -23,6 +24,7 @@ export type PilgrimRecord = {
 };
 export type ProgramRecord = {
   status?: string | null;
+  travel_scope?: 'domestic' | 'international' | string | null;
   capacity?: number | null;
   departure_date?: string | null;
   return_date?: string | null;
@@ -87,12 +89,17 @@ export function canRegisterPilgrim(p: ProgramRecord, current: PilgrimRecord[]) {
 export function readinessIssues(p: PilgrimRecord, program: ProgramRecord) {
   const issues: string[] = [];
   if (!p.full_name?.trim()) issues.push('الاسم غير مسجل');
-  if (!p.name_en?.trim()) issues.push('الاسم بالإنجليزية ناقص');
-  if (!p.passport_number?.trim()) issues.push('رقم الجواز ناقص');
-  if (!p.passport_expiry) issues.push('تاريخ انتهاء الجواز ناقص');
-  if (p.passport_expiry && program.return_date && p.passport_expiry < program.return_date)
-    issues.push('الجواز ينتهي قبل العودة');
-  if (p.visa_status !== 'issued') issues.push('التأشيرة غير مسجلة كصادرة');
+  if (program.travel_scope === 'domestic') {
+    if (!p.national_id?.trim()) issues.push('رقم الهوية / الإقامة ناقص');
+  } else {
+    if (!p.name_en?.trim()) issues.push('الاسم بالإنجليزية ناقص');
+    if (!p.passport_number?.trim()) issues.push('رقم الجواز ناقص');
+    if (!p.passport_expiry) issues.push('تاريخ انتهاء الجواز ناقص');
+    if (p.passport_expiry && program.return_date && p.passport_expiry < program.return_date)
+      issues.push('الجواز ينتهي قبل العودة');
+    if (!['issued','not_required'].includes(p.visa_status || ''))
+      issues.push('حالة التأشيرة لم تُعتمد بعد');
+  }
   if (!p.documents_complete) issues.push('المستندات لم تُعلّم مكتملة');
   if (amount(program.makkah_nights) > 0 && !p.makkah_room?.trim())
     issues.push('غرفة مكة غير محددة');
