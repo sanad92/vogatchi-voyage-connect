@@ -57,13 +57,14 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const [saleId,setSaleId]=useState<string|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [agencyOpen,setAgencyOpen]=useState(false);
+  const [confirmConversionOpen,setConfirmConversionOpen]=useState(false);
   const [draft,setDraft]=useState<SaleDraft>(()=>fresh(initialType,initialProgram));
   const [agency,setAgency]=useState({name:'',contact_name:'',phone:'',email:''});
   const [line,setLine]=useState({item_kind:'program_seat' as SaleItemKind,description:'',
     room_type:'quad',quantity:1,unit_sell:0});
   const [costLine,setCostLine]=useState<any>(null);
   const [costInput,setCostInput]=useState({unit_cost:0,supplier_id:''});
-  const [traveler,setTraveler]=useState({display_name:'',customer_id:'',pilgrim_id:''});
+  const [traveler,setTraveler]=useState({display_name:'',customer_id:'',pilgrim_id:'',room_type:''});
 
   const salesQ=useRows('pilgrimage-sales',orgId,null,
     ()=>sb.from('pilgrimage_sales').select('*').eq('organization_id',orgId)
@@ -91,6 +92,11 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const travelersQ=useRows('pilgrimage-sale-travelers',orgId,saleId,
     ()=>sb.from('pilgrimage_sale_travelers').select('*').eq('organization_id',orgId)
       .eq('sale_id',saleId).order('created_at'),!!saleId);
+  const conversionsQ=useRows('pilgrimage-retail-conversions',orgId,saleId,
+    ()=>sb.from('pilgrimage_retail_conversions')
+      .select('id,registered_count,converted_at')
+      .eq('organization_id',orgId).eq('sale_id',saleId),!!saleId);
+  const conversion=conversionsQ.data?.[0]||null;
   const allocationsQ=useRows('pilgrimage-seat-allocations',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrimage_seat_allocations')
       .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at')
@@ -126,7 +132,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:error?.message||'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
-    'pilgrimage-seat-allocations','pilgrimage-seat-events'].forEach(key=>
+    'pilgrimage-seat-allocations','pilgrimage-seat-events',
+    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs'].forEach(key=>
     qc.invalidateQueries({queryKey:[key,orgId]}));
 
   const createSale=useMutation({
@@ -192,14 +199,18 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
       if(!canEdit)throw new Error('لا يمكن تعديل كشف الأسماء بعد إصدار العرض');
       if(!traveler.display_name.trim()&&!traveler.customer_id&&!traveler.pilgrim_id)
         throw new Error('أدخل اسمًا أو اربطه بملف موجود');
+      if(selected?.sale_model==='group_seat' && !traveler.pilgrim_id &&
+        (traveler.display_name.trim().length<3 || !traveler.room_type))
+        throw new Error('تسجيل مقاعد التجزئة يحتاج اسم كل مسافر وفئة غرفته');
       const {error}=await sb.from('pilgrimage_sale_travelers').insert({
         organization_id:orgId,sale_id:saleId,
         display_name:traveler.display_name.trim()||null,
         customer_id:traveler.customer_id||null,pilgrim_id:traveler.pilgrim_id||null,
+        room_type:traveler.room_type||null,
       });
       if(error)throw error;
     },
-    onSuccess:()=>{refresh();setTraveler({display_name:'',customer_id:'',pilgrim_id:''});},onError:fail,
+    onSuccess:()=>{refresh();setTraveler({display_name:'',customer_id:'',pilgrim_id:'',room_type:''});},onError:fail,
   });
   const removeTraveler=useMutation({
     mutationFn:async(id:string)=>{
@@ -211,6 +222,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const changeStatus=useMutation({
     mutationFn:async(status:'quoted'|'cancelled')=>{
       if(!canManage||!selected)throw new Error('ليس لديك صلاحية');
+      if(status==='cancelled' && conversion)
+        throw new Error('لا يمكن إلغاء عرض تم تحويله لتسجيلات فعلية دون دورة إلغاء ومراجعة مالية');
       if(status==='cancelled' && allocationIsActive)
         throw new Error('حرّر التخصيص الداخلي للمقاعد قبل إلغاء عرض السعر');
       if(status==='quoted'){
@@ -249,6 +262,22 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         'تم تحرير المقاعد داخليًا'});
     },
     onError:fail,
+  });
+  const convertRetail=useMutation({
+    mutationFn:async()=>{
+      if(!canManage || selected?.sale_model!=='group_seat' ||
+        selected?.status!=='quoted' || allocation?.status!=='allocated' || conversion)
+        throw new Error('يلزم عرض أفراد صادر ومقاعد مخصصة داخليًا وغير محوّلة');
+      const {data,error}=await sb.rpc('convert_pilgrimage_retail_group',{_sale_id:selected.id});
+      if(error)throw error;
+      if(!data)throw new Error('تعذر استلام مرجع تحويل المجموعة');
+      return data as string;
+    },
+    onSuccess:()=>{
+      setConfirmConversionOpen(false);refresh();
+      toast({title:'تم تحويل المقاعد إلى تسجيلات معتمرين داخل البرنامج',
+        description:'لم تُصدر فاتورة أو تأشيرة أو تصريح تلقائيًا. راجع المستندات والمحاسبة.'});
+    },onError:fail,
   });
   const cloneQuote=useMutation({
     mutationFn:async()=>{
