@@ -5,6 +5,28 @@
 -- auth.uid(), user_belongs_to_org(), can_process_org_payments().
 BEGIN;
 
+-- Explicit scope avoids treating domestic pilgrim identification as an
+-- international visa/passport workflow. Existing programs remain international.
+ALTER TABLE public.pilgrimage_programs
+  ADD COLUMN IF NOT EXISTS travel_scope text NOT NULL DEFAULT 'international';
+DO $scope$
+BEGIN
+ IF NOT EXISTS (
+   SELECT 1 FROM pg_catalog.pg_constraint
+   WHERE conrelid='public.pilgrimage_programs'::regclass
+     AND conname='pilgrimage_programs_travel_scope_check'
+ ) THEN
+   ALTER TABLE public.pilgrimage_programs
+     ADD CONSTRAINT pilgrimage_programs_travel_scope_check
+       CHECK (travel_scope IN ('domestic','international'));
+ END IF;
+END $scope$;
+ALTER TABLE public.pilgrims
+  DROP CONSTRAINT IF EXISTS pilgrims_visa_status_check;
+ALTER TABLE public.pilgrims
+  ADD CONSTRAINT pilgrims_visa_status_check
+    CHECK (visa_status IN ('not_started','submitted','issued','not_required','rejected'));
+
 -- Staff must cancel records rather than erase financial/traveler history.
 REVOKE DELETE ON TABLE public.pilgrims, public.pilgrimage_programs
   FROM PUBLIC, anon, authenticated;
@@ -16,6 +38,7 @@ AS $fn$
 DECLARE v_count bigint;
 BEGIN
   IF NEW.name IS NULL OR char_length(btrim(NEW.name)) < 3
+    OR NEW.travel_scope NOT IN ('domestic','international')
     OR NEW.capacity < 0 OR NEW.makkah_nights < 0 OR NEW.madinah_nights < 0
     OR NEW.price_quad < 0 OR NEW.price_triple < 0
     OR NEW.price_double < 0 OR NEW.price_single < 0
@@ -35,10 +58,11 @@ BEGIN
     IF NEW.capacity>0 AND v_count>NEW.capacity THEN
       RAISE EXCEPTION 'capacity_less_than_registered_pilgrims'
         USING ERRCODE='22023'; END IF;
-    IF NEW.currency IS DISTINCT FROM OLD.currency AND EXISTS(
+    IF (NEW.currency IS DISTINCT FROM OLD.currency
+      OR NEW.travel_scope IS DISTINCT FROM OLD.travel_scope) AND EXISTS(
       SELECT 1 FROM public.pilgrims g WHERE g.program_id=OLD.id
     ) THEN
-      RAISE EXCEPTION 'cannot_change_program_currency_after_registration'
+      RAISE EXCEPTION 'cannot_change_program_scope_or_currency_after_registration'
         USING ERRCODE='22023'; END IF;
   END IF;
   RETURN NEW;
@@ -144,6 +168,21 @@ BEGIN
     IF NEW.customer_id IS DISTINCT FROM OLD.customer_id AND v_paid>0 THEN
       RAISE EXCEPTION 'paid_pilgrim_customer_change_forbidden'
         USING ERRCODE='42501'; END IF;
+    IF NEW.status IS DISTINCT FROM OLD.status
+      AND NEW.status IN ('ready','traveled','completed') THEN
+      IF NOT coalesce(NEW.documents_complete,false)
+        OR (p.travel_scope='domestic' AND nullif(btrim(coalesce(NEW.national_id,'')),'') IS NULL)
+        OR (p.travel_scope<>'domestic' AND (
+          nullif(btrim(coalesce(NEW.passport_number,'')),'') IS NULL
+          OR nullif(btrim(coalesce(NEW.name_en,'')),'') IS NULL
+          OR NEW.passport_expiry IS NULL
+          OR (p.return_date IS NOT NULL AND NEW.passport_expiry<p.return_date)
+          OR NEW.visa_status NOT IN ('issued','not_required')))
+        OR (p.makkah_nights>0 AND nullif(btrim(coalesce(NEW.makkah_room,'')),'') IS NULL)
+        OR (p.madinah_nights>0 AND nullif(btrim(coalesce(NEW.madinah_room,'')),'') IS NULL)
+      THEN RAISE EXCEPTION 'pilgrim_travel_documents_not_ready'
+        USING ERRCODE='22023'; END IF;
+    END IF;
   END IF;
   RETURN NEW;
 END;
