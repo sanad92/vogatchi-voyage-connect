@@ -78,3 +78,30 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-sales-models.sql
+
+  pilgrimage-allocation-database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test atomic internal holds, shared capacity, release and RLS in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-pilgrimage-seat-allocations.sql
+      - name: Race two real PostgreSQL sessions for the last program seats
+        env:
+          PGPASSWORD: postgres
+        run: bash scripts/test-pilgrimage-seat-concurrency.sh

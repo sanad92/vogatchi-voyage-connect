@@ -91,6 +91,24 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const travelersQ=useRows('pilgrimage-sale-travelers',orgId,saleId,
     ()=>sb.from('pilgrimage_sale_travelers').select('*').eq('organization_id',orgId)
       .eq('sale_id',saleId).order('created_at'),!!saleId);
+  const allocationsQ=useRows('pilgrimage-seat-allocations',orgId,selected?.program_id||null,
+    ()=>sb.from('pilgrimage_seat_allocations')
+      .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at')
+      .eq('organization_id',orgId).eq('program_id',selected.program_id),
+    !!selected?.program_id);
+  const allocations=allocationsQ.data||[];
+  const allocation=allocations.find((a:any)=>a.sale_id===selected?.id)||null;
+  const allocationActive=(a:any)=>a?.status==='allocated' ||
+    (a?.status==='held' && !!a.hold_expires_at && new Date(a.hold_expires_at).getTime()>Date.now());
+  const allocationIsActive=!!allocation && allocationActive(allocation);
+  const eventsQ=useRows('pilgrimage-seat-events',orgId,allocation?.id||null,
+    ()=>sb.from('pilgrimage_seat_allocation_events')
+      .select('id,action,seat_count,event_at')
+      .eq('organization_id',orgId).eq('allocation_id',allocation.id)
+      .order('event_at',{ascending:false}).limit(20),
+    !!allocation?.id);
+  const programAllocationCount=allocations.filter(allocationActive)
+    .reduce((sum:number,a:any)=>sum+Number(a.seat_count||0),0);
   const pilgrimsQ=useRows('pilgrimage-sale-pilgrims',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrims').select('id,full_name').eq('organization_id',orgId)
       .eq('program_id',selected.program_id).neq('status','cancelled'),
@@ -107,7 +125,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
 
   const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:error?.message||'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
-    'pilgrimage-sale-costs','pilgrimage-sale-travelers'].forEach(key=>
+    'pilgrimage-sale-costs','pilgrimage-sale-travelers',
+    'pilgrimage-seat-allocations','pilgrimage-seat-events'].forEach(key=>
     qc.invalidateQueries({queryKey:[key,orgId]}));
 
   const createSale=useMutation({
@@ -192,12 +211,15 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
   const changeStatus=useMutation({
     mutationFn:async(status:'quoted'|'cancelled')=>{
       if(!canManage||!selected)throw new Error('ليس لديك صلاحية');
+      if(status==='cancelled' && allocationIsActive)
+        throw new Error('حرّر التخصيص الداخلي للمقاعد قبل إلغاء عرض السعر');
       if(status==='quoted'){
         const issues=quoteReadiness(selected as SaleDraft,items);
         if(selected.program_id){
           const p=programs.find((x:any)=>x.id===selected.program_id);
           if(!p||p.status!=='open')issues.push('البرنامج الجماعي ليس مفتوحًا للتسجيل');
-          if(p&&p.capacity>0&&selected.party_size>p.capacity-(pilgrimsQ.data||[]).length)
+          if(p&&p.capacity>0&&selected.party_size>
+            p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount)
             issues.push('العدد المطلوب أكبر من المقاعد المتاحة حاليًا');
         }
         if(issues.length)throw new Error(issues.join('، '));
@@ -209,6 +231,25 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
     },onSuccess:()=>{refresh();toast({title:'تم تحديث حالة العرض'});},onError:fail,
   });
 
+  const allocateSeat=useMutation({
+    mutationFn:async(action:'hold'|'allocate'|'release')=>{
+      if(!canManage||!selected||selected.status!=='quoted'||!selected.program_id)
+        throw new Error('تخصيص المقاعد متاح فقط لمدير الشركة على عرض جماعي صادر');
+      const {data,error}=await sb.rpc('transition_pilgrimage_seat_allocation',{
+        _sale_id:selected.id,_action:action,_hold_minutes:120,
+      });
+      if(error)throw error;
+      if(!data)throw new Error('لم يرجع النظام رقم التخصيص');
+      return action;
+    },
+    onSuccess:(action:string)=>{
+      refresh();
+      toast({title:action==='hold'?'تم إنشاء حجز داخلي مؤقت للمقاعد':
+        action==='allocate'?'تم تثبيت تخصيص المقاعد داخليًا':
+        'تم تحرير المقاعد داخليًا'});
+    },
+    onError:fail,
+  });
   const cloneQuote=useMutation({
     mutationFn:async()=>{
       if(!canManage||selected?.status!=='quoted')throw new Error('يلزم عرض صادر وصلاحية مدير');
@@ -292,15 +333,63 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         <p className="text-sm">{SALE_MODELS[selected.sale_model as SaleModel]} · {FULFILLMENT[selected.fulfillment_role as keyof typeof FULFILLMENT]}</p>
         <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
         {selected.program_id&&<p className="text-xs text-muted-foreground">
-          المتاح في البرنامج الآن (دون حجوزات مخصصة بهذه الشاشة): {
+          المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
             (()=>{const p=programs.find((x:any)=>x.id===selected.program_id);
-              return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length):'غير محدود';})()
-          } — رقم تقديري قابل للتغير.
+              return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount):'غير محدود';})()
+          }. التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.
         </p>}
         {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
           هذه نسخة مراجعة لعرض سابق، مع حفظ العرض الأصلي دون تعديل.</p>}
         <p className="text-xs text-muted-foreground">العرض لا يخصم مقاعد من السعة ولا ينشئ فاتورة أو عملية تحصيل. إصداره يقفل تعديل الأسعار؛ للتعديل يُنشأ عرض جديد.</p>
       </Card>
+      {selected.program_id && ['group_seat','b2b_group'].includes(selected.sale_model) &&
+        <Card className="p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
+            <Badge variant="outline">{!allocation?'لم يُحجز':
+              allocation.status==='allocated'?'مخصص داخليًا':
+              allocation.status==='released'?'تم تحرير المقاعد':
+              allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {allocation?.status==='held' && allocationIsActive
+              ? 'ينتهي الحجز المؤقت: '+new Date(allocation.hold_expires_at).toLocaleString('ar-EG')
+              : allocation?.status==='allocated'
+              ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
+              : 'المقاعد غير مخصصة حاليًا.'}
+          </p>
+          {allocationsQ.error&&<p className="text-sm text-destructive">
+            تعذر قراءة المقاعد؛ لا تعتمد على التوافر قبل التأكد من جاهزية قاعدة البيانات.
+          </p>}
+          {canManage && selected.status==='quoted' && !allocationsQ.error &&
+            <div className="flex flex-wrap gap-2">
+              {!allocationIsActive&&<Button disabled={allocateSeat.isPending}
+                onClick={()=>allocateSeat.mutate('hold')}>حجز مقاعد مؤقت — ساعتان</Button>}
+              {allocation?.status==='held' && allocationIsActive &&
+                <Button disabled={allocateSeat.isPending}
+                  onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
+              {allocationIsActive&&<Button variant="outline" disabled={allocateSeat.isPending}
+                onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
+            </div>}
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            هذه العملية تخصّ سعة البرنامج داخل Safar ERP فقط. ليست تأكيدًا من فندق أو شركة طيران،
+            ولا حجزًا رسميًا للحج أو العمرة، ولا إصدار تأشيرة أو فاتورة.
+            عرض الأسماء المرتبطة بمعتمرين مسجلين سابقًا يحتاج تسوية قبل تخصيص مقاعد جديدة.
+          </p>
+          {(eventsQ.data||[]).length>0&&<div className="space-y-1">
+            <p className="text-sm font-medium">آخر سجل تغييرات المقاعد</p>
+            {(eventsQ.data||[]).map((ev:any)=><p key={ev.id} className="text-xs text-muted-foreground">
+              {ev.action==='held'?'حجز مؤقت':
+                ev.action==='reheld'?'تجديد الحجز المؤقت':
+                ev.action==='allocated'?'تثبيت داخلي':'تحرير'} ·
+              {' '+ev.seat_count+' مقاعد · '+new Date(ev.event_at).toLocaleString('ar-EG')}
+            </p>)}
+          </div>}
+        </Card>}
+      {selected.sale_model==='fit'&&<Card className="p-4 text-sm text-muted-foreground">
+        عرض FIT مستقل عن سعة البرامج الجماعية. التأكيد الفعلي لكل خدمة يتم عبر المورد المختص
+        في دورة حجز منفصلة؛ لن نعتبر العرض حجزًا مؤكدًا تلقائيًا.
+      </Card>}
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4"><p className="text-xs text-muted-foreground">البيع المقترح</p><strong>{money(metrics.selling,selected.currency)}</strong></Card>
         <Card className="p-4"><p className="text-xs text-muted-foreground">تكلفة المورد التقديرية</p>
