@@ -104,7 +104,23 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -f scripts/test-trip-file-source-evidence-links.sql
+      - name: Test removed membership and absent JWT subject against completed Trip File history
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -f scripts/test-trip-file-membership-revocation.sql
+      - name: Audit amendment RLS/grants/function posture in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -qAt -F '|' -f scripts/check-trip-file-security-posture.sql > /tmp/tripfile-amendments-posture.psv
+          node scripts/verify-trip-file-security-posture.mjs /tmp/tripfile-amendments-posture.psv amendments
       - name: Test immutable quote version archive and tenant isolation
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d tripfile_quoteversions_qa -v ON_ERROR_STOP=1 -f scripts/test-quote-version-snapshots.sql
+      - name: Audit quote snapshot RLS/grants/function posture in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tripfile_quoteversions_qa -v ON_ERROR_STOP=1 -qAt -F '|' -f scripts/check-trip-file-security-posture.sql > /tmp/tripfile-quotes-posture.psv
+          node scripts/verify-trip-file-security-posture.mjs /tmp/tripfile-quotes-posture.psv quotes
