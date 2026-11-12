@@ -377,12 +377,15 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
             <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
             <Badge variant="outline">{!allocation?'لم يُحجز':
               allocation.status==='allocated'?'مخصص داخليًا':
+              conversion?'تم تسجيل المعتمرين':
               allocation.status==='released'?'تم تحرير المقاعد':
               allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             {allocation?.status==='held' && allocationIsActive
               ? 'ينتهي الحجز المؤقت: '+new Date(allocation.hold_expires_at).toLocaleString('ar-EG')
+              : conversion
+              ? 'نُقلت المقاعد إلى ملفات المعتمرين؛ التسجيل ليس فاتورة أو تأشيرة.'
               : allocation?.status==='allocated'
               ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
               : 'المقاعد غير مخصصة حاليًا.'}
@@ -390,17 +393,24 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           {allocationsQ.error&&<p className="text-sm text-destructive">
             تعذر قراءة المقاعد؛ لا تعتمد على التوافر قبل التأكد من جاهزية قاعدة البيانات.
           </p>}
-          {canManage && selected.status==='quoted' && !allocationsQ.error &&
+          {canManage && selected.status==='quoted' && !allocationsQ.error && !conversionsQ.error &&
             <div className="flex flex-wrap gap-2">
-              {!allocationIsActive&&<Button disabled={allocateSeat.isPending}
+              {!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('hold')}>حجز مقاعد مؤقت — ساعتان</Button>}
               {allocation?.status==='held' && allocationIsActive &&
                 <Button disabled={allocateSeat.isPending}
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
               {allocationIsActive&&<Button variant="outline" disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
+              {selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
+                !conversion && <Button disabled={convertRetail.isPending}
+                  onClick={()=>setConfirmConversionOpen(true)}>
+                  تحويل إلى تسجيلات معتمرين
+                </Button>
             </div>}
           <p className="text-xs text-amber-700 dark:text-amber-300">
+            تحويل تسجيلات الأفراد مشروط بمطابقة عدد الأسماء والغرف مع أسعار البرنامج؛
+            عروض B2B تحتاج حسابات العقد والشركة قبل تحويلها إلى ملفات مالية فردية.
             هذه العملية تخصّ سعة البرنامج داخل Safar ERP فقط. ليست تأكيدًا من فندق أو شركة طيران،
             ولا حجزًا رسميًا للحج أو العمرة، ولا إصدار تأشيرة أو فاتورة.
             عرض الأسماء المرتبطة بمعتمرين مسجلين سابقًا يحتاج تسوية قبل تخصيص مقاعد جديدة.
@@ -408,7 +418,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           {(eventsQ.data||[]).length>0&&<div className="space-y-1">
             <p className="text-sm font-medium">آخر سجل تغييرات المقاعد</p>
             {(eventsQ.data||[]).map((ev:any)=><p key={ev.id} className="text-xs text-muted-foreground">
-              {ev.action==='held'?'حجز مؤقت':
+              {ev.action==='converted'?'تسجيل المعتمرين':
+              ev.action==='held'?'حجز مؤقت':
                 ev.action==='reheld'?'تجديد الحجز المؤقت':
                 ev.action==='allocated'?'تثبيت داخلي':'تحرير'} ·
               {' '+ev.seat_count+' مقاعد · '+new Date(ev.event_at).toLocaleString('ar-EG')}
@@ -482,13 +493,21 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         <p className="text-xs text-muted-foreground">كشف مبدئي لا يحجز مقاعد أو يضيف معتمرين للبرنامج تلقائيًا.</p>
         {travelers.map((x:any)=><div key={x.id} className="flex items-center justify-between gap-2 text-sm border-b pb-2">
           <span>{x.display_name||pilgrimsQ.data?.find((p:any)=>p.id===x.pilgrim_id)?.full_name||
-            customers.find((c:any)=>c.id===x.customer_id)?.name||'ملف مسافر مرتبط'}</span>
+            customers.find((c:any)=>c.id===x.customer_id)?.name||'ملف مسافر مرتبط'}
+            {x.room_type?' · '+ROOM[x.room_type]:''}</span>
           {canEdit&&<Button size="icon" variant="ghost" onClick={()=>removeTraveler.mutate(x.id)}><Trash2 className="h-4 w-4"/></Button>}
         </div>)}
         {canEdit&&travelers.length<selected.party_size&&<div className="space-y-2">
           <div className="grid gap-3 sm:grid-cols-3">
             <Field name="اسم المسافر"><Input value={traveler.display_name}
               onChange={e=>setTraveler({...traveler,display_name:e.target.value})}/></Field>
+            <Field name="فئة الغرفة لكل مسافر"><Select value={selection(traveler.room_type)}
+              onValueChange={v=>setTraveler({...traveler,room_type:resolved(v)||''})}>
+              <SelectTrigger><SelectValue placeholder="اختر فئة الغرفة" /></SelectTrigger>
+              <SelectContent><SelectItem value={NONE}>غير محددة</SelectItem>
+                {Object.entries(ROOM).map(([k,t])=><SelectItem key={k} value={k}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select></Field>
             <Field name="ملف عميل موجود (اختياري)"><Select value={selection(traveler.customer_id)}
               onValueChange={v=>setTraveler({...traveler,customer_id:resolved(v)||''})}>
               <SelectTrigger><SelectValue/></SelectTrigger><SelectContent>
@@ -580,6 +599,29 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
             onChange={e=>setDraft({...draft,notes:e.target.value||null})}/></Field></div>
         </div>
         <Button disabled={createSale.isPending||!canManage} onClick={()=>createSale.mutate()}>حفظ مسودة العرض</Button>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={confirmConversionOpen} onOpenChange={setConfirmConversionOpen}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>تأكيد تسجيل المعتمرين داخل البرنامج</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm">
+            تحويل {selected?.party_size||0} مقاعد من التخصيص الداخلي إلى ملفات
+            معتمرين مسجلة في البرنامج. الإجراء ذري ويحتفظ بسجل المسافرين ومرجع العرض.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            يُنفّذ فقط إذا كانت الأسماء والغرف وأسعار البيع تطابق تعرفة البرنامج
+            ولم يوجد أي معتمر مسجل سابقًا على نفس المقاعد.
+          </p>
+          <p className="text-sm text-destructive">
+            لا يمكن إلغاء هذا التحويل بإلغاء عرض السعر مباشرةً.
+            الفواتير والمدفوعات والموردون والتأشيرات والتصاريح خطوات مستقلة.
+          </p>
+          <Button disabled={convertRetail.isPending} onClick={()=>convertRetail.mutate()}>
+            تأكيد تحويل المقاعد إلى تسجيلات
+          </Button>
+          <Button variant="outline" onClick={()=>setConfirmConversionOpen(false)}>رجوع</Button>
+        </div>
       </DialogContent>
     </Dialog>
     <Dialog open={agencyOpen} onOpenChange={setAgencyOpen}>
