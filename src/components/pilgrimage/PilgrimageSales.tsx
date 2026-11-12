@@ -364,6 +364,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
         {selected.program_id&&<p className="text-xs text-muted-foreground">
           المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
             (()=>{const p=programs.find((x:any)=>x.id===selected.program_id);
+              if(!canManage||pilgrimsQ.isLoading||pilgrimsQ.error||allocationsQ.isLoading||allocationsQ.error)
+                return 'بانتظار تحديث بيانات التوافر';
               return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount):'غير محدود';})()
           }. التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.
         </p>}
