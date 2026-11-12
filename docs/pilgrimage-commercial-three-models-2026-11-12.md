@@ -23,6 +23,7 @@ The `pilgrimage_sale_items` table stores quantity, unit selling price, and serve
 - Line-item services (program seats, hotels, flights, transfers, visa service, guides and other), optional internal costs, preliminary traveler list.
 - SQL constraints for one buyer model, upstream supplier selection, program currency/type, service/party quantities, no anonymous reads, cross-tenant references and role-restricted writes.
 - Fixed draft-to-issued/cancelled lifecycle: quoted selling price and internal cost cannot be silently changed.
+- Before issuing a program-linked group quote, the server checks that the program is currently open and that the requested group size does not exceed current unregistered capacity. **Other pending quotes are not holds, and capacity can change after the quote.**
 - Transactional `clone_pilgrimage_sale(uuid)` creates a **new** draft with new IDs and copied services/costs/travelers; records `supersedes_sale_id` without changing the old quote.
 - Quote preview/print and Excel service breakdown. This is explicitly not an approved Hajj/Umrah contract, visa, permit, financial invoice or supplier confirmation.
 - Domain logic and PostgreSQL 16 fixture automated tests + TypeScript and production build.
