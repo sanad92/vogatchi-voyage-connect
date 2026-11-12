@@ -35,6 +35,9 @@ export default function PilgrimageB2BContract({
   const [debtor, setDebtor] = useState('');
   const [terms, setTerms] = useState('شروط وجدول دفعات مبدئيان يخضعان لاعتماد الشركة والتحقق من التوافر.');
   const [schedule, setSchedule] = useState<Installment[]>([{due_date:'',amount:0}]);
+  const [rosterName,setRosterName] = useState('');
+  const [rosterRoom,setRosterRoom] = useState('');
+  const [rosterKey,setRosterKey] = useState(()=>crypto.randomUUID());
 
   const agreementQ = useQuery({
     queryKey:['pilgrimage-b2b-agreement',orgId,sale.id],
@@ -60,9 +63,23 @@ export default function PilgrimageB2BContract({
     },
   });
 
+  const rosterQ=useQuery({
+    queryKey:['pilgrimage-b2b-roster',orgId,agreement?.id],
+    enabled:!!orgId&&!!agreement?.id&&canManage,
+    queryFn:async()=>{
+      const {data,error}=await sb.from('pilgrimage_b2b_roster_entries')
+        .select('id,display_name,room_type,status,created_at,removed_at')
+        .eq('organization_id',orgId).eq('agreement_id',agreement.id)
+        .order('created_at');
+      if(error)throw error;
+      return data||[];
+    },
+  });
+  const activeRoster=(rosterQ.data||[]).filter((x:any)=>x.status==='active');
   const reload=()=>{
     qc.invalidateQueries({queryKey:['pilgrimage-b2b-agreement',orgId,sale.id]});
     qc.invalidateQueries({queryKey:['pilgrimage-b2b-installments',orgId]});
+    qc.invalidateQueries({queryKey:['pilgrimage-b2b-roster',orgId]});
   };
   const fail=(e:any)=>toast({
     title:'تعذر اعتماد عقد الشركة',description:e?.message||'تحقق من العميل والشروط',
@@ -108,6 +125,32 @@ export default function PilgrimageB2BContract({
     },onError:fail,
   });
 
+  const addRosterName=useMutation({
+    mutationFn:async()=>{
+      if(!agreement?.id||agreement.status!=='approved_internal')
+        throw new Error('الاسماء التشغيلية متاحة بعد الموافقة الداخلية على العقد');
+      if(rosterName.trim().length<3)throw new Error('أدخل اسم المسافر كاملًا');
+      const {data,error}=await sb.rpc('add_pilgrimage_b2b_roster_name',{
+        _agreement_id:agreement.id,_client_key:rosterKey,
+        _display_name:rosterName.trim(),_room_type:rosterRoom||null,
+      });
+      if(error)throw error;
+      return data;
+    },
+    onSuccess:()=>{
+      reload();setRosterName('');setRosterRoom('');setRosterKey(crypto.randomUUID());
+      toast({title:'تمت إضافة الاسم إلى كشف الشركة المبدئي'});
+    },onError:fail,
+  });
+  const removeRosterName=useMutation({
+    mutationFn:async(id:string)=>{
+      const {error}=await sb.rpc('remove_pilgrimage_b2b_roster_name',{_entry_id:id});
+      if(error)throw error;
+    },
+    onSuccess:()=>{
+      reload();toast({title:'تم شطب الاسم من الكشف المبدئي مع الاحتفاظ بالسجل'});
+    },onError:fail,
+  });
   const print=()=>{
     if(!agreement)return;
     const name=customers.find(x=>x.id===agreement.debtor_customer_id)?.name||'غير محدد';
@@ -123,6 +166,10 @@ export default function PilgrimageB2BContract({
     ])+
     '<h2>الدفعات المتفق عليها مبدئيًا</h2>'+
     table(['رقم','الاستحقاق','القيمة'],installmentRows)+
+    (agreement.status==='approved_internal'&&activeRoster.length>0?
+      '<h2>كشف أسماء مبدئي غير مسجّل رسميًا</h2>'+
+      table(['الاسم','فئة الغرفة'],activeRoster.map((x:any)=>[x.display_name,x.room_type||'غير محددة']))
+      :'')+
     '<p class="muted">مستند تجاري داخلي غير موقع. لا يمثل فاتورة ضريبية، أو إثبات تحصيل، '+
     'أو حجز مورّد مؤكد، أو تأشيرة، أو تصريح حج أو عمرة.</p>';
     printDocument(organization,'مسودة اتفاق مجموعة B2B (غير موقع)',body);
