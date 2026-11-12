@@ -226,13 +226,38 @@ BEGIN
 
 END $$;
 
+-- Copy an issued quote as a new draft without mutating its source or
+-- reusing item IDs. The original quoted terms remain an audit reference.
+DO $
+DECLARE
+  new_id uuid;
+  cost_count int;
+BEGIN
+  new_id:=public.clone_pilgrimage_sale('00000000-0000-4000-8000-000000000301');
+  IF new_id IS NULL OR new_id='00000000-0000-4000-8000-000000000301'
+    OR (SELECT status FROM public.pilgrimage_sales WHERE id=new_id)<>'draft'
+    OR (SELECT supersedes_sale_id FROM public.pilgrimage_sales WHERE id=new_id)
+        <>'00000000-0000-4000-8000-000000000301'::uuid
+    OR (SELECT count(*) FROM public.pilgrimage_sale_items WHERE sale_id=new_id)<>1
+    OR (SELECT count(*) FROM public.pilgrimage_sale_travelers WHERE sale_id=new_id)<>2
+  THEN RAISE EXCEPTION 'Quote revision clone missing source or travelers'; END IF;
+  SELECT count(*) INTO cost_count
+   FROM public.pilgrimage_sale_item_costs c
+   JOIN public.pilgrimage_sale_items i ON i.id=c.item_id
+   WHERE i.sale_id=new_id AND c.unit_cost=1500;
+  IF cost_count<>1 THEN RAISE EXCEPTION 'Quote revision lost confidential supplier cost'; END IF;
+  IF (SELECT status FROM public.pilgrimage_sales
+      WHERE id='00000000-0000-4000-8000-000000000301')<>'quoted'
+  THEN RAISE EXCEPTION 'Quote revision altered original'; END IF;
+END $;
+
 -- An organization's viewer sees selling prices but NOT confidential cost.
 SET test.user_id='00000000-0000-4000-8000-000000000012';
 DO $$
 DECLARE denied boolean:=false;
 BEGIN
- IF (SELECT count(*) FROM public.pilgrimage_sales)<>4
-    OR (SELECT count(*) FROM public.pilgrimage_sale_items)<>4
+ IF (SELECT count(*) FROM public.pilgrimage_sales)<>5
+    OR (SELECT count(*) FROM public.pilgrimage_sale_items)<>5
     OR (SELECT count(*) FROM public.pilgrimage_sale_item_costs)<>0 THEN
     RAISE EXCEPTION 'Viewer RLS sales/cost partition failed'; END IF;
  BEGIN
@@ -240,6 +265,11 @@ BEGIN
   VALUES ('00000000-0000-4000-8000-000000000001','Unauthorized agency');
  EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Viewer created agency'; END IF;
+ denied:=false;
+ BEGIN
+   PERFORM public.clone_pilgrimage_sale('00000000-0000-4000-8000-000000000301');
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Viewer cloned a confidential quote'; END IF;
 END $$;
 
 -- Another tenant cannot see or mutate company A quotes, partners or travelers.
