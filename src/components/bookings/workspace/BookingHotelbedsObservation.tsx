@@ -82,6 +82,21 @@ export function BookingHotelbedsObservation({
                     {' · '}وقت القراءة: {result.checkedAt
                       ? new Date(result.checkedAt).toLocaleString('ar-EG') : 'غير متوفر'}
                   </p>
+                  {result.datesComparedToCurrentLocalBooking && (
+                    <div className="rounded-md border p-2 text-xs space-y-1">
+                      <p className="font-medium">مطابقة التواريخ مع حجز الفندق المسجل حاليًا</p>
+                      <p>الدخول: {result.datesComparedToCurrentLocalBooking.checkIn === 'match'
+                        ? 'متطابق' : result.datesComparedToCurrentLocalBooking.checkIn === 'mismatch'
+                        ? 'مختلف — يحتاج مراجعة' : 'غير متاح للمقارنة'}</p>
+                      <p>الخروج: {result.datesComparedToCurrentLocalBooking.checkOut === 'match'
+                        ? 'متطابق' : result.datesComparedToCurrentLocalBooking.checkOut === 'mismatch'
+                        ? 'مختلف — يحتاج مراجعة' : 'غير متاح للمقارنة'}</p>
+                      <p className="text-muted-foreground">
+                        المقارنة دي مع بيانات الحجز الحالية في النظام، مش مع طلب تعديل موثق.
+                        لا تتضمن نوع الغرفة أو الركاب أو المبلغ، ولا تثبت إن التعديل اتنفذ.
+                      </p>
+                    </div>
+                  )}
                   <p className="text-xs text-amber-700 dark:text-amber-400">
                     نتيجة GET تؤكد فقط الحالة التي أعادها المورد في وقت الفحص؛ لا تثبت
                     تنفيذ نوع الغرفة أو تغيير التاريخ أو فرق السعر المطلوب.
