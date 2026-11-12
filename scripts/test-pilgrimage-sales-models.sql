@@ -228,7 +228,7 @@ END $$;
 
 -- Copy an issued quote as a new draft without mutating its source or
 -- reusing item IDs. The original quoted terms remain an audit reference.
-DO $
+DO $$
 DECLARE
   new_id uuid;
   cost_count int;
@@ -249,7 +249,7 @@ BEGIN
   IF (SELECT status FROM public.pilgrimage_sales
       WHERE id='00000000-0000-4000-8000-000000000301')<>'quoted'
   THEN RAISE EXCEPTION 'Quote revision altered original'; END IF;
-END $;
+END $$;
 
 -- An organization's viewer sees selling prices but NOT confidential cost.
 SET test.user_id='00000000-0000-4000-8000-000000000012';
