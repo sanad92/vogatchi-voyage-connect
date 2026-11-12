@@ -115,7 +115,7 @@ const Pilgrimage = () => {
       if (canManage && Number(pf.cost_per_person) > 0) {
         const existing = costs.find((c) => c.program_id === id);
         const { error } = existing
-          ? await sb.from('pilgrimage_program_costs').update({ cost_per_person: pf.cost_per_person }).eq('id', existing.id)
+          ? await sb.from('pilgrimage_program_costs').update({ cost_per_person: pf.cost_per_person }).eq('program_id', id).eq('organization_id', orgId)
           : await sb.from('pilgrimage_program_costs').insert({ program_id: id, organization_id: orgId, cost_per_person: pf.cost_per_person });
         if (error) throw error;
       }
@@ -124,12 +124,16 @@ const Pilgrimage = () => {
     onError: fail,
   });
 
-  /** Links the pilgrim to an existing customer (same phone) or creates one in the customer directory. */
+  /** The same phone may belong to a whole family; never silently merge their customer records. */
   const linkCustomer = async () => {
-    const digits = (gf.phone || '').replace(/\D/g, '');
-    if (digits.length >= 8) {
-      const { data } = await sb.from('customers').select('id,phone').eq('organization_id', orgId).ilike('phone', `%${digits.slice(-9)}%`).limit(1);
-      if (data?.[0]) return data[0].id;
+    const passport = String(gf.passport_number || '').trim();
+    if (passport.length >= 5) {
+      const { data: matching, error: lookupError } = await sb.from('customers')
+        .select('id').eq('organization_id', orgId)
+        .eq('passport_number', passport).limit(2);
+      if (lookupError) throw lookupError;
+      if ((matching || []).length > 1) throw new Error('توجد ملفات عملاء مكررة بنفس الجواز؛ يرجى حل التكرار من CRM');
+      if (matching?.length === 1) return matching[0].id;
     }
     const { data, error } = await sb.from('customers').insert({
       organization_id: orgId, name: gf.full_name, phone: gf.phone || null, nationality: gf.nationality || null, passport_number: gf.passport_number || null,
@@ -439,7 +443,7 @@ const Pilgrimage = () => {
               </F>
               <F label="ملاحظات" wide><Textarea value={gf.notes ?? ''} onChange={(e) => setGf({ ...gf, notes: e.target.value })} /></F>
             </div>
-            {!editingPilgrim && <p className="text-xs text-muted-foreground">سيتم ربطه بملف العميل الحالي بنفس رقم الهاتف أو إنشاء ملف عميل جديد. الدفعات تُسجَّل من زر التحصيل.</p>}
+            {!editingPilgrim && <p className="text-xs text-muted-foreground">يُربط المسافر بملف العميل الحالي فقط عند تطابق رقم الجواز بدقة؛ تشابه الهاتف وحده لا يكفي لأن الأسرة قد تشترك في رقم واحد. الدفعات تُسجَّل من زر التحصيل.</p>}
             <Button className="w-full" disabled={gf.full_name.trim().length < 3 || savePilgrim.isPending} onClick={() => savePilgrim.mutate()}>حفظ</Button>
           </DialogContent>
         </Dialog>
