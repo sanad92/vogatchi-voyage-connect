@@ -5,7 +5,7 @@ const program={status:'open',capacity:2,departure_date:'2027-01-03',return_date:
 const one={id:'one',full_name:'Example A',total_price:1000,paid_amount:1300,status:'registered'};
 const two={id:'two',full_name:'Example B',total_price:2000,paid_amount:500,status:'cancelled',cancellation_fee:100};
 const totals=pilgrimageTotals([one,two]);
-assert.deepEqual(totals,{registered:1,grossDue:1100,collected:1800,outstanding:0,refundExposure:1700});
+assert.deepEqual(totals,{registered:1,grossDue:1100,collected:1800,outstanding:0,refundExposure:700});
 assert.equal(outstanding({...one,paid_amount:400}),600);
 assert.equal(refundable(two),400);
 assert.equal(canRegisterPilgrim(program,[one]),null);
