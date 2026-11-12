@@ -6,6 +6,7 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import type { BookingChangeRequest } from '@/hooks/useBookingChangeRequests';
 import { BookingAmendmentEvidencePanel } from './BookingAmendmentEvidencePanel';
 import { BookingHotelbedsObservation } from './BookingHotelbedsObservation';
+import { BookingAirGdsObservation } from './BookingAirGdsObservation';
 import {
   useBookingChangeHandoffs,
   useBookingHandoffAudit,
@@ -280,6 +281,10 @@ export function BookingAmendmentHandoffPanel({
     </Card>
     {canRead && handoffs.isSuccess && (
       <BookingHotelbedsObservation
+        requests={approvedRequests}
+        handoffs={handoffs.data ?? []}
+      />
+      <BookingAirGdsObservation
         requests={approvedRequests}
         handoffs={handoffs.data ?? []}
       />
