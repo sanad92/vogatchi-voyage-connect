@@ -7,6 +7,7 @@
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.95.3';
 import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
+import { readBoundedJsonBody } from '../_shared/trip-file-bounded-json.ts';
 import {
   sameAirBookingReference, providerFromSupplier, parseTravelportReservation,
   safeAirLocator, travelportOAuthUrl, travelportRetrieveUrl,
@@ -57,9 +58,9 @@ async function obtainTravelportToken(env: ProviderEnvironment):Promise<string> {
     if (!tokenResponse.ok || Number(tokenResponse.headers.get('content-length')||0) > 16000) {
       throw new Error('provider_auth_failed');
     }
-    const json = await tokenResponse.text();
-    if (json.length > 16000) throw new Error('provider_auth_oversize');
-    const body = JSON.parse(json) as {access_token?:unknown;expires_in?:unknown};
+    const body = await readBoundedJsonBody(tokenResponse.body,16000) as {
+      access_token?:unknown;expires_in?:unknown;
+    };
     if (typeof body.access_token !== 'string' ||
       body.access_token.length < 12 || body.access_token.length > 8192) {
       throw new Error('provider_auth_invalid_token');
@@ -100,7 +101,7 @@ Deno.serve(async request => {
 
   let requestId:string;
   try {
-    const data = await request.json();
+    const data = await readBoundedJsonBody(request.body,2000) as Record<string,unknown> | null;
     if (!data || typeof data !== 'object' || Array.isArray(data) ||
       typeof data.requestId !== 'string' || !UUID.test(data.requestId)) {
       return send({error:'invalid_request'},400);
@@ -208,9 +209,8 @@ Deno.serve(async request => {
       return send({state:'provider_unavailable',provider,
         externalProviderVerification:'not_performed',ticketIssuanceVerified:false},502);
     }
-    const body=await response.text();
-    if (body.length>262144) throw new Error('response_too_large');
-    const observation=parseTravelportReservation(JSON.parse(body),change.service_reference);
+    const body=await readBoundedJsonBody(response.body,262144);
+    const observation=parseTravelportReservation(body,change.service_reference);
     return send({
       state:'provider_pnr_observed',
       provider,
