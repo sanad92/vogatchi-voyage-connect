@@ -83,6 +83,18 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
     ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date')
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
+  const b2bAgreementQ=useQuery({
+    queryKey:['pilgrimage-b2b-agreement',orgId,selected?.id],
+    enabled:!!orgId&&!!selected?.id&&selected.sale_model==='b2b_group'&&canManage,
+    queryFn:async()=>{
+      const {data,error}=await sb.from('pilgrimage_b2b_agreements')
+        .select('id,agency_id,debtor_customer_id,total_contract_amount,currency,terms,status,created_at,approved_at')
+        .eq('organization_id',orgId).eq('sale_id',selected.id).maybeSingle();
+      if(error)throw error;
+      return data;
+    },
+  });
+  const isB2BInternallyApproved=b2bAgreementQ.data?.status==='approved_internal';
   const itemsQ=useRows('pilgrimage-sale-items',orgId,saleId,
     ()=>sb.from('pilgrimage_sale_items').select('*').eq('organization_id',orgId)
       .eq('sale_id',saleId).order('created_at'),!!saleId);
@@ -249,6 +261,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
     mutationFn:async(action:'hold'|'allocate'|'release')=>{
       if(!canManage||!selected||selected.status!=='quoted'||!selected.program_id)
         throw new Error('تخصيص المقاعد متاح فقط لمدير الشركة على عرض جماعي صادر');
+      if(action==='release'&&isB2BInternallyApproved)
+        throw new Error('العقد B2B معتمد داخليًا؛ يلزم إجراء إلغاء مالي معتمد لتحرير المقاعد');
       const {data,error}=await sb.rpc('transition_pilgrimage_seat_allocation',{
         _sale_id:selected.id,_action:action,_hold_minutes:120,
       });
@@ -403,7 +417,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
               {allocation?.status==='held' && allocationIsActive &&
                 <Button disabled={allocateSeat.isPending}
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
-              {allocationIsActive&&<Button variant="outline" disabled={allocateSeat.isPending}
+              {allocationIsActive&&!isB2BInternallyApproved&&<Button variant="outline"
+                disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
               {selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
                 !conversion && <Button disabled={convertRetail.isPending}
