@@ -150,22 +150,22 @@ INSERT INTO public.pilgrimage_sales(
  id,organization_id,program_type,sale_model,fulfillment_role,
  name,buyer_agency_id,party_size,currency
 ) VALUES(
- '00000000-0000-4000-8000-000000000304',
+ '00000000-0000-4000-8000-000000000305',
  '00000000-0000-4000-8000-000000000001',
  'umrah','b2b_group','organizer','Another agency group',
  '00000000-0000-4000-8000-000000000402',1,'EGP');
 INSERT INTO public.pilgrimage_sale_items(
  organization_id,sale_id,item_kind,description,quantity,unit_sell
 ) VALUES('00000000-0000-4000-8000-000000000001',
- '00000000-0000-4000-8000-000000000304','other','Agency assistance',1,300);
+ '00000000-0000-4000-8000-000000000305','other','Agency assistance',1,300);
 UPDATE public.pilgrimage_sales SET status='quoted'
- WHERE id='00000000-0000-4000-8000-000000000304';
+ WHERE id='00000000-0000-4000-8000-000000000305';
 DO $$
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
   PERFORM public.prepare_pilgrimage_b2b_agreement(
-    '00000000-0000-4000-8000-000000000304',
+    '00000000-0000-4000-8000-000000000305',
     '00000000-0000-4000-8000-000000000101',
     'Different agency cannot take linked debtor',
     '[{"due_date":"2027-02-01","amount":300}]'::jsonb);
