@@ -195,7 +195,7 @@ INSERT INTO public.pilgrimage_sale_travelers(
  organization_id,sale_id,display_name,room_type
 ) VALUES(
  '00000000-0000-4000-8000-000000000001',
- '00000000-0000-4000-8000-000000000402','X',NULL);
+ '00000000-0000-4000-8000-000000000402','Xi',NULL);
 UPDATE public.pilgrimage_sales SET status='quoted'
  WHERE id='00000000-0000-4000-8000-000000000402';
 SELECT public.transition_pilgrimage_seat_allocation(
