@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { money, printDocument, table, exportExcel, ROOM } from './pilgrimage-documents';
+import PilgrimageB2BContract from './PilgrimageB2BContract';
 import {
   FULFILLMENT, SALE_MODELS, SALE_STATES, SALE_ITEMS,
   quoteMetrics, quoteReadiness, validateSaleDraft,
@@ -428,6 +429,17 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
             </p>)}
           </div>}
         </Card>}
+      {selected.sale_model==='b2b_group' && canManage &&
+        <PilgrimageB2BContract
+          orgId={orgId||''}
+          sale={selected}
+          agencyName={agencies.find((a:any)=>a.id===selected.buyer_agency_id)?.name||'—'}
+          customers={customers}
+          items={items}
+          allocation={allocation}
+          organization={currentOrganization}
+          canManage={canManage}
+        />}
       {selected.sale_model==='fit'&&<Card className="p-4 text-sm text-muted-foreground">
         عرض FIT مستقل عن سعة البرامج الجماعية. التأكيد الفعلي لكل خدمة يتم عبر المورد المختص
         في دورة حجز منفصلة؛ لن نعتبر العرض حجزًا مؤكدًا تلقائيًا.
