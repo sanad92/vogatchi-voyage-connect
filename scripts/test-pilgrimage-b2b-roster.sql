@@ -76,10 +76,8 @@ BEGIN
   RAISE EXCEPTION 'B2B removal / replacement audit failed'; END IF;
 
  -- Name registry is NOT the operational pilgrim list; no revenue posting.
- IF EXISTS(SELECT 1 FROM public.pilgrims g
-  WHERE g.full_name LIKE 'Agency Traveler %'
-     OR g.full_name='Agency Replacement Passenger') THEN
-  RAISE EXCEPTION 'B2B roster created false retail pilgrims'; END IF;
+ IF (SELECT count(*) FROM public.pilgrims)<>1 THEN
+  RAISE EXCEPTION 'B2B roster created or deleted actual program pilgrims'; END IF;
 END $$;
 
 SET test.user_id='00000000-0000-4000-8000-000000000012';
