@@ -168,8 +168,9 @@ BEGIN
     IF NEW.customer_id IS DISTINCT FROM OLD.customer_id AND v_paid>0 THEN
       RAISE EXCEPTION 'paid_pilgrim_customer_change_forbidden'
         USING ERRCODE='42501'; END IF;
-    IF NEW.status IS DISTINCT FROM OLD.status
-      AND NEW.status IN ('ready','traveled','completed') THEN
+    -- Guard the invariant on *every* update. A user must not remove
+    -- visa/document evidence after the pilgrim was marked ready.
+    IF NEW.status IN ('ready','traveled','completed') THEN
       IF NOT coalesce(NEW.documents_complete,false)
         OR (p.travel_scope='domestic' AND nullif(btrim(coalesce(NEW.national_id,'')),'') IS NULL)
         OR (p.travel_scope<>'domestic' AND (
