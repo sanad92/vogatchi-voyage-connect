@@ -28,6 +28,8 @@ jobs:
         run: bun src/lib/pilgrimage/operations.test.ts
       - name: Test Group / FIT / B2B quote validators and margin calculation
         run: bun src/lib/pilgrimage/sales.test.ts
+      - name: Test B2B installment cents, due dates and totals
+        run: bun src/lib/pilgrimage/b2b.test.ts
       - name: Check TypeScript
         run: bunx tsc --noEmit
       - name: Build
