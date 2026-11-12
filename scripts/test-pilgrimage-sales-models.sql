@@ -159,6 +159,17 @@ BEGIN
  WHERE id='00000000-0000-4000-8000-000000000503')<>376.65 THEN
  RAISE EXCEPTION 'FIT item financial formula error'; END IF;
 END $$;
+DO $$
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+  INSERT INTO public.pilgrimage_sale_item_costs(item_id,organization_id,unit_cost,supplier_id)
+  VALUES ('00000000-0000-4000-8000-000000000502',
+    '00000000-0000-4000-8000-000000000001',800,
+    '00000000-0000-4000-8000-000000000112');
+ EXCEPTION WHEN foreign_key_violation THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Foreign company upstream supplier accepted'; END IF;
+END $$;
 UPDATE public.pilgrimage_sales SET status='quoted'
  WHERE id='00000000-0000-4000-8000-000000000302';
 
@@ -212,14 +223,7 @@ BEGIN
     WHERE id='00000000-0000-4000-8000-000000000304';
  EXCEPTION WHEN foreign_key_violation THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Foreign company buyer customer linked'; END IF;
- denied:=false;
- BEGIN
-  INSERT INTO public.pilgrimage_sale_item_costs(item_id,organization_id,unit_cost,supplier_id)
-  VALUES ('00000000-0000-4000-8000-000000000502',
-    '00000000-0000-4000-8000-000000000001',800,
-    '00000000-0000-4000-8000-000000000112');
- EXCEPTION WHEN foreign_key_violation THEN denied:=true; END;
- IF NOT denied THEN RAISE EXCEPTION 'Foreign company upstream supplier accepted'; END IF;
+
 END $$;
 
 -- An organization's viewer sees selling prices but NOT confidential cost.
