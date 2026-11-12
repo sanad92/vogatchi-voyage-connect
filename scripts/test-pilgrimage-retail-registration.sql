@@ -250,6 +250,50 @@ BEGIN
  IF NOT denied THEN RAISE EXCEPTION 'B2B contract was misclassified as retail debtor'; END IF;
 END $$;
 
+-- A reseller/retail quoted tariff that differs from the actual
+-- program passenger tariff must NOT silently create false receivables.
+INSERT INTO public.pilgrimage_sales(
+ id,organization_id,program_type,sale_model,fulfillment_role,name,
+ program_id,buyer_customer_id,party_size,currency
+) VALUES(
+ '00000000-0000-4000-8000-000000000404',
+ '00000000-0000-4000-8000-000000000001','umrah','group_seat',
+ 'organizer','تجربة فرق الأسعار',
+ '00000000-0000-4000-8000-000000000212',
+ '00000000-0000-4000-8000-000000000101',1,'EGP');
+INSERT INTO public.pilgrimage_sale_items(
+ organization_id,sale_id,item_kind,description,room_type,quantity,unit_sell
+) VALUES(
+ '00000000-0000-4000-8000-000000000001',
+ '00000000-0000-4000-8000-000000000404',
+ 'program_seat','سعر فرد تعاقدي مختلف','double',1,1700);
+INSERT INTO public.pilgrimage_sale_travelers(
+ organization_id,sale_id,display_name,room_type
+) VALUES(
+ '00000000-0000-4000-8000-000000000001',
+ '00000000-0000-4000-8000-000000000404',
+ 'Different Tariff Traveler','double');
+UPDATE public.pilgrimage_sales SET status='quoted'
+ WHERE id='00000000-0000-4000-8000-000000000404';
+SELECT public.transition_pilgrimage_seat_allocation(
+  '00000000-0000-4000-8000-000000000404','hold',120);
+SELECT public.transition_pilgrimage_seat_allocation(
+  '00000000-0000-4000-8000-000000000404','allocate',120);
+DO $
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM public.convert_pilgrimage_retail_group(
+    '00000000-0000-4000-8000-000000000404');
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Incorrect passenger retail receivable created'; END IF;
+ IF (SELECT status FROM public.pilgrimage_seat_allocations
+    WHERE sale_id='00000000-0000-4000-8000-000000000404')<>'allocated'
+ OR EXISTS(SELECT 1 FROM public.pilgrimage_retail_conversions
+    WHERE sale_id='00000000-0000-4000-8000-000000000404') THEN
+    RAISE EXCEPTION 'Tariff mismatch partially converted allocation'; END IF;
+END $;
+
 -- No unauthenticated conversion and no externally issued visa is invented.
 SET test.user_id='';
 DO $$
