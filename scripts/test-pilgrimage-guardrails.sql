@@ -24,6 +24,10 @@ CREATE TABLE public.pilgrimage_programs(
 CREATE TABLE public.pilgrims(
  id uuid PRIMARY KEY,organization_id uuid NOT NULL,program_id uuid NOT NULL,
  customer_id uuid,full_name text NOT NULL,status text NOT NULL DEFAULT 'registered',
+ name_en text, national_id text, passport_number text, passport_expiry date,
+ visa_status text NOT NULL DEFAULT 'not_started',
+ documents_complete boolean NOT NULL DEFAULT false,
+ makkah_room text, madinah_room text,
  room_type text NOT NULL DEFAULT 'quad',total_price numeric NOT NULL DEFAULT 0,
  paid_amount numeric NOT NULL DEFAULT 0,cancellation_fee numeric NOT NULL DEFAULT 0
 );
@@ -175,8 +179,53 @@ BEGIN
  IF NOT denied THEN RAISE EXCEPTION 'Payment exceeded remaining balance'; END IF;
 END $$;
 
+-- International traveler readiness must fail closed until documentation
+-- is present. This tests the database trigger, not a statutory visa grant.
+DO $
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+  UPDATE public.pilgrims SET status='ready'
+   WHERE id='00000000-0000-4000-8000-000000000302';
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Undocumented international traveler marked ready'; END IF;
+END $;
+
+UPDATE public.pilgrims SET name_en='SAMPLE B',
+  passport_number='P12345',passport_expiry='2028-01-01',
+  visa_status='issued',documents_complete=true, status='ready'
+WHERE id='00000000-0000-4000-8000-000000000302';
+
+-- Domestic route: identity, not a blanket international passport rule.
+INSERT INTO public.pilgrimage_programs
+(id,organization_id,name,capacity,price_quad,status,travel_scope,departure_date,return_date)
+VALUES ('00000000-0000-4000-8000-000000000203',
+'00000000-0000-4000-8000-000000000001',
+'رحلة حج داخلية تجريبية',1,1200,'open','domestic','2027-03-01','2027-03-10');
+
+INSERT INTO public.pilgrims(id,organization_id,program_id,customer_id,full_name,room_type)
+VALUES ('00000000-0000-4000-8000-000000000304',
+'00000000-0000-4000-8000-000000000001',
+'00000000-0000-4000-8000-000000000203',
+'00000000-0000-4000-8000-000000000101',
+'Domestic Sample','quad');
+
+DO $
+DECLARE denied boolean:=false;
+BEGIN
+ BEGIN
+  UPDATE public.pilgrims SET documents_complete=true,status='ready'
+  WHERE id='00000000-0000-4000-8000-000000000304';
+ EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Domestic traveler without identity marked ready'; END IF;
+END $;
+
+UPDATE public.pilgrims SET national_id='TEST-IQAMA-123',
+ documents_complete=true,visa_status='not_required',status='ready'
+WHERE id='00000000-0000-4000-8000-000000000304';
+
 SET test.user_id='00000000-0000-4000-8000-000000000099';
-DO $$
+DO $
 DECLARE denied boolean:=false;
 BEGIN
  BEGIN
