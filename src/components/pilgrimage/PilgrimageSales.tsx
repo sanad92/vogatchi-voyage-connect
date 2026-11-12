@@ -376,8 +376,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
             <Badge variant="outline">{!allocation?'لم يُحجز':
-              allocation.status==='allocated'?'مخصص داخليًا':
               conversion?'تم تسجيل المعتمرين':
+              allocation.status==='allocated'?'مخصص داخليًا':
               allocation.status==='released'?'تم تحرير المقاعد':
               allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
           </div>
@@ -406,7 +406,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
                 !conversion && <Button disabled={convertRetail.isPending}
                   onClick={()=>setConfirmConversionOpen(true)}>
                   تحويل إلى تسجيلات معتمرين
-                </Button>
+                </Button>}
             </div>}
           <p className="text-xs text-amber-700 dark:text-amber-300">
             تحويل تسجيلات الأفراد مشروط بمطابقة عدد الأسماء والغرف مع أسعار البرنامج؛
