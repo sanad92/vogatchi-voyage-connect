@@ -67,7 +67,7 @@ const Pilgrimage = () => {
   const [cancelFor, setCancelFor] = useState<any>(null);
   const [fee, setFee] = useState(0);
   const [search, setSearch] = useState('');
-  const [pay, setPay] = useState({ amount: 0, method: 'cash', treasury: '', reference: '', date: new Date().toISOString().slice(0, 10) });
+  const [pay, setPay] = useState({ amount: 0, method: 'cash', treasury: '', reference: '', date: new Date().toISOString().slice(0, 10), exchangeRate: 1, clientRef: '' });
   const [pf, setPf] = useState<any>({ ...EMPTY_PROGRAM });
   const [gf, setGf] = useState<any>({ ...EMPTY_PILGRIM });
 
@@ -188,16 +188,33 @@ const Pilgrimage = () => {
       if (!Number.isFinite(pay.amount) || pay.amount <= 0 || pay.amount > remaining)
         throw new Error(`المبلغ يجب أن يكون بين 0 و ${remaining}`);
       if (!pay.date) throw new Error('تاريخ التحصيل مطلوب');
-      if (pay.method !== 'cash' && !pay.treasury) throw new Error('اختر الخزينة أو الحساب البنكي');
+      if (!Number.isFinite(pay.exchangeRate) || pay.exchangeRate <= 0)
+        throw new Error('أدخل سعر التحويل الصحيح لعملة الدفتر');
+      if (!pay.treasury) throw new Error('يجب اختيار خزينة نشطة قبل التحصيل');
+      if (!pay.clientRef) throw new Error('تعذر إنشاء معرف العملية؛ أغلق النافذة وافتحها مجددًا');
       const treasury = treasuries.find((t) => t.id === pay.treasury);
-      if (pay.treasury && (!treasury || treasury.currency !== program.currency))
-        throw new Error('الخزينة ليست نشطة أو عملتها لا تطابق البرنامج');
-      const { data, error } = await sb.from('customer_payments').insert({
-        organization_id: orgId, pilgrim_id: g.id, customer_id: g.customer_id, amount: pay.amount, amount_base: pay.amount,
-        currency: program.currency || 'EGP', payment_method: pay.method, treasury_account_id: pay.treasury || null,
-        reference_number: pay.reference || null, payment_date: pay.date, notes: `${program.name} · ${g.full_name}`, status: 'completed',
-      }).select('*').single();
-      if (error) throw error;
+      if (!treasury || treasury.currency !== program.currency ||
+        (pay.method === 'cash' && treasury.treasury_kind !== 'cash') ||
+        (pay.method !== 'cash' && treasury.treasury_kind === 'cash'))
+        throw new Error('اختر خزينة أو حسابًا مناسبًا لطريقة الدفع وبنفس عملة البرنامج');
+      const payload = {
+        organization_id: orgId, pilgrim_id: g.id, customer_id: g.customer_id, amount: pay.amount,
+        amount_base: Math.round(pay.amount * pay.exchangeRate * 100) / 100,
+        exchange_rate: pay.exchangeRate, client_ref: pay.clientRef,
+        currency: program.currency || 'EGP', payment_method: pay.method, treasury_account_id: pay.treasury,
+        reference_number: pay.reference || null, payment_date: pay.date,
+        notes: `${program.name} · ${g.full_name}`, status: 'completed',
+      };
+      const { data, error } = await sb.from('customer_payments').insert(payload).select('*').single();
+      if (error) {
+        if (error.code !== '23505') throw error;
+        const prior = await sb.from('customer_payments').select('*')
+          .eq('organization_id', orgId).eq('client_ref', pay.clientRef).maybeSingle();
+        if (prior.error || !prior.data ||
+          prior.data.pilgrim_id !== g.id || Number(prior.data.amount) !== Number(pay.amount))
+          throw error;
+        return { p: prior.data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
+      }
       return { p: data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
     },
     onSuccess: ({ p, g }) => {
@@ -309,7 +326,10 @@ const Pilgrimage = () => {
                           {refundable(g) > 0 && <p className="text-xs text-destructive">مستحق مراجعة رد {fmt(refundable(g), program.currency)}</p>}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {!cancelled && canManage && outstanding(g) > 0 && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ ...pay, amount: outstanding(g), reference: '' }); }}><Wallet className="h-4 w-4" /></Button>}
+                          {!cancelled && canManage && outstanding(g) > 0 && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ amount: outstanding(g), method: 'cash', treasury: '', reference: '',
+  date: new Date().toISOString().slice(0, 10),
+  exchangeRate: program.currency === 'EGP' ? 1 : 0,
+  clientRef: crypto.randomUUID() }); }}><Wallet className="h-4 w-4" /></Button>}
                           <Button size="icon" variant="ghost" title="طباعة العقد" onClick={() => printDocument(currentOrganization, `عقد برنامج ${program.name}`, contractHtml(g, program))}><FileText className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>
                           {!cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => { setCancelFor(g); setFee(0); }}><Ban className="h-4 w-4 text-destructive" /></Button>}
@@ -354,7 +374,7 @@ const Pilgrimage = () => {
                       <TableRow key={p.id}>
                         <TableCell>{p.payment_date}</TableCell><TableCell>{g?.full_name}</TableCell><TableCell>{fmt(p.amount, p.currency)}</TableCell>
                         <TableCell>{p.payment_method === 'cash' ? 'نقدي' : 'تحويل بنكي'}</TableCell><TableCell>{p.reference_number || '—'}</TableCell>
-                        <TableCell><Button size="sm" variant="ghost" onClick={() => printDocument(currentOrganization, 'سند قبض', receiptHtml(p, g, program))}><Printer className="h-4 w-4 me-1" />سند</Button></TableCell>
+                        <TableCell>{p.status === 'completed' ? <Button size="sm" variant="ghost" onClick={() => printDocument(currentOrganization, 'سند قبض', receiptHtml(p, g, program))}><Printer className="h-4 w-4 me-1" />سند</Button> : <Badge variant="outline">دفعة {p.status === 'reversed' ? 'معكوسة' : 'معلقة'}</Badge>}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -425,18 +445,19 @@ const Pilgrimage = () => {
         <Dialog open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)}>
           <DialogContent>
             <DialogHeader><DialogTitle>سند قبض · {payFor?.full_name}</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">المتبقي: {payFor && fmt(outstanding(payFor), program.currency)}</p>
+            <p className="text-sm text-muted-foreground">المتبقي: {payFor && fmt(outstanding(payFor), program.currency)}. لا تُعتبر الدفعة مستلمة إلا بعد نجاح التسجيل المحاسبي.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <F label="المبلغ"><Input type="number" value={pay.amount} onChange={(e) => setPay({ ...pay, amount: Number(e.target.value) })} /></F>
               <F label="التاريخ"><Input type="date" value={pay.date} onChange={(e) => setPay({ ...pay, date: e.target.value })} /></F>
               <F label="طريقة الدفع">
-                <Select value={pay.method} onValueChange={(v) => setPay({ ...pay, method: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={pay.method} onValueChange={(v) => setPay({ ...pay, method: v, treasury: '' })}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="cash">نقدي</SelectItem><SelectItem value="bank_transfer">تحويل بنكي</SelectItem></SelectContent></Select>
               </F>
               <F label="الخزينة / الحساب">
                 <Select value={pay.treasury} onValueChange={(v) => setPay({ ...pay, treasury: v })}><SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-                  <SelectContent>{treasuries.filter((t) => (t.currency || 'EGP') === (program.currency || 'EGP')).map((t) => <SelectItem key={t.id} value={t.id}>{t.account_name || t.bank_name}</SelectItem>)}</SelectContent></Select>
+                  <SelectContent>{treasuries.filter((t) => (t.currency || 'EGP') === (program.currency || 'EGP') && (pay.method === 'cash' ? t.treasury_kind === 'cash' : t.treasury_kind !== 'cash')).map((t) => <SelectItem key={t.id} value={t.id}>{t.account_name || t.bank_name}</SelectItem>)}</SelectContent></Select>
               </F>
+              <F label="معامل التحويل إلى عملة الدفتر"><Input type="number" min="0" step="0.000001" value={pay.exchangeRate} onChange={(e) => setPay({ ...pay, exchangeRate: Number(e.target.value) })} /></F>
               <F label="رقم المرجع (اختياري)" wide><Input value={pay.reference} onChange={(e) => setPay({ ...pay, reference: e.target.value })} /></F>
             </div>
             <Button className="w-full" disabled={collect.isPending} onClick={() => collect.mutate()}>تسجيل وطباعة السند</Button>
