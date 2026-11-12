@@ -22,7 +22,7 @@ import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
 } from '@/components/pilgrimage/pilgrimage-documents';
 
-const VISA: Record<string, string> = { not_started: 'لم تبدأ', submitted: 'مقدمة', issued: 'صادرة', rejected: 'مرفوضة' };
+const VISA: Record<string, string> = { not_started: 'لم تبدأ', submitted: 'مقدمة', issued: 'صادرة', not_required: 'غير مطلوبة للمسار', rejected: 'مرفوضة' };
 const PILGRIM_STATUS: Record<string, string> = {
   registered: 'مسجل', documents_pending: 'نواقص مستندات', visa_processing: 'إجراءات التأشيرة',
   ready: 'جاهز للسفر', traveled: 'مسافر', completed: 'مكتمل', cancelled: 'ملغي',
@@ -31,14 +31,14 @@ const PROGRAM_STATUS: Record<string, string> = {
   draft: 'مسودة', open: 'التسجيل مفتوح', full: 'مكتمل العدد', closed: 'مغلق', departed: 'غادر', completed: 'انتهى', cancelled: 'ملغي',
 };
 const PROGRAM_FIELDS = ['name', 'season', 'departure_date', 'return_date', 'makkah_hotel', 'makkah_nights', 'madinah_hotel', 'madinah_nights',
-  'airline', 'flight_details', 'transport_details', 'capacity', 'price_quad', 'price_triple', 'price_double', 'price_single', 'currency', 'notes', 'terms', 'status'];
+  'airline', 'flight_details', 'transport_details', 'capacity', 'price_quad', 'price_triple', 'price_double', 'price_single', 'currency', 'travel_scope', 'notes', 'terms', 'status'];
 const PILGRIM_FIELDS = ['full_name', 'name_en', 'phone', 'gender', 'birth_date', 'nationality', 'national_id', 'passport_number', 'passport_expiry',
   'mahram_name', 'mahram_relation', 'room_type', 'room_group', 'vaccination_done', 'documents_complete', 'visa_number', 'portal_barcode', 'makkah_room', 'madinah_room', 'bus_number', 'supervisor', 'notes'];
 
 const EMPTY_PROGRAM: any = {
   name: '', season: '', departure_date: '', return_date: '', makkah_hotel: '', makkah_nights: 0,
   madinah_hotel: '', madinah_nights: 0, airline: '', flight_details: '', transport_details: '', capacity: 0,
-  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, currency: 'EGP', notes: '', terms: '', status: 'open', cost_per_person: 0,
+  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, currency: 'EGP', travel_scope: 'international', notes: '', terms: '', status: 'open', cost_per_person: 0,
 };
 const EMPTY_PILGRIM: any = {
   full_name: '', name_en: '', phone: '', gender: 'male', birth_date: '', nationality: 'مصري', national_id: '',
@@ -97,6 +97,8 @@ const Pilgrimage = () => {
       if (editingProgram && program) {
         if (programPilgrims.length && pf.currency !== program.currency)
           throw new Error('لا يمكن تغيير عملة البرنامج بعد تسجيل أشخاص عليه');
+        if (programPilgrims.length && pf.travel_scope !== (program.travel_scope || 'international'))
+          throw new Error('لا يمكن تغيير المسار الداخلي/الدولي بعد تسجيل أشخاص عليه');
         if (Number(pf.capacity) > 0 && Number(pf.capacity) < programPilgrims.filter(isActivePilgrim).length)
           throw new Error('السعة الجديدة أقل من عدد المسجلين الفعلي');
       }
@@ -485,6 +487,11 @@ const Pilgrimage = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <F label="اسم البرنامج" wide><Input value={pf.name} onChange={(e) => setPf({ ...pf, name: e.target.value })} placeholder="مثال: عمرة رجب 15 يوم" /></F>
             <F label="الموسم"><Input value={pf.season ?? ''} onChange={(e) => setPf({ ...pf, season: e.target.value })} placeholder="1448 هـ" /></F>
+            <F label="مسار الرحلة">
+              <Select value={pf.travel_scope || 'international'} disabled={editingProgram && programPilgrims.length > 0} onValueChange={(v) => setPf({ ...pf, travel_scope: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="international">رحلة دولية</SelectItem><SelectItem value="domestic">رحلة داخلية بالمملكة</SelectItem></SelectContent>
+              </Select>
+            </F>
             <F label="عملة البرنامج">
               <Select value={pf.currency || 'EGP'} disabled={editingProgram && programPilgrims.length > 0} onValueChange={(v) => setPf({ ...pf, currency: v })}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{['EGP', 'SAR', 'USD', 'EUR'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
