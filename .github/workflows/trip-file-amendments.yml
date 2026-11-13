@@ -1,0 +1,65 @@
+name: Trip File amendment regression checks
+on:
+  pull_request:
+    paths:
+      - 'src/components/bookings/workspace/**'
+      - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/hooks/useBookingChangeHandoffs.ts'
+      - 'src/hooks/useBookingChangeSourceEvidence.ts'
+      - 'src/hooks/useBookingAllocationReview.ts'
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - '.github/workflows/trip-file-amendments.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/bookings/workspace/**'
+      - 'src/hooks/useBookingChangeRequests.ts'
+      - 'src/hooks/useBookingChangeHandoffs.ts'
+      - 'src/hooks/useBookingChangeSourceEvidence.ts'
+      - 'src/hooks/useBookingAllocationReview.ts'
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - '.github/workflows/trip-file-amendments.yml'
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
+      - run: bun install --frozen-lockfile
+      - run: bun src/lib/tripFile/evidenceReconciliation.test.ts
+      - run: bun src/lib/tripFile/allocationReview.test.ts
+      - run: bun src/lib/tripFile/executionExceptions.test.ts
+      - run: bunx tsc --noEmit
+      - run: bun run build
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if absent
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Test organization separation, review, deduplication, and audit
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-trip-file-source-evidence-links.sql

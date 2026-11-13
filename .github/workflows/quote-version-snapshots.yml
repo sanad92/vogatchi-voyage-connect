@@ -1,0 +1,52 @@
+name: Quote version archive regression checks
+on:
+  pull_request:
+    paths:
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/quote-version-snapshots.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/quote-version-snapshots.yml'
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bun run build
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if absent
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Test quote snapshots, company boundaries, and immutability
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/test-quote-version-snapshots.sql
