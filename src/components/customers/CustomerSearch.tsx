@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Plus, User, Phone, Mail, UserPlus, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useOrgId } from "@/hooks/useOrgId";
 
 interface Customer {
   id: string;
@@ -33,15 +34,17 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
   
   // استخدام debounce لتحسين الأداء
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const orgId = useOrgId();
 
   const { data: allCustomers, isLoading } = useQuery({
-    queryKey: ['customers-search', debouncedSearchTerm],
+    queryKey: ['customers-search', orgId, debouncedSearchTerm],
     queryFn: async () => {
-      if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) return [];
+      if (!orgId || !debouncedSearchTerm || debouncedSearchTerm.length < 2) return [];
       
       const { data, error } = await supabase
         .from('customers')
         .select('id, name, phone, email, nationality')
+        .eq('organization_id', orgId)
         .or(`name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%`)
         .order('name')
         .limit(50); // حد أقصى من الخادم
@@ -49,7 +52,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
       if (error) throw error;
       return data as Customer[];
     },
-    enabled: debouncedSearchTerm.length >= 2
+    enabled: !!orgId && debouncedSearchTerm.length >= 2
   });
 
   // تحديد النتائج المعروضة
