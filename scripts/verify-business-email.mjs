@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const src = await import('node:fs').then(f => f.readFileSync('src/lib/business-email.ts','utf8'));
+const domains = [...src.matchAll(/'([a-z.]+\.[a-z]+)'/g)].map(m => m[1]);
+const isFree = (e) => { const d=(e.split('@')[1]||'').toLowerCase(); return domains.some(x=>d===x||d.endsWith('.'+x)); };
+assert.equal(isFree('ali@gmail.com'), true);
+assert.equal(isFree('ali@Outlook.com'), true);
+assert.equal(isFree('ali@hotmail.com'), true);
+assert.equal(isFree('ops@vogatchi.com'), false);
+assert.equal(isFree('ops@safarerp.com'), false);
+console.log('business email rules OK');
