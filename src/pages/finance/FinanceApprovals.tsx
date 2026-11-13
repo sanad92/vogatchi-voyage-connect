@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, XCircle, DollarSign, RotateCcw } from 'lucide-react';
+import { CheckCircle2, DollarSign, RotateCcw } from 'lucide-react';
 import {
   useRefundRequests, useRefundActions, useTreasuryAccounts, usePendingSupplierPOs, useApproveSupplierPO,
 } from '@/hooks/finance/useFinanceRpcs';
@@ -15,7 +17,9 @@ import {
 export default function FinanceApprovals() {
   usePageTitle('اعتمادات مالية');
   const { data: pos = [] } = usePendingSupplierPOs();
-  const { data: refunds = [] } = useRefundRequests();
+  const { data: refunds = [], isError: refundsError, isPending: refundsLoading } = useRefundRequests();
+  const { canProcessPayments } = useSupabasePermissions();
+  const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const { data: treasury = [] } = useTreasuryAccounts();
   const approvePO = useApproveSupplierPO();
   const { approve: approveRefund, pay: payRefund } = useRefundActions();
@@ -55,9 +59,14 @@ export default function FinanceApprovals() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><RotateCcw className="h-4 w-4" />طلبات الاسترداد ({refunds.length})</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2"><RotateCcw className="h-4 w-4" />طلبات الاسترداد ({refunds.length})</CardTitle>
+          <Button asChild variant="outline" size="sm"><Link to="/refund-balances">الأرصدة والاستردادات</Link></Button>
+        </CardHeader>
         <CardContent>
-          {refunds.length === 0 ? <div className="text-center py-6 text-muted-foreground text-sm">لا توجد طلبات</div> :
+          {refundsError ? <p role="alert" className="text-sm text-destructive">تعذر تحميل طلبات الاسترداد</p>
+            : refundsLoading ? <p className="text-sm text-muted-foreground">جارٍ تحميل طلبات الاسترداد…</p>
+            : refunds.length === 0 ? <div className="text-center py-6 text-muted-foreground text-sm">لا توجد طلبات</div> :
             <Table>
               <TableHeader><TableRow><TableHead>الحجز</TableHead><TableHead>العميل</TableHead><TableHead>المبلغ</TableHead><TableHead>السبب</TableHead><TableHead>الحالة</TableHead><TableHead>الإجراء</TableHead></TableRow></TableHeader>
               <TableBody>
@@ -69,25 +78,28 @@ export default function FinanceApprovals() {
                     <TableCell className="text-xs">{r.reason || '—'}</TableCell>
                     <TableCell><Badge>{r.status}</Badge></TableCell>
                     <TableCell className="flex gap-1 items-center">
-                      {r.status === 'pending' && (
+                      {r.status === 'requested' && canProcessPayments() && (
                         <>
-                          <Button size="sm" onClick={() => approveRefund.mutate({ refund_id: r.id, approve: true })}>اعتماد</Button>
-                          <Button size="sm" variant="outline" onClick={() => approveRefund.mutate({ refund_id: r.id, approve: false })}>رفض</Button>
+                          <Button size="sm" disabled={approveRefund.isPending} onClick={() => approveRefund.mutate({ refund_id: r.id, approve: true })}>اعتماد</Button>
+                          <Input className="w-32" aria-label="سبب الرفض" placeholder="سبب الرفض" value={rejectionReasons[r.id] || ''}
+                            onChange={event => setRejectionReasons(previous => ({ ...previous, [r.id]: event.target.value }))} />
+                          <Button size="sm" variant="outline" disabled={approveRefund.isPending || !rejectionReasons[r.id]?.trim()}
+                            onClick={() => approveRefund.mutate({ refund_id: r.id, approve: false, reason: rejectionReasons[r.id] })}>رفض</Button>
                         </>
                       )}
                       {r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && (
                         <Button asChild size="sm" variant="link"><Link to={`/invoices?id=${r.invoice_id}`}>فتح فاتورة المجموعة</Link></Button>
                       )}
-                      {!r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && (
+                      {!r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && canProcessPayments() && (
                         <>
                           <Select value={payAccount[r.id]} onValueChange={(v) => setPayAccount({ ...payAccount, [r.id]: v })}>
                             <SelectTrigger className="w-40 h-8"><SelectValue placeholder="اختر خزينة" /></SelectTrigger>
-                            <SelectContent>{treasury.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.account_name} ({t.currency})</SelectItem>)}</SelectContent>
+                            <SelectContent>{treasury.filter((t: any) => t.currency === r.currency).map((t: any) => <SelectItem key={t.id} value={t.id}>{t.account_name} ({t.currency})</SelectItem>)}</SelectContent>
                           </Select>
-                          <Button size="sm" disabled={!payAccount[r.id]} onClick={() => payRefund.mutate({ refund_id: r.id, treasury_account_id: payAccount[r.id] })}>صرف</Button>
+                          <Button size="sm" disabled={!payAccount[r.id] || payRefund.isPending} onClick={() => payRefund.mutate({ refund_id: r.id, treasury_account_id: payAccount[r.id] })}>صرف المتبقي</Button>
                         </>
                       )}
-                      {r.status === 'paid' && <XCircle className="h-4 w-4 text-emerald-600" />}
+                      {r.status === 'paid' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                     </TableCell>
                   </TableRow>
                 ))}

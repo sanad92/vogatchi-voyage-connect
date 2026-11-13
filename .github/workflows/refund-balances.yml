@@ -1,0 +1,38 @@
+name: Refund balances
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*refund*'
+      - 'src/**/*Refund*'
+      - 'src/pages/PaymentOrders.tsx'
+      - 'scripts/*refund-balances*'
+      - '.github/workflows/refund-balances.yml'
+jobs:
+  finance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/prepare-refund-balances-fixture.mjs
+      - run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f scripts/test-refund-balances.sql
+        env:
+          PGPASSWORD: postgres
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --global bun@1.4.4 --no-audit --no-fund
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit -p tsconfig.app.json
+      - run: bun run build

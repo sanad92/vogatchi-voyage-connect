@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -102,7 +103,7 @@ export default function CustomerLedger() {
         events.push({
           date: inv.issued_date || inv.created_at,
           ref: inv.invoice_number,
-          description: 'تحصيل من العميل',
+          description: 'تسوية فاتورة العميل',
           debit: 0,
           credit: paid,
           currency: inv.currency,
@@ -174,6 +175,8 @@ export default function CustomerLedger() {
           </div>
         </div>
       )}
+
+      {customerId && <RefundLedgerSummary kind="customer" partyId={customerId} />}
 
       <Alert>
         <AlertCircle className="h-4 w-4" />

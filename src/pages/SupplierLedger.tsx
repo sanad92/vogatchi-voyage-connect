@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -117,6 +118,8 @@ export default function SupplierLedger() {
         title="كشف حساب المورد"
         description="تكاليف الحجوزات ومستحقات الحج والعمرة ومدفوعات الموردين."
       />
+
+      {supplierId && <RefundLedgerSummary kind="supplier" partyId={supplierId} />}
 
       <Alert>
         <AlertCircle className="h-4 w-4" />

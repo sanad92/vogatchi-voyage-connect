@@ -108,6 +108,7 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
       '/treasury',
       '/cash-flow',
       '/finance-approvals',
+      '/refund-balances',
       '/trial-balance',
       '/income-statement',
       '/balance-sheet',
