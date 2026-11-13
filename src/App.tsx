@@ -73,7 +73,6 @@ const TransportBookings = lazy(() => import("@/pages/TransportBookings"));
 // Unified Bookings
 const UnifiedBookings = lazy(() => import("@/pages/UnifiedBookings"));
 const NewUnifiedBooking = lazy(() => import("@/pages/NewUnifiedBooking"));
-const UnifiedBookingDetails = lazy(() => import("@/pages/UnifiedBookingDetails"));
 const BookingWorkspace = lazy(() => import("@/pages/BookingWorkspace"));
 
 // Departmental SOP (CS → Sales → Reservations)
@@ -405,7 +404,7 @@ function App() {
                               <Route path="/export-center" element={<PermissionRouteGuard requiredPermission="reports_view"><ExportCenter /></PermissionRouteGuard>} />
                               <Route path="/bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookings /></PermissionRouteGuard>} />
                               <Route path="/bookings/new" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewUnifiedBooking /></PermissionRouteGuard>} />
-                              <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><UnifiedBookingDetails /></PermissionRouteGuard>} />
+                              <Route path="/bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
                               <Route path="/bookings/:id/workspace" element={<PermissionRouteGuard requiredPermission="bookings_view"><BookingWorkspace /></PermissionRouteGuard>} />
                               <Route path="/sop/intake" element={<PermissionRouteGuard requiredPermission="crm_view"><SopIntake /></PermissionRouteGuard>} />
                               <Route path="/sop/handovers" element={<PermissionRouteGuard requiredPermission="crm_view"><SopHandovers /></PermissionRouteGuard>} />

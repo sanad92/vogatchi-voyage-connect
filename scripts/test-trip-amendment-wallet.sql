@@ -1,4 +1,4 @@
-ALTER TABLE public.bookings ADD COLUMN status text, ADD COLUMN workflow_stage text, ADD COLUMN is_demo boolean DEFAULT false, ADD COLUMN supplier_id uuid;
+ALTER TABLE public.bookings ADD COLUMN status text, ADD COLUMN workflow_stage text, ADD COLUMN is_demo boolean DEFAULT false, ADD COLUMN supplier_id uuid, ADD COLUMN status_id uuid, ADD COLUMN updated_at timestamptz;
 ALTER TABLE public.invoices ALTER COLUMN id SET DEFAULT gen_random_uuid(), ADD COLUMN pilgrimage_b2b_agreement_id uuid, ADD COLUMN created_by uuid, ADD COLUMN notes text;
 ALTER TABLE public.supplier_payment_orders ALTER COLUMN id SET DEFAULT gen_random_uuid(), ALTER COLUMN approval_status SET DEFAULT 'pending',
   ADD COLUMN service_type text, ADD COLUMN source_type text, ADD COLUMN source_id uuid, ADD COLUMN notes text;

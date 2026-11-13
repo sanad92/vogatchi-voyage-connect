@@ -1,5 +1,16 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  'تسوية الإلغاء': 'Settle cancellation',
+  'عرض تسوية الإلغاء': 'View cancellation settlement',
+  'إلغاء الحجز وتسوية الفواتير': 'Cancel booking and settle invoices',
+  'اعتماد الإلغاء والتسوية': 'Approve cancellation and settlement',
+  'تم اعتماد تسوية إلغاء الحجز': 'Booking cancellation settlement approved',
+  'راجع الغرامة والمبلغ المتبقي ورصيد الاسترداد قبل الاعتماد.': 'Review the fee, outstanding amount, and refund balance before approval.',
+  'الحجز لا توجد له فواتير صادرة مؤهلة للتسوية.': 'This booking has no eligible issued invoices.',
+  'سبب الإلغاء': 'Cancellation reason',
+  'المتبقي للتحصيل': 'Amount left to collect',
+  'ملاحظات الحجز': 'Booking notes',
+  'تخفيض مستحق بعد تعديل أو إلغاء': 'Receivable reduced after an amendment or cancellation',
   // Trip service amendments
   'تعديل أو إلغاء خدمة وتسويتها': 'Amend or cancel a service',
   'سجّل شروط المورد، وراجع أثر التعديل على فاتورة العميل ومحفظة العميل والمورد قبل الاعتماد.': 'Record the supplier terms and review the impact on the customer invoice and both refund balances.',

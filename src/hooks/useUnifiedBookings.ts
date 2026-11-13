@@ -133,20 +133,6 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     onError: (err: Error) => toast.error('خطأ في إنشاء الحجز: ' + err.message),
   });
 
-  const updateBookingStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: BookingStatus }) => {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
-      toast.success('تم تحديث الحالة');
-    },
-  });
-
   return {
     bookings: bookingsQuery.data?.data || [],
     totalCount: bookingsQuery.data?.count || 0,
@@ -156,41 +142,5 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     finishCreation: () => {
       if (creationRequest.current) finishBookingCreationRequest(creationRequest.current);
     },
-    updateBookingStatus,
   };
-};
-
-export const useBookingDetails = (bookingId: string) => {
-  return useQuery({
-    queryKey: ['unified-booking-detail', bookingId],
-    queryFn: async () => {
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .select('*, customers(name, phone, email), employees(full_name), booking_statuses(name, name_ar, color)')
-        .eq('id', bookingId)
-        .single();
-
-      if (error) throw error;
-
-      let details = null;
-      const type = booking.booking_type;
-
-      if (type === 'hotel') {
-        const { data } = await supabase.from('booking_hotel_details').select('*').eq('booking_id', bookingId).single();
-        details = data;
-      } else if (type === 'flight') {
-        const { data } = await supabase.from('booking_flight_details').select('*').eq('booking_id', bookingId).single();
-        details = data;
-      } else if (type === 'car_rental') {
-        const { data } = await supabase.from('booking_car_details').select('*').eq('booking_id', bookingId).single();
-        details = data;
-      } else if (type === 'transport') {
-        const { data } = await supabase.from('booking_transport_details').select('*').eq('booking_id', bookingId).single();
-        details = data;
-      }
-
-      return { ...booking, details };
-    },
-    enabled: !!bookingId,
-  });
 };

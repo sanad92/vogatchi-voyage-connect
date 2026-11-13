@@ -22,6 +22,11 @@ try {
   await db.exec(migration('20261113171743_trip_amendment_wallet'));
   await db.exec(cases.slice(fixtureEnd));
   console.log('Trip amendments PostgreSQL scenarios passed');
+  const cockpit = migration('20260907171000_route_aware_booking_profit');
+  await db.exec(cockpit.slice(cockpit.indexOf('CREATE OR REPLACE FUNCTION')));
+  await db.exec(migration('20261113182458_booking_cancellation_settlement'));
+  await db.exec(read('scripts/test-booking-cancellation-settlement.sql'));
+  console.log('Booking cancellation settlement PostgreSQL scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;

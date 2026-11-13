@@ -450,9 +450,12 @@ const Invoices = () => {
                           {invoice.remaining_amount?.toLocaleString()} {invoice.currency}
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant={getPaymentStatusColor(invoice.payment_status)}>
-                            {getPaymentStatusLabel(invoice.payment_status)}
-                          </Badge>
+                          {invoice.status === 'cancelled' ? <Badge variant="outline">ملغاة</Badge>
+                            : Number(invoice.remaining_amount) === 0 && Number(invoice.final_amount) > Number(invoice.total_paid_amount)
+                              ? <Badge variant="secondary">تمت تسوية المستحق</Badge>
+                              : <Badge variant={getPaymentStatusColor(invoice.payment_status)}>
+                                {getPaymentStatusLabel(invoice.payment_status)}
+                              </Badge>}
                         </td>
                         <td className="py-3 px-4">
                           {format(new Date(invoice.issued_date), "d MMM yyyy", {
