@@ -1,3 +1,6 @@
+import { ListLoadError } from '@/components/common/ListLoadError';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuotes } from '@/hooks/useQuotes';
@@ -18,13 +21,18 @@ import QuoteFollowupSettingsDialog from '@/components/quotes/QuoteFollowupSettin
 export default function Quotes() {
   usePageTitle('عروض الأسعار');
   const navigate = useNavigate();
+  const { hasPermission } = useSupabasePermissions();
+  const canCreate = hasPermission('quotes_create');
+  const canDelete = hasPermission('quotes_delete');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { quotes, totalCount, isLoading, deleteQuote } = useQuotes({ status, search, page, pageSize });
+  const { quotes, totalCount, isLoading, error, refetch, isFetching, deleteQuote } = useQuotes({ status, search, page, pageSize });
+  const filtered = !!search.trim() || status !== 'all';
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -36,17 +44,17 @@ export default function Quotes() {
         actions={
           <div className="flex gap-2">
             <QuoteFollowupSettingsDialog />
-            <Button onClick={() => setCreateOpen(true)}>
+            {canCreate && <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 ml-1" />
               عرض سعر جديد
-            </Button>
+            </Button>}
           </div>
         }
       />
 
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>إنشاء عرض سعر</DialogTitle><DialogDescription>اختار طريقة إعداد العرض حسب طلب العميل.</DialogDescription></DialogHeader>
           <div className="grid gap-3">
             <Button variant="outline" className="h-auto py-5 justify-start text-right" onClick={() => navigate('/quotes/new')}>عرض سعر عادي — للخدمات والعروض السريعة</Button>
@@ -54,16 +62,33 @@ export default function Quotes() {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open && !deleteQuote.isPending) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف مسودة العرض {deleteTarget?.number}</AlertDialogTitle>
+            <AlertDialogDescription>سيتم حذف هذه المسودة وبنودها.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteQuote.isPending}>رجوع</AlertDialogCancel>
+            <Button variant="destructive" disabled={deleteQuote.isPending} onClick={() => {
+              if (deleteTarget) deleteQuote.mutate(deleteTarget.id, { onSuccess: () => {
+                setDeleteTarget(null);
+                if (quotes.length === 1 && page > 1) setPage(page - 1);
+              } });
+            }}>حذف المسودة</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="بحث بالرقم أو اسم العميل..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="pr-9"
+                className="ps-9"
               />
             </div>
             <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
@@ -84,9 +109,13 @@ export default function Quotes() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="text-center py-10 text-muted-foreground">جاري التحميل...</div>
+          ) : error ? (
+            <ListLoadError message="تعذر تحميل عروض الأسعار" retry={() => void refetch()} pending={isFetching} />
           ) : quotes.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              لا توجد عروض أسعار
+            <div className="space-y-2 text-center py-10 text-muted-foreground">
+              <p>{filtered ? 'لا توجد عروض مطابقة للفلاتر' : 'لا توجد عروض أسعار بعد'}</p>
+              {filtered && <Button variant="outline" size="sm" onClick={() => { setSearch(''); setStatus('all'); setPage(1); }}>مسح الفلاتر</Button>}
+              {!filtered && canCreate && <Button size="sm" onClick={() => setCreateOpen(true)}>إنشاء أول عرض</Button>}
             </div>
           ) : (
             <>
@@ -119,8 +148,8 @@ export default function Quotes() {
                             <Button variant="ghost" size="icon" aria-label="عرض تفاصيل عرض السعر" onClick={() => navigate(`/quotes/${q.id}`)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {q.status === 'draft' && (
-                              <Button variant="ghost" size="icon" aria-label="حذف عرض السعر" className="text-destructive" onClick={() => deleteQuote.mutate(q.id)}>
+                            {canDelete && q.status === 'draft' && (
+                              <Button variant="ghost" size="icon" aria-label="حذف عرض السعر" className="text-destructive" onClick={() => setDeleteTarget({ id: q.id, number: q.quote_number })}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
 

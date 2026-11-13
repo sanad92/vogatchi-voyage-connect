@@ -1,4 +1,5 @@
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -13,11 +14,7 @@ import { Link } from 'react-router-dom';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
-interface DashboardTopbarProps {
-  onMenuClick: () => void;
-}
-
-const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
+const DashboardTopbar = () => {
   const { user, profile, signOut } = useOptimizedAuth();
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
   const { dir, t, language, toggleLanguage } = useLanguage();
@@ -27,15 +24,14 @@ const DashboardTopbar = ({ onMenuClick }: DashboardTopbarProps) => {
       <div className="flex items-center justify-between h-14 px-4 lg:px-6 gap-4">
         {/* Right: Mobile menu + brand hint */}
         <div className="flex items-center gap-3 min-w-0">
-          <Button
+          <SheetTrigger asChild><Button
             variant="ghost"
             size="icon"
             className="lg:hidden flex-shrink-0"
-            onClick={onMenuClick}
             aria-label={t('فتح القائمة')}
           >
             <Menu className="h-5 w-5" />
-          </Button>
+          </Button></SheetTrigger>
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
             <span className="font-medium">{t('النظام متصل')}</span>

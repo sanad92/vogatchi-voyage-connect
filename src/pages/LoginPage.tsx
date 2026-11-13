@@ -23,6 +23,7 @@ const LoginPage = () => {
   const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
   const [searchParams] = useSearchParams();
   const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
+  const isAgency = requestedRedirect === '/pilgrimage/agency';
 
   if (loading || orgLoading || platformLoading) {
     return (
@@ -68,8 +69,8 @@ const LoginPage = () => {
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">مرحباً بعودتك</h2>
-          <p className="text-muted-foreground mt-1">سجّل دخولك للوصول إلى لوحة التحكم</p>
+          <h1 className="text-2xl font-bold text-foreground">{isAgency ? 'دخول وكيل الحج والعمرة' : 'مرحباً بعودتك'}</h1>
+          <p className="text-muted-foreground mt-1">{isAgency ? 'سجّل الدخول ببريد العمل المؤكّد الذي ربطه مشغّل البرنامج باتفاقيتك.' : 'سجّل دخولك للوصول إلى لوحة التحكم'}</p>
         </div>
 
         <form onSubmit={handleSignIn} className="space-y-5">
@@ -100,6 +101,8 @@ const LoginPage = () => {
               <Input
                 id="signin-email"
                 type="email"
+                autoComplete="email"
+                dir="ltr"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -120,6 +123,7 @@ const LoginPage = () => {
             <div className="relative">
               <Input
                 id="signin-password"
+                autoComplete="current-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -131,6 +135,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 disabled={loading}
               >
@@ -160,7 +165,7 @@ const LoginPage = () => {
             to={requestedRedirect ? `/signup?redirect=${encodeURIComponent(requestedRedirect)}` : '/signup'}
             className="text-primary font-semibold hover:underline"
           >
-            أنشئ حساب جديد
+            {isAgency ? 'إنشاء حساب وكيل ببريد العمل' : 'أنشئ حساب جديد'}
           </Link>
         </div>
       </div>

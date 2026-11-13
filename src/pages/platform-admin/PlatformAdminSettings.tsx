@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Database, Lock, Settings, Globe, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -18,10 +18,13 @@ const PlatformAdminSettings = () => {
   const [activeTab, setActiveTab] = useState('system');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const normalizedSearch = searchTerm.trim();
   const filteredTabs = tabs.filter(
     (t) =>
-      t.label.includes(searchTerm) || t.description.includes(searchTerm)
+      t.label.includes(normalizedSearch) || t.description.includes(normalizedSearch)
   );
+
+  const visibleTab = filteredTabs.some(tab => tab.value === activeTab) ? activeTab : filteredTabs[0]?.value;
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-8 space-y-8">
@@ -44,7 +47,8 @@ const PlatformAdminSettings = () => {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="ابحث عن تاب..."
+            aria-label="بحث في أقسام الإعدادات"
+            placeholder="ابحث في أقسام الإعدادات…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-background/70 border-border/50 focus:bg-background"
@@ -53,16 +57,17 @@ const PlatformAdminSettings = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {filteredTabs.length === 0 && <p role="status" className="text-sm text-muted-foreground">لا توجد أقسام مطابقة للبحث.</p>}
+      {visibleTab && <Tabs value={visibleTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList aria-label="أقسام الإعدادات" className="grid h-auto grid-cols-2 md:grid-cols-4 gap-3 bg-transparent p-0">
           {filteredTabs.map((tab) => {
             const Icon = tab.icon;
-            const active = activeTab === tab.value;
+            const active = visibleTab === tab.value;
             return (
-              <button
+              <TabsTrigger
                 key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`p-4 rounded-lg text-right transition-all duration-200 border ${
+                value={tab.value}
+                className={`block whitespace-normal p-4 rounded-lg text-start transition-all duration-200 border ${
                   active
                     ? 'bg-amber-500 text-white border-amber-600 shadow-lg scale-[1.02]'
                     : 'bg-card border-border hover:bg-accent hover:shadow-md'
@@ -71,10 +76,10 @@ const PlatformAdminSettings = () => {
                 <Icon className={`h-5 w-5 mb-2 ${active ? 'text-white' : 'text-muted-foreground'}`} />
                 <h4 className={`font-medium text-sm ${active ? 'text-white' : 'text-foreground'}`}>{tab.label}</h4>
                 <p className={`text-xs mt-1 ${active ? 'text-amber-100' : 'text-muted-foreground'}`}>{tab.description}</p>
-              </button>
+              </TabsTrigger>
             );
           })}
-        </div>
+        </TabsList>
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <TabsContent value="backup" className="mt-0"><BackupManagementTab /></TabsContent>
@@ -82,7 +87,7 @@ const PlatformAdminSettings = () => {
           <TabsContent value="system" className="mt-0"><SystemSettingsTab /></TabsContent>
           <TabsContent value="landing" className="mt-0"><SystemSettingsTab scope="landing" /></TabsContent>
         </div>
-      </Tabs>
+      </Tabs>}
     </div>
   );
 };

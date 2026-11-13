@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
 import { useRef } from "react";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { callUntypedRpc } from "@/lib/supabaseRpc";
@@ -79,8 +80,9 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
   const queryClient = useQueryClient();
   const { type, status, search, startDate, endDate, page = 1, pageSize = 20 } = filters;
 
+  const searchTerm = sanitizeSearchTerm(search ?? '');
   const bookingsQuery = useQuery({
-    queryKey: ['unified-bookings', orgId, type, status, search, startDate, endDate, page, pageSize],
+    queryKey: ['unified-bookings', orgId, type, status, searchTerm, startDate, endDate, page, pageSize],
     queryFn: async () => {
       let q = supabase
         .from('bookings')
@@ -91,8 +93,8 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
       if (status) q = q.eq('status', status);
       if (startDate) q = q.gte('start_date', startDate);
       if (endDate) q = q.lte('start_date', endDate);
-      if (search) {
-        q = q.or(`customer_name.ilike.%${search}%,booking_number.ilike.%${search}%,supplier_name.ilike.%${search}%`);
+      if (searchTerm) {
+        q = q.or(`customer_name.ilike.%${searchTerm}%,booking_number.ilike.%${searchTerm}%,supplier_name.ilike.%${searchTerm}%`);
       }
 
       const from = (page - 1) * pageSize;
@@ -138,6 +140,8 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     totalCount: bookingsQuery.data?.count || 0,
     isLoading: bookingsQuery.isLoading,
     error: bookingsQuery.error,
+    refetch: bookingsQuery.refetch,
+    isFetching: bookingsQuery.isFetching,
     createBooking,
     finishCreation: () => {
       if (creationRequest.current) finishBookingCreationRequest(creationRequest.current);

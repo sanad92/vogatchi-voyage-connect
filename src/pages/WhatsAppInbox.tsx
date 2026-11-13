@@ -143,7 +143,7 @@ const WhatsAppInboxContent: React.FC = () => {
     catch { /* mutation displays the error and refreshes the list */ }
   };
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-background" dir="rtl">
+    <div className="h-[calc(100dvh-4rem)] flex flex-col bg-background">
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
         <div className="h-9 w-9 rounded-xl bg-[image:var(--gradient-brand)] flex items-center justify-center shadow-[var(--shadow-glow)]">
@@ -173,7 +173,7 @@ const WhatsAppInboxContent: React.FC = () => {
           <div className="p-3 border-b space-y-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -310,7 +310,7 @@ const WhatsAppInboxContent: React.FC = () => {
               {showSearch && (
                 <div className="px-4 py-2 border-b bg-card/60 backdrop-blur flex flex-wrap items-center gap-2">
                   <div className="relative flex-1 min-w-[200px]">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}
                       placeholder="ابحث داخل رسائل هذه المحادثة..." className="pr-9 h-9 rounded-full" />
                   </div>

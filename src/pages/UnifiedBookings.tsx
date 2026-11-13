@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
+import { ListLoadError } from '@/components/common/ListLoadError';
+import { Link, useNavigate } from 'react-router-dom';
 import { useUnifiedBookings, BookingType, BookingStatus } from '@/hooks/useUnifiedBookings';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,14 +40,18 @@ const statusLabelsAr: Record<BookingStatus, string> = {
 
 
 const UnifiedBookings = () => {
+  usePageTitle('الحجوزات الموحدة');
   const navigate = useNavigate();
+  const orgId = useOrgId();
+  const { hasPermission, canCreateBookings } = useSupabasePermissions();
+  const canViewFinance = hasPermission('financial_view');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { bookings, totalCount, isLoading } = useUnifiedBookings({
+  const { bookings, totalCount, isLoading, error, refetch, isFetching } = useUnifiedBookings({
     type: typeFilter !== 'all' ? typeFilter as BookingType : undefined,
     status: statusFilter !== 'all' ? statusFilter as BookingStatus : undefined,
     search: search || undefined,
@@ -51,83 +61,92 @@ const UnifiedBookings = () => {
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Note: these stats are from the current page only — totalCount is accurate from server
-  const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const totalProfit = bookings.reduce((sum, b) => sum + (b.profit || 0), 0);
-  const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
+  const searchTerm = sanitizeSearchTerm(search);
+  const summary = useQuery({
+    queryKey: ['unified-bookings', orgId, 'summary', typeFilter, statusFilter, searchTerm, canViewFinance],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<{ currency: string | null; confirmed: number; pending: number; profit: number | null }[]>(
+        'unified_booking_list_summary', {
+          _org: orgId, _type: typeFilter === 'all' ? null : typeFilter,
+          _status: statusFilter === 'all' ? null : statusFilter,
+          _search: searchTerm || null, _start_date: null, _end_date: null,
+        },
+      );
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const confirmedCount = summary.data?.reduce((total, row) => total + Number(row.confirmed), 0);
+  const pendingCount = summary.data?.reduce((total, row) => total + Number(row.pending), 0);
+  const filtered = !!searchTerm || typeFilter !== 'all' || statusFilter !== 'all';
+  const clearFilters = () => { setSearch(''); setTypeFilter('all'); setStatusFilter('all'); setPage(1); };
 
   return (
-    <div className="space-y-6 p-4 md:p-6" dir="rtl">
+    <div className="space-y-6 p-4 md:p-6">
       <PageHeader
         title="الحجوزات الموحدة"
         description="جميع الحجوزات (فنادق، طيران، سيارات، نقل) في مكان واحد"
         icon={CalendarDays}
-        actions={
+        actions={canCreateBookings() && (
           <Button onClick={() => navigate('/bookings/new')}>
             <Plus className="h-4 w-4 ml-2" />
             حجز جديد
           </Button>
-        }
+        )}
       />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="p-4 transition-shadow hover:shadow-md">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><CalendarCheck className="h-5 w-5 text-primary" /></div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
-              <p className="text-2xl font-bold">{totalCount}</p>
+              <p className="text-sm text-muted-foreground">الحجوزات المطابقة</p>
+              <p className="text-2xl font-bold">{isLoading || error ? '—' : totalCount}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4 transition-shadow hover:shadow-md">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="h-5 w-5 text-primary" /></div>
             <div>
               <p className="text-sm text-muted-foreground">مؤكد</p>
-              <p className="text-2xl font-bold">{confirmedCount}</p>
+              <p className="text-2xl font-bold">{summary.isError ? '—' : confirmedCount ?? '—'}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4 transition-shadow hover:shadow-md">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-muted"><Clock className="h-5 w-5 text-muted-foreground" /></div>
             <div>
               <p className="text-sm text-muted-foreground">معلق</p>
-              <p className="text-2xl font-bold">{pendingCount}</p>
+              <p className="text-2xl font-bold">{summary.isError ? '—' : pendingCount ?? '—'}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${totalProfit >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
-              {totalProfit >= 0
-                ? <TrendingUp className="h-5 w-5 text-primary" />
-                : <TrendingDown className="h-5 w-5 text-destructive" />}
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">إجمالي الربح</p>
-              <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                {totalProfit.toLocaleString()}
+        {canViewFinance && <Card className="p-4">
+          <p className="text-sm text-muted-foreground">ربح الحجوزات المطابقة حسب العملة</p>
+          {summary.isError || !summary.data?.length ? <p className="text-lg font-semibold">—</p> :
+            summary.data.filter(row => row.currency && row.profit !== null).map(row => (
+              <p key={row.currency} className="text-lg font-semibold">
+                <bdi>{Number(row.profit).toLocaleString(undefined, { maximumFractionDigits: 2 })} {row.currency}</bdi>
               </p>
-            </div>
-          </div>
-        </Card>
+            ))}
+        </Card>}
       </div>
-
+      {summary.isError && <ListLoadError message="تعذر تحميل ملخص الحجوزات" retry={() => void summary.refetch()} pending={summary.isFetching} />}
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="بحث بالاسم أو رقم الحجز..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="pr-9"
+                className="ps-9"
               />
             </div>
             <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1); }}>
@@ -159,8 +178,14 @@ const UnifiedBookings = () => {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
+          ) : error ? (
+            <ListLoadError message="تعذر تحميل الحجوزات" retry={() => void refetch()} pending={isFetching} />
           ) : bookings.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">لا توجد حجوزات</div>
+            <div className="space-y-2 text-center py-8 text-muted-foreground">
+              <p>{filtered ? 'لا توجد حجوزات مطابقة للفلاتر' : 'لا توجد حجوزات بعد'}</p>
+              {filtered && <Button variant="outline" size="sm" onClick={clearFilters}>مسح الفلاتر</Button>}
+              {!filtered && canCreateBookings() && <Button asChild size="sm"><Link to="/bookings/new">إنشاء أول حجز</Link></Button>}
+            </div>
           ) : (
             <>
               <Table>
@@ -185,7 +210,7 @@ const UnifiedBookings = () => {
                     return (
                       <TableRow key={b.id} className="cursor-pointer transition-colors hover:bg-muted/60"
                         onClick={() => navigate(`/bookings/${b.id}`)}>
-                        <TableCell className="font-mono text-sm">{b.booking_number}</TableCell>
+                        <TableCell className="font-mono text-sm"><Link className="hover:underline" to={`/bookings/${b.id}`}>{b.booking_number}</Link></TableCell>
                         <TableCell>
                           <Badge variant="outline" className={tc.className}>
                             <TypeIcon className="h-3 w-3 ml-1" />
@@ -213,8 +238,8 @@ const UnifiedBookings = () => {
                         </TableCell>
                         <TableCell>{b.start_date || '—'}</TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الحجز">
-                            <Eye className="h-4 w-4" />
+                          <Button asChild variant="ghost" size="icon">
+                            <Link aria-label="عرض تفاصيل الحجز" to={`/bookings/${b.id}`}><Eye className="h-4 w-4" /></Link>
                           </Button>
                         </TableCell>
                       </TableRow>

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import SafarERPLogo from '@/components/brand/VogantraLogo';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,10 +41,8 @@ const ForgotPassword = () => {
     <div className="min-h-dvh flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">V</span>
-            </div>
+          <Link to="/" aria-label="العودة إلى صفحة SafarERP الرئيسية" className="inline-flex items-center mb-4">
+            <SafarERPLogo size="md" />
           </Link>
         </div>
 
@@ -66,12 +65,12 @@ const ForgotPassword = () => {
                   يرجى فحص صندوق الوارد (والبريد غير المرغوب فيه).
                   الرابط صالح لمدة 24 ساعة.
                 </p>
-                <Link to="/login">
-                  <Button variant="outline" className="mt-4 gap-2">
+                <Button asChild variant="outline" className="mt-4 gap-2">
+                  <Link to="/login">
                     <ArrowRight className="h-4 w-4" />
                     العودة لتسجيل الدخول
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">

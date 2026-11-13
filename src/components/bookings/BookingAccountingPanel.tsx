@@ -1,3 +1,4 @@
+import { ListLoadError } from '@/components/common/ListLoadError';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Wallet, BookOpenCheck } from 'lucide-react';
@@ -10,12 +11,21 @@ interface Props {
 }
 
 export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 'EGP' }) => {
-  const { data, isLoading } = useBookingFinancials(bookingId);
+  const { data, isLoading, isError, refetch, isFetching } = useBookingFinancials(bookingId);
 
-  const latestJournal = data?.journals.at(-1);
+  const postedJournals = data?.journals.filter(journal => journal.status === 'posted') ?? [];
+  const latestJournal = postedJournals.at(-1);
+  const sourceInvoice = latestJournal?.source_type === 'invoice'
+    ? data?.invoices.find(invoice => invoice.id === latestJournal.source_id) : undefined;
+  const sourceSupplierInvoice = latestJournal?.source_type === 'supplier_invoice'
+    ? data?.supplierInvoices.find(invoice => invoice.id === latestJournal.source_id) : undefined;
+  const sourcePayment = latestJournal?.source_type === 'customer_payment'
+    ? data?.customerPayments.find(payment => payment.id === latestJournal.source_id) : undefined;
   const supplierCancelled = data?.totals.payableSource === 'cancelled_supplier_invoices';
 
   if (isLoading) return <div className="text-sm text-muted-foreground py-4 text-center">جارٍ تحميل البيانات المحاسبية...</div>;
+
+  if (isError) return <ListLoadError message="تعذر تحميل الربط المحاسبي" retry={() => void refetch()} pending={isFetching} />;
 
   return (
     <Card>
@@ -87,14 +97,25 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
             )}
           </div>
           {latestJournal ? (
-            <Link to={`/journal-entries?id=${latestJournal.id}`} className="block">
+            <div className="space-y-1">
+            <Link to={`/journal-entries?entry=${latestJournal.id}`} className="block hover:underline">
               <div className="text-sm font-mono">{latestJournal.entry_number}</div>
               <div className="text-xs text-muted-foreground">آخر ترحيل: {latestJournal.entry_date}</div>
               <div className="text-sm">{latestJournal.description}</div>
-              <div className="text-base font-bold">قيمة آخر قيد: {Number(latestJournal.total_debit).toLocaleString()} {latestJournal.currency || currency}</div>
+              <div className="text-base font-bold">إجمالي المدين في آخر قيد مُرحّل: {Number(latestJournal.total_debit).toLocaleString()} {latestJournal.currency || currency}</div>
             </Link>
+            {sourceInvoice && <Link className="block text-sm text-primary underline" to={`/invoices?id=${sourceInvoice.id}`}>
+              فاتورة العميل {sourceInvoice.invoice_number}
+            </Link>}
+            {sourceSupplierInvoice && (sourceSupplierInvoice.payment_order_id
+              ? <Link className="block text-sm text-primary underline" to={`/payment-orders?id=${sourceSupplierInvoice.payment_order_id}`}>
+                أمر الدفع المرتبط بفاتورة المورد {sourceSupplierInvoice.invoice_number}
+              </Link>
+              : <p className="text-sm">فاتورة المورد {sourceSupplierInvoice.invoice_number}</p>)}
+            {sourcePayment && <Link className="block text-sm text-primary underline" to={`/bookings/${bookingId}?tab=financials`}>دفعة العميل المرتبطة بالقيد</Link>}
+            </div>
           ) : (
-            <div className="text-xs text-muted-foreground">سيتم التسجيل عند تأكيد الحجز</div>
+            <div className="text-xs text-muted-foreground">لا توجد قيود مُرحّلة مرتبطة بالحجز</div>
           )}
         </div>
       </CardContent>

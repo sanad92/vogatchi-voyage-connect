@@ -126,8 +126,8 @@ const CustomerDetails = () => {
         { label: 'إدارة العملاء', href: '/customers' },
         { label: customerData.name }
       ]} />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button 
             variant="outline" 
             size="sm"
@@ -148,6 +148,8 @@ const CustomerDetails = () => {
             <Edit className="h-4 w-4 mr-2" />
             تعديل البيانات
           </Button>}
+          {hasFeature(PLAN_FEATURES.FINANCE) && getPermissionScope('financial_view') === 'organization' &&
+            <Button variant="outline" onClick={() => navigate(`/customer-ledger?id=${customerId}`)}>كشف حساب العميل</Button>}
           <CustomerQuickActions customer={customerData as any} />
         </div>
       </div>
@@ -223,7 +225,7 @@ const CustomerDetails = () => {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             نظرة عامة

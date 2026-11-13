@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useTeamManagement } from '@/hooks/useTeamManagement';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
@@ -15,14 +15,16 @@ const TeamManagement = () => {
   const { user } = useOptimizedAuth();
   const { members } = useTeamManagement();
   const { canInviteMembers, canManageRoles } = useSupabasePermissions();
-  const [activeTab, setActiveTab] = useState('members');
+  const [params, setParams] = useSearchParams();
+  const activeTab = params.get('tab') === 'invitations' ? 'invitations' : 'members';
+  const setActiveTab = (tab: string) => setParams(tab === 'invitations' ? { tab } : {}, { replace: true });
 
   const canInvite = canInviteMembers();
   const canManage = canManageRoles();
   const activeCount = members.filter((m) => m.is_active).length;
 
   return (
-    <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6" dir="rtl">
+    <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

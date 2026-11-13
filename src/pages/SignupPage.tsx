@@ -22,6 +22,7 @@ const SignupPage = () => {
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
+  const isAgency = requestedRedirect === '/pilgrimage/agency';
   const isInvitation = requestedRedirect?.startsWith('/accept-invite') ?? false;
 
   if (loading || orgLoading) {
@@ -79,9 +80,9 @@ const SignupPage = () => {
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">إنشاء حساب جديد</h2>
+          <h1 className="text-2xl font-bold text-foreground">{isAgency ? 'إنشاء حساب وكيل الحج والعمرة' : 'إنشاء حساب جديد'}</h1>
           <p className="text-muted-foreground mt-1">
-            {isInvitation ? 'أنشئ حسابك ثم اقبل دعوة الانضمام إلى فريقك' : 'سجّل شركتك وابدأ تجربتك المجانية لـ 14 يوم'}
+            {isAgency ? 'استخدم بريد العمل المرتبط باتفاقية الوكالة.' : isInvitation ? 'أنشئ حسابك ثم اقبل دعوة الانضمام إلى فريقك' : 'سجّل شركتك وابدأ تجربتك المجانية لـ 14 يوم'}
           </p>
         </div>
 
@@ -108,11 +109,15 @@ const SignupPage = () => {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signup-email">البريد الإلكتروني</Label>
+            <Label htmlFor="signup-email">بريد العمل الرسمي</Label>
             <div className="relative">
               <Input
                 id="signup-email"
+                aria-describedby="signup-email-guidance"
+                aria-invalid={email.includes('@') && isFreeEmail(email)}
                 type="email"
+                autoComplete="email"
+                dir="ltr"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -122,15 +127,16 @@ const SignupPage = () => {
               />
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
-            {email.includes('@') && isFreeEmail(email) && (
-              <p className="text-sm text-destructive">{BUSINESS_EMAIL_MESSAGE}</p>
-            )}
+            <p id="signup-email-guidance" className={email.includes('@') && isFreeEmail(email) ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}>
+              {isAgency ? 'استخدم بريد العمل الذي سجّله مشغّل البرنامج على الاتفاقية، ثم أكّد البريد.' : BUSINESS_EMAIL_MESSAGE}
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-password">كلمة المرور</Label>
             <div className="relative">
               <Input
                 id="signup-password"
+                autoComplete="new-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -143,6 +149,7 @@ const SignupPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 disabled={loading}
               >
@@ -177,7 +184,7 @@ const SignupPage = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          {isInvitation
+          {isAgency ? 'بعد تأكيد البريد، ستعود إلى بوابة الوكيل.' : isInvitation
             ? 'بعد تأكيد البريد، ستعود تلقائياً لقبول دعوة المؤسسة.'
             : 'بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.'}
         </p>

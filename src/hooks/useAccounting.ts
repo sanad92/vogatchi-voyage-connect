@@ -11,6 +11,7 @@ export interface JournalEntry {
   description: string | null;
   total_debit: number;
   total_credit: number;
+  currency: string | null;
   status: string;
   created_at: string;
 }

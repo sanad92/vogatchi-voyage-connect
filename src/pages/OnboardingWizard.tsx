@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 const STEPS = [
   { id: 'company', title: 'بيانات الشركة', titleShort: 'الشركة', icon: Building2 },
-  { id: 'employee', title: 'أول موظف', titleShort: 'موظف', icon: UserPlus },
+  { id: 'employee', title: 'سجل أول موظف', titleShort: 'موظف', icon: UserPlus },
   { id: 'customer', title: 'أول عميل', titleShort: 'عميل', icon: Users },
   { id: 'booking', title: 'أول حجز', titleShort: 'حجز', icon: CalendarPlus },
 ];
@@ -64,7 +64,7 @@ const OrganizationOnboarding = ({ orgId }: { orgId: string }) => {
     }
   };
 
-  const finishOnboarding = (destination: '/dashboard' | '/bookings/new') => runStep(async () => {
+  const finishOnboarding = (destination: '/dashboard' | '/bookings/new' | '/team?tab=invitations') => runStep(async () => {
     const { data, error } = await supabase.from('organizations')
       .update({ onboarding_completed: true }).eq('id', orgId).select('id').single();
     if (error) throw error;
@@ -187,7 +187,7 @@ const OrganizationOnboarding = ({ orgId }: { orgId: string }) => {
           </h2>
           <p className="text-muted-foreground text-sm mb-5">
             {currentStep === 0 && 'أضف معلومات إضافية عن شركتك'}
-            {currentStep === 1 && 'سجّل أول موظف في النظام'}
+            {currentStep === 1 && 'أضف سجل الموظف. لإرسال دعوة الدخول، افتح دعوات الفريق بعد إنهاء الإعداد.'}
             {currentStep === 2 && 'أضف أول عميل لشركتك'}
             {currentStep === 3 && 'انتقل إلى شاشة الحجز الموحّد لإضافة أول حجز.'}
           </p>
@@ -304,8 +304,11 @@ const OrganizationOnboarding = ({ orgId }: { orgId: string }) => {
             </div>
           )}
 
+          {currentStep === 3 && <Button type="button" variant="outline" disabled={loading}
+            onClick={() => void finishOnboarding('/team?tab=invitations')}>إنهاء الإعداد ودعوة الفريق</Button>}
+
           {/* Actions */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-border">
             <div className="flex gap-2">
               <Button
                 variant="ghost"
