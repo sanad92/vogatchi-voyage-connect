@@ -17068,6 +17068,7 @@ export type Database = {
         Args: { _lines: Json; _session: string }
         Returns: Json
       }
+      is_free_email: { Args: { _email: string }; Returns: boolean }
       is_org_expired: { Args: { _org_id: string }; Returns: boolean }
       is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
