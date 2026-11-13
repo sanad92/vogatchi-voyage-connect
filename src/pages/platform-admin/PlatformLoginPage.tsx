@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { usePlatformFinanceRole } from '@/hooks/usePlatformFinanceRole';
 import VogantraLogo from '@/components/brand/VogantraLogo';
 import { getAuthErrorMessage } from '@/lib/authErrorMessage';
 
@@ -19,7 +20,9 @@ const PlatformLoginPage = () => {
   const { signIn, signOut, isLoggedIn, loading } = useOptimizedAuth();
   const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
 
-  if (loading || platformLoading) {
+  const finance = usePlatformFinanceRole();
+
+  if (loading || platformLoading || (isLoggedIn() && !isPlatformAdmin && finance.loading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
@@ -28,6 +31,8 @@ const PlatformLoginPage = () => {
   }
 
   if (isLoggedIn() && isPlatformAdmin) return <Navigate to="/platform" replace />;
+
+  if (isLoggedIn() && finance.role) return <Navigate to="/platform/finance" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

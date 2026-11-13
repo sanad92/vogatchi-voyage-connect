@@ -4,6 +4,6 @@
 - Email read-state changes use an acknowledged, organization-scoped RPC restricted to visible threads and read fields; why: queue readers can persist state without gaining assignment or workflow write access.
 - Platform branding is shared through the logo component and semantic theme tokens; keep tenant names, document branding, contacts and stable identifiers separate so rebranding never alters company data.
 - English UI = Arabic source strings + runtime DOM translation (src/i18n/domTranslator.ts) from a lazily loaded dictionary (en-auto.json, generated; en.ts manual overrides win); why: covers every screen without rewriting each page. Mark the language toggle and other must-not-translate nodes with data-no-translate.
-- Platform admin area (/platform/*) is guarded only by platform_roles via PlatformAdminGuard with its own /platform/login, never by company membership; admin.safarerp.com host maps / and /login to it. Why: operators must not depend on a tenant.
+- Platform administration uses platform_roles via PlatformAdminGuard and /platform/login. Dedicated platform-finance grants allow access to /platform/finance only. Neither path depends on company membership. The admin.safarerp.com host maps / and /login to the platform area.
 
 - Company sign-up and staff invitations reject free mailbox domains in UI (src/lib/business-email.ts), the onboarding edge function and an invitations insert trigger; why: B2B-only accounts enforced server-side, keep the three lists in sync.

@@ -22,6 +22,8 @@ export const usePlatformAdmin = () => {
         .from('platform_roles')
         .select('role')
         .eq('user_id', user.id)
+        .order('role', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       setIsPlatformAdmin(!!data);
