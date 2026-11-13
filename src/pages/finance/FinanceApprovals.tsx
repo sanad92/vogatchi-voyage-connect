@@ -18,7 +18,9 @@ export default function FinanceApprovals() {
   usePageTitle('اعتمادات مالية');
   const { data: pos = [] } = usePendingSupplierPOs();
   const { data: refunds = [], isError: refundsError, isPending: refundsLoading } = useRefundRequests();
-  const { canProcessPayments } = useSupabasePermissions();
+  const { getPermissionScope } = useSupabasePermissions();
+  const canManageRefunds = getPermissionScope('financial_view') === 'organization'
+    && getPermissionScope('payments_process') === 'organization';
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const { data: treasury = [] } = useTreasuryAccounts();
   const approvePO = useApproveSupplierPO();
@@ -78,7 +80,7 @@ export default function FinanceApprovals() {
                     <TableCell className="text-xs">{r.reason || '—'}</TableCell>
                     <TableCell><Badge>{r.status}</Badge></TableCell>
                     <TableCell className="flex gap-1 items-center">
-                      {r.status === 'requested' && canProcessPayments() && (
+                      {r.status === 'requested' && canManageRefunds && (
                         <>
                           <Button size="sm" disabled={approveRefund.isPending} onClick={() => approveRefund.mutate({ refund_id: r.id, approve: true })}>اعتماد</Button>
                           <Input className="w-32" aria-label="سبب الرفض" placeholder="سبب الرفض" value={rejectionReasons[r.id] || ''}
@@ -90,7 +92,7 @@ export default function FinanceApprovals() {
                       {r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && (
                         <Button asChild size="sm" variant="link"><Link to={`/invoices?id=${r.invoice_id}`}>فتح فاتورة المجموعة</Link></Button>
                       )}
-                      {!r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && canProcessPayments() && (
+                      {!r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && canManageRefunds && (
                         <>
                           <Select value={payAccount[r.id]} onValueChange={(v) => setPayAccount({ ...payAccount, [r.id]: v })}>
                             <SelectTrigger className="w-40 h-8"><SelectValue placeholder="اختر خزينة" /></SelectTrigger>

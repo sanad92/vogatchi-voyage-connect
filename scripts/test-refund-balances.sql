@@ -102,6 +102,12 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT EXISTS (SELECT FROM public.organization_members WHERE organization_id = _org
     AND user_id = auth.uid() AND is_active AND (role = 'owner' OR role = 'viewer' AND _permission = 'financial_view'))
 $$;
+CREATE FUNCTION public._org_permission_state(_org uuid, _user uuid, _permission text)
+RETURNS TABLE (granted boolean, data_scope text) LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT CASE WHEN role = 'limited' THEN true ELSE public.has_org_permission(_org, _permission) END,
+    CASE WHEN role = 'limited' THEN 'own' ELSE 'organization' END
+  FROM public.organization_members WHERE organization_id = _org AND user_id = _user AND is_active
+$$;
 CREATE FUNCTION public._can_read_org_finance(uuid) RETURNS boolean LANGUAGE sql STABLE AS $$
   SELECT public.has_org_permission($1, 'financial_view')
 $$;
@@ -145,6 +151,7 @@ INSERT INTO public.organizations VALUES (fixture_id(1)), (fixture_id(2));
 INSERT INTO public.organization_members VALUES
   (fixture_id(1), fixture_id(10), 'owner', true),
   (fixture_id(1), fixture_id(11), 'viewer', true),
+  (fixture_id(1), fixture_id(12), 'limited', true),
   (fixture_id(2), fixture_id(20), 'owner', true);
 INSERT INTO public.customers VALUES (fixture_id(101),fixture_id(1)),(fixture_id(102),fixture_id(1));
 INSERT INTO public.suppliers VALUES (fixture_id(201),fixture_id(1)),(fixture_id(202),fixture_id(1));
@@ -264,6 +271,15 @@ DO $$
 BEGIN
   PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(801),'confirm');
   RAISE EXCEPTION 'Viewer can confirm claims';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END;
+$$;
+SET test.user_id = '00000000-0000-0000-0000-000000000012';
+SELECT fixture_assert((SELECT count(*) = 0 FROM refund_balance_settlements), 'Own-scope role sees organization-wide balances');
+DO $$
+BEGIN
+  PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(801),'confirm');
+  RAISE EXCEPTION 'Own-scope role can confirm claims';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END;
 $$;

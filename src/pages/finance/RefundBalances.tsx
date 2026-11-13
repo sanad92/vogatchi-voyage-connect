@@ -157,11 +157,12 @@ export default function RefundBalances() {
   const party = params.get('party') || undefined;
   const query = useRefundBalances(kind, party);
   const { claim } = useRefundBalanceActions();
-  const { canProcessPayments } = useSupabasePermissions();
+  const { getPermissionScope } = useSupabasePermissions();
   const [dialog, setDialog] = useState<{ orgId: string; balance?: RefundBalance }>();
   const [openOnly, setOpenOnly] = useState(true);
   const balances = query.data?.filter(row => !openOnly || !['paid', 'rejected', 'settled'].includes(row.status));
-  const canManage = canProcessPayments();
+  const canManage = getPermissionScope('financial_view') === 'organization'
+    && getPermissionScope('payments_process') === 'organization';
 
   return (
     <div className="space-y-4 p-4" dir="rtl">

@@ -55,28 +55,44 @@ CREATE INDEX refund_settlements_supplier_invoice_idx ON public.refund_balance_se
 CREATE INDEX refund_settlements_order_idx ON public.refund_balance_settlements (supplier_order_id) WHERE supplier_order_id IS NOT NULL;
 CREATE UNIQUE INDEX refund_settlements_bank_idx ON public.refund_balance_settlements (bank_transaction_id) WHERE bank_transaction_id IS NOT NULL;
 
+CREATE FUNCTION refund_balance_private.can_read(_org uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT auth.uid() IS NOT NULL AND (
+    public.is_platform_admin(auth.uid()) OR EXISTS (
+      SELECT FROM public._org_permission_state(_org, auth.uid(), 'financial_view')
+      WHERE granted AND data_scope = 'organization'
+    )
+  );
+$$;
+REVOKE ALL ON FUNCTION refund_balance_private.can_read(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION refund_balance_private.can_read(uuid) TO authenticated;
+
 ALTER TABLE public.supplier_refund_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.refund_balance_settlements ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.supplier_refund_claims, public.refund_balance_settlements FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.supplier_refund_claims, public.refund_balance_settlements TO authenticated;
 CREATE POLICY read_supplier_refund_claims ON public.supplier_refund_claims FOR SELECT TO authenticated
-  USING (public._can_read_org_finance(organization_id));
+  USING (refund_balance_private.can_read(organization_id));
 CREATE POLICY read_refund_settlements ON public.refund_balance_settlements FOR SELECT TO authenticated
-  USING (public._can_read_org_finance(organization_id));
+  USING (refund_balance_private.can_read(organization_id));
 
 -- Browser clients already create and review refunds through RPCs.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.refund_requests FROM PUBLIC, anon, authenticated;
 DROP POLICY IF EXISTS rr_read ON public.refund_requests;
 CREATE POLICY rr_read ON public.refund_requests FOR SELECT TO authenticated
-  USING (public._can_read_org_finance(organization_id));
+  USING (refund_balance_private.can_read(organization_id));
 
 CREATE FUNCTION refund_balance_private.can_operate(_org uuid)
 RETURNS boolean LANGUAGE sql STABLE SET search_path = ''
 AS $$
   SELECT auth.uid() IS NOT NULL
     AND coalesce(public.can_org_write(_org), false)
-    AND coalesce(public.has_org_permission(_org, 'financial_view'), false)
-    AND coalesce(public.has_org_permission(_org, 'payments_process'), false);
+    AND refund_balance_private.can_read(_org)
+    AND (public.is_platform_admin(auth.uid()) OR EXISTS (
+      SELECT FROM public._org_permission_state(_org, auth.uid(), 'payments_process')
+      WHERE granted AND data_scope = 'organization'
+    ));
 $$;
 
 CREATE FUNCTION refund_balance_private.post(
@@ -482,7 +498,8 @@ AS $$
 $$;
 
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA refund_balance_private FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION refund_balance_private.supplier_claim(uuid,uuid,uuid,numeric,text,text),
+GRANT EXECUTE ON FUNCTION refund_balance_private.can_read(uuid),
+  refund_balance_private.supplier_claim(uuid,uuid,uuid,numeric,text,text),
   refund_balance_private.settle(uuid,uuid,uuid,uuid,numeric,uuid,uuid,uuid,text) TO authenticated;
 REVOKE ALL ON FUNCTION public.manage_supplier_refund_claim(uuid,uuid,text,uuid,numeric,text),
   public.settle_refund_balance(uuid,uuid,numeric,uuid,uuid,uuid,uuid,uuid,text) FROM PUBLIC, anon, authenticated;
