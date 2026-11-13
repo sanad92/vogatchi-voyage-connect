@@ -138,7 +138,7 @@ if ((first_ok + second_ok != 1)); then
   cat "$first_session" "$second_session"
   exit 1
 fi
-if ! rg -q 'pilgrimage_b2b_collection_exceeds_balance' "$first_session" "$second_session"; then
+if ! grep -Fq 'pilgrimage_b2b_collection_exceeds_balance' "$first_session" "$second_session"; then
   cat "$first_session" "$second_session"
   exit 1
 fi
