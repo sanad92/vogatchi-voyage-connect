@@ -562,12 +562,13 @@ export function useSopLeadForBooking(bookingId?: string | null) {
 }
 
 export function useSopLeadForConversation(conversationId?: string | null) {
+  const orgId = useOrgId();
   return useQuery({
-    queryKey: ['sop-lead', 'conversation', conversationId],
-    enabled: !!conversationId,
+    queryKey: ['sop-lead', 'conversation', orgId, conversationId],
+    enabled: !!orgId && !!conversationId,
     queryFn: async () => {
       const { data, error } = await db.from('sop_leads').select('*')
-        .eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1);
+        .eq('organization_id', orgId).eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1);
       if (error) throw error;
       return ((data || [])[0] || null) as SopLead | null;
     },
@@ -595,11 +596,17 @@ export function useSaveSopLead() {
         editableFields.map((field) => [field, values[field] ?? null]),
       );
 
-      const { data, error } = await db.rpc('sop_save_lead', {
-        _org: orgId,
-        _lead: id || null,
-        _payload: payload,
-      });
+      const { data, error } = !id && values.conversation_id
+        ? await db.rpc('sop_save_whatsapp_lead', {
+          _org: orgId,
+          _conversation: values.conversation_id,
+          _payload: payload,
+        })
+        : await db.rpc('sop_save_lead', {
+          _org: orgId,
+          _lead: id || null,
+          _payload: payload,
+        });
       if (error) throw error;
       if (!data?.allowed || !data?.lead) throw new Error('تعذر حفظ العميل المحتمل');
       return data.lead as SopLead;

@@ -26,7 +26,7 @@ export const useSalesBrief = (conversationId?: string) => {
     queryKey: ['ai-sales-brief', orgId, conversationId],
     queryFn: async (): Promise<SalesBriefRow | null> => {
       if (!orgId || !conversationId) return null;
-      const { data, error } = await (supabase as any).from('ai_sales_briefs')
+      const { data, error } = await supabase.from('ai_sales_briefs')
         .select('*').eq('organization_id', orgId).eq('conversation_id', conversationId).maybeSingle();
       if (error) throw error;
       return data;
