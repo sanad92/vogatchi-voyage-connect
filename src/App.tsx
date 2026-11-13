@@ -280,7 +280,6 @@ function App() {
                 {/* Platform Admin — separate layout, no DashboardLayout */}
                 <Route path="/platform/login" element={<PlatformLoginPage />} />
                 <Route path="/platform/*" element={
-                  <SupabaseProtectedRoute>
                     <PlatformAdminGuard>
                       <PlatformLayout>
                         <Suspense fallback={<PageLoader />}>
@@ -308,7 +307,6 @@ function App() {
                         </Suspense>
                       </PlatformLayout>
                     </PlatformAdminGuard>
-                  </SupabaseProtectedRoute>
                 } />
 
                 {/* Protected */}
