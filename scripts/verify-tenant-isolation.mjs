@@ -26,7 +26,7 @@ await db.exec(`
  INSERT INTO profiles(id,email) SELECT id,email FROM auth.users;
  INSERT INTO platform_roles VALUES('${platform}','platform_owner');
  INSERT INTO invitations(id,organization_id,email,role,token,status,expires_at)
- VALUES('${foreignInvite}','${orgB}','new@work.example','agent','${id(81)}','pending',now()+interval '1 day');
+ VALUES('${foreignInvite}','${orgB}','existing@work.example','agent','${id(81)}','pending',now()+interval '1 day');
  INSERT INTO organization_permission_roles(id,organization_id,name,is_active)
  VALUES('${foreignRole}','${orgB}','Finance',true);
  INSERT INTO employees(id,organization_id,is_active) VALUES('${employeeA}','${orgB}',true),('${employeeB}','${orgB}',true);
