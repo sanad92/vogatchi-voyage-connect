@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useOrgId } from "@/hooks/useOrgId";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
 export interface SupplierAllotment {
   id: string;
@@ -24,10 +26,23 @@ export interface SupplierAllotment {
   updated_at: string;
 }
 
-export const useSupplierAllotments = (supplierId?: string) => {
-  const { currentOrganization } = useOrganization();
+interface AllotmentUsage {
+  id: string;
+  booking_id: string;
+  booking_reference: string | null;
+  quantity_used: number;
+  usage_date: string;
+  released_at: string | null;
+}
+
+type AllotmentAction =
+  | { action: "reserve"; bookingReference: string; quantity: number }
+  | { action: "release_usage"; usageId: string }
+  | { action: "release_allotment" };
+
+export const useSupplierAllotments = (supplierId?: string, allotmentId?: string) => {
   const qc = useQueryClient();
-  const orgId = currentOrganization?.id;
+  const orgId = useOrgId();
 
   const allotmentsQuery = useQuery({
     queryKey: ["supplier-allotments", orgId, supplierId],
@@ -49,7 +64,7 @@ export const useSupplierAllotments = (supplierId?: string) => {
     mutationFn: async (input: Partial<SupplierAllotment>) => {
       const { data, error } = await supabase
         .from("supplier_allotments")
-        .insert({ ...input, organization_id: orgId! } as any)
+        .insert({ ...input, used_quantity: 0, organization_id: orgId! } as Database["public"]["Tables"]["supplier_allotments"]["Insert"])
         .select()
         .single();
       if (error) throw error;
@@ -59,31 +74,48 @@ export const useSupplierAllotments = (supplierId?: string) => {
       toast.success("تم إضافة البلوك بنجاح");
       qc.invalidateQueries({ queryKey: ["supplier-allotments"] });
     },
-    onError: (e: any) => toast.error("فشل: " + e.message),
+    onError: (e: { message: string }) => toast.error("فشل: " + e.message),
   });
 
-  const updateAllotment = useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<SupplierAllotment> & { id: string }) => {
-      const { error } = await supabase.from("supplier_allotments").update(patch).eq("id", id);
+  const usageQuery = useQuery({
+    queryKey: ["supplier-allotment-usage", orgId, allotmentId],
+    enabled: !!orgId && !!allotmentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("allotment_usage")
+        .select("*")
+        .eq("organization_id", orgId!)
+        .eq("allotment_id", allotmentId!)
+        .order("created_at", { ascending: false });
       if (error) throw error;
+      return (data ?? []) as AllotmentUsage[];
     },
-    onSuccess: () => {
-      toast.success("تم تحديث البلوك");
-      qc.invalidateQueries({ queryKey: ["supplier-allotments"] });
-    },
-    onError: (e: any) => toast.error("فشل: " + e.message),
   });
 
-  const deleteAllotment = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("supplier_allotments").delete().eq("id", id);
+  const manageUsage = useMutation({
+    mutationFn: async ({ id, ...input }: AllotmentAction & { id: string }) => {
+      const { error } = await callUntypedRpc<string>("manage_supplier_allotment_usage", {
+        _allotment_id: id,
+        _action: input.action,
+        _booking_reference: input.action === "reserve" ? input.bookingReference : null,
+        _quantity: input.action === "reserve" ? input.quantity : null,
+        _usage_id: input.action === "release_usage" ? input.usageId : null,
+      });
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success("تم حذف البلوك");
-      qc.invalidateQueries({ queryKey: ["supplier-allotments"] });
+    onSuccess: async (_, { id, action }) => {
+      const messages = {
+        reserve: "تم تخصيص الكمية للحجز",
+        release_usage: "تم إرجاع الكمية",
+        release_allotment: "تم إغلاق الحصة أمام التخصيصات الجديدة",
+      };
+      toast.success(messages[action]);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["supplier-allotments", orgId] }),
+        qc.invalidateQueries({ queryKey: ["supplier-allotment-usage", orgId, id] }),
+      ]);
     },
-    onError: (e: any) => toast.error("فشل: " + e.message),
+    onError: (error: { message: string }) => toast.error(error.message),
   });
 
   const getPerformance = async (supplierId: string) => {
@@ -92,15 +124,18 @@ export const useSupplierAllotments = (supplierId?: string) => {
       _supplier_id: supplierId,
     });
     if (error) throw error;
-    return data as any;
+    return data;
   };
 
   return {
     allotments: allotmentsQuery.data || [],
     isLoading: allotmentsQuery.isLoading,
     createAllotment,
-    updateAllotment,
-    deleteAllotment,
+    isError: allotmentsQuery.isError,
+    usage: usageQuery.data ?? [],
+    usageLoading: usageQuery.isLoading,
+    usageError: usageQuery.isError,
+    manageUsage,
     getPerformance,
   };
 };

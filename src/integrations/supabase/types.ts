@@ -578,6 +578,7 @@ export type Database = {
         Row: {
           allotment_id: string
           booking_id: string
+          booking_reference: string | null
           booking_type: string
           created_at: string
           created_by: string | null
@@ -585,11 +586,14 @@ export type Database = {
           notes: string | null
           organization_id: string
           quantity_used: number
+          released_at: string | null
+          released_by: string | null
           usage_date: string
         }
         Insert: {
           allotment_id: string
           booking_id: string
+          booking_reference?: string | null
           booking_type: string
           created_at?: string
           created_by?: string | null
@@ -597,11 +601,14 @@ export type Database = {
           notes?: string | null
           organization_id: string
           quantity_used?: number
+          released_at?: string | null
+          released_by?: string | null
           usage_date?: string
         }
         Update: {
           allotment_id?: string
           booking_id?: string
+          booking_reference?: string | null
           booking_type?: string
           created_at?: string
           created_by?: string | null
@@ -609,6 +616,8 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           quantity_used?: number
+          released_at?: string | null
+          released_by?: string | null
           usage_date?: string
         }
         Relationships: [

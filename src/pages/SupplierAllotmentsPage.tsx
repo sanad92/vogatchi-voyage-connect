@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2, Boxes } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Boxes } from "lucide-react";
+import { usePermissionCheck } from "@/hooks/usePermissionCheck";
+import { useOrgId } from "@/hooks/useOrgId";
 
 const SERVICE_TYPES = [
   { value: "hotel", label: "فندق" },
@@ -22,9 +23,23 @@ const SERVICE_TYPES = [
 ];
 
 export default function SupplierAllotmentsPage() {
+  const orgId = useOrgId();
+  return <SupplierAllotments key={orgId ?? "no-company"} />;
+}
+
+function SupplierAllotments() {
   const { suppliers } = useSuppliers();
   const [filterSupplier, setFilterSupplier] = useState<string | undefined>();
-  const { allotments, isLoading, createAllotment, deleteAllotment } = useSupplierAllotments(filterSupplier);
+  const [selectedAllotmentId, setSelectedAllotmentId] = useState<string>();
+  const [bookingReference, setBookingReference] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const { hasPermission } = usePermissionCheck();
+  const canCreate = hasPermission("suppliers_create");
+  const canEdit = hasPermission("suppliers_edit");
+  const canReserve = canEdit && hasPermission("bookings_view");
+  const { allotments, isLoading, isError, createAllotment, usage, usageLoading, usageError, manageUsage } =
+    useSupplierAllotments(filterSupplier, selectedAllotmentId);
+  const selectedAllotment = allotments.find((allotment) => allotment.id === selectedAllotmentId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<SupplierAllotment>>({
     service_type: "hotel",
@@ -36,11 +51,26 @@ export default function SupplierAllotmentsPage() {
     cost_per_unit: 0,
   });
 
-  const handleCreate = async () => {
-    if (!form.supplier_id || !form.allotment_name || !form.start_date || !form.end_date) return;
-    await createAllotment.mutateAsync(form);
-    setOpen(false);
-    setForm({ service_type: "hotel", currency: "EGP", status: "active", total_quantity: 0, used_quantity: 0, release_days: 7, cost_per_unit: 0 });
+  const validForm = Boolean(
+    form.supplier_id && form.allotment_name?.trim() && form.start_date && form.end_date &&
+    form.start_date <= form.end_date && Number.isInteger(form.total_quantity) && (form.total_quantity ?? 0) > 0 &&
+    Number.isInteger(form.release_days) && (form.release_days ?? -1) >= 0
+  );
+
+  const handleCreate = () => {
+    if (!validForm) return;
+    createAllotment.mutate(form, {
+      onSuccess: () => {
+        setOpen(false);
+        setForm({ service_type: "hotel", currency: "EGP", status: "active", total_quantity: 0, used_quantity: 0, release_days: 7, cost_per_unit: 0 });
+      },
+    });
+  };
+
+  const showUsage = (id: string) => {
+    setBookingReference("");
+    setQuantity(1);
+    setSelectedAllotmentId(id);
   };
 
   const supplierName = (id: string) => suppliers.find((s) => s.id === id)?.name || "-";
@@ -52,7 +82,7 @@ export default function SupplierAllotmentsPage() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><Boxes className="h-6 w-6" />بلوكات المخزون (Allotments)</h1>
           <p className="text-muted-foreground">إدارة الكميات المحجوزة من الموردين</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        {canCreate && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="ml-2 h-4 w-4" />بلوك جديد</Button>
           </DialogTrigger>
@@ -74,7 +104,7 @@ export default function SupplierAllotmentsPage() {
               </div>
               <div>
                 <Label>نوع الخدمة *</Label>
-                <Select value={form.service_type} onValueChange={(v: any) => setForm({ ...form, service_type: v })}>
+                <Select value={form.service_type} onValueChange={(v: SupplierAllotment["service_type"]) => setForm({ ...form, service_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {SERVICE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
@@ -86,8 +116,8 @@ export default function SupplierAllotmentsPage() {
                 <Input value={form.service_reference || ""} onChange={(e) => setForm({ ...form, service_reference: e.target.value })} placeholder="نوع الغرفة" />
               </div>
               <div>
-                <Label>إفراج تلقائي قبل (أيام)</Label>
-                <Input type="number" value={form.release_days || 7} onChange={(e) => setForm({ ...form, release_days: +e.target.value })} />
+                <Label>مهلة الإفراج المتفق عليها (أيام)</Label>
+                <Input type="number" min={0} value={form.release_days ?? 7} onChange={(e) => setForm({ ...form, release_days: +e.target.value })} />
               </div>
               <div>
                 <Label>من تاريخ *</Label>
@@ -99,7 +129,7 @@ export default function SupplierAllotmentsPage() {
               </div>
               <div>
                 <Label>الكمية الإجمالية *</Label>
-                <Input type="number" value={form.total_quantity || 0} onChange={(e) => setForm({ ...form, total_quantity: +e.target.value })} />
+                <Input type="number" min={1} value={form.total_quantity || 0} onChange={(e) => setForm({ ...form, total_quantity: +e.target.value })} />
               </div>
               <div>
                 <Label>تكلفة الوحدة</Label>
@@ -111,10 +141,10 @@ export default function SupplierAllotmentsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleCreate} disabled={createAllotment.isPending}>حفظ</Button>
+              <Button onClick={handleCreate} disabled={!validForm || createAllotment.isPending}>حفظ</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <Card>
@@ -147,6 +177,8 @@ export default function SupplierAllotmentsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={7} className="text-center">جارٍ التحميل...</TableCell></TableRow>
+              ) : isError ? (
+                <TableRow><TableCell colSpan={7} className="text-center">تعذر تحميل الحصص</TableCell></TableRow>
               ) : allotments.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">لا توجد بلوكات</TableCell></TableRow>
               ) : allotments.map((a) => {
@@ -156,7 +188,7 @@ export default function SupplierAllotmentsPage() {
                     <TableCell className="font-medium">{a.allotment_name}</TableCell>
                     <TableCell>{supplierName(a.supplier_id)}</TableCell>
                     <TableCell><Badge variant="outline">{SERVICE_TYPES.find((t) => t.value === a.service_type)?.label}</Badge></TableCell>
-                    <TableCell className="text-xs">{format(new Date(a.start_date), "yyyy-MM-dd")}<br />{format(new Date(a.end_date), "yyyy-MM-dd")}</TableCell>
+                    <TableCell className="text-xs">{a.start_date}<br />{a.end_date}</TableCell>
                     <TableCell className="min-w-32">
                       <div className="text-xs mb-1">{a.used_quantity} / {a.total_quantity}</div>
                       <Progress value={pct} className="h-2" />
@@ -167,7 +199,7 @@ export default function SupplierAllotmentsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => deleteAllotment.mutate(a.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={() => showUsage(a.id)}>الحركات</Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -176,6 +208,78 @@ export default function SupplierAllotmentsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(selectedAllotment)} onOpenChange={(show) => { if (!show) setSelectedAllotmentId(undefined); }}>
+        {selectedAllotment && (
+          <DialogContent className="max-h-[90dvh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>{selectedAllotment.allotment_name}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              المستخدم {selectedAllotment.used_quantity} من {selectedAllotment.total_quantity}
+              {selectedAllotment.status === "active" && `، المتاح ${selectedAllotment.total_quantity - selectedAllotment.used_quantity}`}
+            </p>
+
+            {canReserve && selectedAllotment.status === "active" && (
+              <form className="space-y-3 rounded-md border p-3" onSubmit={(event) => {
+                event.preventDefault();
+                manageUsage.mutate({ id: selectedAllotment.id, action: "reserve", bookingReference, quantity }, {
+                  onSuccess: () => { setBookingReference(""); setQuantity(1); },
+                });
+              }}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="allotment-booking-reference">رقم الحجز</Label>
+                    <Input id="allotment-booking-reference" required maxLength={120} value={bookingReference}
+                      onChange={(event) => setBookingReference(event.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="allotment-booking-quantity">الكمية</Label>
+                    <Input id="allotment-booking-quantity" required type="number" min={1} value={quantity || ""}
+                      onChange={(event) => setQuantity(Number(event.target.value))} />
+                  </div>
+                </div>
+                <Button type="submit" size="sm" disabled={manageUsage.isPending || !bookingReference.trim() || !Number.isInteger(quantity) || quantity < 1}>
+                  تخصيص للحجز
+                </Button>
+              </form>
+            )}
+
+            <Table>
+              <TableHeader><TableRow><TableHead>الحجز</TableHead><TableHead>التاريخ</TableHead><TableHead>الكمية</TableHead><TableHead>الحالة</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {usage.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>{entry.booking_reference ?? entry.booking_id}</TableCell>
+                    <TableCell>{entry.usage_date}</TableCell>
+                    <TableCell>{entry.quantity_used}</TableCell>
+                    <TableCell>
+                      {entry.released_at ? "تم الإرجاع" : canEdit ? (
+                        <Button variant="outline" size="sm" disabled={manageUsage.isPending}
+                          onClick={() => manageUsage.mutate({ id: selectedAllotment.id, action: "release_usage", usageId: entry.id })}>
+                          إرجاع الكمية
+                        </Button>
+                      ) : "مخصصة"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {usage.length === 0 && <TableRow><TableCell colSpan={4}>
+                  {usageLoading ? "جارٍ التحميل..." : usageError ? "تعذر تحميل الحركات" : "لا توجد حركات"}
+                </TableCell></TableRow>}
+              </TableBody>
+            </Table>
+            {canEdit && selectedAllotment.status === "active" && (
+              <DialogFooter>
+                <Button variant="outline" disabled={manageUsage.isPending} onClick={() => {
+                  if (window.confirm("إغلاق الحصة يمنع التخصيصات الجديدة ويحفظ الحركات القائمة. هل تريد المتابعة؟")) {
+                    manageUsage.mutate({ id: selectedAllotment.id, action: "release_allotment" });
+                  }
+                }}>إغلاق الحصة</Button>
+              </DialogFooter>
+            )}
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }
