@@ -229,7 +229,7 @@ const PlatformAdminOrganizations = () => {
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
-                          <Link to={`/platform/organizations/followup?company=${org.id}`} className="font-medium text-foreground hover:underline">{org.name}</Link>
+                          <Link to={`/platform/organizations/followup?company=${org.id}`} className="font-medium text-primary underline-offset-4 hover:underline" data-no-translate>{org.name}</Link>
                           <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
                         </div>
                       </TableCell>

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { PlatformCompanyContacts } from '@/components/platform-admin/PlatformCompanyContacts';
 import { PAGE_SIZE, TablePager } from '@/components/platform-admin/TablePager';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -25,7 +26,6 @@ const statusLabels: Record<string, string> = {
 interface CompanyActivation {
   id: string;
   name: string;
-  email: string | null;
   is_active: boolean;
   created_at: string;
   subscription_status: string | null;
@@ -88,7 +88,6 @@ function CompanySummary({ company }: { company: CompanyActivation }) {
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span data-no-translate>{plan(company)}</span>
-          {company.email && <bdi className="break-all" data-no-translate>{company.email}</bdi>}
           <span><span>تاريخ التسجيل</span> <bdi>{date(company.created_at)}</bdi></span>
         </div>
       </CardHeader>
@@ -247,8 +246,8 @@ export default function PlatformCompanyFollowup() {
           {!id && <p className="mt-2 text-sm text-sidebar-foreground/80">تجارب تنتهي خلال ٧ أيام والشركة لم تسجّل عرض سعر أو حجز بعد.</p>}
         </div>
         <Button asChild variant="secondary" size="sm">
-          <Link to={id ? listUrl : '/platform/organizations'}>
-            <ArrowRight className="ltr:rotate-180" aria-hidden="true" />{id ? 'قائمة المتابعة' : 'كل الشركات'}
+          <Link to="/platform/organizations">
+            <ArrowRight className="ltr:rotate-180" aria-hidden="true" />كل الشركات
           </Link>
         </Button>
       </header>
@@ -263,6 +262,7 @@ export default function PlatformCompanyFollowup() {
         ) : id ? (
           selected ? <>
             <CompanySummary company={selected} />
+            <PlatformCompanyContacts organizationId={selected.id} formatDate={date} />
             <FollowupForm key={selected.id} company={selected} />
           </> : <p role="status">الشركة غير متاحة</p>
         ) : (

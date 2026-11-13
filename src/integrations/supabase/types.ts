@@ -15937,6 +15937,10 @@ export type Database = {
         Args: { p_organization_id?: string; p_page?: number }
         Returns: Json
       }
+      platform_company_contacts: {
+        Args: { p_organization_id: string }
+        Returns: Json
+      }
       get_platform_finance_role: { Args: Record<PropertyKey, never>; Returns: string | null }
       list_platform_finance_staff: { Args: Record<PropertyKey, never>; Returns: { email: string; role: string }[] }
       set_platform_finance_staff: { Args: { p_email: string; p_role: string | null }; Returns: undefined }
