@@ -98,6 +98,13 @@ Deno.serve(async (request) => {
     const receivedHmac = new URL(request.url).searchParams.get("hmac") || "";
     const hmacValid = await verifyHmac(transaction, receivedHmac, hmacSecret);
     const { status, errorMessage } = parseTransactionStatus(transaction);
+    if (!hmacValid) {
+      console.warn("Paymob webhook rejected: invalid HMAC");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const providerTransactionId = String(transaction.id);
     const paymobOrderId = String(transaction.order.id);
     const merchantOrderId = String(transaction.order.merchant_order_id || "");
