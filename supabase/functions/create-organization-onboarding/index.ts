@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
     const email = typeof body?.email === 'string' ? body.email.trim() : (user.email || null);
     const phone = typeof body?.phone === 'string' ? body.phone.trim() : null;
     const address = typeof body?.address === 'string' ? body.address.trim() : null;
+    const ownerName = typeof body?.owner_name === 'string' ? body.owner_name.trim() : null;
+    const ownerPhone = typeof body?.owner_phone === 'string' ? body.owner_phone.trim() : null;
 
     if ((email && isFreeEmail(email)) || (user.email && isFreeEmail(user.email))) {
       return new Response(JSON.stringify({ error: "التسجيل مخصص للشركات فقط. يرجى استخدام بريد العمل الرسمي." }), {
@@ -110,6 +112,8 @@ Deno.serve(async (req) => {
 
     const { data: organizationId, error } = await supabase.rpc("create_organization_onboarding", {
       _name: name,
+      _owner_name: ownerName,
+      _owner_phone: ownerPhone,
       _slug: "",
       _phone: phone || null,
       _email: email || null,
@@ -117,7 +121,7 @@ Deno.serve(async (req) => {
     });
 
     if (error || !organizationId) {
-      const msg = error?.message?.includes("نطاق البريد") ? error.message : "Could not create organization";
+      const msg = error?.code === '22023' || error?.code === '42501' ? error.message : "Could not create organization";
       return new Response(JSON.stringify({ error: msg }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

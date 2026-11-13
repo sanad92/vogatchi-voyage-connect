@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -10,18 +10,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Building2, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { contactValidationError, normalizeContactPhone, validContactName } from '@/lib/organizationContacts';
 
 const RegisterOrganization = () => {
-  const { user } = useOptimizedAuth();
+  const { user, profile } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
+  const { dir } = useLanguage();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [ownerName, setOwnerName] = useState<string>();
+  const [companyEmail, setCompanyEmail] = useState<string>();
   
   const [form, setForm] = useState({
     name: '',
     phone: '',
-    email: '',
+    ownerPhone: '',
     address: '',
   });
+  const accountName = typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : '';
+  const contactName = ownerName ?? (profile?.full_name || accountName);
+  const email = companyEmail ?? user?.email ?? '';
 
   // If user already has an organization, redirect to dashboard
   if (!orgLoading && hasOrganization) {
@@ -31,29 +40,33 @@ const RegisterOrganization = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = form.name.trim();
-    if (!user?.id || !trimmedName) return;
+    if (!user?.id || loading) return;
+    if (!validContactName(trimmedName)) {
+      toast.error('أدخل اسم المؤسسة من حرفين إلى 120 حرفًا.');
+      return;
+    }
+    const validation = contactValidationError(contactName, form.ownerPhone, form.phone, email);
+    if (validation) {
+      toast.error(validation);
+      return;
+    }
 
     setLoading(true);
     try {
-      const organizationEmail = form.email.trim() || user.email || null;
-      let organizationId: string | null = null;
-
-      const { data: onboardingResult, error: onboardingError } = await supabase.functions.invoke('create-organization-onboarding', {
-        body: {
-          name: trimmedName,
-          phone: form.phone || null,
-          email: organizationEmail,
-          address: form.address || null,
-        },
+      const { data: organizationId, error } = await supabase.rpc('create_organization_onboarding', {
+        _name: trimmedName,
+        _owner_name: contactName.trim(),
+        _owner_phone: normalizeContactPhone(form.ownerPhone)!,
+        _phone: normalizeContactPhone(form.phone)!,
+        _email: email.trim(),
+        _address: form.address.trim() || undefined,
       });
-
-      if (!onboardingError && onboardingResult?.organizationId) {
-        organizationId = onboardingResult.organizationId as string;
-      } else {
-        let serverMsg = onboardingResult?.error as string | undefined;
-        try { serverMsg = serverMsg || (await (onboardingError as any)?.context?.json())?.error; } catch { /* ignore */ }
-        if (serverMsg?.includes('نطاق البريد')) { toast.error(serverMsg); return; }
-        throw onboardingError || new Error('Failed to create organization');
+      if (error) {
+        if (['22023', '42501', 'P0001'].includes(error.code) && /[\u0600-\u06ff]/.test(error.message)) {
+          toast.error(error.message);
+          return;
+        }
+        throw error;
       }
 
       if (!organizationId) {
@@ -69,10 +82,7 @@ const RegisterOrganization = () => {
         body: { organizationName: form.name.trim() },
       }).catch(() => {/* non-critical */});
       
-      // Redirect to dashboard after onboarding transaction completes
-      setTimeout(() => {
-        window.location.href = onboardingResult?.redirectTo || '/dashboard';
-      }, 500);
+      navigate('/dashboard', { replace: true });
 
     } catch (error: unknown) {
       console.error('Error creating organization:', error);
@@ -88,7 +98,7 @@ const RegisterOrganization = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-background to-indigo-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-bl from-blue-50 via-background to-indigo-50 flex items-center justify-center p-4" dir={dir}>
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -107,33 +117,42 @@ const RegisterOrganization = () => {
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="مثال: شركة النيل للسياحة"
               required
+              maxLength={120}
+              autoComplete="organization"
               disabled={loading}
-              className="text-right"
+              className="text-start"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="org-phone">رقم الهاتف</Label>
+            <Label htmlFor="org-phone">هاتف المؤسسة *</Label>
             <Input
               id="org-phone"
+              type="tel"
+              dir="ltr"
+              required
+              maxLength={32}
+              autoComplete="section-company tel"
               value={form.phone}
               onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
               placeholder="01xxxxxxxxx"
               disabled={loading}
-              className="text-right"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="org-email">البريد الإلكتروني للشركة</Label>
+            <Label htmlFor="org-email">البريد الإلكتروني للشركة *</Label>
             <Input
               id="org-email"
               type="email"
-              value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              dir="ltr"
+              required
+              maxLength={255}
+              autoComplete="section-company email"
+              value={email}
+              onChange={e => setCompanyEmail(e.target.value)}
               placeholder="info@company.com"
               disabled={loading}
-              className="text-right"
             />
           </div>
 
@@ -145,9 +164,23 @@ const RegisterOrganization = () => {
               onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
               placeholder="المدينة - الحي - الشارع"
               disabled={loading}
-              className="text-right"
+              maxLength={500}
+              className="text-start"
             />
           </div>
+
+          <fieldset className="space-y-3 rounded-lg border p-4">
+            <legend className="px-1 text-sm font-semibold">مسؤول المؤسسة</legend>
+            <div className="space-y-2">
+              <Label htmlFor="org-owner-name">اسم مسؤول المؤسسة *</Label>
+              <Input id="org-owner-name" autoComplete="name" value={contactName} onChange={e => setOwnerName(e.target.value)} required maxLength={120} disabled={loading} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-owner-phone">موبايل مسؤول المؤسسة *</Label>
+              <Input id="org-owner-phone" type="tel" dir="ltr" autoComplete="section-owner tel" required maxLength={32} value={form.ownerPhone} onChange={e => setForm(f => ({ ...f, ownerPhone: e.target.value }))} disabled={loading} />
+            </div>
+            {user?.email && <p className="break-all text-xs text-muted-foreground"><span>بريد حساب المسؤول</span> <bdi data-no-translate>{user.email}</bdi></p>}
+          </fieldset>
 
           <Button
             type="submit"

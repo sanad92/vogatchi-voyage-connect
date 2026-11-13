@@ -6,6 +6,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import DataQualityAlertCard from "@/components/dashboard/DataQualityAlertCard";
+import { OrganizationContactReminder } from "@/components/dashboard/OrganizationContactReminder";
 import AlertsStrip from "@/components/dashboard/AlertsStrip";
 import TodayOverview from "@/components/dashboard/TodayOverview";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -72,6 +73,7 @@ const OptimizedIndex = () => {
     <OptimizedErrorBoundary>
       <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto" dir="rtl">
         <DashboardHeader />
+        <OrganizationContactReminder />
 
         <div className="animate-in fade-in" style={{ animationDelay: '50ms' }}>
           <Alert className="border-border/60 bg-muted/40">

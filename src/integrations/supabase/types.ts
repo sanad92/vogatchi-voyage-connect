@@ -16404,11 +16404,17 @@ export type Database = {
       create_organization_onboarding: {
         Args: {
           _address?: string
-          _email?: string
+          _email: string
           _name: string
-          _phone?: string
+          _owner_name: string
+          _owner_phone: string
+          _phone: string
           _slug?: string
         }
+        Returns: string
+      }
+      complete_organization_contacts: {
+        Args: { _organization_id: string; _owner_name: string; _owner_phone: string; _phone: string; _email: string }
         Returns: string
       }
       create_pilgrimage_supplier_obligation: {
