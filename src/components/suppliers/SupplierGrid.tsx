@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import EditSupplierDialog from './EditSupplierDialog';
 import { Supplier } from '@/types/supplier';
@@ -30,7 +30,6 @@ const SupplierGrid = ({
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState<string | null>(null);
-  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
@@ -155,6 +154,7 @@ const SupplierGrid = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {suppliers.map((supplier) => {
           const paymentMethods = getPaymentMethods(supplier.payment_method_options);
+          const profilePath = `/suppliers/${supplier.id}/workspace`;
 
           return (
             <Card
@@ -174,8 +174,13 @@ const SupplierGrid = ({
                 title="تحديد المورد"
               />
               <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="min-w-0 text-lg">
+                    <Link to={profilePath} onClick={event => event.stopPropagation()}
+                      className="break-words text-primary underline-offset-4 hover:underline">
+                      {supplier.name}
+                    </Link>
+                  </CardTitle>
                   <Badge className={getTypeColor(supplier.supplier_type)}>
                     {getTypeLabel(supplier.supplier_type)}
                   </Badge>
@@ -214,10 +219,15 @@ const SupplierGrid = ({
                   {supplier.payment_terms && (
                     <p><span className="font-medium">شروط الدفع:</span> {supplier.payment_terms}</p>
                   )}
-                  <div className="flex items-center gap-2 pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                     <Badge variant={supplier.is_active ? "default" : "secondary"}>
                       {supplier.is_active ? "نشط" : "غير نشط"}
                     </Badge>
+                    <Link to={profilePath} onClick={event => event.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline">
+                      فتح ملف المورد
+                      <ExternalLink className="size-3.5" aria-hidden="true" />
+                    </Link>
                   </div>
                 </div>
                 {/* Action buttons */}
@@ -225,12 +235,6 @@ const SupplierGrid = ({
                   <div className="absolute left-3 top-3 flex gap-2 opacity-80 group-hover:opacity-100 z-10"
                     onClick={e => e.stopPropagation()}
                   >
-                    <button
-                      title="فتح مساحة العمل"
-                      className="bg-primary/10 text-primary p-1 rounded hover:bg-primary/20 transition"
-                      onClick={() => navigate(`/suppliers/${supplier.id}/workspace`)}>
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
                     <button
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
