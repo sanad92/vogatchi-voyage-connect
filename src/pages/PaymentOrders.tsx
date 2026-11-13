@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, CreditCard, Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,7 +43,8 @@ type Order = {
   status: string;
   approval_status: string;
   service_type: string;
-  booking_id: string;
+  booking_id: string | null;
+  pilgrimage_b2b_agreement_id?: string | null;
   supplier_id: string | null;
   rejection_reason: string | null;
   suppliers?: { name: string } | null;
@@ -52,7 +53,7 @@ type Order = {
   paidAmount: number;
   remainingAmount: number;
 };
-type TreasuryAccount = { id: string; account_name: string; currency: string };
+type TreasuryAccount = { id: string; account_name: string; currency: string; treasury_kind: string };
 const labels: Record<string, string> = {
   pending: "معلق",
   approved: "معتمد",
@@ -65,10 +66,12 @@ const labels: Record<string, string> = {
 export default function PaymentOrders() {
   usePageTitle("أوامر دفع الموردين");
   const orgId = useOrgId();
-  const { canProcessPayments } = useSupabasePermissions();
+  const { canProcessPayments, getPermissionScope } = useSupabasePermissions();
+  const [params] = useSearchParams();
+  const [references, setReferences] = useState<Record<string, string>>({});
   const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("all"),
-    [search, setSearch] = useState(""),
+    [search, setSearch] = useState(params.get("ref") ?? ""),
     [accounts, setAccounts] = useState<Record<string, string>>({});
   const { data: treasuryData = [] } = useTreasuryAccounts();
   const treasury = treasuryData as TreasuryAccount[];
@@ -194,13 +197,13 @@ export default function PaymentOrders() {
                         {r.reference_number}
                       </TableCell>
                       <TableCell>
-                        <Button asChild variant="link" className="h-auto p-0">
+                        {r.pilgrimage_b2b_agreement_id ? 'حج وعمرة B2B' : <Button asChild variant="link" className="h-auto p-0">
                           <Link
                             to={`/bookings/${r.booking_id}/workspace?tab=financials`}
                           >
                             {r.bookings?.booking_number || "فتح الحجز"}
                           </Link>
-                        </Button>
+                        </Button>}
                       </TableCell>
                       <TableCell>{r.suppliers?.name || "غير محدد"}</TableCell>
                       <TableCell>
@@ -224,7 +227,9 @@ export default function PaymentOrders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex min-w-64 items-center gap-2">
-                          {canProcessPayments() && r.approval_status === "pending" && r.status !== "cancelled" && (
+                          {canProcessPayments() && (!r.pilgrimage_b2b_agreement_id ||
+                            getPermissionScope('payments_process') === 'organization') &&
+                            ['pending', 'rejected'].includes(r.approval_status) && r.status !== "cancelled" && (
                             <>
                               <Button
                                 size="sm"
@@ -250,7 +255,8 @@ export default function PaymentOrders() {
                               </Button>
                             </>
                           )}
-                          {canProcessPayments() && canPayOrder(r) && (
+                          {canProcessPayments() && (!r.pilgrimage_b2b_agreement_id ||
+                            getPermissionScope('payments_process') === 'organization') && canPayOrder(r) && (
                               <>
                                 <Select
                                   value={accounts[r.id]}
@@ -264,7 +270,8 @@ export default function PaymentOrders() {
                                   <SelectContent>
                                     {treasury
                                       .filter(
-                                        (account) => account.currency === r.currency,
+                                        (account) => account.currency === r.currency &&
+                                          (!r.pilgrimage_b2b_agreement_id || account.treasury_kind === 'bank'),
                                       )
                                       .map((account) => (
                                         <SelectItem key={account.id} value={account.id}>
@@ -273,22 +280,28 @@ export default function PaymentOrders() {
                                       ))}
                                   </SelectContent>
                                 </Select>
-                                {r.currency !== 'EGP' && <Input
+                                {!r.pilgrimage_b2b_agreement_id && r.currency !== 'EGP' && <Input
                                   type="number" min="0.000001" step="any"
                                   aria-label={`سعر صرف ${r.currency} إلى EGP للأمر ${r.reference_number}`}
                                   placeholder="سعر الصرف إلى EGP"
                                   value={exchangeRates[r.id] || ''}
                                   onChange={event => setExchangeRates(previous => ({ ...previous, [r.id]: event.target.value }))}
                                 />}
+                                {r.pilgrimage_b2b_agreement_id && <Input
+                                  aria-label="مرجع تحويل المورد" placeholder="مرجع التحويل"
+                                  maxLength={120} value={references[r.id] || ''}
+                                  onChange={event => setReferences(previous => ({ ...previous, [r.id]: event.target.value }))} />}
                                 <Button
                                   size="sm"
-                                  disabled={!accounts[r.id] || pay.isPending || (r.currency !== 'EGP' && !(Number(exchangeRates[r.id]) > 0 && Number.isFinite(Number(exchangeRates[r.id]))))}
+                                  disabled={!accounts[r.id] || pay.isPending || (r.pilgrimage_b2b_agreement_id ? !references[r.id]?.trim() :
+                                    r.currency !== 'EGP' && !(Number(exchangeRates[r.id]) > 0 && Number.isFinite(Number(exchangeRates[r.id]))))}
                                   onClick={() =>
                                     pay.mutate({
                                       po_id: r.id,
                                       amount: r.remainingAmount,
                                       currency: r.currency,
-                                      exchange_rate: r.currency === 'EGP' ? 1 : Number(exchangeRates[r.id]),
+                                      exchange_rate: r.pilgrimage_b2b_agreement_id || r.currency === 'EGP' ? 1 : Number(exchangeRates[r.id]),
+                                      reference: r.pilgrimage_b2b_agreement_id ? references[r.id]?.trim() : null,
                                       treasury_account_id: accounts[r.id],
                                       payment_date: new Date()
                                         .toISOString()

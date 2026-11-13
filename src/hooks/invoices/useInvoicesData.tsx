@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InvoiceFilters {
+  organizationId?: string | null;
   searchTerm?: string;
   status?: string;
   bookingType?: string;
@@ -14,6 +15,7 @@ export interface InvoiceFilters {
 export const useInvoicesData = (filters?: InvoiceFilters) => {
   return useQuery({
     queryKey: ['invoices', filters],
+    enabled: filters?.organizationId !== null,
     queryFn: async () => {
       let query = supabase
         .from('invoices')
@@ -23,6 +25,8 @@ export const useInvoicesData = (filters?: InvoiceFilters) => {
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
         .limit(5000);
+
+      if (filters?.organizationId) query = query.eq('organization_id', filters.organizationId);
 
       if (filters?.searchTerm) {
         query = query.or(`invoice_number.ilike.%${filters.searchTerm}%,notes.ilike.%${filters.searchTerm}%`);

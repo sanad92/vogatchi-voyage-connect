@@ -34,19 +34,23 @@ export default function SupplierLedger() {
   }, [suppliers, supplierId, setParams]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['supplier-ledger', supplierId],
-    enabled: !!supplierId,
+    queryKey: ['supplier-ledger', orgId, supplierId],
+    enabled: !!orgId && !!supplierId,
     queryFn: async () => {
       const sb: any = supabase;
-      const [supplier, bookings, payments] = await Promise.all([
-        sb.from('suppliers').select('*').eq('id', supplierId).maybeSingle(),
-        sb.from('bookings').select('id, booking_number, start_date, currency, cost_price, status, booking_type').eq('supplier_id', supplierId).order('start_date', { ascending: true }),
-        sb.from('supplier_payments').select('id, amount, currency, payment_date, paid_date, reference_number, status, booking_id').eq('supplier_id', supplierId).order('payment_date', { ascending: true }),
+      const [supplier, bookings, payments, pilgrimageOrders] = await Promise.all([
+        sb.from('suppliers').select('*').eq('organization_id', orgId).eq('id', supplierId).maybeSingle(),
+        sb.from('bookings').select('id, booking_number, start_date, currency, cost_price, status, booking_type').eq('organization_id', orgId).eq('supplier_id', supplierId).order('start_date', { ascending: true }),
+        sb.from('supplier_payments').select('id, amount, currency, payment_date, paid_date, reference_number, status, booking_id').eq('organization_id', orgId).eq('supplier_id', supplierId).order('payment_date', { ascending: true }),
+        sb.from('supplier_payment_orders').select('reference_number,amount,currency,created_at,status')
+          .eq('organization_id', orgId).eq('supplier_id', supplierId)
+          .eq('service_type', 'pilgrimage_b2b').neq('status', 'cancelled'),
       ]);
       return {
         supplier: supplier.data,
         bookings: bookings.data || [],
         payments: payments.data || [],
+        pilgrimageOrders: pilgrimageOrders.data || [],
       };
     },
   });
@@ -66,6 +70,13 @@ export default function SupplierLedger() {
         link: `/bookings/${b.id}`,
       });
     });
+    for (const order of data.pilgrimageOrders) {
+      events.push({
+        date: order.created_at, ref: order.reference_number, description: 'استحقاق مورد حج وعمرة',
+        debit: 0, credit: Number(order.amount), currency: order.currency,
+        link: `/payment-orders?ref=${encodeURIComponent(order.reference_number)}`,
+      });
+    }
     // Payments to supplier = debit AP
     data.payments.forEach((p: any) => {
       events.push({
@@ -104,13 +115,13 @@ export default function SupplierLedger() {
       <PageHeader
         icon={BookOpen}
         title="كشف حساب المورد"
-        description="عرض للقراءة فقط مبني على تكاليف الحجوزات ومدفوعات الموردين القائمة."
+        description="تكاليف الحجوزات ومستحقات الحج والعمرة ومدفوعات الموردين."
       />
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          الرصيد الموجب = مبلغ مستحق للمورد. المصدر: `bookings.cost_price` (كالتزام) و `supplier_payments` (كسداد).
+          الرصيد الموجب هو المبلغ المستحق للمورد.
         </AlertDescription>
       </Alert>
 

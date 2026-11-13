@@ -35,19 +35,31 @@ export default function CustomerLedger() {
   }, [customers, customerId, setParams]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customer-ledger', customerId],
-    enabled: !!customerId,
+    queryKey: ['customer-ledger', orgId, customerId],
+    enabled: !!orgId && !!customerId,
     queryFn: async () => {
       const sb: any = supabase;
-      const [customer, invoices, bookings] = await Promise.all([
-        sb.from('customers').select('*').eq('id', customerId).maybeSingle(),
-        sb.from('invoices').select('id, invoice_number, issued_date, currency, final_amount, total_paid_amount, remaining_amount, payment_status, booking_id, created_at').eq('customer_id', customerId).order('issued_date', { ascending: true }),
-        sb.from('bookings').select('id, booking_number, booking_type, currency, selling_price, start_date, status').eq('customer_id', customerId).order('start_date', { ascending: true }),
+      const [customer, invoices, bookings, receipts, credits, refunds] = await Promise.all([
+        sb.from('customers').select('*').eq('organization_id', orgId).eq('id', customerId).maybeSingle(),
+        sb.from('invoices').select('*').eq('organization_id', orgId).eq('customer_id', customerId).order('issued_date', { ascending: true }),
+        sb.from('bookings').select('id, booking_number, booking_type, currency, selling_price, start_date, status').eq('organization_id', orgId).eq('customer_id', customerId).order('start_date', { ascending: true }),
+        sb.from('customer_payments').select('invoice_id, payment_date, reference_number, amount, client_ref')
+          .eq('organization_id', orgId).eq('customer_id', customerId).eq('status', 'completed')
+          .like('client_ref', 'pilgrimage-b2b:%').order('payment_date'),
+        sb.from('credit_notes').select('invoice_id,note_number,note_date,amount,currency')
+          .eq('organization_id', orgId).eq('party_type', 'customer').eq('party_id', customerId)
+          .eq('status', 'applied').like('note_number', 'CN-B2B-%'),
+        sb.from('refund_requests').select('invoice_id,paid_at,amount,currency')
+          .eq('organization_id', orgId).eq('customer_id', customerId)
+          .eq('status', 'paid').not('pilgrimage_b2b_cancellation_id', 'is', null),
       ]);
       return {
         customer: customer.data,
         invoices: invoices.data || [],
         bookings: bookings.data || [],
+        receipts: receipts.data || [],
+        credits: credits.data || [],
+        refunds: refunds.data || [],
       };
     },
   });
@@ -55,6 +67,12 @@ export default function CustomerLedger() {
   const rows = useMemo(() => {
     if (!data) return [] as any[];
     const events: any[] = [];
+    const receiptsByInvoice = new Map<string, typeof data.receipts>();
+    for (const receipt of data.receipts) {
+      const receipts = receiptsByInvoice.get(receipt.invoice_id) ?? [];
+      receipts.push(receipt);
+      receiptsByInvoice.set(receipt.invoice_id, receipts);
+    }
     data.invoices.forEach((inv: any) => {
       events.push({
         date: inv.issued_date || inv.created_at,
@@ -66,7 +84,21 @@ export default function CustomerLedger() {
         link: `/invoices?id=${inv.id}`,
       });
       const paid = Number(inv.total_paid_amount || 0);
-      if (paid > 0) {
+      const receipts = receiptsByInvoice.get(inv.id);
+      const receiptsTotal = receipts?.reduce((sum, receipt) => sum + Math.round(Number(receipt.amount) * 100), 0);
+      if (receipts?.length && receiptsTotal === Math.round(paid * 100)) {
+        for (const receipt of receipts) {
+          events.push({
+            date: receipt.payment_date,
+            ref: receipt.reference_number || inv.invoice_number,
+            description: 'تحصيل من العميل',
+            debit: 0,
+            credit: Number(receipt.amount),
+            currency: inv.currency,
+            link: `/invoices?id=${inv.id}`,
+          });
+        }
+      } else if (paid > 0) {
         events.push({
           date: inv.issued_date || inv.created_at,
           ref: inv.invoice_number,
@@ -78,6 +110,25 @@ export default function CustomerLedger() {
         });
       }
     });
+    const pilgrimageInvoiceIds = new Set(data.invoices
+      .filter((invoice: { pilgrimage_b2b_agreement_id?: string }) => invoice.pilgrimage_b2b_agreement_id)
+      .map((invoice: { id: string }) => invoice.id));
+    for (const credit of data.credits) {
+      if (!pilgrimageInvoiceIds.has(credit.invoice_id)) continue;
+      events.push({
+        date: credit.note_date, ref: credit.note_number, description: 'إشعار دائن لإلغاء فاتورة',
+        debit: 0, credit: Number(credit.amount), currency: credit.currency,
+        link: `/invoices?id=${credit.invoice_id}`,
+      });
+    }
+    for (const refund of data.refunds) {
+      if (!pilgrimageInvoiceIds.has(refund.invoice_id)) continue;
+      events.push({
+        date: refund.paid_at, ref: 'استرداد B2B', description: 'استرداد مصروف للعميل',
+        debit: Number(refund.amount), credit: 0, currency: refund.currency,
+        link: `/invoices?id=${refund.invoice_id}`,
+      });
+    }
     events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     // running balance per currency
     const balances: Record<string, number> = {};
@@ -127,7 +178,7 @@ export default function CustomerLedger() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          هذا الكشف يعرض حركات الفواتير والتحصيلات الفعلية. لم يتم تطبيق قيود اليومية بعد، وهذه الأرقام مستخرجة مباشرة من جدول الفواتير.
+          يعرض الكشف أرصدة الفواتير والتحصيلات المسجلة لكل عملة.
         </AlertDescription>
       </Alert>
 

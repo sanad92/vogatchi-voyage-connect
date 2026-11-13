@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban } from 'lucide-react';
@@ -60,6 +61,8 @@ const Pilgrimage = () => {
   const { toast } = useToast();
   const [type, setType] = useState<'umrah' | 'hajj'>('umrah');
   const [programId, setProgramId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const linkedSaleId = params.get('sale');
   const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
@@ -240,7 +243,15 @@ const Pilgrimage = () => {
     Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
 
   // Unified commercial quote workspace (Group seats / FIT / B2B).
-  if (salesOpen) return <PilgrimageSales initialType={type} initialProgram={program} onBack={() => setSalesOpen(false)} />;
+  if (salesOpen || linkedSaleId) return <PilgrimageSales initialType={type} initialProgram={program}
+    initialSaleId={linkedSaleId} onBack={() => {
+      setSalesOpen(false);
+      if (linkedSaleId) setParams((current) => {
+        const next = new URLSearchParams(current);
+        next.delete('sale');
+        return next;
+      }, { replace: true });
+    }} />;
 
   // ===== Program detail =====
   if (program) {
