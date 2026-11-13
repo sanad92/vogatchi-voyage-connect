@@ -10,6 +10,7 @@ import { useTreasuryAccounts } from '@/hooks/finance/useFinanceRpcs';
 import {
   remainingRefundBalance, useRefundBalanceActions, useRefundBalances, type RefundBalance,
 } from '@/hooks/finance/useRefundBalances';
+import { RefundMovements, formatRefundAmount as money, refundStatusLabels } from '@/components/finance/RefundMovements';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,14 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const labels: Record<string, string> = {
-  approved: 'مستحق للعميل', paid: 'تمت التسوية', pending: 'بانتظار تأكيد المورد',
-  confirmed: 'رصيد مؤكد', rejected: 'مرفوض', settled: 'تمت التسوية',
-};
-
-const money = (amount: number, currency: string) =>
-  `${Number(amount).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${currency}`;
 
 function RefundForm({ balance, onClose }: { balance?: RefundBalance; onClose: () => void }) {
   const orgId = useOrgId();
@@ -159,7 +152,15 @@ export default function RefundBalances() {
   const { claim } = useRefundBalanceActions();
   const { getPermissionScope } = useSupabasePermissions();
   const [dialog, setDialog] = useState<{ orgId: string; balance?: RefundBalance }>();
-  const [openOnly, setOpenOnly] = useState(true);
+  const openOnly = params.get('view') !== 'all';
+  const toggleHistory = () => {
+    setParams(previous => {
+      const next = new URLSearchParams(previous);
+      if (openOnly) next.set('view', 'all');
+      else next.delete('view');
+      return next;
+    });
+  };
   const balances = query.data?.filter(row => !openOnly || !['paid', 'rejected', 'settled'].includes(row.status));
   const canManage = getPermissionScope('financial_view') === 'organization'
     && getPermissionScope('payments_process') === 'organization';
@@ -172,7 +173,7 @@ export default function RefundBalances() {
         <Tabs value={kind} onValueChange={value => setParams({ kind: value })}>
           <TabsList><TabsTrigger value="customer">العملاء</TabsTrigger><TabsTrigger value="supplier">الموردون</TabsTrigger></TabsList>
         </Tabs>
-        <Button variant={openOnly ? 'secondary' : 'outline'} onClick={() => setOpenOnly(value => !value)}>
+        <Button variant={openOnly ? 'secondary' : 'outline'} onClick={toggleHistory}>
           {openOnly ? 'عرض كل الحركات' : 'عرض الأرصدة المفتوحة'}
         </Button>
         {party && <Button variant="ghost" onClick={() => setParams({ kind })}>عرض كل الأطراف</Button>}
@@ -189,7 +190,7 @@ export default function RefundBalances() {
           <CardHeader className="pb-2">
             <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
               {row.partyId ? <Link className="hover:underline" to={`/${kind}-ledger?id=${row.partyId}`}>{row.partyName || 'كشف الحساب'}</Link> : row.partyName}
-              <span>{labels[row.status] || row.status}</span>
+              <span>{refundStatusLabels[row.status] || row.status}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -199,19 +200,7 @@ export default function RefundBalances() {
               {['approved', 'confirmed'].includes(row.status) && <strong>المتبقي {money(remainingRefundBalance(row), row.currency)}</strong>}
               {row.reference && <span>{row.reference}</span>}
             </div>
-            {row.movements.length > 0 && <details>
-              <summary className="cursor-pointer text-primary">حركات التسوية ({row.movements.length})</summary>
-              <ul className="mt-2 space-y-1">
-                {[...row.movements].sort((a, b) => a.created_at.localeCompare(b.created_at)).map(movement => (
-                  <li key={movement.id} className="flex flex-wrap gap-x-3">
-                    <span>{new Date(movement.created_at).toLocaleDateString('ar-EG')}</span>
-                    <span>{money(movement.amount, row.currency)}</span>
-                    <span>{movement.invoice?.invoice_number || movement.order?.reference_number || movement.treasury?.account_name || 'تسوية'}</span>
-                    {movement.reference && <span>{movement.reference}</span>}
-                  </li>
-                ))}
-              </ul>
-            </details>}
+            <RefundMovements balance={row} />
             {canManage && orgId && row.partyId && ['approved', 'confirmed'].includes(row.status) && remainingRefundBalance(row) > 0
               && <Button size="sm" onClick={() => setDialog({ orgId, balance: row })}>تسوية الرصيد</Button>}
             {canManage && kind === 'supplier' && row.status === 'pending' && <div className="flex gap-2">
