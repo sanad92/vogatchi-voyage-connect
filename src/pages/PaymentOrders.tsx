@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, CreditCard, Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,9 @@ import { useOrgId } from "@/hooks/useOrgId";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 import { paymentOrderBalance, canPayOrder } from "@/lib/paymentOrderBalance";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type Order = {
   id: string;
@@ -48,7 +51,7 @@ type Order = {
   supplier_id: string | null;
   rejection_reason: string | null;
   suppliers?: { name: string } | null;
-  bookings?: { booking_number: string } | null;
+  bookings?: { booking_number: string; status: string | null; workflow_stage: string | null } | null;
   supplier_payment_allocations?: Array<{ amount: number }>;
   paidAmount: number;
   remainingAmount: number;
@@ -66,9 +69,26 @@ const labels: Record<string, string> = {
 export default function PaymentOrders() {
   usePageTitle("أوامر دفع الموردين");
   const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const [orderToClose, setOrderToClose] = useState<Order | null>(null);
+  const [confirmation, setConfirmation] = useState('');
+  const closeOrder = useMutation({
+    mutationFn: async ({ id, reference }: { id: string; reference: string }) => {
+      const { data, error } = await callUntypedRpc<string>('close_unpaid_supplier_order', { _order_id: id, _confirmation: reference });
+      if (error) throw error;
+      if (data !== id) throw new Error('تعذر تأكيد إقفال أمر الدفع.');
+    },
+    onSuccess: () => {
+      setOrderToClose(null);
+      toast.success('تم إقفال أمر دفع المورد والفاتورة المرتبطة.');
+      void queryClient.invalidateQueries();
+    },
+    onError: error => toast.error('تعذر إقفال أمر دفع المورد', { description: error.message }),
+  });
   const { canProcessPayments, getPermissionScope } = useSupabasePermissions();
   const [params, setParams] = useSearchParams();
   const orderId = params.get("id");
+  const bookingId = params.get("booking_id");
   const [references, setReferences] = useState<Record<string, string>>({});
   const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("all"),
@@ -79,15 +99,16 @@ export default function PaymentOrders() {
   const approve = useApproveSupplierPO();
   const pay = useRecordSupplierPayment();
   const query = useQuery({
-    queryKey: ["supplier-payment-orders-all", orgId, orderId],
+    queryKey: ["supplier-payment-orders-all", orgId, orderId, bookingId],
     enabled: !!orgId,
     queryFn: async () => {
       let request = (supabase as any)
         .from("supplier_payment_orders")
-        .select("*, suppliers(name), bookings(booking_number), supplier_payment_allocations(amount), refund_balance_settlements(amount)")
+        .select("*, suppliers(name), bookings(booking_number, status, workflow_stage), supplier_payment_allocations(amount), refund_balance_settlements(amount)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
       if (orderId) request = request.eq("id", orderId);
+      if (bookingId) request = request.eq("booking_id", bookingId);
       const { data, error } = await request;
       if (error) throw error;
       return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => ({ ...order, ...paymentOrderBalance(order.amount, [
@@ -235,6 +256,13 @@ export default function PaymentOrders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex min-w-64 items-center gap-2">
+                          {canProcessPayments() && getPermissionScope('payments_process') === 'organization' &&
+                            !r.pilgrimage_b2b_agreement_id && ['pending', 'approved'].includes(r.status) && r.paidAmount === 0 &&
+                            (['cancelled', 'canceled'].includes(r.bookings?.status ?? '') || r.bookings?.workflow_stage === 'cancelled') && (
+                              <Button size="sm" variant="outline" onClick={() => { setConfirmation(''); setOrderToClose(r); }}>
+                                إقفال المستحق
+                              </Button>
+                          )}
                           {canProcessPayments() && (!r.pilgrimage_b2b_agreement_id ||
                             getPermissionScope('payments_process') === 'organization') &&
                             ['pending', 'rejected'].includes(r.approval_status) && r.status !== "cancelled" && (
@@ -346,6 +374,30 @@ export default function PaymentOrders() {
           </CardContent>
         </Card>
       )}
+      <Dialog open={!!orderToClose} onOpenChange={open => { if (!open && !closeOrder.isPending) setOrderToClose(null); }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>إقفال مستحق المورد</DialogTitle>
+            <DialogDescription>
+              أكد مع المورد أن أمر الدفع {orderToClose?.reference_number} غير مستحق بالكامل، وسجّل مرجع التأكيد.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={event => {
+            event.preventDefault();
+            if (orderToClose && confirmation.trim().length >= 3 && !closeOrder.isPending) {
+              closeOrder.mutate({ id: orderToClose.id, reference: confirmation.trim() });
+            }
+          }}>
+            <Input aria-label="مرجع تأكيد المورد" value={confirmation} required minLength={3} maxLength={500}
+              disabled={closeOrder.isPending} onChange={event => setConfirmation(event.target.value)} />
+            <DialogFooter>
+              <Button type="submit" variant="destructive" disabled={closeOrder.isPending || confirmation.trim().length < 3}>
+                إقفال أمر الدفع والفاتورة
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

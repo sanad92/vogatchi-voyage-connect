@@ -17,37 +17,38 @@ export const fillFollowupTemplate = (tpl: string, q: Partial<Quote> & { customer
     .split('{total}').join(q.total_amount != null ? `${Number(q.total_amount).toLocaleString()} ${q.currency || ''}`.trim() : '')
     .replace(/\s{2,}/g, ' ').trim();
 
-const digits = (v?: string | null) => (v || '').replace(/\D/g, '');
-
-export default function QuoteWhatsAppFollowupButton({ quote }: { quote: Quote & { customers?: { name?: string; phone?: string } | null } }) {
+export default function QuoteWhatsAppFollowupButton({ quote, sourceConversationId }: { quote: Quote; sourceConversationId?: string }) {
   const orgId = useOrgId();
   const navigate = useNavigate();
 
   const { data } = useQuery({
-    queryKey: ['quote-wa-conversation', orgId, quote.id],
+    queryKey: ['quote-wa-conversation', orgId, quote.id, sourceConversationId],
     queryFn: async () => {
-      const db = supabase as any;
-      const [settings, byCustomer] = await Promise.all([
-        db.from('organization_settings').select('quote_followup_template').eq('organization_id', orgId).maybeSingle(),
-        quote.customer_id
-          ? db.from('whatsapp_conversations').select('id').eq('organization_id', orgId).eq('customer_id', quote.customer_id)
-              .order('last_message_at', { ascending: false, nullsFirst: false }).limit(1).maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
-      let conversationId: string | null = byCustomer.data?.id ?? null;
-      const phone = digits(quote.customers?.phone);
-      if (!conversationId && phone) {
-        const { data: byPhone } = await db.from('whatsapp_conversations').select('id').eq('organization_id', orgId)
-          .ilike('phone_number', `%${phone.slice(-9)}`).order('last_message_at', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
-        conversationId = byPhone?.id ?? null;
-      }
-      return { conversationId, template: settings.data?.quote_followup_template || DEFAULT_FOLLOWUP_TEMPLATE };
+      const settings = supabase.from('organization_settings').select('quote_followup_template').eq('organization_id', orgId!).maybeSingle();
+      const conversations = supabase.from('whatsapp_conversations').select('id').eq('organization_id', orgId!);
+      const phone = quote.customers?.phone?.trim();
+      const matching = sourceConversationId
+        ? conversations.eq('id', sourceConversationId).maybeSingle()
+        : quote.customer_id
+          ? conversations.eq('customer_id', quote.customer_id).order('last_message_at', { ascending: false, nullsFirst: false }).limit(1).maybeSingle()
+          : phone
+            ? conversations.in('phone_number', [phone, phone.replace(/\D/g, '')]).limit(2)
+            : Promise.resolve({ data: null, error: null });
+      const [template, conversation] = await Promise.all([settings, matching]);
+      if (conversation.error) throw conversation.error;
+      const matches = conversation.data;
+      const conversationId = Array.isArray(matches) ? (matches.length === 1 ? matches[0].id : null) : matches?.id ?? null;
+      return { conversationId, template: template.data?.quote_followup_template || DEFAULT_FOLLOWUP_TEMPLATE };
     },
     enabled: !!orgId,
   });
 
   const open = () => {
     if (!data?.conversationId) return;
+    if (quote.status === 'draft') {
+      navigate(`/whatsapp-inbox/${data.conversationId}`);
+      return;
+    }
     const text = fillFollowupTemplate(data.template, { ...quote, customerName: quote.customers?.name });
     const params = new URLSearchParams({ quote: quote.id, text });
     navigate(`/whatsapp-inbox/${data.conversationId}?${params.toString()}`);
@@ -56,7 +57,7 @@ export default function QuoteWhatsAppFollowupButton({ quote }: { quote: Quote & 
   return (
     <Button variant="outline" size="sm" onClick={open} disabled={!data?.conversationId}
       title={data && !data.conversationId ? 'لا توجد محادثة واتساب مرتبطة بهذا العميل' : undefined}>
-      <MessageCircle className="h-4 w-4 ml-1" /> متابعة على واتساب
+      <MessageCircle className="h-4 w-4 ml-1" /> {quote.status === "draft" ? "فتح محادثة واتساب" : "متابعة على واتساب"}
     </Button>
   );
 }

@@ -1,4 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ClipboardList, Loader2 } from 'lucide-react';
@@ -6,7 +10,11 @@ import { useSalesBrief } from '@/hooks/useSalesBrief';
 import { usePriceCatalog } from '@/hooks/usePriceCatalog';
 import { SalesQuoteDraftBuilder } from './SalesQuoteDraftBuilder';
 
-interface Props { conversationId: string }
+interface Props {
+  conversationId: string;
+  customerId?: string | null;
+  customerName: string;
+}
 
 const Field: React.FC<{ label: string; value?: string | number | null }> = ({ label, value }) => (
   <div className="flex items-start justify-between gap-2 text-sm py-1 border-b last:border-0">
@@ -15,17 +23,36 @@ const Field: React.FC<{ label: string; value?: string | number | null }> = ({ la
   </div>
 );
 
-export const SalesBriefPanel: React.FC<Props> = ({ conversationId }) => {
+export const SalesBriefPanel: React.FC<Props> = ({ conversationId, customerId, customerName }) => {
+  const orgId = useOrgId();
+  const { hasPermission } = useSupabasePermissions();
   const { brief, isLoading } = useSalesBrief(conversationId);
   const { rows } = usePriceCatalog(brief?.destination || undefined);
 
   if (isLoading) return <div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
+  const manualQuote = orgId && hasPermission('quotes_create') && (
+    <Button asChild variant="outline" size="sm" className="w-full">
+      <Link to="/quotes/new" state={{ whatsappQuote: {
+        organizationId: orgId,
+        conversationId,
+        customerId,
+        customerName,
+        destination: brief?.destination ?? '',
+        travelDate: brief?.travel_from ?? null,
+        returnDate: brief?.travel_to ?? null,
+        travelers: Math.max(1, (brief?.adults ?? 0) + (brief?.children ?? 0)),
+        notes: brief?.notes ?? '',
+      } }}>إنشاء عرض من المحادثة</Link>
+    </Button>
+  );
+
   if (!brief) {
     return (
       <div className="p-4 text-sm text-muted-foreground text-center">
         <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        لم يجمع وكيل المبيعات الذكي بيانات لهذه المحادثة بعد.
+        <p className="mb-3">لم يجمع وكيل المبيعات الذكي بيانات لهذه المحادثة بعد.</p>
+        {manualQuote}
       </div>
     );
   }
@@ -74,7 +101,8 @@ export const SalesBriefPanel: React.FC<Props> = ({ conversationId }) => {
         </div>
       )}
 
-      {!!rows.length && <SalesQuoteDraftBuilder conversationId={conversationId} brief={brief} rows={rows} />}
+      {manualQuote}
+      {!!rows.length && hasPermission('quotes_create') && <SalesQuoteDraftBuilder key={conversationId} conversationId={conversationId} brief={brief} rows={rows} />}
     </div>
   );
 };

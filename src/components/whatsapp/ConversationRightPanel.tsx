@@ -177,7 +177,9 @@ export const ConversationRightPanel: React.FC<Props> = ({ conversationId, conver
         </TabsList>
 
         <TabsContent value="brief" className="flex-1 overflow-y-auto mt-0">
-          <SalesBriefPanel conversationId={conversationId} />
+          <SalesBriefPanel conversationId={conversationId}
+            customerId={conversation.customer_id}
+            customerName={conversation.customer?.name || conversation.customer_name || conversation.phone_number || ''} />
         </TabsContent>
 
         <TabsContent value="sop" className="flex-1 overflow-y-auto mt-0">

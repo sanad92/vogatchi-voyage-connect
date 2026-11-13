@@ -58,6 +58,9 @@ export default function QuoteDetails() {
   if (!data) return <div className="p-6 text-center text-muted-foreground">عرض السعر غير موجود</div>;
 
   const { quote, items } = data;
+  const quoteSource = items.find(item => typeof item.details?.source_whatsapp_conversation_id === 'string')
+    ?.details?.source_whatsapp_conversation_id;
+  const sourceConversationId = typeof quoteSource === 'string' ? quoteSource : undefined;
   const quoteCurrency = quote.currency || '—';
   const canEdit = hasPermission('quotes_edit');
   const approved = !!(quote as any).review_approved_at;
@@ -112,7 +115,8 @@ export default function QuoteDetails() {
         <div className="flex flex-wrap gap-2 print:hidden">
           {canEdit && items.length > 0 && items.every(item => item.details?.itinerary_builder === true) && <Button variant="outline" size="sm" onClick={() => navigate('/quotes/itinerary-builder?revise=' + encodeURIComponent(quote.id))}><Pencil className="h-4 w-4 ml-1" />نسخة قابلة للتعديل</Button>}
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 ml-1" />طباعة نسخة العميل</Button>
-          {quote.status !== 'draft' && <QuoteWhatsAppFollowupButton quote={quote as any} />}
+          {hasPermission('whatsapp_view') && (quote.status !== 'draft' || sourceConversationId) &&
+            <QuoteWhatsAppFollowupButton quote={quote} sourceConversationId={sourceConversationId} />}
           {quote.status === 'draft' && canEdit && !approved && <QuoteReviewDialog quote={quote} items={items} />}
           {quote.status === 'draft' && canEdit && approved && (
             <Button variant="outline" size="sm" onClick={() => updateQuoteStatus.mutate({ id: quote.id, status: 'sent' })}>

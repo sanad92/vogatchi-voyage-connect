@@ -15,7 +15,7 @@ import type { SalesBriefRow } from '@/hooks/useSalesBrief';
 
 type Room = 'single' | 'double' | 'triple';
 const ROOM_LABEL: Record<Room, string> = { single: 'سنجل', double: 'دبل', triple: 'تربل' };
-const MAX_OPTIONS = 3;
+const MAX_OPTIONS = 1;
 
 interface Pick { room: Room; qty: number }
 interface Props { conversationId: string; brief: SalesBriefRow; rows: PriceCatalogRow[] }
@@ -31,6 +31,7 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [picks, setPicks] = useState<Record<string, Pick>>({});
+  const submitting = useRef(false);
   const [saving, setSaving] = useState(false);
   const requestId = useRef<string>(crypto.randomUUID());
 
@@ -61,7 +62,7 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
 
   const candidates = rows.filter((r) => r.price_single || r.price_double || r.price_triple).slice(0, 8);
   const selected = Object.keys(picks);
-  const mismatched = candidates.some((r) => picks[r.id] && ctx?.currency && r.currency.toUpperCase() !== ctx.currency);
+  const mismatched = candidates.some(r => picks[r.id] && r.currency.toUpperCase() !== ctx?.currency);
 
   const toggle = (r: PriceCatalogRow) => setPicks((p) => {
     if (p[r.id]) { const { [r.id]: _, ...rest } = p; return rest; }
@@ -70,7 +71,7 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
   });
 
   const create = async () => {
-    if (!orgId || !selected.length || saving) return;
+    if (!orgId || !selected.length || submitting.current || mismatched) return;
     if (!ctx?.customerName) { toast.error('لا يمكن تحديد اسم العميل لهذه المحادثة'); return; }
     const items = candidates.filter((r) => picks[r.id]).map((r, i) => {
       const { room, qty } = picks[r.id];
@@ -83,19 +84,19 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
         cost_price: 0,
         selling_price: Math.round(price * nights * 100) / 100,
         details: {
-          source: 'ai_price_catalog', catalog_id: r.id, room_type: room, nights,
+          source: 'ai_price_catalog', source_whatsapp_conversation_id: conversationId, catalog_id: r.id, room_type: room, nights,
           unit: perPerson ? 'per_person' : 'per_room', catalog_currency: r.currency, needs_cost_review: true,
         },
       };
     });
     const notes = [
       'مسودة من وكيل المبيعات الذكي — بانتظار مراجعة الموظف وتأكيد التوافر وإضافة التكلفة قبل الإرسال.',
-      selected.length > 1 ? 'البنود خيارات بديلة للعميل وليست حزمة واحدة.' : null,
       brief.children ? `أطفال: ${brief.children}${brief.children_ages ? ` (أعمار: ${brief.children_ages})` : ''}` : null,
       brief.budget_range ? `الميزانية: ${brief.budget_range}` : null,
       brief.notes,
     ].filter(Boolean).join('\n');
 
+    submitting.current = true;
     setSaving(true);
     try {
       const { data, error } = await callUntypedRpc<{ id: string }>('create_quote_atomic', {
@@ -122,6 +123,7 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
     } catch (e: any) {
       toast.error('تعذّر إنشاء المسودة: ' + e.message);
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   };
@@ -134,7 +136,7 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
         <h5 className="text-xs font-semibold flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> مسودة عرض سعر</h5>
         <span className="text-[10px] text-muted-foreground">{nights} ليلة • {travelers} مسافر</span>
       </div>
-      <p className="text-[11px] text-muted-foreground">اختر حتى {MAX_OPTIONS} خيارات. المسودة لا تُرسل للعميل، وتفتح في العروض للمراجعة.</p>
+      <p className="text-[11px] text-muted-foreground">اختر سعرًا واحدًا للمسودة ثم راجعه قبل الإرسال.</p>
 
       {candidates.map((r) => {
         const pick = picks[r.id];
@@ -167,9 +169,9 @@ export const SalesQuoteDraftBuilder: React.FC<Props> = ({ conversationId, brief,
       })}
 
       {mismatched && (
-        <p className="text-[11px] text-warning">عملة بعض الأسعار تختلف عن عملة الشركة ({ctx?.currency}) — راجع المبالغ في العرض.</p>
+        <p className="text-[11px] text-warning">اختر سعرًا بعملة الشركة قبل إنشاء المسودة ({ctx?.currency || "العملة غير مضبوطة"}).</p>
       )}
-      <Button size="sm" className="w-full" disabled={!selected.length || saving} onClick={create}>
+      <Button size="sm" className="w-full" disabled={!selected.length || saving || mismatched} onClick={create}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : `إنشاء مسودة عرض (${selected.length})`}
       </Button>
     </div>

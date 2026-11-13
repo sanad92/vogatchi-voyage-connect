@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -22,116 +23,112 @@ const STEPS = [
   { id: 'booking', title: 'أول حجز', titleShort: 'حجز', icon: CalendarPlus },
 ];
 
-const OnboardingWizard = () => {
+const OrganizationOnboarding = ({ orgId }: { orgId: string }) => {
   const navigate = useNavigate();
-  const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const submitting = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const { user } = useOptimizedAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
   // Step 1: Company info
-  const [company, setCompany] = useState({ website: '', tax_number: '', logo_url: '' });
+  const [company, setCompany] = useState({ website: '', tax_number: '' });
   // Step 2: Employee
   const [employee, setEmployee] = useState({ full_name: '', phone: '', email: '', position: '' });
   // Step 3: Customer
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', nationality: '' });
-  // Step 4: Booking
-  const [booking, setBooking] = useState({
-    customer_name: '', hotel_name: '', destination_city: '',
-    check_in_date: '', check_out_date: '',
-  });
+  const [employeeCode] = useState(() => `EMP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
+  const [customerId] = useState(() => crypto.randomUUID());
 
-  const finishOnboarding = async () => {
-    if (!orgId) return;
-    try {
-      await supabase
-        .from('organizations')
-        .update({ onboarding_completed: true })
-        .eq('id', orgId);
-      toast.success('🎉 مرحباً بك! تم إعداد النظام بنجاح');
-      window.location.href = '/dashboard';
-    } catch {
-      toast.error('حدث خطأ');
-    }
-  };
-
-  const handleSkipAll = async () => {
-    await finishOnboarding();
-  };
-
-  const handleNext = async () => {
+  const runStep = async (operation: () => Promise<void>) => {
+    if (submitting.current || !orgId || !user) return;
+    submitting.current = true;
     setLoading(true);
     try {
-      if (currentStep === 0) {
-        // Update org info
-        if (company.website || company.tax_number) {
-          await supabase
-            .from('organizations')
-            .update({
-              website: company.website || null,
-              tax_number: company.tax_number || null,
-              logo_url: company.logo_url || null,
-            })
-            .eq('id', orgId);
-        }
-      } else if (currentStep === 1) {
-        // Add employee
-        if (employee.full_name.trim()) {
-          const code = 'EMP-' + Date.now().toString().slice(-6);
-          await supabase.from('employees').insert({
-            full_name: employee.full_name.trim(),
-            phone: employee.phone || null,
-            email: employee.email || null,
-            position: employee.position || null,
-            employee_code: code,
-            organization_id: orgId,
-          });
-        }
-      } else if (currentStep === 2) {
-        // Add customer
-        if (customer.name.trim()) {
-          await supabase.from('customers').insert({
-            name: customer.name.trim(),
-            phone: customer.phone || null,
-            email: customer.email || null,
-            nationality: customer.nationality || null,
-            organization_id: orgId,
-          });
-        }
-      } else if (currentStep === 3) {
-        // Add booking
-        if (booking.customer_name.trim() && booking.check_in_date && booking.check_out_date) {
-          await supabase.from('hotel_bookings').insert({
-            customer_name: booking.customer_name.trim(),
-            hotel_name: booking.hotel_name || null,
-            destination_city: booking.destination_city || null,
-            check_in_date: booking.check_in_date,
-            check_out_date: booking.check_out_date,
-            organization_id: orgId,
-          });
-        }
-        await finishOnboarding();
-        return;
-      }
-
-      setCurrentStep(prev => prev + 1);
-    } catch (error: any) {
-      console.error('Onboarding step error:', error);
-      // Don't block progression on non-critical errors
-      if (currentStep < 3) {
-        setCurrentStep(prev => prev + 1);
+      await operation();
+    } catch (error) {
+      if (mounted.current) {
+        const detail = error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : undefined;
+        toast.error('تعذر حفظ خطوة الإعداد', { description: detail });
       }
     } finally {
-      setLoading(false);
+      submitting.current = false;
+      if (mounted.current) setLoading(false);
     }
+  };
+
+  const finishOnboarding = (destination: '/dashboard' | '/bookings/new') => runStep(async () => {
+    const { data, error } = await supabase.from('organizations')
+      .update({ onboarding_completed: true }).eq('id', orgId).select('id').single();
+    if (error) throw error;
+    if (!data) throw new Error('تعذر تأكيد اكتمال إعداد المؤسسة.');
+    queryClient.setQueryData(['onboarding-status', orgId], false);
+    if (mounted.current) {
+      toast.success('تم إعداد المؤسسة بنجاح');
+      navigate(destination, { replace: true });
+    }
+  });
+
+  const handleNext = () => {
+    if (currentStep === 3) return finishOnboarding('/bookings/new');
+    return runStep(async () => {
+      if (currentStep === 0) {
+        const website = company.website.trim();
+        const taxNumber = company.tax_number.trim();
+        if (website || taxNumber) {
+          const { error } = await supabase.from('organization_settings').upsert({
+            organization_id: orgId,
+            ...(website && { website }),
+            ...(taxNumber && { tax_number: taxNumber }),
+          }, { onConflict: 'organization_id' });
+          if (error) throw error;
+          if (taxNumber) {
+            const { error: taxError } = await supabase.from('organizations')
+              .update({ tax_number: taxNumber }).eq('id', orgId).select('id').single();
+            if (taxError) throw taxError;
+          }
+          void queryClient.invalidateQueries({ queryKey: ['organization-settings', orgId] });
+        }
+      } else if (currentStep === 1) {
+        if (!employee.full_name.trim()) throw new Error('أدخل اسم الموظف أو تخطَّ الخطوة.');
+        const { error } = await supabase.from('employees').upsert({
+          full_name: employee.full_name.trim(),
+          phone: employee.phone.trim() || null,
+          email: employee.email.trim() || null,
+          position: employee.position.trim() || null,
+          employee_code: employeeCode,
+          organization_id: orgId,
+        }, { onConflict: 'employee_code', ignoreDuplicates: true });
+        if (error) throw error;
+        void queryClient.invalidateQueries({ queryKey: ['employees', orgId] });
+      } else {
+        if (!customer.name.trim()) throw new Error('أدخل اسم العميل أو تخطَّ الخطوة.');
+        const { error } = await supabase.from('customers').upsert({
+          id: customerId,
+          name: customer.name.trim(),
+          phone: customer.phone.trim() || null,
+          email: customer.email.trim() || null,
+          nationality: customer.nationality.trim() || null,
+          organization_id: orgId,
+          created_by: user!.id,
+        }, { onConflict: 'id', ignoreDuplicates: true });
+        if (error) throw error;
+        void queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      }
+      if (mounted.current) setCurrentStep(step => step + 1);
+    });
   };
 
   const handleSkipStep = () => {
-    if (currentStep === 3) {
-      finishOnboarding();
-    } else {
-      setCurrentStep(prev => prev + 1);
-    }
+    if (currentStep === 3) return finishOnboarding('/dashboard');
+    setCurrentStep(step => step + 1);
   };
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
@@ -192,7 +189,7 @@ const OnboardingWizard = () => {
             {currentStep === 0 && 'أضف معلومات إضافية عن شركتك'}
             {currentStep === 1 && 'سجّل أول موظف في النظام'}
             {currentStep === 2 && 'أضف أول عميل لشركتك'}
-            {currentStep === 3 && 'أنشئ أول حجز فندقي'}
+            {currentStep === 3 && 'انتقل إلى شاشة الحجز الموحّد لإضافة أول حجز.'}
           </p>
 
           {/* Step 1: Company */}
@@ -307,59 +304,6 @@ const OnboardingWizard = () => {
             </div>
           )}
 
-          {/* Step 4: Booking */}
-          {currentStep === 3 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>اسم العميل *</Label>
-                <Input
-                  value={booking.customer_name}
-                  onChange={e => setBooking(p => ({ ...p, customer_name: e.target.value }))}
-                  placeholder="اسم العميل"
-                  className="text-right"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>اسم الفندق</Label>
-                  <Input
-                    value={booking.hotel_name}
-                    onChange={e => setBooking(p => ({ ...p, hotel_name: e.target.value }))}
-                    placeholder="فندق..."
-                    className="text-right"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>المدينة</Label>
-                  <Input
-                    value={booking.destination_city}
-                    onChange={e => setBooking(p => ({ ...p, destination_city: e.target.value }))}
-                    placeholder="شرم الشيخ"
-                    className="text-right"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>تاريخ الدخول *</Label>
-                  <Input
-                    type="date"
-                    value={booking.check_in_date}
-                    onChange={e => setBooking(p => ({ ...p, check_in_date: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>تاريخ الخروج *</Label>
-                  <Input
-                    type="date"
-                    value={booking.check_out_date}
-                    onChange={e => setBooking(p => ({ ...p, check_out_date: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
             <div className="flex gap-2">
@@ -377,7 +321,7 @@ const OnboardingWizard = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleSkipAll}
+                  onClick={() => void finishOnboarding('/dashboard')}
                   disabled={loading}
                   className="text-muted-foreground"
                 >
@@ -401,14 +345,14 @@ const OnboardingWizard = () => {
               <Button
                 onClick={handleNext}
                 size="sm"
-                disabled={loading}
+                disabled={loading || !orgId}
                 className="bg-gradient-to-r from-primary to-blue-700 text-primary-foreground"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
                 ) : currentStep === 3 ? (
                   <>
-                    إنهاء الإعداد
+                    إنشاء أول حجز
                     <Check className="w-4 h-4 mr-1" />
                   </>
                 ) : (
@@ -426,4 +370,7 @@ const OnboardingWizard = () => {
   );
 };
 
-export default OnboardingWizard;
+export default function OnboardingWizard() {
+  const orgId = useOrgId();
+  return orgId ? <OrganizationOnboarding key={orgId} orgId={orgId} /> : null;
+}

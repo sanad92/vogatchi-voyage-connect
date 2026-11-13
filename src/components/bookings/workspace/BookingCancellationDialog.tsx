@@ -73,7 +73,7 @@ export function BookingCancellationDialog({
       setResult(data);
       toast.success('تم اعتماد تسوية إلغاء الحجز');
       const keys = ['booking-cancellation', 'unified-bookings', 'booking-financials', 'booking-workspace',
-        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices'];
+        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'supplier-payment-orders-all'];
       await Promise.all(keys.map(key => qc.invalidateQueries({ queryKey: [key] })));
       onSettled();
     },
@@ -102,7 +102,10 @@ export function BookingCancellationDialog({
                 {line.refund_id && <p>رصيد محفظة العميل {money(line.refund, line.currency)} · <Link className="underline" to="/refund-balances">فتح المحفظة</Link></p>}
               </div>
             ))}
-            <DialogFooter><Button type="button" onClick={onClose}>تم</Button></DialogFooter>
+            <DialogFooter>
+              <Button asChild variant="outline"><Link to={`/payment-orders?booking_id=${bookingId}`}>مراجعة أوامر دفع المورد</Link></Button>
+              <Button type="button" onClick={onClose}>تم</Button>
+            </DialogFooter>
           </div>
         ) : loadError ? (
           <div className="space-y-2" role="alert">
