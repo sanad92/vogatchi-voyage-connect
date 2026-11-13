@@ -2,6 +2,29 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
+const MAIL_PORTS = new Set([993, 995, 465, 587, 2525]);
+function isPrivateIp(ip: string): boolean {
+  const v = ip.toLowerCase();
+  if (v.includes(':')) return v === '::1' || v === '::' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80') || v.startsWith('::ffff:');
+  const [a, b] = v.split('.').map(Number);
+  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+}
+/** Only public mail servers on standard TLS mail ports may be contacted. */
+export async function assertSafeMailHost(host: string, port: number): Promise<void> {
+  const h = String(host || '').trim().toLowerCase();
+  if (!MAIL_PORTS.has(port)) throw new Error('MAIL_HOST_NOT_ALLOWED');
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h) || /^[0-9.]+$/.test(h)
+    || /(^|\.)(localhost|local|internal|lan|home|corp|supabase\.co|supabase\.in)$/.test(h)) {
+    throw new Error('MAIL_HOST_NOT_ALLOWED');
+  }
+  const ips: string[] = [];
+  for (const t of ['A', 'AAAA'] as const) {
+    try { ips.push(...(await Deno.resolveDns(h, t))); } catch { /* none */ }
+  }
+  if (!ips.length || ips.some(isPrivateIp)) throw new Error('MAIL_HOST_NOT_ALLOWED');
+}
+
 // ---------- credential encryption ----------
 async function cryptoKey(): Promise<CryptoKey> {
   const raw = Deno.env.get('EMAIL_CREDENTIALS_KEY');
@@ -97,6 +120,7 @@ export class Imap {
   private w!: Wire;
   private n = 0;
   static async connect(host: string, port: number): Promise<Imap> {
+    await assertSafeMailHost(host, port);
     const im = new Imap();
     const conn = await withTimeout(Deno.connectTls({ hostname: host, port }), 15000, 'IMAP connect');
     im.w = new Wire(conn);
@@ -196,6 +220,7 @@ async function expect(w: Wire, ok: number[], cmd?: string) {
 }
 
 export async function smtpSession(host: string, port: number, user: string, pass: string, mail?: OutMail) {
+  await assertSafeMailHost(host, port);
   if (port !== 465) throw new Error('SMTP_PORT_UNSUPPORTED');
   const conn = await withTimeout(Deno.connectTls({ hostname: host, port }), 15000, 'SMTP connect');
   const w = new Wire(conn);
@@ -219,6 +244,7 @@ export async function smtpSession(host: string, port: number, user: string, pass
 
 export function friendlyMailError(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
+  if (m === 'MAIL_HOST_NOT_ALLOWED') return 'عنوان خادم البريد أو المنفذ غير مسموح. استخدم خادم بريد عام بمنفذ 993 للاستقبال و465 للإرسال.';
   if (m === 'SMTP_PORT_UNSUPPORTED') return 'منفذ الإرسال لازم يكون 465 (SSL). المنفذ 587 غير مدعوم.';
   if (/AUTHENTICATIONFAILED|Invalid credentials|535|LOGIN failed|authentication failed/i.test(m)) return 'اسم المستخدم أو كلمة المرور غير صحيحة. لـ Gmail استخدم «كلمة مرور التطبيقات».';
   if (/BasicAuthBlocked|basic auth/i.test(m)) return 'Microsoft قافلة الدخول بكلمة المرور على هذا الحساب.';

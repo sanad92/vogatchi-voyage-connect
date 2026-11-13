@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -129,15 +130,15 @@ const EnhancedReportExporter = () => {
     
     if (Array.isArray(data)) {
       // بيانات عادية
-      const worksheet = XLSX.utils.json_to_sheet(data);
+      const worksheet = XLSX.utils.json_to_sheet(safeRows(data));
       XLSX.utils.book_append_sheet(workbook, worksheet, config.dataType);
     } else if (config.dataType === 'financial') {
       // تقرير مالي متعدد الأوراق
-      const summarySheet = XLSX.utils.json_to_sheet([data.summary]);
+      const summarySheet = XLSX.utils.json_to_sheet(safeRows([data.summary]));
       XLSX.utils.book_append_sheet(workbook, summarySheet, 'الملخص');
       
       if (data.bookings?.length) {
-        const bookingsSheet = XLSX.utils.json_to_sheet(data.bookings);
+        const bookingsSheet = XLSX.utils.json_to_sheet(safeRows(data.bookings));
         XLSX.utils.book_append_sheet(workbook, bookingsSheet, 'الحجوزات');
       }
     }
@@ -192,7 +193,7 @@ const EnhancedReportExporter = () => {
     const headers = Object.keys(data[0] || {});
     const csvContent = [
       headers.join(','),
-      ...data.map(row => headers.map(header => row[header] || '').join(','))
+      ...data.map(row => headers.map(header => csvCell(row[header] || '')).join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

@@ -55,7 +55,8 @@ try {
     );
     alter table public.bank_transfer_requests enable row level security;
     grant select,insert,update on public.bank_transfer_requests to authenticated;
-    create policy platform_admin_update_transfers on public.bank_transfer_requests for update to authenticated using (true);
+    create policy platform_admin_update_transfers on public.bank_transfer_requests for update to authenticated
+      using (public.is_platform_admin(auth.uid()));
     create policy fixture_transfer_read on public.bank_transfer_requests for select to authenticated using (true);
     create policy fixture_transfer_insert on public.bank_transfer_requests for insert to authenticated with check (true);
     create table public.payment_checkout_sessions (
@@ -82,6 +83,12 @@ try {
       values ('${tx}','${org}',30000,'EGP','success',true,'${session}','PT1','PO1',now());
   `);
   await sql(readFileSync('supabase/migrations/20261113114237_platform_finance.sql','utf8'));
+  await runAs(admin);
+  await sql(`begin;
+    update public.bank_transfer_requests set status='approved',reviewed_by='${admin}',reviewed_at=now() where id='${transfer}';`);
+  assert.equal((await query(`select status from public.bank_transfer_requests where id='${transfer}'`))[0].status,'approved');
+  await sql('rollback; reset role');
+  await sql(readFileSync('supabase/migrations/20261113132655_platform_finance_transfer_cutover.sql','utf8'));
   await runAs('', 'anon');
   await assert.rejects(query(role), {code:'42501'});
   await runAs(member);

@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
     });
 
     if (error || !organizationId) {
-      return new Response(JSON.stringify({ error: "Could not create organization" }), {
+      const msg = error?.message?.includes("نطاق البريد") ? error.message : "Could not create organization";
+      return new Response(JSON.stringify({ error: msg }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

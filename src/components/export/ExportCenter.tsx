@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -49,7 +50,7 @@ const ExportCenter = () => {
     try {
       const data = await fetchData(selectedReport);
       if (!data.length) { toast.error('لا توجد بيانات للتصدير'); return; }
-      const ws = XLSX.utils.json_to_sheet(data);
+      const ws = XLSX.utils.json_to_sheet(safeRows(data));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, reportConfigs[selectedReport].label);
       XLSX.writeFile(wb, `${reportConfigs[selectedReport].label}_${new Date().toISOString().slice(0, 10)}.xlsx`);

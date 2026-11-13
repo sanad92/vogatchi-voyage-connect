@@ -113,6 +113,27 @@
       "when": 1794570405746,
       "tag": "0015_block_free_email_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794572723948,
+      "tag": "0016_tenant_authorization_and_business_email_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794574573606,
+      "tag": "0017_harden_tenant_accounting_helpers",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794576243933,
+      "tag": "0018_org_domain_unique_and_demo_seed",
+      "breakpoints": true
     }
   ]
 }

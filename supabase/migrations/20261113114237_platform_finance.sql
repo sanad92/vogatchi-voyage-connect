@@ -396,14 +396,6 @@ CREATE FUNCTION public.approve_platform_bank_transfer(p_transfer_id uuid)
 RETURNS uuid LANGUAGE sql SECURITY INVOKER SET search_path = ''
 AS $$ SELECT platform_finance_private.approve_transfer(p_transfer_id) $$;
 
--- Keep the existing rejection path and require the atomic function for approval.
-DROP POLICY platform_admin_update_transfers ON public.bank_transfer_requests;
-CREATE POLICY platform_admin_update_transfers ON public.bank_transfer_requests
-  FOR UPDATE TO authenticated
-  USING (public.is_platform_admin(auth.uid()) AND status = 'pending')
-  WITH CHECK (public.is_platform_admin(auth.uid()) AND status = 'rejected'
-    AND reviewed_by = auth.uid() AND reviewed_at IS NOT NULL);
-
 CREATE POLICY platform_transfer_requests_start_pending ON public.bank_transfer_requests
   AS RESTRICTIVE FOR INSERT TO authenticated
   WITH CHECK (status = 'pending' AND reviewed_by IS NULL AND reviewed_at IS NULL);

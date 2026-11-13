@@ -72,7 +72,7 @@ export function useDocuments() {
       // Get signed URL (valid 7 days)
       const { data: urlData } = await supabase.storage
         .from('documents')
-        .createSignedUrl(filePath, 7 * 24 * 3600);
+        .createSignedUrl(filePath, 3600);
 
       // Save record
       const { data: doc, error: docErr } = await supabase

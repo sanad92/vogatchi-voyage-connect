@@ -149,6 +149,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
 
     // Allow service role key (for internal calls from process-email-queue)
+    let callerUserId: string | null = null;
     if (token !== SUPABASE_SERVICE_ROLE_KEY) {
       const authClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -160,6 +161,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      callerUserId = user.id;
     }
 
     const { email_id } = await req.json();
@@ -183,6 +185,36 @@ serve(async (req) => {
 
     if (fetchError || !email) {
       throw new Error(`Email not found: ${fetchError?.message}`);
+    }
+
+    if (callerUserId) {
+      const forbidden = () => new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+      if (email.status !== "pending") return forbidden();
+      const { data: mem } = await supabase.from("organization_members").select("id")
+        .eq("organization_id", email.organization_id).eq("user_id", callerUserId).eq("is_active", true).maybeSingle();
+      if (!mem) return forbidden();
+      // Recipient must be a customer, an active member, or the organization itself.
+      const rcpt = String(email.recipient_email || "").trim().toLowerCase();
+      const safe = rcpt.replace(/[%_\\]/g, "");
+      const { data: cust } = await supabase.from("customers").select("id")
+        .eq("organization_id", email.organization_id).ilike("email", safe).limit(1);
+      let ok = !!cust?.length;
+      if (!ok) {
+        const { data: org } = await supabase.from("organizations").select("email").eq("id", email.organization_id).maybeSingle();
+        ok = String(org?.email || "").toLowerCase() === rcpt;
+      }
+      if (!ok) {
+        const { data: members } = await supabase.from("organization_members").select("user_id")
+          .eq("organization_id", email.organization_id).eq("is_active", true);
+        const ids = (members ?? []).map((m: any) => m.user_id);
+        if (ids.length) {
+          const { data: prof } = await supabase.from("profiles").select("id").in("id", ids).ilike("email", safe).limit(1);
+          ok = !!prof?.length;
+        }
+      }
+      if (!ok) return forbidden();
     }
 
     // Mark as processing

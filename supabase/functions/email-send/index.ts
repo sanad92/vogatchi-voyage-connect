@@ -39,6 +39,28 @@ Deno.serve(async (req) => {
     const { data: mem } = await admin.from('organization_members').select('id').eq('organization_id', acc.organization_id).eq('user_id', user.id).eq('is_active', true).maybeSingle();
     if (!mem) return json({ error: 'Forbidden' }, 403);
 
+    if (thread && thread.organization_id !== acc.organization_id) return json({ error: 'Forbidden' }, 403);
+    // Recipients are bound to the thread contact or to existing customers of this organization.
+    {
+      const wanted = [...b.to, ...(b.cc ?? [])].map((e) => e.trim().toLowerCase());
+      const allowed = new Set<string>();
+      if (thread?.contact_email) allowed.add(String(thread.contact_email).toLowerCase());
+      const unknown = wanted.filter((e) => !allowed.has(e));
+      if (unknown.length) {
+        const { data: custs } = await admin.from('customers').select('email')
+          .eq('organization_id', acc.organization_id).in('email', unknown);
+        for (const c of custs ?? []) if (c.email) allowed.add(String(c.email).toLowerCase());
+        // case-insensitive fallback
+        for (const e of unknown.filter((x) => !allowed.has(x))) {
+          const { data: c } = await admin.from('customers').select('id').eq('organization_id', acc.organization_id).ilike('email', e.replace(/[%_\\]/g, '')).limit(1);
+          if (c?.length) allowed.add(e);
+        }
+      }
+      if (wanted.some((e) => !allowed.has(e))) {
+        return json({ error: 'يمكن الإرسال فقط لعملاء الشركة أو لجهة المحادثة | Recipients must be organization customers or the thread contact' }, 403);
+      }
+    }
+
     let inReplyTo: string | null = null; let references: string | null = null;
     if (thread) {
       const { data: last } = await admin.from('email_messages').select('message_id, references_header').eq('thread_id', thread.id).order('sent_at', { ascending: false }).limit(1);
