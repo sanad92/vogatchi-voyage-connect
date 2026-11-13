@@ -42,6 +42,18 @@ try {
   await db.exec(migration('20261113234151_settle_booking_with_supplier_cancellation'));
   await db.exec(read('scripts/test-booking-cancellation-with-supplier.sql'));
   console.log('Combined booking and supplier cancellation scenarios passed');
+  await db.exec(`CREATE FUNCTION public.user_belongs_to_org(_user uuid, _org uuid)
+    RETURNS boolean LANGUAGE sql STABLE AS $$
+      SELECT EXISTS (SELECT FROM public.organization_members WHERE organization_id = _org AND user_id = _user AND is_active)
+    $$`);
+  const reports = migration('20260822141000_currency_safe_financial_reports');
+  await db.exec(reports.slice(reports.indexOf('CREATE OR REPLACE FUNCTION public.get_supplier_ledger('),
+    reports.indexOf('CREATE OR REPLACE FUNCTION public.get_financial_launch_health(')));
+  const routes = read('scripts/test-refund-balances.sql').split('CREATE FUNCTION public.get_org_account_route')[1].split('CREATE FUNCTION public._require_route_code')[0];
+  await db.exec('CREATE OR REPLACE FUNCTION public.get_org_account_route' + routes.replace("WHEN 'cash' THEN", "WHEN 'cost_hotel' THEN '5000' WHEN 'cash' THEN"));
+  await db.exec(migration('20261113234804_full_booking_supplier_cancellation'));
+  await db.exec(read('scripts/test-automatic-booking-supplier-cancellation.sql'));
+  console.log('Automatic supplier cancellation PostgreSQL scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;
