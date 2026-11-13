@@ -6,6 +6,9 @@ on:
       - 'src/components/pilgrimage/**'
       - 'src/lib/pilgrimage/**'
       - 'src/pages/Invoices.tsx'
+      - 'src/pages/PaymentOrders.tsx'
+      - 'src/pages/SupplierLedger.tsx'
+      - 'src/pages/finance/FinanceApprovals.tsx'
       - 'src/pages/CustomerLedger.tsx'
       - 'src/components/invoices/InvoiceDetailsDialog.tsx'
       - 'src/hooks/invoices/useInvoicesData.tsx'
@@ -18,6 +21,9 @@ on:
       - 'src/components/pilgrimage/**'
       - 'src/lib/pilgrimage/**'
       - 'src/pages/Invoices.tsx'
+      - 'src/pages/PaymentOrders.tsx'
+      - 'src/pages/SupplierLedger.tsx'
+      - 'src/pages/finance/FinanceApprovals.tsx'
       - 'src/pages/CustomerLedger.tsx'
       - 'src/components/invoices/InvoiceDetailsDialog.tsx'
       - 'src/hooks/invoices/useInvoicesData.tsx'
@@ -215,3 +221,26 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: bash scripts/test-pilgrimage-b2b-receivables.sh
+
+  pilgrimage-b2b-settlement:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test supplier settlement, agency cancellation, refund and reversal
+        env:
+          PGPASSWORD: postgres
+        run: bash scripts/test-pilgrimage-b2b-receivables.sh settlement

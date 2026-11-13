@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,14 +34,18 @@ export default function FinanceApprovals() {
               <TableBody>
                 {pos.map((p: any) => (
                   <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{p.po_number || p.id.slice(0,8)}</TableCell>
+                    <TableCell className="font-mono text-xs">{p.reference_number || p.po_number || p.id.slice(0,8)}</TableCell>
                     <TableCell>{p.suppliers?.name}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.bookings?.booking_number}</TableCell>
+                    <TableCell className="font-mono text-xs">{p.pilgrimage_b2b_agreement_id ? 'حج وعمرة B2B' : p.bookings?.booking_number}</TableCell>
                     <TableCell>{Number(p.amount).toLocaleString('ar-EG')} {p.currency}</TableCell>
                     <TableCell className="text-xs">{p.due_date || '—'}</TableCell>
                     <TableCell className="flex gap-1">
+                      {p.pilgrimage_b2b_agreement_id ? <Button asChild size="sm" variant="link">
+                        <Link to={`/payment-orders?ref=${encodeURIComponent(p.reference_number)}`}>مراجعة أمر الدفع</Link>
+                      </Button> : <>
                       <Button size="sm" variant="default" onClick={() => approvePO.mutate({ po_id: p.id, approve: true })}>اعتماد</Button>
                       <Button size="sm" variant="outline" onClick={() => approvePO.mutate({ po_id: p.id, approve: false })}>رفض</Button>
+                      </>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -58,7 +63,7 @@ export default function FinanceApprovals() {
               <TableBody>
                 {refunds.map((r: any) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.bookings?.booking_number}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.pilgrimage_b2b_cancellation_id ? 'حج وعمرة B2B' : r.bookings?.booking_number}</TableCell>
                     <TableCell>{r.customers?.name}</TableCell>
                     <TableCell>{Number(r.amount).toLocaleString('ar-EG')} {r.currency}</TableCell>
                     <TableCell className="text-xs">{r.reason || '—'}</TableCell>
@@ -70,7 +75,10 @@ export default function FinanceApprovals() {
                           <Button size="sm" variant="outline" onClick={() => approveRefund.mutate({ refund_id: r.id, approve: false })}>رفض</Button>
                         </>
                       )}
-                      {r.status === 'approved' && (
+                      {r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && (
+                        <Button asChild size="sm" variant="link"><Link to={`/invoices?id=${r.invoice_id}`}>فتح فاتورة المجموعة</Link></Button>
+                      )}
+                      {!r.pilgrimage_b2b_cancellation_id && r.status === 'approved' && (
                         <>
                           <Select value={payAccount[r.id]} onValueChange={(v) => setPayAccount({ ...payAccount, [r.id]: v })}>
                             <SelectTrigger className="w-40 h-8"><SelectValue placeholder="اختر خزينة" /></SelectTrigger>

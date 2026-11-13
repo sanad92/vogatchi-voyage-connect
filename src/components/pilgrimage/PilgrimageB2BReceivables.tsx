@@ -22,6 +22,7 @@ type Installment = { sequence_no: number; due_date: string; amount: number };
 type Receipt = { id: string; date: string; amount: number; reference: string; method: string };
 
 const errors: Record<string, string> = {
+  pilgrimage_b2b_cancellation_in_progress: 'التحصيل متوقف أثناء مراجعة الإلغاء.',
   pilgrimage_b2b_invoice_not_authorized: 'صلاحياتك الحالية لا تسمح بإصدار فاتورة الاتفاق.',
   pilgrimage_b2b_collection_not_authorized: 'صلاحياتك الحالية لا تسمح بتسجيل تحصيل على الفاتورة.',
   pilgrimage_b2b_invoice_tax_already_set: 'صدرت الفاتورة بالفعل بنسبة ضريبة مختلفة.',
@@ -59,6 +60,9 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
       const { data, error } = await callUntypedRpc<{
         agreement_id: string;
         customer_id: string;
+        sale_id?: string;
+        cancelled?: boolean;
+        cancellation_pending?: boolean;
         total: number;
         installments: Installment[];
         receipts: Receipt[];
@@ -70,10 +74,12 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
   });
   const summary = summaryQ.data;
   const invoice = summary?.invoice;
+  const pendingCancellation = Boolean(summary?.cancellation_pending);
+  const cancelled = Boolean(summary?.cancelled);
 
   const accountsQ = useQuery({
     queryKey: ['pilgrimage-b2b-treasury', orgId, currency, method],
-    enabled: canCollect && Boolean(invoice && invoice.remaining > 0),
+    enabled: canCollect && !pendingCancellation && !cancelled && Boolean(invoice && invoice.remaining > 0),
     queryFn: async () => {
       const { data, error } = await supabase.from('bank_accounts')
         .select('id,account_name')
@@ -144,10 +150,12 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
   return (
     <section className="space-y-3 border-t pt-3" aria-label="حساب شركة السياحة">
       <h3 className="font-semibold">فاتورة الشركة والتحصيلات</h3>
-      {!invoice && <p className="text-sm text-muted-foreground">
+      {pendingCancellation && <p className="text-sm text-muted-foreground">الإصدار والتحصيل متوقفان أثناء مراجعة الإلغاء.</p>}
+      {cancelled && <p className="text-sm">أُلغي الاتفاق وأُقفل الرصيد المستحق.</p>}
+      {!invoice && !cancelled && <p className="text-sm text-muted-foreground">
         الاتفاق معتمد وقيمته {money(summary.total, currency)}. بانتظار إصدار الفاتورة.
       </p>}
-      {!invoice && canIssue && (
+      {!invoice && canIssue && !pendingCancellation && !cancelled && (
         <div className="flex flex-wrap items-end gap-2">
           <div>
             <Label htmlFor="pilgrimage-b2b-vat">نسبة الضريبة ضمن الإجمالي (%)</Label>
@@ -181,6 +189,9 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
             <span className="break-all">{invoice.number}</span>
             <span>المحصّل {money(invoice.paid, currency)}</span>
             <span>المتبقي {money(invoice.remaining, currency)}</span>
+            {invoiceId && summary.sale_id && <Button asChild variant="link" size="sm">
+              <Link to={`/pilgrimage?sale=${summary.sale_id}`}>فتح اتفاق المجموعة</Link>
+            </Button>}
             {!invoiceId && <Button asChild variant="link" size="sm">
               <Link to={`/invoices?id=${invoice.id}`}>فتح الفاتورة</Link>
             </Button>}
@@ -188,13 +199,13 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
               <Link to={`/customer-ledger?id=${summary.customer_id}`}>كشف حساب الشركة</Link>
             </Button>
           </div>
-          <ul className="space-y-1 text-sm">
+          {!cancelled && <ul className="space-y-1 text-sm">
             {installments.map((row) => <li key={row.sequence_no}>
               قسط {row.sequence_no} · {row.due_date} · {money(row.amount, currency)}
               {' · '}المتبقي {money(row.remaining, currency)}
               {row.remaining > 0 && row.due_date < today && <span className="text-destructive"> · متأخر</span>}
             </li>)}
-          </ul>
+          </ul>}
           {summary.receipts.length > 0 && (
             <div className="space-y-1 text-sm">
               <h4 className="font-medium">التحصيلات المسجلة</h4>
@@ -206,7 +217,7 @@ export default function PilgrimageB2BReceivables({ orgId, saleId, currency, invo
               </ul>
             </div>
           )}
-          {canCollect && invoice.remaining > 0 && (
+          {canCollect && !pendingCancellation && !cancelled && invoice.remaining > 0 && (
             <form className="grid gap-2 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); collect.mutate(); }}>
               <div>
                 <Label htmlFor="pilgrimage-b2b-amount">المبلغ المستلم</Label>

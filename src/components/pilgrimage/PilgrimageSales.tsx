@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { money, printDocument, table, exportExcel, ROOM } from './pilgrimage-documents';
 import PilgrimageB2BContract from './PilgrimageB2BContract';
 import PilgrimageB2BReceivables from './PilgrimageB2BReceivables';
+import PilgrimageB2BSettlement from './PilgrimageB2BSettlement';
 import {
   FULFILLMENT, SALE_MODELS, SALE_STATES, SALE_ITEMS,
   quoteMetrics, quoteReadiness, validateSaleDraft,
@@ -37,7 +38,7 @@ const fresh = (type:'hajj'|'umrah', program?:any):SaleDraft => ({
   upstream_supplier_id:null, party_size:1, currency:program?.currency||'EGP',
   departure_date:program?.departure_date||null,return_date:program?.return_date||null,notes:null,
 });
-type Props={onBack:()=>void;initialType:'hajj'|'umrah';initialProgram?:any|null};
+type Props={onBack:()=>void;initialType:'hajj'|'umrah';initialProgram?:any|null;initialSaleId?:string|null};
 function useRows(key:string,orgId:string|null,subject:string|null,fn:()=>any,enabled=true) {
   return useQuery<any[]>({
     queryKey:[key,orgId,subject],enabled:!!orgId&&enabled,
@@ -49,14 +50,14 @@ function useRows(key:string,orgId:string|null,subject:string|null,fn:()=>any,ena
   });
 }
 
-export default function PilgrimageSales({onBack,initialType,initialProgram}:Props) {
+export default function PilgrimageSales({onBack,initialType,initialProgram,initialSaleId}:Props) {
   const orgId=useOrgId();
   const {orgRole,currentOrganization}=useOrganization();
   const canManage=['owner','admin','manager'].includes(orgRole||'');
   const {toast}=useToast();
   const qc=useQueryClient();
   const [type,setType]=useState<'hajj'|'umrah'>(initialType);
-  const [saleId,setSaleId]=useState<string|null>(null);
+  const [saleId,setSaleId]=useState<string|null>(initialSaleId ?? null);
   const [createOpen,setCreateOpen]=useState(false);
   const [agencyOpen,setAgencyOpen]=useState(false);
   const [confirmConversionOpen,setConfirmConversionOpen]=useState(false);
@@ -460,6 +461,9 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
       {selected.sale_model === 'b2b_group' && selected.status === 'quoted' && orgId && (
         <PilgrimageB2BReceivables key={selected.id} orgId={orgId}
           saleId={selected.id} currency={selected.currency} />
+      )}
+      {selected.sale_model === 'b2b_group' && orgId && (
+        <PilgrimageB2BSettlement key={selected.id} orgId={orgId} saleId={selected.id} currency={selected.currency} />
       )}
       {selected.sale_model==='fit'&&<Card className="p-4 text-sm text-muted-foreground">
         عرض FIT مستقل عن سعة البرامج الجماعية. التأكيد الفعلي لكل خدمة يتم عبر المورد المختص

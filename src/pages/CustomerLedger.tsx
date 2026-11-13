@@ -39,19 +39,27 @@ export default function CustomerLedger() {
     enabled: !!orgId && !!customerId,
     queryFn: async () => {
       const sb: any = supabase;
-      const [customer, invoices, bookings, receipts] = await Promise.all([
+      const [customer, invoices, bookings, receipts, credits, refunds] = await Promise.all([
         sb.from('customers').select('*').eq('organization_id', orgId).eq('id', customerId).maybeSingle(),
-        sb.from('invoices').select('id, invoice_number, issued_date, currency, final_amount, total_paid_amount, remaining_amount, payment_status, booking_id, created_at').eq('organization_id', orgId).eq('customer_id', customerId).order('issued_date', { ascending: true }),
+        sb.from('invoices').select('*').eq('organization_id', orgId).eq('customer_id', customerId).order('issued_date', { ascending: true }),
         sb.from('bookings').select('id, booking_number, booking_type, currency, selling_price, start_date, status').eq('organization_id', orgId).eq('customer_id', customerId).order('start_date', { ascending: true }),
         sb.from('customer_payments').select('invoice_id, payment_date, reference_number, amount, client_ref')
           .eq('organization_id', orgId).eq('customer_id', customerId).eq('status', 'completed')
           .like('client_ref', 'pilgrimage-b2b:%').order('payment_date'),
+        sb.from('credit_notes').select('invoice_id,note_number,note_date,amount,currency')
+          .eq('organization_id', orgId).eq('party_type', 'customer').eq('party_id', customerId)
+          .eq('status', 'applied').like('note_number', 'CN-B2B-%'),
+        sb.from('refund_requests').select('invoice_id,paid_at,amount,currency')
+          .eq('organization_id', orgId).eq('customer_id', customerId)
+          .eq('status', 'paid').not('pilgrimage_b2b_cancellation_id', 'is', null),
       ]);
       return {
         customer: customer.data,
         invoices: invoices.data || [],
         bookings: bookings.data || [],
         receipts: receipts.data || [],
+        credits: credits.data || [],
+        refunds: refunds.data || [],
       };
     },
   });
@@ -102,6 +110,25 @@ export default function CustomerLedger() {
         });
       }
     });
+    const pilgrimageInvoiceIds = new Set(data.invoices
+      .filter((invoice: { pilgrimage_b2b_agreement_id?: string }) => invoice.pilgrimage_b2b_agreement_id)
+      .map((invoice: { id: string }) => invoice.id));
+    for (const credit of data.credits) {
+      if (!pilgrimageInvoiceIds.has(credit.invoice_id)) continue;
+      events.push({
+        date: credit.note_date, ref: credit.note_number, description: 'إشعار دائن لإلغاء فاتورة',
+        debit: 0, credit: Number(credit.amount), currency: credit.currency,
+        link: `/invoices?id=${credit.invoice_id}`,
+      });
+    }
+    for (const refund of data.refunds) {
+      if (!pilgrimageInvoiceIds.has(refund.invoice_id)) continue;
+      events.push({
+        date: refund.paid_at, ref: 'استرداد B2B', description: 'استرداد مصروف للعميل',
+        debit: Number(refund.amount), credit: 0, currency: refund.currency,
+        link: `/invoices?id=${refund.invoice_id}`,
+      });
+    }
     events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     // running balance per currency
     const balances: Record<string, number> = {};

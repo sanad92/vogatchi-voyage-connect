@@ -3,9 +3,10 @@ set -euo pipefail
 
 # Install the exact core finance definitions used by this integration in the
 # fixture, without applying unrelated historical repairs or data backfills.
-python3 - <<'PY' | psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1
+python3 - "${1:-}" <<'PY' | psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1
 from pathlib import Path
 import re
+import sys
 
 migrations = Path('supabase/migrations')
 launch, integrity, payment, periods, treasury = (
@@ -58,7 +59,55 @@ definitions.extend(
 )
 fixture = Path('scripts/test-pilgrimage-b2b-receivables.sql').read_text()
 print(fixture.replace('-- CORE_FINANCE_FUNCTIONS', '\n'.join(definitions)))
+if sys.argv[1] == 'settlement':
+    payables, approvals, refunds, reports = (
+        next(migrations.glob(pattern)).read_text()
+        for pattern in ('20260904100616_*', '20260907105813_*', '20260822144000_*', '20260822141000_*')
+    )
+    settlement_functions = [
+        (payables, 'sync_supplier_invoice_from_payment_order'),
+        (payables, 'prepare_supplier_payment_allocation'),
+        (payables, 'refresh_supplier_invoice_payment_state'),
+        (payables, 'refresh_supplier_invoice_from_allocation'),
+        (payables, 'refresh_supplier_invoices_from_payment'),
+        (integrity, 'post_supplier_invoice'),
+        (integrity, '_trg_post_supplier_invoice'),
+        (integrity, 'post_supplier_payment'),
+        (integrity, 'guard_supplier_payment_total_allocation'),
+        (integrity, 'sync_supplier_payment_allocation_journal'),
+        (integrity, 'guard_locked_financial_source'),
+        (launch, '_trg_post_supplier_payment'),
+        (approvals, 'approve_supplier_payment_order'),
+        (payment, 'record_supplier_payment'),
+        (payment, 'pay_refund_request'),
+        (refunds, 'post_customer_refund'),
+        (refunds, '_trg_post_customer_refund'),
+        (reports, 'get_customer_ledger'),
+    ]
+    settlement_triggers = [
+        (payables, 'trg_sync_supplier_invoice_from_payment_order'),
+        (payables, 'trg_prepare_supplier_payment_allocation'),
+        (payables, 'trg_refresh_supplier_invoice_from_allocation'),
+        (payables, 'trg_refresh_supplier_invoices_from_payment'),
+        (integrity, 'trg_post_supplier_invoice'),
+        (integrity, 'trg_guard_supplier_payment_total_allocation'),
+        (integrity, 'trg_sync_supplier_payment_allocation_journal'),
+        (integrity, 'trg_guard_locked_invoice_cancellation'),
+        (launch, 'trg_post_supplier_payment'),
+        (refunds, 'trg_post_customer_refund'),
+    ]
+    statements = [
+        re.search(rf'CREATE OR REPLACE FUNCTION public\.{name}\(.*?AS\s+(\$\w*\$).*?\1;', src, re.S | re.I)[0]
+        for src, name in settlement_functions
+    ]
+    statements.extend(
+        re.search(rf'CREATE TRIGGER {name}\b[^;]+;', src)[0] for src, name in settlement_triggers
+    )
+    fixture = Path('scripts/test-pilgrimage-b2b-settlement.sql').read_text()
+    print(fixture.replace('-- CORE_SETTLEMENT_FUNCTIONS', '\n'.join(statements)))
 PY
+
+if [[ "${1:-}" == settlement ]]; then exit 0; fi
 
 actor=00000000-0000-4000-8000-000000000011
 bank=00000000-0000-4000-8000-000000000601
