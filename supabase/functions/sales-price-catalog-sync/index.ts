@@ -116,7 +116,17 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await db.from('whatsapp_chatbot_settings')
       .select('price_sheet_id').eq('organization_id', organization_id).maybeSingle();
-    const spreadsheetId = sheetIdFrom(String(sheet || settings?.price_sheet_id || ''));
+    const storedId = sheetIdFrom(String(settings?.price_sheet_id || ''));
+    const requestedId = sheet ? sheetIdFrom(String(sheet)) : null;
+    if (requestedId && requestedId !== storedId) {
+      // Only company owners/admins may point the catalog at a different spreadsheet.
+      const { data: mem } = await db.from('organization_members').select('role,is_active')
+        .eq('organization_id', organization_id).eq('user_id', user.id).maybeSingle();
+      if (!mem?.is_active || !['owner', 'admin'].includes(String(mem.role))) {
+        return json({ error: 'تغيير ملف الأسعار متاح للمالك والأدمن فقط' }, 403);
+      }
+    }
+    const spreadsheetId = requestedId || storedId;
     if (!spreadsheetId) return json({ error: 'رابط ملف الأسعار غير صحيح' }, 400);
 
     const { data: run, error: runError } = await db.from('ai_price_catalog_syncs').insert({
