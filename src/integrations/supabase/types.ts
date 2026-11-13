@@ -10684,6 +10684,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           exchange_rate: number
+          follow_up_on: string | null
           id: string
           invoice_id: string | null
           organization_id: string
@@ -10709,6 +10710,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           exchange_rate?: number
+          follow_up_on?: string | null
           id?: string
           invoice_id?: string | null
           organization_id: string
@@ -10734,6 +10736,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           exchange_rate?: number
+          follow_up_on?: string | null
           id?: string
           invoice_id?: string | null
           organization_id?: string
@@ -13130,6 +13133,7 @@ export type Database = {
           created_by: string
           currency: string
           exchange_rate: number
+          follow_up_on: string | null
           id: string
           organization_id: string
           reference: string
@@ -13146,6 +13150,7 @@ export type Database = {
           created_by: string
           currency: string
           exchange_rate: number
+          follow_up_on: string | null
           id?: string
           organization_id: string
           reference: string
@@ -13162,6 +13167,7 @@ export type Database = {
           created_by?: string
           currency?: string
           exchange_rate?: number
+          follow_up_on?: string | null
           id?: string
           organization_id?: string
           reference?: string
@@ -17614,6 +17620,15 @@ export type Database = {
       set_org_pin: {
         Args: { _org_id: string; _pin: string }
         Returns: undefined
+      }
+      schedule_refund_follow_up: {
+        Args: {
+          _claim: string | null
+          _date: string | null
+          _org: string
+          _refund: string | null
+        }
+        Returns: string
       }
       settle_refund_balance: {
         Args: {

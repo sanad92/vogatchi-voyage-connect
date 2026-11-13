@@ -26,12 +26,15 @@ export interface RefundBalance {
   partyName: string | null;
   source: string | null;
   bookingId?: string | null;
+  bookingNumber?: string | null;
+  invoiceNumber?: string | null;
   amount: number;
   currency: string;
   reference: string | null;
   status: string;
   createdAt: string;
   decisionAt: string | null;
+  followUpOn: string | null;
   paidAt?: string | null;
   treasuryName?: string | null;
   pilgrimageB2B?: boolean;
@@ -44,13 +47,18 @@ export function remainingRefundBalance(row: RefundBalance) {
   return (cents - row.movements.reduce((total, item) => total + Math.round(Number(item.amount) * 100), 0)) / 100;
 }
 
+export function canSettleRefund(row: RefundBalance) {
+  return !!row.partyId && !row.pilgrimageB2B
+    && ['approved', 'confirmed'].includes(row.status) && remainingRefundBalance(row) > 0;
+}
+
 const movements = 'refund_balance_settlements(id,amount,created_at,reference,treasury_account_id,invoice_id,supplier_order_id,invoice:invoices(invoice_number),order:supplier_payment_orders(reference_number),treasury:bank_accounts(account_name))';
 
-export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string, includeHistory = false) {
+export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string, includeHistory = false, enabled = true) {
   const orgId = useOrgId();
   return useQuery({
     queryKey: ['refund-balances', orgId, kind, partyId, includeHistory],
-    enabled: !!orgId,
+    enabled: !!orgId && enabled,
     queryFn: async ({ signal }): Promise<RefundBalance[]> => {
       if (kind === 'customer') {
         const rows = await allRows<any>((from, to) => {
@@ -66,6 +74,8 @@ export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string,
         return rows.map(row => ({
           id: row.id, kind, partyId: row.customer_id, partyName: row.customers?.name,
           source: row.bookings?.booking_number ?? row.invoices?.invoice_number, bookingId: row.booking_id,
+          bookingNumber: row.bookings?.booking_number, invoiceNumber: row.invoices?.invoice_number,
+          followUpOn: row.follow_up_on ?? null,
           amount: row.amount, currency: row.currency, reference: row.reason, status: row.status,
           createdAt: row.created_at, decisionAt: row.approved_at, paidAt: row.paid_at,
           treasuryName: row.bank_accounts?.account_name, pilgrimageB2B: !!row.pilgrimage_b2b_cancellation_id,
@@ -75,7 +85,7 @@ export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string,
 
       const rows = await allRows<any>((from, to) => {
         let query = db.from('supplier_refund_claims')
-          .select(`id,amount,currency,reference,created_at,confirmed_at,rejected_at,supplier_id,suppliers(name),supplier_invoices(invoice_number),${movements}`)
+          .select(`id,amount,currency,reference,created_at,confirmed_at,rejected_at,follow_up_on,supplier_id,suppliers(name),supplier_invoices(invoice_number,bookings(booking_number)),${movements}`)
           .eq('organization_id', orgId);
         if (partyId) query = query.eq('supplier_id', partyId);
         return query.order('created_at', { ascending: false }).order('id').range(from, to).abortSignal(signal);
@@ -83,7 +93,8 @@ export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string,
       return rows.map(row => {
         const balance: RefundBalance = {
           id: row.id, kind, partyId: row.supplier_id, partyName: row.suppliers?.name,
-          source: row.supplier_invoices?.invoice_number, amount: row.amount, currency: row.currency,
+          source: row.supplier_invoices?.invoice_number, bookingNumber: row.supplier_invoices?.bookings?.booking_number,
+          followUpOn: row.follow_up_on ?? null, amount: row.amount, currency: row.currency,
           reference: row.reference, status: row.rejected_at ? 'rejected' : row.confirmed_at ? 'confirmed' : 'pending',
           createdAt: row.created_at, decisionAt: row.rejected_at ?? row.confirmed_at,
           movements: row.refund_balance_settlements ?? [],
@@ -153,5 +164,20 @@ export function useRefundBalanceActions() {
     onSuccess: refresh,
     onError: failure,
   });
-  return { settle, claim };
+  const schedule = useMutation({
+    mutationFn: async ({ id, kind, date }: { id: string; kind: RefundBalance['kind']; date: string | null }) => {
+      if (!orgId) throw new Error('اختر المؤسسة أولًا');
+      const { data, error } = await supabase.rpc('schedule_refund_follow_up', {
+        _org: orgId, _refund: kind === 'customer' ? id : null, _claim: kind === 'supplier' ? id : null, _date: date,
+      });
+      if (error) throw error;
+      if (data !== id) throw new Error('تعذر حفظ موعد المتابعة');
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['refund-balances', orgId] });
+      toast({ title: 'تم حفظ موعد المتابعة' });
+    },
+    onError: () => toast({ title: 'تعذر حفظ موعد المتابعة', variant: 'destructive' }),
+  });
+  return { settle, claim, schedule };
 }

@@ -1,216 +1,155 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Wallet } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
-import { useTreasuryAccounts } from '@/hooks/finance/useFinanceRpcs';
 import {
-  remainingRefundBalance, useRefundBalanceActions, useRefundBalances, type RefundBalance,
+  canSettleRefund, remainingRefundBalance, useRefundBalanceActions, useRefundBalances, type RefundBalance,
 } from '@/hooks/finance/useRefundBalances';
+import { compareRefundFollowUps, isOpenRefund, isRefundFollowUpOverdue } from '@/lib/refundFollowUp';
+import { RefundForm } from '@/components/finance/RefundForm';
+import { RefundFollowUpDialog } from '@/components/finance/RefundFollowUpDialog';
 import { RefundMovements, formatRefundAmount as money, refundStatusLabels } from '@/components/finance/RefundMovements';
 import PageHeader from '@/components/layout/PageHeader';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-function RefundForm({ balance, onClose }: { balance?: RefundBalance; onClose: () => void }) {
-  const orgId = useOrgId();
-  const [method, setMethod] = useState<'treasury' | 'document'>('treasury');
-  const [target, setTarget] = useState('');
-  const [amount, setAmount] = useState('');
-  const [reference, setReference] = useState('');
-  const [search, setSearch] = useState('');
-  const request = useRef<{ payload: string; id: string }>();
-  const { settle, claim } = useRefundBalanceActions();
-  const treasury = useTreasuryAccounts();
-  const sourceInvoice = !balance;
-  const supplier = balance?.kind === 'supplier';
-
-  const documents = useQuery({
-    queryKey: ['refund-settlement-documents', orgId, balance?.id, search],
-    enabled: !!orgId && (sourceInvoice ? search.trim().length >= 2 : method === 'document'),
-    queryFn: async () => {
-      if (sourceInvoice) {
-        const { data, error } = await supabase.from('supplier_invoices')
-          .select('*,suppliers(name)')
-          .eq('organization_id', orgId!).neq('status', 'cancelled').gt('amount_paid', 0)
-          .ilike('invoice_number', `%${search.trim().replace(/[%_\\]/g, '')}%`)
-          .order('invoice_date', { ascending: false }).limit(30);
-        if (error) throw error;
-        return data.filter(row => !('pilgrimage_b2b_agreement_id' in row && row.pilgrimage_b2b_agreement_id)).map(row => ({ id: row.id, label: `${row.invoice_number} · ${row.suppliers?.name ?? ''} · ${money(row.amount_paid, row.currency)}` }));
-      }
-      if (supplier) {
-        const { data, error } = await supabase.from('supplier_payment_orders')
-          .select('*')
-          .eq('organization_id', orgId!).eq('supplier_id', balance!.partyId!).eq('currency', balance!.currency)
-          .eq('approval_status', 'approved').in('status', ['approved', 'pending', 'partially_paid'])
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data.filter(row => !('pilgrimage_b2b_agreement_id' in row && row.pilgrimage_b2b_agreement_id)).map(row => ({ id: row.id, label: `${row.reference_number} · ${money(row.amount, row.currency)}` }));
-      }
-      const { data, error } = await supabase.from('invoices')
-        .select('*')
-        .eq('organization_id', orgId!).eq('customer_id', balance!.partyId!)
-        .eq('currency', balance!.currency).eq('is_demo', false)
-        .not('status', 'in', '(draft,cancelled,paid)').gt('remaining_amount', 0)
-        .order('issued_date', { ascending: false });
-      if (error) throw error;
-      return data.filter(row => (!balance?.bookingId || row.booking_id !== balance.bookingId)
-        && !('pilgrimage_b2b_agreement_id' in row && row.pilgrimage_b2b_agreement_id))
-        .map(row => ({ id: row.id, label: `${row.invoice_number} · ${money(row.remaining_amount ?? 0, balance!.currency)}` }));
-    },
-  });
-
-  const options = sourceInvoice || method === 'document' ? documents.data ?? [] : (treasury.data ?? [])
-    .filter(account => account.currency === balance.currency)
-    .map(account => ({ id: account.id as string, label: account.account_name as string }));
-  const pending = claim.isPending || settle.isPending;
-  const numericAmount = Number(amount);
-  const needsReference = sourceInvoice || supplier || method === 'document';
-  const canSubmit = !pending && options.some(option => option.id === target) && numericAmount > 0
-    && (!balance || numericAmount <= remainingRefundBalance(balance)) && (!needsReference || !!reference.trim());
-
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!canSubmit) return;
-    const payload = JSON.stringify([target, numericAmount, method, reference.trim()]);
-    if (request.current?.payload !== payload) request.current = { payload, id: crypto.randomUUID() };
-    const id = request.current.id;
-    if (!balance) {
-      claim.mutate({ id, action: 'create', invoiceId: target, amount: numericAmount, reference }, { onSuccess: onClose });
-    } else {
-      settle.mutate({
-        id, amount: numericAmount, reference, kind: balance.kind,
-        sourceId: balance.id, destination: method, targetId: target,
-      }, { onSuccess: onClose });
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={open => { if (!open && !pending) onClose(); }}>
-      <DialogContent dir="rtl">
-        <DialogHeader><DialogTitle>{sourceInvoice ? 'مطالبة استرداد من مورد' : 'تسوية رصيد الاسترداد'}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          {balance && <>
-            <p className="text-sm text-muted-foreground">الرصيد المتبقي {money(remainingRefundBalance(balance), balance.currency)}</p>
-            <div className="space-y-2">
-              <Label htmlFor="refund-method">طريقة التسوية</Label>
-              <Select value={method} onValueChange={(value: typeof method) => { setMethod(value); setTarget(''); }} disabled={pending}>
-                <SelectTrigger id="refund-method"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="treasury">{supplier ? 'إثبات استلام المبلغ' : 'إثبات صرف المبلغ'}</SelectItem>
-                  <SelectItem value="document">{supplier ? 'خصم من أمر دفع' : 'استخدام الرصيد في فاتورة'}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </>}
-          {sourceInvoice && <div className="space-y-2">
-            <Label htmlFor="refund-source-search">ابحث برقم فاتورة المورد</Label>
-            <Input id="refund-source-search" value={search} disabled={pending} onChange={e => { setSearch(e.target.value); setTarget(''); }} />
-          </div>}
-          <div className="space-y-2">
-            <Label htmlFor="refund-target">{sourceInvoice ? 'فاتورة المورد الأصلية' : method === 'treasury' ? 'الخزينة' : supplier ? 'أمر الدفع' : 'الفاتورة'}</Label>
-            <Select value={target} onValueChange={setTarget} disabled={pending || options.length === 0}>
-              <SelectTrigger id="refund-target"><SelectValue placeholder="اختر من القائمة" /></SelectTrigger>
-              <SelectContent>{options.map(option => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}</SelectContent>
-            </Select>
-            {(documents.isError || (!sourceInvoice && method === 'treasury' && treasury.isError)) && <p role="alert" className="text-sm text-destructive">تعذر تحميل الخيارات</p>}
-            {documents.isFetching && <p className="text-sm text-muted-foreground">جارٍ تحميل الخيارات</p>}
-            {options.length === 0 && (sourceInvoice || method === 'document') && documents.isSuccess && !documents.isFetching && <p className="text-sm text-muted-foreground">لا توجد مستندات مطابقة</p>}
-            {options.length === 0 && !sourceInvoice && method === 'treasury' && treasury.isSuccess && <p className="text-sm text-muted-foreground">لا توجد خزينة مطابقة للعملة</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="refund-amount">المبلغ</Label>
-            <Input id="refund-amount" type="number" min="0.01" step="0.01" max={balance ? remainingRefundBalance(balance) : undefined}
-              required disabled={pending} value={amount} onChange={e => setAmount(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="refund-reference">{sourceInvoice ? 'مرجع طلب المورد' : method === 'document' && !supplier ? 'مرجع موافقة العميل' : 'مرجع التسوية'}</Label>
-            <Input id="refund-reference" maxLength={200} required={needsReference} disabled={pending} value={reference} onChange={e => setReference(e.target.value)} />
-          </div>
-          <Button type="submit" disabled={!canSubmit}>{pending ? 'جارٍ الحفظ…' : 'تسجيل'}</Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
+type DialogState = { orgId: string } & (
+  { action: 'create' } | { action: 'settle' | 'followUp'; id: string; kind: RefundBalance['kind'] }
+);
 
 export default function RefundBalances() {
   usePageTitle('الأرصدة والاستردادات');
   const orgId = useOrgId();
   const [params, setParams] = useSearchParams();
-  const kind = params.get('kind') === 'supplier' ? 'supplier' : 'customer';
-  const party = params.get('party') || undefined;
-  const query = useRefundBalances(kind, party);
+  const selectedKind = params.get('kind');
+  const kind = selectedKind === 'customer' || selectedKind === 'supplier' ? selectedKind : 'both';
+  const party = kind === 'both' ? undefined : params.get('party') || undefined;
+  const view = params.get('view');
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const canRead = hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
+  const canManage = canRead && hasPermission('payments_process') && getPermissionScope('payments_process') === 'organization';
+  const customers = useRefundBalances('customer', kind === 'customer' ? party : undefined, true, canRead && kind !== 'supplier');
+  const suppliers = useRefundBalances('supplier', kind === 'supplier' ? party : undefined, false, canRead && kind !== 'customer');
   const { claim } = useRefundBalanceActions();
-  const { getPermissionScope } = useSupabasePermissions();
-  const [dialog, setDialog] = useState<{ orgId: string; balance?: RefundBalance }>();
-  const openOnly = params.get('view') !== 'all';
-  const toggleHistory = () => {
-    setParams(previous => {
-      const next = new URLSearchParams(previous);
-      if (openOnly) next.set('view', 'all');
-      else next.delete('view');
-      return next;
-    });
-  };
-  const balances = query.data?.filter(row => !openOnly || !['paid', 'rejected', 'settled'].includes(row.status));
-  const canManage = getPermissionScope('financial_view') === 'organization'
-    && getPermissionScope('payments_process') === 'organization';
+  const [dialog, setDialog] = useState<DialogState>();
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Africa/Cairo' }).format(new Date());
+  const allBalances = [
+    ...(kind === 'supplier' ? [] : customers.data ?? []).filter(row => !row.pilgrimageB2B),
+    ...(kind === 'customer' ? [] : suppliers.data ?? []),
+  ];
+  const balances = allBalances.filter(row => view === 'all'
+    || (view === 'overdue' ? isRefundFollowUpOverdue(row, today) : isOpenRefund(row)));
+  balances.sort(view === 'all'
+    ? (a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)
+    : compareRefundFollowUps);
+  const queries = kind === 'both' ? [customers, suppliers] : [kind === 'customer' ? customers : suppliers];
+  const isPending = queries.some(query => query.isPending);
+  const hasError = queries.some(query => query.isError);
+  const activeDialog = canManage && dialog?.orgId === orgId ? dialog : undefined;
+  const dialogBalance = activeDialog && activeDialog.action !== 'create'
+    ? allBalances.find(row => row.kind === activeDialog.kind && row.id === activeDialog.id) : undefined;
+  const closeDialog = () => setDialog(undefined);
+
+  function changeFilters(nextKind: string, nextView: string | null, nextParty?: string) {
+    const next = new URLSearchParams();
+    if (nextKind !== 'both') next.set('kind', nextKind);
+    if (nextView === 'all' || nextView === 'overdue') next.set('view', nextView);
+    if (nextParty) next.set('party', nextParty);
+    setParams(next);
+  }
 
   return (
     <div className="space-y-4 p-4" dir="rtl">
       <PageHeader icon={Wallet} title="الأرصدة والاستردادات"
-        description="تابع مستحقات العملاء وأرصدة الموردين وتاريخ تسويتها." />
-      <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={kind} onValueChange={value => setParams({ kind: value })}>
-          <TabsList><TabsTrigger value="customer">العملاء</TabsTrigger><TabsTrigger value="supplier">الموردون</TabsTrigger></TabsList>
-        </Tabs>
-        <Button variant={openOnly ? 'secondary' : 'outline'} onClick={toggleHistory}>
-          {openOnly ? 'عرض كل الحركات' : 'عرض الأرصدة المفتوحة'}
-        </Button>
-        {party && <Button variant="ghost" onClick={() => setParams({ kind })}>عرض كل الأطراف</Button>}
-        {kind === 'customer' && <Button asChild variant="outline"><Link to="/finance-approvals">اعتمادات الاسترداد</Link></Button>}
-        {kind === 'supplier' && canManage && orgId && <Button onClick={() => setDialog({ orgId })}>مطالبة استرداد جديدة</Button>}
-      </div>
-      {query.isPending && <p className="text-sm text-muted-foreground">جارٍ تحميل الأرصدة…</p>}
-      {query.isError && <div role="alert" className="flex items-center gap-2 text-destructive">
-        تعذر تحميل الأرصدة <Button variant="outline" onClick={() => void query.refetch()}>إعادة المحاولة</Button>
-      </div>}
-      {balances?.length === 0 && <p className="text-sm text-muted-foreground">لا توجد أرصدة مطابقة.</p>}
-      {balances?.map(row => (
-        <Card key={row.id}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-              {row.partyId ? <Link className="hover:underline" to={`/${kind}-ledger?id=${row.partyId}`}>{row.partyName || 'كشف الحساب'}</Link> : row.partyName}
-              <span>{refundStatusLabels[row.status] || row.status}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex flex-wrap gap-x-6 gap-y-1">
-              <span>المستند الأصلي {row.source || '—'}</span>
-              <span>المبلغ {money(row.amount, row.currency)}</span>
-              {['approved', 'confirmed'].includes(row.status) && <strong>المتبقي {money(remainingRefundBalance(row), row.currency)}</strong>}
-              {row.reference && <span>{row.reference}</span>}
-            </div>
-            <RefundMovements balance={row} />
-            {canManage && orgId && row.partyId && ['approved', 'confirmed'].includes(row.status) && remainingRefundBalance(row) > 0
-              && <Button size="sm" onClick={() => setDialog({ orgId, balance: row })}>تسوية الرصيد</Button>}
-            {canManage && kind === 'supplier' && row.status === 'pending' && <div className="flex gap-2">
-              <Button size="sm" disabled={claim.isPending} onClick={() => claim.mutate({ id: row.id, action: 'confirm' })}>تأكيد رصيد المورد</Button>
-              <Button size="sm" variant="outline" disabled={claim.isPending} onClick={() => claim.mutate({ id: row.id, action: 'reject' })}>رفض المطالبة</Button>
-            </div>}
-          </CardContent>
-        </Card>
-      ))}
-      {dialog && dialog.orgId === orgId && <RefundForm key={dialog.balance?.id ?? orgId} balance={dialog.balance} onClose={() => setDialog(undefined)} />}
+        description="تابع المبالغ المطلوب ردّها للعملاء وتحصيلها من الموردين." />
+      {canRead && <>
+        <div className="flex flex-wrap items-center gap-2">
+          <Tabs value={kind} onValueChange={value => changeFilters(value, view)}>
+            <TabsList>
+              <TabsTrigger value="both">كل الأطراف</TabsTrigger>
+              <TabsTrigger value="customer">العملاء</TabsTrigger>
+              <TabsTrigger value="supplier">الموردون</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button variant={view !== 'all' && view !== 'overdue' ? 'secondary' : 'outline'}
+            onClick={() => changeFilters(kind, null, party)}>الأرصدة المفتوحة</Button>
+          <Button variant={view === 'overdue' ? 'secondary' : 'outline'}
+            onClick={() => changeFilters(kind, 'overdue', party)}>المتابعات المتأخرة</Button>
+          <Button variant={view === 'all' ? 'secondary' : 'outline'}
+            onClick={() => changeFilters(kind, 'all', party)}>عرض كل الحركات</Button>
+          {party && <Button variant="ghost" onClick={() => changeFilters(kind, view)}>إلغاء تصفية الطرف</Button>}
+          {kind !== 'supplier' && <Button asChild variant="outline"><Link to="/finance-approvals">اعتمادات الاسترداد</Link></Button>}
+          {kind !== 'customer' && canManage && orgId && <Button onClick={() => setDialog({ orgId, action: 'create' })}>مطالبة استرداد جديدة</Button>}
+        </div>
+        {isPending && <p className="text-sm text-muted-foreground">جارٍ تحميل الأرصدة…</p>}
+        {hasError && <div role="alert" className="flex items-center gap-2 text-destructive">
+          تعذر تحميل بعض الأرصدة <Button variant="outline" onClick={() => void Promise.all(queries.map(query => query.refetch()))}>إعادة المحاولة</Button>
+        </div>}
+        {!isPending && !hasError && balances.length === 0 && (
+          <p className="text-sm text-muted-foreground">{view === 'overdue' ? 'لا توجد متابعات متأخرة.' : 'لا توجد أرصدة مطابقة.'}</p>
+        )}
+        {balances.map(row => {
+          const overdue = isRefundFollowUpOverdue(row, today);
+          const open = isOpenRefund(row);
+          return (
+            <Card key={`${row.kind}:${row.id}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">{row.kind === 'customer' ? 'استرداد عميل' : 'استرداد مورد'}</Badge>
+                    {row.partyId ? <Link className="hover:underline" to={`/${row.kind}-ledger?id=${row.partyId}`}>{row.partyName || 'كشف الحساب'}</Link> : row.partyName}
+                  </div>
+                  <span>{refundStatusLabels[row.status] || row.status}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-x-6 gap-y-1">
+                  {row.bookingNumber && <span>الحجز {row.bookingNumber}</span>}
+                  <span>المستند الأصلي {row.invoiceNumber || row.source || '—'}</span>
+                  <span>المبلغ الأصلي {money(row.amount, row.currency)}</span>
+                  {(open || row.status === 'paid' || row.status === 'settled') && <>
+                    <span>تمت تسويته {money(Number(row.amount) - remainingRefundBalance(row), row.currency)}</span>
+                    <strong>المتبقي {money(remainingRefundBalance(row), row.currency)}</strong>
+                  </>}
+                  {row.reference && <span>{row.reference}</span>}
+                </div>
+                {(open || row.followUpOn) && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-muted-foreground">موعد المتابعة</span>
+                    {row.followUpOn
+                      ? <time dateTime={row.followUpOn}>{new Date(row.followUpOn).toLocaleDateString('ar-EG', { timeZone: 'UTC' })}</time>
+                      : <span>غير محدد</span>}
+                    {overdue && <Badge variant="destructive">متأخر</Badge>}
+                    {canManage && orgId && open && (
+                      <Button size="sm" variant="outline" onClick={() => setDialog({ orgId, action: 'followUp', id: row.id, kind: row.kind })}>
+                        تعديل موعد المتابعة
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <RefundMovements balance={row} />
+                {canManage && orgId && canSettleRefund(row)
+                  && <Button size="sm" onClick={() => setDialog({ orgId, action: 'settle', id: row.id, kind: row.kind })}>تسوية الرصيد</Button>}
+                {canManage && row.kind === 'supplier' && row.status === 'pending' && <div className="flex gap-2">
+                  <Button size="sm" disabled={claim.isPending} onClick={() => claim.mutate({ id: row.id, action: 'confirm' })}>تأكيد رصيد المورد</Button>
+                  <Button size="sm" variant="outline" disabled={claim.isPending} onClick={() => claim.mutate({ id: row.id, action: 'reject' })}>رفض المطالبة</Button>
+                </div>}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </>}
+      {activeDialog?.action === 'create' && <RefundForm key={orgId} onClose={closeDialog} />}
+      {activeDialog?.action === 'settle' && dialogBalance && (
+        <RefundForm key={`${orgId}:${dialogBalance.id}`} balance={dialogBalance} onClose={closeDialog} />
+      )}
+      {activeDialog?.action === 'followUp' && dialogBalance && (
+        <RefundFollowUpDialog key={`${orgId}:${dialogBalance.id}`} balance={dialogBalance} onClose={closeDialog} />
+      )}
     </div>
   );
 }

@@ -5,6 +5,8 @@ export const formatRefundAmount = (amount: number, currency: string) =>
   `${Number(amount).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${currency}`;
 
 export const refundStatusLabels: Record<string, string> = {
+  requested: 'بانتظار اعتماد الاسترداد',
+  cancelled: 'ملغى',
   approved: 'مستحق للعميل',
   paid: 'تمت التسوية',
   pending: 'بانتظار تأكيد المورد',
