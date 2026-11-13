@@ -108,4 +108,10 @@ const paymentOrders = paymentOrderGroups[0]?.items.find(item => item.href === '/
 assert.equal(paymentOrders?.sidebar, true);
 assert.equal(paymentOrders?.requiredPermission, 'financial_view', 'payment orders retain the financial permission gate');
 assert.equal(paymentOrders?.requiredFeature, features.PLAN_FEATURES.FINANCE, 'payment orders retain the finance plan gate');
+const refundBalanceGroups = registry.NAVIGATION_GROUPS.filter(group => group.items.some(item => item.href === '/refund-balances'));
+assert.equal(refundBalanceGroups.length, 1, 'refund balances appear once in the sidebar');
+assert.equal(refundBalanceGroups[0], paymentOrderGroups[0], 'refund balances belong to the finance sidebar group');
+const refundBalances = refundBalanceGroups[0].items.find(item => item.href === '/refund-balances');
+assert.equal(refundBalances.requiredPermission, 'financial_view');
+assert.equal(refundBalances.requiredFeature, features.PLAN_FEATURES.FINANCE);
 console.log('Workspace ownership, legacy overviews and employee access-envelope checks passed.');
