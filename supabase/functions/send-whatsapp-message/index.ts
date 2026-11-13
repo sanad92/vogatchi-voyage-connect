@@ -156,6 +156,23 @@ Deno.serve(async (req) => {
         return fail('MISSING_TARGET', 'مطلوب conversationId أو customerId أو organizationId | conversationId, customerId or organizationId is required', 400);
       }
 
+      // Authorize the caller and bind the number to an existing customer before any write.
+      const { data: preMember } = await admin.from('organization_members').select('id')
+        .eq('organization_id', orgId).eq('user_id', user.id).eq('is_active', true).maybeSingle();
+      if (!preMember) {
+        return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
+      }
+      {
+        const { data: orgCustomers } = await admin.from('customers').select('id, phone')
+          .eq('organization_id', orgId)
+          .ilike('phone', `%${toPhone.slice(-9)}%`).limit(50);
+        const match = (orgCustomers ?? []).find((c: any) =>
+          normalizePhone(c.phone) === toPhone && (!customerId || c.id === customerId));
+        if (!match) {
+          return fail('NOT_A_CUSTOMER', 'الرقم غير مسجل كعميل في الشركة | The number must belong to an existing customer of this organization', 403);
+        }
+      }
+
       const { data: existing } = await admin
         .from('whatsapp_conversations')
         .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
@@ -195,6 +212,7 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('organization_id', conversation.organization_id)
       .eq('user_id', user.id)
+      .eq('is_active', true)
       .maybeSingle();
     if (!membership) {
       return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
@@ -277,6 +295,11 @@ Deno.serve(async (req) => {
         return fail('MISSING_MEDIA', 'mediaUrl أو mediaStoragePath مطلوب | mediaUrl or mediaStoragePath is required', 400);
       }
       let mediaRef: any = { link: mediaUrl };
+      if (mediaStoragePath && (typeof mediaStoragePath !== 'string'
+        || !mediaStoragePath.startsWith(`${conversation.organization_id}/`)
+        || mediaStoragePath.includes('..'))) {
+        return fail('FORBIDDEN_MEDIA', 'الملف غير تابع لهذه الشركة | Media file does not belong to this organization', 403);
+      }
       if (mediaStoragePath) {
         const uploadedId = await uploadMediaToMeta(admin, settings, mediaStoragePath, mediaMimeType, mediaFileName);
         mediaRef = { id: uploadedId };
