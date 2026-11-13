@@ -116,7 +116,7 @@ export default function CustomerLedger() {
     const invoicesById = new Map<string, { currency: string }>(data.invoices.map((invoice: { id: string; currency: string }) => [invoice.id, invoice]));
     for (const amendment of data.amendments) {
       events.push({
-        date: amendment.resolved_at, ref: amendment.id.slice(0, 8), description: 'تخفيض مستحق بعد تعديل الخدمة',
+        date: amendment.resolved_at, ref: amendment.id.slice(0, 8), description: 'تخفيض مستحق بعد تعديل أو إلغاء',
         debit: 0, credit: Number(amendment.customer_due_reduction),
         currency: invoicesById.get(amendment.customer_invoice_id)?.currency,
         link: `/invoices?id=${amendment.customer_invoice_id}`,

@@ -14,6 +14,7 @@ export const WhatsAppTab = ({ workspace }: Props) => {
   const navigate = useNavigate();
   const convId = workspace.conversation?.id as string | undefined;
   const windowState = useWhatsAppWindow(convId);
+  const phone = String(workspace.customer?.phone ?? "").replace(/\D/g, "");
 
   return (
     <div className="space-y-4">
@@ -58,6 +59,11 @@ export const WhatsAppTab = ({ workspace }: Props) => {
                   بدء محادثة
                 </Button>
               )}
+              {phone && <Button asChild variant="ghost">
+                <a href={`https://wa.me/${phone}?text=${encodeURIComponent(`مرحباً، بخصوص الحجز رقم ${workspace.booking?.booking_number ?? ''}`)}`} target="_blank" rel="noopener noreferrer">
+                  فتح واتساب
+                </a>
+              </Button>}
             </div>
           )}
         </CardContent>

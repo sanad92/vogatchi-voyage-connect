@@ -19,10 +19,11 @@ const STAGE_LABELS: Record<WorkflowStage, string> = {
 
 interface Props {
   stage: WorkflowStage | undefined | null;
+  editable?: boolean;
   onChange: (next: WorkflowStage) => void | Promise<unknown>;
 }
 
-export const StageStepper = ({ stage, onChange }: Props) => {
+export const StageStepper = ({ stage, onChange, editable = true }: Props) => {
   const current = (stage || 'lead') as WorkflowStage;
   const currentIdx = WORKFLOW_STAGES.indexOf(current);
   const isCancelled = current === 'cancelled';
@@ -31,7 +32,7 @@ export const StageStepper = ({ stage, onChange }: Props) => {
     <div className="rounded-lg border bg-card p-3">
       <div className="flex items-center gap-3 mb-3">
         <span className="text-sm font-medium">مرحلة الحجز</span>
-        <Popover>
+        {editable && <Popover>
           <PopoverTrigger asChild>
             <Button size="sm" variant="outline" className="h-7 text-xs">
               تغيير المرحلة <ChevronLeft className="h-3 w-3 mr-1" />
@@ -39,7 +40,7 @@ export const StageStepper = ({ stage, onChange }: Props) => {
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 p-1">
             <div className="grid gap-0.5">
-              {[...WORKFLOW_STAGES, 'cancelled' as WorkflowStage].map((s) => (
+              {WORKFLOW_STAGES.map((s) => (
                 <Button
                   key={s}
                   variant={s === current ? 'secondary' : 'ghost'}
@@ -52,7 +53,7 @@ export const StageStepper = ({ stage, onChange }: Props) => {
               ))}
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover>}
       </div>
 
       {isCancelled ? (

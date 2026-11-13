@@ -24,6 +24,8 @@ const InvoicePaymentDetails = ({ invoice }: InvoicePaymentDetailsProps) => {
     }
   };
 
+  const settledByAdjustment = Number(invoice?.remaining_amount) === 0
+    && Number(invoice?.final_amount) > Number(invoice?.total_paid_amount);
   const paymentProgress = invoice?.final_amount > 0 
     ? ((invoice?.total_paid_amount || 0) / invoice?.final_amount) * 100 
     : 0;
@@ -66,7 +68,9 @@ const InvoicePaymentDetails = ({ invoice }: InvoicePaymentDetailsProps) => {
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">حالة الدفع:</span>
-            {getPaymentStatusBadge(invoice?.payment_status)}
+            {invoice?.status === 'cancelled' ? <Badge variant="outline">ملغاة</Badge>
+              : settledByAdjustment ? <Badge variant="secondary">تمت تسوية المستحق</Badge>
+              : getPaymentStatusBadge(invoice?.payment_status)}
           </div>
           
           <div className="space-y-1">

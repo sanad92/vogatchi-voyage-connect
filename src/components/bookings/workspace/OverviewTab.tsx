@@ -5,6 +5,8 @@ import { User, Phone, Mail, Building2, ListChecks, MessageCircle, ExternalLink }
 import { useNavigate } from 'react-router-dom';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { useWhatsAppWindow } from '@/hooks/useWhatsAppWindow';
+import QuoteLinkPanel from '@/components/bookings/QuoteLinkPanel';
+import CustomerHistoryPanel from '@/components/bookings/CustomerHistoryPanel';
 import { ProfitWidget } from './ProfitWidget';
 import type { Workspace, TabKey } from './types';
 
@@ -18,6 +20,7 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
   const nextTask = workspace.tasks.find((t) => t.status !== 'done' && t.status !== 'cancelled');
   const openTasks = workspace.tasks.filter((t) => t.status !== 'done' && t.status !== 'cancelled').length;
   const conversationId = workspace.conversation?.id;
+  const booking = workspace.booking;
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -28,7 +31,7 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <Row label="الاسم" value={workspace.customer?.name || '—'} />
+          <Row label="الاسم" value={workspace.customer?.name || booking?.customer_name || '—'} />
           <Row label="الهاتف" value={workspace.customer?.phone || '—'} icon={<Phone className="h-3 w-3" />} />
           <Row label="البريد" value={workspace.customer?.email || '—'} icon={<Mail className="h-3 w-3" />} />
           <Row
@@ -40,6 +43,15 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
       </Card>
 
       <ProfitWidget workspace={workspace} />
+
+      <div className="space-y-4 md:col-span-3">
+        {booking?.notes && <Card>
+          <CardHeader><CardTitle className="text-base">ملاحظات الحجز</CardTitle></CardHeader>
+          <CardContent className="whitespace-pre-wrap text-sm">{booking.notes}</CardContent>
+        </Card>}
+        <QuoteLinkPanel quoteId={booking?.quote_id} />
+        {booking?.id && <CustomerHistoryPanel customerId={booking.customer_id} currentBookingId={booking.id} />}
+      </div>
 
       <Card className="md:col-span-2">
         <CardHeader className="flex-row items-center justify-between">

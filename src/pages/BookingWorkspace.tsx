@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet } from 'lucide-react';
+import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBookingWorkspace } from '@/hooks/useBookingWorkspace';
@@ -16,6 +16,9 @@ import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
 import { TasksTab } from '@/components/bookings/workspace/TasksTab';
 import { TimelineTab } from '@/components/bookings/workspace/TimelineTab';
+import AuditLogViewer from '@/components/audit/AuditLogViewer';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { BookingCancellationDialog, useBookingCancellation } from '@/components/bookings/workspace/BookingCancellationDialog';
 import BookingLeadAudit from '@/components/bookings/workspace/BookingLeadAudit';
 import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
 import { BookingSopTab } from '@/components/bookings/workspace/BookingSopTab';
@@ -47,6 +50,13 @@ const BookingWorkspace = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const workspace = useBookingWorkspace(id);
+  const [cancellationOpen, setCancellationOpen] = useState(false);
+  const { getPermissionScope } = useSupabasePermissions();
+  const canSettleCancellation = (['bookings_view', 'bookings_cancel', 'financial_view', 'payments_process'] as const)
+    .every(permission => getPermissionScope(permission) === 'organization');
+  const canEditBooking = getPermissionScope('bookings_edit') === 'organization';
+  const cancelled = workspace.booking?.workflow_stage === 'cancelled' || ['cancelled', 'canceled'].includes(workspace.booking?.status);
+  const cancellation = useBookingCancellation(id, canSettleCancellation && (cancellationOpen || cancelled));
 
   const activeTab: TabKey = useMemo(() => {
     const t = params.get('tab') as TabKey | null;
@@ -75,7 +85,6 @@ const BookingWorkspace = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4" dir="rtl">
-      {/* Back link + legacy view */}
       <div className="flex items-center gap-2 text-sm">
         <Button variant="ghost" size="sm" onClick={() => navigate('/bookings')}>
           <ArrowRight className="h-4 w-4 ml-1" /> الحجوزات
@@ -83,9 +92,6 @@ const BookingWorkspace = () => {
         <span className="text-muted-foreground">/</span>
         <span className="text-muted-foreground">مساحة العمل</span>
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/bookings/${id}`)}>
-          العرض الكلاسيكي
-        </Button>
         <Button variant="ghost" size="icon" onClick={() => workspace.refetch()} title="تحديث">
           <RefreshCw className="h-4 w-4" />
         </Button>
@@ -115,20 +121,27 @@ const BookingWorkspace = () => {
               profitHealth={profitHealth}
             />
             <StageStepper
-              stage={workspace.booking.workflow_stage}
+              stage={cancelled ? 'cancelled' : workspace.booking.workflow_stage}
               onChange={(next) => workspace.setStage(next)}
+              editable={canEditBooking && !cancelled}
             />
             <WorkflowProgressBar bookingId={id!} />
             <FinancialSummaryStrip bookingId={id!} />
             <SmartNextActionCard workspace={workspace} ctx={ctx} />
 
             <div className="flex flex-wrap gap-2">
+              {canSettleCancellation && !workspace.booking.is_demo && (
+                <Button size="sm" variant="outline" onClick={() => setCancellationOpen(true)}>
+                  <Ban className="h-4 w-4 ml-1" />
+                  {cancellation.data?.settled ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
                 <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
               </Button>
-              <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
+              {!cancelled && <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
                 <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
-              </Button>
+              </Button>}
               <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
                 <Wallet className="h-4 w-4 ml-1" /> تسجيل دفعة
               </Button>
@@ -174,6 +187,7 @@ const BookingWorkspace = () => {
         <TabsContent value="timeline" className="mt-4 space-y-4">
           <BookingLeadAudit bookingId={id} />
           <TimelineTab workspace={workspace} />
+          {id && <AuditLogViewer targetTable="bookings" targetId={id} title="سجل التدقيق" compact showFilters={false} />}
         </TabsContent>
 
         <TabsContent value="automation" className="mt-4">
@@ -183,6 +197,9 @@ const BookingWorkspace = () => {
           {id && <BookingSopTab bookingId={id} />}
         </TabsContent>
       </Tabs>
+      {id && cancellationOpen && <BookingCancellationDialog bookingId={id} cancelled={cancelled}
+        preview={cancellation.data} loadError={cancellation.error} onReload={() => { void cancellation.refetch(); }}
+        onClose={() => setCancellationOpen(false)} onSettled={workspace.refetch} />}
     </div>
   );
 };
