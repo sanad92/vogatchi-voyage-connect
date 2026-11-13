@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { money, printDocument, table, ROOM } from './pilgrimage-documents';
 import { validateB2BInstallments } from '@/lib/pilgrimage/b2b';
+import PilgrimageAgencyAccess from './PilgrimageAgencyAccess';
 
 const sb = supabase as any;
 type Installment = { due_date: string; amount: number };
@@ -313,6 +314,8 @@ export default function PilgrimageB2BContract({
           قبل الموافقة الداخلية يجب تثبيت تخصيص مقاعد المجموعة في نفس البرنامج.
           لا يمكن اعتماد مجموعات غير مرتبطة ببرنامج دون مسار عقود الموردين.
         </p>}
+      {['approved_internal', 'voided'].includes(agreement.status) && <PilgrimageAgencyAccess key={agreement.id}
+        agreementId={agreement.id} approved={agreement.status === 'approved_internal'} />}
       {agreement.status==='approved_internal'&&<div className="space-y-3 border-t pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Label>كشف مسافري الوكيل</Label>
