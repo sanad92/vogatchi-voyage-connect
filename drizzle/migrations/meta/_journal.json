@@ -127,6 +127,13 @@
       "when": 1794574573606,
       "tag": "0017_harden_tenant_accounting_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794576243933,
+      "tag": "0018_org_domain_unique_and_demo_seed",
+      "breakpoints": true
     }
   ]
 }
