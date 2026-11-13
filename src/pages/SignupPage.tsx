@@ -10,6 +10,7 @@ import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
+import { isFreeEmail, BUSINESS_EMAIL_MESSAGE } from '@/lib/business-email';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -45,6 +46,10 @@ const SignupPage = () => {
     setError('');
     if (!email || !password || !fullName) {
       setError('يرجى إدخال جميع البيانات المطلوبة');
+      return;
+    }
+    if (isFreeEmail(email)) {
+      setError(BUSINESS_EMAIL_MESSAGE);
       return;
     }
     if (password.length < 8) {
@@ -117,6 +122,9 @@ const SignupPage = () => {
               />
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
+            {email.includes('@') && isFreeEmail(email) && (
+              <p className="text-sm text-destructive">{BUSINESS_EMAIL_MESSAGE}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-password">كلمة المرور</Label>
