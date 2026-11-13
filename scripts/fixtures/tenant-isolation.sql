@@ -8,29 +8,29 @@ CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,email_confirmed_at timest
 
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
 
-CREATE TYPE public.account_type AS ENUM ('{','a','s','s','e','t',',','l','i','a','b','i','l','i','t','y',',','e','q','u','i','t','y',',','r','e','v','e','n','u','e',',','e','x','p','e','n','s','e','}');
+CREATE TYPE public.account_type AS ENUM ('asset','liability','equity','revenue','expense');
 
-CREATE TYPE public.booking_workflow_stage AS ENUM ('{','l','e','a','d',',','q','u','a','l','i','f','i','e','d',',','q','u','o','t','e','d',',','c','o','n','f','i','r','m','e','d',',','p','a','i','d',',','o','p','e','r','a','t','i','o','n','s',',','t','r','a','v','e','l','i','n','g',',','c','o','m','p','l','e','t','e','d',',','p','o','s','t','_','t','r','a','v','e','l',',','c','a','n','c','e','l','l','e','d','}');
+CREATE TYPE public.booking_workflow_stage AS ENUM ('lead','qualified','quoted','confirmed','paid','operations','traveling','completed','post_travel','cancelled');
 
-CREATE TYPE public.document_category AS ENUM ('{','p','a','s','s','p','o','r','t',',','v','i','s','a',',','v','o','u','c','h','e','r',',','i','n','v','o','i','c','e',',','p','u','r','c','h','a','s','e','_','o','r','d','e','r',',','t','i','c','k','e','t',',','i','n','s','u','r','a','n','c','e',',','c','o','n','t','r','a','c','t',',','o','t','h','e','r','}');
+CREATE TYPE public.document_category AS ENUM ('passport','visa','voucher','invoice','purchase_order','ticket','insurance','contract','other');
 
-CREATE TYPE public.org_role AS ENUM ('{','o','w','n','e','r',',','a','d','m','i','n',',','m','a','n','a','g','e','r',',','a','g','e','n','t',',','v','i','e','w','e','r','}');
+CREATE TYPE public.org_role AS ENUM ('owner','admin','manager','agent','viewer');
 
-CREATE TYPE public.platform_role AS ENUM ('{','p','l','a','t','f','o','r','m','_','a','d','m','i','n',',','p','l','a','t','f','o','r','m','_','o','w','n','e','r','}');
+CREATE TYPE public.platform_role AS ENUM ('platform_admin','platform_owner');
 
-CREATE TYPE public.sop_approval_status AS ENUM ('{','p','e','n','d','i','n','g',',','a','p','p','r','o','v','e','d',',','r','e','j','e','c','t','e','d','}');
+CREATE TYPE public.sop_approval_status AS ENUM ('pending','approved','rejected');
 
-CREATE TYPE public.sop_approval_type AS ENUM ('{','d','i','s','c','o','u','n','t',',','f','r','e','e','_','s','e','r','v','i','c','e',',','b','o','o','k','i','n','g','_','c','o','n','f','i','r','m','a','t','i','o','n',',','s','u','p','p','l','i','e','r','_','p','a','y','m','e','n','t',',','r','e','f','u','n','d','_','c','o','m','p','e','n','s','a','t','i','o','n','}');
+CREATE TYPE public.sop_approval_type AS ENUM ('discount','free_service','booking_confirmation','supplier_payment','refund_compensation');
 
-CREATE TYPE public.sop_deadline_type AS ENUM ('{','p','a','y','m','e','n','t',',','c','a','n','c','e','l','l','a','t','i','o','n',',','r','e','l','e','a','s','e',',','p','r','e','_','a','r','r','i','v','a','l',',','r','e','c','o','n','f','i','r','m','a','t','i','o','n','}');
+CREATE TYPE public.sop_deadline_type AS ENUM ('payment','cancellation','release','pre_arrival','reconfirmation');
 
-CREATE TYPE public.sop_department AS ENUM ('{','c','u','s','t','o','m','e','r','_','s','e','r','v','i','c','e',',','s','a','l','e','s',',','r','e','s','e','r','v','a','t','i','o','n','s',',','o','p','e','r','a','t','i','o','n','s',',','m','a','n','a','g','e','m','e','n','t',',','m','a','r','k','e','t','i','n','g',',','f','i','n','a','n','c','e','}');
+CREATE TYPE public.sop_department AS ENUM ('customer_service','sales','reservations','operations','management','marketing','finance');
 
-CREATE TYPE public.sop_handover_type AS ENUM ('{','c','s','_','t','o','_','s','a','l','e','s',',','s','a','l','e','s','_','t','o','_','r','e','s','e','r','v','a','t','i','o','n','s',',','r','e','s','e','r','v','a','t','i','o','n','s','_','t','o','_','s','a','l','e','s',',','r','e','s','e','r','v','a','t','i','o','n','s','_','t','o','_','c','s','}');
+CREATE TYPE public.sop_handover_type AS ENUM ('cs_to_sales','sales_to_reservations','reservations_to_sales','reservations_to_cs');
 
-CREATE TYPE public.sop_lead_stage AS ENUM ('{','n','e','w',',','q','u','a','l','i','f','i','e','d',',','a','s','s','i','g','n','e','d',',','p','r','i','c','i','n','g','_','r','e','q','u','e','s','t','e','d',',','q','u','o','t','e','d',',','f','o','l','l','o','w','_','u','p',',','a','c','c','e','p','t','e','d','_','p','e','n','d','i','n','g','_','r','e','c','h','e','c','k',',','r','e','c','h','e','c','k','e','d',',','p','a','y','m','e','n','t','_','p','e','n','d','i','n','g',',','w','o','n',',','l','o','s','t',',','c','a','n','c','e','l','l','e','d','}');
+CREATE TYPE public.sop_lead_stage AS ENUM ('new','qualified','assigned','pricing_requested','quoted','follow_up','accepted_pending_recheck','rechecked','payment_pending','won','lost','cancelled');
 
-CREATE TYPE public.sop_pricing_status AS ENUM ('{','r','e','q','u','e','s','t','e','d',',','i','n','_','p','r','o','g','r','e','s','s',',','q','u','o','t','e','d',',','r','e','q','u','o','t','e','d',',','r','e','c','h','e','c','k',',','c','l','o','s','e','d',',','c','a','n','c','e','l','l','e','d','}');
+CREATE TYPE public.sop_pricing_status AS ENUM ('requested','in_progress','quoted','requoted','recheck','closed','cancelled');
 
 CREATE TABLE public.admin_audit_log ("id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),"user_id" uuid,"action" text,"target_table" text,"target_id" uuid,"details" jsonb,"ip_address" text,"created_at" timestamp with time zone,"organization_id" uuid,"old_values" jsonb,"new_values" jsonb,"user_email" text,"entity_name" text);
 
