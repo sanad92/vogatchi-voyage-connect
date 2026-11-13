@@ -1,5 +1,15 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  // Private record attachments
+  'اختَر ملف PDF أو صورة JPG أو PNG بحجم يصل إلى ١٠ ميجابايت.': 'Choose a PDF, JPG or PNG file up to 10 MB.',
+  'اختيار مرفق PDF أو JPG أو PNG': 'Choose a PDF, JPG or PNG attachment',
+  'رفع المرفق': 'Upload attachment',
+  'تم رفع المرفق': 'Attachment uploaded',
+  'تعذّر رفع المرفق.': 'Could not upload the attachment.',
+  'تعذّر تحميل المرفق.': 'Could not download the attachment.',
+  'جاري تحميل المرفقات...': 'Loading attachments...',
+  'تعذّر تحميل المرفقات.': 'Could not load attachments.',
+  'لا توجد مرفقات.': 'No attachments.',
   // Platform backups
   'النسخ الاحتياطي والاستعادة': 'Backup and restore',
   'إنشاء النسخ الاحتياطية واستعادتها يتم من إعدادات قاعدة البيانات لدى مزود الاستضافة.': 'Create and restore backups in your hosting provider’s database settings.',
