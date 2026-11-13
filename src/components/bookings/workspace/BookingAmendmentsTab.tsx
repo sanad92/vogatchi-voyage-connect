@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import { TripServiceAmendments } from './TripServiceAmendments';
+import type { Workspace } from './types';
 import { BookingAmendmentHandoffPanel } from './BookingAmendmentHandoffPanel';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, ClipboardList, RefreshCw, Send, ShieldCheck, XCircle } from 'lucide-react';
@@ -54,8 +56,8 @@ function asOptionalAmount(raw: string): number | null {
 }
 
 export function BookingAmendmentsTab({
-  bookingId, bookingCurrency,
-}: { bookingId: string; bookingCurrency?: string | null }) {
+  bookingId, bookingCurrency, customerId, itinerary,
+}: { bookingId: string; bookingCurrency?: string | null; customerId?: string; itinerary?: Workspace['itinerary'] }) {
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
   const changeRequests = useBookingChangeRequests(bookingId);
@@ -148,6 +150,8 @@ export function BookingAmendmentsTab({
 
   return (
     <div className="space-y-4" dir="rtl">
+      <TripServiceAmendments key={bookingId} bookingId={bookingId} currency={(bookingCurrency || 'EGP').toUpperCase()}
+        customerId={customerId} currentUserId={user?.id} canReview={canReview} itinerary={itinerary} />
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

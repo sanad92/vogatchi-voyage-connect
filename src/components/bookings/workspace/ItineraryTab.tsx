@@ -9,6 +9,7 @@ import { Hotel, Plane, Car, Truck, Plus, ExternalLink, Loader2 } from 'lucide-re
 import { AddServiceBookingDialog } from './AddServiceBookingDialog';
 import { TripServicesMoneySummary } from './TripServicesMoneySummary';
 import { useBookingServices, type ServiceKind } from '@/hooks/useBookingServices';
+import { useTripServiceAmendmentHistory } from '@/hooks/useTripServiceAmendments';
 import type { Workspace } from './types';
 
 interface Props {
@@ -36,6 +37,9 @@ export const ItineraryTab = ({ workspace }: Props) => {
 
   const { data: services = [], isLoading, isError, error, refetch } = useBookingServices(bookingId);
   const legacy = workspace.itinerary;
+  const { data: amendments = [] } = useTripServiceAmendmentHistory(bookingId);
+  const serviceWasCancelled = (id: string, kind: ServiceKind) => amendments.some(a =>
+    a.service_id === id && a.service_kind === kind && !a.ticket_number && a.operation === 'cancel');
 
   const handleSaved = () => {
     queryClient.invalidateQueries({ queryKey: ['booking-linked-services', bookingId] });
@@ -97,6 +101,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
                       {KIND_META[s.kind].icon}
                       <span className="font-medium">{s.title}</span>
                       <Badge variant="outline">{s.reference}</Badge>
+                      {serviceWasCancelled(s.id, s.kind) && <Badge variant="destructive">ملغاة</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-3">
                       {s.supplierName && <span>المورد: {s.supplierName}</span>}
@@ -126,7 +131,20 @@ export const ItineraryTab = ({ workspace }: Props) => {
           </CardContent>
         </Card>
 
-        {!isError && services.length > 0 && <TripServicesMoneySummary services={services} />}
+        {!isError && services.length > 0 && <TripServicesMoneySummary services={services.filter(s => !serviceWasCancelled(s.id, s.kind))} />}
+
+        {amendments.length > 0 && <Card>
+          <CardHeader><CardTitle className="text-base">التعديلات والإلغاءات المنفذة</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {amendments.map(a => <div key={`${a.service_id}:${a.ticket_number}:${a.applied_at}`} className="flex flex-wrap items-center gap-2 text-sm">
+              <Badge variant={a.operation === 'cancel' ? 'destructive' : 'secondary'}>{a.operation === 'cancel' ? 'إلغاء' : 'تعديل تواريخ'}</Badge>
+              <span>{KIND_META[a.service_kind].title}</span>
+              {a.ticket_number && <span>تذكرة {a.ticket_number}</span>}
+              {a.new_ticket && <span>التذكرة البديلة {a.new_ticket}</span>}
+              {a.start_date && <span>{a.start_date} إلى {a.end_date}</span>}
+            </div>)}
+          </CardContent>
+        </Card>}
 
         {(legacy?.hotel || legacy?.flight || legacy?.transport || legacy?.car) && (
           <Card>

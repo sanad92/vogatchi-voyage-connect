@@ -54,6 +54,7 @@ export default function CustomerLedger() {
           .eq('organization_id', orgId).eq('customer_id', customerId)
           .eq('status', 'paid').not('pilgrimage_b2b_cancellation_id', 'is', null),
       ]);
+      const amendments = await sb.rpc('get_customer_trip_invoice_credits', { _org: orgId, _customer: customerId });
       return {
         customer: customer.data,
         invoices: invoices.data || [],
@@ -61,6 +62,7 @@ export default function CustomerLedger() {
         receipts: receipts.data || [],
         credits: credits.data || [],
         refunds: refunds.data || [],
+        amendments: amendments.data || [],
       };
     },
   });
@@ -111,6 +113,15 @@ export default function CustomerLedger() {
         });
       }
     });
+    const invoicesById = new Map<string, { currency: string }>(data.invoices.map((invoice: { id: string; currency: string }) => [invoice.id, invoice]));
+    for (const amendment of data.amendments) {
+      events.push({
+        date: amendment.resolved_at, ref: amendment.id.slice(0, 8), description: 'تخفيض مستحق بعد تعديل الخدمة',
+        debit: 0, credit: Number(amendment.customer_due_reduction),
+        currency: invoicesById.get(amendment.customer_invoice_id)?.currency,
+        link: `/invoices?id=${amendment.customer_invoice_id}`,
+      });
+    }
     const pilgrimageInvoiceIds = new Set(data.invoices
       .filter((invoice: { pilgrimage_b2b_agreement_id?: string }) => invoice.pilgrimage_b2b_agreement_id)
       .map((invoice: { id: string }) => invoice.id));

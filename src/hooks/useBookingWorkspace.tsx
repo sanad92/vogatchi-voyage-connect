@@ -338,7 +338,11 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   const financials = useMemo(() => {
     const invoices = invoicesQ.data ?? [];
     const payments = paymentsQ.data ?? [];
-    const invoiced = invoices.reduce((s: number, i: any) => s + Number(i.total_amount ?? 0), 0);
+    const activeInvoices = invoices.filter((i: any) => i.status !== 'cancelled' && i.status !== 'draft');
+    const invoicePaid = activeInvoices.reduce((s: number, i: any) => s + Number(i.total_paid_amount ?? 0), 0);
+    const outstanding = activeInvoices.reduce((s: number, i: any) =>
+      s + Math.max(0, Number(i.remaining_amount ?? (Number(i.final_amount ?? i.total_amount ?? 0) - Number(i.total_paid_amount ?? 0)))), 0);
+    const invoiced = invoicePaid + outstanding;
     const paid = payments
       .filter((p: any) => p.status === 'completed' || p.status === 'succeeded')
       .reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
@@ -347,7 +351,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     return {
       invoiced,
       paid,
-      outstanding: Math.max(0, invoiced - paid),
+      outstanding,
       selling,
       cost,
       profit: Number(booking?.profit ?? selling - cost),

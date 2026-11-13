@@ -92,7 +92,8 @@ export const useBookingFinancials = (bookingId?: string) => {
       const invoicePaidTotal = invoices.reduce((sum, row) => sum + Number(row.total_paid_amount || 0), 0);
       const customerReceipts = structuredReceipts;
       const receivedFromCustomer = invoicePaidTotal;
-      const outstandingFromCustomer = Math.max(0, invoiced - receivedFromCustomer);
+      const outstandingFromCustomer = invoices.reduce((sum, row) =>
+        sum + Math.max(0, Number(row.remaining_amount ?? (Number(row.final_amount || 0) - Number(row.total_paid_amount || 0)))), 0);
 
       const supplierCashPaid = supplierPayments
         .filter((row) => row.status === 'paid' || row.status === 'completed')
