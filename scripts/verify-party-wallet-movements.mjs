@@ -48,3 +48,24 @@ assert.deepEqual(supplierOffset.links.map(link => walletDocumentPath(link, 'supp
   '/payment-orders?id=o1', '/refund-balances?kind=supplier&view=all&refund=c1',
 ]);
 console.log('Wallet activity order, ordinary payments, partial settlements, and legacy refunds passed');
+
+const { buildWalletStatement, walletStatementDay } = await import('../src/lib/walletStatement.ts');
+assert.equal(walletStatementDay('2026-11-09T22:30:00Z'), '2026-11-10');
+assert.equal(walletStatementDay('2026-11-09'), '2026-11-09');
+const { rows, totals, undatedCount } = buildWalletStatement([
+  { ...payment, id: 'before', date: '2026-11-09', balanceDelta: 500 },
+  { ...payment, id: 'approval', date: '2026-11-09T22:30:00Z', balanceDelta: 300 },
+  { ...payment, id: 'applied', date: '2026-11-13', balanceDelta: -150 },
+  { ...payment, id: 'outside', date: '2026-11-13T22:30:00Z', balanceDelta: -100 },
+  { ...payment, id: 'usd', date: '2026-11-12', currency: 'USD', balanceDelta: 72.31 },
+  { ...payment, id: 'supplier-cash', date: '2026-11-12', currency: 'SAR', balanceDelta: 0 },
+  { ...payment, id: 'undated', date: null },
+], '2026-11-10', '2026-11-13');
+assert.deepEqual(rows.map(row => row.id), ['approval', 'supplier-cash', 'usd', 'applied']);
+assert.deepEqual(totals, [
+  { currency: 'EGP', opening: 50000, added: 30000, applied: 15000, closing: 65000 },
+  { currency: 'SAR', opening: 0, added: 0, applied: 0, closing: 0 },
+  { currency: 'USD', opening: 0, added: 7231, applied: 0, closing: 7231 },
+]);
+assert.equal(undatedCount, 1);
+console.log('Wallet statement inclusive dates, Cairo cutoff, per-currency balances and undated handling passed');

@@ -9,9 +9,10 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function RefundLedgerSummary({ kind, partyId, showHistory = false }: {
+export function RefundLedgerSummary({ kind, partyId, partyName, showHistory = false }: {
   kind: 'customer' | 'supplier';
   partyId: string;
+  partyName?: string;
   showHistory?: boolean;
 }) {
   const { data, isError, isPending } = useRefundBalances(kind, partyId, showHistory);
@@ -67,7 +68,7 @@ export function RefundLedgerSummary({ kind, partyId, showHistory = false }: {
       {balance && <RefundForm key={`${orgId}:${balance.id}`} balance={balance} onClose={() => setSelected(undefined)} />}
       {showHistory && (
         <CardContent>
-          <PartyWalletHistory key={`${kind}:${partyId}`} kind={kind} partyId={partyId} refunds={data} refundError={isError} />
+          <PartyWalletHistory key={`${orgId}:${kind}:${partyId}`} kind={kind} partyId={partyId} partyName={partyName} refunds={data} refundError={isError} />
         </CardContent>
       )}
     </Card>
