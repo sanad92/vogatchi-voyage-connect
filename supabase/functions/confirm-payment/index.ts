@@ -67,6 +67,12 @@ serve(async (req) => {
     // AuthZ: the invoice/booking referenced by this intent must belong to the caller's organization
     const metaInvoiceId = paymentIntent.metadata?.invoiceId || null;
     const metaBookingId = paymentIntent.metadata?.bookingId || null;
+    if (!metaInvoiceId && !metaBookingId) {
+      return new Response(JSON.stringify({ error: 'Payment is not linked to an invoice or booking' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     try {
       if (metaInvoiceId) {
         const { data: inv } = await supabase
