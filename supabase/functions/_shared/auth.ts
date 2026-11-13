@@ -68,6 +68,23 @@ export async function requireOrgMember(
   return user;
 }
 
+/** Reads a WhatsApp conversation through the caller's RLS scope. */
+export async function requireWhatsAppConversation(req: Request, conversationId: string) {
+  const token = bearerToken(req);
+  if (!token) throw new AuthError('Unauthorized', 401);
+  const client = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  );
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError || !user) throw new AuthError('Unauthorized', 401);
+  const { data, error } = await client.from('whatsapp_conversations')
+    .select('id, organization_id').eq('id', conversationId).maybeSingle();
+  if (error || !data) throw new AuthError('المحادثة غير متاحة', 404);
+  return data;
+}
+
 /**
  * Internal-only endpoints: the caller must present the service-role key
  * (used when one edge function invokes another).

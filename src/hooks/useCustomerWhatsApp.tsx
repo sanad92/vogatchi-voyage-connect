@@ -25,14 +25,15 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
 
   // 1. Resolve conversation: by customer_id first, fallback to phone match (auto-link)
   const conversationQuery = useQuery({
-    queryKey: ['customer-whatsapp', 'conversation', customerId, phone],
+    queryKey: ['customer-whatsapp', 'conversation', orgId, customerId, phone],
     queryFn: async () => {
-      if (!customerId) return null;
+      if (!customerId || !orgId) return null;
 
       // Try: existing conversation linked to this customer
       const { data: linked } = await supabase
         .from('whatsapp_conversations')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('customer_id', customerId)
         .order('last_message_at', { ascending: false })
         .limit(1)
@@ -46,6 +47,7 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
       const { data: byPhone } = await supabase
         .from('whatsapp_conversations')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('phone_number', phone)
         .order('last_message_at', { ascending: false })
         .limit(1)
@@ -63,7 +65,7 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
 
       return null;
     },
-    enabled: !!customerId,
+    enabled: !!orgId && !!customerId,
     staleTime: 30_000,
   });
 
@@ -107,19 +109,16 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
   // 4. Create a fresh conversation if customer has phone but no conversation yet
   const createConversation = async () => {
     if (!phone) throw new Error('لا يوجد رقم هاتف صالح للعميل');
-    const { data: inbox } = await (supabase as any)
-      .from('whatsapp_settings')
-      .select('id')
-      .eq('organization_id', orgId)
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (!orgId) throw new Error('تعذر تحديد المؤسسة');
+    const { data: channels, error: channelError } = await supabase.rpc('wa_inbox_channels', { _org: orgId });
+    if (channelError) throw channelError;
+    const inbox = channels?.find(channel => channel.is_active);
+    if (!inbox) throw new Error('لا يوجد رقم واتساب متصل متاح لك');
     const { data, error } = await supabase
       .from('whatsapp_conversations')
       .insert({
         phone_number: phone,
-        whatsapp_settings_id: inbox?.id ?? null,
+        whatsapp_settings_id: inbox.id,
         customer_id: customerId,
         organization_id: orgId,
         status: 'active',
@@ -127,7 +126,7 @@ export const useCustomerWhatsApp = (customerId: string, customerPhone?: string |
       .select()
       .single();
     if (error) throw error;
-    queryClient.invalidateQueries({ queryKey: ['customer-whatsapp', 'conversation', customerId, phone] });
+    queryClient.invalidateQueries({ queryKey: ['customer-whatsapp', 'conversation', orgId, customerId, phone] });
     return data;
   };
 

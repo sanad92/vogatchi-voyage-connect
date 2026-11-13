@@ -22,7 +22,7 @@ import { ConversationRightPanel } from '@/components/whatsapp/ConversationRightP
 import { ConversationBotNotice } from '@/components/whatsapp/ConversationBotNotice';
 import { ConversationAgentIndicator } from '@/components/whatsapp/ConversationAgentIndicator';
 import { FollowupsBell } from '@/components/whatsapp/FollowupsBell';
-import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
+import { useWhatsAppChannels } from '@/hooks/useWhatsAppChannels';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CloseConversationDialog } from '@/components/whatsapp/CloseConversationDialog';
 import { ConversationListItem } from '@/components/whatsapp/ConversationListItem';
@@ -41,7 +41,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const { conversations, conversationsLoading, conversationsError, refetch } = useWhatsApp();
   const { employee, canWork, claim, identityError, available, setAvailable, presenceError } = useWhatsAppQueue();
   const { hasPermission } = useSupabasePermissions();
-  const { inboxes } = useWhatsAppSettings();
+  const { data: channels, isError: channelsError } = useWhatsAppChannels();
   const [view, setView] = useState<'queue' | 'mine' | 'all' | 'closed'>('queue');
   // The tools drawer only starts open when the screen is wide enough for it.
   const [showDetails, setShowDetails] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1536);
@@ -53,6 +53,7 @@ const WhatsAppInboxContent: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [inboxFilter, setInboxFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [showSearch, setShowSearch] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -67,17 +68,26 @@ const WhatsAppInboxContent: React.FC = () => {
   };
 
 
-  // Supervisors see every conversation; an agent sees only the shared queue and their own chats.
+  // The database scopes branch inboxes. Shared inboxes retain the existing agent queue view.
   const isSupervisor = hasPermission('whatsapp_admin');
   const visibleConversations = useMemo(() => {
     const list = conversations || [];
     if (isSupervisor) return list;
-    return list.filter((c: any) => c.assigned_to === employee?.id || (!c.assigned_to && isQueuedConversation(c)));
+    return list.filter((c: any) => c.inbox?.branch_id || c.assigned_to === employee?.id || (!c.assigned_to && isQueuedConversation(c)));
   }, [conversations, isSupervisor, employee?.id]);
 
+  const branches = new Map<string, string>();
+  for (const channel of channels ?? []) {
+    if (channel.branch_id && channel.branch_name) branches.set(channel.branch_id, channel.branch_name);
+  }
+  const showAll = isSupervisor || branches.size > 0;
+  const inboxes = (channels ?? []).filter(channel => branchFilter === 'all' || (channel.branch_id ?? 'shared') === branchFilter);
+  const inScope = useMemo(() => visibleConversations.filter(c =>
+    (branchFilter === 'all' || (c.inbox?.branch_id ?? 'shared') === branchFilter) &&
+    (inboxFilter === 'all' || c.whatsapp_settings_id === inboxFilter)
+  ), [visibleConversations, branchFilter, inboxFilter]);
   const filtered = useMemo(() => {
-    let list = visibleConversations;
-    if (inboxFilter !== 'all') list = list.filter(c => c.whatsapp_settings_id === inboxFilter);
+    let list = inScope;
     if (view === 'queue') list = orderQueue(list.filter(isQueuedConversation));
     if (view === 'mine') list = list.filter(c => c.assigned_to === employee?.id && !isClosedConversation(c));
     if (view === 'closed') list = list.filter(isClosedConversation);
@@ -87,10 +97,22 @@ const WhatsAppInboxContent: React.FC = () => {
       (c.phone_number || '').toLowerCase().includes(q) ||
       (c.customer?.name || '').toLowerCase().includes(q)
     );
-  }, [visibleConversations, search, view, employee?.id, inboxFilter]);
+  }, [inScope, search, view, employee?.id]);
 
   React.useEffect(() => { setSelectedId(null); }, [employee?.id]);
   const selected = visibleConversations.find((c: any) => c.id === selectedId);
+  const selectedConversationId = selected?.id;
+  React.useEffect(() => {
+    if (channels && branchFilter !== 'all' && branchFilter !== 'shared' && !channels.some(channel => channel.branch_id === branchFilter)) {
+      setBranchFilter('all');
+      setInboxFilter('all');
+      setSelectedId(null);
+    }
+    if (channels && inboxFilter !== 'all' && !channels.some(channel => channel.id === inboxFilter)) {
+      setInboxFilter('all');
+      setSelectedId(null);
+    }
+  }, [channels, branchFilter, inboxFilter]);
   const setUnread = (unread: boolean) => { if (selected) setUnreadFor(selected.id, unread); };
   // Opening a conversation clears a manual "unread" mark.
   React.useEffect(() => {
@@ -103,9 +125,10 @@ const WhatsAppInboxContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.unread_count]);
   // Lets the message chime skip the chat that is already on screen.
-  React.useEffect(() => { setActiveConversation(selectedId); return () => setActiveConversation(null); }, [selectedId]);
-  const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedId || undefined);
-  const queue = orderQueue(visibleConversations.filter(isQueuedConversation));
+  React.useEffect(() => { setActiveConversation(selectedConversationId ?? null); return () => setActiveConversation(null); }, [selectedConversationId]);
+  const { messages, isLoading: messagesLoading, error: messagesError } = useWhatsAppMessages(selectedConversationId);
+  const queue = orderQueue(inScope.filter(isQueuedConversation));
+  const filtersActive = branchFilter !== 'all' || inboxFilter !== 'all';
   const ownsSelected = !!selected && (selected.assigned_to === employee?.id || isSupervisor);
   const visibleMessages = useMemo(() => {
     const list = messages || [];
@@ -165,11 +188,12 @@ const WhatsAppInboxContent: React.FC = () => {
 
 
       {presenceError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{presenceError}</p>}
+      {channelsError && <p role="alert" className="px-4 py-2 text-sm text-destructive">تعذر تحميل فروع وأرقام واتساب.</p>}
       {conversationsError && <div role="alert" className="p-3 bg-destructive/10 text-destructive">تعذر تحميل المحادثات. تحقق من الاتصال والصلاحيات ثم اضغط تحديث.</div>}
       {canWork && !employee && <div role="status" className="px-4 py-2 text-sm bg-muted">{identityError ? 'تعذر التحقق من ملف الموظف؛ أعد المحاولة قبل الاستلام.' : 'لاستلام المحادثات، اربط حسابك بملف موظف نشط في المؤسسة من فريق العمل.'}</div>}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Conversations list */}
-        <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] md:shrink-0 border-l bg-card/40 flex-col overflow-hidden`}>
+        <aside className={`${selected ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] md:shrink-0 border-l bg-card/40 flex-col overflow-hidden`}>
           <div className="p-3 border-b space-y-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -187,26 +211,38 @@ const WhatsAppInboxContent: React.FC = () => {
               </Button>
             </div>
             <div className="flex gap-1 overflow-x-auto pb-0.5" aria-label="تصنيف المحادثات">
-              {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(isSupervisor ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
+              {(([['queue', 'الطابور'], ['mine', 'محادثاتي'], ...(showAll ? [['all', 'الكل']] : []), ['closed', 'المغلقة']] as const) as ReadonlyArray<readonly ['queue' | 'mine' | 'all' | 'closed', string]>).map(([key, label]) =>
                 <Button key={key} size="sm" variant={view === key ? 'default' : 'ghost'} aria-pressed={view === key}
                   className="h-7 rounded-full px-3 text-xs shrink-0"
                   onClick={() => { setView(key); setSelectedId(null); }}>{label}{key === 'queue' && queue.length ? ` ${queue.length}` : ''}</Button>)}
             </div>
-            {inboxes.length > 1 && (
+            {branches.size > 0 && (
+              <Select value={branchFilter} onValueChange={value => {
+                setBranchFilter(value); setInboxFilter('all'); setSelectedId(null);
+              }}>
+                <SelectTrigger className="h-9 rounded-full" aria-label="فلترة حسب الفرع"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل الفروع المتاحة</SelectItem>
+                  <SelectItem value="shared">الأرقام المشتركة</SelectItem>
+                  {Array.from(branches, ([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            {(inboxes.length > 1 || inboxFilter !== 'all') && (
               <Select value={inboxFilter} onValueChange={(value) => { setInboxFilter(value); setSelectedId(null); }}>
                 <SelectTrigger className="h-9 rounded-full" aria-label="اختيار رقم واتساب"><SelectValue placeholder="كل الأرقام" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الأرقام</SelectItem>
                   {inboxes.map(inbox => (
                     <SelectItem key={inbox.id} value={inbox.id}>
-                      {inbox.label || inbox.display_phone_number || inbox.business_name || 'رقم واتساب'}
+                      {inbox.label || inbox.display_phone_number || inbox.business_name || 'رقم واتساب'}{inbox.branch_name ? ` · ${inbox.branch_name}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
             {view === 'queue' && <Button className="w-full rounded-full" disabled={!employee || !canWork || !queue.length || claim.isPending}
-              onClick={() => pickup('')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
+              onClick={() => pickup(filtersActive ? queue[0].id : '')}>{claim.isPending ? 'جاري الاستلام…' : 'استلام التالي'}</Button>}
             {view === 'queue' && <p className="text-xs text-muted-foreground">الأولوية أولًا، ثم الأقدم حسب تاريخ فتح المحادثة.</p>}
           </div>
 
@@ -247,7 +283,7 @@ const WhatsAppInboxContent: React.FC = () => {
 
 
         {/* Messages panel */}
-        <section className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-chat-canvas`}>
+        <section className={`${selected ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 flex-col overflow-hidden bg-chat-canvas`}>
           {!selected ? (
             <div className="flex-1 flex items-center justify-center text-center p-6">
               <div className="max-w-xs">
@@ -276,6 +312,7 @@ const WhatsAppInboxContent: React.FC = () => {
                       <ConversationCustomerLink conversation={selected as any} />
 
                       <span className="opacity-60">
+                        {selected.inbox?.branch_name && <span>· {selected.inbox.branch_name}</span>}
                         {selected.inbox
                           ? `· عبر ${selected.inbox.label || selected.inbox.display_phone_number || selected.inbox.business_name || 'واتساب'}`
                           : '· واتساب'}
@@ -443,7 +480,7 @@ const WhatsAppInboxContent: React.FC = () => {
           open={showNewConversation}
           onOpenChange={setShowNewConversation}
           employeeId={employee?.id}
-          onStarted={(id) => { setView(isSupervisor ? 'all' : 'mine'); setSelectedId(id); refetch(); }} />
+          onStarted={(id) => { setBranchFilter('all'); setInboxFilter('all'); setView(showAll ? 'all' : 'mine'); setSelectedId(id); refetch(); }} />
 
       </div>
     </div>

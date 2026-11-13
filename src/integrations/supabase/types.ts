@@ -2692,6 +2692,7 @@ export type Database = {
       }
       branches: {
         Row: {
+          whatsapp_region_id: string | null
           address: string | null
           code: string | null
           created_at: string
@@ -2704,6 +2705,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          whatsapp_region_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -2716,6 +2718,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          whatsapp_region_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -14935,8 +14938,15 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_regions: {
+        Row: { id: string; organization_id: string; name: string; manager_user_id: string | null }
+        Insert: { id?: string; organization_id: string; name: string; manager_user_id?: string | null }
+        Update: { id?: string; organization_id?: string; name?: string; manager_user_id?: string | null }
+        Relationships: []
+      }
       whatsapp_settings: {
         Row: {
+          branch_id: string | null
           access_token: string | null
           api_version: string | null
           auto_assignment_enabled: boolean | null
@@ -14966,6 +14976,7 @@ export type Database = {
           webhook_verify_token: string | null
         }
         Insert: {
+          branch_id?: string | null
           access_token?: string | null
           api_version?: string | null
           auto_assignment_enabled?: boolean | null
@@ -14995,6 +15006,7 @@ export type Database = {
           webhook_verify_token?: string | null
         }
         Update: {
+          branch_id?: string | null
           access_token?: string | null
           api_version?: string | null
           auto_assignment_enabled?: boolean | null
@@ -18101,6 +18113,19 @@ export type Database = {
       wa_intake_step: {
         Args: { _conversation_id: string; _message_id: string; _org_id: string }
         Returns: Json
+      }
+      wa_inbox_channels: {
+        Args: { _org: string }
+        Returns: {
+          id: string
+          label: string | null
+          business_name: string | null
+          display_phone_number: string | null
+          branch_id: string | null
+          branch_name: string | null
+          is_active: boolean
+          is_default: boolean
+        }[]
       }
       whatsapp_window_open: {
         Args: { _conversation_id: string }

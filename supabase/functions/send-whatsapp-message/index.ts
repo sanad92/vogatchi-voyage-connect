@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     let conversation: any = null;
 
     if (conversationId) {
-      const { data } = await admin
+      const { data } = await authClient
         .from('whatsapp_conversations')
         .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
         .eq('id', conversationId)
@@ -173,21 +173,30 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { data: existing } = await admin
+      const { data: existing, error: existingError } = await authClient
         .from('whatsapp_conversations')
         .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
         .eq('organization_id', orgId)
         .eq('phone_number', toPhone)
+        .order('last_message_at', { ascending: false, nullsFirst: false })
+        .order('id')
+        .limit(1)
         .maybeSingle();
+      if (existingError) throw existingError;
 
       if (existing) {
         conversation = existing;
-        if (!existing.customer_id && customerId) {
-          await admin.from('whatsapp_conversations').update({ customer_id: customerId }).eq('id', existing.id);
-        }
       } else {
-        const settingsForNew = await resolveSettings(admin, orgId);
-        const { data: created, error: cErr } = await admin
+        const { data: canStart, error: permissionError } = await authClient.rpc('has_org_permission', { _org_id: orgId, _permission: 'whatsapp_admin' });
+        if (permissionError) throw permissionError;
+        if (!canStart) return fail('CLAIM_REQUIRED', 'ابدأ المحادثة من صندوق واتساب واستلمها أولًا', 409);
+
+        const { data: channels, error: channelsError } = await authClient.rpc('wa_inbox_channels', { _org: orgId });
+        if (channelsError) throw channelsError;
+        const channel = channels?.find((row: { is_active: boolean }) => row.is_active);
+        if (!channel) return fail('WHATSAPP_NOT_CONNECTED', 'لا يوجد رقم واتساب متصل متاح لك', 400);
+        const settingsForNew = await resolveSettings(admin, orgId, channel.id);
+        const { data: created, error: cErr } = await authClient
           .from('whatsapp_conversations')
           .insert({
             organization_id: orgId,
@@ -200,8 +209,17 @@ Deno.serve(async (req) => {
           })
           .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
           .single();
-        if (cErr) throw new WaError('CONVERSATION_CREATE_FAILED', cErr.message);
-        conversation = created;
+        if (cErr?.code === '23505') {
+          const { data: concurrent, error } = await authClient.from('whatsapp_conversations')
+            .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
+            .eq('organization_id', orgId).eq('whatsapp_settings_id', channel.id)
+            .eq('phone_number', toPhone).single();
+          if (error) throw error;
+          conversation = concurrent;
+        } else {
+          if (cErr) throw new WaError('CONVERSATION_CREATE_FAILED', cErr.message);
+          conversation = created;
+        }
       }
       conversationId = conversation.id;
     }
@@ -229,9 +247,10 @@ Deno.serve(async (req) => {
     }
     const { data: callerProfile } = await admin.from('profiles').select('linked_employee_id').eq('id', user.id).single();
     const checkOwner = async () => {
-      const { data: current, error } = await admin.from('whatsapp_conversations').select('assigned_to')
-        .eq('id', conversationId!).eq('organization_id', conversation.organization_id).single();
+      const { data: current, error } = await authClient.from('whatsapp_conversations').select('assigned_to')
+        .eq('id', conversationId!).eq('organization_id', conversation.organization_id).maybeSingle();
       if (error) throw error;
+      if (!current) return false;
       if (isManager) return true;
       if (!callerProfile?.linked_employee_id || current.assigned_to !== callerProfile.linked_employee_id) return false;
       const { data: activeEmployee } = await admin.from('employees').select('id')
@@ -239,6 +258,11 @@ Deno.serve(async (req) => {
       return !!activeEmployee;
     };
     if (!await checkOwner()) return fail('CLAIM_REQUIRED', 'استلم المحادثة أولًا أو اطلب تحويلها إليك من المشرف', 409);
+    if (!conversation.customer_id && customerId && !rawConversationId) {
+      const { error } = await authClient.from('whatsapp_conversations').update({ customer_id: customerId })
+        .eq('id', conversationId!).eq('organization_id', conversation.organization_id).is('customer_id', null);
+      if (error) throw error;
+    }
     if (isManager) {
       const { error: pauseError } = await admin.from('whatsapp_conversations')
         .update({ status: 'pending', assignment_reason: 'human_queue' }).eq('id', conversationId!).is('assigned_to', null);
@@ -251,6 +275,7 @@ Deno.serve(async (req) => {
         .from('whatsapp_messages')
         .select('id, status, message_id, error_message')
         .eq('organization_id', conversation.organization_id)
+        .eq('conversation_id', conversationId!)
         .eq('idempotency_key', idempotencyKey)
         .maybeSingle();
       if (dupe && dupe.status !== 'failed') {
@@ -261,7 +286,7 @@ Deno.serve(async (req) => {
     const to = normalizePhone(conversation.phone_number);
     if (!to) return fail('INVALID_PHONE', 'رقم المحادثة غير صالح | Conversation phone number is invalid', 400);
 
-    const settings = await resolveSettings(admin, conversation.organization_id, conversation.whatsapp_settings_id);
+    const settings = await resolveSettings(admin, conversation.organization_id, conversation.whatsapp_settings_id, true);
 
     // ---------- 24h service window enforcement ----------
     // Templates are ALWAYS allowed (that is how a closed window is reopened);
@@ -296,7 +321,7 @@ Deno.serve(async (req) => {
       }
       let mediaRef: any = { link: mediaUrl };
       if (mediaStoragePath && (typeof mediaStoragePath !== 'string'
-        || !mediaStoragePath.startsWith(`${conversation.organization_id}/`)
+        || !mediaStoragePath.startsWith(`${conversation.organization_id}/${conversationId}/`)
         || mediaStoragePath.includes('..'))) {
         return fail('FORBIDDEN_MEDIA', 'الملف غير تابع لهذه الشركة | Media file does not belong to this organization', 403);
       }

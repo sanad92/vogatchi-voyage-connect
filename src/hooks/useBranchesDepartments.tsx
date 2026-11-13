@@ -10,6 +10,7 @@ export interface Branch {
   name: string;
   code: string | null;
   address: string | null;
+  whatsapp_region_id: string | null;
   phone: string | null;
   manager_id: string | null;
   is_active: boolean;

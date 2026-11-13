@@ -41,26 +41,27 @@ export async function appSecretProof(token: string): Promise<string | null> {
 
 /**
  * Resolves the organization's WhatsApp inbox server-side.
- * Preference: explicit inbox id -> org default -> any active inbox.
+ * Use the specified sender when supplied, otherwise choose the organization default or another active sender.
  */
 export async function resolveSettings(
   admin: any,
   organizationId: string,
   settingsId?: string | null,
+  sharedOnly = false,
 ): Promise<WaSettings> {
   const cols = 'id, organization_id, phone_number_id, access_token, api_version, waba_id';
 
   if (settingsId) {
     const { data } = await admin.from('whatsapp_settings').select(cols)
-      .eq('id', settingsId).eq('organization_id', organizationId).maybeSingle();
+      .eq('id', settingsId).eq('organization_id', organizationId).eq('is_active', true).maybeSingle();
     if (data?.access_token && data?.phone_number_id) return data as WaSettings;
+    throw new WaError('WHATSAPP_NOT_CONNECTED', 'رقم واتساب الخاص بالمحادثة غير متصل');
   }
 
-  const { data: rows } = await admin.from('whatsapp_settings').select(cols + ', is_default, is_active')
-    .eq('organization_id', organizationId)
-    .order('is_default', { ascending: false })
-    .order('is_active', { ascending: false })
-    .limit(10);
+  const activeSettings = admin.from('whatsapp_settings').select(cols)
+    .eq('organization_id', organizationId).eq('is_active', true);
+  if (sharedOnly) activeSettings.is('branch_id', null);
+  const { data: rows } = await activeSettings.order('is_default', { ascending: false }).limit(10);
 
   const usable = (rows ?? []).find((r: any) => r.access_token && r.phone_number_id);
   if (!usable) {

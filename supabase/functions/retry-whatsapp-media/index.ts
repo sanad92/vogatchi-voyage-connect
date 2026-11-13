@@ -87,7 +87,7 @@ serve(async (req) => {
     }
 
     // Fetch the message
-    const { data: message, error: msgErr } = await supabase
+    const { data: message, error: msgErr } = await userClient
       .from('whatsapp_messages')
       .select('id, organization_id, conversation_id, message_id, media_provider_id, media_mime_type, media_storage_path, media_download_attempts')
       .eq('id', messageId)
@@ -147,12 +147,13 @@ serve(async (req) => {
         .maybeSingle();
       settings = data;
     }
-    if (!settings?.access_token) {
+    if (!conv?.whatsapp_settings_id) {
       const { data } = await supabase
         .from('whatsapp_settings')
         .select('access_token, api_version')
         .eq('organization_id', message.organization_id)
         .not('access_token', 'is', null)
+        .is('branch_id', null)
         .order('created_at', { ascending: true })
         .limit(1);
       settings = data?.[0] ?? null;
