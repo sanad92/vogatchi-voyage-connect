@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { useBranches } from '@/hooks/useBranchesDepartments';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 import { useQuotes, type QuoteFormData } from '@/hooks/useQuotes';
 import QuoteItemsEditor from '@/components/quotes/QuoteItemsEditor';
 import { Button } from '@/components/ui/button';
@@ -39,14 +42,29 @@ const quoteSteps: WizardStepConfig[] = [
 export default function NewQuote() {
   const navigate = useNavigate();
   const orgId = useOrgId();
+  const [searchParams] = useSearchParams();
+  const conversationId = searchParams.get('whatsapp_conversation');
+  const quoteBranch = useQuery({
+    queryKey: ['pos-whatsapp-quote-branch', orgId, conversationId],
+    enabled: !!orgId && !!conversationId,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<string | null>('pos_whatsapp_quote_branch', { _org: orgId, _conversation: conversationId });
+      if (error) throw error;
+      return data;
+    },
+  });
   const { createQuote } = useQuotes();
 
+  const { data: branches = [] } = useBranches();
+  const { currentUserRole } = useOrgMembers();
+  const canChooseBranch = currentUserRole === 'owner' || currentUserRole === 'admin';
   const wizard = useWizardForm({
     steps: quoteSteps,
     draftKey: orgId ? `draft_quote_${orgId}` : undefined,
     initialData: {
       customer_id: null,
       customer_name: '',
+      sales_branch_id: '',
       travel_date: null,
       return_date: null,
       destination: '',
@@ -97,6 +115,7 @@ export default function NewQuote() {
     const formData: QuoteFormData = {
       customer_id: wizard.formData.customer_id,
       customer_name: wizard.formData.customer_name,
+      sales_branch_id: wizard.formData.sales_branch_id || quoteBranch.data || undefined,
       travel_date: wizard.formData.travel_date,
       return_date: wizard.formData.return_date,
       destination: wizard.formData.destination,
@@ -152,6 +171,17 @@ export default function NewQuote() {
                     </SelectContent>
                   </Select>
                   <FieldError error={wizard.errors.customer_name} />
+                  {!canChooseBranch && quoteBranch.data && <p className="text-sm">فرع البيع المقترح {branches.find(branch => branch.id === quoteBranch.data)?.name}</p>}
+                  {quoteBranch.isError && <p role="status" className="text-sm text-muted-foreground">تعذر تحميل فرع محادثة واتساب.</p>}
+                  {canChooseBranch && branches.some(branch => branch.is_active) && (
+                    <label className="mt-3 block text-sm">فرع البيع
+                      <select className="mt-1 w-full rounded border bg-background p-2" value={wizard.formData.sales_branch_id}
+                        onChange={event => wizard.updateField('sales_branch_id', event.target.value)}>
+                        <option value="">{branches.find(branch => branch.id === quoteBranch.data)?.name || 'الفرع الافتراضي'}</option>
+                        {branches.filter(branch => branch.is_active).map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                      </select>
+                    </label>
+                  )}
                 </div>
 
                 <div>

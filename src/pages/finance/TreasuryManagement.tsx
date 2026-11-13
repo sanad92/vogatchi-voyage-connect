@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useBranches } from '@/hooks/useBranchesDepartments';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 import { useOrgId } from '@/hooks/useOrgId';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/layout/PageHeader';
@@ -23,11 +25,14 @@ export default function TreasuryManagement() {
   usePageTitle('إدارة الخزينة');
   const orgId = useOrgId();
   const qc = useQueryClient();
+  const { data: branches = [] } = useBranches();
+  const { currentUserRole } = useOrgMembers();
+  const canAssignBranch = currentUserRole === 'owner' || currentUserRole === 'admin';
   const { data: accounts = [], isLoading } = useTreasuryAccounts();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     account_name: '', bank_name: '', account_number: '', currency: 'EGP',
-    treasury_kind: 'bank', current_balance: 0, notes: '',
+    treasury_kind: 'bank', current_balance: 0, notes: '', sales_branch_id: null as string | null,
   });
 
   const create = useMutation({
@@ -43,6 +48,16 @@ export default function TreasuryManagement() {
       toast({ title: 'تمت إضافة الحساب' });
     },
     onError: (e: any) => toast({ title: 'فشل', description: e.message, variant: 'destructive' }),
+  });
+
+  const assign = useMutation({
+    mutationFn: async ({ id, branch }: { id: string; branch: string | null }) => {
+      const { error } = await sb.from('bank_accounts').update({ sales_branch_id: branch })
+        .eq('organization_id', orgId).eq('id', id).select('id').single();
+      if (error) throw error;
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['treasury-accounts', orgId] }); toast({ title: 'تم ربط الحساب بالفرع' }); },
+    onError: (error: Error) => toast({ title: 'تعذر ربط الحساب', description: error.message, variant: 'destructive' }),
   });
 
   const totalsByKind = accounts.reduce((acc: any, a: any) => {
@@ -79,6 +94,15 @@ export default function TreasuryManagement() {
                   <SelectContent>{['EGP','USD','EUR','SAR','AED','GBP'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              {canAssignBranch && <div><Label>الفرع</Label>
+                <Select value={form.sales_branch_id ?? 'central'} onValueChange={value => setForm({ ...form, sales_branch_id: value === 'central' ? null : value })}>
+                  <SelectTrigger aria-label="فرع الخزينة الجديدة"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="central">حساب مركزي</SelectItem>
+                    {branches.filter(branch => branch.is_active).map(branch => <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>}
               <div><Label>الرصيد الافتتاحي</Label><Input type="number" value={form.current_balance} onChange={(e) => setForm({ ...form, current_balance: Number(e.target.value) })} /></div>
               <Button className="w-full" onClick={() => create.mutate()} disabled={create.isPending || !form.account_name}>حفظ</Button>
             </div>
@@ -104,7 +128,7 @@ export default function TreasuryManagement() {
               <TableHeader><TableRow>
                 <TableHead>النوع</TableHead><TableHead>الاسم</TableHead>
                 <TableHead>البنك</TableHead><TableHead>الرقم</TableHead>
-                <TableHead>العملة</TableHead><TableHead className="text-left">الرصيد</TableHead>
+                <TableHead>الفرع</TableHead><TableHead>العملة</TableHead><TableHead className="text-left">الرصيد</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {accounts.map((a: any) => (
@@ -113,6 +137,14 @@ export default function TreasuryManagement() {
                     <TableCell className="font-medium">{a.account_name}</TableCell>
                     <TableCell>{a.bank_name}</TableCell>
                     <TableCell className="font-mono text-xs">{a.account_number}</TableCell>
+                    <TableCell>{canAssignBranch ? <Select value={a.sales_branch_id ?? 'central'} disabled={assign.isPending}
+                      onValueChange={value => assign.mutate({ id: a.id, branch: value === 'central' ? null : value })}>
+                      <SelectTrigger className="min-w-36" aria-label={`فرع ${a.account_name}`}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="central">حساب مركزي</SelectItem>
+                        {branches.filter(branch => branch.is_active || branch.id === a.sales_branch_id).map(branch => <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select> : branches.find(branch => branch.id === a.sales_branch_id)?.name ?? 'حساب مركزي'}</TableCell>
                     <TableCell><Badge>{a.currency}</Badge></TableCell>
                     <TableCell className="text-left font-mono">{Number(a.current_balance || 0).toLocaleString('ar-EG')}</TableCell>
                   </TableRow>

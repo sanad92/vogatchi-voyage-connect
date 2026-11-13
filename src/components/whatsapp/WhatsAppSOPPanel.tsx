@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserPlus } from 'lucide-react';
@@ -71,6 +72,9 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
           <p className="text-xs text-muted-foreground">
             لا يوجد ملف عميل محتمل مرتبط بهذه المحادثة حسب دليل العمل.
           </p>
+          {hasPermission('quotes_create') && <Button asChild variant="outline" size="sm">
+            <Link to={`/quotes/new?whatsapp_conversation=${encodeURIComponent(conversationId)}`}>إنشاء عرض سعر</Link>
+          </Button>}
           {hasPermission('crm_create') && hasPermission('crm_view') && (
             <Button size="sm" disabled={briefLoading} onClick={() => setCreating(true)}>
               <UserPlus className="h-3.5 w-3.5 ml-1" /> فتح ملف استقبال
@@ -102,6 +106,9 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
 
   return (
     <div className="p-3 space-y-3">
+      {hasPermission('quotes_create') && <Button asChild variant="outline" size="sm">
+        <Link to={`/quotes/new?whatsapp_conversation=${encodeURIComponent(conversationId)}`}>إنشاء عرض سعر</Link>
+      </Button>}
       <SopLeadPanel leadId={lead.id} compact />
     </div>
   );

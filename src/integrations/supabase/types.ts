@@ -1009,6 +1009,7 @@ export type Database = {
       }
       bank_accounts: {
         Row: {
+          sales_branch_id: string | null
           account_name: string
           account_number: string
           account_type: string | null
@@ -1029,6 +1030,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          sales_branch_id?: string | null
           account_name: string
           account_number: string
           account_type?: string | null
@@ -1049,6 +1051,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          sales_branch_id?: string | null
           account_name?: string
           account_number?: string
           account_type?: string | null
@@ -2547,6 +2550,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          sales_branch_id: string | null
           base_cost_price: number | null
           base_selling_price: number | null
           booking_number: string
@@ -2580,6 +2584,7 @@ export type Database = {
           workflow_stage: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Insert: {
+          sales_branch_id?: string | null
           base_cost_price?: number | null
           base_selling_price?: number | null
           booking_number: string
@@ -2613,6 +2618,7 @@ export type Database = {
           workflow_stage?: Database["public"]["Enums"]["booking_workflow_stage"]
         }
         Update: {
+          sales_branch_id?: string | null
           base_cost_price?: number | null
           base_selling_price?: number | null
           booking_number?: string
@@ -2692,6 +2698,7 @@ export type Database = {
       }
       branches: {
         Row: {
+          pos_cost_center_id: string | null
           address: string | null
           code: string | null
           created_at: string
@@ -2704,6 +2711,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          pos_cost_center_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -2716,6 +2724,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          pos_cost_center_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -7056,6 +7065,7 @@ export type Database = {
       }
       invoices: {
         Row: {
+          sales_branch_id: string | null
           booking_id: string | null
           booking_type: string | null
           created_at: string | null
@@ -7085,6 +7095,7 @@ export type Database = {
           vat_rate: number | null
         }
         Insert: {
+          sales_branch_id?: string | null
           booking_id?: string | null
           booking_type?: string | null
           created_at?: string | null
@@ -7114,6 +7125,7 @@ export type Database = {
           vat_rate?: number | null
         }
         Update: {
+          sales_branch_id?: string | null
           booking_id?: string | null
           booking_type?: string | null
           created_at?: string | null
@@ -10435,6 +10447,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          sales_branch_id: string | null
           assigned_employee_id: string | null
           created_at: string | null
           created_by: string | null
@@ -10467,6 +10480,7 @@ export type Database = {
           vat_rate: number | null
         }
         Insert: {
+          sales_branch_id?: string | null
           assigned_employee_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -10499,6 +10513,7 @@ export type Database = {
           vat_rate?: number | null
         }
         Update: {
+          sales_branch_id?: string | null
           assigned_employee_id?: string | null
           created_at?: string | null
           created_by?: string | null

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 import { useOrgId } from "@/hooks/useOrgId";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,7 @@ const Invoices = () => {
   const orgId = useOrgId();
   const [params, setParams] = useSearchParams();
   const invoiceId = params.get("id");
+  const { hasPermission } = useSupabasePermissions();
   const { data: linkedInvoice } = useQuery({
     queryKey: ["invoices", "by-id", orgId, invoiceId],
     enabled: Boolean(orgId && invoiceId),
@@ -470,6 +472,9 @@ const Invoices = () => {
                               عرض
                             </Button>
                             {!invoice.pilgrimage_b2b_agreement_id && <>
+                              {hasPermission("payments_view") && Number(invoice.remaining_amount) > 0 && <Button asChild variant="ghost" size="sm">
+                                <Link to={`/branch-pos?invoice=${invoice.id}&number=${encodeURIComponent(invoice.invoice_number)}`}>نقطة البيع</Link>
+                              </Button>}
                               <Button
                                 variant="outline"
                                 size="sm"

@@ -52,6 +52,7 @@ export interface Quote {
 }
 
 export interface QuoteFormData {
+  sales_branch_id?: string;
   /** Optional override; atomic quote creation defaults to organization currency when absent. */
   currency?: 'EGP' | 'SAR' | 'USD' | 'EUR' | 'AED';
   customer_id: string | null;
