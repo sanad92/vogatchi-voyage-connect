@@ -1,5 +1,11 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  'القيود المحاسبية': 'Journal entries',
+  'قيمة آخر قيد': 'Latest entry amount',
+  'استحقاق مورد ملغي': 'Cancelled supplier payable',
+  'فاتورة مورد ملغاة': 'Cancelled supplier invoice',
+  'استحقاق فواتير المورد': 'Supplier invoice obligation',
+  'تعذر تحميل كشف حساب المورد.': 'Could not load the supplier statement.',
   'جلسة دعم': 'Support session',
   'جلسة دعم نشطة': 'Active support session',
   'جلسة دعم للمؤسسة': 'Company support session',
