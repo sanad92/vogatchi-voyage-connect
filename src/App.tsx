@@ -141,6 +141,7 @@ const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
 const PlatformLoginPage = lazy(() => import("@/pages/platform-admin/PlatformLoginPage"));
 const PlatformLayout = lazy(() => import("@/components/platform-admin/PlatformLayout"));
 const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
+const PlatformCompanyFollowup = lazy(() => import("@/pages/platform-admin/PlatformCompanyFollowup"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
 const PlatformAdminSettings = lazy(() => import("@/pages/platform-admin/PlatformAdminSettings"));
@@ -288,6 +289,7 @@ function App() {
                           <Routes>
                             <Route index element={<PlatformAdminDashboard />} />
                             <Route path="organizations" element={<PlatformAdminOrganizations />} />
+                            <Route path="organizations/followup" element={<PlatformCompanyFollowup />} />
                             <Route path="subscriptions" element={<PlatformAdminSubscriptions />} />
                             <Route path="plans" element={<PlatformAdminPlans />} />
                             <Route path="transfers" element={<PlatformAdminTransfers />} />

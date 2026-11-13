@@ -9950,6 +9950,12 @@ export type Database = {
           },
         ]
       }
+      platform_company_followups: {
+        Row: { organization_id: string; assigned_to: string | null; next_followup_at: string | null; note: string; updated_by: string | null; updated_at: string }
+        Insert: { organization_id: string; assigned_to?: string | null; next_followup_at?: string | null; note?: string; updated_by?: string | null; updated_at?: string }
+        Update: { assigned_to?: string | null; next_followup_at?: string | null; note?: string; updated_by?: string | null; updated_at?: string }
+        Relationships: []
+      }
       platform_finance_accounts: {
         Row: { code: string; name_ar: string; name_en: string; kind: string }
         Insert: { code: string; name_ar: string; name_en: string; kind: string }
@@ -15926,6 +15932,10 @@ export type Database = {
       add_platform_finance_account: {
         Args: { p_code: string; p_name_ar: string; p_name_en: string; p_kind: string }
         Returns: undefined
+      }
+      platform_company_activation: {
+        Args: { p_organization_id?: string; p_page?: number }
+        Returns: Json
       }
       get_platform_finance_role: { Args: Record<PropertyKey, never>; Returns: string | null }
       list_platform_finance_staff: { Args: Record<PropertyKey, never>; Returns: { email: string; role: string }[] }

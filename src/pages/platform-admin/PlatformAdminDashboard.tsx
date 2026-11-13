@@ -182,6 +182,7 @@ function PlatformAdminDashboard() {
               count={number(transfers.data?.count)} to="/platform/transfers" tone="bg-warning/15 text-foreground" />
             <QueueLink icon={CalendarClock} label="اشتراكات تنتهي قريبًا" detail="اشتراكات وتجارب خلال ٧ أيام"
               count={number(renewals.data?.count)} to="/platform/subscriptions?view=renewals" tone="bg-info/10 text-info" />
+            <SectionLink to="/platform/organizations/followup">متابعة تفعيل الشركات</SectionLink>
             <QueueLink icon={LifeBuoy} label="تذاكر دعم مفتوحة" count={number(support.data?.open)} to="/platform/support"
               detail={support.data
                 ? <><bdi>{number(support.data.overdue)}</bdi> <span>تجاوزت وقت أول رد</span></>

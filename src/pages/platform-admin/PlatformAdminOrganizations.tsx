@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +168,10 @@ const PlatformAdminOrganizations = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
-      <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold text-foreground">إدارة المؤسسات</h2>
+        <Button variant="outline" asChild><Link to="/platform/organizations/followup">متابعة تفعيل الشركات</Link></Button>
+      </div>
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -225,7 +229,7 @@ const PlatformAdminOrganizations = () => {
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-foreground">{org.name}</p>
+                          <Link to={`/platform/organizations/followup?company=${org.id}`} className="font-medium text-foreground hover:underline">{org.name}</Link>
                           <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
                         </div>
                       </TableCell>
