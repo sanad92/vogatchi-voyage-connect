@@ -158,9 +158,9 @@ Deno.serve(async (req) => {
       let customer: any = null;
       {
         const { data: cust } = r.customer_id ? await admin.from('customers')
-          .select('name,phone,whatsapp_phone,email,whatsapp_opt_out')
+          .select('name,phone,email,whatsapp_opt_out')
           .eq('id', r.customer_id).eq('organization_id', broadcast.organization_id).maybeSingle() : { data: null };
-        const phones = [cust?.phone, (cust as any)?.whatsapp_phone].map((p: any) => normalizePhone(String(p || ''))).filter(Boolean);
+        const phones = [cust?.phone].map((p: any) => normalizePhone(String(p || ''))).filter(Boolean);
         if (!cust || !phones.includes(to)) {
           await markRecipient(admin, r.id, 'skipped', { error_code: 'NOT_A_CUSTOMER', error_message: 'الرقم غير مرتبط بعميل في الشركة | Recipient is not a customer of this organization' });
           skipped++;
