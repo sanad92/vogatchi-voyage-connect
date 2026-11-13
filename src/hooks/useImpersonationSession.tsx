@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -53,12 +54,24 @@ export const useImpersonationSession = () => {
       const { error } = await supabase.rpc('stop_impersonation');
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('تم إنهاء جلسة الدعم');
-      qc.removeQueries({ queryKey: ['support-booking-snapshot'] });
+      await qc.cancelQueries({ queryKey: ['active-impersonation'] });
+      qc.setQueriesData({ queryKey: ['active-impersonation'] }, null);
       qc.invalidateQueries({ queryKey: ['active-impersonation'] });
     },
+    onError: () => toast.error('تعذّر إنهاء الجلسة. حاول مرة أخرى.'),
   });
 
-  return { active: query.data, loading: query.isLoading, start, stop };
+  const expiresAt = query.data ? Date.parse(query.data.started_at) + 30 * 60 * 1000 : 0;
+  useEffect(() => {
+    if (!expiresAt) return;
+    const timeout = window.setTimeout(() => {
+      qc.setQueriesData({ queryKey: ['active-impersonation'] }, null);
+      qc.invalidateQueries({ queryKey: ['active-impersonation'] });
+    }, Math.max(expiresAt - Date.now(), 0));
+    return () => window.clearTimeout(timeout);
+  }, [expiresAt, qc]);
+
+  return { active: expiresAt > Date.now() && !query.isError ? query.data : null, loading: query.isLoading, start, stop };
 };
