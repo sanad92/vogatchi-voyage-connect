@@ -11,6 +11,7 @@ import {
   resolveSettings,
   isWindowOpen,
 } from '../_shared/whatsapp.ts';
+import { requireInternalCaller } from '../_shared/auth.ts';
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -28,7 +29,12 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   try {
-    const { broadcastId, internal, retryFailed } = await req.json();
+    const body = await req.json();
+    const { broadcastId, retryFailed } = body;
+    let internal = false;
+    if (body?.internal) {
+      try { requireInternalCaller(req); internal = true; } catch { return json({ error: 'Unauthorized' }, 401); }
+    }
     if (!broadcastId) return json({ error: 'broadcastId required' }, 400);
 
     let { data: broadcast } = await admin
@@ -43,9 +49,11 @@ Deno.serve(async (req) => {
       });
       const { data: { user } } = await authClient.auth.getUser();
       if (!user) return json({ error: 'Unauthorized' }, 401);
-      const { data: member } = await admin.from('organization_members').select('id')
+      const { data: member } = await admin.from('organization_members').select('id,role,is_active')
         .eq('organization_id', broadcast.organization_id).eq('user_id', user.id).maybeSingle();
-      if (!member) return json({ error: 'Forbidden' }, 403);
+      if (!member || member.is_active === false || !['owner', 'admin', 'manager'].includes(String(member.role))) {
+        return json({ error: 'Forbidden' }, 403);
+      }
     }
 
     // Lock: prevents concurrent runs from double-sending
@@ -146,11 +154,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Respect opt-out
+      // Recipients must be existing customers of this organization with a matching phone.
       let customer: any = null;
-      if (r.customer_id) {
-        const { data: cust } = await admin.from('customers')
-          .select('name,phone,email,whatsapp_opt_out').eq('id', r.customer_id).maybeSingle();
+      {
+        const { data: cust } = r.customer_id ? await admin.from('customers')
+          .select('name,phone,whatsapp_phone,email,whatsapp_opt_out')
+          .eq('id', r.customer_id).eq('organization_id', broadcast.organization_id).maybeSingle() : { data: null };
+        const phones = [cust?.phone, (cust as any)?.whatsapp_phone].map((p: any) => normalizePhone(String(p || ''))).filter(Boolean);
+        if (!cust || !phones.includes(to)) {
+          await markRecipient(admin, r.id, 'skipped', { error_code: 'NOT_A_CUSTOMER', error_message: 'الرقم غير مرتبط بعميل في الشركة | Recipient is not a customer of this organization' });
+          skipped++;
+          continue;
+        }
         customer = cust;
         if (cust?.whatsapp_opt_out) {
           await markRecipient(admin, r.id, 'skipped', { error_code: 'OPTED_OUT', error_message: 'العميل ألغى الاشتراك | Customer opted out' });

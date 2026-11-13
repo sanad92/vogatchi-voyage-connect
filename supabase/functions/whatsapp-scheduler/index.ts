@@ -9,12 +9,19 @@ import {
   normalizePhone,
   resolveSettings,
 } from '../_shared/whatsapp.ts';
+import { requireInternalCaller, authErrorResponse } from '../_shared/auth.ts';
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  try {
+    requireInternalCaller(req);
+  } catch (e) {
+    return authErrorResponse(e, corsHeaders) ?? json({ error: 'Unauthorized' }, 401);
+  }
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const nowIso = new Date().toISOString();
