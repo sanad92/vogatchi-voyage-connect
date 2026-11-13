@@ -1,3 +1,4 @@
+import { ListLoadError } from '@/components/common/ListLoadError';
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -23,8 +24,10 @@ export default function EmailInbox() {
   const qc = useQueryClient();
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
   const isSupervisor = isAdmin || orgRole === 'manager';
-  const { data: accounts = [], isLoading: accLoading } = useEmailAccounts();
-  const { data: threads = [], isLoading } = useEmailThreads();
+  const accountsQuery = useEmailAccounts();
+  const threadsQuery = useEmailThreads();
+  const { data: accounts = [], isLoading: accLoading } = accountsQuery;
+  const { data: threads = [], isLoading } = threadsQuery;
   const [tab, setTab] = useState<Tab>('queue');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -66,9 +69,12 @@ export default function EmailInbox() {
     catch (e: any) { toast.error(e.message); } finally { setSyncing(false); }
   };
 
-  if (!accLoading && accounts.length === 0) {
+  if (accLoading) return <p role="status" className="p-8 text-center">جارٍ تحميل حسابات البريد…</p>;
+  if (accountsQuery.isError && accounts.length === 0)
+    return <ListLoadError message="تعذر تحميل حسابات البريد" retry={() => void accountsQuery.refetch()} pending={accountsQuery.isFetching} />;
+  if (accounts.length === 0) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center p-6" dir="rtl">
+      <div className="flex min-h-[70vh] items-center justify-center p-6">
         <div className="max-w-md space-y-4 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"><Mail className="h-8 w-8 text-primary" /></div>
           <h1 className="text-2xl font-semibold">صندوق البريد</h1>
@@ -81,19 +87,20 @@ export default function EmailInbox() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col" dir="rtl">
+    <div className="flex h-[calc(100dvh-4rem)] flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
         <Mail className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-semibold">صندوق البريد</h1>
-        <span className="text-sm text-muted-foreground">{threads.length} محادثة</span>
+        {threadsQuery.data && <span className="text-sm text-muted-foreground">{threads.length} محادثة</span>}
         <div className="flex-1" />
         <Button size="sm" onClick={() => { setComposeAccount(accounts[0]?.id || ''); setComposeOpen(true); }}><PenSquare className="h-4 w-4 ml-1" />رسالة جديدة</Button>
         <Button size="sm" variant="outline" onClick={syncNow} disabled={syncing}>{syncing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-1" />}تحديث الآن</Button>
         <Button size="sm" variant="ghost" onClick={() => setSettingsOpen(true)} aria-label="الإعدادات"><Settings className="h-4 w-4" /></Button>
       </div>
 
+      {accountsQuery.isError && <ListLoadError message="تعذر تحديث حسابات البريد" retry={() => void accountsQuery.refetch()} pending={accountsQuery.isFetching} />}
       <div className="flex min-h-0 flex-1">
-        <aside className={`flex w-full flex-col border-l border-border md:w-96 ${selected ? 'hidden md:flex' : 'flex'}`}>
+        <aside className={`flex w-full flex-col border-e border-border md:w-96 ${selected ? 'hidden md:flex' : 'flex'}`}>
           <div className="space-y-2 p-3">
             <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
               <TabsList className="w-full">
@@ -103,18 +110,19 @@ export default function EmailInbox() {
               </TabsList>
             </Tabs>
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pr-9" placeholder="بحث بالموضوع أو البريد…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="ps-9" placeholder="بحث بالموضوع أو البريد…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
             {isLoading && <Loader2 className="mx-auto mt-8 h-5 w-5 animate-spin text-muted-foreground" />}
-            {!isLoading && !list.length && <div className="p-8 text-center text-sm text-muted-foreground"><Inbox className="mx-auto mb-2 h-6 w-6" />لا توجد رسائل هنا</div>}
+            {threadsQuery.isError && <ListLoadError message="تعذر تحميل رسائل البريد" retry={() => void threadsQuery.refetch()} pending={threadsQuery.isFetching} />}
+            {!isLoading && !threadsQuery.isError && !list.length && <div className="p-8 text-center text-sm text-muted-foreground"><Inbox className="mx-auto mb-2 h-6 w-6" />{search.trim() ? 'لا توجد رسائل مطابقة للبحث' : 'لا توجد رسائل هنا'}</div>}
             {list.map((t) => {
               const unread = isThreadUnread(t) && t.id !== selectedId;
               return (
                 <button key={t.id} onClick={() => setSelectedId(t.id)}
-                  className={`block w-full border-b border-border px-4 py-3 text-right transition-colors hover:bg-accent ${t.id === selectedId ? 'bg-accent' : ''}`}>
+                  className={`block w-full border-b border-border px-4 py-3 text-start transition-colors hover:bg-accent ${t.id === selectedId ? 'bg-accent' : ''}`}>
                   <div className="flex items-center gap-2">
                     {unread && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
                     <span className={`flex-1 truncate ${unread ? 'font-semibold' : ''}`}>{t.contact_name || t.contact_email}</span>
@@ -147,7 +155,7 @@ export default function EmailInbox() {
 
       <EmailAccountsDialog open={settingsOpen} onOpenChange={setSettingsOpen} canManage={isAdmin} />
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="max-w-2xl" dir="rtl">
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>رسالة جديدة</DialogTitle></DialogHeader>
           {accounts.length > 1 && (
             <Select value={composeAccount} onValueChange={setComposeAccount}>

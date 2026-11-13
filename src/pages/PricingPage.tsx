@@ -259,14 +259,8 @@ const PricingPage = () => {
             <SafarERPLogo size="sm" className="[&_img]:max-w-[115px] sm:[&_img]:max-w-none" />
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="font-bold text-foreground">تسجيل الدخول</Button>
-            </Link>
-            <Link to="/signup">
-              <Button size="sm" className="rounded-lg bg-primary font-bold text-primary-foreground hover:bg-primary">
-                ابدأ التجربة
-              </Button>
-            </Link>
+            <Button asChild variant="ghost" size="sm" className="font-bold text-foreground"><Link to="/login">تسجيل الدخول</Link></Button>
+            <Button asChild size="sm" className="rounded-lg font-bold"><Link to="/signup">ابدأ التجربة</Link></Button>
           </div>
         </div>
       </header>

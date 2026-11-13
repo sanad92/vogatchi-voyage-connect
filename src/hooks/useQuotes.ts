@@ -161,8 +161,11 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
 
   const deleteQuote = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('quotes').delete().eq('id', id);
+      if (!orgId) throw new Error('تعذر تحديد الشركة');
+      const { data, error } = await supabase.from('quotes').delete().eq('id', id)
+        .eq('organization_id', orgId).eq('status', 'draft').select('id').maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error('المسودة غير متاحة للحذف');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -175,6 +178,9 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
     quotes: quotesQuery.data?.data ?? [],
     totalCount: quotesQuery.data?.count ?? 0,
     isLoading: quotesQuery.isLoading,
+    error: quotesQuery.error,
+    refetch: quotesQuery.refetch,
+    isFetching: quotesQuery.isFetching,
     createQuote,
     updateQuoteStatus,
     deleteQuote,

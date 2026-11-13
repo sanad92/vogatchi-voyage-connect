@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ListLoadError } from '@/components/common/ListLoadError';
 import { useSearchParams } from 'react-router-dom';
 import { useJournalEntries, useJournalEntryLines } from '@/hooks/useAccounting';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,29 +12,27 @@ import { format } from 'date-fns';
 const formatNumber = (n: number) => new Intl.NumberFormat('ar-EG', { minimumFractionDigits: 2 }).format(n);
 
 export default function JournalEntriesPage() {
-  const { data: entries = [], isLoading } = useJournalEntries(200);
+  const entriesQuery = useJournalEntries(200);
+  const { data: entries = [], isLoading } = entriesQuery;
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('entry'));
-  const { data: lines = [] } = useJournalEntryLines(selectedId);
-
-  useEffect(() => {
-    setSelectedId(searchParams.get('entry'));
-  }, [searchParams]);
+  const selectedId = searchParams.get('entry') || searchParams.get('id');
+  const linesQuery = useJournalEntryLines(selectedId);
+  const { data: lines = [] } = linesQuery;
 
   const openEntry = (entryId: string) => {
-    setSelectedId(entryId);
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
+      next.delete('id');
       next.set('entry', entryId);
       return next;
     });
   };
 
   const closeEntry = () => {
-    setSelectedId(null);
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.delete('entry');
+      next.delete('id');
       return next;
     }, { replace: true });
   };
@@ -54,6 +52,8 @@ export default function JournalEntriesPage() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">جارٍ التحميل...</div>
+          ) : entriesQuery.isError ? (
+            <ListLoadError message="تعذر تحميل القيود المحاسبية" retry={() => void entriesQuery.refetch()} pending={entriesQuery.isFetching} />
           ) : (
             <Table>
               <TableHeader>
@@ -62,7 +62,7 @@ export default function JournalEntriesPage() {
                   <TableHead>التاريخ</TableHead>
                   <TableHead>الوصف</TableHead>
                   <TableHead>المرجع</TableHead>
-                  <TableHead className="text-left">المبلغ</TableHead>
+                  <TableHead className="text-left">إجمالي المدين</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -74,14 +74,14 @@ export default function JournalEntriesPage() {
                     <TableCell>{format(new Date(e.entry_date), 'yyyy-MM-dd')}</TableCell>
                     <TableCell className="max-w-xs truncate">{e.description}</TableCell>
                     <TableCell><Badge variant="outline">{e.reference_type || '—'}</Badge></TableCell>
-                    <TableCell className="text-left font-medium">{formatNumber(e.total_debit)}</TableCell>
+                    <TableCell className="text-left font-medium"><bdi>{formatNumber(e.total_debit)} {e.currency}</bdi></TableCell>
                     <TableCell>
                       <Badge className={e.status === 'posted' ? 'bg-green-500/10 text-green-700' : 'bg-gray-500/10'}>
                         {e.status === 'posted' ? 'مرحّل' : 'مسودة'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => openEntry(e.id)}>
+                      <Button size="sm" variant="ghost" aria-label={`عرض تفاصيل القيد ${e.entry_number}`} onClick={() => openEntry(e.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -99,7 +99,9 @@ export default function JournalEntriesPage() {
       <Dialog open={!!selectedId} onOpenChange={(o) => !o && closeEntry()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>تفاصيل القيد</DialogTitle></DialogHeader>
-          <Table>
+          {linesQuery.isLoading ? <p role="status">جارٍ تحميل بنود القيد…</p> :
+            linesQuery.isError ? <ListLoadError message="تعذر تحميل بنود القيد" retry={() => void linesQuery.refetch()} pending={linesQuery.isFetching} /> :
+            lines.length === 0 ? <p>لا توجد بنود متاحة لهذا القيد.</p> : <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>الحساب</TableHead>
@@ -121,7 +123,7 @@ export default function JournalEntriesPage() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table>}
         </DialogContent>
       </Dialog>
     </div>

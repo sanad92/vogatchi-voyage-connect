@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -31,6 +32,8 @@ import {
 
 const TAB_KEYS = ['overview', 'itinerary', 'amendments', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation', 'sop'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
+
+const TOOLS: TabKey[] = ['timeline', 'automation', 'sop'];
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: 'نظرة عامة',
@@ -74,7 +77,7 @@ const BookingWorkspace = () => {
   }
   if (!workspace.booking) {
     return (
-      <div className="p-8 text-center space-y-3" dir="rtl">
+      <div className="p-8 text-center space-y-3">
         <p className="text-destructive">تعذر تحميل الحجز</p>
         <Button variant="ghost" onClick={() => navigate('/bookings')}>
           <ArrowRight className="h-4 w-4 ml-1" /> رجوع للحجوزات
@@ -84,7 +87,7 @@ const BookingWorkspace = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4" dir="rtl">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="ghost" size="sm" onClick={() => navigate('/bookings')}>
           <ArrowRight className="h-4 w-4 ml-1" /> الحجوزات
@@ -126,8 +129,8 @@ const BookingWorkspace = () => {
               editable={canEditBooking && !cancelled}
             />
             <WorkflowProgressBar bookingId={id!} />
-            <FinancialSummaryStrip bookingId={id!} />
             <SmartNextActionCard workspace={workspace} ctx={ctx} />
+            {getPermissionScope('financial_view') !== 'none' && <FinancialSummaryStrip bookingId={id!} />}
 
             <div className="flex flex-wrap gap-2">
               {canSettleCancellation && !workspace.booking.is_demo && (
@@ -154,13 +157,21 @@ const BookingWorkspace = () => {
       })()}
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
-        <TabsList className="grid grid-cols-3 sm:grid-cols-5 xl:grid-cols-10 h-auto">
-          {TAB_KEYS.map((k) => (
-            <TabsTrigger key={k} value={k} className="text-xs md:text-sm">
-              {TAB_LABELS[k]}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList className="flex h-auto max-w-full flex-wrap justify-start gap-1">
+            {TAB_KEYS.filter(key => !TOOLS.includes(key) || key === activeTab).map(key => (
+              <TabsTrigger key={key} value={key} className="text-xs md:text-sm">
+                {TAB_LABELS[key]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" size="sm">أدوات الحجز</Button></DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {TOOLS.map(key => <DropdownMenuItem key={key} onSelect={() => setTab(key)}>{TAB_LABELS[key]}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <TabsContent value="overview" className="mt-4">
           <OverviewTab workspace={workspace} onOpenTab={setTab} />

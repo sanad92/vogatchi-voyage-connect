@@ -163,7 +163,7 @@ const WhatsAppConversationDetailContent: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex bg-background" dir="rtl">
+    <div className="h-[calc(100dvh-4rem)] flex bg-background">
       <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="border-b bg-card px-4 py-3 flex items-center gap-3">
@@ -217,7 +217,7 @@ const WhatsAppConversationDetailContent: React.FC = () => {
       {/* Search & filters */}
       <div className="border-b bg-card px-4 py-3 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}

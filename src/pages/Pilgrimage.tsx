@@ -359,6 +359,21 @@ const Pilgrimage = () => {
     const requestedTab = params.get('tab');
     const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (requestedTab === 'operations' && operationalUmrah))
       ? requestedTab : 'pilgrims';
+    const goToProgramTab = (value: string) => setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (value === 'pilgrims') next.delete('tab');
+      else next.set('tab', value);
+      return next;
+    }, { replace: true });
+    const needsSalesApproval = ['draft', 'open'].includes(program.status) &&
+      (!program.sales_confirmed_at || pilgrimageSalesIssues(program).length > 0);
+    const editProgram = () => {
+      setConfirmSales(false);
+      setEditingProgram(true);
+      setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((key) => [key, program[key] ?? ''])),
+        cost_per_person: cost?.cost_per_person ?? 0 });
+      setProgramOpen(true);
+    };
     const canManageOperations = canManage && hasPermission('bookings_edit') && operationRefunds.isSuccess;
     const canRoom = hasPermission('bookings_edit') && (!operationalUmrah || operationRefunds.isSuccess)
       && !['departed', 'completed', 'cancelled'].includes(program.status);
@@ -390,15 +405,23 @@ const Pilgrimage = () => {
           description={`${program.program_type === 'hajj' ? 'حج' : 'عمرة'} · ${program.departure_date ?? '—'} ← ${program.return_date ?? '—'} · مكة ${program.makkah_nights} ليالٍ · المدينة ${program.madinah_nights} ليالٍ`}
           icon={Moon}
           badge={<Badge variant="outline">{programStatusLabel(program)}</Badge>}
-          actions={<div className="flex gap-2">
+          actions={<div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
-            <Button variant="outline" onClick={() => setSalesOpen(true)}>عروض البيع Group / FIT / B2B</Button>
-            {canManage && <Button variant="outline" onClick={() => { setConfirmSales(false); setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
+            {canManage && <Button variant="outline" onClick={editProgram}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
             <Button disabled={!!registrationBlock} title={registrationBlock || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: operationalUmrah ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
           </div>}
         />
-        {['draft', 'open'].includes(program.status) && (!program.sales_confirmed_at || pilgrimageSalesIssues(program).length > 0) &&
-          <Card className="p-4 text-sm text-muted-foreground">{salesConfirmationRequired}</Card>}
+        <Card className="space-y-3 p-4">
+          <h2 className="text-sm font-semibold">إدارة البرنامج</h2>
+          {needsSalesApproval && <p className="text-sm text-muted-foreground">{salesConfirmationRequired}</p>}
+          <div className="flex flex-wrap gap-2">
+            {canManage && needsSalesApproval && <Button size="sm" onClick={editProgram}>مراجعة اعتماد البيع</Button>}
+            {interestTab && <Button size="sm" variant={needsSalesApproval && !canManage ? 'default' : 'outline'}
+              onClick={() => goToProgramTab('interest')}>طلبات الاهتمام</Button>}
+            <Button size="sm" variant="outline" onClick={() => setSalesOpen(true)}>العروض والمقاعد</Button>
+            {active.length > 0 && <Button size="sm" variant="outline" onClick={() => goToProgramTab('rooming')}>تسكين المسافرين</Button>}
+          </div>
+        </Card>
         {program.status === 'draft' && program.notes && <Card className="p-4 text-sm whitespace-pre-wrap text-muted-foreground">{program.notes}</Card>}
         {operationalUmrah && operationRefunds.isError && <Card role="alert" className="flex flex-wrap items-center gap-2 p-4 text-sm text-destructive">
           تعذر تحميل رصيد الاسترداد. أعد المحاولة قبل التحصيل أو تنفيذ تعديل مالي.
@@ -424,12 +447,7 @@ const Pilgrimage = () => {
           </Card>
         )}
 
-        <Tabs value={tab} onValueChange={(value) => setParams((current) => {
-          const next = new URLSearchParams(current);
-          if (value === 'pilgrims') next.delete('tab');
-          else next.set('tab', value);
-          return next;
-        }, { replace: true })}>
+        <Tabs value={tab} onValueChange={goToProgramTab}>
           <TabsList className="h-auto flex-wrap"><TabsTrigger value="pilgrims">المسجلون</TabsTrigger>{interestTab && <TabsTrigger value="interest">طلبات الاهتمام</TabsTrigger>}<TabsTrigger value="rooming">التسكين</TabsTrigger>{operationalUmrah && <TabsTrigger value="operations">التعديلات والإلغاء</TabsTrigger>}<TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
 
           {interestTab && orgId && <TabsContent value="interest">

@@ -15,11 +15,12 @@ import {
 } from '@/config/moduleNavigation';
 import { cn } from '@/lib/utils';
 import {
-  ChevronDown, ChevronLeft, ChevronRight, X, Shield, Star,
+  ChevronDown, ChevronLeft, ChevronRight, Shield, Star,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SafarLogo from '@/components/brand/VogantraLogo';
+import { SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
@@ -28,11 +29,10 @@ const FAVORITES_KEY = 'vogatchi:sidebar:favorites:v1';
 interface DashboardSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  mobileOpen: boolean;
   onMobileClose: () => void;
 }
 
-const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: DashboardSidebarProps) => {
+const DashboardSidebar = ({ collapsed, onToggle, onMobileClose }: DashboardSidebarProps) => {
   const location = useLocation();
   const { t, dir } = useLanguage();
   const { user, profile } = useOptimizedAuth();
@@ -110,7 +110,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
       .filter((it): it is NavigationScreen => !!it && canAccessScreen(it));
   }, [favorites, allGroups, canAccessScreen]);
 
-  const sidebarContent = (
+  const renderSidebar = (collapsed: boolean) => (
 
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -118,7 +118,7 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
         "flex items-center gap-3 px-4 py-5 border-b border-sidebar-border",
         collapsed && "justify-center px-2"
       )}>
-        <Link to="/dashboard" aria-label="SafarERP" className="flex items-center gap-3 min-w-0">
+        <Link to="/dashboard" onClick={onMobileClose} aria-label="SafarERP" className="flex items-center gap-3 min-w-0">
           <SafarLogo variant="mark" size="md" />
           {!collapsed && <span className="text-sidebar-foreground font-semibold text-lg" dir="ltr">SafarERP</span>}
         </Link>
@@ -332,33 +332,18 @@ const DashboardSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Da
 
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" onClick={onMobileClose}>
-          <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" />
-        </div>
-      )}
-
-      {/* Mobile sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 start-0 z-50 w-72 bg-sidebar transition-transform duration-300 lg:hidden shadow-2xl",
-        mobileOpen ? "translate-x-0" : "ltr:-translate-x-full rtl:translate-x-full"
-      )}>
-        <button
-          onClick={onMobileClose}
-          className="absolute top-4 end-4 p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent z-10"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        {sidebarContent}
-      </aside>
+      <SheetContent side={dir === 'rtl' ? 'right' : 'left'} dir={dir} aria-describedby={undefined}
+        className="w-72 max-w-[90vw] sm:max-w-[90vw] border-sidebar-border bg-sidebar p-0 lg:hidden [&>button]:right-auto [&>button]:end-3 [&>button]:text-sidebar-foreground">
+        <SheetTitle className="sr-only">{t('قائمة التنقل')}</SheetTitle>
+        {renderSidebar(false)}
+      </SheetContent>
 
       {/* Desktop sidebar */}
       <aside className={cn(
         "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:start-0 bg-sidebar border-e border-sidebar-border transition-all duration-300 z-30",
         collapsed ? "lg:w-[68px]" : "lg:w-64"
       )}>
-        {sidebarContent}
+        {renderSidebar(collapsed)}
       </aside>
     </>
   );

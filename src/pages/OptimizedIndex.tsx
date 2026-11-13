@@ -1,3 +1,8 @@
+import { Link } from 'react-router-dom';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useNavigationAccess } from '@/hooks/useNavigationAccess';
+import { NAVIGATION_GROUPS } from '@/config/moduleNavigation';
+import { Card } from '@/components/ui/card';
 import React, { useState } from 'react';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
@@ -40,6 +45,16 @@ const OptimizedIndex = () => {
   const [currency, setCurrency] = useState('EGP');
   const { hasPermission } = useSupabasePermissions();
   const canViewFinance = hasPermission('financial_view');
+  const { orgRole } = useOrganization();
+  const { canAccessScreen } = useNavigationAccess();
+  const dailyPaths = orgRole === 'owner' || orgRole === 'admin' || orgRole === 'manager'
+    ? ['/sop/pipeline?view=followups', '/operations/queue', '/payment-orders', '/refund-balances']
+    : ['/sop/pipeline?view=followups', '/operations/queue', '/invoices', '/payment-orders'];
+  const dailyActions = dailyPaths.flatMap(href => {
+    const screen = NAVIGATION_GROUPS.flatMap(group => group.items).find(item => item.href === href.split('?')[0]);
+    if (!screen || !canAccessScreen(screen)) return [];
+    return [{ href, title: href.includes('followups') ? 'متابعات المبيعات' : screen.title }];
+  });
   const { dashboardData, isLoading, error } = useOptimizedDashboard(currency);
 
 
@@ -71,11 +86,19 @@ const OptimizedIndex = () => {
 
   return (
     <OptimizedErrorBoundary>
-      <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto" dir="rtl">
+      <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
         <DashboardHeader />
         <OrganizationContactReminder />
+        {dailyActions.length > 0 && <Card className="space-y-3 p-4">
+          <h2 className="text-base font-semibold">متابعة الشغل اليوم</h2>
+          <div className="flex flex-wrap gap-2">
+            {dailyActions.map(action => <Button key={action.href} asChild variant="outline" size="sm">
+              <Link to={action.href}>{action.title}</Link>
+            </Button>)}
+          </div>
+        </Card>}
 
-        <div className="animate-in fade-in" style={{ animationDelay: '50ms' }}>
+        {canViewFinance && <div className="animate-in fade-in" style={{ animationDelay: '50ms' }}>
           <Alert className="border-border/60 bg-muted/40">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
@@ -84,7 +107,7 @@ const OptimizedIndex = () => {
               صافي مساهمة الحجوزات قبل المصروفات العامة للشركة.
             </AlertDescription>
           </Alert>
-        </div>
+        </div>}
 
         {canViewFinance && <div className="animate-in fade-in" style={{ animationDelay: '100ms' }}>
           <ReportCurrencySelect value={currency} onValueChange={setCurrency} />

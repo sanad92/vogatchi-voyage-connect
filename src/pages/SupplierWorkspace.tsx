@@ -122,7 +122,7 @@ const SupplierWorkspace = () => {
 
   if (s.isLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
   if (!s.supplier) return (
-    <div className="p-8 text-center space-y-3" dir="rtl">
+    <div className="p-8 text-center space-y-3">
       <p className="text-destructive">تعذر تحميل المورد</p>
       <Button variant="ghost" onClick={() => navigate('/suppliers')}>
         <ArrowRight className="h-4 w-4 ml-1" /> رجوع
@@ -133,7 +133,7 @@ const SupplierWorkspace = () => {
   const sup = s.supplier;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4" dir="rtl">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="ghost" size="sm" onClick={() => navigate('/suppliers')}>
           <ArrowRight className="h-4 w-4 ml-1" /> الموردون
@@ -188,7 +188,7 @@ const SupplierWorkspace = () => {
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={tab => setParams(tab === 'overview' ? {} : { tab })} dir="rtl">
+      <Tabs value={activeTab} onValueChange={tab => setParams(tab === 'overview' ? {} : { tab })}>
         <TabsList className="flex h-auto w-fit max-w-full flex-wrap justify-start">
           <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
           <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
@@ -310,7 +310,7 @@ const SupplierWorkspace = () => {
 
         {id && (
           <TabsContent value="settings" className="mt-4">
-            <Tabs defaultValue="contracts" dir="rtl">
+            <Tabs defaultValue="contracts">
               <TabsList>
                 <TabsTrigger value="contracts">العقود</TabsTrigger>
                 <TabsTrigger value="currencies">العملات</TabsTrigger>
@@ -352,7 +352,7 @@ const SupplierWorkspace = () => {
 
       {/* Add contact dialog */}
       <Dialog open={contactOpen} onOpenChange={setContactOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent>
           <DialogHeader><DialogTitle>إضافة جهة اتصال</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -404,7 +404,7 @@ const ListCard = ({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-xs text-muted-foreground">
-              {columns.map((c) => <th key={c.key} className="text-right p-2">{c.label}</th>)}
+              {columns.map((c) => <th key={c.key} className="text-start p-2">{c.label}</th>)}
             </tr>
           </thead>
           <tbody>
