@@ -15,9 +15,9 @@ import { PAGE_SIZE, TablePager } from '@/components/platform-admin/TablePager';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { companyProfilePath } from '@/lib/platformCompanyFollowup';
 
 const listUrl = '/platform/organizations/followup';
-const companyUrl = (id: string) => `${listUrl}?company=${encodeURIComponent(id)}`;
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const statusLabels: Record<string, string> = {
   trialing: 'تجريبي', active: 'نشط', expired: 'منتهٍ', cancelled: 'ملغي',
@@ -274,7 +274,7 @@ export default function PlatformCompanyFollowup() {
                     {!companies.data.rows.length && <li className="py-3"><Button variant="outline" onClick={() => setPage(1)}>العودة لأول صفحة</Button></li>}
                     {companies.data.rows.map((company) => (
                       <li key={company.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                        <Link className="break-words font-semibold text-primary hover:underline" to={companyUrl(company.id)} data-no-translate>{company.name}</Link>
+                        <Link className="break-words font-semibold text-primary hover:underline" to={companyProfilePath(company.id)} data-no-translate>{company.name}</Link>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <CalendarClock className="h-4 w-4" aria-hidden="true" />
                           <span>تنتهي التجربة</span><bdi>{date(company.expires_at)}</bdi>

@@ -9,8 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { CreditCard, CheckCircle, XCircle, Clock, CalendarPlus, Filter, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { allRows, renewalWindow } from '@/lib/platformOverview';
+import { Link, useSearchParams } from 'react-router-dom';
+import { billingFollowupPath } from '@/lib/platformCompanyFollowup';
+import { allRows } from '@/lib/platformOverview';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
 import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
@@ -43,9 +44,15 @@ const PlatformAdminSubscriptions = () => {
         .select('*, organizations(name, slug, email), subscription_plans(name, name_ar)')
         .abortSignal(signal);
       if (renewalsOnly) {
-        const { start, end } = renewalWindow();
-        return allRows((from, to) => read().in('status', ['active', 'trialing']).lte('starts_at', start)
-          .gt('expires_at', start).lte('expires_at', end).order('expires_at').order('id').range(from, to));
+        const renewals = await allRows((from, to) => supabase.rpc('platform_billing_followup')
+          .eq('kind', 'renewal').order('id').range(from, to).abortSignal(signal));
+        const batches = await Promise.all(Array.from({ length: Math.ceil(renewals.length / 100) }, async (_, index) => {
+          const ids = renewals.slice(index * 100, (index + 1) * 100).map((row) => row.id);
+          const { data, error } = await read().in('id', ids);
+          if (error) throw error;
+          return data ?? [];
+        }));
+        return batches.flat();
       }
       const { data, error } = await read().order('created_at', { ascending: false });
       if (error) throw error;
@@ -61,6 +68,7 @@ const PlatformAdminSubscriptions = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
       qc.invalidateQueries({ queryKey: ['platform-overview'] });
+      qc.invalidateQueries({ queryKey: ['platform-billing-followup'] });
       toast.success('تم تغيير الخطة بنجاح');
     },
     onError: () => toast.error('فشل في تغيير الخطة'),
@@ -74,6 +82,7 @@ const PlatformAdminSubscriptions = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
       qc.invalidateQueries({ queryKey: ['platform-overview'] });
+      qc.invalidateQueries({ queryKey: ['platform-billing-followup'] });
       toast.success('تم تحديث حالة الاشتراك');
     },
     onError: () => toast.error('فشل في تحديث الحالة'),
@@ -93,6 +102,7 @@ const PlatformAdminSubscriptions = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
       qc.invalidateQueries({ queryKey: ['platform-overview'] });
+      qc.invalidateQueries({ queryKey: ['platform-billing-followup'] });
       toast.success('تم تمديد الاشتراك بنجاح');
     },
     onError: () => toast.error('فشل في تمديد الاشتراك'),
@@ -107,6 +117,7 @@ const PlatformAdminSubscriptions = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
       qc.invalidateQueries({ queryKey: ['platform-overview'] });
+      qc.invalidateQueries({ queryKey: ['platform-billing-followup'] });
       toast.success('تم حذف الاشتراك');
     },
     onError: () => toast.error('تعذّر حذف الاشتراك — قد تكون عليه فواتير أو مدفوعات مرتبطة.'),
@@ -161,9 +172,12 @@ const PlatformAdminSubscriptions = () => {
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-foreground">إدارة الاشتراكات</h2>
-        <Button type="button" variant={renewalsOnly ? 'default' : 'outline'} size="sm" aria-pressed={renewalsOnly} onClick={toggleRenewals}>
-          <Clock className="me-2 h-4 w-4" aria-hidden="true" />تنتهي خلال ٧ أيام
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm"><Link to={billingFollowupPath}>متابعة التجديد والتحصيل</Link></Button>
+          <Button type="button" variant={renewalsOnly ? 'default' : 'outline'} size="sm" aria-pressed={renewalsOnly} onClick={toggleRenewals}>
+            <Clock className="me-2 h-4 w-4" aria-hidden="true" />تنتهي خلال ٧ أيام
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

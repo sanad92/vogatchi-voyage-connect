@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { contactGapLabels, loadPlatformContactGaps } from '@/lib/platformCompanyFollowup';
 
 interface CompanyContact {
   id: string;
@@ -51,6 +52,12 @@ export function PlatformCompanyContacts({ organizationId, formatDate }: {
   formatDate: (value: string) => string;
 }) {
   const { user } = useOptimizedAuth();
+  const contactGaps = useQuery({
+    queryKey: ['platform-company-contact-gaps', user?.id],
+    enabled: !!user,
+    queryFn: ({ signal }) => loadPlatformContactGaps(signal),
+    staleTime: 30_000,
+  });
   const details = useQuery({
     queryKey: ['platform-company-contacts', user?.id, organizationId],
     enabled: !!user,
@@ -74,8 +81,15 @@ export function PlatformCompanyContacts({ organizationId, formatDate }: {
   );
 
   const { email, phone, address, contacts } = details.data;
+  const missingFields = contactGaps.data?.find((row) => row.organization_id === organizationId)?.fields;
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
+      {!!missingFields?.length && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm lg:col-span-2">
+          <span className="font-semibold">بيانات التواصل ناقصة</span>
+          {missingFields.map((field) => <Badge key={field} variant="outline">{contactGapLabels[field]}</Badge>)}
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

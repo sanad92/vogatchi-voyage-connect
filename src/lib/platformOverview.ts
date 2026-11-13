@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { allRows } from './pagedRows';
 
 export { allRows } from './pagedRows';
-const DAY_MS = 86_400_000;
 
 type Result<T> = { data: T[] | null; error: unknown };
 type CountResult = { count: number | null; error: unknown };
@@ -36,16 +35,9 @@ export async function loadPlatformCompanies(signal: AbortSignal) {
   return { total, active, memberships, latest: latest.data };
 }
 
-export function renewalWindow(now = new Date()) {
-  return { start: now.toISOString(), end: new Date(now.getTime() + 7 * DAY_MS).toISOString() };
-}
-
 export function loadUpcomingRenewals(signal: AbortSignal) {
-  const { start, end } = renewalWindow();
-  return listed(supabase.from('subscriptions')
-    .select('id, status, expires_at, organizations(name), subscription_plans(name, name_ar)', { count: 'exact' })
-    .in('status', ['active', 'trialing']).lte('starts_at', start).gt('expires_at', start).lte('expires_at', end)
-    .order('expires_at').order('id').limit(5).abortSignal(signal));
+  return listed(supabase.rpc('platform_billing_followup', {}, { count: 'exact' })
+    .eq('kind', 'renewal').order('event_at').order('id').limit(5).abortSignal(signal));
 }
 
 export function loadPendingTransfers(signal: AbortSignal) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,9 @@ import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
 import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
+import { companyProfilePath, loadPlatformContactGaps } from '@/lib/platformCompanyFollowup';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { allRows } from '@/lib/pagedRows';
 
 type OrgSort = 'newest' | 'oldest' | 'name' | 'bookings' | 'members' | 'expiry';
 
@@ -35,6 +38,16 @@ interface OrgRow {
 
 const PlatformAdminOrganizations = () => {
   const qc = useQueryClient();
+  const { user } = useOptimizedAuth();
+  const [params, setParams] = useSearchParams();
+  const missingOnly = params.get('contacts') === 'incomplete';
+  const contactGaps = useQuery({
+    queryKey: ['platform-company-contact-gaps', user?.id],
+    enabled: !!user,
+    queryFn: ({ signal }) => loadPlatformContactGaps(signal),
+    staleTime: 30_000,
+  });
+  const missingIds = new Set(contactGaps.data?.map(({ organization_id }) => organization_id));
   const { start: startImpersonation } = useOrgImpersonation();
 
   const { data: plans } = useQuery({
@@ -45,11 +58,11 @@ const PlatformAdminOrganizations = () => {
     },
   });
 
-  const { data: orgs, isLoading } = useQuery({
+  const { data: orgs, isLoading, isError, refetch } = useQuery({
     queryKey: ['platform-admin-orgs'],
-    queryFn: async () => {
-      const { data: orgsData } = await supabase.from('organizations').select('*');
-      if (!orgsData) return [];
+    queryFn: async ({ signal }) => {
+      const orgsData = await allRows((from, to) => supabase.from('organizations').select('*')
+        .order('id').range(from, to).abortSignal(signal));
 
       const { data: members } = await supabase.from('organization_members').select('organization_id');
       const { data: subs } = await supabase.from('subscriptions').select('id, organization_id, plan_id, status, expires_at');
@@ -152,6 +165,7 @@ const PlatformAdminOrganizations = () => {
 
   const term = search.trim().toLowerCase();
   const visibleOrgs = (orgs ?? [])
+    .filter((o) => !missingOnly || missingIds.has(o.id))
     .filter((o) => !term || [o.name, o.slug, o.email].some((v) => v?.toLowerCase().includes(term)))
     .sort((a, b) => {
       switch (sort) {
@@ -179,7 +193,16 @@ const PlatformAdminOrganizations = () => {
             قائمة المؤسسات
             <Badge variant="secondary">{visibleOrgs.length}</Badge>
           </CardTitle>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col flex-wrap gap-2 sm:flex-row">
+            <Button variant={missingOnly ? 'default' : 'outline'} size="sm" aria-pressed={missingOnly} onClick={() => {
+              setParams((current) => {
+                const next = new URLSearchParams(current);
+                if (missingOnly) next.delete('contacts');
+                else next.set('contacts', 'incomplete');
+                return next;
+              });
+              setPage(1);
+            }}>بيانات التواصل ناقصة</Button>
             <div className="relative">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -203,12 +226,19 @@ const PlatformAdminOrganizations = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {isError || (missingOnly && contactGaps.isError) ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3 p-6 text-sm">
+              <p>تعذّر تحميل بيانات الشركات</p>
+              <Button variant="outline" size="sm" onClick={() => { void refetch(); void contactGaps.refetch(); }}>إعادة المحاولة</Button>
+            </div>
+          ) : isLoading || (missingOnly && contactGaps.isPending) ? (
             <div className="p-6 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full rounded" />
               ))}
             </div>
+          ) : !visibleOrgs.length ? (
+            <p className="p-6 text-sm text-muted-foreground">{missingOnly && !term ? 'لا توجد شركات ببيانات تواصل ناقصة.' : 'لا توجد شركات مطابقة.'}</p>
           ) : (
             <>
               <Table containerClassName={PLATFORM_TABLE_CONTAINER}>
@@ -229,8 +259,9 @@ const PlatformAdminOrganizations = () => {
                     <TableRow key={org.id}>
                       <TableCell>
                         <div>
-                          <Link to={`/platform/organizations/followup?company=${org.id}`} className="font-medium text-primary underline-offset-4 hover:underline" data-no-translate>{org.name}</Link>
+                          <Link to={companyProfilePath(org.id)} className="font-medium text-primary underline-offset-4 hover:underline" data-no-translate>{org.name}</Link>
                           <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
+                          {missingIds.has(org.id) && <Badge variant="outline" className="mt-1">بيانات التواصل ناقصة</Badge>}
                         </div>
                       </TableCell>
                       <TableCell>

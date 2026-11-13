@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -26,10 +27,31 @@ const statusMap: Record<string, { label: string; color: string; icon: any }> = {
 const PlatformAdminTransfers = () => {
   const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const requestId = params.get('request');
+  const selectedId = requestId && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestId) ? requestId : null;
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const selectRequest = (id: string | null) => setParams((current) => {
+    const next = new URLSearchParams(current);
+    if (id) next.set('request', id);
+    else next.delete('request');
+    return next;
+  });
+
+  const requested = useQuery({
+    queryKey: ['bank-transfer-request', user?.id, selectedId],
+    enabled: !!selectedId && !!user,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from('bank_transfer_requests')
+        .select('*, organizations(name), subscription_plans(name, name_ar)')
+        .eq('id', selectedId!).abortSignal(signal).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const selectedRequest = requested.data;
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['bank-transfer-requests', filter],
@@ -59,7 +81,9 @@ const PlatformAdminTransfers = () => {
       queryClient.invalidateQueries({ queryKey: ['platform-finance'] });
       queryClient.invalidateQueries({ queryKey: ['bank-transfer-requests'] });
       queryClient.invalidateQueries({ queryKey: ['platform-overview'] });
-      setSelectedRequest(null);
+      queryClient.invalidateQueries({ queryKey: ['platform-billing-followup'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-transfer-request'] });
+      selectRequest(null);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -83,7 +107,9 @@ const PlatformAdminTransfers = () => {
       toast.success('تم رفض الطلب');
       queryClient.invalidateQueries({ queryKey: ['bank-transfer-requests'] });
       queryClient.invalidateQueries({ queryKey: ['platform-overview'] });
-      setSelectedRequest(null);
+      queryClient.invalidateQueries({ queryKey: ['platform-billing-followup'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-transfer-request'] });
+      selectRequest(null);
       setRejectionReason('');
     },
     onError: (err: any) => toast.error(err.message),
@@ -185,7 +211,8 @@ const PlatformAdminTransfers = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setSelectedRequest(req)}
+                          onClick={() => { setRejectionReason(''); selectRequest(req.id); }}
+                          aria-label="عرض طلب التحويل"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -199,21 +226,24 @@ const PlatformAdminTransfers = () => {
         )}
 
         {/* Detail Dialog */}
-        <Dialog open={!!selectedRequest} onOpenChange={() => { setSelectedRequest(null); setRejectionReason(''); }}>
+        <Dialog open={!!requestId} onOpenChange={(open) => { if (!open) { selectRequest(null); setRejectionReason(''); } }}>
           <DialogContent className="max-w-lg" dir="rtl">
             <DialogHeader>
               <DialogTitle>تفاصيل طلب التحويل</DialogTitle>
             </DialogHeader>
+            {selectedId && requested.isPending && <p role="status">جارٍ تحميل البيانات</p>}
+            {requested.isError && <p role="alert">تعذّر تحميل طلب التحويل.</p>}
+            {(!selectedId || (requested.isSuccess && !selectedRequest)) && <p>طلب التحويل غير متاح.</p>}
             {selectedRequest && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">المؤسسة</p>
-                    <p className="font-semibold">{(selectedRequest as any).organizations?.name}</p>
+                    <p className="font-semibold">{selectedRequest.organizations?.name}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">الخطة</p>
-                    <p className="font-semibold">{(selectedRequest as any).subscription_plans?.name_ar}</p>
+                    <p className="font-semibold">{selectedRequest.subscription_plans?.name_ar}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">المبلغ</p>
@@ -229,7 +259,7 @@ const PlatformAdminTransfers = () => {
                   </div>
                   <div>
                     <p className="text-muted-foreground">التاريخ</p>
-                    <p className="font-semibold">{new Date(selectedRequest.created_at).toLocaleString('ar-EG')}</p>
+                    <p className="font-semibold">{selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString('ar-EG') : '—'}</p>
                   </div>
                 </div>
 

@@ -16,6 +16,7 @@ import {
   loadPendingTransfers, loadPlatformCollections, loadPlatformCompanies,
   loadPlatformGrowth, loadPlatformSubscriptions, loadSupportBacklog, loadUpcomingRenewals,
 } from '@/lib/platformOverview';
+import { billingFollowupPath, companyProfilePath } from '@/lib/platformCompanyFollowup';
 
 const PLAN_COLORS = ['bg-chart-1', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5'];
 const PANEL = 'min-w-0 rounded-2xl border border-border bg-card shadow-sm';
@@ -179,9 +180,11 @@ function PlatformAdminDashboard() {
           <PanelHeading title="يحتاج إلى متابعة" />
           <div className="grid gap-2.5 p-5 sm:px-6">
             <QueueLink icon={Banknote} label="تحويلات بنكية معلّقة" detail="طلبات دفع بانتظار المراجعة"
-              count={number(transfers.data?.count)} to="/platform/transfers" tone="bg-warning/15 text-foreground" />
+              count={number(transfers.data?.count)} to={`${billingFollowupPath}?kind=transfer`} tone="bg-warning/15 text-foreground" />
             <QueueLink icon={CalendarClock} label="اشتراكات تنتهي قريبًا" detail="اشتراكات وتجارب خلال ٧ أيام"
-              count={number(renewals.data?.count)} to="/platform/subscriptions?view=renewals" tone="bg-info/10 text-info" />
+              count={number(renewals.data?.count)} to={billingFollowupPath} tone="bg-info/10 text-info" />
+            <SectionLink to={`${billingFollowupPath}?kind=activation`}>دفعات مؤكدة بانتظار التفعيل</SectionLink>
+            <SectionLink to="/platform/organizations?contacts=incomplete">بيانات التواصل ناقصة</SectionLink>
             <SectionLink to="/platform/organizations/followup">متابعة تفعيل الشركات</SectionLink>
             <QueueLink icon={LifeBuoy} label="تذاكر دعم مفتوحة" count={number(support.data?.open)} to="/platform/support"
               detail={support.data
@@ -232,7 +235,7 @@ function PlatformAdminDashboard() {
       <div className="grid gap-5 xl:grid-cols-2">
         <section className={PANEL}>
           <PanelHeading title="الاشتراكات والتجارب التي تنتهي قريبًا" description="أقرب مواعيد الانتهاء خلال ٧ أيام">
-            <SectionLink to="/platform/subscriptions?view=renewals">متابعة التجديد</SectionLink>
+            <SectionLink to={billingFollowupPath}>متابعة التجديد والتحصيل</SectionLink>
           </PanelHeading>
           <div className="p-5 sm:px-6">
             <LoadState query={renewals} empty={renewals.data?.rows.length === 0 ? 'لا توجد اشتراكات تنتهي خلال ٧ أيام.' : undefined}>
@@ -240,12 +243,12 @@ function PlatformAdminDashboard() {
                 {renewals.data?.rows.map((row) => (
                   <li key={row.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold"><bdi data-no-translate>{row.organizations?.name || t('شركة غير معروفة')}</bdi></p>
-                      <p className="mt-1 truncate text-xs text-muted-foreground"><bdi data-no-translate>{planName(row.subscription_plans?.name_ar, row.subscription_plans?.name)}</bdi></p>
+                      <Link to={companyProfilePath(row.organization_id)} className="block truncate text-sm font-semibold text-primary hover:underline"><bdi data-no-translate>{row.company_name}</bdi></Link>
+                      <p className="mt-1 truncate text-xs text-muted-foreground"><bdi data-no-translate>{planName(row.plan_name_ar, row.plan_name)}</bdi></p>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-xs">
                       <Badge variant="secondary">{row.status === 'trialing' ? 'تجريبي' : 'نشط'}</Badge>
-                      {row.expires_at && <time dateTime={row.expires_at} className="text-muted-foreground">{date(row.expires_at)}</time>}
+                      {row.event_at && <time dateTime={row.event_at} className="text-muted-foreground">{date(row.event_at)}</time>}
                     </div>
                   </li>
                 ))}

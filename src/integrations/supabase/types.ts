@@ -15952,6 +15952,18 @@ export type Database = {
         Args: { p_organization_id?: string; p_page?: number }
         Returns: Json
       }
+      platform_company_contact_gaps: {
+        Args: Record<PropertyKey, never>
+        Returns: { organization_id: string; fields: string[] }[]
+      }
+      platform_billing_followup: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          kind: string; id: string; organization_id: string; company_name: string;
+          plan_name: string | null; plan_name_ar: string | null; event_at: string | null;
+          status: string; amount: number | null; currency: string | null; reference: string | null;
+        }[]
+      }
       platform_company_contacts: {
         Args: { p_organization_id: string }
         Returns: Json
