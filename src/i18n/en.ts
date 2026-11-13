@@ -29,6 +29,12 @@ export const EN_DICTIONARY: Record<string, string> = {
   'بدون موعد متابعة': 'No follow-up date',
   'بدون اشتراك': 'No subscription',
   'العودة لأول صفحة': 'Back to the first page',
+  // Pilgrimage availability
+  'مفيش برامج مطابقة للفترة والعدد وفئة الغرفة.': 'No programs match the dates, group size, and room category.',
+  'جاري البحث عن مواعيد بديلة…': 'Looking for alternative dates…',
+  'تعذر تحميل المواعيد البديلة.': 'Could not load alternative dates.',
+  'أقرب مواعيد متاحة': 'Closest available departures',
+  'مفيش مواعيد بديلة فيها مقاعد كفاية لنفس الطلب.': 'No alternative departures have enough seats for this request.',
   // Pricing
   'خطط وأسعار SafarERP': 'SafarERP plans and pricing',
   'اختَر الباقة حسب عدد المستخدمين والحجوزات والميزات اللي تحتاجها شركتك. الأسعار بالجنيه المصري.': 'Choose a plan based on your team size, bookings, and features. Prices are in Egyptian pounds.',
