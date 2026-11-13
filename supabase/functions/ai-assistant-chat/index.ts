@@ -232,7 +232,7 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
         const n = String(args.supplier_name).toLowerCase();
         rows = rows.filter((r: any) => (r.suppliers?.name || "").toLowerCase().includes(n));
       }
-      const total = rows.reduce((a, b: any) => a + Number(b.amount || 0), 0);
+      const total = rows.reduce((a: number, b: any) => a + Number(b.amount || 0), 0);
       return { count: rows.length, total_due: total, payments: rows };
     }
 
@@ -321,7 +321,7 @@ Deno.serve(async (req) => {
 
     const messages: ChatMsg[] = [
       { role: "system", content: systemPrompt },
-      ...(history || []).map((m: any) => {
+      ...(history || []).map((m: any): ChatMsg => {
         if (m.role === "tool") return { role: "tool", content: m.content || "", tool_call_id: m.tool_call_id, name: m.tool_name };
         if (m.role === "assistant" && m.tool_calls) return { role: "assistant", content: m.content, tool_calls: m.tool_calls };
         return { role: m.role, content: m.content };

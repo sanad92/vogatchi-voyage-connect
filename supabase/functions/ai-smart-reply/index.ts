@@ -1,5 +1,5 @@
 // deno-lint-ignore-file
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireOrgMember, authErrorResponse } from "../_shared/auth.ts";
 import { callLovableAI, safeParseJSON, corsHeaders } from "../_shared/ai-gateway.ts";
 
