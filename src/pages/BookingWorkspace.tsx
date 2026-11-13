@@ -93,7 +93,7 @@ const BookingWorkspace = () => {
 
       {(() => {
         const invoiced = workspace.financials.invoiced;
-        const paid = workspace.financials.paid;
+        const paid = Math.max(0, invoiced - workspace.financials.outstanding);
         const paymentStatus = derivePaymentStatus(invoiced, paid);
         const profitHealth = deriveProfitHealth(workspace.financials.profit, workspace.financials.selling);
         const hasVoucher = (workspace.invoices as any[]).some((inv: any) =>
@@ -156,7 +156,8 @@ const BookingWorkspace = () => {
           <ItineraryTab workspace={workspace} />
         </TabsContent>
         <TabsContent value="amendments" className="mt-4">
-          {id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency} />}
+          {id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency}
+            customerId={workspace.booking.customer_id} itinerary={workspace.itinerary} />}
         </TabsContent>
         <TabsContent value="financials" className="mt-4">
           <FinancialsTab workspace={workspace} />

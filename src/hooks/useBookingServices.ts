@@ -15,6 +15,7 @@ export interface LinkedServiceBooking {
   cost: number;
   currency: string | null;
   detailsPath: string;
+  tickets?: string[];
 }
 
 const num = (v: any) => Number(v || 0);
@@ -35,7 +36,7 @@ export const useBookingServices = (bookingId?: string) =>
         client
           .from('flight_bookings')
           .select(
-            'id, booking_reference, flight_number, supplier_name, departure_date, arrival_date, total_cost, supplier_cost, currency',
+            'id, booking_reference, flight_number, supplier_name, departure_date, arrival_date, total_cost, supplier_cost, currency, ticket_numbers',
           )
           .eq('booking_id', bookingId),
         client
@@ -95,6 +96,7 @@ export const useBookingServices = (bookingId?: string) =>
           cost: num(f.supplier_cost),
           currency: f.currency,
           detailsPath: `/flight-bookings`,
+          tickets: Array.isArray(f.ticket_numbers) ? f.ticket_numbers.filter((ticket: unknown): ticket is string => typeof ticket === 'string' && !!ticket) : [],
         }),
       );
 
