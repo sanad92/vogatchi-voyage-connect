@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuotes, type QuoteFormData } from '@/hooks/useQuotes';
 import QuoteItemsEditor from '@/components/quotes/QuoteItemsEditor';
 import { Button } from '@/components/ui/button';
@@ -36,22 +36,42 @@ const quoteSteps: WizardStepConfig[] = [
   { title: 'مراجعة وإرسال' },
 ];
 
+type WhatsAppQuoteSource = {
+  organizationId: string;
+  conversationId: string;
+  customerId?: string | null;
+  customerName: string;
+  destination: string;
+  travelDate: string | null;
+  returnDate: string | null;
+  travelers: number;
+  notes: string;
+};
+
 export default function NewQuote() {
-  const navigate = useNavigate();
   const orgId = useOrgId();
+  const { state } = useLocation();
+  const source = (state as { whatsappQuote?: WhatsAppQuoteSource } | null)?.whatsappQuote;
+  if (!orgId) return null;
+  const whatsapp = source?.organizationId === orgId ? source : undefined;
+  return <QuoteForm key={`${orgId}:${whatsapp?.conversationId ?? ''}`} orgId={orgId} whatsapp={whatsapp} />;
+}
+
+function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuoteSource }) {
+  const navigate = useNavigate();
   const { createQuote } = useQuotes();
 
   const wizard = useWizardForm({
     steps: quoteSteps,
-    draftKey: orgId ? `draft_quote_${orgId}` : undefined,
+    draftKey: whatsapp ? `draft_quote_${orgId}_wa_${whatsapp.conversationId}` : `draft_quote_${orgId}`,
     initialData: {
-      customer_id: null,
-      customer_name: '',
-      travel_date: null,
-      return_date: null,
-      destination: '',
-      number_of_travelers: 1,
-      notes: '',
+      customer_id: whatsapp?.customerId ?? null,
+      customer_name: whatsapp?.customerName ?? '',
+      travel_date: whatsapp?.travelDate ?? null,
+      return_date: whatsapp?.returnDate ?? null,
+      destination: whatsapp?.destination ?? '',
+      number_of_travelers: whatsapp?.travelers ?? 1,
+      notes: whatsapp?.notes ?? '',
       discount_amount: 0,
       vat_rate: 14,
       valid_until: null,
@@ -94,6 +114,10 @@ export default function NewQuote() {
   const totalProfit = financialBreakdown.totalProfit;
 
   const handleSubmit = async (status: string) => {
+    const sameContact = whatsapp && (whatsapp.customerId
+      ? wizard.formData.customer_id === whatsapp.customerId
+      : !wizard.formData.customer_id);
+
     const formData: QuoteFormData = {
       customer_id: wizard.formData.customer_id,
       customer_name: wizard.formData.customer_name,
@@ -107,11 +131,14 @@ export default function NewQuote() {
       valid_until: wizard.formData.valid_until,
       assigned_employee_id: wizard.formData.assigned_employee_id,
       status,
-      items,
+      items: sameContact ? items.map((item: QuoteFormData['items'][number]) => ({
+        ...item,
+        details: { ...item.details, source_whatsapp_conversation_id: whatsapp.conversationId },
+      })) : items,
     };
-    await createQuote.mutateAsync(formData);
+    const quote = await createQuote.mutateAsync(formData);
     wizard.clearDraft();
-    navigate('/quotes');
+    navigate(whatsapp ? `/quotes/${quote.id}` : '/quotes');
   };
 
   const handleCustomerChange = (customerId: string) => {
@@ -128,6 +155,9 @@ export default function NewQuote() {
         <h1 className="text-xl md:text-2xl font-bold">إنشاء عرض سعر جديد</h1>
       </div>
 
+      {whatsapp && <Button asChild variant="outline" size="sm">
+        <Link to={`/whatsapp-inbox/${whatsapp.conversationId}`}>فتح محادثة واتساب</Link>
+      </Button>}
       <StepWizard
         steps={quoteSteps}
         currentStep={wizard.currentStep}

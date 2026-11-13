@@ -1,390 +1,172 @@
-import React, { useState, useRef } from 'react';
-import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Upload, 
-  Download, 
-  FileSpreadsheet, 
-  FileText, 
-  AlertCircle,
-  CheckCircle,
-  Users,
-  Building2,
-  UserCheck
-} from 'lucide-react';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Download, FileSpreadsheet, Upload } from 'lucide-react';
+import Papa from 'papaparse';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { importFields, importKey, importRecordId, previewCompanyImport, type ImportTable, type ImportPreview } from '@/lib/companyDataImport';
+import { safeRows } from '@/lib/spreadsheet-safe';
 
-interface ImportData {
-  headers: string[];
-  rows: any[][];
-  errors: string[];
-  warnings: string[];
-}
+const labels: Record<ImportTable, string> = { customers: 'العملاء', suppliers: 'الموردون', employees: 'الموظفون' };
+const pageSize = 1000;
 
-const DataImportExport = () => {
-  const { hasRole, isSuperAdmin } = useOptimizedAuth();
-  const [selectedTable, setSelectedTable] = useState<string>('');
-  const [importData, setImportData] = useState<ImportData | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+function CompanyDataTransfer({ orgId, userId }: { orgId: string; userId: string }) {
+  const queryClient = useQueryClient();
+  const input = useRef<HTMLInputElement>(null);
+  const busy = useRef(false);
+  const [table, setTable] = useState<ImportTable>('customers');
+  const [preview, setPreview] = useState<ImportPreview>();
+  const [fileName, setFileName] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [result, setResult] = useState<{ imported: number; skipped: number }>();
 
-  // التحقق من الصلاحيات
-  if (!hasRole('admin') && !hasRole('manager') && !isSuperAdmin()) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">ليس لديك صلاحية</h3>
-            <p className="text-gray-600">هذه الميزة متاحة للأدمن والمديرين فقط</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const run = async (action: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true;
+    setProcessing(true);
+    try {
+      await action();
+    } catch (error) {
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : undefined;
+      toast.error('تعذرت معالجة البيانات', { description: message });
+    } finally {
+      busy.current = false;
+      setProcessing(false);
+    }
+  };
 
-  const tableOptions = [
-    { value: 'customers', label: 'العملاء', icon: Users },
-    { value: 'suppliers', label: 'الموردين', icon: Building2 },
-    { value: 'employees', label: 'الموظفين', icon: UserCheck }
-  ];
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    
-    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-      handleExcelFile(file);
-    } else if (fileExtension === 'csv') {
-      handleCSVFile(file);
+  const readFile = (file: File) => run(async () => {
+    setPreview(undefined);
+    setResult(undefined);
+    setFileName(file.name);
+    let cells: unknown[][];
+    if (/\.csv$/i.test(file.name)) {
+      const parsed = Papa.parse<string[]>(await file.text(), { skipEmptyLines: 'greedy' });
+      if (parsed.errors.length) throw new Error(parsed.errors[0].message);
+      cells = parsed.data;
+    } else if (/\.xlsx?$/i.test(file.name)) {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      cells = sheet ? XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' }) : [];
     } else {
-      toast.error('نوع الملف غير مدعوم. يرجى استخدام Excel أو CSV');
+      throw new Error('اختر ملف Excel أو CSV.');
+    }
+    setPreview(previewCompanyImport(table, cells));
+  });
+
+  const loadRecords = async () => {
+    const records: Record<string, unknown>[] = [];
+    for (let start = 0; ; start += pageSize) {
+      const { data, error } = await supabase.from(table).select('*').eq('organization_id', orgId)
+        .order('id').range(start, start + pageSize - 1);
+      if (error) throw error;
+      records.push(...data);
+      if (data.length < pageSize) return records;
     }
   };
 
-  const handleExcelFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        processImportData(jsonData as any[][]);
-      } catch (error) {
-        toast.error('خطأ في قراءة ملف Excel');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  const handleCSVFile = (file: File) => {
-    Papa.parse(file, {
-      complete: (results) => {
-        processImportData(results.data as any[][]);
-      },
-      error: () => {
-        toast.error('خطأ في قراءة ملف CSV');
-      }
-    });
-  };
-
-  const processImportData = (data: any[][]) => {
-    if (data.length < 2) {
-      toast.error('الملف يجب أن يحتوي على رأس الجدول والبيانات');
-      return;
+  const save = () => run(async () => {
+    if (!preview?.rows.length || preview.errors.length) return;
+    const existing = new Set((await loadRecords()).map(row => importKey(table, row)));
+    const pending = preview.rows.filter(row => !existing.has(row.key));
+    const rows = await Promise.all(pending.map(async ({ record, key }) => ({
+      ...record,
+      id: await importRecordId(orgId, table, key),
+      organization_id: orgId,
+    })));
+    let count = 0;
+    if (rows.length) {
+      const options = { onConflict: table === 'employees' ? 'employee_code' : 'id', ignoreDuplicates: true };
+      const response = table === 'customers'
+        ? await supabase.from('customers').upsert(rows.map((row, i) => ({
+          ...row, name: pending[i].record.name, created_by: userId,
+        })), options).select('id')
+        : table === 'suppliers'
+          ? await supabase.from('suppliers').upsert(rows.map((row, i) => ({
+            ...row, name: pending[i].record.name, type: pending[i].record.type || 'hotel',
+          })), options).select('id')
+          : await supabase.from('employees').upsert(rows.map((row, i) => ({
+            ...row, full_name: pending[i].record.full_name, employee_code: pending[i].record.employee_code,
+          })), options).select('id');
+      if (response.error) throw response.error;
+      count = response.data.length;
     }
+    setResult({ imported: count, skipped: preview.rows.length + preview.duplicates.length - count });
+    setPreview(undefined);
+    void queryClient.invalidateQueries({ queryKey: [table] });
+    if (count) toast.success(`تم استيراد ${count} سجل`);
+  });
 
-    const headers = data[0];
-    const rows = data.slice(1).filter(row => row.some(cell => cell !== '' && cell !== null));
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // التحقق من صحة البيانات حسب نوع الجدول
-    validateData(selectedTable, headers, rows, errors, warnings);
-
-    setImportData({ headers, rows, errors, warnings });
-  };
-
-  const validateData = (table: string, headers: string[], rows: any[][], errors: string[], warnings: string[]) => {
-    const requiredFields: Record<string, string[]> = {
-      customers: ['name', 'phone'],
-      suppliers: ['name', 'contact_person'],
-      employees: ['full_name', 'position', 'employee_code']
-    };
-
-    const required = requiredFields[table] || [];
-    const missingFields = required.filter(field => !headers.includes(field));
-    
-    if (missingFields.length > 0) {
-      errors.push(`الحقول المطلوبة مفقودة: ${missingFields.join(', ')}`);
-    }
-
-    // فحص البيانات المكررة
-    const duplicates = new Set();
-    rows.forEach((row, index) => {
-      const key = row[0]; // استخدام العمود الأول كمفتاح
-      if (duplicates.has(key)) {
-        warnings.push(`صف ${index + 2}: بيانات مكررة`);
-      } else {
-        duplicates.add(key);
-      }
-    });
-  };
-
-  const handleImport = async () => {
-    if (!importData || !selectedTable) return;
-
-    setIsProcessing(true);
-    setProgress(0);
-
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      for (let i = 0; i < importData.rows.length; i++) {
-        const row = importData.rows[i];
-        const record: any = {};
-        
-        importData.headers.forEach((header, index) => {
-          if (row[index] !== undefined && row[index] !== '') {
-            record[header] = row[index];
-          }
-        });
-
-        const { error } = await supabase
-          .from(selectedTable as any)
-          .insert(record);
-
-        if (error) {
-          console.error(`خطأ في استيراد الصف ${i + 1}:`, error);
-        }
-
-        setProgress(((i + 1) / importData.rows.length) * 100);
-      }
-
-      toast.success(`تم استيراد ${importData.rows.length} سجل بنجاح`);
-      setImportData(null);
-      
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الاستيراد');
-    } finally {
-      setIsProcessing(false);
-      setProgress(0);
-    }
-  };
-
-  const handleExport = async () => {
-    if (!selectedTable) {
-      toast.error('يرجى اختيار نوع البيانات للتصدير');
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error } = await supabase
-        .from(selectedTable as any)
-        .select('*');
-
-      if (error) {
-        toast.error('خطأ في جلب البيانات');
-        return;
-      }
-
-      // تصدير إلى Excel
-      const worksheet = XLSX.utils.json_to_sheet(safeRows(data as unknown as Record<string, unknown>[]));
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, selectedTable);
-      
-      const fileName = `${selectedTable}_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-      
-      toast.success('تم تصدير البيانات بنجاح');
-      
-    } catch (error) {
-      toast.error('حدث خطأ أثناء التصدير');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  const exportFile = (template: boolean) => run(async () => {
+    const rows = template ? [] : await loadRecords();
+    const worksheet = template
+      ? XLSX.utils.aoa_to_sheet([[...importFields[table]]])
+      : XLSX.utils.json_to_sheet(safeRows(rows));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, table);
+    XLSX.writeFile(workbook, `${table}${template ? '_template' : ''}.xlsx`);
+  });
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5" />
-            استيراد وتصدير البيانات
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* اختيار نوع البيانات */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">نوع البيانات</label>
-              <Select value={selectedTable} onValueChange={setSelectedTable}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر نوع البيانات" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tableOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <option.icon className="h-4 w-4" />
-                        {option.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Tabs defaultValue="import" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="import" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  استيراد
-                </TabsTrigger>
-                <TabsTrigger value="export" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  تصدير
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="import" className="space-y-4">
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <Button 
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={!selectedTable}
-                    className="w-full"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    اختيار ملف للاستيراد
-                  </Button>
-                </div>
-
-                {/* معاينة البيانات */}
-                {importData && (
-                  <div className="space-y-4">
-                    {importData.errors.length > 0 && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          <ul className="list-disc list-inside">
-                            {importData.errors.map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {importData.warnings.length > 0 && (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          <ul className="list-disc list-inside">
-                            {importData.warnings.map((warning, index) => (
-                              <li key={index}>{warning}</li>
-                            ))}
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2">معاينة البيانات ({importData.rows.length} سجل)</h4>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              {importData.headers.map((header, index) => (
-                                <th key={index} className="text-right p-2">{header}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {importData.rows.slice(0, 5).map((row, rowIndex) => (
-                              <tr key={rowIndex} className="border-b">
-                                {row.map((cell, cellIndex) => (
-                                  <td key={cellIndex} className="p-2">{cell}</td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {importData.rows.length > 5 && (
-                          <p className="text-center text-gray-500 mt-2">
-                            ...و {importData.rows.length - 5} سجل آخر
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <Button 
-                      onClick={handleImport}
-                      disabled={isProcessing || importData.errors.length > 0}
-                      className="w-full"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      تأكيد الاستيراد
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="export" className="space-y-4">
-                <Button 
-                  onClick={handleExport}
-                  disabled={!selectedTable || isProcessing}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  تصدير البيانات
-                </Button>
-
-                <div className="text-sm text-gray-600">
-                  <p>سيتم تصدير جميع البيانات من الجدول المحدد بصيغة Excel (.xlsx)</p>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            {/* شريط التقدم */}
-            {isProcessing && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>جاري المعالجة...</span>
-                  <span>{Math.round(progress)}%</span>
-                </div>
-                <Progress value={progress} className="w-full" />
-              </div>
-            )}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><FileSpreadsheet className="h-5 w-5" />استيراد بيانات المؤسسة</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Select value={table} disabled={processing} onValueChange={(value: ImportTable) => {
+          setTable(value);
+          setPreview(undefined);
+          setFileName('');
+          setResult(undefined);
+        }}>
+          <SelectTrigger aria-label="نوع البيانات"><SelectValue /></SelectTrigger>
+          <SelectContent>{Object.entries(labels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+        </Select>
+        <input ref={input} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={event => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) void readFile(file);
+        }} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" disabled={processing} onClick={() => input.current?.click()}><Upload className="me-2 h-4 w-4" />اختيار ملف</Button>
+          <Button type="button" variant="outline" disabled={processing} onClick={() => void exportFile(true)}>تنزيل قالب Excel</Button>
+          <Button type="button" variant="outline" disabled={processing} onClick={() => void exportFile(false)}><Download className="me-2 h-4 w-4" />تصدير البيانات</Button>
+        </div>
+        {fileName && <p className="break-all text-sm text-muted-foreground">{fileName}</p>}
+        {processing && <p role="status" className="text-sm text-muted-foreground">جاري معالجة الملف...</p>}
+        {result && <Alert><AlertDescription>تم استيراد {result.imported} سجل. تم تخطي {result.skipped} سجل مكرر.</AlertDescription></Alert>}
+        {preview && <>
+          {preview.errors.length > 0 && <Alert variant="destructive"><AlertDescription>
+            {preview.errors.slice(0, 10).map(error => <p key={error}>{error}</p>)}
+            {preview.errors.length > 10 && <p>إجمالي أخطاء الملف {preview.errors.length}</p>}
+          </AlertDescription></Alert>}
+          <p className="text-sm">{preview.rows.length} سجل صالح · {preview.duplicates.length} تكرار في الملف</p>
+          <div className="max-h-72 overflow-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted"><tr><th className="p-2">الصف</th>{importFields[table].map(field => <th className="p-2 text-start" key={field}>{field}</th>)}</tr></thead>
+              <tbody>{preview.rows.slice(0, 10).map(row => <tr className="border-t" key={row.row}>
+                <td className="p-2 text-center">{row.row}</td>
+                {importFields[table].map(field => <td className="p-2" key={field}>{row.record[field]}</td>)}
+              </tr>)}</tbody>
+            </table>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Button type="button" disabled={processing || !preview.rows.length || preview.errors.length > 0} onClick={() => void save()}>تأكيد الاستيراد</Button>
+        </>}
+      </CardContent>
+    </Card>
   );
-};
+}
 
-export default DataImportExport;
+export default function DataImportExport() {
+  const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  if (!orgId || !user) return null;
+  return <CompanyDataTransfer key={`${orgId}:${user.id}`} orgId={orgId} userId={user.id} />;
+}
