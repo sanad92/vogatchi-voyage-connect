@@ -35,6 +35,7 @@ const MonitoringDashboard = () => {
       const { data } = await supabase
         .from('error_logs')
         .select('*')
+        .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
       return data ?? [];
@@ -49,6 +50,7 @@ const MonitoringDashboard = () => {
       const { data } = await supabase
         .from('performance_logs')
         .select('*')
+        .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
       return data ?? [];
@@ -63,6 +65,7 @@ const MonitoringDashboard = () => {
       const { data } = await supabase
         .from('api_logs')
         .select('*')
+        .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
       return data ?? [];
@@ -77,6 +80,7 @@ const MonitoringDashboard = () => {
       const { data } = await supabase
         .from('admin_audit_log')
         .select('*')
+        .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
       return data ?? [];
@@ -90,7 +94,8 @@ const MonitoringDashboard = () => {
       const { error } = await supabase
         .from('error_logs')
         .update({ resolved: true, resolved_at: new Date().toISOString() })
-        .eq('id', errorId);
+        .eq('id', errorId)
+        .eq('organization_id', orgId!);
       if (error) throw error;
     },
     onSuccess: () => {

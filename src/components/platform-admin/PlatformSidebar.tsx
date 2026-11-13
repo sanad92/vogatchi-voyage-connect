@@ -51,7 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'البيانات العالمية', href: '/platform/global-data', icon: Globe },
       { title: 'قواعد سير العمل', href: '/platform/workflow-rules', icon: Workflow, ownerOnly: true },
       { title: 'ناقل الأحداث', href: '/platform/event-bus', icon: Zap, ownerOnly: true },
-      { title: 'المراقبة', href: '/platform/monitoring', icon: Activity },
+      { title: 'المراقبة', href: '/platform/monitoring', icon: Activity, ownerOnly: true },
     ],
   },
   {

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Activity, RefreshCw, Search, TrendingUp, AlertTriangle, Clock, CheckCircle2, Play } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -176,7 +176,9 @@ const VolumeChart = () => {
 };
 
 const PlatformEventBus = () => {
-  const [tab, setTab] = useState('events');
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') ?? 'events';
+  const activeTab = ['pending', 'failed', 'dead', 'succeeded'].includes(tab) ? tab : 'events';
   const [search, setSearch] = useState('');
   const [eventType, setEventType] = useState('all');
   const [aggregateType, setAggregateType] = useState('all');
@@ -212,7 +214,7 @@ const PlatformEventBus = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">النشاط</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <Tabs value={tab} onValueChange={setTab}>
+          <Tabs value={activeTab} onValueChange={value => setParams(value === 'events' ? {} : { tab: value })}>
             <div className="flex flex-wrap items-center gap-2 mx-4 mt-4">
               <TabsList>
                 <TabsTrigger value="events">الأحداث</TabsTrigger>
@@ -222,7 +224,7 @@ const PlatformEventBus = () => {
                 <TabsTrigger value="succeeded">ناجحة</TabsTrigger>
               </TabsList>
 
-              {tab === 'events' && (
+              {activeTab === 'events' && (
                 <div className="flex flex-wrap gap-2 ms-auto">
                   <div className="relative">
                     <Search className="h-3.5 w-3.5 absolute right-2.5 top-2.5 text-muted-foreground" />

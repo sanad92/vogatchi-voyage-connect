@@ -1,134 +1,94 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { setApiReporter } from '@/lib/monitoringFetch';
 
-// Get org ID from context - caller must provide it
-let _currentOrgId: string | null = null;
-let _currentUserId: string | null = null;
+const applicationRoutes = new Set([
+  'dashboard', 'team', 'customers', 'suppliers', 'quotes', 'invoices', 'bookings',
+  'hotel-bookings', 'flight-bookings', 'transport-bookings', 'payments', 'subscription',
+  'organization', 'monitoring', 'reports', 'whatsapp', 'pilgrimage', 'login', 'signup',
+]);
+const platformRoutes = new Set([
+  'login', 'organizations', 'subscriptions', 'plans', 'transfers', 'finance',
+  'accounts', 'audit', 'event-bus', 'analytics', 'settings', 'database', 'support',
+  'global-data', 'monitoring', 'act-as', 'workflow-rules',
+]);
+const errorNames = new Set(['Error', 'TypeError', 'ReferenceError', 'RangeError', 'SyntaxError', 'AggregateError']);
+const navigationPath = location.pathname;
+let sampledNavigation = false;
+let loggedEvents = 0;
+let reportedWriteFailure = false;
+const recentEvents = new Map<string, number>();
 
-export function setMonitoringContext(orgId: string | null, userId: string | null) {
-  _currentOrgId = orgId;
-  _currentUserId = userId;
+function routeLabel(pathname: string) {
+  const [, first, second] = pathname.split('/');
+  if (!first) return '/';
+  if (first === 'platform') return platformRoutes.has(second) ? '/platform/' + second : '/platform';
+  return applicationRoutes.has(first) ? '/' + first : '/other';
 }
 
-// ===== Error Tracking =====
+function allowEvent(key: string) {
+  const now = Date.now();
+  if (loggedEvents >= 40 || now - (recentEvents.get(key) ?? 0) < 60_000) return false;
+  recentEvents.set(key, now);
+  loggedEvents += 1;
+  return true;
+}
 
-export async function trackError(
-  error: Error | string,
-  options?: {
-    component?: string;
-    severity?: 'warning' | 'error' | 'critical';
-    metadata?: Record<string, any>;
-    errorType?: 'client' | 'server' | 'edge_function';
-  }
-) {
-  try {
-    const errorMessage = typeof error === 'string' ? error : error.message;
-    const errorStack = typeof error === 'string' ? undefined : error.stack;
-
-    await supabase.from('error_logs').insert({
-      organization_id: _currentOrgId,
-      error_type: options?.errorType || 'client',
-      error_message: errorMessage,
-      error_stack: errorStack,
-      component_name: options?.component,
-      url: window.location.href,
-      user_id: _currentUserId,
-      user_agent: navigator.userAgent,
-      severity: options?.severity || 'error',
-      metadata: options?.metadata || {},
-    });
-  } catch (e) {
-    console.error('Failed to track error:', e);
+function reportWriteFailure(error: unknown) {
+  if (!reportedWriteFailure) {
+    reportedWriteFailure = true;
+    console.warn('Operational telemetry could not be saved.', error);
   }
 }
 
-// ===== Performance Monitoring =====
+export function startMonitoring(organizationId: string | null, userId: string) {
+  const context = { organization_id: organizationId, user_id: userId };
+  const reportError = (source: string, error: unknown) => {
+    const name = error instanceof Error && errorNames.has(error.name) ? error.name : 'Error';
+    const route = routeLabel(location.pathname);
+    if (!allowEvent(['error', source, name, route].join(':'))) return;
+    void supabase.from('error_logs').insert({
+      ...context, error_type: 'client', severity: 'error', component_name: source, error_message: name, url: route,
+    }).then(({ error: failure }) => { if (failure) reportWriteFailure(failure.code); }, reportWriteFailure);
+  };
+  const onError = (event: ErrorEvent) => reportError('window', event.error);
+  const onRejection = (event: PromiseRejectionEvent) => reportError('promise', event.reason);
+  const onRenderError = (event: Event) => reportError('react', (event as CustomEvent<Error>).detail);
+  window.addEventListener('error', onError);
+  window.addEventListener('unhandledrejection', onRejection);
+  window.addEventListener('safar:render-error', onRenderError);
 
-export async function trackPagePerformance() {
-  try {
-    // Wait for page load to complete
-    if (document.readyState !== 'complete') {
-      await new Promise((resolve) => window.addEventListener('load', resolve, { once: true }));
-    }
+  setApiReporter(({ functionName, method, status, durationMs }) => {
+    if (!allowEvent(['api', functionName, method, status].join(':'))) return;
+    void supabase.from('api_logs').insert({
+      ...context, function_name: functionName, method, status_code: status, response_time_ms: durationMs,
+    }).then(({ error }) => { if (error) reportWriteFailure(error.code); }, reportWriteFailure);
+  });
 
-    // Small delay for metrics to settle
-    await new Promise((r) => setTimeout(r, 1000));
-
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    if (!navigation) return;
-
-    const paintEntries = performance.getEntriesByType('paint');
-    const fcp = paintEntries.find((e) => e.name === 'first-contentful-paint');
-
-    // Get LCP via PerformanceObserver if available
-    let lcpValue: number | undefined;
-    try {
-      const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-      if (lcpEntries.length > 0) {
-        lcpValue = Math.round(lcpEntries[lcpEntries.length - 1].startTime);
-      }
-    } catch (_) {}
-
-    await supabase.from('performance_logs').insert({
-      organization_id: _currentOrgId,
-      page_url: window.location.pathname,
+  const recordNavigation = () => {
+    if (sampledNavigation) return;
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (!navigation || navigation.loadEventEnd <= 0) return;
+    sampledNavigation = true;
+    const fcp = performance.getEntriesByName('first-contentful-paint', 'paint')[0];
+    void supabase.from('performance_logs').insert({
+      ...context,
+      page_url: routeLabel(navigationPath),
       load_time_ms: Math.round(navigation.loadEventEnd - navigation.startTime),
       ttfb_ms: Math.round(navigation.responseStart - navigation.requestStart),
       fcp_ms: fcp ? Math.round(fcp.startTime) : null,
-      lcp_ms: lcpValue || null,
-      user_id: _currentUserId,
-      user_agent: navigator.userAgent,
-      connection_type: (navigator as any).connection?.effectiveType || null,
-    });
-  } catch (e) {
-    console.error('Failed to track performance:', e);
-  }
-}
+    }).then(({ error }) => { if (error) reportWriteFailure(error.code); }, reportWriteFailure);
+  };
+  let timer: number | undefined;
+  const afterLoad = () => { timer = window.setTimeout(recordNavigation, 0); };
+  if (document.readyState === 'complete') afterLoad();
+  else window.addEventListener('load', afterLoad, { once: true });
 
-// ===== Global Error Handler =====
-
-export function initGlobalErrorTracking() {
-  window.addEventListener('error', (event) => {
-    trackError(event.error || event.message, {
-      component: 'global',
-      severity: 'error',
-      metadata: {
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-      },
-    });
-  });
-
-  window.addEventListener('unhandledrejection', (event) => {
-    trackError(
-      event.reason instanceof Error ? event.reason : String(event.reason),
-      {
-        component: 'promise',
-        severity: 'error',
-        metadata: { type: 'unhandled_rejection' },
-      }
-    );
-  });
-}
-
-// ===== Audit Trail =====
-
-export async function logAuditAction(
-  action: string,
-  targetTable?: string,
-  targetId?: string,
-  details?: Record<string, any>
-) {
-  try {
-    await supabase.from('admin_audit_log').insert({
-      action,
-      target_table: targetTable,
-      target_id: targetId,
-      details: details || {},
-      organization_id: _currentOrgId,
-      user_id: _currentUserId,
-    });
-  } catch (e) {
-    console.error('Failed to log audit action:', e);
-  }
+  return () => {
+    window.removeEventListener('error', onError);
+    window.removeEventListener('unhandledrejection', onRejection);
+    window.removeEventListener('safar:render-error', onRenderError);
+    window.removeEventListener('load', afterLoad);
+    window.clearTimeout(timer);
+    setApiReporter(null);
+  };
 }

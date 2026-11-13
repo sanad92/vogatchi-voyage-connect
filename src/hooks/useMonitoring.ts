@@ -1,27 +1,22 @@
 import { useEffect } from 'react';
-import { useOrgId } from '@/hooks/useOrgId';
+import { useLocation } from 'react-router-dom';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { setMonitoringContext, initGlobalErrorTracking, trackPagePerformance } from '@/utils/monitoring';
+import { isPlatformAdminHost } from '@/lib/platform-host';
+import { startMonitoring } from '@/utils/monitoring';
 
-/**
- * Initialize monitoring: sets context, starts global error tracking,
- * and tracks page performance. Place this in your app layout.
- */
-export function useMonitoring() {
-  const orgId = useOrgId();
+export function MonitoringCollector() {
+  const { pathname } = useLocation();
+  const { organizationId, loading } = useOrganization();
   const { user } = useOptimizedAuth();
+  const platform = isPlatformAdminHost() || pathname === '/platform' || pathname.startsWith('/platform/');
+  const monitoredOrg = platform ? null : organizationId;
+  const ready = platform || !loading;
 
   useEffect(() => {
-    setMonitoringContext(orgId || null, user?.id || null);
-  }, [orgId, user?.id]);
+    if (!user?.id || !ready) return;
+    return startMonitoring(monitoredOrg, user.id);
+  }, [monitoredOrg, ready, user?.id]);
 
-  useEffect(() => {
-    initGlobalErrorTracking();
-  }, []);
-
-  useEffect(() => {
-    if (orgId) {
-      trackPagePerformance();
-    }
-  }, [orgId, window.location.pathname]);
+  return null;
 }

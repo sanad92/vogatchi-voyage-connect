@@ -12,6 +12,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
+import { MonitoringCollector } from "@/hooks/useMonitoring";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
@@ -123,6 +124,7 @@ const WhatsAppConversationDetail = lazy(() => import("@/pages/WhatsAppConversati
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const AdminImportExport = lazy(() => import("@/pages/AdminImportExport"));
 const SiteCustomization = lazy(() => import("@/pages/SiteCustomization"));
+const PlatformMonitoringDashboard = lazy(() => import("@/pages/platform-admin/PlatformMonitoringDashboard"));
 const MonitoringDashboard = lazy(() => import("@/pages/MonitoringDashboard"));
 const SupportTickets = lazy(() => import("@/pages/SupportTickets"));
 const PilgrimagePage = lazy(() => import("@/pages/Pilgrimage"));
@@ -249,6 +251,7 @@ function App() {
       <Router>
         <OptimizedAuthProvider>
           <OrganizationProvider>
+          <MonitoringCollector />
           <OptimizedErrorBoundary>
             <div className="min-h-screen bg-background">
               <Toaster position="top-right" />
@@ -308,7 +311,7 @@ function App() {
                             <Route path="database" element={<DatabaseManager />} />
                             <Route path="support" element={<PlatformSupport />} />
                             <Route path="global-data" element={<PlatformAdminGlobalData />} />
-                            <Route path="monitoring" element={<MonitoringDashboard />} />
+                            <Route path="monitoring" element={<PlatformMonitoringDashboard />} />
                             <Route path="act-as" element={<PlatformActAsPage />} />
                             <Route path="workflow-rules" element={<PlatformWorkflowRules />} />
                             <Route path="*" element={<Navigate to="/platform" replace />} />

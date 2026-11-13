@@ -68,6 +68,7 @@ const OptimizedErrorBoundary = ({
 }: OptimizedErrorBoundaryProps) => {
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
     errorManager.error('ErrorBoundary', 'خطأ في React Component', { error, errorInfo });
+    window.dispatchEvent(new CustomEvent('safar:render-error', { detail: error }));
     onError?.(error, errorInfo);
   };
 

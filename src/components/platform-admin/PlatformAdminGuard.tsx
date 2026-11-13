@@ -36,7 +36,7 @@ const PlatformAdminGuard = ({ children }: Props) => {
   if (financePath && finance.role) return <>{children}</>;
   if (!isPlatformAdmin) return <Navigate to={finance.role ? '/platform/finance' : '/platform/login'} replace />;
   if (financePath && !finance.loading) return <Navigate to="/platform" replace />;
-  const ownerOnlyPath = ['/platform/event-bus', '/platform/settings', '/platform/audit'].some(route => pathname === route || pathname.startsWith(route + '/'));
+  const ownerOnlyPath = ['/platform/event-bus', '/platform/settings', '/platform/audit', '/platform/monitoring'].some(route => pathname === route || pathname.startsWith(route + '/'));
   if (ownerOnlyPath && !isPlatformOwner) {
     return <Navigate to="/platform" replace />;
   }
