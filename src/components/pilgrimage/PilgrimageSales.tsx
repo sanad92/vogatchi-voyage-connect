@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, FileSpreadsheet, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
@@ -128,11 +129,19 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       .eq('organization_id',orgId).eq('allocation_id',allocation.id)
       .order('event_at',{ascending:false}).limit(20),
     !!allocation?.id);
-  const programAllocationCount=allocations.filter(allocationActive)
-    .reduce((sum:number,a:any)=>sum+Number(a.seat_count||0),0);
+  const availabilityQ=useQuery({
+    queryKey:['pilgrimage-availability',orgId,selected?.program_id],
+    enabled:!!orgId&&!!selected?.program_id,
+    queryFn:async()=>{
+      const {data,error}=await callUntypedRpc<{ available_seats: number|null; program_status: string }[]>(
+        'search_pilgrimage_availability',{_organization_id:orgId,_program_id:selected.program_id});
+      if(error)throw error;
+      return data?.[0]??null;
+    },
+  });
   const pilgrimsQ=useRows('pilgrimage-sale-pilgrims',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrims').select('id,full_name').eq('organization_id',orgId)
-      .eq('program_id',selected.program_id).neq('status','cancelled'),
+      .eq('program_id',selected.program_id).neq('status','cancelled').is('b2b_roster_entry_id',null),
     canManage&&!!selected?.program_id);
   const costs=costsQ.data||[];
   const customers=customersQ.data||[];
@@ -148,7 +157,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
     'pilgrimage-seat-allocations','pilgrimage-seat-events',
-    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs'].forEach(key=>
+    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs','pilgrimage-availability'].forEach(key=>
     qc.invalidateQueries({queryKey:[key,orgId]}));
 
   const createSale=useMutation({
@@ -246,9 +255,6 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         if(selected.program_id){
           const p=programs.find((x:any)=>x.id===selected.program_id);
           if(!p||p.status!=='open')issues.push('البرنامج الجماعي ليس مفتوحًا للتسجيل');
-          if(p&&p.capacity>0&&selected.party_size>
-            p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount)
-            issues.push('العدد المطلوب أكبر من المقاعد المتاحة حاليًا');
         }
         if(issues.length)throw new Error(issues.join('، '));
       }
@@ -381,10 +387,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
         {selected.program_id&&<p className="text-xs text-muted-foreground">
           المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
-            (()=>{const p=programs.find((x:any)=>x.id===selected.program_id);
-              if(!canManage||pilgrimsQ.isLoading||pilgrimsQ.error||allocationsQ.isLoading||allocationsQ.error)
-                return 'بانتظار تحديث بيانات التوافر';
-              return p?.capacity?Math.max(0,p.capacity-(pilgrimsQ.data||[]).length-programAllocationCount):'غير محدود';})()
+            availabilityQ.isError ? 'تعذر تحميل التوافر' :
+              !availabilityQ.data ? 'بانتظار تحديث بيانات التوافر' :
+              availabilityQ.data.program_status !== 'open' ? 'البرنامج مغلق للبيع' :
+              availabilityQ.data.available_seats ?? 'السعة غير محددة'
           }. التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.
         </p>}
         {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
@@ -449,6 +455,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         </Card>}
       {selected.sale_model==='b2b_group' && canManage &&
         <PilgrimageB2BContract
+          key={selected.id}
           orgId={orgId||''}
           sale={selected}
           agencyName={agencies.find((a:any)=>a.id===selected.buyer_agency_id)?.name||'—'}

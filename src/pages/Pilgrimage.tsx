@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban } from 'lucide-react';
+import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import PilgrimageSales from '@/components/pilgrimage/PilgrimageSales';
+import PilgrimageAvailabilitySearch from '@/components/pilgrimage/PilgrimageAvailabilitySearch';
 import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram } from '@/lib/pilgrimage/operations';
 import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
@@ -48,6 +49,7 @@ const EMPTY_PILGRIM: any = {
   vaccination_done: false, documents_complete: false, visa_number: '', portal_barcode: '', makkah_room: '', madinah_room: '', bus_number: '', supervisor: '', notes: '',
 };
 const pick = (o: any, keys: string[]) => Object.fromEntries(keys.map((k) => [k, o[k] === '' && /date|expiry/.test(k) ? null : o[k] ?? null]));
+const genderLabel = (gender: string | null) => gender === 'female' ? 'أنثى' : gender === 'male' ? 'ذكر' : 'غير محدد';
 
 const F = ({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) => (
   <div className={wide ? 'sm:col-span-2' : ''}><Label>{label}</Label>{children}</div>
@@ -60,9 +62,24 @@ const Pilgrimage = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [type, setType] = useState<'umrah' | 'hajj'>('umrah');
-  const [programId, setProgramId] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
+  const programId = params.get('program');
+  const linkedPassengerId = params.get('passenger');
+  const setProgramId = (id: string | null) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.delete('passenger');
+    if (id) next.set('program', id);
+    else next.delete('program');
+    return next;
+  });
   const linkedSaleId = params.get('sale');
+  const availabilityOpen = params.get('view') === 'availability';
+  const openAvailability = () => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.delete('sale');
+    next.set('view', 'availability');
+    return next;
+  });
   const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
@@ -78,7 +95,7 @@ const Pilgrimage = () => {
 
   const fail = (e: any) => toast({ title: 'تعذر الحفظ', description: e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => ['pilgrimage-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -156,7 +173,7 @@ const Pilgrimage = () => {
       if (editingPilgrim) {
         const previous = programPilgrims.find((g) => g.id === editingPilgrim);
         if (!previous) throw new Error('ملف المسافر غير موجود');
-        if (previous.room_type !== gf.room_type) {
+        if (!previous.b2b_roster_entry_id && previous.room_type !== gf.room_type) {
           if (Number(previous.paid_amount) > 0) throw new Error('لا يمكن تغيير سعر فئة الغرفة بعد التحصيل. استخدم إجراء تعديل مالي معتمد.');
           row.total_price = priceFor(program, gf.room_type);
         }
@@ -238,9 +255,22 @@ const Pilgrimage = () => {
     onError: fail,
   });
 
-  const label = type === 'hajj' ? 'الحاج' : 'المعتمر';
+  const label = (program?.program_type || type) === 'hajj' ? 'الحاج' : 'المعتمر';
   const passportWarning = (g: any) =>
     Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
+
+  if (availabilityOpen && orgId) return <PilgrimageAvailabilitySearch key={orgId} orgId={orgId}
+    onBack={() => setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('view');
+      return next;
+    })}
+    onOpenQuote={id => setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('view');
+      next.set('sale', id);
+      return next;
+    })} />;
 
   // Unified commercial quote workspace (Group seats / FIT / B2B).
   if (salesOpen || linkedSaleId) return <PilgrimageSales initialType={type} initialProgram={program}
@@ -256,8 +286,10 @@ const Pilgrimage = () => {
   // ===== Program detail =====
   if (program) {
     const active = programPilgrims.filter(isActivePilgrim);
+    const retailActiveCount = active.filter(g => !g.b2b_roster_entry_id).length;
     const totals = pilgrimageTotals(programPilgrims);
     const filteredPilgrims = programPilgrims.filter((g) =>
+      (!linkedPassengerId || g.id === linkedPassengerId) &&
       [g.full_name, g.name_en, g.phone, g.passport_number, g.room_group].some((v: unknown) => String(v ?? '').toLowerCase().includes(search.trim().toLowerCase()))
     );
     const cost = costs.find((c) => c.program_id === program.id);
@@ -266,10 +298,10 @@ const Pilgrimage = () => {
       active.forEach((g) => { const k = g[key] || 'غير مسكّن'; m.set(k, [...(m.get(k) ?? []), g]); });
       return [...m.entries()].sort(([a], [b]) => a.localeCompare(b, 'ar', { numeric: true }));
     };
-    const roomingRows = (key: string) => groupBy(key).flatMap(([room, occ]) => occ.map((g) => [room, g.full_name, g.gender === 'female' ? 'أنثى' : 'ذكر', ROOM[g.room_type], g.room_group || '', g.mahram_name || '']));
+    const roomingRows = (key: string) => groupBy(key).flatMap(([room, occ]) => occ.map((g) => [room, g.full_name, genderLabel(g.gender), ROOM[g.room_type], g.room_group || '', g.mahram_name || '']));
     const busRows = groupBy('bus_number').flatMap(([bus, occ]) => occ.map((g) => [bus, g.supervisor || '', g.full_name, g.phone || '']));
 
-    const openEditPilgrim = (g: any) => { setEditingPilgrim(g.id); setGf({ ...EMPTY_PILGRIM, ...Object.fromEntries(PILGRIM_FIELDS.map((k) => [k, g[k] ?? ''])) }); setPilgrimOpen(true); };
+    const openEditPilgrim = (g: any) => { setEditingPilgrim(g.id); setGf({ ...EMPTY_PILGRIM, ...Object.fromEntries(PILGRIM_FIELDS.map((k) => [k, g[k] ?? ''])), gender: g.gender }); setPilgrimOpen(true); };
 
     return (
       <div className="space-y-6">
@@ -280,6 +312,7 @@ const Pilgrimage = () => {
           icon={Moon}
           badge={<Badge variant="outline">{PROGRAM_STATUS[program.status]}</Badge>}
           actions={<div className="flex gap-2">
+            <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
             <Button variant="outline" onClick={() => setSalesOpen(true)}>عروض البيع Group / FIT / B2B</Button>
             {canManage && <Button variant="outline" onClick={() => { setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
             <Button disabled={!!canRegisterPilgrim(program, programPilgrims)} title={canRegisterPilgrim(program, programPilgrims) || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
@@ -287,9 +320,9 @@ const Pilgrimage = () => {
         />
         <div className="grid gap-3 sm:grid-cols-4">
           <Card className="p-4"><p className="text-xs text-muted-foreground">المسجلون / السعة</p><p className="text-2xl font-semibold">{totals.registered} / {program.capacity || '∞'}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">إجمالي المبيعات</p><p className="text-xl font-semibold">{fmt(totals.grossDue, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل</p><p className="text-xl font-semibold">{fmt(totals.collected, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي</p><p className="text-xl font-semibold">{fmt(totals.outstanding, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">مبيعات الأفراد</p><p className="text-xl font-semibold">{fmt(totals.grossDue, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل من الأفراد</p><p className="text-xl font-semibold">{fmt(totals.collected, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي على الأفراد</p><p className="text-xl font-semibold">{fmt(totals.outstanding, program.currency)}</p></Card>
         </div>
         {totals.refundExposure > 0 && (
           <Card className="p-4 text-sm border-amber-500/60">
@@ -301,7 +334,7 @@ const Pilgrimage = () => {
         {canManage && cost && (
           <Card className="p-4 text-sm">
             <span className="text-muted-foreground">للإدارة فقط · التكلفة التقديرية للفرد: </span>{fmt(cost.cost_per_person, program.currency)}
-            <span className="text-muted-foreground ms-4">الهامش التقديري قبل المصروفات والتسويات: </span>{fmt(totals.grossDue - cost.cost_per_person * active.length, program.currency)}
+            <span className="text-muted-foreground ms-4">هامش مبيعات الأفراد التقديري: </span>{fmt(totals.grossDue - cost.cost_per_person * retailActiveCount, program.currency)}
           </Card>
         )}
 
@@ -309,6 +342,7 @@ const Pilgrimage = () => {
           <TabsList><TabsTrigger value="pilgrims">المسجلون</TabsTrigger><TabsTrigger value="rooming">التسكين</TabsTrigger><TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
 
           <TabsContent value="pilgrims" className="space-y-3">
+            {linkedPassengerId && <Button variant="outline" size="sm" onClick={() => setProgramId(program.id)}>عرض كل مسافري البرنامج</Button>}
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الجواز أو الهاتف أو المجموعة" aria-label="بحث المسجلين" />
             <Card className="overflow-x-auto">
               <Table>
@@ -324,7 +358,7 @@ const Pilgrimage = () => {
                     const issues = readinessIssues(g, program);
                     return (
                       <TableRow key={g.id} className={cancelled ? 'opacity-60' : ''}>
-                        <TableCell className="font-medium">{g.full_name}{g.mahram_name && <p className="text-xs text-muted-foreground">المحرم: {g.mahram_name} ({g.mahram_relation})</p>}</TableCell>
+                        <TableCell className="font-medium">{g.full_name}{g.b2b_roster_entry_id && <p className="text-xs text-muted-foreground">ضمن اتفاق الوكيل</p>}{g.mahram_name && <p className="text-xs text-muted-foreground">المحرم: {g.mahram_name} ({g.mahram_relation})</p>}</TableCell>
                         <TableCell dir="ltr">{g.phone}</TableCell>
                         <TableCell>
                           {g.passport_number || <span className="text-destructive text-xs">ناقص</span>}
@@ -345,10 +379,10 @@ const Pilgrimage = () => {
                             </Select>
                           )}
                         </TableCell>
-                        <TableCell>{fmt(due, program.currency)}{!cancelled && issues.length > 0 && <p className="text-xs text-amber-600">{issues.length} نواقص تشغيلية</p>}</TableCell>
-                        <TableCell>{fmt(g.paid_amount, program.currency)}</TableCell>
+                        <TableCell><span>{g.b2b_roster_entry_id ? 'على فاتورة الوكيل' : fmt(due, program.currency)}</span>{!cancelled && issues.length > 0 && <p className="text-xs text-amber-600">{issues.length} نواقص تشغيلية</p>}</TableCell>
+                        <TableCell>{g.b2b_roster_entry_id ? '—' : fmt(g.paid_amount, program.currency)}</TableCell>
                         <TableCell>
-                          {fmt(outstanding(g), program.currency)}
+                          {g.b2b_roster_entry_id ? '—' : fmt(outstanding(g), program.currency)}
                           {refundable(g) > 0 && <p className="text-xs text-destructive">مستحق مراجعة رد {fmt(refundable(g), program.currency)}</p>}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
@@ -356,9 +390,9 @@ const Pilgrimage = () => {
   date: new Date().toISOString().slice(0, 10),
   exchangeRate: program.currency === 'EGP' ? 1 : 0,
   clientRef: crypto.randomUUID() }); }}><Wallet className="h-4 w-4" /></Button>}
-                          <Button size="icon" variant="ghost" title="طباعة العقد" onClick={() => printDocument(currentOrganization, `عقد برنامج ${program.name}`, contractHtml(g, program))}><FileText className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>
-                          {!cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => { setCancelFor(g); setFee(0); }}><Ban className="h-4 w-4 text-destructive" /></Button>}
+                          {!g.b2b_roster_entry_id && <Button size="icon" variant="ghost" title="طباعة العقد" onClick={() => printDocument(currentOrganization, `عقد برنامج ${program.name}`, contractHtml(g, program))}><FileText className="h-4 w-4" /></Button>}
+                          {(!g.b2b_roster_entry_id || !cancelled) && <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>}
+                          {!g.b2b_roster_entry_id && !cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => { setCancelFor(g); setFee(0); }}><Ban className="h-4 w-4 text-destructive" /></Button>}
                         </TableCell>
                       </TableRow>
                     );
@@ -378,7 +412,7 @@ const Pilgrimage = () => {
                     return (
                       <div key={room} className={`rounded-md border p-3 text-sm ${issues.length ? 'border-destructive' : ''}`}>
                         <p className="font-medium">{room === 'غير مسكّن' ? room : `غرفة ${room}`} <span className="text-muted-foreground">({occ.length})</span></p>
-                        {occ.map((g) => <p key={g.id} className="text-muted-foreground">{g.full_name} · {g.gender === 'female' ? 'أنثى' : 'ذكر'} · {ROOM[g.room_type]}</p>)}
+                        {occ.map((g) => <p key={g.id} className="text-muted-foreground">{g.full_name} · {genderLabel(g.gender)} · {ROOM[g.room_type]}</p>)}
                         {issues.map((i) => <p key={i} className="text-xs text-destructive">{i}</p>)}
                       </div>
                     );
@@ -419,7 +453,7 @@ const Pilgrimage = () => {
                 { t: 'كشف الحافلات والمشرفين', h: ['الحافلة', 'المشرف', 'الاسم', 'الهاتف'], r: () => busRows },
                 { t: 'كشف حالة التأشيرات', h: ['الاسم', 'رقم الجواز', 'التأشيرة', 'رقم التأشيرة', 'باركود المنصة'], r: () => active.map((g) => [g.full_name, g.passport_number || '', VISA[g.visa_status] || '', g.visa_number || '', g.portal_barcode || '']) },
                 { t: 'كشف النواقص والجاهزية', h: ['الاسم', 'الحالة', 'النواقص'], r: () => active.map((g) => [g.full_name, PILGRIM_STATUS[g.status] || '', readinessIssues(g, program).join('؛ ') || 'مكتمل تشغيليًا']) },
-                { t: 'كشف التحصيل والمتبقي', h: ['الاسم', 'المستحق', 'المدفوع', 'المتبقي', 'مراجعة رد'], r: () => programPilgrims.map((g) => [g.full_name, pilgrimDue(g), g.paid_amount, outstanding(g), refundable(g)]) },
+                { t: 'كشف تحصيل الأفراد والمتبقي', h: ['الاسم', 'المستحق', 'المدفوع', 'المتبقي', 'مراجعة رد'], r: () => programPilgrims.filter(g => !g.b2b_roster_entry_id).map((g) => [g.full_name, pilgrimDue(g), g.paid_amount, outstanding(g), refundable(g)]) },
               ].map((rep) => (
                 <Card key={rep.t} className="p-4 space-y-3">
                   <p className="font-medium">{rep.t}</p>
@@ -448,12 +482,12 @@ const Pilgrimage = () => {
                 <F key={k} label={l}><Input type={kind === 'date' ? 'date' : 'text'} dir={kind === 'ltr' ? 'ltr' : undefined} value={gf[k] ?? ''} onChange={(e) => setGf({ ...gf, [k]: e.target.value })} /></F>
               ))}
               <F label="النوع">
-                <Select value={gf.gender} onValueChange={(v) => setGf({ ...gf, gender: v })}><SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select>
+                <Select value={gf.gender || '__none__'} onValueChange={(v) => setGf({ ...gf, gender: v === '__none__' ? null : v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="__none__">غير محدد</SelectItem><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select>
               </F>
               <F label="نوع الغرفة">
                 <Select value={gf.room_type} onValueChange={(v) => setGf({ ...gf, room_type: v })}><SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(ROOM).map(([k, v]) => <SelectItem key={k} value={k}>{v} · {fmt(priceFor(program, k), program.currency)}</SelectItem>)}</SelectContent></Select>
+                  <SelectContent>{Object.entries(ROOM).map(([k, v]) => <SelectItem key={k} value={k}>{v}{!programPilgrims.find(g => g.id === editingPilgrim)?.b2b_roster_entry_id && ` · ${fmt(priceFor(program, k), program.currency)}`}</SelectItem>)}</SelectContent></Select>
               </F>
               <F label="ملف المستندات مكتمل">
                 <div className="flex items-center gap-2 pt-2"><Checkbox checked={!!gf.documents_complete} onCheckedChange={(v) => setGf({ ...gf, documents_complete: v === true })} /><span className="text-sm">تمت مراجعة المستندات يدويًا</span></div>
@@ -550,6 +584,7 @@ const Pilgrimage = () => {
         description="إدارة برامج الحج والعمرة، التسجيل، التحصيل بسندات قبض، التسكين، وكشوفات السفر والعقود."
         icon={Moon}
         actions={<div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
           <Button variant="outline" onClick={() => setSalesOpen(true)}>مبيعات Group / FIT / B2B</Button>
           {canManage && <Button onClick={() => { setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
         </div>}
