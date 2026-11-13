@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User, Phone, Mail, MapPin, Flag, Edit, Eye, Star, Archive, RotateCcw } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import CustomerEditDialog from "./CustomerEditDialog";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
@@ -69,7 +70,11 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated, onArchive }: Cust
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-600" />
-              <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
+              <h3 className="min-w-0 text-lg font-semibold">
+                <Link to={`/customers/${customer.id}`} className="break-words text-primary underline-offset-4 hover:underline">
+                  {customer.name}
+                </Link>
+              </h3>
             </div>
             <div className="flex gap-1">
               {canEditCustomers() && !customer.archived_at && (
@@ -88,6 +93,8 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated, onArchive }: Cust
                 size="sm" 
                 variant="outline"
                 onClick={handleViewClick}
+                aria-label="معاينة العميل"
+                title="معاينة العميل"
                 className="h-7 w-7 p-0"
               >
                 <Eye className="h-3 w-3" />
