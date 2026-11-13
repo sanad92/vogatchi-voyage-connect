@@ -34,24 +34,32 @@ export default function SupplierLedger() {
     if (!supplierId && suppliers[0]?.id) setParams({ id: suppliers[0].id }, { replace: true });
   }, [suppliers, supplierId, setParams]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['supplier-ledger', orgId, supplierId],
     enabled: !!orgId && !!supplierId,
     queryFn: async () => {
       const sb: any = supabase;
-      const [supplier, bookings, payments, pilgrimageOrders] = await Promise.all([
+      const [supplier, bookings, payments, pilgrimageOrders, supplierInvoices, legacyCosts] = await Promise.all([
         sb.from('suppliers').select('*').eq('organization_id', orgId).eq('id', supplierId).maybeSingle(),
-        sb.from('bookings').select('id, booking_number, start_date, currency, cost_price, status, booking_type').eq('organization_id', orgId).eq('supplier_id', supplierId).order('start_date', { ascending: true }),
-        sb.from('supplier_payments').select('id, amount, currency, payment_date, paid_date, reference_number, status, booking_id').eq('organization_id', orgId).eq('supplier_id', supplierId).order('payment_date', { ascending: true }),
+        sb.from('bookings').select('id, booking_number, start_date, currency, cost_price, status, workflow_stage, booking_type').eq('organization_id', orgId).eq('supplier_id', supplierId).order('start_date', { ascending: true }),
+        sb.from('supplier_payments').select('id, amount, currency, payment_date, paid_date, reference_number, status, booking_id').eq('organization_id', orgId).eq('supplier_id', supplierId).in('status', ['paid', 'completed', 'succeeded']).order('payment_date', { ascending: true }),
         sb.from('supplier_payment_orders').select('reference_number,amount,currency,created_at,status')
           .eq('organization_id', orgId).eq('supplier_id', supplierId)
-          .eq('service_type', 'pilgrimage_b2b').neq('status', 'cancelled'),
+          .eq('service_type', 'pilgrimage_b2b').neq('status', 'cancelled').neq('approval_status', 'rejected'),
+        sb.from('supplier_invoices').select('booking_id,status,currency,payment_order_id,supplier_payment_orders(status)')
+          .eq('organization_id', orgId).eq('supplier_id', supplierId).not('booking_id', 'is', null),
+        sb.from('journal_entries').select('booking_id,currency')
+          .eq('organization_id', orgId).eq('source_type', 'booking_cost').eq('status', 'posted'),
       ]);
+      if (supplierInvoices.error) throw supplierInvoices.error;
+      if (legacyCosts.error) throw legacyCosts.error;
       return {
         supplier: supplier.data,
         bookings: bookings.data || [],
         payments: payments.data || [],
         pilgrimageOrders: pilgrimageOrders.data || [],
+        supplierInvoices: supplierInvoices.data || [],
+        legacyCosts: legacyCosts.data || [],
       };
     },
   });
@@ -59,14 +67,24 @@ export default function SupplierLedger() {
   const rows = useMemo(() => {
     if (!data) return [] as any[];
     const events: any[] = [];
-    // Bookings = liability to supplier (credit AP)
+    const voidStatuses = ['cancelled', 'canceled', 'void'];
+    const key = (id: string, currency: string | null) => `${id}:${(currency || 'EGP').toUpperCase()}`;
+    const voidInvoices = new Set(data.supplierInvoices.filter((i: any) => voidStatuses.includes(i.status)
+      && (!i.payment_order_id || voidStatuses.includes(i.supplier_payment_orders?.status)))
+      .map((i: any) => key(i.booking_id, i.currency)));
+    const activeInvoices = new Set(data.supplierInvoices.filter((i: any) => !voidStatuses.includes(i.status))
+      .map((i: any) => key(i.booking_id, i.currency)));
+    const postedCosts = new Set(data.legacyCosts.map((j: any) => key(j.booking_id, j.currency)));
     data.bookings.forEach((b: any) => {
+      const bookingKey = key(b.id, b.currency);
+      const cancelled = (voidStatuses.includes(b.status) || b.workflow_stage === 'cancelled')
+        && voidInvoices.has(bookingKey) && !activeInvoices.has(bookingKey) && !postedCosts.has(bookingKey);
       events.push({
         date: b.start_date || null,
         ref: b.booking_number,
-        description: `تكلفة حجز — ${b.booking_type}`,
+        description: cancelled ? 'استحقاق مورد ملغي' : `تكلفة حجز — ${b.booking_type}`,
         debit: 0,
-        credit: Number(b.cost_price || 0),
+        credit: cancelled ? 0 : Number(b.cost_price || 0),
         currency: b.currency,
         link: `/bookings/${b.id}`,
       });
@@ -128,6 +146,7 @@ export default function SupplierLedger() {
         </AlertDescription>
       </Alert>
 
+      {isError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>تعذر تحميل كشف حساب المورد.</AlertDescription></Alert>}
       <Card>
         <CardContent className="pt-6 flex items-center gap-3 flex-wrap">
           <Building2 className="h-4 w-4 text-muted-foreground" />

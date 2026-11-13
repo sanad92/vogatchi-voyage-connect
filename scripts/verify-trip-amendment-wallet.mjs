@@ -30,6 +30,9 @@ try {
   await db.exec(migration('20261113184230_cancel_fully_waived_booking_invoice'));
   await db.exec(read('scripts/test-cancel-fully-waived-booking-invoice.sql'));
   console.log('Fully waived invoice cancellation scenarios passed');
+  await db.exec(migration('20261113191412_cancelled_booking_supplier_balance'));
+  await db.exec(read('scripts/test-cancelled-booking-supplier-balance.sql'));
+  console.log('Cancelled supplier order scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;

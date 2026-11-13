@@ -36,7 +36,8 @@ export interface BookingFinancials {
     supplierCashPaid: number;
     paidToSupplier: number;
     outstandingToSupplier: number;
-    payableSource: 'supplier_invoice' | 'booking_cost_estimate';
+    payableSource: 'supplier_invoice' | 'booking_cost_estimate' | 'cancelled_supplier_invoices';
+    supplierObligation: number;
     currency: string;
   };
   timeline: Array<{
@@ -73,10 +74,16 @@ export const useBookingFinancials = (bookingId?: string) => {
       const booking = bk.data;
       if (!booking) return null;
 
-      const invoices = (invs.data || []).filter((row) => row.status !== 'cancelled');
-      const invoice = invoices.at(-1) || null;
+      const invoiceHistory = invs.data ?? [];
+      const defaultCurrency = booking.currency || invoiceHistory.at(-1)?.currency || 'EGP';
+      const inBookingCurrency = (currency: string | null) =>
+        (currency || defaultCurrency).toUpperCase() === defaultCurrency.toUpperCase();
+      const invoices = invoiceHistory.filter(row => !['cancelled', 'draft'].includes(row.status));
+      const invoice = invoices.at(-1) ?? invoiceHistory.at(-1) ?? null;
       const customerPayments = (cpays.data || []).filter((row) => row.status === 'completed');
-      const supplierInvoices = (sinvs.data || []).filter((row) => row.status !== 'cancelled');
+      const voidStatuses = ['cancelled', 'canceled', 'void'];
+      const supplierInvoiceHistory = sinvs.data ?? [];
+      const supplierInvoices = supplierInvoiceHistory.filter(row => !voidStatuses.includes(row.status));
       const paymentOrders = orders.data || [];
       const supplierPayments = spays.data || [];
       const journals = jes.data || [];
@@ -96,15 +103,26 @@ export const useBookingFinancials = (bookingId?: string) => {
         sum + Math.max(0, Number(row.remaining_amount ?? (Number(row.final_amount || 0) - Number(row.total_paid_amount || 0)))), 0);
 
       const supplierCashPaid = supplierPayments
-        .filter((row) => row.status === 'paid' || row.status === 'completed')
+        .filter(row => ['paid', 'completed', 'succeeded'].includes(row.status) && inBookingCurrency(row.currency))
         .reduce((sum, row) => sum + Number(row.amount || 0), 0);
-      const supplierInvoiced = supplierInvoices.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-      const supplierInvoicePaid = supplierInvoices.reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);
-      const payableSource = supplierInvoices.length > 0 ? 'supplier_invoice' : 'booking_cost_estimate';
-      const paidToSupplier = supplierInvoices.length > 0 ? supplierInvoicePaid : supplierCashPaid;
-      const outstandingToSupplier = Math.max(0, (supplierInvoices.length > 0 ? supplierInvoiced : cost) - paidToSupplier);
-
-      const currency = booking.currency || invoice?.currency || 'EGP';
+      const supplierCurrencyInvoices = supplierInvoices.filter(row => inBookingCurrency(row.currency));
+      const supplierInvoiced = supplierCurrencyInvoices.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      const supplierInvoicePaid = supplierCurrencyInvoices.reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);
+      const currency = defaultCurrency;
+      const cancelledBooking = voidStatuses.includes(booking.status) || booking.workflow_stage === 'cancelled';
+      const cancelledOrderIds = new Set(paymentOrders.filter(o => voidStatuses.includes(o.status)).map(o => o.id));
+      const hasCancelledSupplierInvoice = supplierInvoiceHistory.some(row =>
+        voidStatuses.includes(row.status) && inBookingCurrency(row.currency)
+        && (!row.payment_order_id || cancelledOrderIds.has(row.payment_order_id)));
+      const hasLegacyCostPosting = journals.some(row => row.source_type === 'booking_cost' && row.status === 'posted'
+        && inBookingCurrency(row.currency));
+      const payableSource = supplierCurrencyInvoices.length > 0 ? 'supplier_invoice'
+        : cancelledBooking && hasCancelledSupplierInvoice && !hasLegacyCostPosting
+          ? 'cancelled_supplier_invoices' : 'booking_cost_estimate';
+      const supplierObligation = payableSource === 'supplier_invoice' ? supplierInvoiced
+        : payableSource === 'cancelled_supplier_invoices' ? 0 : cost;
+      const paidToSupplier = supplierCurrencyInvoices.length > 0 ? supplierInvoicePaid : supplierCashPaid;
+      const outstandingToSupplier = Math.max(0, supplierObligation - paidToSupplier);
 
       // Validation warnings
       const warnings: string[] = [];
@@ -157,8 +175,8 @@ export const useBookingFinancials = (bookingId?: string) => {
       customerPayments.forEach((row) => {
         timeline.push({ date: row.payment_date, kind: 'receipt', label: 'تحصيل من العميل', amount: Number(row.amount), currency: row.currency, ref: row.id });
       });
-      supplierInvoices.forEach((row) => {
-        timeline.push({ date: row.invoice_date, kind: 'supplier_invoice', label: `استحقاق مورد ${row.invoice_number}`, amount: Number(row.amount), currency: row.currency, ref: row.id });
+      supplierInvoiceHistory.forEach((row) => {
+        timeline.push({ date: row.invoice_date, kind: 'supplier_invoice', label: `${voidStatuses.includes(row.status) ? 'فاتورة مورد ملغاة' : 'استحقاق مورد'} ${row.invoice_number}`, amount: Number(row.amount), currency: row.currency, ref: row.id });
       });
       paymentOrders.forEach((row) => {
         timeline.push({ date: row.created_at, kind: 'supplier_order', label: `أمر دفع ${row.reference_number} (${row.approval_status})`, amount: Number(row.amount), currency: row.currency, ref: row.id });
@@ -202,7 +220,7 @@ export const useBookingFinancials = (bookingId?: string) => {
         totals: {
           selling, cost, profit, profitMargin,
           invoiced, customerReceipts, receivedFromCustomer, outstandingFromCustomer,
-          supplierInvoiced, supplierCashPaid, paidToSupplier, outstandingToSupplier, payableSource,
+          supplierInvoiced, supplierCashPaid, paidToSupplier, outstandingToSupplier, payableSource, supplierObligation,
           currency,
         },
         timeline,

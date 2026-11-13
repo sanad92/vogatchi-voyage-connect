@@ -57,7 +57,7 @@ export const BookingProfitCockpit = ({ bookingId }: { bookingId: string }) => {
               [s.customer_due_basis === 'customer_invoices' ? 'فواتير العميل' : 'سعر البيع', s.customer_due_basis === 'customer_invoices' ? s.customer_invoiced : s.selling], ['المتحصل', s.customer_collected], ['المتبقي', s.customer_remaining],
             ]} currency={currency} />
             <SettlementCard title="تسوية المورد" settled={settlement.supplier_settled} progress={settlement.supplier_progress_pct} rows={[
-              [s.supplier_due_basis === 'supplier_invoices' ? 'فواتير المورد' : 'تكلفة الحجز', s.supplier_due_basis === 'supplier_invoices' ? s.supplier_invoiced : s.supplier_cost],
+              [s.supplier_due_basis === 'booking_cost' ? 'تكلفة الحجز' : 'استحقاق فواتير المورد', s.supplier_due_basis === 'booking_cost' ? s.supplier_cost : s.supplier_invoiced],
               ['المدفوع', s.supplier_paid], ['المتبقي', s.supplier_remaining],
             ]} currency={currency} />
           </div>

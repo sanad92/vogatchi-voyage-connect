@@ -101,7 +101,7 @@ export default function PaymentOrders() {
         (r) =>
           (orderId || status === "all" ||
             r.status === status ||
-            r.approval_status === status) &&
+            (r.status !== 'cancelled' && r.approval_status === status)) &&
           (orderId || !search ||
             r.reference_number.toLowerCase().includes(search.toLowerCase()) ||
             r.suppliers?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -114,7 +114,7 @@ export default function PaymentOrders() {
   const totals = useMemo(
     () => ({
       all: query.data?.length || 0,
-      pending: (query.data || []).filter((r) => r.approval_status === "pending")
+      pending: (query.data || []).filter((r) => r.approval_status === "pending" && r.status !== "cancelled")
         .length,
       approved: (query.data || []).filter(
         (r) => canPayOrder(r),
@@ -158,6 +158,7 @@ export default function PaymentOrders() {
                 <SelectItem value="approved">معتمد</SelectItem>
                 <SelectItem value="rejected">مرفوض</SelectItem>
                 <SelectItem value="paid">مدفوع</SelectItem>
+                <SelectItem value="cancelled">ملغي</SelectItem>
                 <SelectItem value="partially_paid">مدفوع جزئيًا</SelectItem>
               </SelectContent>
             </Select>
@@ -227,7 +228,7 @@ export default function PaymentOrders() {
                                 : "outline"
                           }
                         >
-                          {labels[r.status] ||
+                          {r.status === "cancelled" ? labels.cancelled : (r.approval_status === "rejected" ? labels.rejected : labels[r.status]) ||
                             labels[r.approval_status] ||
                             r.status}
                         </Badge>

@@ -115,8 +115,8 @@ export const BookingFinancialWorkspace: React.FC<Props> = ({ bookingId }) => {
               </div>
             </div>
             <Row
-              label={totals.payableSource === 'supplier_invoice' ? 'استحقاق المورد' : 'استحقاق تقديري من التكلفة'}
-              value={fmt(totals.payableSource === 'supplier_invoice' ? totals.supplierInvoiced : totals.cost, ccy)}
+              label={totals.payableSource === 'booking_cost_estimate' ? 'استحقاق تقديري من التكلفة' : 'استحقاق المورد'}
+              value={fmt(totals.supplierObligation, ccy)}
               tone={totals.payableSource === 'booking_cost_estimate' ? 'bad' : undefined}
             />
             <Row label="المسدّد والمخصص للمورد" value={fmt(totals.paidToSupplier, ccy)} tone="good" />

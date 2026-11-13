@@ -40,7 +40,7 @@ export interface BookingProfitCockpit {
     supplier_invoiced: number;
     supplier_paid: number;
     supplier_remaining: number;
-    supplier_due_basis: 'supplier_invoices' | 'booking_cost';
+    supplier_due_basis: 'supplier_invoices' | 'booking_cost' | 'cancelled_supplier_invoices';
   };
   settlement: {
     customer_settled: boolean;

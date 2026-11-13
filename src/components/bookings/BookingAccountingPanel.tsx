@@ -12,6 +12,9 @@ interface Props {
 export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 'EGP' }) => {
   const { data, isLoading } = useBookingFinancials(bookingId);
 
+  const latestJournal = data?.journals.at(-1);
+  const supplierCancelled = data?.totals.payableSource === 'cancelled_supplier_invoices';
+
   if (isLoading) return <div className="text-sm text-muted-foreground py-4 text-center">جارٍ تحميل البيانات المحاسبية...</div>;
 
   return (
@@ -29,7 +32,7 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
             <span className="text-xs text-muted-foreground flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> فاتورة العميل</span>
             {data?.invoice ? (
               <Badge variant={data.invoice.payment_status === 'paid' ? 'default' : 'outline'} className="text-[10px]">
-                {data.invoices.length} — {data.invoice.payment_status === 'paid' ? 'مدفوعة' : data.invoice.payment_status || 'غير محددة'}
+                {data.invoice.status === 'cancelled' ? 'ملغاة' : data.invoice.payment_status === 'paid' ? 'مدفوعة' : data.invoice.payment_status || 'غير محددة'}
               </Badge>
             ) : (
               <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">غير مُصدرة</Badge>
@@ -50,7 +53,7 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
         <div className="border rounded-lg p-3 space-y-2 bg-card">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="h-3.5 w-3.5" /> سداد المورد</span>
-            {data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
+            {supplierCancelled ? <Badge variant="outline" className="text-[10px]">ملغي</Badge> : data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
               <Badge variant={data.totals.outstandingToSupplier === 0 ? 'default' : 'outline'} className="text-[10px]">
                 {data.totals.outstandingToSupplier === 0 ? 'مسدد بالكامل' : 'مستحق'}
               </Badge>
@@ -58,7 +61,7 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
               <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">غير مسدد</Badge>
             )}
           </div>
-          {data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
+          {supplierCancelled ? <div className="text-sm">المتبقي للمورد: <strong>0 {data?.totals.currency || currency}</strong></div> : data && (data.supplierInvoices.length > 0 || data.supplierPayments.length > 0) ? (
             <div>
               {data.supplierInvoices.length > 0 ? (
                 <div className="text-xs font-mono">{data.supplierInvoices.map((row) => row.invoice_number).join('، ')}</div>
@@ -76,18 +79,19 @@ export const BookingAccountingPanel: React.FC<Props> = ({ bookingId, currency = 
         {/* Journal Entry */}
         <div className="border rounded-lg p-3 space-y-2 bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground flex items-center gap-1"><BookOpenCheck className="h-3.5 w-3.5" /> القيد المحاسبي</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1"><BookOpenCheck className="h-3.5 w-3.5" /> القيود المحاسبية</span>
             {data?.journals.length ? (
               <Badge variant="default" className="text-[10px]">{data.journals.length} قيد</Badge>
             ) : (
               <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">غير مُسجل</Badge>
             )}
           </div>
-          {data?.journals.length ? (
-            <Link to={`/journal-entries?id=${data.journals.at(-1)?.id}`} className="block">
-              <div className="text-sm font-mono">{data.journals.at(-1)?.entry_number}</div>
-              <div className="text-xs text-muted-foreground">آخر ترحيل: {data.journals.at(-1)?.entry_date}</div>
-              <div className="text-base font-bold">{Number(data.journals.reduce((sum, row) => sum + Number(row.total_debit || 0), 0)).toLocaleString()} {data.totals.currency || currency}</div>
+          {latestJournal ? (
+            <Link to={`/journal-entries?id=${latestJournal.id}`} className="block">
+              <div className="text-sm font-mono">{latestJournal.entry_number}</div>
+              <div className="text-xs text-muted-foreground">آخر ترحيل: {latestJournal.entry_date}</div>
+              <div className="text-sm">{latestJournal.description}</div>
+              <div className="text-base font-bold">قيمة آخر قيد: {Number(latestJournal.total_debit).toLocaleString()} {latestJournal.currency || currency}</div>
             </Link>
           ) : (
             <div className="text-xs text-muted-foreground">سيتم التسجيل عند تأكيد الحجز</div>
