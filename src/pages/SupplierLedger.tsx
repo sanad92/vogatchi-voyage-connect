@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
+import { useSupplierLedgerRpc } from '@/hooks/finance/useFinanceRpcs';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,89 +35,23 @@ export default function SupplierLedger() {
     if (!supplierId && suppliers[0]?.id) setParams({ id: suppliers[0].id }, { replace: true });
   }, [suppliers, supplierId, setParams]);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['supplier-ledger', orgId, supplierId],
-    enabled: !!orgId && !!supplierId,
-    queryFn: async () => {
-      const sb: any = supabase;
-      const [supplier, bookings, payments, pilgrimageOrders, supplierInvoices, legacyCosts] = await Promise.all([
-        sb.from('suppliers').select('*').eq('organization_id', orgId).eq('id', supplierId).maybeSingle(),
-        sb.from('bookings').select('id, booking_number, start_date, currency, cost_price, status, workflow_stage, booking_type').eq('organization_id', orgId).eq('supplier_id', supplierId).order('start_date', { ascending: true }),
-        sb.from('supplier_payments').select('id, amount, currency, payment_date, paid_date, reference_number, status, booking_id').eq('organization_id', orgId).eq('supplier_id', supplierId).in('status', ['paid', 'completed', 'succeeded']).order('payment_date', { ascending: true }),
-        sb.from('supplier_payment_orders').select('reference_number,amount,currency,created_at,status')
-          .eq('organization_id', orgId).eq('supplier_id', supplierId)
-          .eq('service_type', 'pilgrimage_b2b').neq('status', 'cancelled').neq('approval_status', 'rejected'),
-        sb.from('supplier_invoices').select('booking_id,status,currency,payment_order_id,supplier_payment_orders(status)')
-          .eq('organization_id', orgId).eq('supplier_id', supplierId).not('booking_id', 'is', null),
-        sb.from('journal_entries').select('booking_id,currency')
-          .eq('organization_id', orgId).eq('source_type', 'booking_cost').eq('status', 'posted'),
-      ]);
-      if (supplierInvoices.error) throw supplierInvoices.error;
-      if (legacyCosts.error) throw legacyCosts.error;
-      return {
-        supplier: supplier.data,
-        bookings: bookings.data || [],
-        payments: payments.data || [],
-        pilgrimageOrders: pilgrimageOrders.data || [],
-        supplierInvoices: supplierInvoices.data || [],
-        legacyCosts: legacyCosts.data || [],
-      };
-    },
-  });
-
-  const rows = useMemo(() => {
-    if (!data) return [] as any[];
-    const events: any[] = [];
-    const voidStatuses = ['cancelled', 'canceled', 'void'];
-    const key = (id: string, currency: string | null) => `${id}:${(currency || 'EGP').toUpperCase()}`;
-    const voidInvoices = new Set(data.supplierInvoices.filter((i: any) => voidStatuses.includes(i.status)
-      && (!i.payment_order_id || voidStatuses.includes(i.supplier_payment_orders?.status)))
-      .map((i: any) => key(i.booking_id, i.currency)));
-    const activeInvoices = new Set(data.supplierInvoices.filter((i: any) => !voidStatuses.includes(i.status))
-      .map((i: any) => key(i.booking_id, i.currency)));
-    const postedCosts = new Set(data.legacyCosts.map((j: any) => key(j.booking_id, j.currency)));
-    data.bookings.forEach((b: any) => {
-      const bookingKey = key(b.id, b.currency);
-      const cancelled = (voidStatuses.includes(b.status) || b.workflow_stage === 'cancelled')
-        && voidInvoices.has(bookingKey) && !activeInvoices.has(bookingKey) && !postedCosts.has(bookingKey);
-      events.push({
-        date: b.start_date || null,
-        ref: b.booking_number,
-        description: cancelled ? 'استحقاق مورد ملغي' : `تكلفة حجز — ${b.booking_type}`,
-        debit: 0,
-        credit: cancelled ? 0 : Number(b.cost_price || 0),
-        currency: b.currency,
-        link: `/bookings/${b.id}`,
-      });
-    });
-    for (const order of data.pilgrimageOrders) {
-      events.push({
-        date: order.created_at, ref: order.reference_number, description: 'استحقاق مورد حج وعمرة',
-        debit: 0, credit: Number(order.amount), currency: order.currency,
-        link: `/payment-orders?ref=${encodeURIComponent(order.reference_number)}`,
-      });
-    }
-    // Payments to supplier = debit AP
-    data.payments.forEach((p: any) => {
-      events.push({
-        date: p.paid_date || p.payment_date,
-        ref: p.reference_number || '—',
-        description: 'سداد للمورد',
-        debit: Number(p.amount || 0),
-        credit: 0,
-        currency: p.currency,
-        link: p.booking_id ? `/bookings/${p.booking_id}` : '#',
-      });
-    });
-    events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    const balances: Record<string, number> = {};
-    return events.map((e) => {
-      const ccy = e.currency || 'EGP';
-      // Balance = credit − debit (positive = we owe supplier)
-      balances[ccy] = (balances[ccy] || 0) + e.credit - e.debit;
-      return { ...e, balance: balances[ccy] };
-    });
-  }, [data]);
+  const { data, isLoading, isError } = useSupplierLedgerRpc(supplierId);
+  const rows = useMemo(() => (data ?? []).map(row => ({
+    date: row.entry_date?.slice(0, 10),
+    ref: row.reference,
+    description: {
+      supplier_invoice: 'استحقاق مورد',
+      payment_order: 'أمر دفع مورد',
+      payment: 'سداد للمورد',
+      booking_cancellation: 'تسوية إلغاء المورد',
+      supplier_wallet_offset: 'تسوية من محفظة المورد',
+    }[row.entry_type] || row.entry_type,
+    debit: Number(row.debit),
+    credit: Number(row.credit),
+    balance: -Number(row.balance),
+    currency: row.currency,
+    link: row.booking_id ? `/bookings/${row.booking_id}/workspace?tab=financials` : null,
+  })), [data]);
 
   const totalsByCurrency = useMemo(() => {
     const m: Record<string, { debit: number; credit: number; balance: number }> = {};
@@ -134,7 +69,7 @@ export default function SupplierLedger() {
       <PageHeader
         icon={BookOpen}
         title="كشف حساب المورد"
-        description="تكاليف الحجوزات ومستحقات الحج والعمرة ومدفوعات الموردين."
+        description="فواتير المورد وأوامر الدفع والمدفوعات والتسويات."
       />
 
       {supplierId && <RefundLedgerSummary kind="supplier" partyId={supplierId} />}
@@ -200,7 +135,7 @@ export default function SupplierLedger() {
                 {rows.map((r, i) => (
                   <TableRow key={i}>
                     <TableCell className="text-xs">{r.date || '—'}</TableCell>
-                    <TableCell><Link to={r.link} className="font-mono text-xs text-primary hover:underline">{r.ref}</Link></TableCell>
+                    <TableCell>{r.link ? <Link to={r.link} className="font-mono text-xs text-primary hover:underline">{r.ref}</Link> : r.ref}</TableCell>
                     <TableCell className="text-sm">{r.description}</TableCell>
                     <TableCell className="text-left font-mono text-green-600">{r.debit ? fmt(r.debit, r.currency) : '—'}</TableCell>
                     <TableCell className="text-left font-mono">{r.credit ? fmt(r.credit, r.currency) : '—'}</TableCell>

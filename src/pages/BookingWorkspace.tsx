@@ -133,7 +133,7 @@ const BookingWorkspace = () => {
               {canSettleCancellation && !workspace.booking.is_demo && (
                 <Button size="sm" variant="outline" onClick={() => setCancellationOpen(true)}>
                   <Ban className="h-4 w-4 ml-1" />
-                  {cancellation.data?.settled ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
+                  {cancellation.data?.customer.settled && (cancellation.data.supplier_result || !cancellation.data.suppliers.length) ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
                 </Button>
               )}
               <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>

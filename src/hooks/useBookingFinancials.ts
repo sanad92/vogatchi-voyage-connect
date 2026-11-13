@@ -1,3 +1,4 @@
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 /** Booking financial workspace: one read model for AR, AP, cash and journals. */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,7 +58,7 @@ export const useBookingFinancials = (bookingId?: string) => {
     enabled: !!bookingId,
     queryFn: async () => {
       if (!bookingId) return null;
-      const [bk, invs, cpays, sinvs, orders, spays, jes, docs] = await Promise.all([
+      const [bk, invs, cpays, sinvs, orders, spays, jes, docs, supplierCancellation] = await Promise.all([
         supabase.from('bookings').select('*').eq('id', bookingId).maybeSingle(),
         supabase.from('invoices').select('*').eq('booking_id', bookingId).order('issued_date', { ascending: true }),
         supabase.from('customer_payments').select('*').eq('booking_id', bookingId).order('payment_date', { ascending: true }),
@@ -66,6 +67,7 @@ export const useBookingFinancials = (bookingId?: string) => {
         supabase.from('supplier_payments').select('*').eq('booking_id', bookingId).order('payment_date', { ascending: true }),
         supabase.from('journal_entries').select('*').eq('booking_id', bookingId).order('entry_date', { ascending: true }),
         supabase.from('generated_documents').select('*').eq('booking_id', bookingId).order('created_at', { ascending: false }),
+        callUntypedRpc<boolean>('booking_supplier_cancellation_completed', { _booking: bookingId }),
       ]);
 
       const firstError = [bk, invs, cpays, sinvs, orders, spays, jes, docs].find((result) => result.error)?.error;
@@ -117,12 +119,13 @@ export const useBookingFinancials = (bookingId?: string) => {
       const hasLegacyCostPosting = journals.some(row => row.source_type === 'booking_cost' && row.status === 'posted'
         && inBookingCurrency(row.currency));
       const payableSource = supplierCurrencyInvoices.length > 0 ? 'supplier_invoice'
-        : cancelledBooking && hasCancelledSupplierInvoice && !hasLegacyCostPosting
+        : cancelledBooking && (supplierCancellation.data || (hasCancelledSupplierInvoice && !hasLegacyCostPosting))
           ? 'cancelled_supplier_invoices' : 'booking_cost_estimate';
       const supplierObligation = payableSource === 'supplier_invoice' ? supplierInvoiced
         : payableSource === 'cancelled_supplier_invoices' ? 0 : cost;
-      const paidToSupplier = supplierCurrencyInvoices.length > 0 ? supplierInvoicePaid : supplierCashPaid;
-      const outstandingToSupplier = Math.max(0, supplierObligation - paidToSupplier);
+      const paidToSupplier = supplierCancellation.data ? supplierCashPaid
+        : supplierCurrencyInvoices.length > 0 ? supplierInvoicePaid : supplierCashPaid;
+      const outstandingToSupplier = Math.max(0, supplierObligation - (supplierCancellation.data ? supplierInvoicePaid : paidToSupplier));
 
       // Validation warnings
       const warnings: string[] = [];
@@ -143,10 +146,10 @@ export const useBookingFinancials = (bookingId?: string) => {
       if (['confirmed', 'completed'].includes(booking.status) && cost > 0 && supplierInvoices.length === 0) {
         warnings.push('لم تُنشأ فاتورة/استحقاق للمورد رغم تأكيد الحجز وتسجيل التكلفة.');
       }
-      if (supplierInvoices.length > 0 && Math.abs(supplierInvoiced - cost) > 0.01) {
+      if (!supplierCancellation.data && supplierInvoices.length > 0 && Math.abs(supplierInvoiced - cost) > 0.01) {
         warnings.push(`إجمالي استحقاق المورد (${supplierInvoiced}) لا يطابق تكلفة الحجز (${cost}).`);
       }
-      if (supplierInvoices.length > 0 && Math.abs(supplierInvoicePaid - supplierCashPaid) > 0.01) {
+      if (!supplierCancellation.data && supplierInvoices.length > 0 && Math.abs(supplierInvoicePaid - supplierCashPaid) > 0.01) {
         warnings.push('تخصيص دفعات المورد لا يطابق إجمالي المدفوع على الحجز.');
       }
       if (customerReceipts > receivedFromCustomer + 0.01) {
@@ -179,7 +182,7 @@ export const useBookingFinancials = (bookingId?: string) => {
         timeline.push({ date: row.invoice_date, kind: 'supplier_invoice', label: `${voidStatuses.includes(row.status) ? 'فاتورة مورد ملغاة' : 'استحقاق مورد'} ${row.invoice_number}`, amount: Number(row.amount), currency: row.currency, ref: row.id });
       });
       paymentOrders.forEach((row) => {
-        timeline.push({ date: row.created_at, kind: 'supplier_order', label: `أمر دفع ${row.reference_number} (${row.approval_status})`, amount: Number(row.amount), currency: row.currency, ref: row.id });
+        timeline.push({ date: row.created_at, kind: 'supplier_order', label: `أمر دفع ${row.reference_number} (${row.status === 'cancelled' ? 'ملغي' : row.approval_status})`, amount: Number(row.amount), currency: row.currency, ref: row.id });
       });
       supplierPayments.forEach((p) => {
         timeline.push({

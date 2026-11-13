@@ -46,6 +46,7 @@ type Order = {
   status: string;
   approval_status: string;
   service_type: string;
+  source_type: string | null;
   booking_id: string | null;
   pilgrimage_b2b_agreement_id?: string | null;
   supplier_id: string | null;
@@ -111,9 +112,12 @@ export default function PaymentOrders() {
       if (bookingId) request = request.eq("booking_id", bookingId);
       const { data, error } = await request;
       if (error) throw error;
-      return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => ({ ...order, ...paymentOrderBalance(order.amount, [
-        ...(order.supplier_payment_allocations ?? []), ...(order.refund_balance_settlements ?? []),
-      ]) })) as unknown as Order[];
+      return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => {
+        const balance = paymentOrderBalance(order.amount, [
+          ...(order.supplier_payment_allocations ?? []), ...(order.refund_balance_settlements ?? []),
+        ]);
+        return { ...order, ...balance, remainingAmount: order.status === 'cancelled' ? 0 : balance.remainingAmount };
+      }) as Order[];
     },
   });
   const rows = useMemo(
@@ -257,7 +261,7 @@ export default function PaymentOrders() {
                       <TableCell>
                         <div className="flex min-w-64 items-center gap-2">
                           {canProcessPayments() && getPermissionScope('payments_process') === 'organization' &&
-                            !r.pilgrimage_b2b_agreement_id && ['pending', 'approved'].includes(r.status) && r.paidAmount === 0 &&
+                            !r.pilgrimage_b2b_agreement_id && r.source_type !== 'booking_cancellation_fee' && ['pending', 'approved'].includes(r.status) && r.paidAmount === 0 &&
                             (['cancelled', 'canceled'].includes(r.bookings?.status ?? '') || r.bookings?.workflow_stage === 'cancelled') && (
                               <Button size="sm" variant="outline" onClick={() => { setConfirmation(''); setOrderToClose(r); }}>
                                 إقفال المستحق
@@ -276,19 +280,21 @@ export default function PaymentOrders() {
                               >
                                 اعتماد
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={approve.isPending}
-                                onClick={() =>
-                                  approve.mutate({
-                                    po_id: r.id,
-                                    approve: false,
-                                  })
-                                }
-                              >
-                                رفض
-                              </Button>
+                              {r.source_type !== 'booking_cancellation_fee' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={approve.isPending}
+                                  onClick={() =>
+                                    approve.mutate({
+                                      po_id: r.id,
+                                      approve: false,
+                                    })
+                                  }
+                                >
+                                  رفض
+                                </Button>
+                              )}
                             </>
                           )}
                           {canProcessPayments() && (!r.pilgrimage_b2b_agreement_id ||
