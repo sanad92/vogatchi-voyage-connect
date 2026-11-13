@@ -129,17 +129,6 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
-        <NavLink
-          to="/dashboard"
-          title={isCollapsed ? 'العودة إلى لوحة الشركة' : undefined}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors',
-            isCollapsed && 'justify-center px-2'
-          )}
-        >
-          <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span>العودة إلى لوحة الشركة</span>}
-        </NavLink>
         <button
           onClick={onToggle}
           className="hidden md:flex w-full items-center justify-center gap-2 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors"
