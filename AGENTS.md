@@ -6,4 +6,5 @@
 - English UI = Arabic source strings + runtime DOM translation (src/i18n/domTranslator.ts) from a lazily loaded dictionary (en-auto.json, generated; en.ts manual overrides win); why: covers every screen without rewriting each page. Mark the language toggle and other must-not-translate nodes with data-no-translate.
 - Platform admin area (/platform/*) is guarded only by platform_roles via PlatformAdminGuard with its own /platform/login, never by company membership; admin.safarerp.com host maps / and /login to it. Why: operators must not depend on a tenant.
 
-- Company sign-up and staff invitations reject free mailbox domains in UI (src/lib/business-email.ts), the onboarding edge function and an invitations insert trigger; why: B2B-only accounts enforced server-side, keep the three lists in sync.
+- Company sign-up and staff invitations reject free mailbox domains in UI, onboarding, invitation RPCs and pending-invitation insert/update triggers; verified work email is required by onboarding and acceptance RPCs. Why: direct calls and old invitations cannot bypass B2B enforcement; keep domain lists in sync.
+- Privileged RPC denial predicates coalesce missing organization roles to an empty value, and membership identity is immutable. Why: SQL NULL must deny access, and memberships must never move between tenants or users.
