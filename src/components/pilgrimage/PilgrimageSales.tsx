@@ -132,7 +132,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     .reduce((sum:number,a:any)=>sum+Number(a.seat_count||0),0);
   const pilgrimsQ=useRows('pilgrimage-sale-pilgrims',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrims').select('id,full_name').eq('organization_id',orgId)
-      .eq('program_id',selected.program_id).neq('status','cancelled'),
+      .eq('program_id',selected.program_id).neq('status','cancelled').is('b2b_roster_entry_id',null),
     canManage&&!!selected?.program_id);
   const costs=costsQ.data||[];
   const customers=customersQ.data||[];
@@ -449,6 +449,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         </Card>}
       {selected.sale_model==='b2b_group' && canManage &&
         <PilgrimageB2BContract
+          key={selected.id}
           orgId={orgId||''}
           sale={selected}
           agencyName={agencies.find((a:any)=>a.id===selected.buyer_agency_id)?.name||'—'}

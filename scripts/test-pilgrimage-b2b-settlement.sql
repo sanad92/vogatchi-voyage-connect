@@ -71,6 +71,109 @@ AS $$ SELECT public.can_org_write(org) AND public.has_org_permission(org, 'payme
 
 \i scripts/deploy-pilgrimage-b2b-settlement.sql
 
+ALTER TABLE public.pilgrimage_programs ADD COLUMN name text NOT NULL DEFAULT 'Test program',
+  ADD COLUMN departure_date date, ADD COLUMN return_date date,
+  ADD COLUMN makkah_nights int NOT NULL DEFAULT 0, ADD COLUMN madinah_nights int NOT NULL DEFAULT 0,
+  ADD COLUMN price_quad numeric NOT NULL DEFAULT 500, ADD COLUMN price_triple numeric NOT NULL DEFAULT 750,
+  ADD COLUMN price_double numeric NOT NULL DEFAULT 1000, ADD COLUMN price_single numeric NOT NULL DEFAULT 1500;
+ALTER TABLE public.pilgrims ALTER COLUMN id SET DEFAULT gen_random_uuid(),
+  ADD COLUMN full_name text, ADD COLUMN name_en text, ADD COLUMN customer_id uuid,
+  ADD COLUMN created_by uuid, ADD COLUMN gender text, ADD COLUMN national_id text,
+  ADD COLUMN passport_number text, ADD COLUMN passport_expiry date,
+  ADD COLUMN visa_status text NOT NULL DEFAULT 'not_started',
+  ADD COLUMN documents_complete boolean NOT NULL DEFAULT false,
+  ADD COLUMN makkah_room text, ADD COLUMN madinah_room text, ADD COLUMN bus_number text,
+  ADD COLUMN room_type text NOT NULL DEFAULT 'quad',
+  ADD COLUMN total_price numeric NOT NULL DEFAULT 0, ADD COLUMN paid_amount numeric NOT NULL DEFAULT 0,
+  ADD COLUMN cancellation_fee numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.customer_payments ADD COLUMN pilgrim_id uuid;
+CREATE TABLE public.pilgrimage_program_costs (program_id uuid PRIMARY KEY, organization_id uuid, cost_per_person numeric);
+ALTER TABLE public.pilgrims ENABLE ROW LEVEL SECURITY;
+CREATE POLICY fixture_pilgrims ON public.pilgrims FOR ALL TO authenticated
+  USING (public.user_belongs_to_org(auth.uid(), organization_id))
+  WITH CHECK (public.user_belongs_to_org(auth.uid(), organization_id));
+GRANT SELECT, INSERT, UPDATE ON public.pilgrims TO authenticated;
+GRANT SELECT, UPDATE ON public.pilgrimage_programs TO authenticated;
+\i scripts/deploy-pilgrimage-guardrails.sql
+\i scripts/deploy-pilgrimage-retail-registration.sql
+\i scripts/deploy-pilgrimage-b2b-roster.sql
+\i scripts/deploy-pilgrimage-b2b-passengers.sql
+
+SET ROLE authenticated;
+SET test.user_id = '00000000-0000-4000-8000-000000000011';
+DO $$
+DECLARE
+  program constant uuid := '00000000-0000-4000-8000-000000000201';
+  sale constant uuid := '00000000-0000-4000-8000-000000000303';
+  agreement uuid;
+  entry uuid;
+  traveler uuid;
+BEGIN
+  SELECT id INTO STRICT agreement FROM public.pilgrimage_b2b_agreements WHERE sale_id=sale;
+  UPDATE public.pilgrimage_programs SET capacity=11, status='full' WHERE id=program;
+  entry := public.add_pilgrimage_b2b_roster_name(agreement, gen_random_uuid(), 'Agency Test Passenger', 'double');
+  traveler := public.register_pilgrimage_b2b_passenger(entry, 'double', 'female', '201', '310', 'B2');
+  IF public.register_pilgrimage_b2b_passenger(entry, 'double', 'female', '201', '310', 'B2') <> traveler
+    OR NOT EXISTS (SELECT 1 FROM public.pilgrims WHERE id=traveler AND program_id=program
+      AND b2b_roster_entry_id=entry AND makkah_room='201' AND madinah_room='310' AND bus_number='B2'
+      AND gender='female' AND customer_id IS NULL AND total_price=0 AND paid_amount=0)
+  THEN RAISE EXCEPTION 'Reserved passenger registration or retry failed'; END IF;
+  BEGIN
+    PERFORM public.register_pilgrimage_b2b_passenger(entry, 'double', 'female', '202', '310', 'B2');
+    RAISE EXCEPTION 'Conflicting registration retry accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  UPDATE public.pilgrimage_programs SET capacity=12, status='open' WHERE id=program;
+  INSERT INTO public.pilgrims (organization_id,program_id,full_name)
+    VALUES ('00000000-0000-4000-8000-000000000001',program,'Additional Retail Passenger');
+  BEGIN
+    INSERT INTO public.pilgrims (organization_id,program_id,full_name)
+      VALUES ('00000000-0000-4000-8000-000000000001',program,'Unallocated Retail Passenger');
+    RAISE EXCEPTION 'Retail registration consumed a reserved agency seat';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    UPDATE public.pilgrims SET status='cancelled' WHERE id=traveler;
+    RAISE EXCEPTION 'Direct agency passenger cancellation succeeded';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    UPDATE public.pilgrims SET b2b_roster_entry_id=NULL WHERE id=traveler;
+    RAISE EXCEPTION 'Direct removal of the reserved-seat link succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO public.customer_payments (organization_id,pilgrim_id,amount)
+      VALUES ('00000000-0000-4000-8000-000000000001',traveler,1);
+    RAISE EXCEPTION 'Individual payment accepted for an agency passenger';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE public.pilgrims SET room_type='triple' WHERE id=traveler;
+  IF (SELECT total_price FROM public.pilgrims WHERE id=traveler) <> 0 THEN
+    RAISE EXCEPTION 'Room change created a retail receivable';
+  END IF;
+  PERFORM public.remove_pilgrimage_b2b_roster_name(entry);
+  entry := public.add_pilgrimage_b2b_roster_name(agreement, gen_random_uuid(), 'Replacement Agency Passenger', 'triple');
+  PERFORM public.register_pilgrimage_b2b_passenger(entry, 'triple');
+  IF (SELECT status FROM public.pilgrims WHERE id=traveler) <> 'cancelled'
+    OR (SELECT seat_count FROM public.pilgrimage_seat_allocations WHERE sale_id=sale AND status='allocated') <> 10
+  THEN RAISE EXCEPTION 'Replacement lost its contracted seat or original history'; END IF;
+
+  PERFORM set_config('test.user_id','00000000-0000-4000-8000-000000000012',true);
+  BEGIN
+    PERFORM public.register_pilgrimage_b2b_passenger(entry, 'triple');
+    RAISE EXCEPTION 'Viewer registered a passenger';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  PERFORM set_config('test.user_id','00000000-0000-4000-8000-000000000021',true);
+  BEGIN
+    PERFORM public.register_pilgrimage_b2b_passenger(entry, 'triple');
+    RAISE EXCEPTION 'Foreign tenant registered a passenger';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $$;
+RESET ROLE;
+
 SET ROLE authenticated;
 SET test.user_id = '00000000-0000-4000-8000-000000000011';
 DO $$
@@ -158,6 +261,7 @@ BEGIN
   PERFORM public.review_pilgrimage_b2b_cancellation(request_id, true);
   PERFORM public.review_pilgrimage_b2b_cancellation(request_id, true);
   IF NOT EXISTS (SELECT 1 FROM public.invoices WHERE id = bill AND status = 'cancelled' AND remaining_amount = 0)
+    OR EXISTS (SELECT 1 FROM public.pilgrims WHERE b2b_roster_entry_id IS NOT NULL AND status <> 'cancelled')
     OR NOT EXISTS (SELECT 1 FROM public.pilgrimage_seat_allocations
       WHERE sale_id = '00000000-0000-4000-8000-000000000303' AND status = 'released')
     OR NOT EXISTS (SELECT 1 FROM public.credit_notes WHERE invoice_id = bill AND amount = 5000)

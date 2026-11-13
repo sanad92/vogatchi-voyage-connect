@@ -50,7 +50,7 @@ ${table(['البرنامج', 'السفر', 'العودة', 'مكة', 'المدي
 <div class="sign"><span>توقيع العميل: ............</span><span>عن الشركة: ............</span></div>`;
 
 export const manifestRows = (list: any[]) =>
-  list.map((g, i) => [i + 1, g.name_en || g.full_name, g.gender === 'female' ? 'F' : 'M', g.birth_date || '', g.nationality || '', g.passport_number || '', g.passport_expiry || '', g.visa_number || '']);
+  list.map((g, i) => [i + 1, g.name_en || g.full_name, g.gender === 'female' ? 'F' : g.gender === 'male' ? 'M' : '', g.birth_date || '', g.nationality || '', g.passport_number || '', g.passport_expiry || '', g.visa_number || '']);
 export const MANIFEST_HEADERS = ['#', 'Name', 'Sex', 'Birth date', 'Nationality', 'Passport', 'Expiry', 'Visa'];
 
 export function exportExcel(fileName: string, sheets: { name: string; headers: string[]; rows: unknown[][] }[]) {
