@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 interface Props {
   children: React.ReactNode;
@@ -7,6 +8,7 @@ interface Props {
 
 const PlatformAdminGuard = ({ children }: Props) => {
   const { isPlatformAdmin, loading } = usePlatformAdmin();
+  const { isLoggedIn } = useOptimizedAuth();
 
   if (loading) {
     return (
@@ -19,8 +21,8 @@ const PlatformAdminGuard = ({ children }: Props) => {
     );
   }
 
-  if (!isPlatformAdmin) {
-    return <Navigate to="/dashboard" replace />;
+  if (!isLoggedIn() || !isPlatformAdmin) {
+    return <Navigate to="/platform/login" replace />;
   }
 
   return <>{children}</>;

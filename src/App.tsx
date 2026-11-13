@@ -18,6 +18,7 @@ import SubscriptionBanner from "@/components/subscription/SubscriptionBanner";
 import OptimizedErrorBoundary from "@/components/common/OptimizedErrorBoundary";
 
 import PermissionRouteGuard from "@/components/guards/PermissionRouteGuard";
+import { isPlatformAdminHost } from "@/lib/platform-host";
 import PlatformAdminGuard from "@/components/platform-admin/PlatformAdminGuard";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import SubscriptionRedirectGuard from "@/components/subscription/SubscriptionRedirectGuard";
@@ -137,6 +138,7 @@ const CMSPages = lazy(() => import("@/pages/admin/CMSPages"));
 const PageBlocks = lazy(() => import("@/pages/admin/PageBlocks"));
 
 // Platform Admin
+const PlatformLoginPage = lazy(() => import("@/pages/platform-admin/PlatformLoginPage"));
 const PlatformLayout = lazy(() => import("@/components/platform-admin/PlatformLayout"));
 const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
@@ -248,12 +250,12 @@ function App() {
               <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public */}
-                <Route path="/" element={<SaaSLanding />} />
+                <Route path="/" element={isPlatformAdminHost() ? <Navigate to="/platform" replace /> : <SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
                 <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/payment" element={<PaymentPage />} />
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={isPlatformAdminHost() ? <Navigate to="/platform/login" replace /> : <LoginPage />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/auth" element={<Navigate to="/login" replace />} />
@@ -276,6 +278,7 @@ function App() {
                 <Route path="/data-deletion" element={<DataDeletion />} />
 
                 {/* Platform Admin — separate layout, no DashboardLayout */}
+                <Route path="/platform/login" element={<PlatformLoginPage />} />
                 <Route path="/platform/*" element={
                   <SupabaseProtectedRoute>
                     <PlatformAdminGuard>
