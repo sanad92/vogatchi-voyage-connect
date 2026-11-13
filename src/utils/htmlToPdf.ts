@@ -37,6 +37,19 @@ export async function elementToPdfBlob(el: HTMLElement): Promise<Blob> {
   return pdf.output('blob');
 }
 
+/** Each supplied element has already been laid out as one A4 page. */
+export async function pagesToPdfBlob(pages: HTMLElement[]): Promise<Blob> {
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  for (const [index, page] of pages.entries()) {
+    const canvas = await html2canvas(page, {
+      scale: 2, backgroundColor: '#ffffff', logging: false, windowWidth: page.offsetWidth,
+    });
+    if (index > 0) pdf.addPage();
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+  }
+  return pdf.output('blob');
+}
+
 export const downloadBlob = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

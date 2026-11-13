@@ -218,7 +218,7 @@ const CustomerDetails = () => {
 
       {customerId && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
         && getPermissionScope('financial_view') === 'organization' && (
-          <RefundLedgerSummary kind="customer" partyId={customerId} showHistory />
+          <RefundLedgerSummary kind="customer" partyId={customerId} partyName={customerData.name} showHistory />
         )}
 
       {/* Main Content Tabs */}

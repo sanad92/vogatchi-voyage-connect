@@ -8,6 +8,8 @@ import type { RefundBalance } from '@/hooks/finance/useRefundBalances';
 import { usePartyWalletPayments } from '@/hooks/finance/usePartyWalletPayments';
 import { listPartyWalletMovements, walletDocumentPath, type PartyWalletMovement } from '@/lib/partyWalletMovements';
 import { formatRefundAmount } from './RefundMovements';
+import { WalletStatementDialog } from './WalletStatementDialog';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 const PAGE_SIZE = 15;
 
@@ -15,13 +17,16 @@ function formatMovementDate(date: string) {
   return new Date(date).toLocaleDateString('ar-EG', { timeZone: 'Africa/Cairo' });
 }
 
-export function PartyWalletHistory({ kind, partyId, refunds, refundError }: {
+export function PartyWalletHistory({ kind, partyId, partyName, refunds, refundError }: {
   kind: RefundBalance['kind'];
   partyId: string;
+  partyName?: string;
   refunds?: RefundBalance[];
   refundError: boolean;
 }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [statementOpen, setStatementOpen] = useState(false);
+  const { currentOrganization, organizationId } = useOrganization();
   const [paymentId, setPaymentId] = useState<string>();
   const { hasPermission } = useSupabasePermissions();
   const canOpenInvoice = hasPermission('invoices_view');
@@ -39,9 +44,19 @@ export function PartyWalletHistory({ kind, partyId, refunds, refundError }: {
   const hasError = refundError || payments.isError;
   const isLoading = (!refunds && !refundError) || payments.isPending;
 
+  const statementReady = !!partyName && !!organizationId && currentOrganization?.id === organizationId
+    && !hasError && !isLoading && !!refunds && payments.isSuccess;
   return (
     <section className="space-y-2" aria-label="سجل حركات المحفظة">
-      <h3 className="font-medium">سجل حركات المحفظة</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium">سجل حركات المحفظة</h3>
+        {partyName && <Button size="sm" variant="outline" className="print:hidden" disabled={!statementReady}
+          onClick={() => setStatementOpen(true)}>كشف المحفظة PDF</Button>}
+      </div>
+      {statementOpen && partyName && currentOrganization && (
+        <WalletStatementDialog kind={kind} partyName={partyName} organizationName={currentOrganization.name}
+          movements={movements} ready={statementReady} onClose={() => setStatementOpen(false)} />
+      )}
       {hasError && <p role="alert" className="text-sm text-destructive">تعذر تحميل بعض حركات المحفظة</p>}
       {isLoading && <p className="text-sm text-muted-foreground">جارٍ تحميل الحركات…</p>}
       {!hasError && !isLoading && movements.length === 0 && (

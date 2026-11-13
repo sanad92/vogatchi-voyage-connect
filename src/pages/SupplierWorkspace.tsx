@@ -177,7 +177,7 @@ const SupplierWorkspace = () => {
 
       {id && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
         && getPermissionScope('financial_view') === 'organization' && (
-          <RefundLedgerSummary kind="supplier" partyId={id} showHistory />
+          <RefundLedgerSummary kind="supplier" partyId={id} partyName={sup.name} showHistory />
         )}
 
       <Tabs defaultValue="overview" dir="rtl">
