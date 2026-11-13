@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Shield, Building2, CreditCard, BanknoteIcon, Settings,
+  Building2, CreditCard, BanknoteIcon, Settings,
   UserCog, ScrollText, Database, Activity, Package,
   LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
 } from 'lucide-react';
+import SafarLogo from '@/components/brand/VogantraLogo';
 import { cn } from '@/lib/utils';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
@@ -73,13 +74,13 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
       : location.pathname === href || location.pathname.startsWith(href + '/');
 
   const renderContent = (isCollapsed: boolean) => (
-    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground border-s border-sidebar-border">
+    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground border-e border-sidebar-border">
       <div className={cn(
         'flex items-center gap-3 px-4 h-16 border-b border-sidebar-border',
         isCollapsed && 'justify-center px-2'
       )}>
         <div className="w-9 h-9 rounded-lg bg-sidebar-primary/15 border border-sidebar-primary/40 flex items-center justify-center flex-shrink-0">
-          <Shield className="h-4 w-4 text-sidebar-primary" />
+          <SafarLogo variant="mark" size="sm" />
         </div>
         {!isCollapsed && (
           <div className="min-w-0">
@@ -107,6 +108,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
                   <NavLink
                     key={item.href}
                     to={item.href}
+                    end={item.href === '/platform'}
                     onClick={onMobileClose}
                     title={isCollapsed ? item.title : undefined}
                     className={cn(
@@ -143,7 +145,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
   return (
     <>
       <aside className={cn(
-        'hidden md:block fixed top-0 right-0 h-screen z-30 transition-all duration-300',
+        'hidden md:block fixed top-0 start-0 h-dvh z-30 transition-all duration-300',
         collapsed ? 'w-16' : 'w-64'
       )}>
         {renderContent(collapsed)}
@@ -152,7 +154,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-foreground/50" onClick={onMobileClose} />
-          <aside className="relative w-72 h-full ms-auto">{renderContent(false)}</aside>
+          <aside className="relative h-full w-72 max-w-[85vw]">{renderContent(false)}</aside>
         </div>
       )}
     </>

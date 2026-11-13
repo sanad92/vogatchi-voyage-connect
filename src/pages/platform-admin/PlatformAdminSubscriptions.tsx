@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { CreditCard, CheckCircle, XCircle, Clock, CalendarPlus, Filter, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { allRows, renewalWindow } from '@/lib/platformOverview';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
 import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
@@ -22,6 +24,8 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 
 const PlatformAdminSubscriptions = () => {
   const qc = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const renewalsOnly = params.get('view') === 'renewals';
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: plans } = useQuery({
@@ -32,14 +36,20 @@ const PlatformAdminSubscriptions = () => {
     },
   });
 
-  const { data: subscriptions, isLoading } = useQuery({
-    queryKey: ['platform-admin-subscriptions'],
-    queryFn: async () => {
-      const { data: subs } = await supabase
-        .from('subscriptions')
+  const { data: subscriptions, isLoading, isError, refetch } = useQuery({
+    queryKey: ['platform-admin-subscriptions', renewalsOnly ? 'renewals' : 'all'],
+    queryFn: async ({ signal }) => {
+      const read = () => supabase.from('subscriptions')
         .select('*, organizations(name, slug, email), subscription_plans(name, name_ar)')
-        .order('created_at', { ascending: false });
-      return subs ?? [];
+        .abortSignal(signal);
+      if (renewalsOnly) {
+        const { start, end } = renewalWindow();
+        return allRows((from, to) => read().in('status', ['active', 'trialing']).lte('starts_at', start)
+          .gt('expires_at', start).lte('expires_at', end).order('expires_at').order('id').range(from, to));
+      }
+      const { data, error } = await read().order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -50,6 +60,7 @@ const PlatformAdminSubscriptions = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
+      qc.invalidateQueries({ queryKey: ['platform-overview'] });
       toast.success('تم تغيير الخطة بنجاح');
     },
     onError: () => toast.error('فشل في تغيير الخطة'),
@@ -62,6 +73,7 @@ const PlatformAdminSubscriptions = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
+      qc.invalidateQueries({ queryKey: ['platform-overview'] });
       toast.success('تم تحديث حالة الاشتراك');
     },
     onError: () => toast.error('فشل في تحديث الحالة'),
@@ -80,6 +92,7 @@ const PlatformAdminSubscriptions = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
+      qc.invalidateQueries({ queryKey: ['platform-overview'] });
       toast.success('تم تمديد الاشتراك بنجاح');
     },
     onError: () => toast.error('فشل في تمديد الاشتراك'),
@@ -93,6 +106,7 @@ const PlatformAdminSubscriptions = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
+      qc.invalidateQueries({ queryKey: ['platform-overview'] });
       toast.success('تم حذف الاشتراك');
     },
     onError: () => toast.error('تعذّر حذف الاشتراك — قد تكون عليه فواتير أو مدفوعات مرتبطة.'),
@@ -100,25 +114,36 @@ const PlatformAdminSubscriptions = () => {
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<'newest' | 'expiry_asc' | 'expiry_desc' | 'start' | 'name'>('newest');
+  const [sort, setSort] = useState<'newest' | 'expiry_asc' | 'expiry_desc' | 'start' | 'name'>();
+  const selectedSort = sort ?? (renewalsOnly ? 'expiry_asc' : 'newest');
+  const toggleRenewals = () => {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (renewalsOnly) next.delete('view');
+      else next.set('view', 'renewals');
+      return next;
+    });
+    setPage(1);
+    setStatusFilter('all');
+    setSort(undefined);
+  };
   const term = search.trim().toLowerCase();
 
   const filtered = (subscriptions ?? [])
     .filter((s) => statusFilter === 'all' || s.status === statusFilter)
     .filter((s) => {
       if (!term) return true;
-      const org = s.organizations as any;
-      const plan = s.subscription_plans as any;
+      const org = s.organizations;
+      const plan = s.subscription_plans;
       return [org?.name, org?.email, org?.slug, plan?.name, plan?.name_ar]
         .some((v) => typeof v === 'string' && v.toLowerCase().includes(term));
     })
     .sort((a, b) => {
-      const name = (x: any) => (x.organizations as any)?.name ?? '';
-      switch (sort) {
+      switch (selectedSort) {
         case 'expiry_asc': return (a.expires_at ?? '9999').localeCompare(b.expires_at ?? '9999');
         case 'expiry_desc': return (b.expires_at ?? '').localeCompare(a.expires_at ?? '');
         case 'start': return (b.starts_at ?? '').localeCompare(a.starts_at ?? '');
-        case 'name': return name(a).localeCompare(name(b), 'ar');
+        case 'name': return (a.organizations?.name ?? '').localeCompare(b.organizations?.name ?? '', 'ar');
         default: return (b.created_at ?? '').localeCompare(a.created_at ?? '');
       }
     });
@@ -134,7 +159,12 @@ const PlatformAdminSubscriptions = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
-      <h2 className="text-2xl font-bold text-foreground">إدارة الاشتراكات</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold text-foreground">إدارة الاشتراكات</h2>
+        <Button type="button" variant={renewalsOnly ? 'default' : 'outline'} size="sm" aria-pressed={renewalsOnly} onClick={toggleRenewals}>
+          <Clock className="me-2 h-4 w-4" aria-hidden="true" />تنتهي خلال ٧ أيام
+        </Button>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -148,7 +178,7 @@ const PlatformAdminSubscriptions = () => {
             <CardContent className="p-4 flex items-center gap-3">
               <s.icon className={cn("h-8 w-8", s.color)} />
               <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                <p className="text-2xl font-bold text-foreground">{isError || isLoading ? '—' : s.value}</p>
                 <p className="text-xs text-muted-foreground">{s.label}</p>
               </div>
             </CardContent>
@@ -161,7 +191,7 @@ const PlatformAdminSubscriptions = () => {
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            جميع الاشتراكات
+            {renewalsOnly ? 'الاشتراكات والتجارب التي تنتهي قريبًا' : 'جميع الاشتراكات'}
           </CardTitle>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative">
@@ -169,7 +199,7 @@ const PlatformAdminSubscriptions = () => {
               <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="ابحث بالشركة أو الخطة..." className="h-9 w-full pr-9 sm:w-60" />
             </div>
-            <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+            <Select value={selectedSort} onValueChange={(v) => { setSort(v as typeof selectedSort); setPage(1); }}>
               <SelectTrigger className="h-9 w-full sm:w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">الأحدث إنشاءً</SelectItem>
@@ -195,7 +225,12 @@ const PlatformAdminSubscriptions = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {isError ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3 p-6 text-sm text-destructive">
+              تعذّر تحميل البيانات
+              <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>إعادة المحاولة</Button>
+            </div>
+          ) : isLoading ? (
             <div className="p-6 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full rounded" />
@@ -216,8 +251,8 @@ const PlatformAdminSubscriptions = () => {
                 </TableHeader>
                 <TableBody>
                   {pager.pageRows.map((sub) => {
-                    const org = sub.organizations as any;
-                    const plan = sub.subscription_plans as any;
+                    const org = sub.organizations;
+                    const plan = sub.subscription_plans;
                     const st = statusLabels[sub.status] || { label: sub.status, variant: 'outline' as const };
                     return (
                       <TableRow key={sub.id}>
