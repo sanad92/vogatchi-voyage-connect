@@ -115,5 +115,10 @@ await denied(`UPDATE organization_members SET organization_id='${orgA}' WHERE id
 await denied(`UPDATE organization_members SET user_id='${ownerA}' WHERE id='${membership}'`, 'membership cannot be reassigned to another account', /immutable/);
 await denied(`UPDATE organization_members SET id='${id(99)}' WHERE id='${membership}'`, 'membership identifier cannot be changed', /immutable/);
 assert.equal((await db.query(`SELECT status FROM invitations WHERE id='${invite.id}'`)).rows[0].status,'accepted','acceptance persisted'); checks++;
+await db.exec(`INSERT INTO auth.users VALUES('${id(19)}','owner@new-company.example',now());`);
+await asUser(id(19));
+const newOrganization=(await db.query(`SELECT create_organization_onboarding('Verified company',NULL,NULL,'contact@new-company.example') AS id`)).rows[0].id;
+assert.ok(newOrganization,'verified work-email onboarding still succeeds'); checks++;
+assert.equal((await db.query(`SELECT role::text FROM organization_members WHERE organization_id='${newOrganization}'`)).rows[0].role,'owner','new company owner persists'); checks++;
 await db.close();
 console.log(`Tenant isolation checks passed (${checks} assertions; reproduced original bypass, blocked 11 privileged cross-tenant paths).`);
