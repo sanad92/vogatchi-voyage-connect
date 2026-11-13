@@ -206,7 +206,7 @@ const DataImportExport = () => {
       }
 
       // تصدير إلى Excel
-      const worksheet = XLSX.utils.json_to_sheet(safeRows(data));
+      const worksheet = XLSX.utils.json_to_sheet(safeRows(data as unknown as Record<string, unknown>[]));
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, selectedTable);
       
