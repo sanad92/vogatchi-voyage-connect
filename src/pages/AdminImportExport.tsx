@@ -3,6 +3,7 @@ import React from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import DataImportExport from '@/components/admin/DataImportExport';
 import EnhancedReportExporter from '@/components/admin/EnhancedReportExporter';
+import OpenHotelBookingImport from '@/components/admin/OpenHotelBookingImport';
 
 const AdminImportExport = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
@@ -27,7 +28,10 @@ const AdminImportExport = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <DataImportExport />
+          <div className="space-y-8">
+            <DataImportExport />
+            <OpenHotelBookingImport />
+          </div>
           <EnhancedReportExporter />
         </div>
       </div>
