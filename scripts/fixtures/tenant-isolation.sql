@@ -75,7 +75,7 @@ AS $function$
   SELECT COALESCE(array_agg(organization_id), '{}')
   FROM public.organization_members
   WHERE user_id = _user_id AND is_active = true
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.get_user_org_role(_user_id uuid, _org_id uuid)
@@ -87,7 +87,7 @@ AS $function$
   SELECT role FROM public.organization_members
   WHERE user_id = _user_id AND organization_id = _org_id AND is_active = true
   LIMIT 1
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
@@ -101,7 +101,7 @@ AS $function$
     WHERE user_id = _user_id
       AND role IN ('platform_admin'::platform_role, 'platform_owner'::platform_role)
   );
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.user_belongs_to_org(_user_id uuid, _org_id uuid)
@@ -117,7 +117,7 @@ AS $function$
       AND m.organization_id = _org_id
       AND m.is_active = true
   );
-$function$
+$function$;
 
 
 CREATE FUNCTION public.queue_organization_invitation_email(uuid) RETURNS bigint LANGUAGE sql AS $$ SELECT 1::bigint $$;
@@ -204,7 +204,7 @@ BEGIN
     'organization_id', v_invite.organization_id
   );
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.assign_org_permission_role(_org_id uuid, _user_id uuid, _role_id uuid, _assigned boolean DEFAULT true)
@@ -235,7 +235,7 @@ BEGIN
     WHERE organization_id = _org_id AND user_id = _user_id AND role_id = _role_id;
   END IF;
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.cancel_organization_invitation(_invitation_id uuid)
@@ -275,7 +275,7 @@ BEGIN
 
   RETURN jsonb_build_object('success', true);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.clone_pilgrimage_sale(_sale_id uuid)
@@ -353,7 +353,7 @@ BEGIN
   END LOOP;
   RETURN new_sale_id;
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.create_org_permission_role(_org_id uuid, _name text, _description text DEFAULT NULL::text, _inherits_base_role boolean DEFAULT false)
@@ -379,7 +379,7 @@ BEGIN
   RETURNING id INTO v_id;
   RETURN v_id;
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.create_organization_invitation(_organization_id uuid, _email text, _role org_role DEFAULT 'agent'::org_role)
@@ -469,7 +469,7 @@ BEGIN
 
   RETURN to_jsonb(v_invite) || jsonb_build_object('email_queued', true);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.create_organization_onboarding(_name text, _slug text DEFAULT NULL::text, _phone text DEFAULT NULL::text, _email text DEFAULT NULL::text, _address text DEFAULT NULL::text)
@@ -543,7 +543,7 @@ BEGIN
 
   RETURN v_org_id;
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.guard_organization_member_integrity()
@@ -593,7 +593,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.manage_organization_member(_membership_id uuid, _new_role org_role DEFAULT NULL::org_role, _is_active boolean DEFAULT NULL::boolean, _termination_date date DEFAULT NULL::date, _note text DEFAULT NULL::text)
@@ -701,7 +701,7 @@ BEGIN
     'is_active', v_next_active
   );
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.manage_sop_department_member(_organization_id uuid, _user_id uuid, _department sop_department, _assign boolean DEFAULT true, _is_available boolean DEFAULT true)
@@ -770,7 +770,7 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'assigned', _assign, 'department', _department);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.merge_employee_records(_keep_id uuid, _merge_ids uuid[])
@@ -811,7 +811,7 @@ BEGIN
   VALUES(v_org,_keep_id,_merge_ids,auth.uid());
   RETURN jsonb_build_object('success',true,'kept_employee_id',_keep_id,'merged_employee_ids',_merge_ids,'references_updated',v_count);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.resend_organization_invitation(_invitation_id uuid)
@@ -868,7 +868,7 @@ BEGIN
 
   RETURN to_jsonb(v_invite) || jsonb_build_object('email_queued', true);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.set_org_permission_grant(_org_id uuid, _role_id uuid, _permission_key text, _granted boolean, _data_scope text DEFAULT 'organization'::text)
@@ -902,7 +902,7 @@ BEGIN
     data_scope = EXCLUDED.data_scope,
     updated_at = now();
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.set_org_permission_override(_org_id uuid, _user_id uuid, _permission_key text, _granted boolean, _data_scope text DEFAULT 'organization'::text, _reason text DEFAULT NULL::text)
@@ -939,7 +939,7 @@ BEGIN
     updated_by = EXCLUDED.updated_by,
     updated_at = now();
 END;
-$function$
+$function$;
 
 
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated,service_role;
