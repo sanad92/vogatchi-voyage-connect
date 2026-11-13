@@ -610,4 +610,11 @@ export const EN_DICTIONARY: Record<string, string> = {
   'ميزان المراجعة': 'Trial balance',
   'نظرة عامة': 'Overview',
   'وضع العرض': 'Demo mode',
+  'معنى أدوار الفريق': 'What team roles mean',
+  'يدير المؤسسة وأعضاءها، ويقدر يعيّن مديرين.': 'Manages the organization and its members and can appoint administrators.',
+  'يدير إعدادات المؤسسة وأعضاء الفريق حسب صلاحيات الإدارة.': 'Manages organization settings and team members within administrative permissions.',
+  'يتابع التشغيل ويقدر يدير الحجوزات والعملاء والفواتير ويعرض التقارير.': 'Oversees operations, manages bookings, customers and invoices, and can view reports.',
+  'صلاحياته حسب القسم المعيّن له، زي الحجوزات أو المالية.': 'Permissions depend on the assigned department, such as reservations or finance.',
+  'يقدر يطّلع على البيانات المتاحة لدوره للقراءة فقط.': 'Has read-only access to the data available to this role.',
+  'إدارة الأدوار المخصصة': 'Manage custom roles',
 };

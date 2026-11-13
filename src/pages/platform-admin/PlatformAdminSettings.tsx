@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Database, Lock, Settings, KeyRound, Globe, Search } from 'lucide-react';
+import { Shield, Database, Lock, Settings, Globe, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import BackupManagementTab from '@/components/admin/BackupManagementTab';
 import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
-import PermissionsTab from '@/components/admin/PermissionsTab';
 
 const tabs = [
   { value: 'backup', label: 'النسخ الاحتياطي', icon: Database, description: 'سجل النسخ الاحتياطية' },
   { value: 'security', label: 'الأمان', icon: Lock, description: 'سجل الأمان والتحقق الثنائي' },
   { value: 'system', label: 'إعدادات النظام', icon: Settings, description: 'إعدادات النظام العامة' },
-  { value: 'permissions', label: 'الصلاحيات', icon: KeyRound, description: 'مرجع أدوار المؤسسة المعتمدة' },
   { value: 'landing', label: 'صفحة الهبوط', icon: Globe, description: 'إدارة محتوى صفحة الهبوط' },
 ];
 
@@ -56,7 +54,7 @@ const PlatformAdminSettings = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {filteredTabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.value;
@@ -82,7 +80,6 @@ const PlatformAdminSettings = () => {
           <TabsContent value="backup" className="mt-0"><BackupManagementTab /></TabsContent>
           <TabsContent value="security" className="mt-0"><SecurityManagementTab /></TabsContent>
           <TabsContent value="system" className="mt-0"><SystemSettingsTab /></TabsContent>
-          <TabsContent value="permissions" className="mt-0"><PermissionsTab /></TabsContent>
           <TabsContent value="landing" className="mt-0"><SystemSettingsTab scope="landing" /></TabsContent>
         </div>
       </Tabs>

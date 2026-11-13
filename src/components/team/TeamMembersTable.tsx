@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,12 @@ import { useSopDepartmentMembers, useUpsertDepartmentMember, useRemoveDepartment
 import { DEPARTMENT_LABELS, SopDepartment } from '@/lib/sop';
 import OffboardMemberDialog from './OffboardMemberDialog';
 
-const ROLE_META: Record<string, { label: string; icon: LucideIcon; color: string }> = {
-  owner: { label: 'مالك', icon: Crown, color: 'text-amber-600' },
-  admin: { label: 'مدير', icon: Shield, color: 'text-blue-600' },
-  manager: { label: 'مشرف', icon: Briefcase, color: 'text-green-600' },
-  agent: { label: 'موظف', icon: UserCheck, color: 'text-purple-600' },
-  viewer: { label: 'مشاهد', icon: Eye, color: 'text-muted-foreground' },
+const ROLE_META: Record<OrgRole, { label: string; description: string; icon: LucideIcon; color: string }> = {
+  owner: { label: 'مالك', description: 'يدير المؤسسة وأعضاءها، ويقدر يعيّن مديرين.', icon: Crown, color: 'text-amber-600' },
+  admin: { label: 'مدير', description: 'يدير إعدادات المؤسسة وأعضاء الفريق حسب صلاحيات الإدارة.', icon: Shield, color: 'text-blue-600' },
+  manager: { label: 'مشرف', description: 'يتابع التشغيل ويقدر يدير الحجوزات والعملاء والفواتير ويعرض التقارير.', icon: Briefcase, color: 'text-green-600' },
+  agent: { label: 'موظف', description: 'صلاحياته حسب القسم المعيّن له، زي الحجوزات أو المالية.', icon: UserCheck, color: 'text-purple-600' },
+  viewer: { label: 'مشاهد', description: 'يقدر يطّلع على البيانات المتاحة لدوره للقراءة فقط.', icon: Eye, color: 'text-muted-foreground' },
 };
 
 interface Props {
@@ -55,6 +56,22 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
 
   return (
     <>
+      {canManage && (
+        <details className="mb-3 rounded-lg border px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium">معنى أدوار الفريق</summary>
+          <dl className="mt-3 space-y-2">
+            {Object.values(ROLE_META).map(({ label, description }) => (
+              <div key={label} className="grid gap-x-3 sm:grid-cols-[5rem_1fr]">
+                <dt className="font-medium">{label}</dt>
+                <dd className="text-muted-foreground">{description}</dd>
+              </div>
+            ))}
+          </dl>
+          <Link className="mt-3 inline-block text-primary underline underline-offset-4" to="/organization/roles">
+            إدارة الأدوار المخصصة
+          </Link>
+        </details>
+      )}
       <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
