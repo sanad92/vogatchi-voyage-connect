@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Shield, Building2, CreditCard, BanknoteIcon, Settings,
-  UserCog, ScrollText, Database, Activity, Package, ChevronRight,
+  UserCog, ScrollText, Database, Activity, Package,
   LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
