@@ -59,6 +59,7 @@ const pageImports={
  '@tanstack/react-query':{useQuery:()=>({isLoading:false,isError:queryFailed,refetch:()=>{},data:{quote:{id:'quote-a',status:'accepted',quote_number:'Q1',customers:null,employees:null},items:[{id:'item-a',item_type:'hotel',description:'Room'}]}})},
  '@/integrations/supabase/client':{supabase:{}},
  '@/hooks/useOrgId':{useOrgId:()=>org},
+ '@/hooks/useOrganizationSettings':{useOrganizationSettings:()=>({settings:null})},
  '@/hooks/useQuotes':{useQuotes:()=>({updateQuoteStatus:{mutate:()=>{}}})},
  '@/hooks/useQuoteConversion':{useQuoteConversion:()=>({convertToBooking:{isPending:pendingMutation,mutateAsync:async args=>{assert.equal(args.quoteId,'quote-a');if(failed)throw new Error('late failure');return apiData;}}})},
  '@/hooks/useSupabasePermissions':{useSupabasePermissions:()=>({hasPermission:()=>allowed,hasAllPermissions:()=>allowed})},
@@ -68,6 +69,7 @@ const pageImports={
  '@/components/quotes/QuoteFollowupsPanel':{default:'QuoteFollowupsPanel'},
  '@/components/quotes/QuoteWhatsAppFollowupButton':{default:'QuoteWhatsAppFollowupButton'},
  '@/components/quotes/QuoteReviewDialog':{default:'QuoteReviewDialog'},
+ '@/components/quotes/QuoteVersionHistory':{default:'QuoteVersionHistory'},
  'lucide-react':Object.fromEntries(['ArrowRight','Send','CheckCircle','XCircle','ArrowLeftRight'].map(x=>[x,x])),
  'date-fns':{format:()=>''},'date-fns/locale':{ar:{}},
 };
