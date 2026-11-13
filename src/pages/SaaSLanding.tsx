@@ -455,15 +455,6 @@ const SaaSLanding = () => {
                 </a>
               </div>
 
-              <a
-                href={`tel:${platformPhone}`}
-                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-brand-ivory hover:text-brand-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-gold"
-              >
-                <Phone className="h-4 w-4" aria-hidden="true" />
-                <span>اتصل بنا</span>
-                <bdi dir="ltr">{platformPhone}</bdi>
-              </a>
-
               <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs font-medium text-muted-foreground sm:text-sm lg:justify-start">
                 {['إعداد سريع', 'واجهة عربية RTL', 'صلاحيات دقيقة'].map(item => (
                   <span key={item} className="flex items-center gap-1.5">
@@ -706,10 +697,6 @@ const SaaSLanding = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-xs font-semibold text-muted-foreground sm:text-sm">
-            <a href={`tel:${platformPhone}`} className="inline-flex items-center gap-2 hover:text-brand-gold">
-              <Phone className="h-4 w-4" aria-hidden="true" />
-              <bdi dir="ltr">{platformPhone}</bdi>
-            </a>
             <a href="#workflow" className="hover:text-brand-gold">دورة العمل</a>
             <a href="#platform" className="hover:text-brand-gold">المنصة</a>
             <Link to="/pricing" className="hover:text-brand-gold">الأسعار</Link>
@@ -718,8 +705,12 @@ const SaaSLanding = () => {
             <Link to="/privacy" className="hover:text-brand-gold">الخصوصية</Link>
           </div>
         </div>
-        <div className={`${pageContainer} mt-8 border-t border-border pt-6 text-xs text-muted-foreground`}>
-          © {new Date().getFullYear()} SafarERP. جميع الحقوق محفوظة.
+        <div className={`${pageContainer} mt-8 flex flex-wrap items-center justify-between gap-x-4 border-t border-border pt-4 text-xs text-muted-foreground`}>
+          <span>© {new Date().getFullYear()} SafarERP. جميع الحقوق محفوظة.</span>
+          <a href={`tel:${platformPhone}`} className="inline-flex min-h-11 items-center gap-2 rounded-md hover:text-brand-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-gold">
+            <Phone className="h-4 w-4" aria-hidden="true" />
+            <bdi dir="ltr">{platformPhone}</bdi>
+          </a>
         </div>
       </footer>
     </div>
