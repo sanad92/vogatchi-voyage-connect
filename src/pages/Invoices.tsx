@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useOrgId } from "@/hooks/useOrgId";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +26,20 @@ const Invoices = () => {
   useInitialInvoices();
   usePageTitle('الفواتير');
 
+  const orgId = useOrgId();
+  const [params, setParams] = useSearchParams();
+  const invoiceId = params.get("id");
+  const { data: linkedInvoice } = useQuery({
+    queryKey: ["invoices", "by-id", orgId, invoiceId],
+    enabled: Boolean(orgId && invoiceId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("invoices")
+        .select("*, customer:customers(id, name, email, phone)")
+        .eq("organization_id", orgId).eq("id", invoiceId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -46,12 +64,24 @@ const Invoices = () => {
     isUpdatingInvoice,
     invoiceStats,
   } = useInvoicesManagement({
+    organizationId: orgId,
     searchTerm: debouncedSearchTerm,
     status: filterStatus,
     bookingType: filterType,
     dateFrom,
     dateTo,
   });
+
+  useEffect(() => {
+    if (invoiceId && linkedInvoice?.id === invoiceId) {
+      setSelectedInvoice(linkedInvoice);
+      setShowDetailsDialog(true);
+    }
+  }, [invoiceId, linkedInvoice]);
+
+  const displayedInvoice = selectedInvoice?.organization_id === orgId
+    ? invoices?.find((invoice) => invoice.id === selectedInvoice.id) ?? selectedInvoice
+    : null;
 
   const getBookingTypeLabel = (type) => {
     const types = {
@@ -408,7 +438,7 @@ const Invoices = () => {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          {getBookingTypeLabel(invoice.booking_type)}
+                          {invoice.pilgrimage_b2b_agreement_id ? "حج وعمرة B2B" : getBookingTypeLabel(invoice.booking_type)}
                         </td>
                         <td className="py-3 px-4 font-medium">
                           {invoice.final_amount?.toLocaleString()} {invoice.currency}
@@ -439,23 +469,25 @@ const Invoices = () => {
                               <Eye className="h-4 w-4 mr-1" />
                               عرض
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditInvoice(invoice)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              تعديل
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteInvoice(invoice.id)}
-                              disabled={isDeletingInvoice}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              حذف
-                            </Button>
+                            {!invoice.pilgrimage_b2b_agreement_id && <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditInvoice(invoice)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                تعديل
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteInvoice(invoice.id)}
+                                disabled={isDeletingInvoice}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                حذف
+                              </Button>
+                            </>}
                           </div>
                         </td>
                       </tr>
@@ -474,18 +506,24 @@ const Invoices = () => {
         onClose={() => setShowCreateDialog(false)}
       />
 
-      {selectedInvoice && (
+      {displayedInvoice && (
         <>
           <InvoiceDetailsDialog
-            invoice={selectedInvoice}
+            key={displayedInvoice.id}
+            invoice={displayedInvoice}
             open={showDetailsDialog}
             onClose={() => {
               setShowDetailsDialog(false);
               setSelectedInvoice(null);
+              if (invoiceId) setParams((current) => {
+                const next = new URLSearchParams(current);
+                next.delete("id");
+                return next;
+              }, { replace: true });
             }}
-            onEdit={handleEditInvoice}
-            onDelete={handleDeleteInvoice}
-            onUpdateStatus={handleUpdateStatus}
+            onEdit={displayedInvoice.pilgrimage_b2b_agreement_id ? undefined : handleEditInvoice}
+            onDelete={displayedInvoice.pilgrimage_b2b_agreement_id ? undefined : handleDeleteInvoice}
+            onUpdateStatus={displayedInvoice.pilgrimage_b2b_agreement_id ? undefined : handleUpdateStatus}
           />
 
           <EditInvoiceDialog

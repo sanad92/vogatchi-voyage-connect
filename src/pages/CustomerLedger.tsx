@@ -35,19 +35,23 @@ export default function CustomerLedger() {
   }, [customers, customerId, setParams]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customer-ledger', customerId],
-    enabled: !!customerId,
+    queryKey: ['customer-ledger', orgId, customerId],
+    enabled: !!orgId && !!customerId,
     queryFn: async () => {
       const sb: any = supabase;
-      const [customer, invoices, bookings] = await Promise.all([
-        sb.from('customers').select('*').eq('id', customerId).maybeSingle(),
-        sb.from('invoices').select('id, invoice_number, issued_date, currency, final_amount, total_paid_amount, remaining_amount, payment_status, booking_id, created_at').eq('customer_id', customerId).order('issued_date', { ascending: true }),
-        sb.from('bookings').select('id, booking_number, booking_type, currency, selling_price, start_date, status').eq('customer_id', customerId).order('start_date', { ascending: true }),
+      const [customer, invoices, bookings, receipts] = await Promise.all([
+        sb.from('customers').select('*').eq('organization_id', orgId).eq('id', customerId).maybeSingle(),
+        sb.from('invoices').select('id, invoice_number, issued_date, currency, final_amount, total_paid_amount, remaining_amount, payment_status, booking_id, created_at').eq('organization_id', orgId).eq('customer_id', customerId).order('issued_date', { ascending: true }),
+        sb.from('bookings').select('id, booking_number, booking_type, currency, selling_price, start_date, status').eq('organization_id', orgId).eq('customer_id', customerId).order('start_date', { ascending: true }),
+        sb.from('customer_payments').select('invoice_id, payment_date, reference_number, amount, client_ref')
+          .eq('organization_id', orgId).eq('customer_id', customerId).eq('status', 'completed')
+          .like('client_ref', 'pilgrimage-b2b:%').order('payment_date'),
       ]);
       return {
         customer: customer.data,
         invoices: invoices.data || [],
         bookings: bookings.data || [],
+        receipts: receipts.data || [],
       };
     },
   });
@@ -55,6 +59,12 @@ export default function CustomerLedger() {
   const rows = useMemo(() => {
     if (!data) return [] as any[];
     const events: any[] = [];
+    const receiptsByInvoice = new Map<string, typeof data.receipts>();
+    for (const receipt of data.receipts) {
+      const receipts = receiptsByInvoice.get(receipt.invoice_id) ?? [];
+      receipts.push(receipt);
+      receiptsByInvoice.set(receipt.invoice_id, receipts);
+    }
     data.invoices.forEach((inv: any) => {
       events.push({
         date: inv.issued_date || inv.created_at,
@@ -66,7 +76,21 @@ export default function CustomerLedger() {
         link: `/invoices?id=${inv.id}`,
       });
       const paid = Number(inv.total_paid_amount || 0);
-      if (paid > 0) {
+      const receipts = receiptsByInvoice.get(inv.id);
+      const receiptsTotal = receipts?.reduce((sum, receipt) => sum + Math.round(Number(receipt.amount) * 100), 0);
+      if (receipts?.length && receiptsTotal === Math.round(paid * 100)) {
+        for (const receipt of receipts) {
+          events.push({
+            date: receipt.payment_date,
+            ref: receipt.reference_number || inv.invoice_number,
+            description: 'تحصيل من العميل',
+            debit: 0,
+            credit: Number(receipt.amount),
+            currency: inv.currency,
+            link: `/invoices?id=${inv.id}`,
+          });
+        }
+      } else if (paid > 0) {
         events.push({
           date: inv.issued_date || inv.created_at,
           ref: inv.invoice_number,
@@ -127,7 +151,7 @@ export default function CustomerLedger() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          هذا الكشف يعرض حركات الفواتير والتحصيلات الفعلية. لم يتم تطبيق قيود اليومية بعد، وهذه الأرقام مستخرجة مباشرة من جدول الفواتير.
+          يعرض الكشف أرصدة الفواتير والتحصيلات المسجلة لكل عملة.
         </AlertDescription>
       </Alert>
 

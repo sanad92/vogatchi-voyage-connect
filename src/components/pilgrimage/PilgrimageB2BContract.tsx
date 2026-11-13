@@ -79,6 +79,7 @@ export default function PilgrimageB2BContract({
   const activeRoster=(rosterQ.data||[]).filter((x:any)=>x.status==='active');
   const reload=()=>{
     qc.invalidateQueries({queryKey:['pilgrimage-b2b-agreement',orgId,sale.id]});
+    qc.invalidateQueries({queryKey:['pilgrimage-b2b-receivables',orgId,sale.id]});
     qc.invalidateQueries({queryKey:['pilgrimage-b2b-installments',orgId]});
     qc.invalidateQueries({queryKey:['pilgrimage-b2b-roster',orgId]});
   };

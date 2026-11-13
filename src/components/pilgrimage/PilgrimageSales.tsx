@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { money, printDocument, table, exportExcel, ROOM } from './pilgrimage-documents';
 import PilgrimageB2BContract from './PilgrimageB2BContract';
+import PilgrimageB2BReceivables from './PilgrimageB2BReceivables';
 import {
   FULFILLMENT, SALE_MODELS, SALE_STATES, SALE_ITEMS,
   quoteMetrics, quoteReadiness, validateSaleDraft,
@@ -368,7 +369,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           {canEdit&&<Button disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('quoted')}>إصدار عرض السعر</Button>}
           {canManage&&selected.status==='quoted'&&<Button variant="outline"
             disabled={cloneQuote.isPending} onClick={()=>cloneQuote.mutate()}>إنشاء نسخة معدلة</Button>}
-          {canManage&&selected.status!=='cancelled'&&<Button variant="destructive"
+          {canManage&&selected.status!=='cancelled'&&
+            (selected.sale_model!=='b2b_group'||(b2bAgreementQ.isSuccess&&!isB2BInternallyApproved))&&<Button variant="destructive"
             disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('cancelled')}>إلغاء العرض</Button>}
         </div>
       </div>
@@ -455,6 +457,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram}:Prop
           organization={currentOrganization}
           canManage={canManage}
         />}
+      {selected.sale_model === 'b2b_group' && selected.status === 'quoted' && orgId && (
+        <PilgrimageB2BReceivables key={selected.id} orgId={orgId}
+          saleId={selected.id} currency={selected.currency} />
+      )}
       {selected.sale_model==='fit'&&<Card className="p-4 text-sm text-muted-foreground">
         عرض FIT مستقل عن سعة البرامج الجماعية. التأكيد الفعلي لكل خدمة يتم عبر المورد المختص
         في دورة حجز منفصلة؛ لن نعتبر العرض حجزًا مؤكدًا تلقائيًا.

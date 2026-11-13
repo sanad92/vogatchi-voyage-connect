@@ -9,6 +9,7 @@ import InvoiceBookingDetails from "./details/InvoiceBookingDetails";
 import InvoiceFinancialDetails from "./details/InvoiceFinancialDetails";
 import InvoicePaymentDetails from "./details/InvoicePaymentDetails";
 import InvoicePaymentManager from "./payments/InvoicePaymentManager";
+import PilgrimageB2BReceivables from "@/components/pilgrimage/PilgrimageB2BReceivables";
 
 interface InvoiceDetailsDialogProps {
   invoice: any;
@@ -33,10 +34,11 @@ const InvoiceDetailsDialog = ({
 
   if (!invoice) return null;
 
+  const isPilgrimageAgreement = Boolean(invoice.pilgrimage_b2b_agreement_id);
   const getStatusLabel = (status: string) => {
     const statuses = {
       draft: "مسودة",
-      sent: "مرسلة",
+      sent: isPilgrimageAgreement ? "صادرة" : "مرسلة",
       paid: "مدفوعة",
       overdue: "متأخرة",
       cancelled: "ملغاة",
@@ -107,19 +109,19 @@ const InvoiceDetailsDialog = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isPilgrimageAgreement ? "grid-cols-2" : "grid-cols-3"}`}>
             <TabsTrigger value="details">تفاصيل الفاتورة</TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               إدارة المدفوعات
             </TabsTrigger>
-            <TabsTrigger value="actions">الإجراءات</TabsTrigger>
+            {!isPilgrimageAgreement && <TabsTrigger value="actions">الإجراءات</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="details" className="space-y-6">
             <InvoiceBasicInfo 
               invoice={invoice} 
-              getBookingTypeLabel={getBookingTypeLabel}
+              getBookingTypeLabel={isPilgrimageAgreement ? () => "حج وعمرة B2B" : getBookingTypeLabel}
             />
 
             <InvoiceBookingDetails 
@@ -134,7 +136,10 @@ const InvoiceDetailsDialog = ({
           </TabsContent>
 
           <TabsContent value="payments">
-            <InvoicePaymentManager invoice={invoice} />
+            {isPilgrimageAgreement
+              ? <PilgrimageB2BReceivables key={invoice.id} orgId={invoice.organization_id}
+                  invoiceId={invoice.id} currency={invoice.currency} />
+              : <InvoicePaymentManager invoice={invoice} />}
           </TabsContent>
 
           <TabsContent value="actions" className="space-y-4">
