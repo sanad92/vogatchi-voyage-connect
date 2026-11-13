@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import PrivateRecordAttachments from '@/components/documents/PrivateRecordAttachments';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -497,6 +498,11 @@ const Pilgrimage = () => {
               </F>
               <F label="ملاحظات" wide><Textarea value={gf.notes ?? ''} onChange={(e) => setGf({ ...gf, notes: e.target.value })} /></F>
             </div>
+            {pilgrimOpen && editingPilgrim && canManage && orgId && (
+              <PrivateRecordAttachments key={editingPilgrim} bucket="pilgrimage-attachments"
+                organizationId={orgId} recordId={editingPilgrim}
+                canUpload={programPilgrims.some(pilgrim => pilgrim.id === editingPilgrim && pilgrim.status !== 'cancelled')} />
+            )}
             {!editingPilgrim && <p className="text-xs text-muted-foreground">يُربط المسافر بملف العميل الحالي فقط عند تطابق رقم الجواز بدقة؛ تشابه الهاتف وحده لا يكفي لأن الأسرة قد تشترك في رقم واحد. الدفعات تُسجَّل من زر التحصيل.</p>}
             <Button className="w-full" disabled={gf.full_name.trim().length < 3 || savePilgrim.isPending} onClick={() => savePilgrim.mutate()}>حفظ</Button>
           </DialogContent>

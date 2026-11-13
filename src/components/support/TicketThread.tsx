@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import PrivateRecordAttachments from '@/components/documents/PrivateRecordAttachments';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -84,6 +85,9 @@ const TicketThread = ({ ticket, staffMode = false }: Props) => {
         ))}
         {messages.length === 0 && <p className="text-sm text-muted-foreground">لا توجد ردود بعد.</p>}
       </div>
+
+      <PrivateRecordAttachments key={ticket.id} bucket="support-attachments"
+        organizationId={ticket.organization_id} recordId={ticket.id} canUpload={!closed} />
 
       {!closed && (
         <div className="space-y-2">
