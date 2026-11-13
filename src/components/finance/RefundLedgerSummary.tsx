@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useRefundBalances, remainingRefundBalance } from '@/hooks/finance/useRefundBalances';
-import { RefundMovements, formatRefundAmount, refundStatusLabels } from './RefundMovements';
+import { formatRefundAmount } from './RefundMovements';
+import { PartyWalletHistory } from './PartyWalletHistory';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -9,10 +10,10 @@ export function RefundLedgerSummary({ kind, partyId, showHistory = false }: {
   partyId: string;
   showHistory?: boolean;
 }) {
-  const { data, isError, isPending } = useRefundBalances(kind, partyId);
+  const { data, isError, isPending } = useRefundBalances(kind, partyId, showHistory);
   const totals = new Map<string, number>();
   for (const row of data ?? []) {
-    if (!['approved', 'confirmed'].includes(row.status)) continue;
+    if (row.pilgrimageB2B || !['approved', 'confirmed'].includes(row.status)) continue;
     const remaining = remainingRefundBalance(row);
     if (remaining > 0) totals.set(row.currency, (totals.get(row.currency) ?? 0) + Math.round(remaining * 100));
   }
@@ -20,35 +21,25 @@ export function RefundLedgerSummary({ kind, partyId, showHistory = false }: {
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-base">{kind === 'customer' ? 'استرداد مستحق للعميل' : 'رصيد استرداد مؤكد لدى المورد'}</CardTitle>
+        <CardTitle className="text-base">
+          {showHistory
+            ? kind === 'customer' ? 'محفظة العميل' : 'محفظة المورد'
+            : kind === 'customer' ? 'استرداد مستحق للعميل' : 'رصيد استرداد مؤكد لدى المورد'}
+        </CardTitle>
         <Button asChild size="sm" variant="outline" className="print:hidden">
-          <Link to={`/refund-balances?kind=${kind}&party=${partyId}&view=all`}>عرض حركات الاسترداد</Link>
+          <Link to={`/refund-balances?kind=${kind}&party=${partyId}&view=all`}>إدارة الأرصدة والاستردادات</Link>
         </Button>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-4 text-sm">
         {isError && <span role="alert" className="text-destructive">تعذر تحميل أرصدة الاسترداد</span>}
         {isPending && <span>جارٍ تحميل الأرصدة…</span>}
         {data && totals.size === 0 && <span>لا توجد أرصدة استرداد مفتوحة</span>}
-        {[...totals].map(([currency, cents]) => <strong key={currency}>{(cents / 100).toLocaleString('ar-EG')} {currency}</strong>)}
+        {totals.size > 0 && <span className="text-muted-foreground">رصيد الاسترداد المتاح</span>}
+        {[...totals].map(([currency, cents]) => <strong key={currency}>{formatRefundAmount(cents / 100, currency)}</strong>)}
       </CardContent>
-      {showHistory && data && data.length > 0 && (
-        <CardContent className="space-y-2 text-sm">
-          <details>
-            <summary className="cursor-pointer font-medium text-primary">سجل الأرصدة والاستردادات</summary>
-            <ul className="mt-3 space-y-3">
-              {data.map(balance => (
-                <li key={balance.id} className="space-y-2 rounded-md border p-3">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    {balance.source && <span>{balance.source}</span>}
-                    <strong>{formatRefundAmount(balance.amount, balance.currency)}</strong>
-                    <span>{refundStatusLabels[balance.status] ?? balance.status}</span>
-                    {balance.reference && <span>{balance.reference}</span>}
-                  </div>
-                  <RefundMovements balance={balance} />
-                </li>
-              ))}
-            </ul>
-          </details>
+      {showHistory && (
+        <CardContent>
+          <PartyWalletHistory key={`${kind}:${partyId}`} kind={kind} partyId={partyId} refunds={data} refundError={isError} />
         </CardContent>
       )}
     </Card>

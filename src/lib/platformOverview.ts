@@ -1,22 +1,13 @@
 import { addMonths, startOfMonth, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
-const PAGE_SIZE = 500;
+import { allRows } from './pagedRows';
+
+export { allRows } from './pagedRows';
 const DAY_MS = 86_400_000;
 
 type Result<T> = { data: T[] | null; error: unknown };
 type CountResult = { count: number | null; error: unknown };
-
-export async function allRows<T>(read: (from: number, to: number) => PromiseLike<Result<T>>) {
-  const rows: T[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await read(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
-    if (!data) throw new Error('Missing platform data');
-    rows.push(...data);
-    if (data.length < PAGE_SIZE) return rows;
-  }
-}
 
 async function counted(read: PromiseLike<CountResult>) {
   const { count, error } = await read;
