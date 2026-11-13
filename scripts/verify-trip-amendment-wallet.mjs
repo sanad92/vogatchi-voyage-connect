@@ -33,6 +33,12 @@ try {
   await db.exec(migration('20261113191412_cancelled_booking_supplier_balance'));
   await db.exec(read('scripts/test-cancelled-booking-supplier-balance.sql'));
   console.log('Cancelled supplier order scenarios passed');
+  await db.exec(migration('20261113232530_close_unpaid_supplier_order'));
+  const aging = migration('20260905090544_wave3_receivables_payables_aging');
+  await db.exec(aging.slice(aging.indexOf('CREATE OR REPLACE FUNCTION public.get_supplier_aging_details_v2'),
+    aging.indexOf('CREATE OR REPLACE FUNCTION public.get_aging_control_totals_v2')));
+  await db.exec(read('scripts/test-cancel-unpaid-supplier-order.sql'));
+  console.log('Confirmed free supplier cancellation and supplier aging scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;

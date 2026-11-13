@@ -3,13 +3,14 @@ import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectTrigger,
+  SelectValue,
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
 
 // Avoid empty value string in Radix SelectItem (use "all" for default/all)
 const typesOptions = [
-  { value: 'all', label: 'الكل' },
+  { value: 'all', label: 'كل الأنواع' },
   { value: 'hotel', label: 'فنادق' },
   { value: 'airline', label: 'طيران' },
   { value: 'transport', label: 'نقل' },
@@ -17,7 +18,7 @@ const typesOptions = [
 ];
 
 const statusOptions = [
-  { value: 'all', label: 'الكل' },
+  { value: 'all', label: 'كل الحالات' },
   { value: 'active', label: 'نشط' },
   { value: 'inactive', label: 'غير نشط' },
 ];
@@ -77,11 +78,11 @@ const SupplierAdvancedFilters = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-50 rounded-md mb-3">
+    <div className="flex flex-wrap gap-2 items-center">
       <Input
         type="text"
-        placeholder="بحث بالاسم أو المسؤول"
-        className="w-40"
+        placeholder="بحث بالاسم أو بيانات التواصل"
+        className="w-60"
         value={filters.search}
         onChange={e => handleChange('search', e.target.value)}
       />
@@ -89,7 +90,7 @@ const SupplierAdvancedFilters = ({
         value={filters.type}
         onValueChange={v => handleChange('type', v)}
       >
-        <SelectTrigger className="w-32">نوع المورد</SelectTrigger>
+        <SelectTrigger className="w-32" aria-label="نوع المورد"><SelectValue /></SelectTrigger>
         <SelectContent>
           {typesOptions.map(opt => (
             <SelectItem key={opt.value} value={opt.value}>
@@ -102,7 +103,7 @@ const SupplierAdvancedFilters = ({
         value={filters.status}
         onValueChange={v => handleChange('status', v)}
       >
-        <SelectTrigger className="w-32">الحالة</SelectTrigger>
+        <SelectTrigger className="w-32" aria-label="الحالة"><SelectValue /></SelectTrigger>
         <SelectContent>
           {statusOptions.map(opt => (
             <SelectItem key={opt.value} value={opt.value}>
@@ -115,9 +116,9 @@ const SupplierAdvancedFilters = ({
         value={filters.minRating}
         onValueChange={v => handleChange('minRating', v)}
       >
-        <SelectTrigger className="w-32">الحد الأدنى للتقييم</SelectTrigger>
+        <SelectTrigger className="w-40" aria-label="الحد الأدنى للتقييم"><SelectValue /></SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">الكل</SelectItem>
+          <SelectItem value="all">كل التقييمات</SelectItem>
           {[1, 2, 3, 4, 5].map(num => (
             <SelectItem key={num} value={String(num)}>
               {num} نجوم+

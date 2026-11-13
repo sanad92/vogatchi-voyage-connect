@@ -4,16 +4,28 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { TrendingUp, DollarSign, Users, Star, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 import { CURRENCY_SYMBOLS } from '@/types/currency';
 
 const SupplierAnalytics = () => {
+  const orgId = useOrgId();
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const { hasFeature } = useSubscription();
+  const canViewFinance = hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
+    && getPermissionScope('financial_view') === 'organization';
+
   // استعلام بيانات الموردين
   const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers-analytics'],
+    queryKey: ['suppliers-analytics', orgId],
+    enabled: !!orgId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
+        .select('id,type,rating,is_active')
+        .eq('organization_id', orgId!)
         .order('name');
       
       if (error) throw error;
@@ -22,8 +34,9 @@ const SupplierAnalytics = () => {
   });
 
   // استعلام بيانات المدفوعات
-  const { data: payments = [] } = useQuery({
-    queryKey: ['supplier-payments-analytics'],
+  const { data: queriedPayments = [] } = useQuery({
+    queryKey: ['supplier-payments-analytics', orgId],
+    enabled: !!orgId && canViewFinance,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('supplier_payments')
@@ -31,13 +44,16 @@ const SupplierAnalytics = () => {
           *,
           suppliers(name, type)
         `)
-        .eq('status', 'paid')
+        .eq('organization_id', orgId!)
+        .in('status', ['paid', 'completed'])
         .order('payment_date', { ascending: false });
       
       if (error) throw error;
       return data;
     }
   });
+
+  const payments = canViewFinance ? queriedPayments : [];
 
   // تحليل الموردين حسب النوع
   const suppliersByType = suppliers.reduce((acc, supplier) => {
@@ -60,7 +76,7 @@ const SupplierAnalytics = () => {
       year: 'numeric', 
       month: 'long' 
     });
-    acc[month] = (acc[month] || 0) + (payment.amount_in_egp || payment.amount);
+    acc[month] = (acc[month] || 0) + (payment.amount_in_egp ?? (payment.currency === 'EGP' ? payment.amount : 0));
     return acc;
   }, {} as Record<string, number>);
 
@@ -84,7 +100,7 @@ const SupplierAnalytics = () => {
       };
     }
     
-    acc[supplierId].totalAmount += (payment.amount_in_egp || payment.amount);
+    acc[supplierId].totalAmount += (payment.amount_in_egp ?? (payment.currency === 'EGP' ? payment.amount : 0));
     acc[supplierId].transactionCount += 1;
     
     return acc;
@@ -103,7 +119,7 @@ const SupplierAnalytics = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   // حساب الإحصائيات العامة
-  const totalPayments = payments.reduce((sum, p) => sum + (p.amount_in_egp || p.amount), 0);
+  const totalPayments = payments.reduce((sum, p) => sum + (p.amount_in_egp ?? (p.currency === 'EGP' ? p.amount : 0)), 0);
   const averageRating = suppliers.reduce((sum, s) => sum + (s.rating || 0), 0) / suppliers.length || 0;
   const activeSuppliers = suppliers.filter(s => s.is_active).length;
 
@@ -123,7 +139,7 @@ const SupplierAnalytics = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {canViewFinance && <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-green-600" />
@@ -133,7 +149,7 @@ const SupplierAnalytics = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
         <Card>
           <CardContent className="p-4">
@@ -190,8 +206,7 @@ const SupplierAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* المدفوعات الشهرية */}
-        <Card>
+        {canViewFinance && <Card>
           <CardHeader>
             <CardTitle>المدفوعات الشهرية للموردين</CardTitle>
           </CardHeader>
@@ -206,10 +221,10 @@ const SupplierAnalytics = () => {
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </Card>}
       </div>
 
-      {/* أفضل الموردين */}
+      {canViewFinance && <>
       <Card>
         <CardHeader>
           <CardTitle>أفضل 5 موردين (حسب إجمالي المدفوعات)</CardTitle>
@@ -260,6 +275,7 @@ const SupplierAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+      </>}
     </div>
   );
 };

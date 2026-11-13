@@ -5,20 +5,22 @@ import { useToast } from "@/hooks/use-toast";
 import type { Supplier } from "@/types/supplier";
 import { useOrgId } from './useOrgId';
 
-export const useSuppliers = (supplierType?: string) => {
+export const useSuppliers = (supplierType?: string, includeInactive = false) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const orgId = useOrgId();
 
   const suppliersQuery = useQuery({
-    queryKey: ['suppliers', supplierType, orgId],
+    queryKey: ['suppliers', supplierType, orgId, includeInactive],
     queryFn: async (): Promise<Supplier[]> => {
       let query = supabase
         .from('suppliers')
         .select(`*, supplier_currencies(id, currency, is_primary, exchange_rate)`)
-        .eq('is_active', true)
+        .eq('organization_id', orgId!)
         .order('name', { ascending: true });
       
+      if (!includeInactive) query = query.eq('is_active', true);
+
       if (supplierType) {
         query = query.ilike('type', `%${supplierType}%`);
       }

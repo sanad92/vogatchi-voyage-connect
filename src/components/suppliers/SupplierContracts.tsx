@@ -9,17 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, FileText, Plus, DollarSign } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency, SupplierContract } from '@/types/currency';
 
 interface SupplierContractsProps {
-  supplierId?: string | null;
+  supplierId: string;
+  canEdit: boolean;
 }
 
-const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
+const SupplierContracts = ({ supplierId, canEdit }: SupplierContractsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const orgId = useOrgId();
 
   const [newContract, setNewContract] = useState({
     supplier_id: supplierId || '',
@@ -35,7 +38,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
 
   // استعلام العقود
   const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ['supplier-contracts', supplierId],
+    queryKey: ['supplier-contracts', orgId, supplierId],
     queryFn: async () => {
       if (!supplierId) return [];
       
@@ -58,6 +61,7 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
         .from('supplier_contracts')
         .insert([{
           supplier_id: contract.supplier_id,
+          organization_id: orgId,
           contract_number: contract.contract_number,
           contract_type: contract.contract_type,
           start_date: contract.start_date,
@@ -141,30 +145,20 @@ const SupplierContracts = ({ supplierId }: SupplierContractsProps) => {
     });
   };
 
-  if (!supplierId) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">يرجى اختيار مورد لعرض العقود</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* زر إضافة عقد جديد */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">عقود المورد</h3>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
+        {canEdit && <Button onClick={() => setShowAddForm(!showAddForm)}>
           <Plus className="w-4 h-4 ml-2" />
           إضافة عقد جديد
-        </Button>
+        </Button>}
       </div>
 
       {/* نموذج إضافة عقد */}
-      {showAddForm && (
+      {canEdit && showAddForm && (
         <Card>
           <CardHeader>
             <CardTitle>إضافة عقد جديد</CardTitle>

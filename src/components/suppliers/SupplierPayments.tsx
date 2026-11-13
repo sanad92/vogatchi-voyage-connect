@@ -6,37 +6,31 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign, Plus, Calendar } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS, CURRENCY_NAMES, SupportedCurrency } from '@/types/currency';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useOrgId } from '@/hooks/useOrgId';
+import { formatRefundAmount } from '@/components/finance/RefundMovements';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Payment = Pick<Tables<'supplier_payments'>,
+  'id' | 'reference_number' | 'payment_reference' | 'status' | 'amount' | 'currency' |
+  'paid_date' | 'payment_date' | 'payment_method'>;
 
 interface SupplierPaymentsProps {
-  supplierId?: string | null;
+  supplierId: string;
+  canManage: boolean;
+  payments: Payment[];
+  state: { isPending: boolean; isError: boolean };
 }
 
-interface SupplierPayment {
-  id: string;
-  supplier_id: string;
-  amount: number;
-  currency: SupportedCurrency;
-  payment_date: string;
-  payment_method: string;
-  reference_number: string;
-  exchange_rate: number;
-  amount_in_egp: number;
-  status: 'pending' | 'paid' | 'cancelled';
-  notes?: string;
-  created_at: string;
-}
-
-const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
+const SupplierPayments = ({ supplierId, canManage, payments, state }: SupplierPaymentsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { getCurrentRate } = useExchangeRates();
+  const orgId = useOrgId();
 
   const [newPayment, setNewPayment] = useState({
     supplier_id: supplierId || '',
@@ -48,51 +42,14 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
     notes: ''
   });
 
-  // استعلام المدفوعات
-  const { data: payments = [], isLoading } = useQuery({
-    queryKey: ['supplier-payments', supplierId],
-    queryFn: async () => {
-      if (!supplierId) return [];
-      
-      const { data, error } = await supabase
-        .from('supplier_payments')
-        .select(`
-          *,
-          suppliers(name)
-        `)
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data.map(payment => ({
-        id: payment.id,
-        supplier_id: payment.supplier_id,
-        amount: payment.amount,
-        currency: payment.currency || 'EGP',
-        payment_date: payment.payment_date || payment.paid_date || new Date().toISOString().split('T')[0],
-        payment_method: payment.payment_method || 'bank_transfer',
-        reference_number: payment.reference_number || payment.payment_reference || '',
-        exchange_rate: payment.exchange_rate || 1,
-        amount_in_egp: payment.amount_in_egp || payment.amount,
-        status: payment.status || 'pending',
-        notes: payment.notes || '',
-        created_at: payment.created_at
-      })) as SupplierPayment[];
-    },
-    enabled: !!supplierId
-  });
-
-  // إضافة دفعة جديدة
   const addPaymentMutation = useMutation({
     mutationFn: async (payment: typeof newPayment) => {
-      // حساب سعر الصرف إلى الجنيه المصري
-      const exchangeRate = await getCurrentRate(payment.currency, 'EGP');
-      const amountInEgp = payment.amount * exchangeRate;
-
+      if (!canManage || !orgId) throw new Error('ليس لديك صلاحية لإضافة دفعة.');
       const { data, error } = await supabase
         .from('supplier_payments')
         .insert([{
           supplier_id: payment.supplier_id,
+          organization_id: orgId,
           amount: payment.amount,
           currency: payment.currency,
           payment_date: payment.payment_date,
@@ -100,10 +57,9 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
           reference_number: payment.reference_number,
           payment_reference: payment.reference_number, // للتوافق مع الحقل الحالي
           notes: payment.notes,
-          exchange_rate: exchangeRate,
-          amount_in_egp: amountInEgp,
+          exchange_rate: 1,
+          amount_in_egp: payment.amount,
           status: 'pending',
-          booking_id: '00000000-0000-0000-0000-000000000000' // dummy value للتوافق مع الجدول
         }])
         .select()
         .single();
@@ -112,7 +68,7 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplier-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['sup360-payments', supplierId, orgId] });
       setNewPayment({
         supplier_id: supplierId || '',
         amount: 0,
@@ -127,7 +83,8 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
         title: "تم إضافة الدفعة بنجاح",
         description: "تم حفظ بيانات الدفعة الجديدة",
       });
-    }
+    },
+    onError: error => toast({ title: 'تعذر حفظ الدفعة', description: error.message, variant: 'destructive' }),
   });
 
   const getStatusColor = (status: string) => {
@@ -174,76 +131,19 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
     });
   };
 
-  // حساب إجمالي المدفوعات بالجنيه المصري
-  const totalPaymentsEgp = payments
-    .filter(p => p.status === 'paid')
-    .reduce((sum, p) => sum + p.amount_in_egp, 0);
-
-  if (!supplierId) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">يرجى اختيار مورد لعرض المدفوعات</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* إحصائيات المدفوعات */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">إجمالي المدفوعات</p>
-                <p className="text-2xl font-bold">{totalPaymentsEgp.toLocaleString()} {CURRENCY_SYMBOLS.EGP}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">عدد المعاملات</p>
-                <p className="text-2xl font-bold">{payments.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">المعلقة</p>
-                <p className="text-2xl font-bold">
-                  {payments.filter(p => p.status === 'pending').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* زر إضافة دفعة جديدة */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">مدفوعات المورد</h3>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="w-4 h-4 ml-2" />
-          إضافة دفعة جديدة
-        </Button>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-base font-semibold">مدفوعات المورد</h3>
+        {canManage && (
+          <Button size="sm" variant="outline" onClick={() => setShowAddForm(!showAddForm)}>
+            <Plus className="size-4" /> إضافة دفعة جديدة
+          </Button>
+        )}
       </div>
 
       {/* نموذج إضافة دفعة */}
-      {showAddForm && (
+      {canManage && showAddForm && (
         <Card>
           <CardHeader>
             <CardTitle>إضافة دفعة جديدة</CardTitle>
@@ -253,6 +153,7 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
               <Input
                 type="number"
                 step="0.01"
+                min="0.01"
                 placeholder="المبلغ (ج.م)"
                 value={newPayment.amount}
                 onChange={e => setNewPayment({...newPayment, amount: parseFloat(e.target.value) || 0})}
@@ -307,71 +208,39 @@ const SupplierPayments = ({ supplierId }: SupplierPaymentsProps) => {
         </Card>
       )}
 
-      {/* قائمة المدفوعات */}
-      <div className="grid grid-cols-1 gap-4">
-        {isLoading ? (
-          <div className="text-center py-8">جاري تحميل المدفوعات...</div>
-        ) : payments.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">لا توجد مدفوعات لهذا المورد</p>
-            </CardContent>
-          </Card>
-        ) : (
-          payments.map((payment) => (
-            <Card key={payment.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                      <DollarSign className="w-5 h-5" />
-                      دفعة #{payment.reference_number}
-                    </h4>
-                    <p className="text-gray-600">طريقة الدفع: {getPaymentMethodLabel(payment.payment_method)}</p>
-                  </div>
-                  <div className="text-left">
-                    <Badge className={getStatusColor(payment.status)}>
-                      {getStatusLabel(payment.status)}
-                    </Badge>
-                    <div className="mt-2">
-                      <div className="text-lg font-bold">
-                        {payment.amount.toLocaleString()} {CURRENCY_SYMBOLS.EGP}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    <span className="font-medium">تاريخ الدفع:</span>
-                    <p>{new Date(payment.payment_date).toLocaleDateString('ar-EG')}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">سعر الصرف:</span>
-                    <p>{payment.exchange_rate.toFixed(4)}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">المبلغ بالجنيه:</span>
-                    <p>{payment.amount_in_egp.toLocaleString()} {CURRENCY_SYMBOLS.EGP}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">تاريخ الإضافة:</span>
-                    <p>{new Date(payment.created_at).toLocaleDateString('ar-EG')}</p>
-                  </div>
-                </div>
-
-                {payment.notes && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <span className="font-medium">ملاحظات:</span>
-                    <p className="text-sm mt-1">{payment.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      <Card>
+        <CardContent className="overflow-x-auto p-4">
+          {state.isError ? (
+            <p role="alert" className="text-sm text-destructive">تعذر تحميل مدفوعات المورد.</p>
+          ) : state.isPending ? (
+            <p className="text-sm text-muted-foreground">جاري تحميل المدفوعات...</p>
+          ) : payments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">لا توجد مدفوعات لهذا المورد</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-right text-muted-foreground">
+                  {['المرجع', 'التاريخ', 'المبلغ', 'الوسيلة', 'الحالة'].map(label => <th key={label} className="p-2">{label}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map(payment => {
+                  const status = payment.status || 'pending';
+                  return (
+                    <tr key={payment.id} className="border-b">
+                      <td className="p-2">{payment.reference_number || payment.payment_reference || '—'}</td>
+                      <td className="p-2">{payment.payment_date || payment.paid_date || '—'}</td>
+                      <td className="p-2">{formatRefundAmount(payment.amount, payment.currency || 'EGP')}</td>
+                      <td className="p-2">{payment.payment_method ? getPaymentMethodLabel(payment.payment_method) : '—'}</td>
+                      <td className="p-2"><Badge className={getStatusColor(status)}>{getStatusLabel(status)}</Badge></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
