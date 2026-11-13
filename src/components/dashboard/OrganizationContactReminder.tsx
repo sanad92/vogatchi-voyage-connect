@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { contactValidationError, normalizeContactPhone } from '@/lib/organizationContacts';
@@ -17,7 +16,6 @@ import { toast } from 'sonner';
 export function OrganizationContactReminder() {
   const { user } = useOptimizedAuth();
   const { orgRole, currentOrganization } = useOrganization();
-  const { isImpersonating } = useOrgImpersonation();
   const { dir } = useLanguage();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -27,7 +25,7 @@ export function OrganizationContactReminder() {
 
   const contacts = useQuery({
     queryKey,
-    enabled: !!organizationId && !!user && orgRole === 'owner' && !isImpersonating,
+    enabled: !!organizationId && !!user && orgRole === 'owner',
     queryFn: async ({ signal }) => {
       const [profile, settings] = await Promise.all([
         supabase.from('profiles').select('full_name,phone').eq('id', user!.id).abortSignal(signal).maybeSingle(),
@@ -68,7 +66,7 @@ export function OrganizationContactReminder() {
     onError: () => toast.error('تعذّر حفظ بيانات التواصل. حاول مرة أخرى.'),
   });
 
-  if (orgRole !== 'owner' || isImpersonating || !contacts.data) return null;
+  if (orgRole !== 'owner' || !contacts.data) return null;
   const data = contacts.data;
   if (!contactValidationError(data.name, data.ownerPhone, data.phone, data.email)) return null;
 

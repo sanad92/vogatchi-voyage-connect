@@ -28,12 +28,13 @@ const JsonBlock = ({ data }: { data: unknown }) => (
 const PlatformEventExplorer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: event, isLoading } = useDomainEvent(id);
+  const { data: event, isLoading, isError } = useDomainEvent(id);
   const { data: deliveries = [] } = useDeliveriesForEvent(id);
   const retry = useRetryDelivery();
   const replay = useReplayEvent();
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل...</div>;
+  if (isError) return <p role="alert" className="p-6 text-sm text-destructive">تعذّر تحميل الحدث</p>;
   if (!event) return <div className="p-6 text-sm text-muted-foreground">الحدث غير موجود</div>;
 
   const bookingId = (event.enriched_payload as any)?.booking?.id
@@ -54,10 +55,10 @@ const PlatformEventExplorer = () => {
         </div>
         <Button
           onClick={() => id && replay.mutate(id)}
-          disabled={replay.isPending}
+          disabled={replay.isPending || !deliveries.some((delivery) => delivery.status === 'failed' || delivery.status === 'dead')}
           size="sm"
         >
-          <Play className="h-3.5 w-3.5 me-1" /> إعادة تشغيل الحدث
+          <Play className="h-3.5 w-3.5 me-1" /> إعادة التسليمات الفاشلة
         </Button>
       </div>
 

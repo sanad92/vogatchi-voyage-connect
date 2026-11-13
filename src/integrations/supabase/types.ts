@@ -18019,13 +18019,15 @@ export type Database = {
       }
       start_impersonation: {
         Args: {
-          _mfa_verified: boolean
           _org_pin: string
           _reason: string
           _target_org_id: string
-          _target_user_id: string
         }
         Returns: string
+      }
+      platform_support_booking_snapshot: {
+        Args: never
+        Returns: { booking_number: string | null; booking_type: string | null; status: string | null; created_at: string | null }[]
       }
       stop_impersonation: { Args: never; Returns: undefined }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }

@@ -51,10 +51,11 @@ const StatCard = ({ icon: Icon, label, value, tone = 'default' }: {
 };
 
 const DeliveriesTable = ({ status }: { status?: EventDelivery['status'] }) => {
-  const { data = [], isLoading } = useEventDeliveries(status);
+  const { data = [], isLoading, isError } = useEventDeliveries(status);
   const retry = useRetryDelivery();
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل...</div>;
+  if (isError) return <p role="alert" className="p-6 text-sm text-destructive">تعذّر تحميل التسليمات</p>;
   if (!data.length) return <div className="p-6 text-sm text-muted-foreground">لا توجد سجلات</div>;
 
   return (
@@ -103,7 +104,7 @@ const DeliveriesTable = ({ status }: { status?: EventDelivery['status'] }) => {
 const EventsTable = ({ search, eventType, aggregateType }: {
   search: string; eventType: string; aggregateType: string;
 }) => {
-  const { data = [], isLoading } = useRecentDomainEvents({
+  const { data = [], isLoading, isError } = useRecentDomainEvents({
     search: search || undefined,
     eventType: eventType || undefined,
     aggregateType: aggregateType || undefined,
@@ -112,6 +113,7 @@ const EventsTable = ({ search, eventType, aggregateType }: {
   const replay = useReplayEvent();
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل...</div>;
+  if (isError) return <p role="alert" className="p-6 text-sm text-destructive">تعذّر تحميل الأحداث</p>;
   if (!data.length) return <div className="p-6 text-sm text-muted-foreground">لا توجد أحداث</div>;
   return (
     <Table>
@@ -143,7 +145,7 @@ const EventsTable = ({ search, eventType, aggregateType }: {
                   <Button size="sm" variant="ghost">استكشاف</Button>
                 </Link>
                 <Button size="sm" variant="outline" onClick={() => replay.mutate(e.id)}>
-                  <Play className="h-3 w-3 me-1" /> إعادة
+                  <Play className="h-3 w-3 me-1" /> إعادة الفاشلة
                 </Button>
               </div>
             </TableCell>
@@ -178,10 +180,11 @@ const PlatformEventBus = () => {
   const [search, setSearch] = useState('');
   const [eventType, setEventType] = useState('all');
   const [aggregateType, setAggregateType] = useState('all');
-  const { data: stats } = useEventBusStats();
+  const { data: stats, isError: statsError } = useEventBusStats();
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {statsError && <p role="alert" className="text-sm text-destructive">تعذّر تحميل مؤشرات ناقل الأحداث</p>}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Activity className="h-6 w-6 text-primary" /> Event Bus

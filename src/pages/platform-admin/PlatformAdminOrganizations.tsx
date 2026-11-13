@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Ban, CheckCircle, CalendarPlus, Building2, LogIn, Search, Trash2, XCircle } from 'lucide-react';
-import { useOrgImpersonation } from '@/hooks/useOrgImpersonation';
 import { Input } from '@/components/ui/input';
 import { ConfirmAction } from '@/components/platform-admin/ConfirmAction';
 import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
@@ -48,7 +47,6 @@ const PlatformAdminOrganizations = () => {
     staleTime: 30_000,
   });
   const missingIds = new Set(contactGaps.data?.map(({ organization_id }) => organization_id));
-  const { start: startImpersonation } = useOrgImpersonation();
 
   const { data: plans } = useQuery({
     queryKey: ['platform-admin-plans'],
@@ -314,13 +312,14 @@ const PlatformAdminOrganizations = () => {
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           <Button
+                            asChild
                             size="sm"
                             variant="outline"
                             className="h-7 text-xs border-amber-500/50 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                            onClick={() => startImpersonation(org.id, org.name)}
-                            title="دخول إلى داشبورد المؤسسة"
                           >
-                            <LogIn className="h-3 w-3 ml-1" /> دخول
+                            <Link to={`/platform/act-as?company=${encodeURIComponent(org.id)}`}>
+                              <LogIn className="h-3 w-3 ml-1" /> جلسة دعم
+                            </Link>
                           </Button>
                           <Button
                             size="sm"

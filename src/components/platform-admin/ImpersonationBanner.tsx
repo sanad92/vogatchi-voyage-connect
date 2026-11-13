@@ -1,6 +1,7 @@
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useImpersonationSession } from '@/hooks/useImpersonationSession';
+import { Link } from 'react-router-dom';
 
 const ImpersonationBanner = () => {
   const { active, stop } = useImpersonationSession();
@@ -10,7 +11,7 @@ const ImpersonationBanner = () => {
       <div className="max-w-full px-4 py-2 flex items-center gap-3 text-sm">
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <div className="flex-1 truncate">
-          <span className="font-semibold">وضع الانتحال نشط</span>
+          <Link to="/platform/act-as" className="font-semibold underline">جلسة دعم نشطة</Link>
           <span className="mx-2 opacity-80">— السبب: {active.reason}</span>
           <span className="opacity-70 text-xs">بدأت {new Date(active.started_at).toLocaleString('ar-EG')}</span>
         </div>

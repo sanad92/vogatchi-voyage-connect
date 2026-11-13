@@ -54,6 +54,9 @@ export function useEventBusStats() {
         (supabase as any).from('event_deliveries').select('*', { count: 'exact', head: true }).eq('status', 'succeeded').gte('updated_at', since),
         (supabase as any).from('event_deliveries').select('processing_ms').not('processing_ms', 'is', null).gte('updated_at', since).limit(500),
       ]);
+      for (const result of [total, recent, pending, failed, dead, succeeded, latency]) {
+        if (result.error) throw result.error;
+      }
       const times: number[] = (latency.data || []).map((r: any) => r.processing_ms).filter(Boolean);
       const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
       return {
@@ -193,6 +196,7 @@ export function useRetryDelivery() {
       toast.success('تمت إعادة الجدولة');
       qc.invalidateQueries({ queryKey: ['event-deliveries'] });
       qc.invalidateQueries({ queryKey: ['event-deliveries-for-event'] });
+      qc.invalidateQueries({ queryKey: ['event-bus-stats'] });
     },
     onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
   });
@@ -207,7 +211,8 @@ export function useReplayEvent() {
       return data as number;
     },
     onSuccess: (count) => {
-      toast.success(`تمت إعادة تشغيل ${count} تسليم`);
+      if (count) toast.success(`تمت إعادة جدولة ${count} تسليم`);
+      else toast.info('لا توجد تسليمات فاشلة لإعادة المحاولة');
       qc.invalidateQueries({ queryKey: ['event-deliveries'] });
       qc.invalidateQueries({ queryKey: ['event-deliveries-for-event'] });
       qc.invalidateQueries({ queryKey: ['event-bus-stats'] });

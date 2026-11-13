@@ -9,7 +9,7 @@ interface Props {
 }
 
 const PlatformAdminGuard = ({ children }: Props) => {
-  const { isPlatformAdmin, loading } = usePlatformAdmin();
+  const { isPlatformAdmin, isPlatformOwner, loading } = usePlatformAdmin();
   const { isLoggedIn } = useOptimizedAuth();
   const finance = usePlatformFinanceRole();
   const { pathname } = useLocation();
@@ -36,6 +36,9 @@ const PlatformAdminGuard = ({ children }: Props) => {
   if (financePath && finance.role) return <>{children}</>;
   if (!isPlatformAdmin) return <Navigate to={finance.role ? '/platform/finance' : '/platform/login'} replace />;
   if (financePath && !finance.loading) return <Navigate to="/platform" replace />;
+  if ((pathname === '/platform/event-bus' || pathname.startsWith('/platform/event-bus/')) && !isPlatformOwner) {
+    return <Navigate to="/platform" replace />;
+  }
 
   return <>{children}</>;
 };

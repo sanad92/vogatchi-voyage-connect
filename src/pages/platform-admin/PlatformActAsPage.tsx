@@ -1,129 +1,190 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { UserCog, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useImpersonationSession } from '@/hooks/useImpersonationSession';
+import { supabase } from '@/integrations/supabase/client';
+import { companyProfilePath } from '@/lib/platformCompanyFollowup';
+
+const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 
 export default function PlatformActAsPage() {
+  const [params, setParams] = useSearchParams();
+  const organizationId = params.get('company');
+  const { user } = useOptimizedAuth();
+  const { dir, language } = useLanguage();
+  const qc = useQueryClient();
+  const { active, loading, start, stop } = useImpersonationSession();
   const [search, setSearch] = useState('');
-  const [selectedOrg, setSelectedOrg] = useState<{ id: string; name: string } | null>(null);
   const [pin, setPin] = useState('');
   const [reason, setReason] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
-  const [mfaVerified, setMfaVerified] = useState(false);
-  const { active, start, stop } = useImpersonationSession();
+  const [code, setCode] = useState('');
+  const [enrollment, setEnrollment] = useState<{ id: string; qr: string; secret: string }>();
+  const targetId = active?.target_org_id ?? organizationId;
 
-  const orgs = useQuery({
-    queryKey: ['orgs-search', search],
-    queryFn: async () => {
-      const q = (supabase as any).from('organizations').select('id,name,slug').order('name').limit(20);
-      const { data, error } = search ? await q.ilike('name', `%${search}%`) : await q;
+  const company = useQuery({
+    queryKey: ['support-organization', user?.id, targetId],
+    enabled: !!targetId && uuid.test(targetId),
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from('organizations').select('id,name').eq('id', targetId!).abortSignal(signal).maybeSingle();
       if (error) throw error;
-      return data ?? [];
+      return data;
     },
   });
-
-  const verifyMfa = () => {
-    // Placeholder: accepts a 6-digit code. Wire to Supabase MFA verify challenge in a hardening pass.
-    if (mfaCode.length === 6) setMfaVerified(true);
-  };
-
-  const handleStart = () => {
-    if (!selectedOrg) return;
-    start.mutate({
-      target_org_id: selectedOrg.id,
-      org_pin: pin,
-      reason: reason.trim(),
-      mfa_verified: mfaVerified,
-    }, {
-      onSuccess: () => { setPin(''); setReason(''); setMfaCode(''); setMfaVerified(false); },
-    });
+  const companies = useQuery({
+    queryKey: ['support-organizations', user?.id, search],
+    enabled: !active,
+    queryFn: async ({ signal }) => {
+      const query = supabase.from('organizations').select('id,name').order('name').limit(20).abortSignal(signal);
+      const { data, error } = await (search.trim() ? query.ilike('name', `%${search.trim()}%`) : query);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const authKey = ['support-mfa', user?.id];
+  const factors = useQuery({
+    queryKey: authKey,
+    enabled: !!user && !active,
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      if (error) throw error;
+      return data.totp;
+    },
+  });
+  const enroll = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'SafarERP' });
+      if (error) throw error;
+      return { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+    },
+    onSuccess: setEnrollment,
+    onError: () => toast.error('تعذّر إعداد التحقق الثنائي. حاول مرة أخرى.'),
+  });
+  const verify = useMutation({
+    mutationFn: async () => {
+      const factorId = enrollment?.id ?? factors.data?.[0]?.id;
+      if (!factorId) throw new Error('No authenticator');
+      const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setEnrollment(undefined);
+      setCode('');
+      await qc.invalidateQueries({ queryKey: authKey });
+      if (!company.data || active) return;
+      start.mutate({ target_org_id: company.data.id, org_pin: pin, reason: reason.trim() }, {
+        onSuccess: () => { setPin(''); setReason(''); },
+      });
+    },
+    onError: () => { setCode(''); toast.error('تعذّر تأكيد رمز التحقق. استخدم الرمز الحالي من تطبيق المصادقة.'); },
+  });
+  const snapshot = useQuery({
+    queryKey: ['support-booking-snapshot', user?.id, active?.session_id],
+    enabled: !!active,
+    refetchInterval: 30_000,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.rpc('platform_support_booking_snapshot').abortSignal(signal);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const formatDate = new Intl.DateTimeFormat(language === 'ar' ? 'ar-EG' : 'en-GB', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Cairo',
+  });
+  const busy = verify.isPending || start.isPending;
+  const canVerify = !!enrollment || !!factors.data?.length;
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (company.data && code.length === 6 && pin.length === 6 && reason.trim().length >= 10 && canVerify && !busy) verify.mutate();
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><UserCog className="h-6 w-6 text-amber-600" /> الوصول نيابة عن مؤسسة (Act As)</h1>
-        <p className="text-sm text-muted-foreground mt-1">وصول مؤقت ومسجَّل بالكامل. يتطلب MFA + PIN المؤسسة + سبب.</p>
-      </div>
-
-      {active && (
-        <Alert className="border-amber-300 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-700" />
-          <AlertDescription className="flex items-center justify-between gap-3">
-            <div>
-              <span className="font-semibold">جلسة نشطة</span> — السبب: {active.reason}
-              <div className="text-xs text-muted-foreground">بدأت {new Date(active.started_at).toLocaleString('ar-EG')}</div>
-            </div>
-            <Button size="sm" variant="destructive" onClick={() => stop.mutate()}>إنهاء الجلسة</Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-5 p-4 sm:p-6 lg:p-8" dir={dir}>
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sidebar p-5 text-sidebar-foreground">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold"><ShieldCheck className="h-5 w-5" aria-hidden="true" />جلسة دعم للمؤسسة</h1>
+          <p className="mt-2 text-sm text-sidebar-foreground/80">اطّلع على ملخص أحدث الحجوزات لمدة ٣٠ دقيقة باستخدام تطبيق المصادقة وPIN المؤسسة.</p>
+        </div>
+        <Button asChild variant="secondary" size="sm"><Link to="/platform/organizations">كل الشركات</Link></Button>
+      </header>
+      {loading ? <p role="status">جارٍ تحميل البيانات</p> : active ? (
         <Card>
-          <CardHeader><CardTitle className="text-base">1. اختر المؤسسة</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Input placeholder="ابحث بالاسم..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            <div className="max-h-80 overflow-y-auto border rounded divide-y">
-              {(orgs.data ?? []).map((o: any) => (
-                <button key={o.id}
-                  onClick={() => setSelectedOrg({ id: o.id, name: o.name })}
-                  className={`w-full text-right p-3 hover:bg-muted transition ${selectedOrg?.id === o.id ? 'bg-primary/10' : ''}`}>
-                  <div className="font-medium">{o.name}</div>
-                  <div className="text-xs text-muted-foreground">{o.slug}</div>
-                </button>
+          <CardHeader className="space-y-3">
+            <CardTitle>أحدث حجوزات المؤسسة</CardTitle>
+            {company.data && <Link className="w-fit text-sm text-primary underline" to={companyProfilePath(company.data.id)} data-no-translate>{company.data.name}</Link>}
+            <Button size="sm" variant="outline" className="w-fit" disabled={stop.isPending} onClick={() => stop.mutate()}>إنهاء الجلسة</Button>
+          </CardHeader>
+          <CardContent>
+            {snapshot.isPending ? <p role="status">جارٍ تحميل البيانات</p> : snapshot.isError ? <p role="alert">تعذّر عرض الحجوزات. راجع حالة جلسة الدعم.</p> : !snapshot.data.length ? (
+              <p className="text-sm text-muted-foreground">لا توجد حجوزات مسجلة.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {snapshot.data.map((booking, index) => (
+                  <li key={`${booking.booking_number}-${index}`} className="flex flex-wrap gap-x-4 gap-y-1 py-3 text-sm">
+                    <bdi className="break-all font-semibold" data-no-translate>{booking.booking_number || '—'}</bdi>
+                    <span>{booking.booking_type}</span><span>{booking.status}</span>
+                    {booking.created_at && <time dateTime={booking.created_at}>{formatDate.format(new Date(booking.created_at))}</time>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle className="text-base">اختر المؤسسة</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Input aria-label="ابحث عن مؤسسة" placeholder="ابحث بالاسم..." value={search} onChange={(event) => setSearch(event.target.value)} />
+              {companies.isError && <p role="alert">تعذّر تحميل الشركات</p>}
+              {companies.data?.map((org) => (
+                <Button key={org.id} type="button" variant={organizationId === org.id ? 'secondary' : 'ghost'} className="w-full justify-start" data-no-translate
+                  disabled={busy} onClick={() => { setPin(''); setCode(''); setParams({ company: org.id }); }}>{org.name}</Button>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> 2. التحقق وبدء الجلسة</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {selectedOrg && <Badge className="bg-primary/10 text-primary border-primary/30">{selectedOrg.name}</Badge>}
-
-            <div>
-              <Label>رمز MFA (6 أرقام)</Label>
-              <div className="flex gap-2">
-                <Input value={mfaCode} onChange={(e) => { setMfaCode(e.target.value.replace(/\D/g, '')); setMfaVerified(false); }} maxLength={6} type="password" />
-                <Button variant="outline" size="sm" onClick={verifyMfa} disabled={mfaCode.length !== 6}>
-                  {mfaVerified ? '✓ تم' : 'تحقق'}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>PIN المؤسسة (6 أرقام)</Label>
-              <Input type="password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} />
-            </div>
-
-            <div>
-              <Label>السبب * (10 أحرف على الأقل)</Label>
-              <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="ex: تصعيد دعم فني - تذكرة #12345" />
-            </div>
-
-            <Button
-              className="w-full"
-              onClick={handleStart}
-              disabled={!selectedOrg || !mfaVerified || pin.length !== 6 || reason.trim().length < 10 || start.isPending || !!active}
-            >
-              {active ? 'يوجد جلسة نشطة' : 'بدء الجلسة'}
-            </Button>
-
-            <div className="text-xs text-muted-foreground border-t pt-3">
-              جميع العمليات ستُسجَّل في سجل التدقيق مع ربطها برقم الجلسة.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">التحقق وبدء الجلسة</CardTitle>
+              {company.data && <bdi className="text-sm text-muted-foreground" data-no-translate>{company.data.name}</bdi>}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {factors.isError && <Button variant="outline" size="sm" onClick={() => factors.refetch()}>إعادة تحميل وسائل التحقق</Button>}
+              {factors.isSuccess && !canVerify && <Button variant="outline" disabled={enroll.isPending} onClick={() => enroll.mutate()}>إعداد تطبيق المصادقة</Button>}
+              {enrollment && (
+                <div className="space-y-2 rounded-lg border p-3 text-sm">
+                  <p>امسح رمز QR بتطبيق المصادقة، أو أدخل المفتاح يدويًا.</p>
+                  <img src={enrollment.qr.startsWith('data:') ? enrollment.qr : `data:image/svg+xml;utf-8,${encodeURIComponent(enrollment.qr)}`} alt="رمز إعداد تطبيق المصادقة" width={160} height={160} />
+                  <Input aria-label="مفتاح تطبيق المصادقة" dir="ltr" type="password" readOnly value={enrollment.secret} />
+                </div>
+              )}
+              <form className="space-y-3" onSubmit={submit}>
+                <div className="space-y-1.5">
+                  <Label htmlFor="support-mfa-code">رمز تطبيق المصادقة</Label>
+                  <Input id="support-mfa-code" inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} disabled={busy || !canVerify} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="support-pin">PIN المؤسسة</Label>
+                  <Input id="support-pin" type="password" inputMode="numeric" dir="ltr" maxLength={6} disabled={busy} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="support-reason">سبب جلسة الدعم</Label>
+                  <Textarea id="support-reason" minLength={10} maxLength={500} disabled={busy} value={reason} onChange={(event) => setReason(event.target.value)} required />
+                </div>
+                <Button type="submit" disabled={!company.data || !canVerify || code.length !== 6 || pin.length !== 6 || reason.trim().length < 10 || busy}>تحقق وابدأ جلسة الدعم</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

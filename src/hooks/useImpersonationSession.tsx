@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 
 export interface ActiveImpersonation {
   session_id: string;
@@ -12,11 +13,13 @@ export interface ActiveImpersonation {
 
 export const useImpersonationSession = () => {
   const qc = useQueryClient();
+  const { user, session } = useOptimizedAuth();
 
   const query = useQuery({
-    queryKey: ['active-impersonation'],
+    queryKey: ['active-impersonation', user?.id, session?.access_token ? session.expires_at : null],
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_active_impersonation');
+      const { data, error } = await supabase.rpc('get_active_impersonation');
       if (error) throw error;
       return (data?.[0] ?? null) as ActiveImpersonation | null;
     },
@@ -27,23 +30,19 @@ export const useImpersonationSession = () => {
   const start = useMutation({
     mutationFn: async (input: {
       target_org_id: string;
-      target_user_id?: string | null;
       org_pin: string;
       reason: string;
-      mfa_verified: boolean;
     }) => {
-      const { data, error } = await (supabase.rpc as any)('start_impersonation', {
+      const { data, error } = await supabase.rpc('start_impersonation', {
         _target_org_id: input.target_org_id,
-        _target_user_id: input.target_user_id ?? null,
         _org_pin: input.org_pin,
         _reason: input.reason,
-        _mfa_verified: input.mfa_verified,
       });
       if (error) throw error;
       return data as string;
     },
     onSuccess: () => {
-      toast.success('تم بدء جلسة الانتحال');
+      toast.success('تم بدء جلسة الدعم');
       qc.invalidateQueries({ queryKey: ['active-impersonation'] });
     },
     onError: (e: any) => toast.error(e.message ?? 'فشل بدء الجلسة'),
@@ -51,11 +50,12 @@ export const useImpersonationSession = () => {
 
   const stop = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.rpc as any)('stop_impersonation');
+      const { error } = await supabase.rpc('stop_impersonation');
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('تم إنهاء جلسة الانتحال');
+      toast.success('تم إنهاء جلسة الدعم');
+      qc.removeQueries({ queryKey: ['support-booking-snapshot'] });
       qc.invalidateQueries({ queryKey: ['active-impersonation'] });
     },
   });
