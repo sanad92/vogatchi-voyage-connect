@@ -145,21 +145,12 @@ export const usePeriodCommissions = () => {
       }
 
       // التعامل مع استجابة الدالة بطريقة آمنة
-      let response: DatabaseFunctionResponse;
-      
-      try {
-        if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-          response = data as unknown as DatabaseFunctionResponse;
-        } else {
-          throw new Error('استجابة غير متوقعة من الخادم');
-        }
-        
-        if (!response.success) {
-          throw new Error(response.message || 'حدث خطأ في حساب العمولة');
-        }
-      } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        throw new Error('حدث خطأ في معالجة الاستجابة من الخادم');
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+        throw new Error('استجابة غير متوقعة من الخادم');
+      }
+      const response = data as unknown as DatabaseFunctionResponse;
+      if (!response.success) {
+        throw new Error(response.message || 'حدث خطأ في حساب العمولة');
       }
 
       console.log('Generated period commission:', response);
