@@ -1,5 +1,9 @@
 # Launch execution
 
+- [x] Audit tenant isolation after business-email enforcement: patch 11 NULL-role authorization bypasses, enforce verified work email in RPCs and pending invitation insert/update, and prohibit membership identity changes; 41 isolated regression assertions passed and deployed definitions verified.
+- [ ] Verify hardened invitation flow in authenticated live UI (blocked: requesting user's email has no matching auth account; needs a signed-in preview session).
+- [ ] Receive the requested deep security scan results (blocked: background scan notification).
+
 - [x] Apply approved SafarERP name, original logo, palette and typography; preserve tenant identities; public home/login/pricing and navigation verified. Authenticated dashboard visual check remains unavailable without a session.
 - [x] Fix queued email read/unread persistence; reproduce old denial and verify staff persistence, unchanged ownership/workflow and tenant isolation in isolated PostgreSQL.
 - [ ] Verify queued email read/unread in the authenticated live UI (blocked: signed out; requesting user's account could not be matched for session restoration).
