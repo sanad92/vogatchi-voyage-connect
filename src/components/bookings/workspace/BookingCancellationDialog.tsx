@@ -73,7 +73,7 @@ export function BookingCancellationDialog({
       setResult(data);
       toast.success('تم اعتماد تسوية إلغاء الحجز');
       const keys = ['booking-cancellation', 'unified-bookings', 'booking-financials', 'booking-workspace',
-        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'supplier-payment-orders-all'];
+        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'supplier-payment-orders-all', 'sup360-bookings'];
       await Promise.all(keys.map(key => qc.invalidateQueries({ queryKey: [key] })));
       onSettled();
     },

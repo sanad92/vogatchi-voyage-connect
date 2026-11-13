@@ -11,7 +11,6 @@ import { Supplier } from '@/types/supplier';
 interface SupplierGridProps {
   suppliers: Supplier[];
   isLoading: boolean;
-  onSupplierSelect: (id: string) => void;
   updateSupplier?: (data: any) => void;
   isUpdatingSupplier?: boolean;
   deleteSupplier?: (id: string) => void;
@@ -21,7 +20,6 @@ interface SupplierGridProps {
 const SupplierGrid = ({
   suppliers,
   isLoading,
-  onSupplierSelect,
   updateSupplier,
   isUpdatingSupplier,
   deleteSupplier,
@@ -137,7 +135,7 @@ const SupplierGrid = ({
   return (
     <>
       {/* Bulk delete header */}
-      <div className="flex gap-2 mb-3 items-center">
+      {deleteSupplier && <div className="flex gap-2 mb-3 items-center">
         <button onClick={selectAll} className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-blue-100">كل الصفوف</button>
         <button onClick={clearAll} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-orange-100">إلغاء الكل</button>
         {selectedIds.length > 0 && (
@@ -150,7 +148,7 @@ const SupplierGrid = ({
           </button>
         )}
         {bulkDeleteLoading && <span className="ml-2 text-sm text-gray-500 animate-pulse">جاري حذف الموردين...</span>}
-      </div>
+      </div>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {suppliers.map((supplier) => {
           const paymentMethods = getPaymentMethods(supplier.payment_method_options);
@@ -159,11 +157,10 @@ const SupplierGrid = ({
           return (
             <Card
               key={supplier.id}
-              className={`hover:shadow-lg transition-shadow cursor-pointer relative group ${selectedIds.includes(supplier.id) ? 'ring-2 ring-blue-400' : ''}`}
-              onClick={() => onSupplierSelect(supplier.id)}
+              className={`hover:shadow-lg transition-shadow relative group ${selectedIds.includes(supplier.id) ? 'ring-2 ring-blue-400' : ''}`}
             >
               {/* CheckBox للتحديد */}
-              <input
+              {deleteSupplier && <input
                 type="checkbox"
                 checked={selectedIds.includes(supplier.id)}
                 onChange={e => {
@@ -172,11 +169,11 @@ const SupplierGrid = ({
                 }}
                 className="absolute left-3 top-3 w-4 h-4 accent-blue-600 z-20"
                 title="تحديد المورد"
-              />
+              />}
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="min-w-0 text-lg">
-                    <Link to={profilePath} onClick={event => event.stopPropagation()}
+                    <Link to={profilePath}
                       className="break-words text-primary underline-offset-4 hover:underline">
                       {supplier.name}
                     </Link>
@@ -223,7 +220,7 @@ const SupplierGrid = ({
                     <Badge variant={supplier.is_active ? "default" : "secondary"}>
                       {supplier.is_active ? "نشط" : "غير نشط"}
                     </Badge>
-                    <Link to={profilePath} onClick={event => event.stopPropagation()}
+                    <Link to={profilePath}
                       className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline">
                       فتح ملف المورد
                       <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -231,11 +228,10 @@ const SupplierGrid = ({
                   </div>
                 </div>
                 {/* Action buttons */}
-                {updateSupplier && deleteSupplier && (
-                  <div className="absolute left-3 top-3 flex gap-2 opacity-80 group-hover:opacity-100 z-10"
-                    onClick={e => e.stopPropagation()}
+                {(updateSupplier || deleteSupplier) && (
+                  <div className={`absolute ${deleteSupplier ? 'left-9' : 'left-3'} top-3 flex gap-2 opacity-80 group-hover:opacity-100 z-10`}
                   >
-                    <button
+                    {updateSupplier && <button
                       title="تعديل"
                       className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200 transition"
                       onClick={() => {
@@ -243,13 +239,13 @@ const SupplierGrid = ({
                         setShowEdit(true);
                       }}>
                       <Edit className="w-4 h-4" />
-                    </button>
-                    <button
+                    </button>}
+                    {deleteSupplier && <button
                       title="حذف"
                       className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200 transition"
                       onClick={() => setShowDelete(supplier.id)}>
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </button>}
                   </div>
                 )}
               </CardContent>

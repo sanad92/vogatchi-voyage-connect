@@ -9,9 +9,10 @@ import AddCurrencyForm from './currency/AddCurrencyForm';
 
 interface SupplierCurrencyManagerProps {
   supplierId: string;
+  canEdit: boolean;
 }
 
-const SupplierCurrencyManager = ({ supplierId }: SupplierCurrencyManagerProps) => {
+const SupplierCurrencyManager = ({ supplierId, canEdit }: SupplierCurrencyManagerProps) => {
   const {
     supplierCurrencies,
     isLoading,
@@ -55,17 +56,17 @@ const SupplierCurrencyManager = ({ supplierId }: SupplierCurrencyManagerProps) =
           <DollarSign className="h-5 w-5" />
           العملات المدعومة
         </CardTitle>
-        <Button 
+        {canEdit && <Button
           onClick={() => setShowAddForm(!showAddForm)}
           size="sm"
         >
           <Plus className="w-4 h-4 ml-2" />
           إضافة عملة
-        </Button>
+        </Button>}
       </CardHeader>
       <CardContent className="space-y-4">
         <AddCurrencyForm
-          isVisible={showAddForm}
+          isVisible={canEdit && showAddForm}
           isLoading={isAddingCurrency}
           onSubmit={handleAddCurrency}
           onCancel={() => setShowAddForm(false)}
@@ -74,8 +75,8 @@ const SupplierCurrencyManager = ({ supplierId }: SupplierCurrencyManagerProps) =
 
         <CurrencyList
           currencies={supplierCurrencies}
-          onSetPrimary={handleSetPrimary}
-          onRemove={removeCurrency}
+          onSetPrimary={canEdit ? handleSetPrimary : undefined}
+          onRemove={canEdit ? removeCurrency : undefined}
         />
       </CardContent>
     </Card>

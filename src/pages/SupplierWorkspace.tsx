@@ -2,15 +2,15 @@ import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { PLAN_FEATURES } from '@/lib/planFeatures';
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
   ArrowRight, RefreshCw, MessageCircle, Mail, Star, Wallet,
-  FileText, Phone, User, Pin, PlusCircle, Building2, TrendingUp, Clock,
+  FileText, Phone, User, Pin, PlusCircle, Building2, Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,18 +23,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useSupplier360 } from '@/hooks/useSupplier360';
 import { useOrgId } from '@/hooks/useOrgId';
 import { DocumentsPanel } from '@/components/documents/DocumentsPanel';
+import SupplierContracts from '@/components/suppliers/SupplierContracts';
+import SupplierCurrencyManager from '@/components/suppliers/SupplierCurrencyManager';
+import SupplierRatings from '@/components/suppliers/SupplierRatings';
+import SupplierPayments from '@/components/suppliers/SupplierPayments';
+import { SupplierAccountSummary } from '@/components/suppliers/SupplierAccountSummary';
 
-const currency = (n?: number, c = 'EGP') =>
-  `${Number(n ?? 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${c}`;
+const currency = (n?: number, c?: string | null) =>
+  `${Number(n ?? 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${c || 'EGP'}`;
 
 const SupplierWorkspace = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const orgId = useOrgId();
   const qc = useQueryClient();
-  const s = useSupplier360(id);
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const { hasFeature } = useSubscription();
+  const canViewFinance = hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
+    && getPermissionScope('financial_view') === 'organization';
+  const canEditSupplier = hasPermission('suppliers_edit');
+  const canManagePayments = hasPermission('payments_process') && getPermissionScope('payments_process') === 'organization';
+  const s = useSupplier360(id, canViewFinance);
+  const [params, setParams] = useSearchParams();
+  const { hash } = useLocation();
+  const tabs = ['overview', 'bookings', 'documents', 'settings', 'timeline', ...(canViewFinance ? ['finance'] : [])];
+  const requestedTab = params.get('tab') ?? '';
+  const activeTab = tabs.includes(requestedTab) ? requestedTab : 'overview';
+
+  useEffect(() => {
+    if (activeTab === 'finance' && hash.startsWith('#supplier-invoice-') && !s.invoiceState.isPending) {
+      const target = document.getElementById(hash.slice(1));
+      target?.scrollIntoView({ block: 'center' });
+      target?.focus({ preventScroll: true });
+    }
+  }, [activeTab, hash, s.invoiceState.isPending, s.supplier]);
 
   const [newNote, setNewNote] = useState('');
   const [contactOpen, setContactOpen] = useState(false);
@@ -78,14 +100,14 @@ const SupplierWorkspace = () => {
   const timeline = useMemo(() => {
     const items: Array<{ ts: string; icon: any; label: string; sub?: string }> = [];
     for (const p of s.payments) items.push({
-      ts: p.created_at, icon: Wallet,
+      ts: p.created_at ?? '', icon: Wallet,
       label: `دفع للمورد ${currency(p.amount, p.currency)}`,
-      sub: p.reference_number || p.notes,
+      sub: p.reference_number || p.notes || undefined,
     });
     for (const po of s.purchaseOrders) items.push({
       ts: po.created_at, icon: FileText,
-      label: `أمر شراء ${po.po_number || po.id.slice(0, 8)} — ${po.status || ''}`,
-      sub: currency(po.total_amount, po.currency),
+      label: `أمر شراء ${po.reference_number} — ${po.status || ''}`,
+      sub: currency(po.amount, po.currency),
     });
     for (const b of s.bookings) items.push({
       ts: b.created_at, icon: Building2,
@@ -108,7 +130,7 @@ const SupplierWorkspace = () => {
     </div>
   );
 
-  const sup: any = s.supplier;
+  const sup = s.supplier;
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4" dir="rtl">
@@ -117,7 +139,7 @@ const SupplierWorkspace = () => {
           <ArrowRight className="h-4 w-4 ml-1" /> الموردون
         </Button>
         <span className="text-muted-foreground">/</span>
-        <span className="text-muted-foreground">Supplier 360</span>
+        <span className="text-muted-foreground">ملف المورد</span>
         <div className="flex-1" />
         <Button variant="ghost" size="icon" onClick={() => s.refetch()} title="تحديث">
           <RefreshCw className="h-4 w-4" />
@@ -133,7 +155,7 @@ const SupplierWorkspace = () => {
           <div className="min-w-0 flex-1">
             <h1 className="text-xl md:text-2xl font-bold truncate">{sup.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
-              <Badge variant="outline">{sup.supplier_type}</Badge>
+              <Badge variant="outline">{sup.type || sup.supplier_type}</Badge>
               {sup.rating && <Badge variant="secondary" className="gap-1"><Star className="h-3 w-3" /> {Number(sup.rating).toFixed(1)}</Badge>}
               {sup.payment_type && <Badge variant="outline">{sup.payment_type === 'prepaid' ? 'دفع مسبق' : 'دفع لاحق'}</Badge>}
               {sup.is_active === false && <Badge variant="destructive">غير نشط</Badge>}
@@ -157,53 +179,43 @@ const SupplierWorkspace = () => {
                 <a href={`mailto:${sup.email}`}><Mail className="h-4 w-4 ml-1" /> بريد</a>
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => navigate(`/supplier-ledger?id=${id}`)}>
-              <Wallet className="h-4 w-4 ml-1" /> السجل المالي
-            </Button>
+            {canViewFinance && (
+              <Button size="sm" variant="outline" asChild>
+                <Link to={`/supplier-ledger?id=${id}`}><Wallet className="h-4 w-4 ml-1" /> كشف حساب المورد</Link>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <KpiCard label="إجمالي المشتريات" value={currency(s.kpi.totalPurchases)} icon={TrendingUp} />
-        <KpiCard label="المدفوع" value={currency(s.kpi.totalPaid)} icon={Wallet} />
-        <KpiCard label="الرصيد المستحق" value={currency(s.kpi.outstandingBalance)} icon={Wallet}
-                 tone={s.kpi.outstandingBalance > 0 ? 'warning' : 'ok'} />
-        <KpiCard label="الحجوزات" value={String(s.kpi.bookingsCount)} icon={Building2} />
-        <KpiCard label="أوامر شراء مفتوحة" value={String(s.kpi.openPOs)} icon={FileText} />
-        <KpiCard label="التقييم" value={s.kpi.avgRating ? s.kpi.avgRating.toFixed(1) : '—'} icon={Star} />
-      </div>
-
-      {id && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
-        && getPermissionScope('financial_view') === 'organization' && (
-          <RefundLedgerSummary kind="supplier" partyId={id} partyName={sup.name} showHistory />
-        )}
-
-      <Tabs defaultValue="overview" dir="rtl">
-        <TabsList className="grid grid-cols-4 md:grid-cols-8 h-auto">
+      <Tabs value={activeTab} onValueChange={tab => setParams(tab === 'overview' ? {} : { tab })} dir="rtl">
+        <TabsList className="flex h-auto w-fit max-w-full flex-wrap justify-start">
           <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
           <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
-          <TabsTrigger value="pos">أوامر الشراء</TabsTrigger>
-          <TabsTrigger value="payments">المدفوعات</TabsTrigger>
-          <TabsTrigger value="invoices">الفواتير</TabsTrigger>
+          {canViewFinance && <TabsTrigger value="finance">الحسابات</TabsTrigger>}
           <TabsTrigger value="documents">المستندات</TabsTrigger>
-          <TabsTrigger value="contacts">الاتصالات</TabsTrigger>
+          <TabsTrigger value="settings">إعدادات المورد</TabsTrigger>
           <TabsTrigger value="timeline">السجل الزمني</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-4">
+          {id && canViewFinance && (
+            <>
+              <SupplierAccountSummary supplierId={id} invoices={s.invoices} state={s.invoiceState} />
+              <RefundLedgerSummary kind="supplier" partyId={id} partyName={sup.name} />
+            </>
+          )}
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-base">ملاحظات داخلية</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex gap-2">
+                {canEditSupplier && <div className="flex gap-2">
                   <Textarea rows={2} value={newNote} onChange={(e) => setNewNote(e.target.value)}
                     placeholder="أضف ملاحظة حول المورد..." />
                   <Button size="sm" onClick={() => addNote.mutate()} disabled={!newNote.trim() || addNote.isPending}>
                     حفظ
                   </Button>
-                </div>
+                </div>}
                 <div className="space-y-2 max-h-72 overflow-auto">
                   {s.notes.length === 0 && <p className="text-xs text-muted-foreground">لا توجد ملاحظات.</p>}
                   {s.notes.map((n: any) => (
@@ -222,9 +234,9 @@ const SupplierWorkspace = () => {
             <Card>
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">جهات الاتصال</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setContactOpen(true)}>
+                {canEditSupplier && <Button size="sm" variant="outline" onClick={() => setContactOpen(true)}>
                   <PlusCircle className="h-4 w-4 ml-1" /> إضافة
-                </Button>
+                </Button>}
               </CardHeader>
               <CardContent className="space-y-2">
                 {s.contacts.length === 0 && <p className="text-xs text-muted-foreground">لا توجد جهات اتصال.</p>}
@@ -252,7 +264,7 @@ const SupplierWorkspace = () => {
             columns={[
               { key: 'booking_reference', label: 'المرجع' },
               { key: 'customer_name', label: 'العميل' },
-              { key: 'workflow_stage', label: 'المرحلة' },
+              { key: 'workflow_stage', label: 'المرحلة', render: r => ['cancelled', 'canceled'].includes(r.status) || r.workflow_stage === 'cancelled' ? 'ملغي' : r.workflow_stage },
               { key: 'total_amount', label: 'الإجمالي', render: (r: any) => currency(r.total_amount, r.currency) },
               { key: 'travel_date', label: 'تاريخ السفر' },
             ]}
@@ -260,56 +272,56 @@ const SupplierWorkspace = () => {
           />
         </TabsContent>
 
-        <TabsContent value="pos" className="mt-4">
-          <ListCard title="أوامر الشراء" rows={s.purchaseOrders}
-            columns={[
-              { key: 'po_number', label: 'رقم' },
-              { key: 'status', label: 'الحالة' },
-              { key: 'total_amount', label: 'الإجمالي', render: (r: any) => currency(r.total_amount, r.currency) },
-              { key: 'due_date', label: 'الاستحقاق' },
-              { key: 'created_at', label: 'أنشئ', render: (r: any) => r.created_at ? format(new Date(r.created_at), 'yyyy-MM-dd') : '' },
-            ]}
-          />
-        </TabsContent>
-
-        <TabsContent value="payments" className="mt-4">
-          <ListCard title="المدفوعات" rows={s.payments}
-            columns={[
-              { key: 'reference_number', label: 'المرجع' },
-              { key: 'payment_date', label: 'التاريخ' },
-              { key: 'amount', label: 'المبلغ', render: (r: any) => currency(r.amount, r.currency) },
-              { key: 'payment_method', label: 'الوسيلة' },
-              { key: 'status', label: 'الحالة' },
-            ]}
-          />
-        </TabsContent>
-
-        <TabsContent value="invoices" className="mt-4">
-          <ListCard title="فواتير الموردين" rows={s.invoices}
-            columns={[
-              { key: 'invoice_number', label: 'رقم' },
-              { key: 'issue_date', label: 'التاريخ' },
-              { key: 'total_amount', label: 'الإجمالي', render: (r: any) => currency(r.total_amount, r.currency) },
-              { key: 'status', label: 'الحالة' },
-            ]}
-          />
-        </TabsContent>
+        {id && canViewFinance && (
+          <TabsContent value="finance" className="mt-4 space-y-4">
+            <ListCard title="فواتير الموردين" rows={s.invoices} state={s.invoiceState}
+              rowAnchor={r => `supplier-invoice-${r.id}`}
+              columns={[
+                { key: 'invoice_number', label: 'رقم', render: r => r.payment_order_id
+                  ? <Link className="text-primary underline" to={`/payment-orders?id=${r.payment_order_id}`}>{r.invoice_number}</Link>
+                  : r.invoice_number },
+                { key: 'invoice_date', label: 'التاريخ' },
+                { key: 'due_date', label: 'الاستحقاق' },
+                { key: 'amount', label: 'الإجمالي', render: r => currency(r.amount, r.currency) },
+                { key: 'amount_paid', label: 'المسدّد', render: r => currency(r.amount_paid, r.currency) },
+                { key: 'status', label: 'الحالة', render: r => ({
+                  unpaid: 'غير مدفوع', partial: 'مدفوع جزئيًا', paid: 'مدفوع', cancelled: 'ملغي',
+                })[r.status] || r.status },
+              ]}
+            />
+            <ListCard title="أوامر دفع الموردين" rows={s.purchaseOrders} state={s.orderState}
+              columns={[
+                { key: 'reference_number', label: 'المرجع', render: r =>
+                  <Link className="text-primary underline" to={`/payment-orders?id=${r.id}`}>{r.reference_number}</Link> },
+                { key: 'status', label: 'الحالة', render: r => r.status === 'cancelled' ? 'ملغي' : r.approval_status === 'rejected' ? 'مرفوض' : r.status },
+                { key: 'amount', label: 'المبلغ', render: r => currency(r.amount, r.currency) },
+                { key: 'due_date', label: 'الاستحقاق' },
+              ]}
+            />
+            <SupplierPayments key={id} supplierId={id} canManage={canManagePayments}
+              payments={s.payments} state={s.paymentState} />
+            <RefundLedgerSummary kind="supplier" partyId={id} partyName={sup.name} showHistory />
+          </TabsContent>
+        )}
 
         <TabsContent value="documents" className="mt-4">
           <DocumentsPanel supplierId={id} title="مستندات المورد" defaultCategory="contract" />
         </TabsContent>
 
-        <TabsContent value="contacts" className="mt-4">
-          <ListCard title="جهات الاتصال" rows={s.contacts}
-            columns={[
-              { key: 'name', label: 'الاسم' },
-              { key: 'role', label: 'الدور' },
-              { key: 'phone', label: 'هاتف' },
-              { key: 'email', label: 'بريد' },
-              { key: 'is_primary', label: 'أساسي', render: (r: any) => r.is_primary ? 'نعم' : '' },
-            ]}
-          />
-        </TabsContent>
+        {id && (
+          <TabsContent value="settings" className="mt-4">
+            <Tabs defaultValue="contracts" dir="rtl">
+              <TabsList>
+                <TabsTrigger value="contracts">العقود</TabsTrigger>
+                <TabsTrigger value="currencies">العملات</TabsTrigger>
+                <TabsTrigger value="ratings">التقييمات</TabsTrigger>
+              </TabsList>
+              <TabsContent value="contracts"><SupplierContracts key={id} supplierId={id} canEdit={canEditSupplier} /></TabsContent>
+              <TabsContent value="currencies"><SupplierCurrencyManager supplierId={id} canEdit={canEditSupplier} /></TabsContent>
+              <TabsContent value="ratings"><SupplierRatings key={id} supplierId={id} canEdit={canEditSupplier} /></TabsContent>
+            </Tabs>
+          </TabsContent>
+        )}
 
         <TabsContent value="timeline" className="mt-4">
           <Card>
@@ -375,30 +387,18 @@ const SupplierWorkspace = () => {
   );
 };
 
-const KpiCard = ({
-  label, value, icon: Icon, tone,
-}: { label: string; value: string; icon: any; tone?: 'ok' | 'warning' }) => (
-  <Card>
-    <CardContent className="p-3">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" /> {label}
-      </div>
-      <p className={
-        'text-lg font-bold mt-1 ' +
-        (tone === 'warning' ? 'text-amber-600' : tone === 'ok' ? 'text-emerald-600' : '')
-      }>{value}</p>
-    </CardContent>
-  </Card>
-);
-
 interface Col { key: string; label: string; render?: (r: any) => any }
 const ListCard = ({
-  title, rows, columns, onRowClick,
-}: { title: string; rows: any[]; columns: Col[]; onRowClick?: (r: any) => void }) => (
+  title, rows, columns, onRowClick, rowAnchor, state,
+}: { title: string; rows: any[]; columns: Col[]; onRowClick?: (r: any) => void; rowAnchor?: (r: any) => string; state?: { isError: boolean; isPending: boolean } }) => (
   <Card>
     <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
     <CardContent className="overflow-x-auto">
-      {rows.length === 0 ? (
+      {state?.isError ? (
+        <p role="alert" className="text-sm text-destructive">تعذر تحميل البيانات.</p>
+      ) : state?.isPending ? (
+        <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
+      ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">لا توجد بيانات.</p>
       ) : (
         <table className="w-full text-sm">
@@ -409,8 +409,8 @@ const ListCard = ({
           </thead>
           <tbody>
             {rows.map((r: any) => (
-              <tr key={r.id}
-                className={'border-b hover:bg-muted/40 ' + (onRowClick ? 'cursor-pointer' : '')}
+              <tr key={r.id} id={rowAnchor?.(r)} tabIndex={rowAnchor ? -1 : undefined}
+                className={'border-b hover:bg-muted/40 target:bg-primary/10 ' + (onRowClick ? 'cursor-pointer' : '')}
                 onClick={() => onRowClick?.(r)}>
                 {columns.map((c) => (
                   <td key={c.key} className="p-2">{c.render ? c.render(r) : (r[c.key] ?? '—')}</td>

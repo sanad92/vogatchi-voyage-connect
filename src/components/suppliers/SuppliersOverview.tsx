@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import SupplierStatsCards from './SupplierStatsCards';
-import SupplierPermissionCheck from './SupplierPermissionCheck';
-import SupplierSearchAndAdd from './SupplierSearchAndAdd';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import SupplierForm from './SupplierForm';
 import SupplierGrid from './SupplierGrid';
 import SupplierAdvancedFilters from './SupplierAdvancedFilters';
@@ -14,12 +15,8 @@ import { SupplierCurrencySetupData } from '../shared/SupplierCurrencySetup';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import PaginationControlsUI from '@/components/ui/pagination-controls';
 
-interface SuppliersOverviewProps {
-  onSupplierSelect: (id: string) => void;
-}
-
-const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const SuppliersOverview = () => {
+  const { hasPermission } = useSupabasePermissions();
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   // الأنواع متوافقة الآن مع الفلاتر (كل شيء optional)
@@ -29,10 +26,7 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
     minRating?: number;
     search?: string;
   }>({
-    type: '',
-    status: '',
-    minRating: undefined,
-    search: '',
+    status: 'active',
   });
   const { 
     suppliers: suppliersList, 
@@ -43,20 +37,13 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
     isUpdatingSupplier,
     deleteSupplier,
     isDeletingSupplier
-  } = useSuppliers();
+  } = useSuppliers(undefined, true);
   const suppliers = suppliersList as Supplier[];
 
-  // فلترة متقدمة:
+  const search = advancedFilters.search?.trim().toLowerCase() || '';
   const filteredSuppliers = suppliers.filter(supplier => {
-    // نص البحث بالاسم أو المسؤول/الإيميل
-    const searchMatch =
-      (advancedFilters.search || searchTerm)
-        ? (
-            supplier.name?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase()) ||
-            supplier.contact_person?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase()) ||
-            supplier.email?.toLowerCase().includes((advancedFilters.search || searchTerm).toLowerCase())
-          )
-        : true;
+    const searchMatch = [supplier.name, supplier.contact_person, supplier.email, supplier.phone]
+      .some(value => value?.toLowerCase().includes(search)) || !search;
     // النوع
     const typeMatch = advancedFilters.type ? supplier.supplier_type === advancedFilters.type : true;
     // الحالة
@@ -115,42 +102,31 @@ const SuppliersOverview = ({ onSupplierSelect }: SuppliersOverviewProps) => {
     }
   };
 
-  const totalSuppliers = suppliers.length;
-  const activeSuppliers = suppliers.filter(s => s.is_active).length;
-  const avgRating = suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / (suppliers.length || 1);
-
   return (
-    <div className="space-y-6">
-      <SupplierStatsCards 
+    <div className="space-y-4">
+      <SupplierStatsCards
         totalSuppliers={suppliers.length}
         activeSuppliers={suppliers.filter(s => s.is_active).length}
         avgRating={suppliers.reduce((acc, s) => acc + (s.rating || 0), 0) / (suppliers.length || 1)}
       />
-      {/* شريط الفلاتر المتقدمة */}
-      <SupplierAdvancedFilters
-        onFilterChange={setAdvancedFilters}
-        currentFilters={advancedFilters}
-      />
-      <SupplierPermissionCheck action="create">
-        <SupplierSearchAndAdd
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onAddClick={() => setShowAddForm(!showAddForm)}
-        />
-        <SupplierForm
-          isVisible={showAddForm}
-          isLoading={isAddingSupplier}
-          onSubmit={handleFormSubmit}
-          onCancel={() => setShowAddForm(false)}
-        />
-      </SupplierPermissionCheck>
+      <div className="flex flex-wrap items-center gap-2">
+        <SupplierAdvancedFilters onFilterChange={setAdvancedFilters} currentFilters={advancedFilters} />
+        {hasPermission('suppliers_create') && (
+          <Button onClick={() => setShowAddForm(open => !open)}>
+            <Plus className="size-4" /> إضافة مورد جديد
+          </Button>
+        )}
+      </div>
+      {hasPermission('suppliers_create') && (
+        <SupplierForm isVisible={showAddForm} isLoading={isAddingSupplier}
+          onSubmit={handleFormSubmit} onCancel={() => setShowAddForm(false)} />
+      )}
       <SupplierGrid
         suppliers={paginatedItems}
         isLoading={isLoading}
-        onSupplierSelect={onSupplierSelect}
-        updateSupplier={updateSupplier}
+        updateSupplier={hasPermission('suppliers_edit') ? updateSupplier : undefined}
         isUpdatingSupplier={isUpdatingSupplier}
-        deleteSupplier={deleteSupplier}
+        deleteSupplier={hasPermission('suppliers_delete') ? deleteSupplier : undefined}
         isDeletingSupplier={isDeletingSupplier}
       />
       <PaginationControlsUI pagination={pagination} />

@@ -10,10 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useOrgId } from '@/hooks/useOrgId';
 
 interface SupplierRatingsProps {
-  supplierId?: string | null;
+  supplierId: string;
+  canEdit: boolean;
 }
 
-const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
+const SupplierRatings = ({ supplierId, canEdit }: SupplierRatingsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,7 +31,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
 
   // استعلام التقييمات
   const { data: ratings = [], isLoading } = useQuery({
-    queryKey: ['supplier-ratings', supplierId],
+    queryKey: ['supplier-ratings', orgId, supplierId],
     queryFn: async () => {
       if (!supplierId) return [];
       
@@ -41,6 +42,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
           suppliers(name)
         `)
         .eq('supplier_id', supplierId)
+        .eq('organization_id', orgId!)
         .order('rating_date', { ascending: false });
       
       if (error) throw error;
@@ -52,6 +54,8 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
   // إضافة تقييم جديد
   const addRatingMutation = useMutation({
     mutationFn: async (rating: typeof newRating) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw authError ?? new Error('يجب تسجيل الدخول أولاً');
       const overallRating = (
         rating.service_quality + 
         rating.delivery_time + 
@@ -66,7 +70,7 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
           organization_id: orgId as string,
           overall_rating: overallRating,
           rating_date: new Date().toISOString(),
-          rated_by: 'current_user' // يمكن تحديث هذا ليكون المستخدم الحالي
+          rated_by: user.id
         }])
         .select()
         .single();
@@ -142,16 +146,6 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
     });
   };
 
-  if (!supplierId) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">يرجى اختيار مورد لعرض التقييمات</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -196,14 +190,14 @@ const SupplierRatings = ({ supplierId }: SupplierRatingsProps) => {
       {/* زر إضافة تقييم جديد */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">تقييمات المورد</h3>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
+        {canEdit && <Button onClick={() => setShowAddForm(!showAddForm)}>
           <Plus className="w-4 h-4 ml-2" />
           إضافة تقييم جديد
-        </Button>
+        </Button>}
       </div>
 
       {/* نموذج إضافة تقييم */}
-      {showAddForm && (
+      {canEdit && showAddForm && (
         <Card>
           <CardHeader>
             <CardTitle>إضافة تقييم جديد</CardTitle>

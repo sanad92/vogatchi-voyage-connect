@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { allRows } from '@/lib/pagedRows';
 
-export function useSupplier360(supplierId?: string) {
+export function useSupplier360(supplierId: string | undefined, canViewFinance: boolean) {
   const orgId = useOrgId();
   const enabled = !!supplierId && !!orgId;
 
   const supplierQ = useQuery({
-    queryKey: ['sup360-supplier', supplierId],
+    queryKey: ['sup360-supplier', supplierId, orgId],
     enabled,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('suppliers').select('*').eq('id', supplierId).maybeSingle();
+      const { data, error } = await supabase
+        .from('suppliers').select('*').eq('organization_id', orgId!).eq('id', supplierId!).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -21,11 +22,11 @@ export function useSupplier360(supplierId?: string) {
     queryKey: ['sup360-bookings', supplierId, orgId],
     enabled,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('bookings')
-        .select('id, booking_reference:booking_number, customer_name, workflow_stage, total_amount:selling_price, currency, created_at, travel_date:start_date')
-        .eq('organization_id', orgId)
-        .eq('supplier_id', supplierId)
+        .select('id, booking_reference:booking_number, customer_name, workflow_stage, status, total_amount:selling_price, currency, created_at, travel_date:start_date')
+        .eq('organization_id', orgId!)
+        .eq('supplier_id', supplierId!)
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -35,129 +36,85 @@ export function useSupplier360(supplierId?: string) {
 
   const posQ = useQuery({
     queryKey: ['sup360-pos', supplierId, orgId],
-    enabled,
+    enabled: enabled && canViewFinance,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from('supplier_payment_orders')
-        .select('*')
-        .eq('organization_id', orgId)
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      return data ?? [];
+      const { data, error } = await supabase.from('supplier_payment_orders')
+        .select('id,reference_number,status,approval_status,amount,currency,due_date,created_at')
+        .eq('organization_id', orgId!).eq('supplier_id', supplierId!)
+        .order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      return data;
     },
   });
 
   const paymentsQ = useQuery({
     queryKey: ['sup360-payments', supplierId, orgId],
-    enabled,
+    enabled: enabled && canViewFinance,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from('supplier_payments')
-        .select('*')
-        .eq('organization_id', orgId)
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      return data ?? [];
+      const { data, error } = await supabase.from('supplier_payments')
+        .select('id,reference_number,payment_reference,status,amount,currency,paid_date,payment_date,payment_method,created_at,notes')
+        .eq('organization_id', orgId!).eq('supplier_id', supplierId!)
+        .order('created_at', { ascending: false }).limit(200);
+      if (error) throw error;
+      return data;
     },
   });
 
   const invoicesQ = useQuery({
     queryKey: ['sup360-invoices', supplierId, orgId],
-    enabled,
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from('supplier_invoices')
-        .select('*')
-        .eq('organization_id', orgId)
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      return data ?? [];
-    },
+    enabled: enabled && canViewFinance,
+    queryFn: ({ signal }) => allRows((from, to) => supabase.from('supplier_invoices')
+      .select('id,invoice_number,invoice_date,due_date,amount,amount_paid,status,currency,payment_order_id,booking_id')
+      .eq('organization_id', orgId!).eq('supplier_id', supplierId!)
+      .order('invoice_date', { ascending: false }).order('id').range(from, to).abortSignal(signal)),
   });
 
   const contactsQ = useQuery({
-    queryKey: ['sup360-contacts', supplierId],
+    queryKey: ['sup360-contacts', supplierId, orgId],
     enabled,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('supplier_contacts')
         .select('*')
-        .eq('supplier_id', supplierId)
+        .eq('organization_id', orgId!)
+        .eq('supplier_id', supplierId!)
         .order('is_primary', { ascending: false });
       return data ?? [];
     },
   });
 
   const notesQ = useQuery({
-    queryKey: ['sup360-notes', supplierId],
+    queryKey: ['sup360-notes', supplierId, orgId],
     enabled,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('supplier_notes')
         .select('*')
-        .eq('supplier_id', supplierId)
+        .eq('organization_id', orgId!)
+        .eq('supplier_id', supplierId!)
         .order('pinned', { ascending: false })
         .order('created_at', { ascending: false });
       return data ?? [];
     },
   });
 
-  const ratingsQ = useQuery({
-    queryKey: ['sup360-ratings', supplierId, orgId],
-    enabled,
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from('supplier_ratings')
-        .select('*')
-        .eq('organization_id', orgId)
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      return data ?? [];
-    },
-  });
-
-  // KPIs
-  const kpi = (() => {
-    const bookings = bookingsQ.data ?? [];
-    const payments = paymentsQ.data ?? [];
-    const pos = posQ.data ?? [];
-    const invoices = invoicesQ.data ?? [];
-    const ratings = ratingsQ.data ?? [];
-
-    const totalPurchases = invoices.reduce((s: number, i: any) => s + Number(i.total_amount ?? 0), 0);
-    const totalPaid = payments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
-    const openPOs = pos.filter((p: any) => (p.status ?? '') !== 'paid' && (p.status ?? '') !== 'cancelled').length;
-    const outstandingBalance = totalPurchases - totalPaid;
-    const avgRating = ratings.length
-      ? ratings.reduce((s: number, r: any) => s + Number(r.rating ?? 0), 0) / ratings.length
-      : Number(supplierQ.data?.rating ?? 0);
-
-    return {
-      totalPurchases, totalPaid, outstandingBalance,
-      bookingsCount: bookings.length, openPOs,
-      avgRating, invoicesCount: invoices.length,
-    };
-  })();
-
   return {
     supplier: supplierQ.data,
     isLoading: supplierQ.isLoading,
     bookings: bookingsQ.data ?? [],
-    purchaseOrders: posQ.data ?? [],
-    payments: paymentsQ.data ?? [],
-    invoices: invoicesQ.data ?? [],
+    purchaseOrders: canViewFinance ? posQ.data ?? [] : [],
+    payments: canViewFinance ? paymentsQ.data ?? [] : [],
+    invoices: canViewFinance ? invoicesQ.data ?? [] : [],
+    invoiceState: { isPending: invoicesQ.isPending, isError: invoicesQ.isError },
+    orderState: { isPending: posQ.isPending, isError: posQ.isError },
+    paymentState: { isPending: paymentsQ.isPending, isError: paymentsQ.isError },
     contacts: contactsQ.data ?? [],
     notes: notesQ.data ?? [],
-    ratings: ratingsQ.data ?? [],
-    kpi,
     refetch: () => {
-      supplierQ.refetch(); bookingsQ.refetch(); posQ.refetch();
-      paymentsQ.refetch(); invoicesQ.refetch(); contactsQ.refetch();
-      notesQ.refetch(); ratingsQ.refetch();
+      supplierQ.refetch(); bookingsQ.refetch(); contactsQ.refetch(); notesQ.refetch();
+      if (canViewFinance) {
+        posQ.refetch(); paymentsQ.refetch(); invoicesQ.refetch();
+      }
     },
   };
 }

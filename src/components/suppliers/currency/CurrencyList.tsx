@@ -14,8 +14,8 @@ interface SupplierCurrency {
 
 interface CurrencyListProps {
   currencies: SupplierCurrency[];
-  onSetPrimary: (currencyId: string) => void;
-  onRemove: (currencyId: string) => void;
+  onSetPrimary?: (currencyId: string) => void;
+  onRemove?: (currencyId: string) => void;
 }
 
 const CurrencyList = ({ currencies, onSetPrimary, onRemove }: CurrencyListProps) => {
@@ -50,7 +50,7 @@ const CurrencyList = ({ currencies, onSetPrimary, onRemove }: CurrencyListProps)
             )}
           </div>
           <div className="flex items-center gap-2">
-            {!currency.is_primary && (
+            {!currency.is_primary && onSetPrimary && (
               <Button
                 size="sm"
                 variant="outline"
@@ -59,13 +59,13 @@ const CurrencyList = ({ currencies, onSetPrimary, onRemove }: CurrencyListProps)
                 جعل أساسية
               </Button>
             )}
-            <Button
+            {onRemove && <Button
               size="sm"
               variant="destructive"
               onClick={() => onRemove(currency.id)}
             >
               <Trash2 className="h-4 w-4" />
-            </Button>
+            </Button>}
           </div>
         </div>
       ))}
