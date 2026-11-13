@@ -13,6 +13,7 @@ import QuoteBookingsPanel from '@/components/quotes/QuoteBookingsPanel';
 import QuoteFollowupsPanel from '@/components/quotes/QuoteFollowupsPanel';
 import QuoteWhatsAppFollowupButton from '@/components/quotes/QuoteWhatsAppFollowupButton';
 import QuoteReviewDialog from '@/components/quotes/QuoteReviewDialog';
+import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -201,6 +202,10 @@ export default function QuoteDetails() {
           </div>
         </CardContent>
       </Card>
+
+      {hasPermission('financial_view') && (
+        <QuoteVersionHistory quoteId={quote.id} canCapture={canEdit} />
+      )}
 
       {/* Financial Summary */}
       <Card>
