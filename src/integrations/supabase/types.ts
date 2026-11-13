@@ -5361,6 +5361,7 @@ export type Database = {
       }
       event_deliveries: {
         Row: {
+          failure_code: string | null
           attempts: number
           completed_at: string | null
           event_id: string
@@ -5374,6 +5375,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          failure_code?: string | null
           attempts?: number
           completed_at?: string | null
           event_id: string
@@ -5387,6 +5389,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          failure_code?: string | null
           attempts?: number
           completed_at?: string | null
           event_id?: string

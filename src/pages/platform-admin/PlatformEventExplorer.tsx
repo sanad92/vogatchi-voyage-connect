@@ -8,6 +8,8 @@ import {
   useDomainEvent,
   useDeliveriesForEvent,
   useRetryDelivery,
+  isMissingNotificationOrganization,
+  notificationOrganizationMissingLabel,
   useReplayEvent,
   type EventDelivery,
 } from '@/hooks/useEventBus';
@@ -129,7 +131,7 @@ const PlatformEventExplorer = () => {
                   <TableCell>{d.attempts}</TableCell>
                   <TableCell className="text-xs">{d.processing_ms != null ? `${d.processing_ms}ms` : '—'}</TableCell>
                   <TableCell className="max-w-[280px] truncate text-xs text-muted-foreground" title={d.last_error || ''}>
-                    {d.last_error || '—'}
+                    {isMissingNotificationOrganization(d) ? notificationOrganizationMissingLabel : d.last_error || '—'}
                   </TableCell>
                   <TableCell className="text-xs">{new Date(d.updated_at).toLocaleString()}</TableCell>
                   <TableCell className="text-right">

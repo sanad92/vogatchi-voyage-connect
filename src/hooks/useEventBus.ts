@@ -23,11 +23,25 @@ export interface EventDelivery {
   status: 'pending' | 'succeeded' | 'failed' | 'dead';
   attempts: number;
   last_error: string | null;
+  failure_code: string | null;
   next_retry_at: string;
   updated_at: string;
   started_at?: string | null;
   completed_at?: string | null;
   processing_ms?: number | null;
+}
+
+const missingNotificationOrganization = 'notification_organization_missing';
+export const notificationOrganizationMissingLabel = 'المؤسسة المرتبطة بالإشعار غير موجودة.';
+
+export function isMissingNotificationOrganization(delivery: Pick<EventDelivery, 'failure_code'>) {
+  return delivery.failure_code === missingNotificationOrganization;
+}
+
+function retryErrorMessage(error: { message?: string }) {
+  return error.message === missingNotificationOrganization
+    ? notificationOrganizationMissingLabel
+    : error.message || 'خطأ';
 }
 
 export interface EventBusStats {
@@ -198,7 +212,7 @@ export function useRetryDelivery() {
       qc.invalidateQueries({ queryKey: ['event-deliveries-for-event'] });
       qc.invalidateQueries({ queryKey: ['event-bus-stats'] });
     },
-    onError: (e: any) => toast.error('فشل: ' + (e?.message || 'خطأ')),
+    onError: (error: { message?: string }) => toast.error(retryErrorMessage(error)),
   });
 }
 
@@ -217,6 +231,6 @@ export function useReplayEvent() {
       qc.invalidateQueries({ queryKey: ['event-deliveries-for-event'] });
       qc.invalidateQueries({ queryKey: ['event-bus-stats'] });
     },
-    onError: (e: any) => toast.error('فشل الإعادة: ' + (e?.message || 'خطأ')),
+    onError: (error: { message?: string }) => toast.error(retryErrorMessage(error)),
   });
 }

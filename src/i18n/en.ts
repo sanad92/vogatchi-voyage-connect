@@ -697,4 +697,5 @@ export const EN_DICTIONARY: Record<string, string> = {
   "أحدث أخطاء التطبيق": "Latest application errors",
   "أحدث طلبات Edge Functions الفاشلة": "Latest failed Edge Function requests",
   "تعذّر الاتصال": "Connection failed",
+  'المؤسسة المرتبطة بالإشعار غير موجودة.': 'The organization linked to this notification no longer exists.',
 };

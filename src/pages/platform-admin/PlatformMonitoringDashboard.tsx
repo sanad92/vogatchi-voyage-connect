@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEventBusStats, useEventDeliveries } from '@/hooks/useEventBus';
+import { isMissingNotificationOrganization, notificationOrganizationMissingLabel, useEventBusStats, useEventDeliveries } from '@/hooks/useEventBus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -107,6 +107,7 @@ export default function PlatformMonitoringDashboard() {
                 <li className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0" key={delivery.id}>
                   <div className="min-w-0">
                     <bdi className="block break-all font-medium" data-no-translate>{delivery.handler_key}</bdi>
+                    {isMissingNotificationOrganization(delivery) && <p className="text-sm text-muted-foreground">{notificationOrganizationMissingLabel}</p>}
                     <p className="text-sm text-muted-foreground">
                       <time dateTime={delivery.updated_at}>{dateFormat.format(new Date(delivery.updated_at))}</time>
                     </p>
