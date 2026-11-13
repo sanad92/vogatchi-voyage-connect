@@ -12,11 +12,19 @@ type RpcResponse<T> = {
   error: RpcError | null;
 };
 
+type RpcQuery<T> = PromiseLike<RpcResponse<T>> & {
+  gt(column: string, value: unknown): RpcQuery<T>;
+  gte(column: string, value: unknown): RpcQuery<T>;
+  lt(column: string, value: unknown): RpcQuery<T>;
+  order(column: string, options?: { ascending?: boolean }): RpcQuery<T>;
+  limit(count: number): RpcQuery<T>;
+};
+
 type UntypedRpcClient = {
   rpc: <T>(
     functionName: string,
     args?: Record<string, unknown>,
-  ) => PromiseLike<RpcResponse<T>>;
+  ) => RpcQuery<T>;
 };
 
 // Keeps generated Supabase types untouched while newly deployed RPCs await
@@ -24,6 +32,8 @@ type UntypedRpcClient = {
 export const callUntypedRpc = async <T>(
   functionName: string,
   args?: Record<string, unknown>,
-): Promise<RpcResponse<T>> => (
-  (supabase as unknown as UntypedRpcClient).rpc<T>(functionName, args)
-);
+  configure?: (query: RpcQuery<T>) => RpcQuery<T>,
+): Promise<RpcResponse<T>> => {
+  const query = (supabase as unknown as UntypedRpcClient).rpc<T>(functionName, args);
+  return configure ? configure(query) : query;
+};

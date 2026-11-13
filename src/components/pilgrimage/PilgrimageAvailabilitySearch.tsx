@@ -30,6 +30,7 @@ type Availability = {
 
 const labels = { umrah: 'عمرة', hajj: 'حج' };
 const initialFilters = { type: 'all', from: '', to: '', party: '1', room: 'quad' };
+const alternativeLimit = 5;
 
 export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuote }: {
   orgId: string;
@@ -50,22 +51,64 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
   const validFilters = Number.isInteger(Number(filters.party)) && Number(filters.party) >= 1
     && Number(filters.party) <= 10000 && (!filters.from || !filters.to || filters.from <= filters.to);
   const searchKey = ['pilgrimage-availability', orgId, submitted] as const;
+  const searchArgs = {
+    _organization_id: orgId,
+    _program_type: submitted.type === 'all' ? null : submitted.type,
+    _party_size: partySize,
+    _room_type: submitted.room,
+  };
 
   const results = useQuery({
     queryKey: searchKey,
     queryFn: async () => {
       const { data, error } = await callUntypedRpc<Availability[]>('search_pilgrimage_availability', {
-        _organization_id: orgId,
-        _program_type: submitted.type === 'all' ? null : submitted.type,
+        ...searchArgs,
         _departure_from: submitted.from || null,
         _departure_to: submitted.to || null,
-        _party_size: partySize,
-        _room_type: submitted.room,
       });
       if (error) throw error;
       return data ?? [];
     },
   });
+  const noMatches = results.isSuccess && results.data.length === 0;
+  const suggestDates = noMatches && Boolean(submitted.from || submitted.to);
+  const alternatives = useQuery({
+    queryKey: [...searchKey, 'alternatives'],
+    enabled: suggestDates,
+    queryFn: async () => {
+      const { from, to } = submitted;
+      const searchOutside = async (boundary: string, before: boolean) => {
+        if (!boundary) return [];
+
+        const { data, error } = await callUntypedRpc<Availability[]>('search_pilgrimage_availability', {
+          ...searchArgs,
+          _departure_from: before ? null : boundary,
+          _departure_to: before ? boundary : null,
+        }, query => {
+          // Only suggest programs with enough known seats.
+          const outside = before ? query.lt('departure_date', boundary) : query.gt('departure_date', boundary);
+          return outside.gte('available_seats', partySize)
+            .order('departure_date', { ascending: !before })
+            .order('program_name')
+            .order('program_id')
+            .limit(alternativeLimit);
+        });
+        if (error) throw error;
+        return (data ?? []).map(row => ({
+          row,
+          distance: Math.abs(Date.parse(row.departure_date) - Date.parse(boundary)),
+        }));
+      };
+      const [earlier, later] = await Promise.all([searchOutside(from, true), searchOutside(to, false)]);
+      return [...earlier, ...later]
+        .sort((a, b) => a.distance - b.distance || a.row.departure_date.localeCompare(b.row.departure_date))
+        .slice(0, alternativeLimit)
+        .map(({ row }) => row);
+    },
+  });
+  const visibleResults = suggestDates ? alternatives : results;
+  const refreshSearch = () => qc.invalidateQueries({ queryKey: searchKey });
+
   const customerQuery = useQuery({
     queryKey: ['pilgrimage-availability-customers', orgId, customerTerm],
     enabled: !!selection && canCreate,
@@ -99,7 +142,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
       const refreshRequired = /price_changed|insufficient_unallocated|program_unavailable/.test(error.message ?? '');
       if (refreshRequired) {
         setSelection(null);
-        results.refetch();
+        refreshSearch();
       }
       toast({ title: 'تعذر إنشاء عرض السعر', variant: 'destructive', description: refreshRequired
         ? 'السعر أو التوافر اتغير. راجع النتائج المحدثة.'
@@ -115,7 +158,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
       <form className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-6" onSubmit={event => {
         event.preventDefault();
         if (!validFilters) return;
-        if (JSON.stringify(filters) === JSON.stringify(submitted)) results.refetch();
+        if (JSON.stringify(filters) === JSON.stringify(submitted)) refreshSearch();
         else setSubmitted(filters);
       }}>
         <div className="space-y-1"><Label htmlFor="availability-type">نوع البرنامج</Label>
@@ -144,7 +187,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
             <SelectContent>{Object.entries(ROOM).map(([id, label]) => <SelectItem key={id} value={id}>{label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <Button type="submit" disabled={!validFilters || results.isFetching}><Search className="h-4 w-4 me-1" />بحث</Button>
+        <Button type="submit" disabled={!validFilters || results.isFetching || (suggestDates && alternatives.isFetching)}><Search className="h-4 w-4 me-1" />بحث</Button>
       </form>
     </Card>
 
@@ -154,9 +197,17 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
       <p>تعذر تحميل التوافر. راجع الصلاحيات أو حاول مرة أخرى.</p>
       <Button variant="outline" onClick={() => results.refetch()}>إعادة المحاولة</Button>
     </Card>}
-    {results.isSuccess && results.data.length === 0 && <Card className="p-6 text-center">مفيش برامج مطابقة للفترة والعدد وفئة الغرفة.</Card>}
+    {noMatches && <Card className="p-6 text-center">مفيش برامج مطابقة للفترة والعدد وفئة الغرفة.</Card>}
+    {suggestDates && alternatives.isLoading && <p role="status">جاري البحث عن مواعيد بديلة…</p>}
+    {suggestDates && alternatives.isError && <Card className="flex items-center justify-between gap-3 p-4" role="alert">
+      <p>تعذر تحميل المواعيد البديلة.</p>
+      <Button variant="outline" onClick={() => alternatives.refetch()}>إعادة المحاولة</Button>
+    </Card>}
+    {suggestDates && alternatives.isSuccess && (alternatives.data.length > 0
+      ? <h2 className="text-lg font-semibold">أقرب مواعيد متاحة</h2>
+      : <p className="text-sm text-muted-foreground">مفيش مواعيد بديلة فيها مقاعد كفاية لنفس الطلب.</p>)}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {(results.data ?? []).map(row => <Card key={row.program_id} className="space-y-4 p-4">
+      {(visibleResults.data ?? []).map(row => <Card key={row.program_id} className="space-y-4 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div><h2 className="font-semibold">{row.program_name}</h2>
             <p className="text-sm text-muted-foreground">{labels[row.program_type]} · <span dir="ltr">{row.departure_date}</span>{row.return_date && <> إلى <span dir="ltr">{row.return_date}</span></>}</p>
@@ -169,7 +220,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenQuot
             <p className="font-semibold">{money(row.unit_price, row.currency)}</p>
             <p className="text-sm text-muted-foreground">الإجمالي لـ {partySize} · {money(row.unit_price * partySize, row.currency)}</p>
           </div>
-          {canCreate && <Button disabled={results.isFetching || results.isError} onClick={() => {
+          {canCreate && <Button disabled={results.isFetching || visibleResults.isFetching || visibleResults.isError} onClick={() => {
             setCustomer(''); setCustomerTerm(''); setRequestId(crypto.randomUUID()); setSelection(row);
           }}>إنشاء مسودة عرض</Button>}
         </div>
