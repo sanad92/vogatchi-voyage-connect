@@ -19,7 +19,7 @@ export default function SupplierLedger() {
   usePageTitle('كشف حساب المورد');
   const orgId = useOrgId();
   const [params, setParams] = useSearchParams();
-  const supplierId = params.get('id') || '';
+  const supplierId = params.get('id') || params.get('supplier_id') || '';
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['ledger-suppliers', orgId],

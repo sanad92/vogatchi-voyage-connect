@@ -1,3 +1,6 @@
+import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 import React, { useState, useEffect } from "react";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { useParams, useNavigate } from "react-router-dom";
@@ -48,7 +51,8 @@ const CustomerDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const { customerData, isLoading, refetch, error } = useCustomerData(customerId || '');
-  const { canEditCustomers } = useSupabasePermissions();
+  const { canEditCustomers, hasPermission, getPermissionScope } = useSupabasePermissions();
+  const { hasFeature } = useSubscription();
 
   useEffect(() => {
     if (customerId) {
@@ -211,6 +215,11 @@ const CustomerDetails = () => {
           </CardContent>
         </Card>
       </div>
+
+      {customerId && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
+        && getPermissionScope('financial_view') === 'organization' && (
+          <RefundLedgerSummary kind="customer" partyId={customerId} showHistory />
+        )}
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

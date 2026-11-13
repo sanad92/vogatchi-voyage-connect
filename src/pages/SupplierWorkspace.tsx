@@ -1,3 +1,7 @@
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { RefundLedgerSummary } from '@/components/finance/RefundLedgerSummary';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +33,8 @@ const SupplierWorkspace = () => {
   const orgId = useOrgId();
   const qc = useQueryClient();
   const s = useSupplier360(id);
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const { hasFeature } = useSubscription();
 
   const [newNote, setNewNote] = useState('');
   const [contactOpen, setContactOpen] = useState(false);
@@ -151,7 +157,7 @@ const SupplierWorkspace = () => {
                 <a href={`mailto:${sup.email}`}><Mail className="h-4 w-4 ml-1" /> بريد</a>
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => navigate(`/supplier-ledger?supplier_id=${id}`)}>
+            <Button size="sm" variant="outline" onClick={() => navigate(`/supplier-ledger?id=${id}`)}>
               <Wallet className="h-4 w-4 ml-1" /> السجل المالي
             </Button>
           </div>
@@ -168,6 +174,11 @@ const SupplierWorkspace = () => {
         <KpiCard label="أوامر شراء مفتوحة" value={String(s.kpi.openPOs)} icon={FileText} />
         <KpiCard label="التقييم" value={s.kpi.avgRating ? s.kpi.avgRating.toFixed(1) : '—'} icon={Star} />
       </div>
+
+      {id && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
+        && getPermissionScope('financial_view') === 'organization' && (
+          <RefundLedgerSummary kind="supplier" partyId={id} showHistory />
+        )}
 
       <Tabs defaultValue="overview" dir="rtl">
         <TabsList className="grid grid-cols-4 md:grid-cols-8 h-auto">
