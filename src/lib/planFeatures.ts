@@ -106,6 +106,7 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
       '/supplier-aging',
       '/executive-finance',
       '/treasury',
+      '/branch-pos',
       '/cash-flow',
       '/finance-approvals',
       '/refund-balances',

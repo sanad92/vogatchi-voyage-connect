@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCostCenters } from '@/hooks/useCostCenters';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -11,6 +13,7 @@ import { useBranches, useBranchMutations, Branch } from '@/hooks/useBranchesDepa
 
 export default function BranchesPage() {
   const { data = [], isLoading, error, refetch } = useBranches();
+  const { data: costCenters = [] } = useCostCenters();
   const { save, remove } = useBranchMutations();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Branch>>({});
@@ -63,6 +66,17 @@ export default function BranchesPage() {
             <div><Label>الرمز</Label><Input value={editing.code ?? ''} onChange={(e) => setEditing({ ...editing, code: e.target.value })} /></div>
             <div><Label>الهاتف</Label><Input value={editing.phone ?? ''} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
             <div><Label>العنوان</Label><Input value={editing.address ?? ''} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></div>
+            <div><Label>مركز تكلفة الفرع</Label>
+              <Select value={editing.pos_cost_center_id ?? 'none'} onValueChange={value => setEditing({ ...editing, pos_cost_center_id: value === 'none' ? null : value })}>
+                <SelectTrigger aria-label="مركز تكلفة الفرع"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون مركز تكلفة</SelectItem>
+                  {costCenters.filter(center => center.is_active || center.id === editing.pos_cost_center_id).map(center => (
+                    <SelectItem key={center.id} value={center.id}>{center.name_ar || center.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center gap-2"><Switch checked={!!editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /><Label>نشط</Label></div>
           </div>
           <DialogFooter>

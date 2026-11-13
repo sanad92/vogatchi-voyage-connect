@@ -249,6 +249,7 @@ export const ERP_MODULES: ErpModule[] = [
         title: 'الخزينة والبنوك',
         description: 'حركة النقد والبنوك والتدفقات والتسويات.',
         screens: [
+          screen({ title: 'نقطة البيع', href: '/branch-pos', icon: Receipt, description: 'تحصيل الفواتير وورديات الفروع.', requiredPermission: 'payments_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الخزينة', href: '/treasury', icon: Wallet, description: 'البنوك والنقد والبطاقات والمحافظ وبوابات الدفع.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الحسابات البنكية', href: '/bank-accounts', icon: CreditCard, description: 'الحسابات وحركات القبض والصرف.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'التدفقات النقدية', href: '/cash-flow', icon: TrendingUp, description: 'الوارد والصادر وصافي التدفق حسب العملة.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
@@ -451,7 +452,7 @@ const SIDEBAR_LAYOUT: { label: string; icon: ElementType; hrefs: string[] }[] = 
   { label: 'الرئيسية', icon: LayoutDashboard, hrefs: ['/dashboard', '/pilgrimage', '/bookings', '/travel-calendar', '/operations/queue', '/operations', '/document-center'] },
   { label: 'المبيعات والعملاء', icon: Users, hrefs: ['/sop/pipeline', '/quotes', '/customers', '/sop/pricing'] },
   { label: 'قنوات التواصل', icon: MessageSquare, hrefs: ['/whatsapp-inbox', '/email-inbox', '/marketing/journeys'] },
-  { label: 'المالية والمحاسبة', icon: Wallet, hrefs: ['/invoices', '/payment-orders', '/refund-balances', '/treasury', '/expense-management', '/accounting-reports', '/executive-finance'] },
+  { label: 'المالية والمحاسبة', icon: Wallet, hrefs: ['/invoices', '/payment-orders', '/refund-balances', '/branch-pos', '/treasury', '/expense-management', '/accounting-reports', '/executive-finance'] },
   { label: 'الموردون والتعاقدات', icon: Building2, hrefs: ['/suppliers', '/supplier-rates', '/supplier-allotments'] },
   { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/employee-records', '/employee-commissions', '/audit-log', '/automation', '/ai-assistant'] },
   { label: 'الإعدادات والدعم', icon: Settings, hrefs: ['/organization', '/team', '/admin-settings', '/whatsapp-admin', '/support', '/subscription'] },

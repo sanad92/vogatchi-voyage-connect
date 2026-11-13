@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "test:core": "node scripts/verify-saas-core.mjs",
     "test:crm": "node scripts/verify-crm-core.mjs",
+    "test:branch-pos": "node scripts/verify-branch-pos.mjs",
     "test:finance": "node scripts/verify-financial-formulas.mjs",
     "test:bank-baseline": "node scripts/verify-bank-baseline-ui.mjs",
     "test:bank-reconciliation": "node scripts/verify-bank-reconciliation-permissions.mjs",

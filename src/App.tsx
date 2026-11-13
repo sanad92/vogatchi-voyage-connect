@@ -176,6 +176,7 @@ const GeneralLedger = lazy(() => import("@/pages/GeneralLedger"));
 const BankReconciliation = lazy(() => import("@/pages/BankReconciliation"));
 const TravelKPIs = lazy(() => import("@/pages/TravelKPIs"));
 const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
+const BranchPOS = lazy(() => import("@/pages/finance/BranchPOS"));
 const TreasuryManagement = lazy(() => import("@/pages/finance/TreasuryManagement"));
 const CashFlowDashboard = lazy(() => import("@/pages/finance/CashFlowDashboard"));
 const RefundBalances = lazy(() => import("@/pages/finance/RefundBalances"));
@@ -421,6 +422,7 @@ function App() {
                               <Route path="/customer-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><CustomerLedger /></PermissionRouteGuard>} />
                               <Route path="/supplier-ledger" element={<PermissionRouteGuard requiredPermission="financial_view"><SupplierLedger /></PermissionRouteGuard>} />
                              <Route path="/executive-finance" element={<PermissionRouteGuard requiredPermission="financial_view"><ExecutiveFinance /></PermissionRouteGuard>} />
+                             <Route path="/branch-pos" element={<PermissionRouteGuard requiredPermission="payments_view"><BranchPOS /></PermissionRouteGuard>} />
                              <Route path="/treasury" element={<PermissionRouteGuard requiredPermission="financial_view"><TreasuryManagement /></PermissionRouteGuard>} />
                              <Route path="/cash-flow" element={<PermissionRouteGuard requiredPermission="financial_view"><CashFlowDashboard /></PermissionRouteGuard>} />
                              <Route path="/finance-approvals" element={<PermissionRouteGuard requiredPermission="financial_view"><FinanceApprovals /></PermissionRouteGuard>} />

@@ -9,6 +9,7 @@ export interface OrgMember {
   id: string;
   user_id: string;
   role: string;
+  branch_id: string | null;
   is_active: boolean;
   joined_at: string;
   profile: {
@@ -31,7 +32,7 @@ export const useOrgMembers = () => {
 
       const { data: memberships, error: memError } = await supabase
         .from('organization_members')
-        .select('id, user_id, role, is_active, joined_at')
+        .select('id, user_id, role, branch_id, is_active, joined_at')
         .eq('organization_id', orgId)
         .eq('is_active', true)
         .order('joined_at', { ascending: true });

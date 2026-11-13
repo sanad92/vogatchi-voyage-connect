@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 
 export interface Branch {
+  pos_cost_center_id: string | null;
   id: string;
   organization_id: string;
   name: string;
@@ -66,8 +67,8 @@ export const useBranchMutations = () => {
       if (!b.name?.trim()) throw new Error('أدخل اسم الفرع');
       const row = { name: b.name.trim(), code: b.code?.trim() || null, address: b.address?.trim() || null, phone: b.phone?.trim() || null, is_active: b.is_active ?? true };
       const { error } = b.id
-        ? await supabase.from('branches').update(row).eq('id', b.id).eq('organization_id', orgId).select('id').single()
-        : await supabase.from('branches').insert({ ...row, organization_id: orgId }).select('id').single();
+        ? await supabase.from('branches').update({ ...row, ...('pos_cost_center_id' in b ? { pos_cost_center_id: b.pos_cost_center_id } : {}) }).eq('id', b.id).eq('organization_id', orgId).select('id').single()
+        : await supabase.from('branches').insert({ ...row, organization_id: orgId, ...('pos_cost_center_id' in b ? { pos_cost_center_id: b.pos_cost_center_id } : {}) }).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['branches'] }); toast.success('تم الحفظ'); },
