@@ -97,6 +97,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    const authRes = authErrorResponse(err, corsHeaders);
+    if (authRes) return authRes;
     const msg = String((err as Error)?.message || err);
     const status = msg.includes("429") ? 429 : msg.includes("402") ? 402 : 500;
     return new Response(JSON.stringify({ error: msg }), {
