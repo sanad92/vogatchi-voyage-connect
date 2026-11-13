@@ -537,11 +537,12 @@ export function useSopLeads(filters: LeadFilters = {}) {
 }
 
 export function useSopLead(id?: string | null) {
+  const orgId = useOrgId();
   return useQuery({
-    queryKey: ['sop-lead', id],
-    enabled: !!id,
+    queryKey: ['sop-lead', id, orgId],
+    enabled: !!id && !!orgId,
     queryFn: async () => {
-      const { data, error } = await db.from('sop_leads').select('*').eq('id', id).maybeSingle();
+      const { data, error } = await db.from('sop_leads').select('*').eq('id', id).eq('organization_id', orgId).maybeSingle();
       if (error) throw error;
       return data as SopLead | null;
     },

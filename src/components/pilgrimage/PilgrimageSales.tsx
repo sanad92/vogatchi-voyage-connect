@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, FileSpreadsheet, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -417,6 +418,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
               ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
               : 'المقاعد غير مخصصة حاليًا.'}
           </p>
+          {conversion && selected.program_type === 'umrah' && <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=rooming`}>تسكين المعتمرين</Link></Button>
+            <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=operations`}>تعديل أو إلغاء التسجيل</Link></Button>
+          </div>}
           {allocationsQ.error&&<p className="text-sm text-destructive">
             تعذر قراءة المقاعد؛ لا تعتمد على التوافر قبل التأكد من جاهزية قاعدة البيانات.
           </p>}
