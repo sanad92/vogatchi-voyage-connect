@@ -283,4 +283,3 @@ BEGIN
   RETURN jsonb_build_object('allowed', true, 'lead', to_jsonb(saved));
 END;
 $$;
-
