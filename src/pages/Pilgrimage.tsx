@@ -26,7 +26,7 @@ import PilgrimageInterest from '@/components/pilgrimage/PilgrimageInterest';
 import PilgrimageOperations from '@/components/pilgrimage/PilgrimageOperations';
 import UmrahRooming, { umrahRoomGroupLabel, type UmrahRoomGroup } from '@/components/pilgrimage/UmrahRooming';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
-import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram } from '@/lib/pilgrimage/operations';
+import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram, pilgrimageSalesIssues, salesConfirmationRequired } from '@/lib/pilgrimage/operations';
 import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
 } from '@/components/pilgrimage/pilgrimage-documents';
@@ -39,6 +39,9 @@ const PILGRIM_STATUS: Record<string, string> = {
 const PROGRAM_STATUS: Record<string, string> = {
   draft: 'مسودة', open: 'التسجيل مفتوح', full: 'مكتمل العدد', closed: 'مغلق', departed: 'غادر', completed: 'انتهى', cancelled: 'ملغي',
 };
+const programStatusLabel = (program: any) => program.status === 'open' &&
+  (!program.sales_confirmed_at || pilgrimageSalesIssues(program).length > 0)
+  ? 'بانتظار اعتماد البيع' : PROGRAM_STATUS[program.status];
 const PROGRAM_FIELDS = ['name', 'season', 'departure_date', 'return_date', 'makkah_hotel', 'makkah_nights', 'madinah_hotel', 'madinah_nights',
   'airline', 'flight_details', 'transport_details', 'capacity', 'price_quad', 'price_triple', 'price_double', 'price_single', 'currency', 'travel_scope', 'notes', 'terms', 'status'];
 const PILGRIM_FIELDS = ['full_name', 'name_en', 'phone', 'gender', 'birth_date', 'nationality', 'national_id', 'passport_number', 'passport_expiry',
@@ -47,8 +50,9 @@ const PILGRIM_FIELDS = ['full_name', 'name_en', 'phone', 'gender', 'birth_date',
 const EMPTY_PROGRAM: any = {
   name: '', season: '', departure_date: '', return_date: '', makkah_hotel: '', makkah_nights: 0,
   madinah_hotel: '', madinah_nights: 0, airline: '', flight_details: '', transport_details: '', capacity: 0,
-  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, currency: 'EGP', travel_scope: 'international', notes: '', terms: '', status: 'open', cost_per_person: 0,
+  price_quad: 0, price_triple: 0, price_double: 0, price_single: 0, currency: 'EGP', travel_scope: 'international', notes: '', terms: '', status: 'draft', cost_per_person: 0,
 };
+const SALES_FIELDS = ['departure_date', 'return_date', 'capacity', 'currency', 'price_quad', 'price_triple', 'price_double', 'price_single'];
 const EMPTY_PILGRIM: any = {
   full_name: '', name_en: '', phone: '', gender: 'male', birth_date: '', nationality: 'مصري', national_id: '',
   passport_number: '', passport_expiry: '', mahram_name: '', mahram_relation: '', room_type: 'quad', room_group: '',
@@ -90,6 +94,7 @@ const Pilgrimage = () => {
   });
   const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
+  const [confirmSales, setConfirmSales] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
   const [pilgrimOpen, setPilgrimOpen] = useState(false);
   const [editingPilgrim, setEditingPilgrim] = useState<string | null>(null);
@@ -103,6 +108,7 @@ const Pilgrimage = () => {
   const [gf, setGf] = useState<any>({ ...EMPTY_PILGRIM });
 
   const fail = (e: { message: string }) => toast({ title: 'تعذر الحفظ', description: ({
+    pilgrimage_sales_confirmation_required: salesConfirmationRequired,
     room_capacity_exceeded: 'الغرفة مكتملة. اختر غرفة أخرى.',
     room_category_conflict: 'فئة هذه الغرفة تختلف عن فئة المعتمر.',
     room_family_group_required: 'التسكين المشترك يتطلب تسجيل مجموعة عائلية واحدة.',
@@ -110,7 +116,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -152,10 +158,18 @@ const Pilgrimage = () => {
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0 })), [pilgrims, programId, operationRefunds.data]);
   const priceFor = (p: any, room: string) => Number(p?.[`price_${room}`] ?? 0);
 
+  const salesIssues = pilgrimageSalesIssues(pf);
+  const salesFieldsChanged = !editingProgram || SALES_FIELDS.some((key) => String(pf[key] ?? '') !== String(program?.[key] ?? ''));
+  const salesConfirmed = !!program?.sales_confirmed_at && !salesFieldsChanged;
   const saveProgram = useMutation({
     mutationFn: async () => {
       const issues = validatePilgrimageProgram(pf, pf.name || '');
       if (issues.length) throw new Error(issues.join('، '));
+      const openingSales = pf.status === 'open' && (!editingProgram || program?.status !== 'open');
+      if ((openingSales || (pf.status === 'open' && salesFieldsChanged) || confirmSales) &&
+          (salesIssues.length || (!salesConfirmed && !confirmSales))) {
+        throw new Error(salesConfirmationRequired);
+      }
       if (editingProgram && program) {
         if (programPilgrims.length && pf.currency !== program.currency)
           throw new Error('لا يمكن تغيير عملة البرنامج بعد تسجيل أشخاص عليه');
@@ -165,6 +179,7 @@ const Pilgrimage = () => {
           throw new Error('السعة الجديدة أقل من عدد المسجلين الفعلي');
       }
       const row: any = pick(pf, PROGRAM_FIELDS);
+      if (confirmSales) row.sales_confirmed_at = new Date().toISOString();
       let id = programId;
       if (editingProgram && id) {
         const { error } = await sb.from('pilgrimage_programs').update(row).eq('id', id).eq('organization_id', orgId);
@@ -339,7 +354,8 @@ const Pilgrimage = () => {
     );
     const cost = costs.find((c) => c.program_id === program.id);
     const interestTab = program.program_type === 'umrah' && canViewCRM() && !!orgId;
-    const capacity = program.status === 'draft' && !program.capacity ? 'بانتظار التأكيد' : program.capacity || '∞';
+    const capacity = program.capacity || 'بانتظار التأكيد';
+    const registrationBlock = canRegisterPilgrim(program, programPilgrims);
     const requestedTab = params.get('tab');
     const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (requestedTab === 'operations' && operationalUmrah))
       ? requestedTab : 'pilgrims';
@@ -373,14 +389,16 @@ const Pilgrimage = () => {
           title={program.name}
           description={`${program.program_type === 'hajj' ? 'حج' : 'عمرة'} · ${program.departure_date ?? '—'} ← ${program.return_date ?? '—'} · مكة ${program.makkah_nights} ليالٍ · المدينة ${program.madinah_nights} ليالٍ`}
           icon={Moon}
-          badge={<Badge variant="outline">{PROGRAM_STATUS[program.status]}</Badge>}
+          badge={<Badge variant="outline">{programStatusLabel(program)}</Badge>}
           actions={<div className="flex gap-2">
             <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
             <Button variant="outline" onClick={() => setSalesOpen(true)}>عروض البيع Group / FIT / B2B</Button>
-            {canManage && <Button variant="outline" onClick={() => { setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
-            <Button disabled={!!canRegisterPilgrim(program, programPilgrims)} title={canRegisterPilgrim(program, programPilgrims) || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: operationalUmrah ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
+            {canManage && <Button variant="outline" onClick={() => { setConfirmSales(false); setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
+            <Button disabled={!!registrationBlock} title={registrationBlock || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: operationalUmrah ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
           </div>}
         />
+        {['draft', 'open'].includes(program.status) && (!program.sales_confirmed_at || pilgrimageSalesIssues(program).length > 0) &&
+          <Card className="p-4 text-sm text-muted-foreground">{salesConfirmationRequired}</Card>}
         {program.status === 'draft' && program.notes && <Card className="p-4 text-sm whitespace-pre-wrap text-muted-foreground">{program.notes}</Card>}
         {operationalUmrah && operationRefunds.isError && <Card role="alert" className="flex flex-wrap items-center gap-2 p-4 text-sm text-destructive">
           تعذر تحميل رصيد الاسترداد. أعد المحاولة قبل التحصيل أو تنفيذ تعديل مالي.
@@ -666,7 +684,7 @@ const Pilgrimage = () => {
               </Select>
             </F>
             <F label="عملة البرنامج">
-              <Select value={pf.currency || 'EGP'} disabled={editingProgram && programPilgrims.length > 0} onValueChange={(v) => setPf({ ...pf, currency: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={pf.currency || 'EGP'} disabled={editingProgram && programPilgrims.length > 0} onValueChange={(v) => { setConfirmSales(false); setPf({ ...pf, currency: v }); }}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{['EGP', 'SAR', 'USD', 'EUR'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
               </Select>
             </F>
@@ -679,8 +697,19 @@ const Pilgrimage = () => {
               ['airline', 'شركة الطيران'], ['flight_details', 'تفاصيل الرحلات'], ['transport_details', 'النقل والتنقلات'],
               ['price_quad', 'سعر البيع - رباعية', 'number'], ['price_triple', 'سعر البيع - ثلاثية', 'number'], ['price_double', 'سعر البيع - ثنائية', 'number'], ['price_single', 'سعر البيع - فردية', 'number'],
             ] as [string, string, string?][]).map(([k, l, kind]) => (
-              <F key={k} label={l}><Input type={kind ?? 'text'} value={pf[k] ?? ''} onChange={(e) => setPf({ ...pf, [k]: kind === 'number' ? Number(e.target.value) : e.target.value })} /></F>
+              <F key={k} label={l}><Input type={kind ?? 'text'} value={pf[k] ?? ''} onChange={(e) => {
+                if (SALES_FIELDS.includes(k)) setConfirmSales(false);
+                setPf({ ...pf, [k]: kind === 'number' ? Number(e.target.value) : e.target.value });
+              }} /></F>
             ))}
+            <div className="space-y-2 rounded-md border p-3 sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={salesConfirmed || confirmSales} disabled={salesConfirmed || salesIssues.length > 0}
+                  onCheckedChange={(value) => setConfirmSales(value === true)} />
+                أؤكد اعتماد تواريخ السفر والعودة وأسعار البيع وسعة البرنامج
+              </label>
+              {salesIssues.length > 0 && <p className="text-sm text-muted-foreground">المطلوب للاعتماد: {salesIssues.join('، ')}</p>}
+            </div>
             {canManage && <F label="التكلفة الداخلية للفرد (تظهر للإدارة فقط)" wide><Input type="number" value={pf.cost_per_person} onChange={(e) => setPf({ ...pf, cost_per_person: Number(e.target.value) })} /></F>}
             <F label="الشروط والأحكام (تظهر في العقد)" wide><Textarea value={pf.terms ?? ''} onChange={(e) => setPf({ ...pf, terms: e.target.value })} /></F>
             <F label="ملاحظات" wide><Textarea value={pf.notes ?? ''} onChange={(e) => setPf({ ...pf, notes: e.target.value })} /></F>
@@ -701,7 +730,7 @@ const Pilgrimage = () => {
         actions={<div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
           <Button variant="outline" onClick={() => setSalesOpen(true)}>مبيعات Group / FIT / B2B</Button>
-          {canManage && <Button onClick={() => { setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
+          {canManage && <Button onClick={() => { setConfirmSales(false); setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
         </div>}
       />
       <Tabs value={type} onValueChange={(v) => setType(v as any)}>
@@ -713,12 +742,14 @@ const Pilgrimage = () => {
           const count = pilgrims.filter((g) => g.program_id === p.id && g.status !== 'cancelled').length;
           return (
             <Card key={p.id} className="p-5 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setProgramId(p.id)}>
-              <div className="flex items-start justify-between gap-2"><h3 className="font-semibold">{p.name}</h3><Badge variant="outline">{PROGRAM_STATUS[p.status]}</Badge></div>
+              <div className="flex items-start justify-between gap-2"><h3 className="font-semibold">{p.name}</h3><Badge variant="outline">{programStatusLabel(p)}</Badge></div>
               <p className="mt-1 text-xs text-muted-foreground">{p.season} · {p.departure_date ?? '—'} ← {p.return_date ?? '—'}</p>
               <p className="mt-3 text-sm">مكة: {p.makkah_hotel || '—'} · المدينة: {p.madinah_hotel || '—'}</p>
               <div className="mt-4 flex items-center justify-between text-sm">
-                <span className="flex items-center gap-1 text-muted-foreground"><Users className="h-4 w-4" />{count} / {p.status === 'draft' && !p.capacity ? 'بانتظار التأكيد' : p.capacity || '∞'}</span>
-                <span>من {fmt(p.price_quad, p.currency)}</span>
+                <span className="flex items-center gap-1 text-muted-foreground"><Users className="h-4 w-4" />{count} / {p.capacity || 'بانتظار التأكيد'}</span>
+                <span>{p.sales_confirmed_at && pilgrimageSalesIssues(p).length === 0
+                  ? `من ${fmt(Math.min(...[p.price_quad, p.price_triple, p.price_double, p.price_single].map(Number).filter((price) => price > 0)), p.currency)}`
+                  : 'السعر بانتظار التأكيد'}</span>
               </div>
             </Card>
           );

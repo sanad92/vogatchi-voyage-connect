@@ -27,6 +27,7 @@ export type PilgrimRecord = {
 };
 export type ProgramRecord = {
   status?: string | null;
+  sales_confirmed_at?: string | null;
   travel_scope?: 'domestic' | 'international' | string | null;
   capacity?: number | null;
   departure_date?: string | null;
@@ -70,7 +71,7 @@ export function validatePilgrimageProgram(p: ProgramRecord, name: string) {
   if (p.departure_date && p.return_date && p.return_date < p.departure_date)
     errors.push('تاريخ العودة يسبق تاريخ السفر');
   if (!Number.isInteger(amount(p.capacity)) || amount(p.capacity) < 0)
-    errors.push('السعة يجب أن تكون عددًا صحيحًا غير سالب؛ صفر يعني سعة غير محددة');
+    errors.push('السعة يجب أن تكون عددًا صحيحًا غير سالب؛ صفر يعني أن السعة بانتظار التأكيد');
   for (const key of ['makkah_nights','madinah_nights'] as const) {
     if (!Number.isInteger(amount(p[key])) || amount(p[key]) < 0)
       errors.push('عدد ليالي الإقامة غير صحيح');
@@ -83,8 +84,22 @@ export function validatePilgrimageProgram(p: ProgramRecord, name: string) {
   return errors;
 }
 
+export const salesConfirmationRequired = 'أكّد تواريخ السفر والعودة، وسعة البرنامج، وأسعار البيع قبل فتح البيع.';
+
+export function pilgrimageSalesIssues(p: ProgramRecord, today = new Date().toISOString().slice(0, 10)) {
+  const issues: string[] = [];
+  if (!p.departure_date || p.departure_date < today || !p.return_date || p.return_date < p.departure_date)
+    issues.push('تواريخ سفر وعودة صالحة');
+  if (!Number.isInteger(amount(p.capacity)) || amount(p.capacity) < 1)
+    issues.push('سعة محددة أكبر من صفر');
+  if (!([p.price_quad, p.price_triple, p.price_double, p.price_single].some(price => amount(price) > 0)))
+    issues.push('سعر بيع لفئة غرفة واحدة على الأقل');
+  return issues;
+}
+
 export function canRegisterPilgrim(p: ProgramRecord, current: PilgrimRecord[]) {
   if (p.status !== 'open') return 'التسجيل متاح فقط عندما تكون حالة البرنامج «التسجيل مفتوح»';
+  if (!p.sales_confirmed_at || pilgrimageSalesIssues(p).length) return salesConfirmationRequired;
   const slots = amount(p.capacity);
   if (slots > 0 && current.filter(isActivePilgrim).length >= slots)
     return 'البرنامج مكتمل العدد';

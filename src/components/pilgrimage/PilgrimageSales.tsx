@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, FileSpreadsheet, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { pilgrimageSalesIssues, salesConfirmationRequired } from '@/lib/pilgrimage/operations';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
@@ -85,7 +86,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     ()=>sb.from('suppliers').select('id,name').eq('organization_id',orgId)
       .eq('is_active',true).order('name').limit(200),canManage);
   const programsQ=useRows('pilgrimage-sale-programs',orgId,null,
-    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date')
+    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date,sales_confirmed_at,price_quad,price_triple,price_double,price_single')
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
   const b2bAgreementQ=useQuery({
@@ -155,7 +156,16 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const canEdit=canManage&&selected?.status==='draft';
   const selectedProgram=programs.find((p:any)=>p.id===draft.program_id)||null;
 
-  const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:error?.message||'راجع البيانات والصلاحيات',variant:'destructive'});
+  const linkedProgram = programs.find(p => p.id === selected?.program_id);
+  const programSaleReady = !!linkedProgram?.sales_confirmed_at && linkedProgram.status === 'open' &&
+    pilgrimageSalesIssues(linkedProgram).length === 0;
+  const canIssueProgramQuote = !selected?.program_id || programSaleReady;
+  const canExportQuote = !selected?.program_id || selected.status === 'quoted';
+  const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:({
+    pilgrimage_sales_confirmation_required: salesConfirmationRequired,
+    pilgrimage_quote_dates_changed: 'تواريخ العرض تختلف عن البرنامج المعتمد. أنشئ مسودة بالتواريخ الحالية.',
+    pilgrimage_quote_room_price_required: 'يلزم سعر معتمد وسعر بيع موجب لكل فئة غرفة في العرض.',
+  } as Record<string, string>)[error?.message] || error?.message || 'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
     'pilgrimage-seat-allocations','pilgrimage-seat-events',
@@ -254,10 +264,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         throw new Error('حرّر التخصيص الداخلي للمقاعد قبل إلغاء عرض السعر');
       if(status==='quoted'){
         const issues=quoteReadiness(selected as SaleDraft,items);
-        if(selected.program_id){
-          const p=programs.find((x:any)=>x.id===selected.program_id);
-          if(!p||p.status!=='open')issues.push('البرنامج الجماعي ليس مفتوحًا للتسجيل');
-        }
+        if(!canIssueProgramQuote)issues.push(salesConfirmationRequired);
         if(issues.length)throw new Error(issues.join('، '));
       }
       const {data,error}=await sb.from('pilgrimage_sales').update({status})
@@ -271,6 +278,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     mutationFn:async(action:'hold'|'allocate'|'release')=>{
       if(!canManage||!selected||selected.status!=='quoted'||!selected.program_id)
         throw new Error('تخصيص المقاعد متاح فقط لمدير الشركة على عرض جماعي صادر');
+      if(action!=='release'&&!programSaleReady)throw new Error(salesConfirmationRequired);
       if(action==='release'&&isB2BInternallyApproved)
         throw new Error('العقد B2B معتمد داخليًا؛ يلزم إجراء إلغاء مالي معتمد لتحرير المقاعد');
       const {data,error}=await sb.rpc('transition_pilgrimage_seat_allocation',{
@@ -317,7 +325,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     },onError:fail,
   });
   const printQuote=()=>{
-    if(!selected)return;
+    if(!selected||!canExportQuote)return;
     const buyer=selected.buyer_agency_id
       ? agencies.find((x:any)=>x.id===selected.buyer_agency_id)?.name
       : customers.find((x:any)=>x.id===selected.buyer_customer_id)?.name;
@@ -370,12 +378,12 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="outline" onClick={()=>setSaleId(null)}><ArrowRight className="h-4 w-4 me-1"/>كل العروض</Button>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={printQuote}><FileText className="h-4 w-4 me-1"/>طباعة العرض</Button>
-          <Button variant="outline" onClick={()=>exportExcel('Pilgrimage quotation',[
+          <Button variant="outline" disabled={!canExportQuote} onClick={printQuote}><FileText className="h-4 w-4 me-1"/>طباعة العرض</Button>
+          <Button variant="outline" disabled={!canExportQuote} onClick={()=>exportExcel('Pilgrimage quotation',[
             {name:'Pricing',headers:['Service','Description','Qty','Unit sell','Total'],
               rows:items.map((x:any)=>[x.item_kind,x.description,x.quantity,x.unit_sell,x.line_sell])}
           ])}><FileSpreadsheet className="h-4 w-4 me-1"/>Excel</Button>
-          {canEdit&&<Button disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('quoted')}>إصدار عرض السعر</Button>}
+          {canEdit&&<Button disabled={changeStatus.isPending || !canIssueProgramQuote} onClick={()=>changeStatus.mutate('quoted')}>إصدار عرض السعر</Button>}
           {canManage&&selected.status==='quoted'&&<Button variant="outline"
             disabled={cloneQuote.isPending} onClick={()=>cloneQuote.mutate()}>إنشاء نسخة معدلة</Button>}
           {canManage&&selected.status!=='cancelled'&&
@@ -387,6 +395,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         <h3 className="font-semibold">{selected.name}</h3>
         <p className="text-sm">{SALE_MODELS[selected.sale_model as SaleModel]} · {FULFILLMENT[selected.fulfillment_role as keyof typeof FULFILLMENT]}</p>
         <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
+        {selected.program_id && !programSaleReady && <p className="text-sm text-muted-foreground">{salesConfirmationRequired}</p>}
         {selected.program_id&&<p className="text-xs text-muted-foreground">
           المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
             availabilityQ.isError ? 'تعذر تحميل التوافر' :
@@ -427,16 +436,16 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           </p>}
           {canManage && selected.status==='quoted' && !allocationsQ.error && !conversionsQ.error &&
             <div className="flex flex-wrap gap-2">
-              {!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending}
+              {!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending || !programSaleReady}
                 onClick={()=>allocateSeat.mutate('hold')}>حجز مقاعد مؤقت — ساعتان</Button>}
               {allocation?.status==='held' && allocationIsActive &&
-                <Button disabled={allocateSeat.isPending}
+                <Button disabled={allocateSeat.isPending || !programSaleReady}
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
               {allocationIsActive&&!isB2BInternallyApproved&&<Button variant="outline"
                 disabled={allocateSeat.isPending}
                 onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
               {selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
-                !conversion && <Button disabled={convertRetail.isPending}
+                !conversion && <Button disabled={convertRetail.isPending || !programSaleReady}
                   onClick={()=>setConfirmConversionOpen(true)}>
                   تحويل إلى تسجيلات معتمرين
                 </Button>}
@@ -612,8 +621,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
             onValueChange={v=>{
               const p=programs.find((x:any)=>x.id===v);
               setDraft({...draft,program_id:resolved(v),currency:p?.currency||draft.currency,
-                departure_date:p?.departure_date||draft.departure_date,
-                return_date:p?.return_date||draft.return_date});
+                departure_date:p ? p.departure_date : draft.departure_date,
+                return_date:p ? p.return_date : draft.return_date});
             }}>
             <SelectTrigger><SelectValue placeholder="اختر برنامجًا"/></SelectTrigger><SelectContent>
               <SelectItem value={NONE}>{draft.sale_model==='b2b_group'?'مجموعة مستقلة':'حدد برنامجًا'}</SelectItem>
@@ -642,9 +651,9 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
             <SelectTrigger><SelectValue/></SelectTrigger><SelectContent>
               {['EGP','SAR','USD','EUR'].map(x=><SelectItem key={x} value={x}>{x}</SelectItem>)}
             </SelectContent></Select></Field>
-          <Field name="تاريخ السفر"><Input type="date" value={draft.departure_date||''}
+          <Field name="تاريخ السفر"><Input type="date" disabled={!!draft.program_id} value={draft.departure_date||''}
             onChange={e=>setDraft({...draft,departure_date:e.target.value||null})}/></Field>
-          <Field name="تاريخ العودة"><Input type="date" value={draft.return_date||''}
+          <Field name="تاريخ العودة"><Input type="date" disabled={!!draft.program_id} value={draft.return_date||''}
             onChange={e=>setDraft({...draft,return_date:e.target.value||null})}/></Field>
           <div className="sm:col-span-2"><Field name="ملاحظات"><Textarea value={draft.notes||''}
             onChange={e=>setDraft({...draft,notes:e.target.value||null})}/></Field></div>
@@ -668,7 +677,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
             لا يمكن إلغاء هذا التحويل بإلغاء عرض السعر مباشرةً.
             الفواتير والمدفوعات والموردون والتأشيرات والتصاريح خطوات مستقلة.
           </p>
-          <Button disabled={convertRetail.isPending} onClick={()=>convertRetail.mutate()}>
+          <Button disabled={convertRetail.isPending || !programSaleReady} onClick={()=>convertRetail.mutate()}>
             تأكيد تحويل المقاعد إلى تسجيلات
           </Button>
           <Button variant="outline" onClick={()=>setConfirmConversionOpen(false)}>رجوع</Button>
