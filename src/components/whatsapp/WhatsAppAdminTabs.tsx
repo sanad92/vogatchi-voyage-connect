@@ -27,6 +27,7 @@ import { WhatsAppInboxList } from './WhatsAppInboxList';
 import { WhatsAppSLASettings } from './WhatsAppSLASettings';
 import { WhatsAppAutomationBuilder } from './WhatsAppAutomationBuilder';
 import { WhatsAppChatbotSettings } from './WhatsAppChatbotSettings';
+import { WhatsAppBranchRouting } from './WhatsAppBranchRouting';
 import { WhatsAppRoutingSettings } from './WhatsAppRoutingSettings';
 import { ManualConnectDialog } from './ManualConnectDialog';
 
@@ -99,6 +100,7 @@ export const WhatsAppAdminTabs: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="employees" className="mt-6 space-y-6 animate-in fade-in">
+          <WhatsAppBranchRouting />
           <WhatsAppRoutingSettings />
           <WhatsAppEmployeeManagement />
         </TabsContent>

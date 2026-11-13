@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       ...(history || []).reverse().map((m: any): ChatMessage => ({ role: m.direction === 'inbound' ? 'user' : 'assistant', content: m.content }))];
     if (messages[messages.length - 1].content !== user_message) messages.push({ role: 'user', content: user_message });
     // Reserve a unique outbound key BEFORE generating/sending. Retries cannot send twice.
-    const account = await resolveSettings(db, orgId, convo.whatsapp_settings_id);
+    const account = await resolveSettings(db, orgId, convo.whatsapp_settings_id, true);
     const { data: pending, error: reserveError } = await db.from('whatsapp_messages').insert({
       organization_id: orgId, conversation_id: conversationId, whatsapp_settings_id: account.id,
       direction: 'outbound', message_type: 'text', content: null, status: 'sending',

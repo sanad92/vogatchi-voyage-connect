@@ -116,15 +116,16 @@ serve(async (req) => {
                 .from('whatsapp_settings')
                 .select('id, organization_id')
                 .eq('phone_number_id', phoneNumberId)
+                .eq('waba_id', wabaId)
+                .eq('is_active', true)
                 .maybeSingle();
               settings = data ?? null;
-            }
-            if (!settings) {
+            } else {
               const { data } = await supabase
                 .from('whatsapp_settings')
                 .select('id, organization_id')
                 .eq('waba_id', wabaId)
-                .eq('is_default', true)
+                .eq('is_active', true)
                 .maybeSingle();
               settings = data ?? null;
             }

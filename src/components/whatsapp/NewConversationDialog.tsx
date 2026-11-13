@@ -9,7 +9,7 @@ import { Search, Loader2, MessageCirclePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
+import { useWhatsAppChannels } from '@/hooks/useWhatsAppChannels';
 import { useQueryClient } from '@tanstack/react-query';
 
 const COUNTRY_CODES = [
@@ -49,7 +49,7 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
   const orgId = useOrgId();
   const queryClient = useQueryClient();
   const { customers } = useCustomers();
-  const { inboxes } = useWhatsAppSettings();
+  const { data: channels, isError: channelsError } = useWhatsAppChannels();
 
   const [countryCode, setCountryCode] = useState<string>('20');
   const [phone, setPhone] = useState('');
@@ -58,8 +58,8 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
   const [customerSearch, setCustomerSearch] = useState('');
   const [isWorking, setIsWorking] = useState(false);
 
-  const activeInboxes = useMemo(() => inboxes.filter((i: any) => i.is_active !== false), [inboxes]);
-  const effectiveInboxId = inboxId || activeInboxes[0]?.id || '';
+  const activeInboxes = channels?.filter(channel => channel.is_active) ?? [];
+  const effectiveInboxId = activeInboxes.find(channel => channel.id === inboxId)?.id || activeInboxes[0]?.id || '';
 
   const customerMatches = useMemo(() => {
     const q = customerSearch.trim().toLowerCase();
@@ -90,15 +90,16 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
   const handleStart = async () => {
     if (!orgId) { toast.error('تعذر تحديد المؤسسة'); return; }
     if (!isValid) { toast.error('أدخل رقم هاتف صحيح'); return; }
+    if (!effectiveInboxId) { toast.error('لا يوجد رقم واتساب متصل متاح لك'); return; }
     setIsWorking(true);
     try {
-      // Reuse the existing chat for this number instead of splitting the history.
-      const tail = normalized.slice(-9);
+      // Each connected sender has its own conversation with the customer.
       const { data: existing, error: findError } = await (supabase as any)
         .from('whatsapp_conversations')
         .select('id')
         .eq('organization_id', orgId)
-        .ilike('phone_number', `%${tail}`)
+        .eq('whatsapp_settings_id', effectiveInboxId)
+        .eq('phone_number', normalized)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle();
@@ -126,6 +127,17 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
         })
         .select('id')
         .single();
+      if (error?.code === '23505') {
+        const { data: concurrent, error: readError } = await supabase.from('whatsapp_conversations')
+          .select('id').eq('organization_id', orgId).eq('whatsapp_settings_id', effectiveInboxId)
+          .eq('phone_number', normalized).single();
+        if (readError) throw readError;
+        queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
+        onStarted(concurrent.id);
+        onOpenChange(false);
+        reset();
+        return;
+      }
       if (error) throw error;
 
       toast.success('تم بدء المحادثة');
@@ -216,9 +228,9 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
               <Select value={effectiveInboxId} onValueChange={setInboxId}>
                 <SelectTrigger><SelectValue placeholder="اختر رقم الواتساب" /></SelectTrigger>
                 <SelectContent>
-                  {activeInboxes.map((inbox: any) => (
+                  {activeInboxes.map(inbox => (
                     <SelectItem key={inbox.id} value={inbox.id}>
-                      {inbox.label || inbox.display_phone_number || inbox.business_name || 'رقم واتساب'}
+                      {inbox.label || inbox.display_phone_number || inbox.business_name || 'رقم واتساب'}{inbox.branch_name ? ` · ${inbox.branch_name}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -226,6 +238,8 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
             </div>
           )}
 
+          {channelsError && <p role="alert" className="text-sm text-destructive">تعذر تحميل أرقام واتساب المتاحة.</p>}
+          {channels && !activeInboxes.length && <p className="text-sm text-muted-foreground">لا يوجد رقم واتساب متصل متاح لك.</p>}
           {!employeeId && (
             <p className="text-xs text-muted-foreground">
               لبدء الإرسال، اربط حسابك بملف موظف نشط ثم استلم المحادثة.
@@ -235,7 +249,7 @@ export const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-          <Button onClick={handleStart} disabled={!isValid || isWorking}>
+          <Button onClick={handleStart} disabled={!isValid || !effectiveInboxId || isWorking}>
             {isWorking ? <Loader2 className="h-4 w-4 animate-spin ml-1" /> : null}
             بدء المحادثة
           </Button>
