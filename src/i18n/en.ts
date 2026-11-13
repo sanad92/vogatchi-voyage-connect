@@ -417,6 +417,7 @@ export const EN_DICTIONARY: Record<string, string> = {
   'وارد': 'Money in',
   'صادر': 'Money out',
   'معاينة العميل': 'Preview customer',
+  'فتح ملف المورد': 'Open supplier profile',
   'فتح ملف العميل': 'Open customer profile',
   'محفظة العميل': 'Customer wallet',
   'محفظة المورد': 'Supplier wallet',
