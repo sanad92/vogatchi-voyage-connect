@@ -39,6 +39,9 @@ try {
     aging.indexOf('CREATE OR REPLACE FUNCTION public.get_aging_control_totals_v2')));
   await db.exec(read('scripts/test-cancel-unpaid-supplier-order.sql'));
   console.log('Confirmed free supplier cancellation and supplier aging scenarios passed');
+  await db.exec(migration('20261113234151_settle_booking_with_supplier_cancellation'));
+  await db.exec(read('scripts/test-booking-cancellation-with-supplier.sql'));
+  console.log('Combined booking and supplier cancellation scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;

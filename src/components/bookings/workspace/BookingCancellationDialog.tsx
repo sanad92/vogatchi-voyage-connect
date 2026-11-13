@@ -11,10 +11,22 @@ import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 type CancellationInvoice = { id: string; number: string; currency: string; due: number; paid: number };
 type SettlementLine = { invoice_id: string; number: string; currency: string; fee: number; remaining: number; refund: number; refund_id: string | null };
+type SupplierOrder = {
+  id: string;
+  number: string;
+  supplier_name: string | null;
+  amount: number;
+  currency: string;
+  blocked_reason: string | null;
+};
+type ClosedSupplierOrder = Omit<SupplierOrder, 'blocked_reason'> & { confirmation: string };
+type CancellationResult = { invoices: SettlementLine[]; closed_supplier_orders: ClosedSupplierOrder[] };
 type Preview = {
   invoices: CancellationInvoice[];
   blocked_reason: string | null;
   can_refund: boolean;
+  supplier_orders: SupplierOrder[];
+  closed_supplier_orders: ClosedSupplierOrder[];
   settled: { at: string; result: SettlementLine[] } | null;
 };
 
@@ -28,7 +40,7 @@ export function useBookingCancellation(bookingId?: string, enabled = false) {
     queryKey: ['booking-cancellation', bookingId],
     enabled: !!bookingId && enabled,
     queryFn: async () => {
-      const { data, error } = await callUntypedRpc<Preview>('get_booking_cancellation_preview', { _booking: bookingId });
+      const { data, error } = await callUntypedRpc<Preview>('get_booking_cancellation_with_supplier_preview', { _booking: bookingId });
       if (error) throw error;
       if (!data) throw new Error('تعذر تحميل معاينة الإلغاء.');
       return data;
@@ -50,8 +62,15 @@ export function BookingCancellationDialog({
   const qc = useQueryClient();
   const [reason, setReason] = useState('');
   const [fees, setFees] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<SettlementLine[]>();
-  const settled = result ?? preview?.settled?.result;
+  const [supplierReferences, setSupplierReferences] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<CancellationResult>();
+  const settled = result?.invoices ?? preview?.settled?.result;
+  const closedSupplierOrders = result?.closed_supplier_orders ?? preview?.closed_supplier_orders ?? [];
+  const supplierOrders = preview?.supplier_orders ?? [];
+  const supplierConfirmations = Object.fromEntries(supplierOrders
+    .filter(order => !order.blocked_reason && supplierReferences[order.id]?.trim())
+    .map(order => [order.id, supplierReferences[order.id].trim()]));
+  const invalidSupplierReference = Object.values(supplierConfirmations).some(reference => reference.length < 3);
   const lines = (preview?.invoices ?? []).map(invoice => {
     const raw = fees[invoice.id] ?? '0';
     const fee = Number(raw);
@@ -63,17 +82,24 @@ export function BookingCancellationDialog({
   const missingRefundPermission = !preview?.can_refund && lines.some(line => line.refund > 0);
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await callUntypedRpc<SettlementLine[]>('settle_booking_cancellation', {
-        _booking: bookingId, _reason: reason.trim(), _fees: Object.fromEntries(lines.map(({ invoice, fee }) => [invoice.id, fee])), _expected: preview,
+      const { data, error } = await callUntypedRpc<CancellationResult>('settle_booking_cancellation_with_supplier', {
+        _booking: bookingId,
+        _reason: reason.trim(),
+        _fees: Object.fromEntries(lines.map(({ invoice, fee }) => [invoice.id, fee])),
+        _expected: preview,
+        _supplier_confirmations: supplierConfirmations,
       });
       if (error) throw error;
-      return data ?? [];
+      if (!data) throw new Error('تعذر إكمال تسوية الإلغاء.');
+      return data;
     },
     onSuccess: async data => {
       setResult(data);
       toast.success('تم اعتماد تسوية إلغاء الحجز');
       const keys = ['booking-cancellation', 'unified-bookings', 'booking-financials', 'booking-workspace',
-        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'supplier-payment-orders-all', 'sup360-bookings'];
+        'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'workspace-invoices', 'workspace-timeline',
+        'supplier-payment-orders', 'supplier-payment-orders-all', 'supplier-aging-details-v2', 'aging-control-totals-v2',
+        'supplier-ledger', 'sup360-bookings', 'sup360-invoices', 'sup360-pos'];
       await Promise.all(keys.map(key => qc.invalidateQueries({ queryKey: [key] })));
       onSettled();
     },
@@ -83,14 +109,14 @@ export function BookingCancellationDialog({
     },
   });
   const canSubmit = !!preview && !preview.blocked_reason && reason.trim().length >= 3
-    && lines.every(line => line.valid) && !missingRefundPermission && !mutation.isPending;
+    && lines.every(line => line.valid) && !missingRefundPermission && !invalidSupplierReference && !mutation.isPending;
 
   return (
     <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose(); }}>
       <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز وتسوية الفواتير'}</DialogTitle>
-          <DialogDescription>راجع الغرامة والمبلغ المتبقي ورصيد الاسترداد قبل الاعتماد.</DialogDescription>
+          <DialogDescription>راجع تسوية العميل ومستحقات المورد قبل اعتماد الإلغاء.</DialogDescription>
         </DialogHeader>
         {settled ? (
           <div className="space-y-3">
@@ -102,8 +128,22 @@ export function BookingCancellationDialog({
                 {line.refund_id && <p>رصيد محفظة العميل {money(line.refund, line.currency)} · <Link className="underline" to="/refund-balances">فتح المحفظة</Link></p>}
               </div>
             ))}
+            {closedSupplierOrders.length > 0 && (
+              <section className="space-y-2" aria-label="مستحقات المورد المقفلة">
+                <h3 className="text-sm font-semibold">تم إقفال مستحقات المورد التالية</h3>
+                {closedSupplierOrders.map(order => (
+                  <div className="rounded-md border p-3 text-sm" key={order.id}>
+                    <Link className="font-medium underline" to={`/payment-orders?id=${order.id}`}>{order.number}</Link>
+                    <p>{order.supplier_name} · {money(order.amount, order.currency)}</p>
+                    <p>{order.confirmation}</p>
+                  </div>
+                ))}
+              </section>
+            )}
             <DialogFooter>
-              <Button asChild variant="outline"><Link to={`/payment-orders?booking_id=${bookingId}`}>مراجعة أوامر دفع المورد</Link></Button>
+              {supplierOrders.some(order => !closedSupplierOrders.some(closed => closed.id === order.id)) && (
+                <Button asChild variant="outline"><Link to={`/payment-orders?booking_id=${bookingId}`}>مراجعة أوامر دفع المورد</Link></Button>
+              )}
               <Button type="button" onClick={onClose}>تم</Button>
             </DialogFooter>
           </div>
@@ -131,6 +171,28 @@ export function BookingCancellationDialog({
               </div>
             ))}
             {missingRefundPermission && <p role="alert" className="text-sm text-destructive">تسوية المبلغ المدفوع تتطلب صلاحية اعتماد الاستردادات.</p>}
+            {supplierOrders.length > 0 && (
+              <section className="space-y-2" aria-labelledby="supplier-cancellation-heading">
+                <h3 id="supplier-cancellation-heading" className="text-sm font-semibold">مستحقات المورد</h3>
+                {supplierOrders.some(order => !order.blocked_reason) && (
+                  <p className="text-sm text-muted-foreground">لو المورد أكد الإلغاء بدون غرامة، سجّل مرجع تأكيده هنا. إقفال أمر الدفع والفاتورة هيتم تلقائيًا عند اعتماد الإلغاء.</p>
+                )}
+                {supplierOrders.map(order => (
+                  <div className="space-y-2 rounded-md border p-3 text-sm" key={order.id}>
+                    <p className="font-medium">{order.supplier_name || order.number}</p>
+                    <p className="text-muted-foreground">{order.number} · {money(order.amount, order.currency)}</p>
+                    {order.blocked_reason ? <p className="text-muted-foreground">{order.blocked_reason}</p> : (
+                      <>
+                        <Label htmlFor={`supplier-confirmation-${order.id}`}>مرجع تأكيد الإلغاء المجاني من المورد</Label>
+                        <Input id={`supplier-confirmation-${order.id}`} value={supplierReferences[order.id] ?? ''}
+                          minLength={3} maxLength={500} disabled={mutation.isPending}
+                          onChange={event => setSupplierReferences({ ...supplierReferences, [order.id]: event.target.value })} />
+                      </>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
             <div className="space-y-2">
               <Label htmlFor="booking-cancellation-reason">سبب الإلغاء</Label>
               <Textarea id="booking-cancellation-reason" value={reason} onChange={event => setReason(event.target.value)}
