@@ -5,12 +5,12 @@ import { toast } from 'sonner';
 import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 
 export interface Branch {
+  pos_cost_center_id: string | null;
   id: string;
   organization_id: string;
   name: string;
   code: string | null;
   address: string | null;
-  pos_cost_center_id: string | null;
   phone: string | null;
   manager_id: string | null;
   is_active: boolean;

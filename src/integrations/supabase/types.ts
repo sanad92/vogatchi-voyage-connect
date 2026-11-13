@@ -2698,7 +2698,6 @@ export type Database = {
       }
       branches: {
         Row: {
-          pos_cost_center_id: string | null
           address: string | null
           code: string | null
           created_at: string
@@ -2708,10 +2707,10 @@ export type Database = {
           name: string
           organization_id: string
           phone: string | null
+          pos_cost_center_id: string | null
           updated_at: string
         }
         Insert: {
-          pos_cost_center_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -2721,10 +2720,10 @@ export type Database = {
           name: string
           organization_id: string
           phone?: string | null
+          pos_cost_center_id?: string | null
           updated_at?: string
         }
         Update: {
-          pos_cost_center_id?: string | null
           address?: string | null
           code?: string | null
           created_at?: string
@@ -2734,6 +2733,7 @@ export type Database = {
           name?: string
           organization_id?: string
           phone?: string | null
+          pos_cost_center_id?: string | null
           updated_at?: string
         }
         Relationships: [
