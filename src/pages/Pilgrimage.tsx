@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban } from 'lucide-react';
+import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import PilgrimageSales from '@/components/pilgrimage/PilgrimageSales';
+import PilgrimageAvailabilitySearch from '@/components/pilgrimage/PilgrimageAvailabilitySearch';
 import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram } from '@/lib/pilgrimage/operations';
 import {
   ROOM, money as fmt, printDocument, table, receiptHtml, contractHtml, manifestRows, MANIFEST_HEADERS, exportExcel, roomIssues,
@@ -72,6 +73,13 @@ const Pilgrimage = () => {
     return next;
   });
   const linkedSaleId = params.get('sale');
+  const availabilityOpen = params.get('view') === 'availability';
+  const openAvailability = () => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.delete('sale');
+    next.set('view', 'availability');
+    return next;
+  });
   const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
@@ -87,7 +95,7 @@ const Pilgrimage = () => {
 
   const fail = (e: any) => toast({ title: 'تعذر الحفظ', description: e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => ['pilgrimage-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -251,6 +259,19 @@ const Pilgrimage = () => {
   const passportWarning = (g: any) =>
     Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
 
+  if (availabilityOpen && orgId) return <PilgrimageAvailabilitySearch key={orgId} orgId={orgId}
+    onBack={() => setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('view');
+      return next;
+    })}
+    onOpenQuote={id => setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('view');
+      next.set('sale', id);
+      return next;
+    })} />;
+
   // Unified commercial quote workspace (Group seats / FIT / B2B).
   if (salesOpen || linkedSaleId) return <PilgrimageSales initialType={type} initialProgram={program}
     initialSaleId={linkedSaleId} onBack={() => {
@@ -291,6 +312,7 @@ const Pilgrimage = () => {
           icon={Moon}
           badge={<Badge variant="outline">{PROGRAM_STATUS[program.status]}</Badge>}
           actions={<div className="flex gap-2">
+            <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
             <Button variant="outline" onClick={() => setSalesOpen(true)}>عروض البيع Group / FIT / B2B</Button>
             {canManage && <Button variant="outline" onClick={() => { setEditingProgram(true); setPf({ ...EMPTY_PROGRAM, ...Object.fromEntries(PROGRAM_FIELDS.map((k) => [k, program[k] ?? ''])), cost_per_person: cost?.cost_per_person ?? 0 }); setProgramOpen(true); }}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
             <Button disabled={!!canRegisterPilgrim(program, programPilgrims)} title={canRegisterPilgrim(program, programPilgrims) || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
@@ -562,6 +584,7 @@ const Pilgrimage = () => {
         description="إدارة برامج الحج والعمرة، التسجيل، التحصيل بسندات قبض، التسكين، وكشوفات السفر والعقود."
         icon={Moon}
         actions={<div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
           <Button variant="outline" onClick={() => setSalesOpen(true)}>مبيعات Group / FIT / B2B</Button>
           {canManage && <Button onClick={() => { setEditingProgram(false); setPf({ ...EMPTY_PROGRAM }); setProgramOpen(true); }}><Plus className="h-4 w-4 me-1" />برنامج جديد</Button>}
         </div>}

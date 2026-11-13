@@ -58,7 +58,8 @@ CREATE OR REPLACE FUNCTION public.user_belongs_to_org(u uuid, org uuid)
 RETURNS boolean LANGUAGE sql STABLE SET search_path = ''
 AS $$
   SELECT (u IN ('00000000-0000-4000-8000-000000000011'::uuid, '00000000-0000-4000-8000-000000000012'::uuid,
-    '00000000-0000-4000-8000-000000000013'::uuid) AND org = '00000000-0000-4000-8000-000000000001'::uuid)
+    '00000000-0000-4000-8000-000000000013'::uuid, '00000000-0000-4000-8000-000000000014'::uuid)
+    AND org = '00000000-0000-4000-8000-000000000001'::uuid)
     OR (u = '00000000-0000-4000-8000-000000000021'::uuid AND org = '00000000-0000-4000-8000-000000000002'::uuid);
 $$;
 CREATE OR REPLACE FUNCTION public._require_route_code(org uuid, route text) RETURNS text LANGUAGE sql
@@ -73,6 +74,7 @@ AS $$ SELECT public.can_org_write(org) AND public.has_org_permission(org, 'payme
 
 ALTER TABLE public.pilgrimage_programs ADD COLUMN name text NOT NULL DEFAULT 'Test program',
   ADD COLUMN departure_date date, ADD COLUMN return_date date,
+  ADD COLUMN makkah_hotel text, ADD COLUMN madinah_hotel text,
   ADD COLUMN makkah_nights int NOT NULL DEFAULT 0, ADD COLUMN madinah_nights int NOT NULL DEFAULT 0,
   ADD COLUMN price_quad numeric NOT NULL DEFAULT 500, ADD COLUMN price_triple numeric NOT NULL DEFAULT 750,
   ADD COLUMN price_double numeric NOT NULL DEFAULT 1000, ADD COLUMN price_single numeric NOT NULL DEFAULT 1500;
@@ -98,6 +100,24 @@ GRANT SELECT, UPDATE ON public.pilgrimage_programs TO authenticated;
 \i scripts/deploy-pilgrimage-retail-registration.sql
 \i scripts/deploy-pilgrimage-b2b-roster.sql
 \i scripts/deploy-pilgrimage-b2b-passengers.sql
+\i scripts/deploy-pilgrimage-availability-search.sql
+
+CREATE OR REPLACE FUNCTION public._org_permission_state(org uuid, actor uuid, permission text)
+RETURNS TABLE(granted boolean, data_scope text) LANGUAGE sql STABLE
+AS $$
+  SELECT public.user_belongs_to_org(actor, org)
+    AND (public.get_user_org_role(actor, org) = 'manager'
+      OR permission IN ('invoices_view','bookings_view','customers_view')
+      OR (actor='00000000-0000-4000-8000-000000000014'::uuid AND permission='quotes_create')),
+    'organization'::text
+$$;
+CREATE OR REPLACE FUNCTION public.get_user_org_role(u uuid, org uuid)
+RETURNS text LANGUAGE sql STABLE SET search_path = ''
+AS $$
+  SELECT CASE WHEN NOT public.user_belongs_to_org(u,org) THEN 'none'
+    WHEN u='00000000-0000-4000-8000-000000000012'::uuid THEN 'viewer'
+    WHEN u='00000000-0000-4000-8000-000000000014'::uuid THEN 'agent' ELSE 'manager' END;
+$$;
 
 SET ROLE authenticated;
 SET test.user_id = '00000000-0000-4000-8000-000000000011';
@@ -169,6 +189,74 @@ BEGIN
   BEGIN
     PERFORM public.register_pilgrimage_b2b_passenger(entry, 'triple');
     RAISE EXCEPTION 'Foreign tenant registered a passenger';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $$;
+RESET ROLE;
+
+-- Two retail travelers plus one named B2B traveler in an existing 10-seat
+-- allocation consume 12 seats, with no extra seat for the named traveler.
+UPDATE public.pilgrimage_programs SET capacity=15, departure_date=current_date+10, return_date=current_date+17
+  WHERE id='00000000-0000-4000-8000-000000000201';
+SET ROLE authenticated;
+SET test.user_id = '00000000-0000-4000-8000-000000000014';
+DO $$
+DECLARE
+  org constant uuid := '00000000-0000-4000-8000-000000000001';
+  program constant uuid := '00000000-0000-4000-8000-000000000201';
+  customer constant uuid := '00000000-0000-4000-8000-000000000101';
+  request uuid := gen_random_uuid();
+  quote uuid;
+BEGIN
+  IF has_function_privilege('anon','public.search_pilgrimage_availability(uuid,text,date,date,integer,text,uuid)','EXECUTE')
+  THEN RAISE EXCEPTION 'Search callable anonymously'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.search_pilgrimage_availability(org,'umrah',current_date+5,current_date+12,3,'double')
+    WHERE program_id=program AND available_seats=3 AND unit_price=1000)
+    OR EXISTS (SELECT 1 FROM public.search_pilgrimage_availability(org,'umrah',NULL,NULL,4,'double'))
+    OR EXISTS (SELECT 1 FROM public.search_pilgrimage_availability(org,'hajj',NULL,NULL,1,'double'))
+    OR EXISTS (SELECT 1 FROM public.search_pilgrimage_availability(org,'umrah',current_date+11,NULL,1,'double'))
+  THEN RAISE EXCEPTION 'Seat, date, type, or room-price filtering failed'; END IF;
+  quote := public.create_pilgrimage_quote_from_availability(org,request,program,customer,3,'double',1000,'EGP');
+  IF quote<>request OR public.create_pilgrimage_quote_from_availability(org,request,program,customer,3,'double',1000,'EGP')<>quote
+    OR NOT EXISTS (SELECT 1 FROM public.pilgrimage_sales s WHERE s.id=quote AND s.status='draft' AND s.party_size=3)
+    OR (SELECT count(*) FROM public.pilgrimage_sale_items WHERE sale_id=quote)<>1
+    OR NOT EXISTS (SELECT 1 FROM public.pilgrimage_sale_items WHERE sale_id=quote AND line_sell=3000 AND room_type='double')
+    OR (SELECT available_seats FROM public.search_pilgrimage_availability(org,_program_id=>program))<>3
+  THEN RAISE EXCEPTION 'Atomic quote, duplicate prevention or unchanged availability failed'; END IF;
+  PERFORM set_config('test.user_id','00000000-0000-4000-8000-000000000011',true);
+  UPDATE public.pilgrimage_sales SET status='quoted' WHERE id=quote;
+  PERFORM public.transition_pilgrimage_seat_allocation(quote,'hold',5);
+  IF (SELECT available_seats FROM public.search_pilgrimage_availability(org,_program_id=>program))<>0
+  THEN RAISE EXCEPTION 'Search ignored an active hold'; END IF;
+  PERFORM public.transition_pilgrimage_seat_allocation(quote,'release');
+  IF (SELECT available_seats FROM public.search_pilgrimage_availability(org,_program_id=>program))<>3
+  THEN RAISE EXCEPTION 'Search ignored a released hold'; END IF;
+  BEGIN
+    PERFORM public.create_pilgrimage_quote_from_availability(org,gen_random_uuid(),program,customer,3,'double',999,'EGP');
+    RAISE EXCEPTION 'Stale price accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.create_pilgrimage_quote_from_availability(org,gen_random_uuid(),program,customer,4,'double',1000,'EGP');
+    RAISE EXCEPTION 'Unavailable seats accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.create_pilgrimage_quote_from_availability(org,gen_random_uuid(),program,
+      '00000000-0000-4000-8000-000000000102',3,'double',1000,'EGP');
+    RAISE EXCEPTION 'Foreign customer accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  PERFORM set_config('test.user_id','00000000-0000-4000-8000-000000000012',true);
+  BEGIN
+    PERFORM public.create_pilgrimage_quote_from_availability(org,gen_random_uuid(),program,customer,1,'double',1000,'EGP');
+    RAISE EXCEPTION 'Viewer created a quote';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  PERFORM set_config('test.user_id','00000000-0000-4000-8000-000000000021',true);
+  BEGIN
+    PERFORM public.search_pilgrimage_availability(org);
+    RAISE EXCEPTION 'Foreign tenant searched the organization';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 END $$;
