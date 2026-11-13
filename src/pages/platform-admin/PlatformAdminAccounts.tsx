@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,11 +13,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Shield, Trash2, UserCog, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+
+type PlatformRole = 'platform_owner' | 'platform_admin';
+
+function roleChangeError(error: { code?: string }, fallback: string) {
+  if (error.code === '23514') return 'لا يمكن إزالة أو تغيير دور آخر مالك للمنصة.';
+  if (error.code === '40001') return 'الدور اتغيّر. حدّث القائمة وحاول تاني.';
+  if (error.code === '42501') return 'الإجراء متاح لمالك المنصة فقط.';
+  return fallback;
+}
 
 interface PlatformAdminRow {
   id: string;
   user_id: string;
-  role: 'platform_owner' | 'platform_admin';
+  role: PlatformRole;
   created_at: string;
   email: string | null;
   full_name: string | null;
@@ -26,11 +36,12 @@ interface PlatformAdminRow {
 const PlatformAdminAccounts = () => {
   const qc = useQueryClient();
   const { isPlatformOwner } = usePlatformAdmin();
+  const { user } = useOptimizedAuth();
   const [openAdd, setOpenAdd] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PlatformAdminRow | null>(null);
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'platform_admin' as 'platform_admin' | 'platform_owner' });
+  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'platform_admin' as PlatformRole });
 
-  const { data: admins = [], isLoading, isFetching, refetch } = useQuery({
+  const { data: admins = [], isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['platform-admins'],
     queryFn: async (): Promise<PlatformAdminRow[]> => {
       const { data: roles, error } = await supabase
@@ -56,24 +67,23 @@ const PlatformAdminAccounts = () => {
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ row, newRole }: { row: PlatformAdminRow; newRole: 'platform_owner' | 'platform_admin' }) => {
-      if (row.role === newRole) return;
-      // Prevent demoting the last owner
-      if (row.role === 'platform_owner' && newRole !== 'platform_owner') {
-        const ownerCount = admins.filter(a => a.role === 'platform_owner').length;
-        if (ownerCount <= 1) throw new Error('لا يمكن تخفيض آخر مالك للمنصة');
-      }
-      const { error } = await supabase
-        .from('platform_roles')
-        .update({ role: newRole })
-        .eq('id', row.id);
+    mutationFn: async ({ row, newRole }: { row: PlatformAdminRow; newRole: PlatformRole }) => {
+      const { data, error } = await supabase.rpc('change_platform_account_role', {
+        p_role_id: row.id, p_expected_role: row.role, p_new_role: newRole,
+      });
       if (error) throw error;
+      if (data !== row.id) throw new Error('Role change was not confirmed');
     },
-    onSuccess: () => {
+    onSuccess: (_, { row }) => {
+      if (row.user_id === user?.id) window.location.reload();
       toast.success('تم تحديث الدور');
-      qc.invalidateQueries({ queryKey: ['platform-admins'] });
+      void qc.invalidateQueries({ queryKey: ['platform-admins'] });
+      void qc.invalidateQueries({ queryKey: ['platform-audit-entries'] });
     },
-    onError: (e: any) => toast.error(e?.message ?? 'فشل تحديث الدور'),
+    onError: (error: { code?: string }) => {
+      toast.error(roleChangeError(error, 'فشل تحديث الدور'));
+      void qc.invalidateQueries({ queryKey: ['platform-admins'] });
+    },
   });
 
   const createAdmin = useMutation({
@@ -96,24 +106,25 @@ const PlatformAdminAccounts = () => {
 
   const deleteAdmin = useMutation({
     mutationFn: async (row: PlatformAdminRow) => {
-      // Check it's not the last platform_owner
-      if (row.role === 'platform_owner') {
-        const ownerCount = admins.filter(a => a.role === 'platform_owner').length;
-        if (ownerCount <= 1) throw new Error('لا يمكن إزالة آخر مالك للمنصة');
-      }
-      const { error } = await supabase
-        .from('platform_roles')
-        .delete()
-        .eq('id', row.id);
+      const { data, error } = await supabase.rpc('change_platform_account_role', {
+        p_role_id: row.id, p_expected_role: row.role, p_new_role: null,
+      });
       if (error) throw error;
+      if (data !== row.id) throw new Error('Role removal was not confirmed');
     },
-    onSuccess: () => {
+    onSuccess: (_, row) => {
+      if (row.user_id === user?.id) window.location.reload();
       toast.success('تم إزالة الصلاحية بنجاح');
       setPendingDelete(null);
-      qc.invalidateQueries({ queryKey: ['platform-admins'] });
+      void qc.invalidateQueries({ queryKey: ['platform-admins'] });
+      void qc.invalidateQueries({ queryKey: ['platform-audit-entries'] });
     },
-    onError: (e: any) => toast.error(e?.message ?? 'فشل الإزالة'),
+    onError: (error: { code?: string }) => {
+      toast.error(roleChangeError(error, 'فشل الإزالة'));
+      void qc.invalidateQueries({ queryKey: ['platform-admins'] });
+    },
   });
+  const ownerCount = admins.filter(account => account.role === 'platform_owner').length;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -123,7 +134,7 @@ const PlatformAdminAccounts = () => {
             <UserCog className="h-6 w-6 text-amber-600" /> حسابات المنصة
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            إدارة المستخدمين الذين يملكون صلاحية إدارة المنصة بالكامل
+            إدارة حسابات مالكي المنصة ومديريها
           </p>
         </div>
         {isPlatformOwner && (
@@ -140,12 +151,18 @@ const PlatformAdminAccounts = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">المدراء الحاليون ({admins.length})</CardTitle>
+          <CardTitle className="text-base">حسابات المنصة الحالية ({admins.length})</CardTitle>
+          {ownerCount === 1 && isPlatformOwner && <p className="text-sm text-muted-foreground">لا يمكن إزالة أو تغيير دور آخر مالك للمنصة.</p>}
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : isError ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3">
+              <p>تعذّر تحميل حسابات المنصة.</p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>إعادة المحاولة</Button>
             </div>
           ) : admins.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">لا يوجد مدراء منصة</p>
@@ -169,10 +186,10 @@ const PlatformAdminAccounts = () => {
                       {isPlatformOwner ? (
                         <Select
                           value={a.role}
-                          onValueChange={(v: any) => updateRole.mutate({ row: a, newRole: v })}
-                          disabled={updateRole.isPending}
+                          onValueChange={value => updateRole.mutate({ row: a, newRole: value as PlatformRole })}
+                          disabled={updateRole.isPending || deleteAdmin.isPending || (a.role === 'platform_owner' && ownerCount <= 1)}
                         >
-                          <SelectTrigger className="w-[160px] h-8">
+                          <SelectTrigger className="w-[160px] h-8" aria-label="دور حساب المنصة">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -195,6 +212,8 @@ const PlatformAdminAccounts = () => {
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-label="إزالة دور المنصة"
+                          disabled={updateRole.isPending || deleteAdmin.isPending || (a.role === 'platform_owner' && ownerCount <= 1)}
                           onClick={() => setPendingDelete(a)}
                           className="text-destructive hover:text-destructive"
                         >
@@ -270,7 +289,11 @@ const PlatformAdminAccounts = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => pendingDelete && deleteAdmin.mutate(pendingDelete)}
+              disabled={deleteAdmin.isPending}
+              onClick={event => {
+                event.preventDefault();
+                if (pendingDelete) deleteAdmin.mutate(pendingDelete);
+              }}
               className="bg-destructive hover:bg-destructive/90"
             >
               تأكيد الإزالة

@@ -58,7 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'الأمان والإعدادات',
     items: [
       { title: 'حسابات المنصة', href: '/platform/accounts', icon: UserCog },
-      { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText },
+      { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText, ownerOnly: true },
       { title: 'إعدادات المنصة', href: '/platform/settings', icon: Settings, ownerOnly: true },
     ],
   },

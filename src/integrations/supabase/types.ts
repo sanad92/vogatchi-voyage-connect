@@ -18100,6 +18100,42 @@ export type Database = {
         }
         Returns: Json
       }
+      change_platform_account_role: {
+        Args: {
+          p_role_id: string
+          p_expected_role: Database["public"]["Enums"]["platform_role"]
+          p_new_role?: Database["public"]["Enums"]["platform_role"] | null
+        }
+        Returns: string
+      }
+      platform_audit_actions: {
+        Args: never
+        Returns: { action: string }[]
+      }
+      platform_audit_entries: {
+        Args: {
+          p_scope?: string
+          p_action?: string | null
+          p_from?: string | null
+          p_to?: string | null
+          p_page?: number
+        }
+        Returns: {
+          id: string
+          occurred_at: string | null
+          action: string
+          organization_id: string | null
+          organization_name: string | null
+          actor_id: string | null
+          actor_name: string | null
+          actor_email: string | null
+          target_table: string | null
+          target_id: string | null
+          setting_key: string | null
+          old_role: string | null
+          new_role: string | null
+        }[]
+      }
       platform_security_events: {
         Args: never
         Returns: {
