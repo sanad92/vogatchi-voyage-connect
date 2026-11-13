@@ -295,7 +295,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
               mediaDownloadStatus = 'success';
             } catch (e) {
               mediaDownloadStatus = 'failed';
-              mediaDownloadError = String(e?.message ?? e).slice(0, 500);
+              mediaDownloadError = String((e as Error)?.message ?? e).slice(0, 500);
               console.error('[wa-webhook] media download failed', {
                 messageId: message.id, mediaId: media.id, mime: mediaMime, error: mediaDownloadError,
               });

@@ -217,7 +217,6 @@ Deno.serve(async (req) => {
         approval_status: status,
         meta_rejection_reason: null,
         meta_synced_at: new Date().toISOString(),
-        whatsapp_settings_id: settings.id,
       }).eq('id', row.id);
 
       results.push({ id: row.id, name, ok: true, metaId: j?.id ?? null, status });
