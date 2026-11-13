@@ -28,6 +28,7 @@ export interface RefundBalance {
   bookingId?: string | null;
   bookingNumber?: string | null;
   invoiceNumber?: string | null;
+  invoiceId?: string | null;
   amount: number;
   currency: string;
   reference: string | null;
@@ -54,27 +55,28 @@ export function canSettleRefund(row: RefundBalance) {
 
 const movements = 'refund_balance_settlements(id,amount,created_at,reference,treasury_account_id,invoice_id,supplier_order_id,invoice:invoices(invoice_number),order:supplier_payment_orders(reference_number),treasury:bank_accounts(account_name))';
 
-export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string, includeHistory = false, enabled = true) {
+export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string, includeHistory = false, enabled = true, refundId?: string) {
   const orgId = useOrgId();
   return useQuery({
-    queryKey: ['refund-balances', orgId, kind, partyId, includeHistory],
+    queryKey: ['refund-balances', orgId, kind, partyId, includeHistory, refundId],
     enabled: !!orgId && enabled,
     queryFn: async ({ signal }): Promise<RefundBalance[]> => {
       if (kind === 'customer') {
         const rows = await allRows<any>((from, to) => {
           let query = db.from('refund_requests')
-            .select(`*,customers(name),bookings(booking_number),invoices(invoice_number),bank_accounts(account_name),${movements}`)
+            .select(`*,customers(name),bookings(booking_number),invoices(id,invoice_number),bank_accounts(account_name),${movements}`)
             .eq('organization_id', orgId);
           if (!includeHistory) {
             query = query.in('status', ['approved', 'paid']).is('pilgrimage_b2b_cancellation_id', null);
           }
           if (partyId) query = query.eq('customer_id', partyId);
+          if (refundId) query = query.eq('id', refundId);
           return query.order('created_at', { ascending: false }).order('id').range(from, to).abortSignal(signal);
         });
         return rows.map(row => ({
           id: row.id, kind, partyId: row.customer_id, partyName: row.customers?.name,
           source: row.bookings?.booking_number ?? row.invoices?.invoice_number, bookingId: row.booking_id,
-          bookingNumber: row.bookings?.booking_number, invoiceNumber: row.invoices?.invoice_number,
+          bookingNumber: row.bookings?.booking_number, invoiceNumber: row.invoices?.invoice_number, invoiceId: row.invoices?.id,
           followUpOn: row.follow_up_on ?? null,
           amount: row.amount, currency: row.currency, reference: row.reason, status: row.status,
           createdAt: row.created_at, decisionAt: row.approved_at, paidAt: row.paid_at,
@@ -88,6 +90,7 @@ export function useRefundBalances(kind: RefundBalance['kind'], partyId?: string,
           .select(`id,amount,currency,reference,created_at,confirmed_at,rejected_at,follow_up_on,supplier_id,suppliers(name),supplier_invoices(invoice_number,bookings(booking_number)),${movements}`)
           .eq('organization_id', orgId);
         if (partyId) query = query.eq('supplier_id', partyId);
+        if (refundId) query = query.eq('id', refundId);
         return query.order('created_at', { ascending: false }).order('id').range(from, to).abortSignal(signal);
       });
       return rows.map(row => {
