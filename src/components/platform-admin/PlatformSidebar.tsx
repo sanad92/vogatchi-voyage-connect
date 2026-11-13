@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Building2, CreditCard, BanknoteIcon, Settings,
+  Building2, CreditCard, BanknoteIcon, Settings, Calculator,
   UserCog, ScrollText, Database, Activity, Package,
   LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
 } from 'lucide-react';
 import SafarLogo from '@/components/brand/VogantraLogo';
 import { cn } from '@/lib/utils';
+import { usePlatformFinanceRole } from '@/hooks/usePlatformFinanceRole';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 interface NavItem {
@@ -13,6 +14,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   ownerOnly?: boolean;
+  financeOnly?: boolean;
 }
 
 interface NavGroup {
@@ -37,6 +39,10 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'التحويلات البنكية', href: '/platform/transfers', icon: BanknoteIcon },
       { title: 'تذاكر الدعم', href: '/platform/support', icon: LifeBuoy },
     ],
+  },
+  {
+    label: 'المالية',
+    items: [{ title: 'محاسبة SafarERP', href: '/platform/finance', icon: Calculator, financeOnly: true }],
   },
   {
     label: 'التشغيل والتقنية',
@@ -67,7 +73,8 @@ interface Props {
 
 const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) => {
   const location = useLocation();
-  const { isPlatformOwner } = usePlatformAdmin();
+  const { isPlatformAdmin, isPlatformOwner } = usePlatformAdmin();
+  const { role: financeRole } = usePlatformFinanceRole();
   const isActive = (href: string) =>
     href === '/platform'
       ? location.pathname === '/platform'
@@ -92,7 +99,7 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
 
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5">
         {NAV_GROUPS.map(group => {
-          const items = group.items.filter(i => !i.ownerOnly || isPlatformOwner);
+          const items = group.items.filter(i => i.financeOnly ? !!financeRole : isPlatformAdmin && (!i.ownerOnly || isPlatformOwner));
           if (!items.length) return null;
           return (
             <div key={group.label} className="space-y-1">

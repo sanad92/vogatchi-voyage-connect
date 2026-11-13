@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { usePlatformFinanceRole } from '@/hooks/usePlatformFinanceRole';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import PlatformSidebar from './PlatformSidebar';
 import ImpersonationBanner from './ImpersonationBanner';
@@ -21,7 +22,11 @@ const PlatformLayout = ({ children }: Props) => {
   const { dir } = useLanguage();
   const location = useLocation();
   const { profile, signOut } = useOptimizedAuth();
-  const { platformRole } = usePlatformAdmin();
+  const { platformRole, isPlatformAdmin } = usePlatformAdmin();
+  const { role: financeRole } = usePlatformFinanceRole();
+  const roleLabel = {
+    owner: 'مالك المنصة', accountant: 'محاسب المنصة', auditor: 'مراجع مالي',
+  };
 
   return (
     <div className="min-h-screen bg-background" dir={dir}>
@@ -46,13 +51,13 @@ const PlatformLayout = ({ children }: Props) => {
               <Shield className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-foreground">لوحة تحكم المنصة</p>
               <Badge variant="outline" className="border-border text-muted-foreground text-[10px] hidden sm:inline-flex">
-                {platformRole === 'platform_owner' ? 'مالك المنصة' : 'مدير المنصة'}
+                {financeRole ? roleLabel[financeRole] : platformRole === 'platform_owner' ? 'مالك المنصة' : 'مدير المنصة'}
               </Badge>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {location.pathname !== '/platform' && (
+            {isPlatformAdmin && location.pathname !== '/platform' && (
               <Button asChild variant="ghost" size="icon">
                 <Link to="/platform#platform-follow-up" aria-label="يحتاج إلى متابعة" title="يحتاج إلى متابعة">
                   <Bell className="h-4 w-4" aria-hidden="true" />

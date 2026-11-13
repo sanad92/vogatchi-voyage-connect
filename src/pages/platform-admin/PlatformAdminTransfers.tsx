@@ -51,50 +51,14 @@ const PlatformAdminTransfers = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const req = requests?.find(r => r.id === requestId);
-      if (!req) throw new Error('الطلب غير موجود');
-
-      // Update request status
-      const { error: updateError } = await supabase
-        .from('bank_transfer_requests')
-        .update({
-          status: 'approved',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-      if (updateError) throw updateError;
-
-      // Activate subscription
-      const durationDays = req.billing_cycle === 'yearly' ? 365 : 30;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + durationDays);
-
-      const { error: subError } = await supabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          starts_at: new Date().toISOString(),
-          expires_at: expiresAt.toISOString(),
-          plan_id: req.plan_id,
-          notes: `تم التفعيل عبر تحويل بنكي - مرجع: ${req.transfer_reference || 'غير محدد'}`,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('organization_id', req.organization_id);
-      if (subError) throw subError;
-
-      // Record payment transaction
-      await supabase.from('payment_transactions').insert({
-        organization_id: req.organization_id,
-        amount_cents: Math.round(req.amount * 100),
-        currency: req.currency,
-        status: 'completed',
-        payment_method: 'bank_transfer',
-      });
+      const { error } = await supabase.rpc('approve_platform_bank_transfer', { p_transfer_id: requestId });
+      if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('تم قبول الطلب وتفعيل الاشتراك');
+      toast.success('تم قبول الطلب وتفعيل الاشتراك وترحيل القيد');
+      queryClient.invalidateQueries({ queryKey: ['platform-finance'] });
       queryClient.invalidateQueries({ queryKey: ['bank-transfer-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-overview'] });
       setSelectedRequest(null);
     },
     onError: (err: any) => toast.error(err.message),
@@ -102,20 +66,23 @@ const PlatformAdminTransfers = () => {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ requestId, reason }: { requestId: string; reason: string }) => {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('bank_transfer_requests')
         .update({
           status: 'rejected',
           reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
           rejection_reason: reason,
-        })
-        .eq('id', requestId);
+        }, { count: 'exact' })
+        .eq('id', requestId)
+        .eq('status', 'pending');
       if (error) throw error;
+      if (!count) throw new Error('الطلب تمت مراجعته بالفعل');
     },
     onSuccess: () => {
       toast.success('تم رفض الطلب');
       queryClient.invalidateQueries({ queryKey: ['bank-transfer-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-overview'] });
       setSelectedRequest(null);
       setRejectionReason('');
     },

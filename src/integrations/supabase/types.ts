@@ -9950,6 +9950,51 @@ export type Database = {
           },
         ]
       }
+      platform_finance_accounts: {
+        Row: { code: string; name_ar: string; name_en: string; kind: string }
+        Insert: { code: string; name_ar: string; name_en: string; kind: string }
+        Update: { code?: string; name_ar?: string; name_en?: string; kind?: string }
+        Relationships: []
+      }
+      platform_finance_entries: {
+        Row: {
+          id: string; entry_no: number; entry_date: string; currency: string;
+          memo: string; source: string; source_id: string | null; request_id: string | null;
+          reverses_id: string | null; posted_by: string | null; posted_at: string
+        }
+        Insert: { entry_date: string; currency: string; memo: string; source: string }
+        Update: { memo?: string }
+        Relationships: [
+          {
+            foreignKeyName: "platform_finance_entries_reverses_id_fkey"
+            columns: ["reverses_id"]
+            isOneToOne: true
+            referencedRelation: "platform_finance_entries"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      platform_finance_lines: {
+        Row: { entry_id: string; line_no: number; account_code: string; debit: number; credit: number }
+        Insert: { entry_id: string; line_no: number; account_code: string; debit: number; credit: number }
+        Update: { debit?: number; credit?: number }
+        Relationships: [
+          {
+            foreignKeyName: "platform_finance_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "platform_finance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_finance_lines_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "platform_finance_accounts"
+            referencedColumns: ["code"]
+          }
+        ]
+      }
       platform_roles: {
         Row: {
           assigned_by: string | null
@@ -15878,6 +15923,25 @@ export type Database = {
       }
     }
     Functions: {
+      add_platform_finance_account: {
+        Args: { p_code: string; p_name_ar: string; p_name_en: string; p_kind: string }
+        Returns: undefined
+      }
+      get_platform_finance_role: { Args: Record<PropertyKey, never>; Returns: string | null }
+      list_platform_finance_staff: { Args: Record<PropertyKey, never>; Returns: { email: string; role: string }[] }
+      set_platform_finance_staff: { Args: { p_email: string; p_role: string | null }; Returns: undefined }
+      post_platform_finance_entry: {
+        Args: { p_date: string; p_currency: string; p_memo: string; p_lines: Json; p_request_id: string }
+        Returns: string
+      }
+      reverse_platform_finance_entry: { Args: { p_entry_id: string; p_memo: string }; Returns: string }
+      platform_finance_trial_balance: {
+        Args: { p_from: string; p_to: string; p_currency: string }
+        Returns: { account_code: string; opening: number; debit: number; credit: number }[]
+      }
+      import_platform_paymob_receipts: { Args: { p_from: string; p_to: string }; Returns: number }
+      approve_platform_bank_transfer: { Args: { p_transfer_id: string }; Returns: string }
+
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }
