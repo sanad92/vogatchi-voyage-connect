@@ -11,11 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PlatformCompanyContacts } from '@/components/platform-admin/PlatformCompanyContacts';
+import { PlatformCompanyContactHistory } from '@/components/platform-admin/PlatformCompanyContactHistory';
 import { PAGE_SIZE, TablePager } from '@/components/platform-admin/TablePager';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { companyProfilePath } from '@/lib/platformCompanyFollowup';
+import { companyProfilePath, dueCompanyFollowupPath } from '@/lib/platformCompanyFollowup';
 
 const listUrl = '/platform/organizations/followup';
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
@@ -152,6 +153,7 @@ function FollowupForm({ company }: { company: CompanyActivation }) {
     onSuccess: (timestamp) => {
       setRevision(timestamp);
       qc.invalidateQueries({ queryKey: ['platform-company-activation', user?.id] });
+      qc.invalidateQueries({ queryKey: ['platform-company-due'] });
       toast.success('تم حفظ متابعة الشركة');
     },
     onError: (error) => {
@@ -245,11 +247,14 @@ export default function PlatformCompanyFollowup() {
           </h1>
           {!id && <p className="mt-2 text-sm text-sidebar-foreground/80">تجارب تنتهي خلال ٧ أيام والشركة لم تسجّل عرض سعر أو حجز بعد.</p>}
         </div>
-        <Button asChild variant="secondary" size="sm">
-          <Link to="/platform/organizations">
-            <ArrowRight className="ltr:rotate-180" aria-hidden="true" />كل الشركات
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary" size="sm"><Link to={dueCompanyFollowupPath}>متابعات اليوم والمتأخرات</Link></Button>
+          <Button asChild variant="secondary" size="sm">
+            <Link to="/platform/organizations">
+              <ArrowRight className="ltr:rotate-180" aria-hidden="true" />كل الشركات
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {!valid ? <p role="alert">الشركة غير متاحة</p>
@@ -264,6 +269,7 @@ export default function PlatformCompanyFollowup() {
             <CompanySummary company={selected} />
             <PlatformCompanyContacts organizationId={selected.id} formatDate={date} />
             <FollowupForm key={selected.id} company={selected} />
+            <PlatformCompanyContactHistory key={`history-${selected.id}`} organizationId={selected.id} />
           </> : <p role="status">الشركة غير متاحة</p>
         ) : (
           <Card>

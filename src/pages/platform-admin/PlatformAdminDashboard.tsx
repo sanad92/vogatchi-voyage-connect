@@ -16,7 +16,7 @@ import {
   loadPendingTransfers, loadPlatformCollections, loadPlatformCompanies,
   loadPlatformGrowth, loadPlatformSubscriptions, loadSupportBacklog, loadUpcomingRenewals,
 } from '@/lib/platformOverview';
-import { billingFollowupPath, companyProfilePath } from '@/lib/platformCompanyFollowup';
+import { billingFollowupPath, companyProfilePath, dueCompanyFollowupPath } from '@/lib/platformCompanyFollowup';
 
 const PLAN_COLORS = ['bg-chart-1', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5'];
 const PANEL = 'min-w-0 rounded-2xl border border-border bg-card shadow-sm';
@@ -186,6 +186,7 @@ function PlatformAdminDashboard() {
             <SectionLink to={`${billingFollowupPath}?kind=activation`}>دفعات مؤكدة بانتظار التفعيل</SectionLink>
             <SectionLink to="/platform/organizations?contacts=incomplete">بيانات التواصل ناقصة</SectionLink>
             <SectionLink to="/platform/organizations/followup">متابعة تفعيل الشركات</SectionLink>
+            <SectionLink to={dueCompanyFollowupPath}>متابعات اليوم والمتأخرات</SectionLink>
             <QueueLink icon={LifeBuoy} label="تذاكر دعم مفتوحة" count={number(support.data?.open)} to="/platform/support"
               detail={support.data
                 ? <><bdi>{number(support.data.overdue)}</bdi> <span>تجاوزت وقت أول رد</span></>

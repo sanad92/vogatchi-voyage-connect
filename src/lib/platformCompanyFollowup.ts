@@ -3,6 +3,13 @@ import { allRows } from '@/lib/pagedRows';
 
 export const companyProfilePath = (id: string) => `/platform/organizations/followup?company=${encodeURIComponent(id)}`;
 export const billingFollowupPath = '/platform/subscriptions/followup';
+export const dueCompanyFollowupPath = '/platform/organizations/followup/due';
+
+export const contactChannels = { call: 'مكالمة', whatsapp: 'واتساب', email: 'إيميل' };
+export const contactOutcomes = {
+  reached: 'تم التواصل', no_reply: 'مفيش رد', training_requested: 'طلب تدريب',
+  renewal_promised: 'وعد بالتجديد', other: 'نتيجة أخرى',
+};
 
 export const contactGapLabels: Record<string, string> = {
   company_phone: 'هاتف المؤسسة',

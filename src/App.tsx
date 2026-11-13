@@ -141,6 +141,7 @@ const PlatformLoginPage = lazy(() => import("@/pages/platform-admin/PlatformLogi
 const PlatformLayout = lazy(() => import("@/components/platform-admin/PlatformLayout"));
 const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/PlatformAdminDashboard"));
 const PlatformCompanyFollowup = lazy(() => import("@/pages/platform-admin/PlatformCompanyFollowup"));
+const PlatformDueCompanyFollowups = lazy(() => import("@/pages/platform-admin/PlatformDueCompanyFollowups"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
 const PlatformBillingFollowup = lazy(() => import("@/pages/platform-admin/PlatformBillingFollowup"));
@@ -290,6 +291,7 @@ function App() {
                             <Route index element={<PlatformAdminDashboard />} />
                             <Route path="organizations" element={<PlatformAdminOrganizations />} />
                             <Route path="organizations/followup" element={<PlatformCompanyFollowup />} />
+                            <Route path="organizations/followup/due" element={<PlatformDueCompanyFollowups />} />
                             <Route path="subscriptions" element={<PlatformAdminSubscriptions />} />
                             <Route path="subscriptions/followup" element={<PlatformBillingFollowup />} />
                             <Route path="plans" element={<PlatformAdminPlans />} />

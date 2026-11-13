@@ -9965,6 +9965,12 @@ export type Database = {
         Update: { assigned_to?: string | null; next_followup_at?: string | null; note?: string; updated_by?: string | null; updated_at?: string }
         Relationships: []
       }
+      platform_company_contact_history: {
+        Row: { id: string; organization_id: string; channel: string; outcome: string; note: string; recorded_by: string | null; recorded_at: string }
+        Insert: { id: string; organization_id: string; channel: string; outcome: string; note?: string }
+        Update: never
+        Relationships: []
+      }
       platform_finance_accounts: {
         Row: { code: string; name_ar: string; name_en: string; kind: string }
         Insert: { code: string; name_ar: string; name_en: string; kind: string }
@@ -15951,6 +15957,10 @@ export type Database = {
       platform_company_activation: {
         Args: { p_organization_id?: string; p_page?: number }
         Returns: Json
+      }
+      platform_due_company_followups: {
+        Args: Record<PropertyKey, never>
+        Returns: { organization_id: string; company_name: string; next_followup_at: string; overdue: boolean; assigned_name: string | null; note: string; last_channel: string | null; last_outcome: string | null; last_recorded_at: string | null }[]
       }
       platform_company_contact_gaps: {
         Args: Record<PropertyKey, never>
