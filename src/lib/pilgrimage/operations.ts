@@ -8,6 +8,7 @@ export type PilgrimRecord = {
   status?: string | null;
   total_price?: number | string | null;
   paid_amount?: number | string | null;
+  reserved_refunds?: number | string | null;
   cancellation_fee?: number | string | null;
   full_name?: string | null;
   name_en?: string | null;
@@ -19,6 +20,8 @@ export type PilgrimRecord = {
   visa_status?: string | null;
   makkah_room?: string | null;
   madinah_room?: string | null;
+  makkah_rooming_group_id?: string | null;
+  madinah_rooming_group_id?: string | null;
   bus_number?: string | null;
   room_type?: string | null;
 };
@@ -43,10 +46,12 @@ export const isActivePilgrim = (p: PilgrimRecord) => p.status !== 'cancelled';
 export const pilgrimDue = (p: PilgrimRecord) => Math.max(
   0, amount(isActivePilgrim(p) ? p.total_price : p.cancellation_fee)
 );
+export const pilgrimNetPaid = (p: PilgrimRecord) =>
+  Math.max(0, Math.round(amount(p.paid_amount) * 100) - Math.round(amount(p.reserved_refunds) * 100)) / 100;
 export const outstanding = (p: PilgrimRecord) =>
-  Math.max(0, pilgrimDue(p) - Math.max(0, amount(p.paid_amount)));
+  Math.max(0, pilgrimDue(p) - pilgrimNetPaid(p));
 export const refundable = (p: PilgrimRecord) =>
-  Math.max(0, Math.max(0, amount(p.paid_amount)) - pilgrimDue(p));
+  Math.max(0, pilgrimNetPaid(p) - pilgrimDue(p));
 
 export function pilgrimageTotals(pilgrims: PilgrimRecord[]) {
   const active = pilgrims.filter(isActivePilgrim);
@@ -101,9 +106,9 @@ export function readinessIssues(p: PilgrimRecord, program: ProgramRecord) {
       issues.push('حالة التأشيرة لم تُعتمد بعد');
   }
   if (!p.documents_complete) issues.push('المستندات لم تُعلّم مكتملة');
-  if (amount(program.makkah_nights) > 0 && !p.makkah_room?.trim())
+  if (amount(program.makkah_nights) > 0 && !p.makkah_rooming_group_id && !p.makkah_room?.trim())
     issues.push('غرفة مكة غير محددة');
-  if (amount(program.madinah_nights) > 0 && !p.madinah_room?.trim())
+  if (amount(program.madinah_nights) > 0 && !p.madinah_rooming_group_id && !p.madinah_room?.trim())
     issues.push('غرفة المدينة غير محددة');
   return issues;
 }

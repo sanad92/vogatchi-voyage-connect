@@ -158,6 +158,8 @@ const SopPipeline = () => {
   const [source, setSource] = useState('all');
   const [followUp, setFollowUp] = useState<FollowUpFilter>('all');
   const [selected, setSelected] = useState<string | null>(null);
+  const linkedLead = searchParams.get('lead');
+  const activeLeadId = selected || linkedLead;
   const [editing, setEditing] = useState<SopLead | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -328,13 +330,21 @@ const SopPipeline = () => {
         </div>
       )}
 
-      <Sheet open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+      <Sheet open={!!activeLeadId} onOpenChange={(open) => {
+        if (open) return;
+        setSelected(null);
+        if (linkedLead) setSearchParams((current) => {
+          const next = new URLSearchParams(current);
+          next.delete('lead');
+          return next;
+        }, { replace: true });
+      }}>
         <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-2xl" dir="rtl">
           <SheetHeader className="text-right mb-4">
             <SheetTitle>ملف العميل المحتمل</SheetTitle>
             <SheetDescription>البيانات، المرحلة، الصلاحيات، المتابعات والتسعير في سجل واحد.</SheetDescription>
           </SheetHeader>
-          {selected && <SopLeadPanel leadId={selected} />}
+          {activeLeadId && <SopLeadPanel leadId={activeLeadId} />}
         </SheetContent>
       </Sheet>
 

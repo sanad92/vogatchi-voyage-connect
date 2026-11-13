@@ -199,7 +199,8 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           </Select>
         </Field>
         <Field label="الحملة">
-          <Input value={form.campaign || ''} onChange={(e) => set('campaign', e.target.value)} />
+          {form.campaign?.startsWith('pilgrimage:') ? <Input value="طلبات اهتمام العمرة" readOnly /> :
+            <Input value={form.campaign || ''} onChange={(e) => set('campaign', e.target.value)} />}
         </Field>
         <Field label="فندق / باقة مرجعية">
           <Input value={form.reference_hotel || ''} onChange={(e) => set('reference_hotel', e.target.value)} />

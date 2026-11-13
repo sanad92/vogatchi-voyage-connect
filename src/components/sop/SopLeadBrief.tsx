@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, User } from 'lucide-react';
@@ -17,6 +18,7 @@ const Row = ({ label, value }: { label: string; value?: React.ReactNode }) => {
 
 /** Customer + trip brief so Sales can read the full request without leaving the panel. */
 export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
+  const umrahProgramId = lead.campaign?.match(/^pilgrimage:([\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12})$/i)?.[1];
   const dates = lead.check_in
     ? `${new Date(lead.check_in).toLocaleDateString('ar-EG')} → ${
         lead.check_out ? new Date(lead.check_out).toLocaleDateString('ar-EG') : '—'
@@ -74,7 +76,11 @@ export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
               : undefined}
           />
           <Row label="الأولويات" value={lead.priorities} />
-          <Row label="فندق مرجعي" value={lead.reference_hotel} />
+          {umrahProgramId ? <Row label="برنامج العمرة" value={
+            <Link className="text-primary underline" to={`/pilgrimage?program=${umrahProgramId}&tab=interest`}>
+              {lead.reference_hotel || 'عرض البرنامج'}
+            </Link>
+          } /> : <Row label="فندق مرجعي" value={lead.reference_hotel} />}
           <Row label="طلبات خاصة" value={lead.special_requests} />
           <Row label="سياسة الدفع" value={PAYMENT_POLICY_LABELS[lead.payment_policy] || lead.payment_policy} />
           <Row label="نسبة العربون" value={lead.deposit_percent ? `${lead.deposit_percent}%` : undefined} />
