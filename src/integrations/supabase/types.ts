@@ -18100,6 +18100,16 @@ export type Database = {
         }
         Returns: Json
       }
+      platform_security_events: {
+        Args: never
+        Returns: {
+          id: string
+          action: string
+          target_table: string | null
+          setting_key: string | null
+          created_at: string | null
+        }[]
+      }
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }
         Returns: boolean

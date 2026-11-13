@@ -3,22 +3,21 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Database, Lock, Settings, KeyRound, Globe, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import LandingPageCMS from '@/components/admin/LandingPageCMS';
 import BackupManagementTab from '@/components/admin/BackupManagementTab';
 import SecurityManagementTab from '@/components/admin/SecurityManagementTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
 import PermissionsTab from '@/components/admin/PermissionsTab';
 
 const tabs = [
-  { value: 'backup', label: 'النسخ الاحتياطي', icon: Database, description: 'إدارة النسخ الاحتياطية' },
-  { value: 'security', label: 'الأمان', icon: Lock, description: 'إعدادات الأمان المتقدمة' },
+  { value: 'backup', label: 'النسخ الاحتياطي', icon: Database, description: 'سجل النسخ الاحتياطية' },
+  { value: 'security', label: 'الأمان', icon: Lock, description: 'سجل الأمان والتحقق الثنائي' },
   { value: 'system', label: 'إعدادات النظام', icon: Settings, description: 'إعدادات النظام العامة' },
   { value: 'permissions', label: 'الصلاحيات', icon: KeyRound, description: 'مرجع أدوار المؤسسة المعتمدة' },
   { value: 'landing', label: 'صفحة الهبوط', icon: Globe, description: 'إدارة محتوى صفحة الهبوط' },
 ];
 
 const PlatformAdminSettings = () => {
-  const [activeTab, setActiveTab] = useState('backup');
+  const [activeTab, setActiveTab] = useState('system');
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTabs = tabs.filter(
@@ -37,7 +36,7 @@ const PlatformAdminSettings = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">إعدادات المنصة</h1>
-              <p className="text-muted-foreground text-sm">إعدادات على مستوى المنصة — للسوبر أدمن فقط</p>
+              <p className="text-muted-foreground text-sm">إعدادات على مستوى المنصة لمالك المنصة</p>
             </div>
           </div>
           <Badge variant="outline" className="bg-amber-100/50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300">
@@ -47,7 +46,7 @@ const PlatformAdminSettings = () => {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="البحث في الإعدادات..."
+            placeholder="ابحث عن تاب..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-background/70 border-border/50 focus:bg-background"
@@ -84,7 +83,7 @@ const PlatformAdminSettings = () => {
           <TabsContent value="security" className="mt-0"><SecurityManagementTab /></TabsContent>
           <TabsContent value="system" className="mt-0"><SystemSettingsTab /></TabsContent>
           <TabsContent value="permissions" className="mt-0"><PermissionsTab /></TabsContent>
-          <TabsContent value="landing" className="mt-0"><LandingPageCMS /></TabsContent>
+          <TabsContent value="landing" className="mt-0"><SystemSettingsTab scope="landing" /></TabsContent>
         </div>
       </Tabs>
     </div>

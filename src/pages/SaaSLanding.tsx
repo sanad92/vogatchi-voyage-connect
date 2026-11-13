@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSafarLandingSettings } from '@/hooks/useSafarLandingSettings';
+import { safarLandingDefaults } from '@/lib/safarLandingSettings';
 import {
   ArrowLeft,
   ArrowUpLeft,
@@ -42,8 +44,6 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-
-const platformPhone = '+201103442886';
 
 const pageContainer = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8';
 
@@ -341,6 +341,8 @@ const SectionHeading = ({
 );
 
 const SaaSLanding = () => {
+  const { data: landing = safarLandingDefaults } = useSafarLandingSettings();
+  const platformPhone = landing.safar_landing_phone;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -433,11 +435,11 @@ const SaaSLanding = () => {
               <h1 className="text-4xl font-black leading-[1.25] tracking-normal sm:text-5xl lg:text-[4.15rem] lg:leading-[1.18]">
                 SafarERP
                 <span className="block text-brand-gold text-2xl sm:text-3xl mt-3">
-                  نظام إدارة شركات السياحة
+                  {landing.safar_landing_headline}
                 </span>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-brand-ivory/80 sm:text-lg lg:mx-0 lg:max-w-xl">
-                SafarERP يجمع إدارة العملاء، عروض الأسعار، الحجوزات، التشغيل والحسابات في منصة واحدة مصممة لطريقة عمل شركات السياحة العربية.
+                {landing.safar_landing_intro}
               </p>
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
@@ -693,7 +695,7 @@ const SaaSLanding = () => {
           <div>
             <BrandLockup />
             <p className="mt-3 max-w-md text-xs leading-6 text-muted-foreground">
-              منصة لإدارة دورة العمل داخل شركات السياحة والسفر—من طلب العميل حتى الحجز والتحصيل والربحية.
+              {landing.safar_landing_footer}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-xs font-semibold text-muted-foreground sm:text-sm">

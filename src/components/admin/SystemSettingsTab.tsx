@@ -1,212 +1,139 @@
+import { useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { safarLandingQueryKey } from '@/hooks/useSafarLandingSettings';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import { Building2, DollarSign, Mail, Globe, Shield } from "lucide-react";
-
-interface SystemSetting {
-  id: string;
-  setting_key: string;
-  setting_value: string;
-  setting_type: string;
-  category: string;
-  description: string;
-  is_public: boolean;
+interface SettingField {
+  key: string;
+  label: string;
+  multiline?: boolean;
+  type?: 'email' | 'tel';
+  pattern?: string;
+  maxLength?: number;
+  hint?: string;
 }
 
-const SystemSettingsTab = () => {
+const generalFields: SettingField[] = [
+  { key: 'site_name', label: 'اسم الموقع', maxLength: 100 },
+  { key: 'site_description', label: 'وصف الموقع', multiline: true },
+  { key: 'company_name', label: 'اسم الشركة المشغّلة', maxLength: 100 },
+  { key: 'company_phone', label: 'هاتف الشركة المشغّلة', type: 'tel' },
+  { key: 'company_email', label: 'بريد الشركة المشغّلة', type: 'email' },
+  { key: 'company_address', label: 'عنوان الشركة المشغّلة', multiline: true },
+];
+const landingFields: SettingField[] = [
+  { key: 'safar_landing_headline', label: 'العنوان أسفل اسم SafarERP', maxLength: 100 },
+  { key: 'safar_landing_intro', label: 'النص التعريفي في أول الصفحة', multiline: true },
+  { key: 'safar_landing_footer', label: 'الوصف أسفل الصفحة', multiline: true },
+  { key: 'safar_landing_phone', label: 'رقم التواصل أسفل الصفحة', type: 'tel', pattern: '\\+[1-9][0-9]{7,14}', maxLength: 16, hint: 'اكتب الرقم بالصيغة الدولية، مثل +201103442886.' },
+];
+
+export default function SystemSettingsTab({ scope = 'general' }: { scope?: 'general' | 'landing' }) {
   const queryClient = useQueryClient();
-  const [editingSettings, setEditingSettings] = useState<Record<string, string>>({});
-
-  // جلب جميع الإعدادات
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['system-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .order('category', { ascending: true });
-      
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const isLanding = scope === 'landing';
+  const fields = isLanding ? landingFields : generalFields;
+  const settings = useQuery({
+    queryKey: ['platform-settings', scope],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from('system_settings')
+        .select('setting_key,setting_value').in('setting_key', fields.map(field => field.key)).abortSignal(signal);
       if (error) throw error;
-      return data as SystemSetting[];
-    }
+      return new Map(data.map(row => [row.setting_key, row.setting_value ?? '']));
+    },
   });
 
-  // تحديث إعداد
-  const updateSettingMutation = useMutation({
+  const save = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase.rpc('update_system_setting', {
-        setting_key_param: key,
-        setting_value_param: value
-      });
-      
+      const { data, error } = await supabase.rpc('update_system_setting', { setting_key_param: key, setting_value_param: value });
       if (error) throw error;
+      if (!data) throw new Error('Setting was not saved');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-settings'] });
-      toast({
-        title: "تم التحديث",
-        description: "تم حفظ الإعدادات بنجاح",
-      });
-      setEditingSettings({});
+    onSuccess: (_, { key, value }) => {
+      queryClient.setQueryData<Map<string, string>>(['platform-settings', scope], previous =>
+        new Map(previous).set(key, value),
+      );
+      clearDraft(key);
+      void queryClient.invalidateQueries({ queryKey: ['platform-settings', scope] });
+      if (isLanding) void queryClient.invalidateQueries({ queryKey: safarLandingQueryKey });
+      toast.success('تم حفظ الإعداد');
     },
-    onError: (error: any) => {
-      toast({
-        title: "خطأ في التحديث",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    onError: (error: { code?: string }) => {
+      toast.error(error.code === '22023' ? 'راجع القيمة المدخلة وحاول مرة أخرى.' : 'تعذّر حفظ الإعداد. حاول مرة أخرى.');
+    },
   });
 
-  const handleSaveSetting = (key: string) => {
-    const value = editingSettings[key];
-    if (value !== undefined) {
-      updateSettingMutation.mutate({ key, value });
-    }
-  };
-
-  const handleSettingChange = (key: string, value: string) => {
-    setEditingSettings(prev => ({ ...prev, [key]: value }));
-  };
-
-  const renderSettingInput = (setting: SystemSetting) => {
-    const currentValue = editingSettings[setting.setting_key] ?? setting.setting_value;
-
-    switch (setting.setting_type) {
-      case 'boolean':
-        return (
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={currentValue === 'true'}
-              onCheckedChange={(checked) => 
-                handleSettingChange(setting.setting_key, checked.toString())
-              }
-            />
-            <span className="text-sm text-gray-600">
-              {currentValue === 'true' ? 'مفعل' : 'معطل'}
-            </span>
-          </div>
-        );
-      case 'number':
-        return (
-          <Input
-            type="number"
-            value={currentValue}
-            onChange={(e) => handleSettingChange(setting.setting_key, e.target.value)}
-          />
-        );
-      default:
-        return setting.setting_key.includes('address') || setting.setting_key.includes('description') ? (
-          <Textarea
-            value={currentValue}
-            onChange={(e) => handleSettingChange(setting.setting_key, e.target.value)}
-            rows={3}
-          />
-        ) : (
-          <Input
-            value={currentValue}
-            onChange={(e) => handleSettingChange(setting.setting_key, e.target.value)}
-          />
-        );
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'company': return <Building2 className="h-5 w-5" />;
-      case 'financial': return <DollarSign className="h-5 w-5" />;
-      case 'notifications': return <Mail className="h-5 w-5" />;
-      case 'general': return <Globe className="h-5 w-5" />;
-      case 'security': return <Shield className="h-5 w-5" />;
-      default: return <Globe className="h-5 w-5" />;
-    }
-  };
-
-  const getCategoryTitle = (category: string) => {
-    switch (category) {
-      case 'company': return 'معلومات الشركة';
-      case 'financial': return 'الإعدادات المالية';
-      case 'notifications': return 'الإشعارات';
-      case 'general': return 'الإعدادات العامة';
-      case 'security': return 'الأمان';
-      case 'booking': return 'الحجوزات';
-      case 'automation': return 'الأتمتة';
-      default: return category;
-    }
-  };
-
-  if (isLoading) {
-    return <div className="text-center py-8">جاري تحميل الإعدادات...</div>;
+  function clearDraft(key: string) {
+    setDrafts(previous => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
   }
 
-  // تجميع الإعدادات حسب الفئة
-  const settingsByCategory = settings?.reduce((acc, setting) => {
-    if (!acc[setting.category]) {
-      acc[setting.category] = [];
-    }
-    acc[setting.category].push(setting);
-    return acc;
-  }, {} as Record<string, SystemSetting[]>) || {};
+  function submit(event: FormEvent<HTMLFormElement>, key: string) {
+    event.preventDefault();
+    const value = drafts[key]?.trim();
+    if (value && value !== settings.data?.get(key)) save.mutate({ key, value });
+  }
 
-  return (
-    <div className="space-y-6">
-      {Object.entries(settingsByCategory).map(([category, categorySettings]) => (
-        <Card key={category}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {getCategoryIcon(category)}
-              {getCategoryTitle(category)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {categorySettings.map((setting) => (
-              <div key={setting.setting_key} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">{setting.description}</Label>
-                  <p className="text-sm text-gray-500 mt-1">{setting.setting_key}</p>
-                </div>
-                <div>
-                  {renderSettingInput(setting)}
-                </div>
-                <div className="flex items-center gap-2">
-                  {editingSettings[setting.setting_key] !== undefined && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveSetting(setting.setting_key)}
-                        disabled={updateSettingMutation.isPending}
-                      >
-                        حفظ
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const newSettings = { ...editingSettings };
-                          delete newSettings[setting.setting_key];
-                          setEditingSettings(newSettings);
-                        }}
-                      >
-                        إلغاء
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
+  if (settings.isPending) return <p role="status">جارٍ تحميل الإعدادات...</p>;
+  if (settings.isError) return (
+    <div className="flex flex-wrap items-center gap-3" role="alert">
+      <p>تعذّر تحميل الإعدادات.</p>
+      <Button variant="outline" onClick={() => void settings.refetch()}>إعادة المحاولة</Button>
     </div>
   );
-};
 
-export default SystemSettingsTab;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{isLanding ? 'محتوى الصفحة الرئيسية' : 'الإعدادات العامة'}</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {isLanding
+            ? 'بيظهر التعديل على الصفحة الرئيسية بعد الحفظ.'
+            : 'دي البيانات العامة المحفوظة للمنصة. لتغيير النصوص ورقم التواصل المنشورين، استخدم تاب صفحة الهبوط.'}
+        </p>
+        {isLanding && <a className="w-fit text-sm text-primary underline" href="https://safarerp.com/" target="_blank" rel="noreferrer">عرض الصفحة الرئيسية</a>}
+      </CardHeader>
+      <CardContent className="divide-y">
+        {fields.map(field => {
+          const saved = settings.data.get(field.key);
+          const draft = drafts[field.key] ?? saved ?? '';
+          const changed = draft !== saved;
+          const inputProps = {
+            id: field.key,
+            value: draft,
+            required: true,
+            maxLength: field.maxLength ?? 500,
+            onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+              const value = event.target.value;
+              setDrafts(previous => ({ ...previous, [field.key]: value }));
+            },
+            disabled: saved === undefined || save.isPending,
+            'aria-describedby': field.hint ? `${field.key}-hint` : undefined,
+          };
+          return (
+            <form className="grid gap-2 py-4 first:pt-0 last:pb-0" key={field.key} onSubmit={event => submit(event, field.key)}>
+              <Label htmlFor={field.key}>{field.label}</Label>
+              {field.hint && <p className="text-xs text-muted-foreground" id={`${field.key}-hint`}>{field.hint}</p>}
+              {saved === undefined ? <p className="text-sm text-muted-foreground">الإعداد غير متاح حاليًا.</p> : field.multiline
+                ? <Textarea {...inputProps} rows={3} />
+                : <Input {...inputProps} type={field.type ?? 'text'} pattern={field.pattern} dir={field.type ? 'ltr' : undefined} />}
+              {saved !== undefined && changed && <div className="flex gap-2">
+                <Button size="sm" disabled={save.isPending || !draft.trim() || draft.trim() === saved}>حفظ</Button>
+                <Button size="sm" type="button" variant="outline" disabled={save.isPending} onClick={() => clearDraft(field.key)}>إلغاء</Button>
+              </div>}
+            </form>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
