@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Clock, Check, X, RefreshCw, UserPlus, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { isFreeEmail, BUSINESS_INVITE_MESSAGE } from '@/lib/business-email';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -34,6 +35,10 @@ const InvitationManager = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+    if (isFreeEmail(email)) {
+      toast.error(BUSINESS_INVITE_MESSAGE);
+      return;
+    }
     try {
       await sendInvitation.mutateAsync({ email: email.trim(), role });
       setEmail('');
@@ -72,6 +77,9 @@ const InvitationManager = () => {
                 disabled={sendInvitation.isPending}
                 className="text-right"
               />
+              {email.includes('@') && isFreeEmail(email) && (
+                <p className="text-xs text-destructive">{BUSINESS_INVITE_MESSAGE}</p>
+              )}
             </div>
             <div className="w-full sm:w-36">
               <Select value={role} onValueChange={(v) => setRole(v as InvitationRole)}>

@@ -106,6 +106,13 @@
       "when": 1794489436372,
       "tag": "0014_pin_email_queue_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794570405746,
+      "tag": "0015_block_free_email_invitations",
+      "breakpoints": true
     }
   ]
 }

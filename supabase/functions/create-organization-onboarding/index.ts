@@ -9,6 +9,8 @@ const corsHeaders = {
 const MAX_NAME_LENGTH = 200;
 const MAX_FIELD_LENGTH = 500;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const FREE_EMAIL_DOMAINS = ['gmail.com','googlemail.com','yahoo.com','ymail.com','rocketmail.com','outlook.com','hotmail.com','live.com','msn.com','icloud.com','me.com','mac.com','aol.com','mail.com','proton.me','protonmail.com','gmx.com','zoho.com','yandex.com'];
+const isFreeEmail = (e: string) => { const d = (e.split('@')[1] || '').toLowerCase(); return FREE_EMAIL_DOMAINS.some((x) => d === x || d.endsWith('.' + x)); };
 const PHONE_REGEX = /^[\d\s\-\+\(\)]{6,20}$/;
 
 Deno.serve(async (req) => {
@@ -72,6 +74,12 @@ Deno.serve(async (req) => {
     const phone = typeof body?.phone === 'string' ? body.phone.trim() : null;
     const address = typeof body?.address === 'string' ? body.address.trim() : null;
 
+    if ((email && isFreeEmail(email)) || (user.email && isFreeEmail(user.email))) {
+      return new Response(JSON.stringify({ error: "التسجيل مخصص للشركات فقط. يرجى استخدام بريد العمل الرسمي." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (email && !EMAIL_REGEX.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email format" }), {
         status: 400,
