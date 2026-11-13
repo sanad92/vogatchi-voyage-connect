@@ -126,6 +126,7 @@ const SiteCustomization = lazy(() => import("@/pages/SiteCustomization"));
 const MonitoringDashboard = lazy(() => import("@/pages/MonitoringDashboard"));
 const SupportTickets = lazy(() => import("@/pages/SupportTickets"));
 const PilgrimagePage = lazy(() => import("@/pages/Pilgrimage"));
+const PilgrimageAgencyPortal = lazy(() => import("@/pages/PilgrimageAgencyPortal"));
 const PlatformSupport = lazy(() => import("@/pages/platform-admin/PlatformSupport"));
 const DatabaseManager = lazy(() => import("@/pages/DatabaseManager"));
 const TeamManagement = lazy(() => import("@/pages/TeamManagement"));
@@ -274,6 +275,7 @@ function App() {
                 <Route path="/onboarding" element={
                   <SupabaseProtectedRoute><OnboardingWizard /></SupabaseProtectedRoute>
                 } />
+                <Route path="/pilgrimage/agency" element={<PilgrimageAgencyPortal />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
