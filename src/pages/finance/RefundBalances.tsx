@@ -29,16 +29,17 @@ export default function RefundBalances() {
   const kind = selectedKind === 'customer' || selectedKind === 'supplier' ? selectedKind : 'both';
   const party = kind === 'both' ? undefined : params.get('party') || undefined;
   const view = params.get('view');
+  const refundId = kind === 'both' ? undefined : params.get('refund') || undefined;
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const canRead = hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
   const canManage = canRead && hasPermission('payments_process') && getPermissionScope('payments_process') === 'organization';
-  const customers = useRefundBalances('customer', kind === 'customer' ? party : undefined, true, canRead && kind !== 'supplier');
-  const suppliers = useRefundBalances('supplier', kind === 'supplier' ? party : undefined, false, canRead && kind !== 'customer');
+  const customers = useRefundBalances('customer', kind === 'customer' ? party : undefined, true, canRead && kind !== 'supplier', refundId);
+  const suppliers = useRefundBalances('supplier', kind === 'supplier' ? party : undefined, false, canRead && kind !== 'customer', refundId);
   const { claim } = useRefundBalanceActions();
   const [dialog, setDialog] = useState<DialogState>();
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Africa/Cairo' }).format(new Date());
   const allBalances = [
-    ...(kind === 'supplier' ? [] : customers.data ?? []).filter(row => !row.pilgrimageB2B),
+    ...(kind === 'supplier' ? [] : customers.data ?? []).filter(row => !row.pilgrimageB2B || row.id === refundId),
     ...(kind === 'customer' ? [] : suppliers.data ?? []),
   ];
   const balances = allBalances.filter(row => view === 'all'
@@ -81,6 +82,7 @@ export default function RefundBalances() {
             onClick={() => changeFilters(kind, 'overdue', party)}>المتابعات المتأخرة</Button>
           <Button variant={view === 'all' ? 'secondary' : 'outline'}
             onClick={() => changeFilters(kind, 'all', party)}>عرض كل الحركات</Button>
+          {refundId && <Button variant="ghost" onClick={() => changeFilters(kind, view, party)}>عرض كل الاستردادات</Button>}
           {party && <Button variant="ghost" onClick={() => changeFilters(kind, view)}>إلغاء تصفية الطرف</Button>}
           {kind !== 'supplier' && <Button asChild variant="outline"><Link to="/finance-approvals">اعتمادات الاسترداد</Link></Button>}
           {kind !== 'customer' && canManage && orgId && <Button onClick={() => setDialog({ orgId, action: 'create' })}>مطالبة استرداد جديدة</Button>}
@@ -93,7 +95,7 @@ export default function RefundBalances() {
           <p className="text-sm text-muted-foreground">{view === 'overdue' ? 'لا توجد متابعات متأخرة.' : 'لا توجد أرصدة مطابقة.'}</p>
         )}
         {balances.map(row => {
-          const overdue = isRefundFollowUpOverdue(row, today);
+          const overdue = !row.pilgrimageB2B && isRefundFollowUpOverdue(row, today);
           const open = isOpenRefund(row);
           return (
             <Card key={`${row.kind}:${row.id}`}>
@@ -124,7 +126,7 @@ export default function RefundBalances() {
                       ? <time dateTime={row.followUpOn}>{new Date(row.followUpOn).toLocaleDateString('ar-EG', { timeZone: 'UTC' })}</time>
                       : <span>غير محدد</span>}
                     {overdue && <Badge variant="destructive">متأخر</Badge>}
-                    {canManage && orgId && open && (
+                    {canManage && orgId && open && !row.pilgrimageB2B && (
                       <Button size="sm" variant="outline" onClick={() => setDialog({ orgId, action: 'followUp', id: row.id, kind: row.kind })}>
                         تعديل موعد المتابعة
                       </Button>

@@ -67,7 +67,8 @@ export default function PaymentOrders() {
   usePageTitle("أوامر دفع الموردين");
   const orgId = useOrgId();
   const { canProcessPayments, getPermissionScope } = useSupabasePermissions();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const orderId = params.get("id");
   const [references, setReferences] = useState<Record<string, string>>({});
   const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("all"),
@@ -78,14 +79,16 @@ export default function PaymentOrders() {
   const approve = useApproveSupplierPO();
   const pay = useRecordSupplierPayment();
   const query = useQuery({
-    queryKey: ["supplier-payment-orders-all", orgId],
+    queryKey: ["supplier-payment-orders-all", orgId, orderId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let request = (supabase as any)
         .from("supplier_payment_orders")
         .select("*, suppliers(name), bookings(booking_number), supplier_payment_allocations(amount), refund_balance_settlements(amount)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
+      if (orderId) request = request.eq("id", orderId);
+      const { data, error } = await request;
       if (error) throw error;
       return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => ({ ...order, ...paymentOrderBalance(order.amount, [
         ...(order.supplier_payment_allocations ?? []), ...(order.refund_balance_settlements ?? []),
@@ -96,17 +99,17 @@ export default function PaymentOrders() {
     () =>
       (query.data || []).filter(
         (r) =>
-          (status === "all" ||
+          (orderId || status === "all" ||
             r.status === status ||
             r.approval_status === status) &&
-          (!search ||
+          (orderId || !search ||
             r.reference_number.toLowerCase().includes(search.toLowerCase()) ||
             r.suppliers?.name?.toLowerCase().includes(search.toLowerCase()) ||
             r.bookings?.booking_number
               ?.toLowerCase()
               .includes(search.toLowerCase())),
       ),
-    [query.data, status, search],
+    [query.data, status, search, orderId],
   );
   const totals = useMemo(
     () => ({
@@ -127,36 +130,38 @@ export default function PaymentOrders() {
         title="أوامر دفع الموردين"
         description="دورة واحدة من إنشاء الاستحقاق إلى الاعتماد ثم الصرف من الخزينة."
       />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {!orderId && <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Count label="الإجمالي" value={totals.all} />
         <Count label="بانتظار الاعتماد" value={totals.pending} />
         <Count label="جاهز للصرف" value={totals.approved} />
         <Count label="تم صرفه" value={totals.paid} />
-      </div>
+      </div>}
       <Card>
         <CardContent className="flex flex-wrap gap-3 pt-6">
-          <div className="relative min-w-64 flex-1">
-            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pr-9"
-              placeholder="رقم الأمر أو الحجز أو المورد"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الحالات</SelectItem>
-              <SelectItem value="pending">بانتظار الاعتماد</SelectItem>
-              <SelectItem value="approved">معتمد</SelectItem>
-              <SelectItem value="rejected">مرفوض</SelectItem>
-              <SelectItem value="paid">مدفوع</SelectItem>
-              <SelectItem value="partially_paid">مدفوع جزئيًا</SelectItem>
-            </SelectContent>
-          </Select>
+          {orderId ? <Button variant="outline" onClick={() => setParams({})}>عرض كل أوامر الدفع</Button> : <>
+            <div className="relative min-w-64 flex-1">
+              <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pr-9"
+                placeholder="رقم الأمر أو الحجز أو المورد"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الحالات</SelectItem>
+                <SelectItem value="pending">بانتظار الاعتماد</SelectItem>
+                <SelectItem value="approved">معتمد</SelectItem>
+                <SelectItem value="rejected">مرفوض</SelectItem>
+                <SelectItem value="paid">مدفوع</SelectItem>
+                <SelectItem value="partially_paid">مدفوع جزئيًا</SelectItem>
+              </SelectContent>
+            </Select>
+          </>}
         </CardContent>
       </Card>
       {query.isLoading && (

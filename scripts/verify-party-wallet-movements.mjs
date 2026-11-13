@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { listPartyWalletMovements } from '../src/lib/partyWalletMovements.ts';
+import { listPartyWalletMovements, walletDocumentPath } from '../src/lib/partyWalletMovements.ts';
 
 const payment = {
   id: 'payment:1', date: '2026-11-10', label: 'دفعة من العميل',
@@ -20,6 +20,11 @@ assert.deepEqual([payout.balanceDelta, payout.cashDirection], [-200, 'out']);
 assert.deepEqual([invoice.balanceDelta, invoice.cashDirection, invoice.document], [-300, undefined, 'INV-1']);
 assert.equal(approval.balanceDelta, 500);
 assert.equal(receipt.balanceDelta, 0);
+assert.deepEqual(invoice.links.map(link => walletDocumentPath(link, 'customer')), [
+  '/invoices?id=i1', '/refund-balances?kind=customer&view=all&refund=c1',
+]);
+assert.equal(walletDocumentPath(approval.links[0], 'customer'), '/refund-balances?kind=customer&view=all&refund=c1');
+assert.equal(walletDocumentPath({ kind: 'booking', id: 'booking/id', label: 'Booking' }, 'customer'), '/bookings/booking%2Fid/workspace?tab=financials');
 
 const [direct] = listPartyWalletMovements([], [{ ...refund, movements: [] }]);
 assert.deepEqual([direct.date, direct.amount, direct.balanceDelta, direct.cashDirection], [refund.paidAt, 500, 0, 'out']);
@@ -33,10 +38,13 @@ const [supplierOffset, supplierReceipt, supplierCredit] = listPartyWalletMovemen
   kind: 'supplier', status: 'confirmed', currency: 'USD',
   movements: [
     { id: 's3', amount: 70, created_at: '2026-11-13T10:00:00Z', treasury_account_id: 't1' },
-    { id: 's4', amount: 200, created_at: '2026-11-13T11:00:00Z', supplier_order_id: 'o1' },
+    { id: 's4', amount: 200, created_at: '2026-11-13T11:00:00Z', supplier_order_id: 'o1', order: { reference_number: 'PO-1' } },
   ],
 }]);
 assert.deepEqual([supplierOffset.balanceDelta, supplierOffset.cashDirection], [-200, undefined]);
 assert.deepEqual([supplierReceipt.currency, supplierReceipt.balanceDelta, supplierReceipt.cashDirection], ['USD', -70, 'in']);
 assert.equal(supplierCredit.balanceDelta, 500);
+assert.deepEqual(supplierOffset.links.map(link => walletDocumentPath(link, 'supplier')), [
+  '/payment-orders?id=o1', '/refund-balances?kind=supplier&view=all&refund=c1',
+]);
 console.log('Wallet activity order, ordinary payments, partial settlements, and legacy refunds passed');
