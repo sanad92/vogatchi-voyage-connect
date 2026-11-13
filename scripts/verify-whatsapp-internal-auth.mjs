@@ -39,6 +39,11 @@ async function check({ label, serviceKey = modernKey, secret = internalSecret, h
     '../_shared/auth.ts': auth,
     '../_shared/ai-gateway.ts': { corsHeaders: {}, callLovableAI: rejectEffect('ai') },
     '../_shared/whatsapp-bot-policy.ts': { botMayReply: () => { throw new Error('No-op reached conversation policy'); } },
+    '../_shared/sales-agent.ts': {
+      loadBrief: rejectEffect('database'), matchCatalog: rejectEffect('database'),
+      catalogText: rejectEffect('ai'), salesSystemPrompt: rejectEffect('ai'),
+      extractBrief: rejectEffect('ai'), mergeBrief: rejectEffect('ai'),
+    },
     '../_shared/whatsapp.ts': {
       graphSend: rejectEffect('provider'), isWindowOpen: rejectEffect('database'),
       resolveSettings: rejectEffect('database'), normalizePhone: value => value,

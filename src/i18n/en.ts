@@ -1,5 +1,11 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  // Platform backups
+  'النسخ الاحتياطي والاستعادة': 'Backup and restore',
+  'إنشاء النسخ الاحتياطية واستعادتها يتم من إعدادات قاعدة البيانات لدى مزود الاستضافة.': 'Create and restore backups in your hosting provider’s database settings.',
+  'تعذّر تحميل سجل النسخ الاحتياطية.': 'Could not load the backup history.',
+  'لا توجد سجلات نسخ احتياطية في النظام.': 'No backup records in the system.',
+  'سجل غير موثّق': 'Unverified record',
   // Company follow-up
   'متابعة تفعيل الشركات': 'Company activation follow-up',
   'ملف الشركة': 'Company profile',

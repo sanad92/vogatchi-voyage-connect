@@ -10,6 +10,7 @@ const output=ts.transpileModule(source,{fileName:'useQuotes.ts',compilerOptions:
 const imports={
   react:{useRef:()=>requestRef},
   '@tanstack/react-query':{useMutation:x=>x,useQuery:x=>x,useQueryClient:()=>({invalidateQueries:()=>{}})},
+  '@/lib/postgrest-safe':{sanitizeSearchTerm:()=>{throw new Error('Unexpected search during quote creation');}},
   '@/integrations/supabase/client':{supabase:{from:()=>{throw new Error('Unexpected client-side table write');}}},
   '@/hooks/useOrgId':{useOrgId:()=>org},
   '@/hooks/useOptimizedAuth':{useOptimizedAuth:()=>({user:user?{id:user}:null})},
