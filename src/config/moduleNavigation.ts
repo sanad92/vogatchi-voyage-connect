@@ -241,6 +241,7 @@ export const ERP_MODULES: ErpModule[] = [
           screen({ title: 'أعمار ديون الموردين', href: '/supplier-aging', icon: Building2, description: 'فواتير الموردين المفتوحة حسب مدة التأخر ومطابقة الذمم.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
           screen({ title: 'المصروفات', href: '/expense-management', icon: Calculator, description: 'مصروفات الشركة والموظفين والعمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'الاعتمادات المالية', href: '/finance-approvals', icon: CheckCircle2, description: 'اعتماد السداد للموردين وطلبات الاسترداد.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'الأرصدة والاستردادات', href: '/refund-balances', icon: Wallet, description: 'أرصدة العملاء والموردين وتسويات الاسترداد.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
           screen({ title: 'أوامر الدفع', href: '/payment-orders', icon: CreditCard, description: 'متابعة أوامر دفع الموردين واعتمادها وصرفها.', requiredPermission: 'financial_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
         ],
       },

@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import BookingFinancialWorkspace from '@/components/bookings/BookingFinancialWorkspace';
 import BookingAccountingPanel from '@/components/bookings/BookingAccountingPanel';
 import RecordPaymentDialog from './RecordPaymentDialog';
+import RequestRefundDialog from './RequestRefundDialog';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { BookingProfitCockpit } from './BookingProfitCockpit';
 import type { Workspace } from './types';
 
@@ -13,6 +15,7 @@ interface Props {
 
 export const FinancialsTab = ({ workspace }: Props) => {
   const f = workspace.financials;
+  const { canProcessPayments, canRefundPayments } = useSupabasePermissions();
   const paymentInvoices = (workspace.invoices as Array<Record<string, unknown>>).map((invoice) => ({
     id: String(invoice.id),
     invoice_number: typeof invoice.invoice_number === 'string' ? invoice.invoice_number : null,
@@ -32,16 +35,21 @@ export const FinancialsTab = ({ workspace }: Props) => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">إجراءات التحصيل</CardTitle>
-          {workspace.booking?.id && (
-            <RecordPaymentDialog
-              bookingId={workspace.booking.id}
-              customerId={workspace.booking.customer_id ?? workspace.customer?.id}
-              currency={f.currency}
-              outstanding={f.outstanding}
-              invoices={paymentInvoices}
-              onSaved={() => workspace.refetch()}
-            />
-          )}
+          <div className="flex flex-wrap gap-2">
+            {workspace.booking?.id && workspace.booking.customer_id && ['EGP', 'USD', 'SAR'].includes(f.currency)
+              && (canRefundPayments() || canProcessPayments())
+              && <RequestRefundDialog key={workspace.booking.id} bookingId={workspace.booking.id} currency={f.currency} />}
+            {workspace.booking?.id && (
+              <RecordPaymentDialog
+                bookingId={workspace.booking.id}
+                customerId={workspace.booking.customer_id ?? workspace.customer?.id}
+                currency={f.currency}
+                outstanding={f.outstanding}
+                invoices={paymentInvoices}
+                onSaved={() => workspace.refetch()}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">سجّل تحصيلًا جديدًا ثم راجع أثره فورًا في تسوية العميل وربحية الحجز.</CardContent>
       </Card>

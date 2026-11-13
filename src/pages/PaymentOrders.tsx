@@ -81,13 +81,15 @@ export default function PaymentOrders() {
     queryKey: ["supplier-payment-orders-all", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("supplier_payment_orders")
-        .select("*, suppliers(name), bookings(booking_number), supplier_payment_allocations(amount)")
+        .select("*, suppliers(name), bookings(booking_number), supplier_payment_allocations(amount), refund_balance_settlements(amount)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []).map(order => ({ ...order, ...paymentOrderBalance(order.amount, order.supplier_payment_allocations) })) as unknown as Order[];
+      return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => ({ ...order, ...paymentOrderBalance(order.amount, [
+        ...(order.supplier_payment_allocations ?? []), ...(order.refund_balance_settlements ?? []),
+      ]) })) as unknown as Order[];
     },
   });
   const rows = useMemo(
