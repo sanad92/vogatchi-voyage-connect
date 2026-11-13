@@ -1,0 +1,30 @@
+name: Trip File service currency summary checks
+on:
+  pull_request:
+    paths:
+      - 'src/lib/tripFile/**'
+      - 'src/hooks/useBookingServices.ts'
+      - 'src/components/bookings/workspace/ItineraryTab.tsx'
+      - 'src/components/bookings/workspace/TripServicesMoneySummary.tsx'
+      - '.github/workflows/trip-file-services-summary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/tripFile/**'
+      - 'src/hooks/useBookingServices.ts'
+      - 'src/components/bookings/workspace/ItineraryTab.tsx'
+      - 'src/components/bookings/workspace/TripServicesMoneySummary.tsx'
+      - '.github/workflows/trip-file-services-summary.yml'
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
+      - run: bun install --frozen-lockfile
+      - run: bun src/lib/tripFile/serviceSummary.test.ts
+      - run: bunx tsc --noEmit
+      - run: bun run build

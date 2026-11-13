@@ -1,0 +1,126 @@
+name: Trip File 2.0 integrated QA
+on:
+  pull_request:
+    paths:
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/bookings/workspace/**'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useHotelbedsBookingObservation.ts'
+      - 'src/hooks/useAirReservationObservation.ts'
+      - 'supabase/functions/trip-file-air-reservation-status/**'
+      - 'supabase/functions/_shared/trip-file-air-provider*'
+      - 'supabase/functions/_shared/trip-file-bounded-json*'
+      - 'supabase/functions/trip-file-hotelbeds-status/**'
+      - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/config.toml'
+      - 'src/hooks/useBooking**'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/trip-file-integrated.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/BookingWorkspace.tsx'
+      - 'src/pages/QuoteDetails.tsx'
+      - 'src/components/bookings/workspace/**'
+      - 'src/components/quotes/QuoteVersionHistory.tsx'
+      - 'src/hooks/useHotelbedsBookingObservation.ts'
+      - 'src/hooks/useAirReservationObservation.ts'
+      - 'supabase/functions/trip-file-air-reservation-status/**'
+      - 'supabase/functions/_shared/trip-file-air-provider*'
+      - 'supabase/functions/_shared/trip-file-bounded-json*'
+      - 'supabase/functions/trip-file-hotelbeds-status/**'
+      - 'supabase/functions/_shared/trip-file-hotelbeds*'
+      - 'supabase/config.toml'
+      - 'src/hooks/useBooking**'
+      - 'src/lib/tripFile/**'
+      - 'scripts/*trip-file*'
+      - 'scripts/*quote-version*'
+      - '.github/workflows/trip-file-integrated.yml'
+jobs:
+  frontend-integrated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Bun via npm registry (GitHub release CDN fallback)
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun --version
+      - run: bun install --frozen-lockfile
+      - name: Verify all integrated Trip File UI and guarded SQL contracts
+        run: node scripts/verify-trip-file-integrated.mjs
+      - name: Verify Hotelbeds JWT, tenant and no-write contracts
+        run: node scripts/verify-trip-file-hotelbeds-contract.mjs
+      - name: Test Hotelbeds sanitized booking observation parser
+        run: bun supabase/functions/_shared/trip-file-hotelbeds.test.ts
+      - name: Test Hotelbeds provider-versus-local date diagnostics
+        run: bun supabase/functions/_shared/trip-file-hotelbeds-detail.test.ts
+      - name: Verify Amadeus/Travelport PNR security and no-write contracts
+        run: node scripts/verify-trip-file-air-provider.mjs
+      - name: Test Travelport locator and sanitized reservation retrieval
+        run: bun supabase/functions/_shared/trip-file-air-provider.test.ts
+      - name: Test streaming JSON byte limits and cancellation
+        run: bun supabase/functions/_shared/trip-file-bounded-json.test.ts
+      - name: Run immutable snapshot and currency/finance tests
+        run: |
+          bun src/lib/tripFile/serviceSummary.test.ts
+          bun src/lib/tripFile/evidenceReconciliation.test.ts
+          bun src/lib/tripFile/allocationReview.test.ts
+          bun src/lib/tripFile/executionExceptions.test.ts
+      - name: TypeScript check
+        run: bunx tsc --noEmit
+      - name: Production app build
+        run: bun run build
+
+  database-integrated:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Postgres client
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Create isolated fixture databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE tripfile_amendments_qa;'
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE tripfile_quoteversions_qa;'
+      - name: Test amendments, handoff and original finance evidence
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -f scripts/test-trip-file-source-evidence-links.sql
+      - name: Test removed membership and absent JWT subject against completed Trip File history
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -f scripts/test-trip-file-membership-revocation.sql
+      - name: Audit amendment RLS/grants/function posture in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tripfile_amendments_qa -v ON_ERROR_STOP=1 -qAt -F '|' -f scripts/check-trip-file-security-posture.sql > /tmp/tripfile-amendments-posture.psv
+          node scripts/verify-trip-file-security-posture.mjs /tmp/tripfile-amendments-posture.psv amendments
+      - name: Test immutable quote version archive and tenant isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d tripfile_quoteversions_qa -v ON_ERROR_STOP=1 -f scripts/test-quote-version-snapshots.sql
+      - name: Audit quote snapshot RLS/grants/function posture in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tripfile_quoteversions_qa -v ON_ERROR_STOP=1 -qAt -F '|' -f scripts/check-trip-file-security-posture.sql > /tmp/tripfile-quotes-posture.psv
+          node scripts/verify-trip-file-security-posture.mjs /tmp/tripfile-quotes-posture.psv quotes

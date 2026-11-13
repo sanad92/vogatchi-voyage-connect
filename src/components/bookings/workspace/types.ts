@@ -5,6 +5,7 @@ export type Workspace = ReturnType<typeof useBookingWorkspace>;
 export type TabKey =
   | 'overview'
   | 'itinerary'
+  | 'amendments'
   | 'financials'
   | 'documents'
   | 'whatsapp'

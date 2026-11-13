@@ -10,6 +10,7 @@ import { SmartNextActionCard } from '@/components/bookings/workspace/SmartNextAc
 import { StageStepper } from '@/components/bookings/workspace/StageStepper';
 import { OverviewTab } from '@/components/bookings/workspace/OverviewTab';
 import { ItineraryTab } from '@/components/bookings/workspace/ItineraryTab';
+import { BookingAmendmentsTab } from '@/components/bookings/workspace/BookingAmendmentsTab';
 import { FinancialsTab } from '@/components/bookings/workspace/FinancialsTab';
 import { DocumentsTab } from '@/components/bookings/workspace/DocumentsTab';
 import { WhatsAppTab } from '@/components/bookings/workspace/WhatsAppTab';
@@ -25,12 +26,13 @@ import {
   type WorkflowContext,
 } from '@/lib/bookingWorkflow';
 
-const TAB_KEYS = ['overview', 'itinerary', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation', 'sop'] as const;
+const TAB_KEYS = ['overview', 'itinerary', 'amendments', 'financials', 'documents', 'whatsapp', 'tasks', 'timeline', 'automation', 'sop'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: 'نظرة عامة',
   itinerary: 'البرنامج',
+  amendments: 'تعديلات الرحلة',
   financials: 'المالية',
   documents: 'المستندات',
   whatsapp: 'واتساب',
@@ -139,7 +141,7 @@ const BookingWorkspace = () => {
       })()}
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
-        <TabsList className="grid grid-cols-4 md:grid-cols-8 h-auto">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 xl:grid-cols-10 h-auto">
           {TAB_KEYS.map((k) => (
             <TabsTrigger key={k} value={k} className="text-xs md:text-sm">
               {TAB_LABELS[k]}
@@ -152,6 +154,9 @@ const BookingWorkspace = () => {
         </TabsContent>
         <TabsContent value="itinerary" className="mt-4">
           <ItineraryTab workspace={workspace} />
+        </TabsContent>
+        <TabsContent value="amendments" className="mt-4">
+          {id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency} />}
         </TabsContent>
         <TabsContent value="financials" className="mt-4">
           <FinancialsTab workspace={workspace} />
