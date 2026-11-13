@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,7 +80,7 @@ const CustomerDataExporter = ({ customers, selectedCustomers }: CustomerDataExpo
 
   const handleExportExcel = () => {
     const data = getExportData();
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.json_to_sheet(safeRows(data));
     const wb = XLSX.utils.book_new();
     
     // تعيين عرض الأعمدة
@@ -105,7 +106,7 @@ const CustomerDataExporter = ({ customers, selectedCustomers }: CustomerDataExpo
     const csvContent = [
       headers.join(','),
       ...data.map(row => 
-        headers.map(header => `"${row[header] || ''}"`).join(',')
+        headers.map(header => csvCell(row[header] || '')).join(',')
       )
     ].join('\n');
 

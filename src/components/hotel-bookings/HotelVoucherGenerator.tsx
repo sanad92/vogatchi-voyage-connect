@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+const esc = (v: unknown): string => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download } from "lucide-react";
@@ -75,7 +76,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فاوتشر حجز فندق - ${booking.internal_booking_number}</title>
+    <title>فاوتشر حجز فندق - ${esc(booking.internal_booking_number)}</title>
     <style>
         body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
         .voucher { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
@@ -103,11 +104,11 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
 <body>
     <div class="voucher">
         <div class="header">
-            ${orgLogo ? `<img src="${orgLogo}" alt="${orgName}" style="height:60px;margin-bottom:10px;object-fit:contain;" />` : ''}
-            <div class="company-name">${orgName}</div>
+            ${orgLogo ? `<img src="${esc(orgLogo)}" alt="${esc(orgName)}" style="height:60px;margin-bottom:10px;object-fit:contain;" />` : ''}
+            <div class="company-name">${esc(orgName)}</div>
             <div class="voucher-title">فاوتشر حجز فندق</div>
-            <div class="booking-number">رقم الحجز: ${booking.internal_booking_number}</div>
-            ${orgContact ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;">${orgContact}</div>` : ''}
+            <div class="booking-number">رقم الحجز: ${esc(booking.internal_booking_number)}</div>
+            ${orgContact ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;">${esc(orgContact)}</div>` : ''}
         </div>
 
         <div class="section">
@@ -115,11 +116,11 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">اسم العميل:</span>
-                    <span class="info-value">${booking.customer_name}</span>
+                    <span class="info-value">${esc(booking.customer_name)}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">موظف الحجز:</span>
-                    <span class="info-value">${booking.booking_agent_name}</span>
+                    <span class="info-value">${esc(booking.booking_agent_name)}</span>
                 </div>
             </div>
         </div>
@@ -129,19 +130,19 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">اسم الفندق:</span>
-                    <span class="info-value">${booking.hotel_name}</span>
+                    <span class="info-value">${esc(booking.hotel_name)}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">تصنيف الفندق:</span>
-                    <span class="info-value">${booking.hotel_star_rating || 'غير محدد'} نجوم</span>
+                    <span class="info-value">${esc(booking.hotel_star_rating || 'غير محدد')} نجوم</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">المدينة:</span>
-                    <span class="info-value">${booking.destination_city}</span>
+                    <span class="info-value">${esc(booking.destination_city)}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">نوع الغرفة:</span>
-                    <span class="info-value">${booking.room_type}</span>
+                    <span class="info-value">${esc(booking.room_type)}</span>
                 </div>
             </div>
         </div>
@@ -159,24 +160,24 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
                 </div>
                 <div class="info-item">
                     <span class="info-label">عدد الليالي:</span>
-                    <span class="info-value">${booking.number_of_nights} ليلة</span>
+                    <span class="info-value">${esc(booking.number_of_nights)} ليلة</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">عدد البالغين:</span>
-                    <span class="info-value">${booking.number_of_adults}</span>
+                    <span class="info-value">${esc(booking.number_of_adults)}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">عدد الأطفال:</span>
-                    <span class="info-value">${booking.number_of_children}</span>
+                    <span class="info-value">${esc(booking.number_of_children)}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">نظام الوجبات:</span>
-                    <span class="info-value">${booking.meal_plan}</span>
+                    <span class="info-value">${esc(booking.meal_plan)}</span>
                 </div>
                 ${booking.children_ages ? `
                 <div class="info-item full-width">
                     <span class="info-label">أعمار الأطفال:</span>
-                    <span class="info-value">${booking.children_ages}</span>
+                    <span class="info-value">${esc(booking.children_ages)}</span>
                 </div>
                 ` : ''}
             </div>
@@ -188,9 +189,9 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
             <div class="special-requests">
                 ${Object.entries(groupedRequests).map(([category, requests]) => `
                     <div class="request-category">
-                        <div class="request-category-title">${categoryLabels[category as keyof typeof categoryLabels]}</div>
+                        <div class="request-category-title">${esc(categoryLabels[category as keyof typeof categoryLabels])}</div>
                         <ul class="request-list">
-                            ${requests.map(request => `<li class="request-item">${request}</li>`).join('')}
+                            ${requests.map(request => `<li class="request-item">${esc(request)}</li>`).join('')}
                         </ul>
                     </div>
                 `).join('')}
@@ -198,7 +199,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
                 ${customRequests.length > 0 ? `
                     <div class="custom-requests">
                         <strong>طلبات إضافية:</strong><br>
-                        ${customRequests.join('<br>')}
+                        ${customRequests.map(esc).join('<br>')}
                     </div>
                 ` : ''}
             </div>
@@ -211,7 +212,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
             <div class="info-grid">
                 <div class="info-item full-width">
                     <span class="info-label">مرجع الحجز لدى المورد:</span>
-                    <span class="info-value">${booking.booking_reference_supplier}</span>
+                    <span class="info-value">${esc(booking.booking_reference_supplier)}</span>
                 </div>
             </div>
         </div>
@@ -221,14 +222,14 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
         <div class="section">
             <div class="section-title">سياسة الإلغاء</div>
             <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border-right: 4px solid #ef4444;">
-                ${booking.cancellation_policy}
+                ${esc(booking.cancellation_policy)}
             </div>
         </div>
         ` : ''}
 
         <div class="footer">
-            <p>${orgFooter}</p>
-            <p>${orgName}</p>
+            <p>${esc(orgFooter)}</p>
+            <p>${esc(orgName)}</p>
             <p>تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
         </div>
     </div>
@@ -241,7 +242,7 @@ const HotelVoucherGenerator = ({ booking, onClose }: HotelVoucherGeneratorProps)
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `voucher-${booking.internal_booking_number}.html`;
+      link.download = `voucher-${esc(booking.internal_booking_number)}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

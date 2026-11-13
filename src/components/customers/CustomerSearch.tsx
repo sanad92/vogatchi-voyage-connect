@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
         .from('customers')
         .select('id, name, phone, email, nationality')
         .eq('organization_id', orgId)
-        .or(`name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%`)
+        .or(`name.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%,phone.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%,email.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%`)
         .order('name')
         .limit(50); // حد أقصى من الخادم
       

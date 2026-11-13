@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { callLovableAI, safeParseJSON, corsHeaders } from "../_shared/ai-gateway.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { requireUser, authErrorResponse } from "../_shared/auth.ts";
 
 const CATEGORY_LABELS: Record<string, string> = {
   marketing: "تسويقية",
@@ -16,21 +18,31 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const caller = await requireUser(req);
+    const adminDb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: mem } = await adminDb.from("organization_members").select("id")
+      .eq("user_id", caller.id).eq("is_active", true).limit(1);
+    if (!mem?.length) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const {
       brief,
-      category = "marketing",
+      category: rawCategory = "marketing",
       tone = "professional",
       locale = "ar",
     } = await req.json();
 
-    if (!brief || typeof brief !== "string") {
+    const category = Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, rawCategory) ? rawCategory : "marketing";
+    if (!brief || typeof brief !== "string" || brief.length > 2000) {
       return new Response(JSON.stringify({ error: "brief required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const catLabel = CATEGORY_LABELS[category] || category;
+    const catLabel = CATEGORY_LABELS[category];
     const lang = locale === "ar" ? "العربية" : "English";
     const toneLabel = tone === "friendly" ? "ودود" : tone === "urgent" ? "عاجل" : "مهني رسمي";
 
@@ -85,6 +97,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    const authRes = authErrorResponse(err, corsHeaders);
+    if (authRes) return authRes;
     const msg = String((err as Error)?.message || err);
     const status = msg.includes("429") ? 429 : msg.includes("402") ? 402 : 500;
     return new Response(JSON.stringify({ error: msg }), {

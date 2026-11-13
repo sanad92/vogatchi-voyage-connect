@@ -120,6 +120,13 @@
       "when": 1794572723948,
       "tag": "0016_tenant_authorization_and_business_email_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794574573606,
+      "tag": "0017_harden_tenant_accounting_helpers",
+      "breakpoints": true
     }
   ]
 }

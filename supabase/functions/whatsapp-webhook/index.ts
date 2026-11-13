@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isAllowedFile } from '../_shared/file-policy.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -621,6 +622,7 @@ async function downloadAndStoreMedia(
   );
   const bytes = new Uint8Array(await fileRes.arrayBuffer());
   if (bytes.byteLength === 0) throw new Error('downloaded empty file');
+  if (!isAllowedFile(mimeType, bytes.byteLength)) throw new Error(`media rejected by file policy: ${mimeType} ${bytes.byteLength}B`);
 
   const rawExt = MIME_EXT[mimeType] || mimeType.split('/')[1] || 'bin';
   const ext = rawExt.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';

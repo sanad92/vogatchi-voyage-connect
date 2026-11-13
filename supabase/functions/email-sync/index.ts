@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { isAllowedFile } from '../_shared/file-policy.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import PostalMime from 'npm:postal-mime@2.4.4';
 import { requireUser, requireInternalCaller, authErrorResponse, AuthError } from '../_shared/auth.ts';
@@ -122,6 +123,7 @@ async function storeMessage(admin: SupabaseClient, acc: any, uid: number, raw: U
   for (const a of p.attachments || []) {
     const content = typeof a.content === 'string' ? new TextEncoder().encode(a.content) : new Uint8Array(a.content as ArrayBuffer);
     if (content.length > 20 * 1024 * 1024) continue;
+    if (!isAllowedFile(a.mimeType, content.length, a.filename || '')) { console.warn('attachment rejected by file policy', a.mimeType); continue; }
     const name = (a.filename || 'attachment').replace(/[^\p{L}\p{N}._-]+/gu, '_').slice(0, 120);
     const path = `${acc.organization_id}/${msg.id}/${crypto.randomUUID()}-${name}`;
     const up = await admin.storage.from('email-attachments').upload(path, content, { contentType: a.mimeType || 'application/octet-stream' });

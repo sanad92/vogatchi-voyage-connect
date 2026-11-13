@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,7 @@ const LeadCycleTime = () => {
       const v = l[h];
       return v === null || v === undefined ? '' : String(v).replace(/"/g, '""');
     }));
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map((r) => r.map((c) => csvCell(c)).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
     a.href = url;

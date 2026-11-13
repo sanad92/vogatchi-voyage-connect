@@ -130,13 +130,8 @@ async function executeAction(supabase: any, action: Action, ctx: any, rule: Rule
       });
     }
     case 'webhook': {
-      if (!action.config.url) throw new Error('webhook url required');
-      const res = await fetch(action.config.url, {
-        method: action.config.method || 'POST',
-        headers: { 'Content-Type': 'application/json', ...(action.config.headers || {}) },
-        body: JSON.stringify({ rule: rule.name, context: ctx }),
-      });
-      return { status: res.status };
+      // Disabled: automation rules must never forward customer data to outside services.
+      throw new Error('webhook actions are disabled');
     }
     default:
       throw new Error(`unknown action: ${action.type}`);
