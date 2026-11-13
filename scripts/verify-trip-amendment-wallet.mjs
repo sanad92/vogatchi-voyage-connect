@@ -27,6 +27,9 @@ try {
   await db.exec(migration('20261113182458_booking_cancellation_settlement'));
   await db.exec(read('scripts/test-booking-cancellation-settlement.sql'));
   console.log('Booking cancellation settlement PostgreSQL scenarios passed');
+  await db.exec(migration('20261113184230_cancel_fully_waived_booking_invoice'));
+  await db.exec(read('scripts/test-cancel-fully-waived-booking-invoice.sql'));
+  console.log('Fully waived invoice cancellation scenarios passed');
 } catch (error) {
   console.error(error.message, error.where || '');
   process.exitCode = 1;
