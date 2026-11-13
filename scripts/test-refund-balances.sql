@@ -53,6 +53,7 @@ CREATE TABLE public.bank_account_transactions (
 CREATE TABLE public.refund_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid, booking_id uuid, customer_id uuid,
   invoice_id uuid, source_payment_id uuid, treasury_account_id uuid, amount numeric, currency text,
+  pilgrimage_b2b_cancellation_id uuid,
   amount_base numeric, exchange_rate numeric, reason text, status text, rejection_reason text, created_at timestamptz DEFAULT now(),
   approved_at timestamptz, approved_by uuid, requested_by uuid, paid_at timestamptz, updated_at timestamptz
 );
@@ -137,6 +138,7 @@ $$;
 \i supabase/migrations/20260904100616_booking_supplier_payable_integrity.sql
 \i supabase/migrations/20260907160253_3951a969-8a9d-4656-bbdc-bf859cf5178a.sql
 \i supabase/migrations/20261113110937_finance_refund_balances.sql
+\i supabase/migrations/20261113165957_refund_follow_up.sql
 
 -- Compact, deterministic fixture IDs. Authentication is simulated with SET ROLE
 -- and a transaction-local user ID. The actual finance RPCs do the posting.
@@ -182,6 +184,7 @@ GRANT EXECUTE ON FUNCTION public.record_customer_payment(uuid,numeric,text,numer
 GRANT SELECT ON public.supplier_invoices TO authenticated;
 SELECT fixture_assert(NOT has_table_privilege('authenticated','refund_balance_settlements','INSERT')
   AND NOT has_table_privilege('authenticated','refund_requests','UPDATE')
+  AND NOT has_function_privilege('anon','public.schedule_refund_follow_up(uuid,uuid,uuid,date)','EXECUTE')
   AND NOT has_function_privilege('anon','public.settle_refund_balance(uuid,uuid,numeric,uuid,uuid,uuid,uuid,uuid,text)','EXECUTE'),
   'Refund grants permit unsafe writes');
 
@@ -194,6 +197,7 @@ DECLARE
 BEGIN
   PERFORM public.record_customer_payment(fixture_id(501),110,'EGP',1,'cash',fixture_id(401));
   v_refund := public.create_refund_request(fixture_id(301),55,'EGP',1,NULL,'Booking changed');
+  PERFORM fixture_assert(public.schedule_refund_follow_up(fixture_id(1),v_refund,NULL,'2026-11-20')=v_refund, 'Pending customer refund could not be scheduled');
   PERFORM public.approve_refund_request(v_refund,true);
 
   BEGIN
@@ -204,7 +208,9 @@ BEGIN
   END;
   PERFORM public.settle_refund_balance(fixture_id(1),fixture_id(701),20,_refund=>v_refund,_treasury=>fixture_id(401));
   PERFORM public.settle_refund_balance(fixture_id(1),fixture_id(701),20,_refund=>v_refund,_treasury=>fixture_id(401));
-  PERFORM fixture_assert((SELECT status='approved' FROM public.refund_requests WHERE id=v_refund), 'Partial refund closed early');
+  PERFORM fixture_assert((SELECT status='approved' AND follow_up_on='2026-11-20' FROM public.refund_requests WHERE id=v_refund), 'Partial refund lost its follow-up');
+  PERFORM public.schedule_refund_follow_up(fixture_id(1),v_refund,NULL,NULL);
+  PERFORM fixture_assert((SELECT follow_up_on IS NULL FROM public.refund_requests WHERE id=v_refund), 'Customer refund follow-up could not be cleared');
   BEGIN
     PERFORM public.settle_refund_balance(fixture_id(1),fixture_id(702),10,_refund=>v_refund,_invoice=>fixture_id(503),_reference=>'consent');
     RAISE EXCEPTION 'Wrong customer invoice was accepted';
@@ -220,6 +226,11 @@ BEGIN
   END;
   PERFORM public.pay_refund_request(v_refund,fixture_id(401),'final customer payment');
   PERFORM fixture_assert((SELECT status='paid' FROM public.refund_requests WHERE id=v_refund), 'Full settlement did not close');
+  BEGIN
+    PERFORM public.schedule_refund_follow_up(fixture_id(1),v_refund,NULL,'2026-11-22');
+    RAISE EXCEPTION 'Closed customer refund was scheduled';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
   PERFORM public.record_customer_payment(fixture_id(502),75,'EGP',1,'cash',fixture_id(401));
   BEGIN
     PERFORM public.create_refund_request(fixture_id(302),100,'EGP',1,NULL,'Attempt to cash-refund wallet funds');
@@ -238,6 +249,7 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM NOT LIKE 'Refund must be approved%' THEN RAISE; END IF;
   END;
+  PERFORM public.schedule_refund_follow_up(fixture_id(1),NULL,fixture_id(801),'2026-11-21');
   PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(801),'confirm');
   PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(802),'create',v_supplier_invoice,50,'CREDIT-002');
   BEGIN
@@ -254,7 +266,13 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM NOT LIKE 'Select an approved order%' THEN RAISE; END IF;
   END;
+  PERFORM fixture_assert((SELECT follow_up_on='2026-11-21' FROM public.supplier_refund_claims WHERE id=fixture_id(801)), 'Supplier follow-up did not survive partial settlement');
   PERFORM public.settle_refund_balance(fixture_id(1),fixture_id(712),50,_claim=>fixture_id(801),_order=>fixture_id(602),_reference=>'offset');
+  BEGIN
+    PERFORM public.schedule_refund_follow_up(fixture_id(1),NULL,fixture_id(801),'2026-11-22');
+    RAISE EXCEPTION 'Settled supplier claim was scheduled';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
   BEGIN
     PERFORM public.record_supplier_payment(fixture_id(602),51,'EGP',1,'bank_transfer',fixture_id(401));
     RAISE EXCEPTION 'Cash overpayment after wallet offset was accepted';
@@ -267,6 +285,14 @@ $$;
 
 SET test.user_id = '00000000-0000-0000-0000-000000000011';
 SELECT fixture_assert((SELECT count(*) = 5 FROM refund_balance_settlements), 'Finance viewer cannot read wallet history');
+SELECT fixture_assert((SELECT follow_up_on='2026-11-21' FROM public.supplier_refund_claims WHERE id=fixture_id(801)), 'Finance viewer cannot read follow-up');
+DO $$
+BEGIN
+  PERFORM public.schedule_refund_follow_up(fixture_id(1),NULL,fixture_id(801),'2026-11-22');
+  RAISE EXCEPTION 'Viewer can schedule follow-up';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END;
+$$;
 DO $$
 BEGIN
   PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(801),'confirm');
@@ -287,6 +313,13 @@ SET test.user_id = '00000000-0000-0000-0000-000000000020';
 SELECT fixture_assert((SELECT count(*) = 0 FROM refund_balance_settlements)
   AND (SELECT count(*) = 0 FROM supplier_refund_claims)
   AND (SELECT count(*) = 0 FROM refund_requests), 'Cross-company balance visible');
+DO $$
+BEGIN
+  PERFORM public.schedule_refund_follow_up(fixture_id(2),NULL,fixture_id(801),'2026-11-22');
+  RAISE EXCEPTION 'Other company can schedule a foreign claim';
+EXCEPTION WHEN invalid_parameter_value THEN NULL;
+END;
+$$;
 DO $$
 BEGIN
   PERFORM public.manage_supplier_refund_claim(fixture_id(1),fixture_id(801),'confirm');
