@@ -16,6 +16,7 @@ import {
   LockKeyhole,
   Menu,
   MessageSquareText,
+  Phone,
   Plane,
   ReceiptText,
   Route,
@@ -41,6 +42,8 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+
+const platformPhone = '+201103442886';
 
 const pageContainer = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8';
 
@@ -452,6 +455,15 @@ const SaaSLanding = () => {
                 </a>
               </div>
 
+              <a
+                href={`tel:${platformPhone}`}
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-brand-ivory hover:text-brand-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-gold"
+              >
+                <Phone className="h-4 w-4" aria-hidden="true" />
+                <span>اتصل بنا</span>
+                <bdi dir="ltr">{platformPhone}</bdi>
+              </a>
+
               <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs font-medium text-muted-foreground sm:text-sm lg:justify-start">
                 {['إعداد سريع', 'واجهة عربية RTL', 'صلاحيات دقيقة'].map(item => (
                   <span key={item} className="flex items-center gap-1.5">
@@ -694,6 +706,10 @@ const SaaSLanding = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-xs font-semibold text-muted-foreground sm:text-sm">
+            <a href={`tel:${platformPhone}`} className="inline-flex items-center gap-2 hover:text-brand-gold">
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              <bdi dir="ltr">{platformPhone}</bdi>
+            </a>
             <a href="#workflow" className="hover:text-brand-gold">دورة العمل</a>
             <a href="#platform" className="hover:text-brand-gold">المنصة</a>
             <Link to="/pricing" className="hover:text-brand-gold">الأسعار</Link>
