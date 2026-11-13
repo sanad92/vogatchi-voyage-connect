@@ -51,7 +51,7 @@ export const WhatsAppConnectCard: React.FC = () => {
   const [signupMeta, setSignupMeta] = useState<{ waba_id?: string; phone_number_id?: string }>({});
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (typeof event.data !== 'string' || !event.origin.includes('facebook.com')) return;
+      if (typeof event.data !== 'string' || !/^https:\/\/([a-z0-9-]+\.)*facebook\.com$/i.test(event.origin)) return;
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'WA_EMBEDDED_SIGNUP' && data.event === 'FINISH') {

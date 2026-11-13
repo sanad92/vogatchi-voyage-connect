@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ const TableViewer = ({ table, onBack }: TableViewerProps) => {
     const csvRows = [
       cols.join(","),
       ...data.map(row =>
-        cols.map(col => JSON.stringify(row[col] ?? "")).join(",")
+        cols.map(col => csvCell(row[col])).join(",")
       ),
     ];
     const csvString = csvRows.join("\n");

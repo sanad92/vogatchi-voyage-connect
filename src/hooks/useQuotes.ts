@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -90,7 +91,7 @@ export const useQuotes = (filters?: { status?: string; search?: string; page?: n
         query = query.eq('status', filters.status);
       }
       if (filters?.search) {
-        query = query.or(`quote_number.ilike.%${filters.search}%,customer_name.ilike.%${filters.search}%`);
+        query = query.or(`quote_number.ilike.%${sanitizeSearchTerm(filters.search)}%,customer_name.ilike.%${sanitizeSearchTerm(filters.search)}%`);
       }
 
       const { data, error, count } = await query;

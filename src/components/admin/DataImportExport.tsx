@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { safeRows, csvCell } from '@/lib/spreadsheet-safe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -205,7 +206,7 @@ const DataImportExport = () => {
       }
 
       // تصدير إلى Excel
-      const worksheet = XLSX.utils.json_to_sheet(data);
+      const worksheet = XLSX.utils.json_to_sheet(safeRows(data));
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, selectedTable);
       

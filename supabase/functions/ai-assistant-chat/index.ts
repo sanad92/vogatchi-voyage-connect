@@ -178,7 +178,7 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
         cust = data;
       } else if (args?.customer_name) {
         const { data } = await supabase.from("customers").select("*").eq("organization_id", orgId)
-          .or(`name.ilike.%${args.customer_name}%,email.ilike.%${args.customer_name}%`).limit(1).maybeSingle();
+          .or(`name.ilike.%${String(args.customer_name ?? '').replace(/[,()*%\\:"'.]/g, ' ').trim().slice(0, 100)}%,email.ilike.%${String(args.customer_name ?? '').replace(/[,()*%\\:"'.]/g, ' ').trim().slice(0, 100)}%`).limit(1).maybeSingle();
         cust = data;
       }
       if (!cust) return { error: "لم يتم العثور على العميل" };
