@@ -21,6 +21,7 @@ import { money, printDocument, table, exportExcel, ROOM } from './pilgrimage-doc
 import PilgrimageB2BContract from './PilgrimageB2BContract';
 import PilgrimageB2BReceivables from './PilgrimageB2BReceivables';
 import PilgrimageB2BSettlement from './PilgrimageB2BSettlement';
+import PilgrimageFitConfirmations from './PilgrimageFitConfirmations';
 import {
   FULFILLMENT, SALE_MODELS, SALE_STATES, SALE_ITEMS,
   quoteMetrics, quoteReadiness, validateSaleDraft,
@@ -472,10 +473,9 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       {selected.sale_model === 'b2b_group' && orgId && (
         <PilgrimageB2BSettlement key={selected.id} orgId={orgId} saleId={selected.id} currency={selected.currency} />
       )}
-      {selected.sale_model==='fit'&&<Card className="p-4 text-sm text-muted-foreground">
-        عرض FIT مستقل عن سعة البرامج الجماعية. التأكيد الفعلي لكل خدمة يتم عبر المورد المختص
-        في دورة حجز منفصلة؛ لن نعتبر العرض حجزًا مؤكدًا تلقائيًا.
-      </Card>}
+      {selected.sale_model==='fit'&&orgId&&<PilgrimageFitConfirmations key={selected.id}
+        organizationId={orgId} saleId={selected.id} issued={selected.status==='quoted'}
+        canManage={canManage} items={items} suppliers={suppliers} />}
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4"><p className="text-xs text-muted-foreground">البيع المقترح</p><strong>{money(metrics.selling,selected.currency)}</strong></Card>
         <Card className="p-4"><p className="text-xs text-muted-foreground">تكلفة المورد التقديرية</p>

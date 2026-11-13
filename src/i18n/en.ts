@@ -1,5 +1,16 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  // FIT supplier confirmations
+  'تأكيدات موردي الرحلة الخاصة': 'Private trip supplier confirmations',
+  'سجّل مرجع كل خدمة بعد استلام التأكيد من المورد.': 'Record each service reference after receiving the supplier’s confirmation.',
+  'جاري تحميل تأكيدات الموردين...': 'Loading supplier confirmations...',
+  'تعذّر تحميل تأكيدات الموردين.': 'Could not load supplier confirmations.',
+  'تأكيد مسجّل': 'Confirmation recorded',
+  'بانتظار التأكيد': 'Awaiting confirmation',
+  'مرجع تأكيد المورد': 'Supplier confirmation reference',
+  'حفظ التأكيد': 'Save confirmation',
+  'تم تسجيل تأكيد المورد': 'Supplier confirmation recorded',
+  'تعذّر حفظ تأكيد المورد. راجع حالة العرض والخدمة ثم حاول مرة أخرى.': 'Could not save the supplier confirmation. Check the quote and service, then try again.',
   // Private record attachments
   'اختَر ملف PDF أو صورة JPG أو PNG بحجم يصل إلى ١٠ ميجابايت.': 'Choose a PDF, JPG or PNG file up to 10 MB.',
   'اختيار مرفق PDF أو JPG أو PNG': 'Choose a PDF, JPG or PNG attachment',
