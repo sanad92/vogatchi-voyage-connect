@@ -50,6 +50,9 @@ const RegisterOrganization = () => {
       if (!onboardingError && onboardingResult?.organizationId) {
         organizationId = onboardingResult.organizationId as string;
       } else {
+        let serverMsg = onboardingResult?.error as string | undefined;
+        try { serverMsg = serverMsg || (await (onboardingError as any)?.context?.json())?.error; } catch { /* ignore */ }
+        if (serverMsg?.includes('نطاق البريد')) { toast.error(serverMsg); return; }
         throw onboardingError || new Error('Failed to create organization');
       }
 
