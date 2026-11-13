@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -156,7 +157,9 @@ const CustomerTableView = ({
         return (
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-gray-400" />
-            <span className="font-medium">{customer.name}</span>
+            <Link to={`/customers/${customer.id}`} className="font-medium text-primary underline-offset-4 hover:underline">
+              {customer.name}
+            </Link>
             {customer.archived_at && (
               <Badge variant="outline" className="border-amber-300 text-amber-700">مؤرشف</Badge>
             )}
@@ -237,6 +240,8 @@ const CustomerTableView = ({
               variant="ghost"
               size="sm"
               onClick={() => onCustomerSelect(customer.id)}
+              aria-label="معاينة العميل"
+              title="معاينة العميل"
             >
               <Eye className="h-3 w-3" />
             </Button>

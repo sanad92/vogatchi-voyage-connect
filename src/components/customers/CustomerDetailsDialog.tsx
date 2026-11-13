@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,13 @@ const CustomerDetailsDialog = ({ selectedCustomer, onClose }: CustomerDetailsDia
               <Badge variant="outline" className="border-amber-300 text-amber-700">مؤرشف</Badge>
             )}
           </DialogTitle>
+          {customerData && (
+            <div className="flex">
+              <Button asChild size="sm">
+                <Link to={`/customers/${customerData.id}`}>فتح ملف العميل</Link>
+              </Button>
+            </div>
+          )}
         </DialogHeader>
 
         {isLoading ? (

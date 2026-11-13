@@ -398,6 +398,8 @@ export const EN_DICTIONARY: Record<string, string> = {
   'المبلغ': 'Amount',
   'وارد': 'Money in',
   'صادر': 'Money out',
+  'معاينة العميل': 'Preview customer',
+  'فتح ملف العميل': 'Open customer profile',
   'محفظة العميل': 'Customer wallet',
   'محفظة المورد': 'Supplier wallet',
   'إدارة الأرصدة والاستردادات': 'Manage balances and refunds',
