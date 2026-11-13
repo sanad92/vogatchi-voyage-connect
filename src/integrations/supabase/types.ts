@@ -7065,6 +7065,7 @@ export type Database = {
           organization_id: string | null
           payment_status: string | null
           payment_terms: string | null
+          pilgrimage_b2b_agreement_id: string | null
           quote_id: string | null
           remaining_amount: number | null
           status: string | null
@@ -7093,6 +7094,7 @@ export type Database = {
           organization_id?: string | null
           payment_status?: string | null
           payment_terms?: string | null
+          pilgrimage_b2b_agreement_id?: string | null
           quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
@@ -7121,6 +7123,7 @@ export type Database = {
           organization_id?: string | null
           payment_status?: string | null
           payment_terms?: string | null
+          pilgrimage_b2b_agreement_id?: string | null
           quote_id?: string | null
           remaining_amount?: number | null
           status?: string | null
@@ -7144,6 +7147,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_pilgrimage_b2b_agreement_fk"
+            columns: ["organization_id", "pilgrimage_b2b_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_agreements"
+            referencedColumns: ["organization_id", "id"]
           },
           {
             foreignKeyName: "invoices_quote_id_fkey"
@@ -8809,6 +8819,386 @@ export type Database = {
           },
         ]
       }
+      pilgrimage_agencies: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_agencies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_agency_accounts: {
+        Row: {
+          agency_id: string
+          debtor_customer_id: string
+          linked_at: string
+          linked_by: string
+          organization_id: string
+        }
+        Insert: {
+          agency_id: string
+          debtor_customer_id: string
+          linked_at?: string
+          linked_by: string
+          organization_id: string
+        }
+        Update: {
+          agency_id?: string
+          debtor_customer_id?: string
+          linked_at?: string
+          linked_by?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_agency_accounts_debtor_customer_id_fkey"
+            columns: ["debtor_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_agency_accounts_organization_id_agency_id_fkey"
+            columns: ["organization_id", "agency_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_agencies"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_agency_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_agreements: {
+        Row: {
+          agency_id: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          debtor_customer_id: string
+          id: string
+          organization_id: string
+          request_fingerprint: string
+          sale_id: string
+          status: string
+          terms: string
+          total_contract_amount: number
+        }
+        Insert: {
+          agency_id: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          currency: string
+          debtor_customer_id: string
+          id?: string
+          organization_id: string
+          request_fingerprint: string
+          sale_id: string
+          status?: string
+          terms: string
+          total_contract_amount: number
+        }
+        Update: {
+          agency_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          debtor_customer_id?: string
+          id?: string
+          organization_id?: string
+          request_fingerprint?: string
+          sale_id?: string
+          status?: string
+          terms?: string
+          total_contract_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_agreements_debtor_customer_id_fkey"
+            columns: ["debtor_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_agreements_organization_id_agency_id_fkey"
+            columns: ["organization_id", "agency_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_agencies"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_agreements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_agreements_organization_id_sale_id_fkey"
+            columns: ["organization_id", "sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_cancellations: {
+        Row: {
+          agreement_id: string
+          credit_note_id: string | null
+          id: string
+          invoice_id: string | null
+          organization_id: string
+          reason: string
+          refund_id: string | null
+          requested_at: string
+          requested_by: string
+          reversal_journal_id: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          agreement_id: string
+          credit_note_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id: string
+          reason: string
+          refund_id?: string | null
+          requested_at?: string
+          requested_by: string
+          reversal_journal_id?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          agreement_id?: string
+          credit_note_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id?: string
+          reason?: string
+          refund_id?: string | null
+          requested_at?: string
+          requested_by?: string
+          reversal_journal_id?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_cancellations_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_cancellations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_cancellations_organization_id_agreement_id_fkey"
+            columns: ["organization_id", "agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_agreements"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_cancellations_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refund_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_b2b_cancellations_reversal_journal_id_fkey"
+            columns: ["reversal_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_installments: {
+        Row: {
+          agreement_id: string
+          amount: number
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          organization_id: string
+          sequence_no: number
+        }
+        Insert: {
+          agreement_id: string
+          amount: number
+          created_at?: string
+          currency: string
+          due_date: string
+          id?: string
+          organization_id: string
+          sequence_no: number
+        }
+        Update: {
+          agreement_id?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          organization_id?: string
+          sequence_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_installments_organization_id_agreement_id_fkey"
+            columns: ["organization_id", "agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_agreements"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_roster_entries: {
+        Row: {
+          agreement_id: string
+          client_key: string
+          created_at: string
+          created_by: string
+          display_name: string
+          id: string
+          organization_id: string
+          removed_at: string | null
+          removed_by: string | null
+          room_type: string | null
+          status: string
+        }
+        Insert: {
+          agreement_id: string
+          client_key: string
+          created_at?: string
+          created_by: string
+          display_name: string
+          id?: string
+          organization_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          room_type?: string | null
+          status?: string
+        }
+        Update: {
+          agreement_id?: string
+          client_key?: string
+          created_at?: string
+          created_by?: string
+          display_name?: string
+          id?: string
+          organization_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          room_type?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_roster_entries_organization_id_agreement_id_fkey"
+            columns: ["organization_id", "agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_agreements"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
+      pilgrimage_b2b_roster_events: {
+        Row: {
+          action: string
+          actor_id: string
+          entry_id: string
+          event_at: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          entry_id: string
+          event_at?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          entry_id?: string
+          event_at?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_b2b_roster_events_organization_id_entry_id_fkey"
+            columns: ["organization_id", "entry_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_roster_entries"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
       pilgrimage_program_costs: {
         Row: {
           cost_notes: string | null
@@ -8875,6 +9265,7 @@ export type Database = {
           status: string
           terms: string | null
           transport_details: string | null
+          travel_scope: string
           updated_at: string
         }
         Insert: {
@@ -8903,6 +9294,7 @@ export type Database = {
           status?: string
           terms?: string | null
           transport_details?: string | null
+          travel_scope?: string
           updated_at?: string
         }
         Update: {
@@ -8931,6 +9323,7 @@ export type Database = {
           status?: string
           terms?: string | null
           transport_details?: string | null
+          travel_scope?: string
           updated_at?: string
         }
         Relationships: [
@@ -8939,6 +9332,484 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_retail_conversion_travelers: {
+        Row: {
+          conversion_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          pilgrim_id: string
+          quote_traveler_id: string
+        }
+        Insert: {
+          conversion_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          pilgrim_id: string
+          quote_traveler_id: string
+        }
+        Update: {
+          conversion_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          pilgrim_id?: string
+          quote_traveler_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_retail_conversion__organization_id_conversion_i_fkey"
+            columns: ["organization_id", "conversion_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_retail_conversions"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_retail_conversion_travelers_pilgrim_id_fkey"
+            columns: ["pilgrim_id"]
+            isOneToOne: true
+            referencedRelation: "pilgrims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_retail_conversion_travelers_quote_traveler_id_fkey"
+            columns: ["quote_traveler_id"]
+            isOneToOne: true
+            referencedRelation: "pilgrimage_sale_travelers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_retail_conversions: {
+        Row: {
+          allocation_id: string
+          converted_at: string
+          converted_by: string
+          id: string
+          organization_id: string
+          program_id: string
+          registered_count: number
+          sale_id: string
+        }
+        Insert: {
+          allocation_id: string
+          converted_at?: string
+          converted_by: string
+          id?: string
+          organization_id: string
+          program_id: string
+          registered_count: number
+          sale_id: string
+        }
+        Update: {
+          allocation_id?: string
+          converted_at?: string
+          converted_by?: string
+          id?: string
+          organization_id?: string
+          program_id?: string
+          registered_count?: number
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_retail_conversions_organization_id_allocation_i_fkey"
+            columns: ["organization_id", "allocation_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_seat_allocations"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_retail_conversions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_retail_conversions_organization_id_sale_id_fkey"
+            columns: ["organization_id", "sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_retail_conversions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_sale_item_costs: {
+        Row: {
+          cost_notes: string | null
+          item_id: string
+          organization_id: string
+          supplier_id: string | null
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          cost_notes?: string | null
+          item_id: string
+          organization_id: string
+          supplier_id?: string | null
+          unit_cost: number
+          updated_at?: string
+        }
+        Update: {
+          cost_notes?: string | null
+          item_id?: string
+          organization_id?: string
+          supplier_id?: string | null
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_sale_item_costs_organization_id_item_id_fkey"
+            columns: ["organization_id", "item_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sale_items"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sale_item_costs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_sale_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          item_kind: string
+          line_sell: number | null
+          notes: string | null
+          organization_id: string
+          quantity: number
+          room_type: string | null
+          sale_id: string
+          unit_sell: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          item_kind: string
+          line_sell?: number | null
+          notes?: string | null
+          organization_id: string
+          quantity: number
+          room_type?: string | null
+          sale_id: string
+          unit_sell: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          item_kind?: string
+          line_sell?: number | null
+          notes?: string | null
+          organization_id?: string
+          quantity?: number
+          room_type?: string | null
+          sale_id?: string
+          unit_sell?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_sale_items_organization_id_sale_id_fkey"
+            columns: ["organization_id", "sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
+      pilgrimage_sale_travelers: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          display_name: string | null
+          id: string
+          organization_id: string
+          pilgrim_id: string | null
+          room_type: string | null
+          sale_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          display_name?: string | null
+          id?: string
+          organization_id: string
+          pilgrim_id?: string | null
+          room_type?: string | null
+          sale_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          display_name?: string | null
+          id?: string
+          organization_id?: string
+          pilgrim_id?: string | null
+          room_type?: string | null
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_sale_travelers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sale_travelers_organization_id_sale_id_fkey"
+            columns: ["organization_id", "sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sale_travelers_pilgrim_id_fkey"
+            columns: ["pilgrim_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_sales: {
+        Row: {
+          buyer_agency_id: string | null
+          buyer_customer_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          departure_date: string | null
+          fulfillment_role: string
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          party_size: number
+          program_id: string | null
+          program_type: string
+          return_date: string | null
+          sale_model: string
+          status: string
+          supersedes_sale_id: string | null
+          updated_at: string
+          upstream_supplier_id: string | null
+        }
+        Insert: {
+          buyer_agency_id?: string | null
+          buyer_customer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          departure_date?: string | null
+          fulfillment_role: string
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          party_size: number
+          program_id?: string | null
+          program_type: string
+          return_date?: string | null
+          sale_model: string
+          status?: string
+          supersedes_sale_id?: string | null
+          updated_at?: string
+          upstream_supplier_id?: string | null
+        }
+        Update: {
+          buyer_agency_id?: string | null
+          buyer_customer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          departure_date?: string | null
+          fulfillment_role?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          party_size?: number
+          program_id?: string | null
+          program_type?: string
+          return_date?: string | null
+          sale_model?: string
+          status?: string
+          supersedes_sale_id?: string | null
+          updated_at?: string
+          upstream_supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_sales_buyer_agency_id_fkey"
+            columns: ["buyer_agency_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sales_buyer_customer_id_fkey"
+            columns: ["buyer_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sales_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sales_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sales_supersedes_sale_id_fkey"
+            columns: ["supersedes_sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_sales_upstream_supplier_id_fkey"
+            columns: ["upstream_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilgrimage_seat_allocation_events: {
+        Row: {
+          action: string
+          actor_id: string
+          allocation_id: string
+          event_at: string
+          id: string
+          organization_id: string
+          seat_count: number
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          allocation_id: string
+          event_at?: string
+          id?: string
+          organization_id: string
+          seat_count: number
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          allocation_id?: string
+          event_at?: string
+          id?: string
+          organization_id?: string
+          seat_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_seat_allocation_ev_organization_id_allocation_i_fkey"
+            columns: ["organization_id", "allocation_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_seat_allocations"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
+      pilgrimage_seat_allocations: {
+        Row: {
+          allocated_at: string | null
+          created_at: string
+          created_by: string | null
+          hold_expires_at: string | null
+          id: string
+          organization_id: string
+          program_id: string
+          released_at: string | null
+          sale_id: string
+          seat_count: number
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allocated_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          hold_expires_at?: string | null
+          id?: string
+          organization_id: string
+          program_id: string
+          released_at?: string | null
+          sale_id: string
+          seat_count: number
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allocated_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          hold_expires_at?: string | null
+          id?: string
+          organization_id?: string
+          program_id?: string
+          released_at?: string | null
+          sale_id?: string
+          seat_count?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilgrimage_seat_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_seat_allocations_organization_id_sale_id_fkey"
+            columns: ["organization_id", "sale_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_sales"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "pilgrimage_seat_allocations_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_programs"
             referencedColumns: ["id"]
           },
         ]
@@ -9623,6 +10494,124 @@ export type Database = {
           },
         ]
       }
+      refund_balance_settlements: {
+        Row: {
+          amount: number
+          bank_transaction_id: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          customer_refund_id: string | null
+          id: string
+          invoice_id: string | null
+          journal_id: string
+          organization_id: string
+          reference: string | null
+          supplier_claim_id: string | null
+          supplier_invoice_id: string | null
+          supplier_order_id: string | null
+          treasury_account_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_transaction_id?: string | null
+          created_at?: string
+          created_by: string
+          currency: string
+          customer_refund_id?: string | null
+          id: string
+          invoice_id?: string | null
+          journal_id: string
+          organization_id: string
+          reference?: string | null
+          supplier_claim_id?: string | null
+          supplier_invoice_id?: string | null
+          supplier_order_id?: string | null
+          treasury_account_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_transaction_id?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          customer_refund_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          journal_id?: string
+          organization_id?: string
+          reference?: string | null
+          supplier_claim_id?: string | null
+          supplier_invoice_id?: string | null
+          supplier_order_id?: string | null
+          treasury_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_balance_settlements_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_customer_refund_id_fkey"
+            columns: ["customer_refund_id"]
+            isOneToOne: false
+            referencedRelation: "refund_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_supplier_claim_id_fkey"
+            columns: ["supplier_claim_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_refund_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_supplier_invoice_id_fkey"
+            columns: ["supplier_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_supplier_order_id_fkey"
+            columns: ["supplier_order_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payment_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_balance_settlements_treasury_account_id_fkey"
+            columns: ["treasury_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refund_requests: {
         Row: {
           advance_component: number
@@ -9639,6 +10628,7 @@ export type Database = {
           invoice_id: string | null
           organization_id: string
           paid_at: string | null
+          pilgrimage_b2b_cancellation_id: string | null
           reason: string | null
           rejection_reason: string | null
           requested_by: string | null
@@ -9663,6 +10653,7 @@ export type Database = {
           invoice_id?: string | null
           organization_id: string
           paid_at?: string | null
+          pilgrimage_b2b_cancellation_id?: string | null
           reason?: string | null
           rejection_reason?: string | null
           requested_by?: string | null
@@ -9687,6 +10678,7 @@ export type Database = {
           invoice_id?: string | null
           organization_id?: string
           paid_at?: string | null
+          pilgrimage_b2b_cancellation_id?: string | null
           reason?: string | null
           rejection_reason?: string | null
           requested_by?: string | null
@@ -9751,6 +10743,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_pilgrimage_b2b_cancellation_id_fkey"
+            columns: ["pilgrimage_b2b_cancellation_id"]
+            isOneToOne: true
+            referencedRelation: "pilgrimage_b2b_cancellations"
             referencedColumns: ["id"]
           },
           {
@@ -11715,13 +12714,14 @@ export type Database = {
           approval_status: string
           approved_at: string | null
           approved_by: string | null
-          booking_id: string
+          booking_id: string | null
           created_at: string
           currency: string
           due_date: string | null
           id: string
           notes: string | null
           organization_id: string
+          pilgrimage_b2b_agreement_id: string | null
           reference_number: string
           rejection_reason: string | null
           service_type: string
@@ -11736,13 +12736,14 @@ export type Database = {
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
-          booking_id: string
+          booking_id?: string | null
           created_at?: string
           currency?: string
           due_date?: string | null
           id?: string
           notes?: string | null
           organization_id: string
+          pilgrimage_b2b_agreement_id?: string | null
           reference_number: string
           rejection_reason?: string | null
           service_type: string
@@ -11757,13 +12758,14 @@ export type Database = {
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
-          booking_id?: string
+          booking_id?: string | null
           created_at?: string
           currency?: string
           due_date?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
+          pilgrimage_b2b_agreement_id?: string | null
           reference_number?: string
           rejection_reason?: string | null
           service_type?: string
@@ -11774,6 +12776,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "supplier_order_pilgrimage_agreement_fk"
+            columns: ["organization_id", "pilgrimage_b2b_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_b2b_agreements"
+            referencedColumns: ["organization_id", "id"]
+          },
           {
             foreignKeyName: "supplier_payment_orders_booking_id_fkey"
             columns: ["booking_id"]
@@ -12048,6 +13057,79 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_refund_claims: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          exchange_rate: number
+          id: string
+          organization_id: string
+          reference: string
+          rejected_at: string | null
+          rejected_by: string | null
+          supplier_id: string
+          supplier_invoice_id: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by: string
+          currency: string
+          exchange_rate: number
+          id?: string
+          organization_id: string
+          reference: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          supplier_id: string
+          supplier_invoice_id: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          exchange_rate?: number
+          id?: string
+          organization_id?: string
+          reference?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          supplier_id?: string
+          supplier_invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_refund_claims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_refund_claims_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_refund_claims_supplier_invoice_id_fkey"
+            columns: ["supplier_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -14809,6 +15891,10 @@ export type Database = {
       }
       _can_manage_refunds: { Args: { _org_id: string }; Returns: boolean }
       _can_read_org_finance: { Args: { _org_id: string }; Returns: boolean }
+      _can_read_pilgrimage_b2b_receivables: {
+        Args: { _organization_id: string }
+        Returns: boolean
+      }
       _cash_flow_category: {
         Args: { _reference_type: string; _source_type: string }
         Returns: string
@@ -14817,6 +15903,26 @@ export type Database = {
       _ensure_account_routing_defaults: {
         Args: { _org_id: string }
         Returns: undefined
+      }
+      _has_pilgrimage_finance_permission: {
+        Args: { _org: string; _permission: string }
+        Returns: boolean
+      }
+      _is_pilgrimage_b2b_invoice: {
+        Args: { _invoice_id: string; _organization_id: string }
+        Returns: boolean
+      }
+      _is_pilgrimage_supplier_invoice: {
+        Args: { _invoice_id: string }
+        Returns: boolean
+      }
+      _is_pilgrimage_supplier_order: {
+        Args: { _order_id: string }
+        Returns: boolean
+      }
+      _is_pilgrimage_supplier_payment: {
+        Args: { _payment_id: string }
+        Returns: boolean
       }
       _module_pulse_window: {
         Args: { p_from: string; p_org: string; p_to: string }
@@ -14878,6 +15984,15 @@ export type Database = {
         Args: { _paymob_transaction_id: string }
         Returns: boolean
       }
+      add_pilgrimage_b2b_roster_name: {
+        Args: {
+          _agreement_id: string
+          _client_key: string
+          _display_name: string
+          _room_type?: string
+        }
+        Returns: string
+      }
       advance_workflow: {
         Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
         Returns: Json
@@ -14885,6 +16000,10 @@ export type Database = {
       approve_bank_reconciliation: {
         Args: { _session: string; _tolerance?: number }
         Returns: Json
+      }
+      approve_pilgrimage_b2b_agreement: {
+        Args: { _agreement_id: string }
+        Returns: string
       }
       approve_quote_review: {
         Args: { _checks: Json; _costs?: Json; _quote: string }
@@ -15124,11 +16243,16 @@ export type Database = {
         }
       }
       claim_email_thread: { Args: { _thread: string }; Returns: undefined }
+      clone_pilgrimage_sale: { Args: { _sale_id: string }; Returns: string }
       close_accounting_period: { Args: { _period_id: string }; Returns: Json }
       close_bank_reconciliation: { Args: { _session: string }; Returns: Json }
       close_fiscal_year: {
         Args: { _confirmation: string; _org: string; _year: number }
         Returns: Json
+      }
+      convert_pilgrimage_retail_group: {
+        Args: { _sale_id: string }
+        Returns: string
       }
       convert_quote_atomic: {
         Args: { _org: string; _quote: string }
@@ -15206,6 +16330,16 @@ export type Database = {
           _name: string
           _phone?: string
           _slug?: string
+        }
+        Returns: string
+      }
+      create_pilgrimage_supplier_obligation: {
+        Args: {
+          _amount: number
+          _due_date: string
+          _reference: string
+          _sale_id: string
+          _supplier_id: string
         }
         Returns: string
       }
@@ -15747,6 +16881,18 @@ export type Database = {
         Args: { _org_id: string }
         Returns: Json
       }
+      get_pilgrimage_b2b_receivables: {
+        Args: {
+          _invoice_id?: string
+          _organization_id: string
+          _sale_id?: string
+        }
+        Returns: Json
+      }
+      get_pilgrimage_b2b_settlement: {
+        Args: { _org: string; _sale_id: string }
+        Returns: Json
+      }
       get_profit_analytics_dashboard: {
         Args: {
           _currency?: string
@@ -15926,6 +17072,10 @@ export type Database = {
       is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin_v2: { Args: { _user_id: string }; Returns: boolean }
+      issue_pilgrimage_b2b_invoice: {
+        Args: { _agreement_id: string; _vat_rate: number }
+        Returns: string
+      }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
         Returns: Json
@@ -16016,6 +17166,17 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
+      }
+      manage_supplier_refund_claim: {
+        Args: {
+          _action: string
+          _amount?: number
+          _id: string
+          _invoice?: string
+          _org: string
+          _reference?: string
+        }
+        Returns: string
       }
       match_bank_statement_line: {
         Args: {
@@ -16119,6 +17280,15 @@ export type Database = {
         Returns: string
       }
       post_supplier_payment: { Args: { _payment_id: string }; Returns: string }
+      prepare_pilgrimage_b2b_agreement: {
+        Args: {
+          _debtor_customer_id: string
+          _installments: Json
+          _sale_id: string
+          _terms: string
+        }
+        Returns: string
+      }
       prepare_subscription_checkout: {
         Args: {
           _billing_cycle: string
@@ -16174,6 +17344,17 @@ export type Database = {
         }
         Returns: string
       }
+      record_pilgrimage_b2b_collection: {
+        Args: {
+          _amount: number
+          _invoice_id: string
+          _method: string
+          _payment_date: string
+          _reference: string
+          _treasury_account_id: string
+        }
+        Returns: string
+      }
       record_quote_followup: {
         Args: { _action: string; _followup: string; _note?: string }
         Returns: undefined
@@ -16212,6 +17393,10 @@ export type Database = {
         Args: { _close?: boolean; _thread: string }
         Returns: undefined
       }
+      remove_pilgrimage_b2b_roster_name: {
+        Args: { _entry_id: string }
+        Returns: string
+      }
       reopen_accounting_period: { Args: { _period_id: string }; Returns: Json }
       reopen_fiscal_year: {
         Args: { _org: string; _reason: string; _year: number }
@@ -16225,6 +17410,10 @@ export type Database = {
       replay_gl_postings: {
         Args: { _dry_run?: boolean; _from?: string; _org: string; _to?: string }
         Returns: Json
+      }
+      request_pilgrimage_b2b_cancellation: {
+        Args: { _reason: string; _sale_id: string }
+        Returns: string
       }
       resend_organization_invitation: {
         Args: { _invitation_id: string }
@@ -16250,6 +17439,10 @@ export type Database = {
       retry_workflow_rule_run: {
         Args: { p_event_id: string; p_rule_id: string }
         Returns: undefined
+      }
+      review_pilgrimage_b2b_cancellation: {
+        Args: { _approve: boolean; _id: string; _reason?: string }
+        Returns: string
       }
       run_booking_automation: {
         Args: { p_booking_id: string }
@@ -16327,6 +17520,20 @@ export type Database = {
       set_org_pin: {
         Args: { _org_id: string; _pin: string }
         Returns: undefined
+      }
+      settle_refund_balance: {
+        Args: {
+          _amount: number
+          _claim?: string
+          _id: string
+          _invoice?: string
+          _order?: string
+          _org: string
+          _reference?: string
+          _refund?: string
+          _treasury?: string
+        }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -16710,6 +17917,10 @@ export type Database = {
       toggle_employee_status: {
         Args: { p_employee_id: string; p_is_active: boolean; p_reason?: string }
         Returns: Json
+      }
+      transition_pilgrimage_seat_allocation: {
+        Args: { _action: string; _hold_minutes?: number; _sale_id: string }
+        Returns: string
       }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
       unmatch_bank_reconciliation: {
