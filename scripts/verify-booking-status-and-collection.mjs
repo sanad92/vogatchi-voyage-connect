@@ -50,6 +50,13 @@ assert.equal(customerDisplayName('=d9=85 =d8=b9'), 'م ع');
 assert.equal(customerDisplayName('=?UTF-8?Q?=D9=85?= =?UTF-8?Q?=D9=86?='), 'من');
 assert.equal(customerDisplayName('A=41=42'), 'A=41=42');
 assert.equal(customerDisplayName('=D9=FF'), '=D9=FF');
+assert.equal(customerDisplayName('=D9=85=D8=B1=D9=83=D'), 'مرك…');
+assert.equal(customerDisplayName('=D9=85=D8=B1=D9='), 'مر…');
+assert.equal(customerDisplayName('=D9=85=D8=B1=D9'), 'مر…');
+assert.equal(customerDisplayName('=D9=85=D8=B1=20=D8=B9=D9=85'), 'مر عم');
+assert.equal(customerDisplayName('=D9=85=D8=B1=20=D'), 'مر…');
+assert.equal(customerDisplayName('=D9=85=D8=B1=D9=FF'), '=D9=85=D8=B1=D9=FF');
+assert.equal(customerDisplayName('A=41=42='), 'A=41=42=');
 assert.equal(customerDisplayName('مها السيد'), 'مها السيد');
 
 const storage = new Map();
