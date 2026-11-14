@@ -46,7 +46,7 @@ try {
       ('${orgA}', '${viewer}', 'viewer', true);
   `);
   const migration = readFileSync('supabase/migrations/20261114001838_company_api_integrations.sql', 'utf8');
-  await db.exec(migration.replace('CREATE EXTENSION IF NOT EXISTS supabase_vault;', ''));
+  await db.exec(migration);
 
   for (const role of ['anon', 'authenticated']) {
     await db.exec(`set role ${role}`);
