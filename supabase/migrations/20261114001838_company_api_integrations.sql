@@ -1,6 +1,7 @@
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS supabase_vault;
+-- Supabase Vault is provisioned by the hosted database and required here.
+-- Lovable Cloud permits using the installed Vault extension without recreating it.
 CREATE SCHEMA IF NOT EXISTS company_api_private;
 REVOKE ALL ON SCHEMA company_api_private FROM PUBLIC, anon, authenticated;
 
