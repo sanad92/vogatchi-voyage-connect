@@ -1,6 +1,6 @@
 /**
  * Trip File: ONE user-triggered READ-ONLY air PNR observation.
- * Travelport TripServices Air and Sabre Booking Management are behind organization opt-in.
+ * Travelport TripServices Air and Sabre Booking Management use the company connection.
  * Amadeus Enterprise requires agency-specific provisioned SOAP/API contracts;
  * never send its PNR to retired Self-Service endpoints or guessed hosts.
  * No external booking mutation, ticket issue, cancellation or local DB write.
@@ -8,11 +8,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.95.3';
 import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import { readBoundedJsonBody } from '../_shared/trip-file-bounded-json.ts';
+import { loadCompanyApiConnection } from '../_shared/company-api-store.ts';
+import { readCompanyAirPnr } from '../_shared/company-api-providers.ts';
 import {
-  sameAirBookingReference, providerFromSupplier, parseTravelportReservation,
-  safeAirLocator, travelportOAuthUrl, travelportRetrieveUrl,
-  sabreEndpoints, parseSabreReservation,
-  type ProviderEnvironment,
+  sameAirBookingReference, providerFromSupplier, safeAirLocator,
 } from '../_shared/trip-file-air-provider.ts';
 
 const CORS = {
@@ -32,134 +31,6 @@ const unavailable = (provider?: string) => send({
   ticketIssuanceVerified:false,
 });
 const unauthorized = () => send({error:'not_authorized'},403);
-type TokenCache = { token:string; expiresAt:number; credentialKey:string };
-let cache:TokenCache | null = null;
-let inFlightToken:Promise<string> | null = null;
-
-let sabreToken: TokenCache | null = null;
-let sabreTokenRequest: Promise<string> | null = null;
-
-const getEnv = (name:string) => (Deno.env.get(name) || '').trim();
-async function obtainTravelportToken(env: ProviderEnvironment):Promise<string> {
-  const username = getEnv('TRAVELPORT_VERIFY_USERNAME');
-  const password = Deno.env.get('TRAVELPORT_VERIFY_PASSWORD') || '';
-  const id = getEnv('TRAVELPORT_VERIFY_CLIENT_ID');
-  const secret = Deno.env.get('TRAVELPORT_VERIFY_CLIENT_SECRET') || '';
-  if (!username || !password || !id || !secret) throw new Error('credentials_missing');
-
-  const key = env+'|'+username+'|'+id;
-  if (cache?.credentialKey === key && Date.now() < cache.expiresAt) return cache.token;
-  if (inFlightToken) return inFlightToken;
-  inFlightToken = (async () => {
-    const tokenResponse = await fetch(travelportOAuthUrl(env),{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded',Accept:'application/json'},
-      body:new URLSearchParams({
-        grant_type:'password',username,password,client_id:id,client_secret:secret,
-      }),
-      redirect:'error',signal:AbortSignal.timeout(7500),
-    });
-    if (!tokenResponse.ok || Number(tokenResponse.headers.get('content-length')||0) > 16000) {
-      throw new Error('provider_auth_failed');
-    }
-    const body = await readBoundedJsonBody(tokenResponse.body,16000) as {
-      access_token?:unknown;expires_in?:unknown;
-    };
-    if (typeof body.access_token !== 'string' ||
-      body.access_token.length < 12 || body.access_token.length > 8192) {
-      throw new Error('provider_auth_invalid_token');
-    }
-    const seconds = typeof body.expires_in === 'number' && body.expires_in >= 180
-      ? Math.min(body.expires_in,86400) : 3600;
-    cache = {
-      token:body.access_token,credentialKey:key,
-      expiresAt:Date.now() + (seconds - 120)*1000,
-    };
-    return body.access_token;
-  })();
-  try { return await inFlightToken; } finally { inFlightToken=null; }
-}
-
-async function obtainSabreToken(env: ProviderEnvironment, basicCredential: string): Promise<string> {
-  if (sabreToken?.credentialKey === env && Date.now() < sabreToken.expiresAt) return sabreToken.token;
-  if (sabreTokenRequest) return sabreTokenRequest;
-  sabreTokenRequest = (async () => {
-    const tokenResponse = await fetch(sabreEndpoints(env).token, {
-      method: 'POST',
-      headers: {
-        Authorization: 'Basic ' + basicCredential,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json',
-        'Conversation-ID': crypto.randomUUID(),
-      },
-      body: new URLSearchParams({ grant_type: 'client_credentials' }),
-      redirect: 'error',
-      signal: AbortSignal.timeout(7500),
-    });
-    if (!tokenResponse.ok) throw new Error('sabre_auth_failed');
-    const token = await readBoundedJsonBody(tokenResponse.body, 16000) as {
-      access_token?: unknown; token_type?: unknown; expires_in?: unknown;
-    } | null;
-    if (!token || typeof token.access_token !== 'string' || !/^[A-Za-z0-9._~+\/-]{12,8192}={0,2}$/.test(token.access_token)
-      || typeof token.token_type !== 'string' || token.token_type.toLowerCase() !== 'bearer') {
-      throw new Error('sabre_auth_invalid_token');
-    }
-    const seconds = Number(token.expires_in);
-    if (Number.isFinite(seconds) && seconds > 120) {
-      sabreToken = { token: token.access_token, credentialKey: env, expiresAt: Date.now() + (Math.min(seconds, 604800) - 60) * 1000 };
-    }
-    return token.access_token;
-  })();
-  try { return await sabreTokenRequest; } finally { sabreTokenRequest = null; }
-}
-
-async function observeSabre(orgId: string, locator: string) {
-  if (getEnv('SABRE_VERIFY_ENABLED') !== 'true' || getEnv('SABRE_VERIFY_ALLOWED_ORG_ID') !== orgId) {
-    return unavailable('sabre');
-  }
-  const environment = getEnv('SABRE_VERIFY_ENV') || 'preproduction';
-  const basicCredential = getEnv('SABRE_VERIFY_BASIC_CREDENTIAL');
-  if ((environment !== 'preproduction' && environment !== 'production')
-    || !/^[A-Za-z0-9+/]{12,4096}={0,2}$/.test(basicCredential)
-    || (environment === 'production' && getEnv('SABRE_VERIFY_PRODUCTION_ACK') !== 'REVIEWED')) {
-    return unavailable('sabre');
-  }
-  try {
-    const token = await obtainSabreToken(environment, basicCredential);
-    const response = await fetch(sabreEndpoints(environment).retrieve, {
-      method: 'POST', // Sabre getBooking is a read operation.
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'Conversation-ID': crypto.randomUUID(),
-      },
-      body: JSON.stringify({ confirmationId: locator, returnOnly: ['FLIGHTS'] }),
-      redirect: 'error',
-      signal: AbortSignal.timeout(9000),
-    });
-    if (response.status === 401) sabreToken = null;
-    if (!response.ok || Number(response.headers.get('content-length') || 0) > 262144
-      || !(response.headers.get('content-type') || '').toLowerCase().includes('json')) throw new Error('sabre_read_failed');
-    const observation = parseSabreReservation(await readBoundedJsonBody(response.body, 262144), locator);
-    return send({
-      state: 'provider_pnr_observed',
-      provider: observation.provider,
-      environment,
-      checkedAt: new Date().toISOString(),
-      airStatus: observation.airStatus,
-      segmentStatusSamples: observation.statusSampleCount,
-      externalProviderVerification: 'pnr_status_only',
-      ticketIssuanceVerified: false,
-    });
-  } catch {
-    return send({
-      state: 'provider_unavailable', provider: 'sabre',
-      externalProviderVerification: 'not_performed', ticketIssuanceVerified: false,
-    }, 502);
-  }
-}
-
 Deno.serve(async request => {
   if (request.method === 'OPTIONS') return new Response(null,{headers:CORS});
   if (request.method !== 'POST') return send({error:'method_not_allowed'},405);
@@ -259,59 +130,22 @@ Deno.serve(async request => {
     externalProviderVerification:'not_performed',ticketIssuanceVerified:false,
   });
 
-  if (provider === 'sabre') return observeSabre(change.organization_id, change.service_reference);
-
-  if (getEnv('TRAVELPORT_VERIFY_ENABLED')!=='true' ||
-      getEnv('TRAVELPORT_VERIFY_ALLOWED_ORG_ID')!==change.organization_id) {
-    return unavailable(provider);
-  }
-  const environment:ProviderEnvironment =
-    getEnv('TRAVELPORT_VERIFY_ENV')==='production'?'production':'preproduction';
-  const accessGroup = getEnv('TRAVELPORT_VERIFY_ACCESS_GROUP');
-  if (!accessGroup || accessGroup.length>100 ||
-    !getEnv('TRAVELPORT_VERIFY_USERNAME') ||
-    !Deno.env.get('TRAVELPORT_VERIFY_PASSWORD') ||
-    !getEnv('TRAVELPORT_VERIFY_CLIENT_ID') ||
-    !Deno.env.get('TRAVELPORT_VERIFY_CLIENT_SECRET') ||
-    (environment==='production' && getEnv('TRAVELPORT_VERIFY_PRODUCTION_ACK')!=='REVIEWED')) {
-    return unavailable(provider);
-  }
-
+  // Resolve credentials only after the caller's RLS-scoped handoff, membership
+  // and original booking checks. Never accept the tenant ID or provider from the request.
   try {
-    const token=await obtainTravelportToken(environment);
-    const response=await fetch(travelportRetrieveUrl(environment,change.service_reference),{
-      method:'GET',redirect:'error',signal:AbortSignal.timeout(9000),
-      headers:{
-        Authorization:'Bearer '+token,
-        'XAUTH_TRAVELPORT_ACCESSGROUP':accessGroup,
-        Accept:'application/json',
-        'Accept-Encoding':'gzip, deflate',
-        'Cache-Control':'no-cache',
-      },
+    const connection = await loadCompanyApiConnection(change.organization_id, provider);
+    if (!connection) return unavailable(provider);
+    const observation = await readCompanyAirPnr({
+      ...connection, provider, organizationId: change.organization_id, locator: change.service_reference,
     });
-    // Do not expose remote errors or ticket/passenger/payment details.
-    if (!response.ok || Number(response.headers.get('content-length')||0)>262144 ||
-      !(response.headers.get('content-type')||'').toLowerCase().includes('json')) {
-      return send({state:'provider_unavailable',provider,
-        externalProviderVerification:'not_performed',ticketIssuanceVerified:false},502);
-    }
-    const body=await readBoundedJsonBody(response.body,262144);
-    const observation=parseTravelportReservation(body,change.service_reference);
     return send({
-      state:'provider_pnr_observed',
-      provider,
-      environment,
-      checkedAt:new Date().toISOString(),
-      airStatus:observation.airStatus,
+      state:'provider_pnr_observed', provider, environment:connection.environment,
+      checkedAt:new Date().toISOString(), airStatus:observation.airStatus,
       segmentStatusSamples:observation.statusSampleCount,
-      externalProviderVerification:'pnr_status_only',
-      ticketIssuanceVerified:false,
-      caveat:'PNR retrieval does not prove ticket issue, completed changes or refund.',
+      externalProviderVerification:'pnr_status_only', ticketIssuanceVerified:false,
     });
   } catch {
-    return send({
-      state:'provider_unavailable',provider,
-      externalProviderVerification:'not_performed',ticketIssuanceVerified:false,
-    },502);
+    return send({ state:'provider_unavailable', provider,
+      externalProviderVerification:'not_performed', ticketIssuanceVerified:false }, 502);
   }
 });
