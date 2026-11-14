@@ -17,3 +17,9 @@ export function getSafeInternalRedirect(value: string | null | undefined): strin
   }
 }
 
+
+/** Retain the requested page when a company session requires sign-in. */
+export function getCompanyLoginPath(location: { pathname: string; search: string; hash: string }): string {
+  const target = getSafeInternalRedirect(location.pathname + location.search + location.hash);
+  return target ? `/login?${new URLSearchParams({ redirect: target })}` : '/login';
+}
