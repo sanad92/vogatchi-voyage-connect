@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   safeAirLocator, sameAirBookingReference, providerFromSupplier,
   travelportRetrieveUrl, travelportOAuthUrl, parseTravelportReservation,
+  sabreEndpoints, parseSabreReservation,
 } from './trip-file-air-provider';
 
 const locator = 'BXPJVM';
@@ -23,6 +24,9 @@ assert.throws(() => travelportRetrieveUrl('unsupported' as any,locator));
 assert.throws(() => travelportOAuthUrl('unsupported' as any));
 assert.equal(providerFromSupplier('Travelport+ (Galileo)'),'travelport');
 assert.equal(providerFromSupplier('Travelport GDS'),'travelport');
+assert.equal(providerFromSupplier('Galileo'),'travelport');
+assert.equal(providerFromSupplier('Sabre GDS'),'sabre');
+assert.equal(providerFromSupplier('Sabreware'),null);
 assert.equal(providerFromSupplier('Amadeus Enterprise'), 'amadeus_enterprise');
 assert.equal(providerFromSupplier('Amadeus GDS'), 'amadeus_enterprise');
 assert.equal(providerFromSupplier('Any Supplier Ltd'),null);
@@ -95,3 +99,33 @@ const vendorOnly=payload();
 (vendorOnly.ReservationResponse.Reservation.Receipt[0].Confirmation.Locator as any).sourceContext='VendorLocator';
 assert.throws(()=>parseTravelportReservation(vendorOnly,locator));
 console.log('Trip File air provider lookup: strict PNR, source binding, status mix, PII safety passed');
+
+assert.deepEqual(sabreEndpoints('preproduction'), {
+  token: 'https://api.cert.platform.sabre.com/v2/auth/token',
+  retrieve: 'https://api.cert.platform.sabre.com/v1/trip/orders/getBooking',
+});
+assert.deepEqual(sabreEndpoints('production'), {
+  token: 'https://api.platform.sabre.com/v2/auth/token',
+  retrieve: 'https://api.platform.sabre.com/v1/trip/orders/getBooking',
+});
+assert.throws(() => sabreEndpoints('unknown' as never));
+assert.equal(sameAirBookingReference({...flight,supplier_name:'Sabre GDS'},'org1','bk1',locator,'sabre'),true);
+assert.equal(sameAirBookingReference({...flight,supplier_name:'Sabre GDS'},'org1','bk1',locator,'travelport'),false);
+
+const sabre = {
+  bookingId: locator,
+  flights: [{ status: 'HK' }],
+  travelers: [{ name: 'SECRET NAME' }],
+  isTicketed: true,
+};
+assert.deepEqual(parseSabreReservation(sabre, locator), {
+  provider: 'sabre', bookingLocatorMatched: true, airStatus: 'unknown',
+  statusSampleCount: 0, ticketIssuanceVerified: false, amendmentExecutionVerified: false,
+});
+assert.throws(() => parseSabreReservation({ ...sabre, bookingId: 'OTHER1', request: { confirmationId: locator } }, locator));
+assert.throws(() => parseSabreReservation({ ...sabre, flights: [] }, locator));
+assert.throws(() => parseSabreReservation({ ...sabre, flights: [null] }, locator));
+assert.throws(() => parseSabreReservation({ ...sabre, errors: [{ category: 'ERROR' }] }, locator));
+assert.throws(() => parseSabreReservation({ ...sabre, errors: {} }, locator));
+assert.throws(() => parseSabreReservation(null, locator));
+console.log('Sabre fixed environments, exact provider booking match and sanitized read-only result passed');

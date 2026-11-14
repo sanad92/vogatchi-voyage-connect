@@ -5,7 +5,7 @@ export interface AirReservationObservation {
   state:
     | 'not_configured' | 'enterprise_contract_required'
     | 'source_not_unambiguous' | 'provider_unavailable' | 'provider_pnr_observed';
-  provider?: 'travelport' | 'amadeus_enterprise';
+  provider?: 'travelport' | 'amadeus_enterprise' | 'sabre';
   environment?: 'preproduction' | 'production';
   checkedAt?: string;
   airStatus?: 'confirmed' | 'cancelled' | 'pending' | 'modified'
@@ -17,7 +17,7 @@ export interface AirReservationObservation {
 }
 
 /**
- * Manual provider GET observation. No polling or secrets in browser.
+ * Manual read-only provider observation. No polling or secrets in browser.
  * The request ID, not the PNR, is sent to the server.
  */
 export function useAirReservationObservation() {
@@ -38,7 +38,7 @@ export function useAirReservationObservation() {
         throw new Error('رد التحقق من الطيران غير مكتمل أو غير موثوق');
       }
       if (record.state === 'provider_pnr_observed' &&
-        (record.provider !== 'travelport' ||
+        ((record.provider !== 'travelport' && record.provider !== 'sabre') ||
          record.externalProviderVerification !== 'pnr_status_only')) {
         throw new Error('لا يمكن اعتماد هذا الرد كقراءة PNR موثوقة');
       }

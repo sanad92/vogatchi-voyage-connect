@@ -6,7 +6,7 @@
  * Amadeus Self-Service was retired July 2026. Enterprise PoweredPNR requires
  * an agency-specific contract. This adapter deliberately has NO Amadeus URL.
  */
-export type AirProvider = 'travelport' | 'amadeus_enterprise';
+export type AirProvider = 'travelport' | 'amadeus_enterprise' | 'sabre';
 export type ProviderEnvironment = 'preproduction' | 'production';
 export type AirReservationState =
   | 'confirmed' | 'cancelled' | 'pending' | 'modified'
@@ -28,12 +28,13 @@ export function safeAirLocator(v: unknown): v is string {
 export function providerFromSupplier(name: unknown): AirProvider | null {
   if (typeof name !== 'string') return null;
   const n = name.trim().toLowerCase();
-  if (/^(travelport|travelport\+|galileo by travelport|galileo travelport)(?:\s|$)/.test(n)) {
+  if (/^(travelport\+?|galileo)(?:\s|$)/.test(n)) {
     return 'travelport';
   }
   if (/^(amadeus|amadeus enterprise)(?:\s|$)/.test(n)) {
     return 'amadeus_enterprise';
   }
+  if (/^sabre(?:\s|$)/.test(n)) return 'sabre';
   return null;
 }
 
@@ -90,7 +91,7 @@ function normalizeAirStatus(value: unknown): AirReservationState {
 
 /** Deliberately omit itinerary, passenger details, ticket numbers, prices. */
 export interface AirReservationObservation {
-  provider: 'travelport';
+  provider: 'travelport' | 'sabre';
   bookingLocatorMatched: true;
   airStatus: AirReservationState;
   statusSampleCount: number;
@@ -132,6 +133,40 @@ export function parseTravelportReservation(
     airStatus: !nonUnknown.length ? 'unknown' :
       allSame ? nonUnknown[0] : 'mixed',
     statusSampleCount: Math.min(statuses.length, 30),
+    ticketIssuanceVerified: false,
+    amendmentExecutionVerified: false,
+  };
+}
+
+// Sabre Booking Management v1 uses POST for the read-only getBooking operation.
+const sabreHosts: Record<ProviderEnvironment, string> = {
+  preproduction: 'https://api.cert.platform.sabre.com',
+  production: 'https://api.platform.sabre.com',
+};
+
+export function sabreEndpoints(environment: ProviderEnvironment) {
+  if (!Object.prototype.hasOwnProperty.call(sabreHosts, environment)) throw new Error('invalid_sabre_environment');
+  const host = sabreHosts[environment];
+  return { token: host + '/v2/auth/token', retrieve: host + '/v1/trip/orders/getBooking' };
+}
+
+export function parseSabreReservation(payload: unknown, expectedLocator: string): AirReservationObservation {
+  const booking = object(payload);
+  // Bind to the Sabre booking ID, never to an echoed request or airline locator.
+  if (!safeAirLocator(expectedLocator) || booking?.bookingId !== expectedLocator
+    || !Array.isArray(booking.flights) || booking.flights.length === 0
+    || !booking.flights.every(flight => object(flight) !== null)
+    || (booking.errors !== undefined && (!Array.isArray(booking.errors) || booking.errors.length > 0))) {
+    throw new Error('sabre_booking_not_verified');
+  }
+
+  // getBooking proves record retrieval. Do not infer segment/ticket status from
+  // the presence of flights or from the booking-level isTicketed flag.
+  return {
+    provider: 'sabre',
+    bookingLocatorMatched: true,
+    airStatus: 'unknown',
+    statusSampleCount: 0,
     ticketIssuanceVerified: false,
     amendmentExecutionVerified: false,
   };

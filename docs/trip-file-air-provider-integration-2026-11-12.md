@@ -76,6 +76,27 @@ secrets, **never** in GitHub, frontend, `VITE_` variables or logs. This
 is one organization and one access group only; true SaaS multitenant
 provider vault/security is NOT delivered.
 
+## Sabre Booking Management PNR lookup
+
+The Trip File supplier handoff also supports a read-only Sabre lookup for the
+same approved flight amendment and original booking. Sabre uses
+`POST /v1/trip/orders/getBooking` to retrieve the PNR and
+`POST /v2/auth/token` to obtain the bearer token.
+[Sabre Booking Management](https://developer.sabre.com/blog/deep-dive-e2e-ndc-reservation-management-booking-management-api/index.html)
+
+```
+SABRE_VERIFY_ENABLED=true
+SABRE_VERIFY_ALLOWED_ORG_ID=<organization UUID>
+SABRE_VERIFY_ENV=preproduction
+SABRE_VERIFY_BASIC_CREDENTIAL=<Sabre v2 Base64 authorization credential without the Basic prefix>
+```
+
+The server checks the returned Sabre booking ID against the original PNR
+and exposes only the match. Fixture checks cover the parser. A test booking
+owned by the authorized Sabre agency is required to verify the live response.
+Production also uses `SABRE_VERIFY_PRODUCTION_ACK=REVIEWED`. Configure
+credentials as Edge secrets.
+
 ## Critical operational truth
 
 - Travelport's `ReceiptConfirmation` may include one or more

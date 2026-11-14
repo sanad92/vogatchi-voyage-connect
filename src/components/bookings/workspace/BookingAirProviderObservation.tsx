@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 type StateMap = Record<string, AirReservationObservation>;
+const providerNames = { travelport: 'Travelport / Galileo', sabre: 'Sabre', amadeus_enterprise: 'Amadeus Enterprise' };
 const labels: Record<NonNullable<AirReservationObservation['airStatus']>, string> = {
   confirmed: 'الحجز يحتوي على حالات مقاطع مؤكدة',
   cancelled: 'المقاطع المرتبطة بالحجز ملغاة',
@@ -55,7 +56,7 @@ export function BookingAirProviderObservation({
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Plane className="h-4 w-4" />
-          مراجعة PNR من Travelport / Amadeus Enterprise
+          مراجعة PNR من Travelport / Sabre / Amadeus Enterprise
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           فحص يدوي للقراءة فقط: النظام يحدد المورد من حجز الطيران المسجل في شركتك،
@@ -82,12 +83,14 @@ export function BookingAirProviderObservation({
 
               {result?.state==='provider_pnr_observed' && (
                 <div className="space-y-1 text-sm">
-                  <p>Travelport: {labels[result.airStatus || 'unknown']}</p>
+                  <p>{result.provider && providerNames[result.provider]} · {result.provider === 'sabre'
+                    ? 'تمت مطابقة حجز الطيران مع مرجع سيبر'
+                    : labels[result.airStatus || 'unknown']}</p>
                   <p className="text-xs text-muted-foreground">
                     البيئة: {result.environment==='production'?'إنتاج':'تجريبية'}
                     {' · '}وقت القراءة: {result.checkedAt
                       ? new Date(result.checkedAt).toLocaleString('ar-EG') : 'غير متوفر'}
-                    {' · '}حالات المقاطع المقروءة: {result.segmentStatusSamples ?? 0}
+                    {result.provider === 'travelport' && ` · حالات المقاطع المقروءة: ${result.segmentStatusSamples ?? 0}`}
                   </p>
                   <p className="text-xs text-amber-700 dark:text-amber-400">
                     مش دليل على إصدار التذكرة أو تنفيذ التغيير المطلوب في التاريخ أو الاسم
@@ -100,7 +103,7 @@ export function BookingAirProviderObservation({
                   {result.state==='enterprise_contract_required'
                     ? 'Amadeus Enterprise: يلزم ربط حساب وكالة معتمد وعقد API محدد؛ لم يتم الاستعلام من Amadeus.'
                     : result.state==='not_configured'
-                    ? 'Travelport غير مفعّل للشركة حاليًا أو بيانات الوصول التجريبية غير مكتملة.'
+                    ? `${result.provider ? providerNames[result.provider] : 'مزود الطيران'} · الاتصال يحتاج تفعيل حساب الشركة.`
                     : result.state==='source_not_unambiguous'
                     ? 'مرجع الـPNR غير مطابق لحجز طيران أصلي واحد ونفس الشركة؛ لم يتم الاتصال بالمورد.'
                     : 'تعذر تأكيد القراءة من المورد. لا تفسّر ذلك كإلغاء أو إصدار تذكرة.'}
@@ -112,7 +115,7 @@ export function BookingAirProviderObservation({
         <p className="flex gap-2 text-xs text-amber-700 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0"/>
           Amadeus Self-Service قديمة وغير معتمدة للتكامل الجديد. مسار Enterprise
-          ينتظر صلاحيات التعاقد ومواصفات الاسترجاع. نتيجة Travelport تخص حالة الـPNR
+          ينتظر صلاحيات التعاقد ومواصفات الاسترجاع. قراءة المزود تخص الـPNR
           فقط ولا تتحول تلقائيًا إلى حالة «تم التعديل» أو «تم إصدار التذكرة».
         </p>
       </CardContent>

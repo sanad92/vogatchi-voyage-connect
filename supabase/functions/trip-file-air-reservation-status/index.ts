@@ -1,6 +1,6 @@
 /**
  * Trip File: ONE user-triggered READ-ONLY air PNR observation.
- * Travelport TripServices Air v11 is implemented behind strict opt-in.
+ * Travelport TripServices Air and Sabre Booking Management are behind organization opt-in.
  * Amadeus Enterprise requires agency-specific provisioned SOAP/API contracts;
  * never send its PNR to retired Self-Service endpoints or guessed hosts.
  * No external booking mutation, ticket issue, cancellation or local DB write.
@@ -11,6 +11,7 @@ import { readBoundedJsonBody } from '../_shared/trip-file-bounded-json.ts';
 import {
   sameAirBookingReference, providerFromSupplier, parseTravelportReservation,
   safeAirLocator, travelportOAuthUrl, travelportRetrieveUrl,
+  sabreEndpoints, parseSabreReservation,
   type ProviderEnvironment,
 } from '../_shared/trip-file-air-provider.ts';
 
@@ -34,6 +35,9 @@ const unauthorized = () => send({error:'not_authorized'},403);
 type TokenCache = { token:string; expiresAt:number; credentialKey:string };
 let cache:TokenCache | null = null;
 let inFlightToken:Promise<string> | null = null;
+
+let sabreToken: TokenCache | null = null;
+let sabreTokenRequest: Promise<string> | null = null;
 
 const getEnv = (name:string) => (Deno.env.get(name) || '').trim();
 async function obtainTravelportToken(env: ProviderEnvironment):Promise<string> {
@@ -74,6 +78,86 @@ async function obtainTravelportToken(env: ProviderEnvironment):Promise<string> {
     return body.access_token;
   })();
   try { return await inFlightToken; } finally { inFlightToken=null; }
+}
+
+async function obtainSabreToken(env: ProviderEnvironment, basicCredential: string): Promise<string> {
+  if (sabreToken?.credentialKey === env && Date.now() < sabreToken.expiresAt) return sabreToken.token;
+  if (sabreTokenRequest) return sabreTokenRequest;
+  sabreTokenRequest = (async () => {
+    const tokenResponse = await fetch(sabreEndpoints(env).token, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + basicCredential,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'Conversation-ID': crypto.randomUUID(),
+      },
+      body: new URLSearchParams({ grant_type: 'client_credentials' }),
+      redirect: 'error',
+      signal: AbortSignal.timeout(7500),
+    });
+    if (!tokenResponse.ok) throw new Error('sabre_auth_failed');
+    const token = await readBoundedJsonBody(tokenResponse.body, 16000) as {
+      access_token?: unknown; token_type?: unknown; expires_in?: unknown;
+    } | null;
+    if (!token || typeof token.access_token !== 'string' || !/^[A-Za-z0-9._~+\/-]{12,8192}={0,2}$/.test(token.access_token)
+      || typeof token.token_type !== 'string' || token.token_type.toLowerCase() !== 'bearer') {
+      throw new Error('sabre_auth_invalid_token');
+    }
+    const seconds = Number(token.expires_in);
+    if (Number.isFinite(seconds) && seconds > 120) {
+      sabreToken = { token: token.access_token, credentialKey: env, expiresAt: Date.now() + (Math.min(seconds, 604800) - 60) * 1000 };
+    }
+    return token.access_token;
+  })();
+  try { return await sabreTokenRequest; } finally { sabreTokenRequest = null; }
+}
+
+async function observeSabre(orgId: string, locator: string) {
+  if (getEnv('SABRE_VERIFY_ENABLED') !== 'true' || getEnv('SABRE_VERIFY_ALLOWED_ORG_ID') !== orgId) {
+    return unavailable('sabre');
+  }
+  const environment = getEnv('SABRE_VERIFY_ENV') || 'preproduction';
+  const basicCredential = getEnv('SABRE_VERIFY_BASIC_CREDENTIAL');
+  if ((environment !== 'preproduction' && environment !== 'production')
+    || !/^[A-Za-z0-9+/]{12,4096}={0,2}$/.test(basicCredential)
+    || (environment === 'production' && getEnv('SABRE_VERIFY_PRODUCTION_ACK') !== 'REVIEWED')) {
+    return unavailable('sabre');
+  }
+  try {
+    const token = await obtainSabreToken(environment, basicCredential);
+    const response = await fetch(sabreEndpoints(environment).retrieve, {
+      method: 'POST', // Sabre getBooking is a read operation.
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Conversation-ID': crypto.randomUUID(),
+      },
+      body: JSON.stringify({ confirmationId: locator }),
+      redirect: 'error',
+      signal: AbortSignal.timeout(9000),
+    });
+    if (response.status === 401) sabreToken = null;
+    if (!response.ok || Number(response.headers.get('content-length') || 0) > 262144
+      || !(response.headers.get('content-type') || '').toLowerCase().includes('json')) throw new Error('sabre_read_failed');
+    const observation = parseSabreReservation(await readBoundedJsonBody(response.body, 262144), locator);
+    return send({
+      state: 'provider_pnr_observed',
+      provider: observation.provider,
+      environment,
+      checkedAt: new Date().toISOString(),
+      airStatus: observation.airStatus,
+      segmentStatusSamples: observation.statusSampleCount,
+      externalProviderVerification: 'pnr_status_only',
+      ticketIssuanceVerified: false,
+    });
+  } catch {
+    return send({
+      state: 'provider_unavailable', provider: 'sabre',
+      externalProviderVerification: 'not_performed', ticketIssuanceVerified: false,
+    }, 502);
+  }
 }
 
 Deno.serve(async request => {
@@ -149,7 +233,7 @@ Deno.serve(async request => {
   if (!membership.data?.is_active || canBook.data!==true || canFinance.data!==true) {
     return unauthorized();
   }
-  if (!parent.data || parent.data.status==='cancelled' ||
+  if (!parent.data || ['cancelled','canceled'].includes(parent.data.status ?? '') ||
     parent.data.workflow_stage==='cancelled' || !handoff.data ||
     !['supplier_confirmed','finance_reviewed','execution_reported'].includes(handoff.data.status)) {
     return unauthorized();
@@ -174,6 +258,8 @@ Deno.serve(async request => {
     state:'enterprise_contract_required',provider,
     externalProviderVerification:'not_performed',ticketIssuanceVerified:false,
   });
+
+  if (provider === 'sabre') return observeSabre(change.organization_id, change.service_reference);
 
   if (getEnv('TRAVELPORT_VERIFY_ENABLED')!=='true' ||
       getEnv('TRAVELPORT_VERIFY_ALLOWED_ORG_ID')!==change.organization_id) {
