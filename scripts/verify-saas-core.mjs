@@ -50,6 +50,15 @@ assert.equal(
   'invitation redirect remains internal',
 );
 assert.equal(redirects.getSafeInternalRedirect('https://evil.example/path'), null, 'absolute redirects are rejected');
+const bookingTarget = { pathname: '/bookings/sample', search: '?tab=timeline', hash: '#activity' };
+const loginUrl = new URL(redirects.getCompanyLoginPath(bookingTarget), 'https://safarerp.com');
+assert.equal(loginUrl.pathname, '/login');
+assert.equal(
+  redirects.getSafeInternalRedirect(loginUrl.searchParams.get('redirect')),
+  '/bookings/sample?tab=timeline#activity',
+  'the booking link and active tab survive login'
+);
+assert.equal(redirects.getCompanyLoginPath({ pathname: '//example.invalid', search: '', hash: '' }), '/login');
 assert.equal(redirects.getSafeInternalRedirect('//evil.example/path'), null, 'scheme-relative redirects are rejected');
 assert.equal(redirects.getSafeInternalRedirect('/\\evil.example'), null, 'backslash redirects are rejected');
 

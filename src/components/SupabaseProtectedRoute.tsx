@@ -4,6 +4,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { getCompanyLoginPath } from '@/lib/safeRedirect';
 
 interface SupabaseProtectedRouteProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ const SupabaseProtectedRoute = ({ children, requiredRole }: SupabaseProtectedRou
   }
 
   if (!isLoggedIn()) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={getCompanyLoginPath(location)} replace />;
   }
 
   // Don't redirect to create-organization flow if we're already there
