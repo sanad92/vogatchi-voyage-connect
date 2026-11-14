@@ -36,7 +36,8 @@ export async function loadPlatformCompanies(signal: AbortSignal) {
 }
 
 export function loadUpcomingRenewals(signal: AbortSignal) {
-  return listed(supabase.rpc('platform_billing_followup', undefined, { count: 'exact' })
+  // Generated Args is never for this no-argument RPC; preserve its typed result and count options.
+  return listed(supabase.rpc('platform_billing_followup', {} as never, { count: 'exact' })
     .eq('kind', 'renewal').order('event_at').order('id').limit(5).abortSignal(signal));
 }
 
