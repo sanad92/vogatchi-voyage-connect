@@ -62,7 +62,7 @@ const pendingConnectors = [
   {
     name: 'البوابة المصرية للعمرة',
     description: 'تفعيل الاتصال يتطلب تأكيد وسيلة الربط ومواصفاتها من الوزارة أو الغرفة.',
-    url: 'https://www.etaa-egypt.org/SitePages/UmrahGate.aspx',
+    url: 'https://umrah.eg/home',
   },
 ];
 
