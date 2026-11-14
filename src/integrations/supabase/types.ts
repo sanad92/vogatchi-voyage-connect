@@ -1637,118 +1637,6 @@ export type Database = {
           },
         ]
       }
-      booking_cancellation_invoice_credits: {
-        Row: {
-          amount: number
-          booking_id: string
-          id: string
-          invoice_id: string
-        }
-        Insert: {
-          amount: number
-          booking_id: string
-          id?: string
-          invoice_id: string
-        }
-        Update: {
-          amount?: number
-          booking_id?: string
-          id?: string
-          invoice_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_cancellation_invoice_credits_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "booking_cancellation_settlements"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_invoice_credits_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: true
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_cancellation_settlements: {
-        Row: {
-          booking_id: string
-          fees: Json
-          organization_id: string
-          reason: string
-          result: Json
-          settled_at: string
-          settled_by: string
-          supplier_result: Json
-        }
-        Insert: {
-          booking_id: string
-          fees: Json
-          organization_id: string
-          reason: string
-          result?: Json
-          settled_at?: string
-          settled_by: string
-          supplier_result?: Json
-        }
-        Update: {
-          booking_id?: string
-          fees?: Json
-          organization_id?: string
-          reason?: string
-          result?: Json
-          settled_at?: string
-          settled_by?: string
-          supplier_result?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_cancellation_settlements_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_settlements_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_settlements_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_settlements_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_settlements_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_cancellation_settlements_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       booking_car_details: {
         Row: {
           booking_id: string
@@ -1827,389 +1715,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "transport_bookings_unified"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_change_handoff_events: {
-        Row: {
-          action: string
-          actor_id: string
-          booking_id: string
-          change_request_id: string
-          evidence_reference: string | null
-          id: string
-          note: string | null
-          occurred_at: string
-          organization_id: string
-        }
-        Insert: {
-          action: string
-          actor_id: string
-          booking_id: string
-          change_request_id: string
-          evidence_reference?: string | null
-          id?: string
-          note?: string | null
-          occurred_at?: string
-          organization_id: string
-        }
-        Update: {
-          action?: string
-          actor_id?: string
-          booking_id?: string
-          change_request_id?: string
-          evidence_reference?: string | null
-          id?: string
-          note?: string | null
-          occurred_at?: string
-          organization_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_change_handoff_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoff_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoff_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoff_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoff_events_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoff_events_change_request_id_fkey"
-            columns: ["change_request_id"]
-            isOneToOne: false
-            referencedRelation: "booking_change_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "handoff_event_parent_company_consistent"
-            columns: ["change_request_id", "organization_id", "booking_id"]
-            isOneToOne: false
-            referencedRelation: "booking_change_requests"
-            referencedColumns: ["id", "organization_id", "booking_id"]
-          },
-        ]
-      }
-      booking_change_handoffs: {
-        Row: {
-          blocked_at: string | null
-          blocked_by: string | null
-          booking_id: string
-          change_request_id: string
-          created_at: string
-          execution_reference: string | null
-          execution_reported_at: string | null
-          execution_reported_by: string | null
-          finance_reference: string | null
-          finance_reviewed_at: string | null
-          finance_reviewed_by: string | null
-          id: string
-          organization_id: string
-          status: string
-          supplier_confirmed_at: string | null
-          supplier_confirmed_by: string | null
-          supplier_reference: string | null
-          updated_at: string
-        }
-        Insert: {
-          blocked_at?: string | null
-          blocked_by?: string | null
-          booking_id: string
-          change_request_id: string
-          created_at?: string
-          execution_reference?: string | null
-          execution_reported_at?: string | null
-          execution_reported_by?: string | null
-          finance_reference?: string | null
-          finance_reviewed_at?: string | null
-          finance_reviewed_by?: string | null
-          id?: string
-          organization_id: string
-          status?: string
-          supplier_confirmed_at?: string | null
-          supplier_confirmed_by?: string | null
-          supplier_reference?: string | null
-          updated_at?: string
-        }
-        Update: {
-          blocked_at?: string | null
-          blocked_by?: string | null
-          booking_id?: string
-          change_request_id?: string
-          created_at?: string
-          execution_reference?: string | null
-          execution_reported_at?: string | null
-          execution_reported_by?: string | null
-          finance_reference?: string | null
-          finance_reviewed_at?: string | null
-          finance_reviewed_by?: string | null
-          id?: string
-          organization_id?: string
-          status?: string
-          supplier_confirmed_at?: string | null
-          supplier_confirmed_by?: string | null
-          supplier_reference?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_change_handoffs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoffs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoffs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoffs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoffs_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_handoffs_change_request_id_fkey"
-            columns: ["change_request_id"]
-            isOneToOne: true
-            referencedRelation: "booking_change_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "handoff_parent_company_consistent"
-            columns: ["change_request_id", "organization_id", "booking_id"]
-            isOneToOne: false
-            referencedRelation: "booking_change_requests"
-            referencedColumns: ["id", "organization_id", "booking_id"]
-          },
-        ]
-      }
-      booking_change_requests: {
-        Row: {
-          booking_id: string
-          change_kind: string
-          description: string
-          estimate_currency: string | null
-          id: string
-          organization_id: string
-          proposed_cost_delta: number | null
-          proposed_selling_delta: number | null
-          request_key: string
-          requested_at: string
-          requested_by: string
-          review_note: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          service_kind: string | null
-          service_reference: string | null
-          status: string
-        }
-        Insert: {
-          booking_id: string
-          change_kind: string
-          description: string
-          estimate_currency?: string | null
-          id?: string
-          organization_id: string
-          proposed_cost_delta?: number | null
-          proposed_selling_delta?: number | null
-          request_key: string
-          requested_at?: string
-          requested_by: string
-          review_note?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          service_kind?: string | null
-          service_reference?: string | null
-          status?: string
-        }
-        Update: {
-          booking_id?: string
-          change_kind?: string
-          description?: string
-          estimate_currency?: string | null
-          id?: string
-          organization_id?: string
-          proposed_cost_delta?: number | null
-          proposed_selling_delta?: number | null
-          request_key?: string
-          requested_at?: string
-          requested_by?: string
-          review_note?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          service_kind?: string | null
-          service_reference?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_change_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_requests_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      booking_change_source_evidence: {
-        Row: {
-          amount_at_link: number | null
-          booking_id: string
-          change_request_id: string
-          currency_at_link: string | null
-          id: string
-          linked_at: string
-          linked_by: string
-          organization_id: string
-          reference_at_link: string | null
-          source_id: string
-          source_type: string
-          status_at_link: string | null
-        }
-        Insert: {
-          amount_at_link?: number | null
-          booking_id: string
-          change_request_id: string
-          currency_at_link?: string | null
-          id?: string
-          linked_at?: string
-          linked_by: string
-          organization_id: string
-          reference_at_link?: string | null
-          source_id: string
-          source_type: string
-          status_at_link?: string | null
-        }
-        Update: {
-          amount_at_link?: number | null
-          booking_id?: string
-          change_request_id?: string
-          currency_at_link?: string | null
-          id?: string
-          linked_at?: string
-          linked_by?: string
-          organization_id?: string
-          reference_at_link?: string | null
-          source_id?: string
-          source_type?: string
-          status_at_link?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_change_source_evidence_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_source_evidence_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_source_evidence_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_source_evidence_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_source_evidence_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_change_source_evidence_org_booking_fk"
-            columns: ["change_request_id", "organization_id", "booking_id"]
-            isOneToOne: false
-            referencedRelation: "booking_change_requests"
-            referencedColumns: ["id", "organization_id", "booking_id"]
           },
         ]
       }
@@ -3046,7 +2551,6 @@ export type Database = {
           base_selling_price: number | null
           booking_number: string
           booking_type: string
-          cancellation_terms: Json | null
           cost_price: number | null
           created_at: string | null
           currency: string | null
@@ -3080,7 +2584,6 @@ export type Database = {
           base_selling_price?: number | null
           booking_number: string
           booking_type: string
-          cancellation_terms?: Json | null
           cost_price?: number | null
           created_at?: string | null
           currency?: string | null
@@ -3114,7 +2617,6 @@ export type Database = {
           base_selling_price?: number | null
           booking_number?: string
           booking_type?: string
-          cancellation_terms?: Json | null
           cost_price?: number | null
           created_at?: string | null
           currency?: string | null
@@ -5859,10 +5361,10 @@ export type Database = {
       }
       event_deliveries: {
         Row: {
+          failure_code: string | null
           attempts: number
           completed_at: string | null
           event_id: string
-          failure_code: string | null
           handler_key: string
           id: string
           last_error: string | null
@@ -5873,10 +5375,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          failure_code?: string | null
           attempts?: number
           completed_at?: string | null
           event_id: string
-          failure_code?: string | null
           handler_key: string
           id?: string
           last_error?: string | null
@@ -5887,10 +5389,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          failure_code?: string | null
           attempts?: number
           completed_at?: string | null
           event_id?: string
-          failure_code?: string | null
           handler_key?: string
           id?: string
           last_error?: string | null
@@ -7409,7 +6911,6 @@ export type Database = {
       }
       impersonation_sessions: {
         Row: {
-          auth_session_id: string | null
           created_at: string
           ended_at: string | null
           id: string
@@ -7424,7 +6925,6 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
-          auth_session_id?: string | null
           created_at?: string
           ended_at?: string | null
           id?: string
@@ -7439,7 +6939,6 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
-          auth_session_id?: string | null
           created_at?: string
           ended_at?: string | null
           id?: string
@@ -9712,154 +9211,6 @@ export type Database = {
           },
         ]
       }
-      pilgrimage_fit_supplier_confirmations: {
-        Row: {
-          item_id: string
-          organization_id: string
-          recorded_at: string
-          recorded_by: string
-          reference: string
-          sale_id: string
-          supplier_id: string
-        }
-        Insert: {
-          item_id: string
-          organization_id: string
-          recorded_at?: string
-          recorded_by: string
-          reference: string
-          sale_id: string
-          supplier_id: string
-        }
-        Update: {
-          item_id?: string
-          organization_id?: string
-          recorded_at?: string
-          recorded_by?: string
-          reference?: string
-          sale_id?: string
-          supplier_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pilgrimage_fit_supplier_confirmati_organization_id_item_id_fkey"
-            columns: ["organization_id", "item_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrimage_sale_items"
-            referencedColumns: ["organization_id", "id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_fit_supplier_confirmati_organization_id_sale_id_fkey"
-            columns: ["organization_id", "sale_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrimage_sales"
-            referencedColumns: ["organization_id", "id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_fit_supplier_confirmations_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pilgrimage_operations: {
-        Row: {
-          action: string
-          cancellation_fee: number
-          created_at: string
-          created_by: string
-          id: string
-          new_price: number
-          new_room_type: string | null
-          old_price: number
-          old_room_type: string
-          organization_id: string
-          pilgrim_id: string
-          program_id: string
-          reason: string
-          refund_id: string | null
-          replacement_id: string | null
-          request: Json
-          transaction_id: number
-        }
-        Insert: {
-          action: string
-          cancellation_fee?: number
-          created_at?: string
-          created_by: string
-          id: string
-          new_price: number
-          new_room_type?: string | null
-          old_price: number
-          old_room_type: string
-          organization_id: string
-          pilgrim_id: string
-          program_id: string
-          reason: string
-          refund_id?: string | null
-          replacement_id?: string | null
-          request: Json
-          transaction_id?: number
-        }
-        Update: {
-          action?: string
-          cancellation_fee?: number
-          created_at?: string
-          created_by?: string
-          id?: string
-          new_price?: number
-          new_room_type?: string | null
-          old_price?: number
-          old_room_type?: string
-          organization_id?: string
-          pilgrim_id?: string
-          program_id?: string
-          reason?: string
-          refund_id?: string | null
-          replacement_id?: string | null
-          request?: Json
-          transaction_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pilgrimage_operations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_operations_pilgrim_id_fkey"
-            columns: ["pilgrim_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrims"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_operations_program_id_fkey"
-            columns: ["program_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrimage_programs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_operations_refund_id_fkey"
-            columns: ["refund_id"]
-            isOneToOne: true
-            referencedRelation: "refund_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrimage_operations_replacement_id_fkey"
-            columns: ["replacement_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrims"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       pilgrimage_program_costs: {
         Row: {
           cost_notes: string | null
@@ -9922,7 +9273,6 @@ export type Database = {
           price_triple: number
           program_type: string
           return_date: string | null
-          sales_confirmed_at: string | null
           season: string | null
           status: string
           terms: string | null
@@ -9952,7 +9302,6 @@ export type Database = {
           price_triple?: number
           program_type: string
           return_date?: string | null
-          sales_confirmed_at?: string | null
           season?: string | null
           status?: string
           terms?: string | null
@@ -9982,7 +9331,6 @@ export type Database = {
           price_triple?: number
           program_type?: string
           return_date?: string | null
-          sales_confirmed_at?: string | null
           season?: string | null
           status?: string
           terms?: string | null
@@ -10480,7 +9828,6 @@ export type Database = {
       }
       pilgrims: {
         Row: {
-          b2b_roster_entry_id: string | null
           birth_date: string | null
           bus_number: string | null
           cancellation_fee: number
@@ -10493,11 +9840,9 @@ export type Database = {
           gender: string | null
           id: string
           madinah_room: string | null
-          madinah_rooming_group_id: string | null
           mahram_name: string | null
           mahram_relation: string | null
           makkah_room: string | null
-          makkah_rooming_group_id: string | null
           name_en: string | null
           national_id: string | null
           nationality: string | null
@@ -10520,7 +9865,6 @@ export type Database = {
           visa_status: string
         }
         Insert: {
-          b2b_roster_entry_id?: string | null
           birth_date?: string | null
           bus_number?: string | null
           cancellation_fee?: number
@@ -10533,11 +9877,9 @@ export type Database = {
           gender?: string | null
           id?: string
           madinah_room?: string | null
-          madinah_rooming_group_id?: string | null
           mahram_name?: string | null
           mahram_relation?: string | null
           makkah_room?: string | null
-          makkah_rooming_group_id?: string | null
           name_en?: string | null
           national_id?: string | null
           nationality?: string | null
@@ -10560,7 +9902,6 @@ export type Database = {
           visa_status?: string
         }
         Update: {
-          b2b_roster_entry_id?: string | null
           birth_date?: string | null
           bus_number?: string | null
           cancellation_fee?: number
@@ -10573,11 +9914,9 @@ export type Database = {
           gender?: string | null
           id?: string
           madinah_room?: string | null
-          madinah_rooming_group_id?: string | null
           mahram_name?: string | null
           mahram_relation?: string | null
           makkah_room?: string | null
-          makkah_rooming_group_id?: string | null
           name_en?: string | null
           national_id?: string | null
           nationality?: string | null
@@ -10601,31 +9940,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pilgrims_b2b_roster_entry_fk"
-            columns: ["organization_id", "b2b_roster_entry_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrimage_b2b_roster_entries"
-            referencedColumns: ["organization_id", "id"]
-          },
-          {
             foreignKeyName: "pilgrims_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrims_madinah_rooming_group_id_fkey"
-            columns: ["madinah_rooming_group_id"]
-            isOneToOne: false
-            referencedRelation: "umrah_rooming_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pilgrims_makkah_rooming_group_id_fkey"
-            columns: ["makkah_rooming_group_id"]
-            isOneToOne: false
-            referencedRelation: "umrah_rooming_groups"
             referencedColumns: ["id"]
           },
           {
@@ -10644,140 +9962,32 @@ export type Database = {
           },
         ]
       }
-      platform_company_contact_history: {
-        Row: {
-          channel: string
-          id: string
-          note: string
-          organization_id: string
-          outcome: string
-          recorded_at: string
-          recorded_by: string | null
-        }
-        Insert: {
-          channel: string
-          id: string
-          note?: string
-          organization_id: string
-          outcome: string
-          recorded_at?: string
-          recorded_by?: string | null
-        }
-        Update: {
-          channel?: string
-          id?: string
-          note?: string
-          organization_id?: string
-          outcome?: string
-          recorded_at?: string
-          recorded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "platform_company_contact_history_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       platform_company_followups: {
-        Row: {
-          assigned_to: string | null
-          next_followup_at: string | null
-          note: string
-          organization_id: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          assigned_to?: string | null
-          next_followup_at?: string | null
-          note?: string
-          organization_id: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          assigned_to?: string | null
-          next_followup_at?: string | null
-          note?: string
-          organization_id?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "platform_company_followups_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: { organization_id: string; assigned_to: string | null; next_followup_at: string | null; note: string; updated_by: string | null; updated_at: string }
+        Insert: { organization_id: string; assigned_to?: string | null; next_followup_at?: string | null; note?: string; updated_by?: string | null; updated_at?: string }
+        Update: { assigned_to?: string | null; next_followup_at?: string | null; note?: string; updated_by?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      platform_company_contact_history: {
+        Row: { id: string; organization_id: string; channel: string; outcome: string; note: string; recorded_by: string | null; recorded_at: string }
+        Insert: { id: string; organization_id: string; channel: string; outcome: string; note?: string }
+        Update: never
+        Relationships: []
       }
       platform_finance_accounts: {
-        Row: {
-          code: string
-          kind: string
-          name_ar: string
-          name_en: string
-        }
-        Insert: {
-          code: string
-          kind: string
-          name_ar: string
-          name_en: string
-        }
-        Update: {
-          code?: string
-          kind?: string
-          name_ar?: string
-          name_en?: string
-        }
+        Row: { code: string; name_ar: string; name_en: string; kind: string }
+        Insert: { code: string; name_ar: string; name_en: string; kind: string }
+        Update: { code?: string; name_ar?: string; name_en?: string; kind?: string }
         Relationships: []
       }
       platform_finance_entries: {
         Row: {
-          currency: string
-          entry_date: string
-          entry_no: number
-          id: string
-          memo: string
-          posted_at: string
-          posted_by: string | null
-          request_id: string | null
-          reverses_id: string | null
-          source: string
-          source_id: string | null
+          id: string; entry_no: number; entry_date: string; currency: string;
+          memo: string; source: string; source_id: string | null; request_id: string | null;
+          reverses_id: string | null; posted_by: string | null; posted_at: string
         }
-        Insert: {
-          currency: string
-          entry_date: string
-          entry_no?: never
-          id?: string
-          memo: string
-          posted_at?: string
-          posted_by?: string | null
-          request_id?: string | null
-          reverses_id?: string | null
-          source: string
-          source_id?: string | null
-        }
-        Update: {
-          currency?: string
-          entry_date?: string
-          entry_no?: never
-          id?: string
-          memo?: string
-          posted_at?: string
-          posted_by?: string | null
-          request_id?: string | null
-          reverses_id?: string | null
-          source?: string
-          source_id?: string | null
-        }
+        Insert: { entry_date: string; currency: string; memo: string; source: string }
+        Update: { memo?: string }
         Relationships: [
           {
             foreignKeyName: "platform_finance_entries_reverses_id_fkey"
@@ -10785,39 +9995,14 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "platform_finance_entries"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       platform_finance_lines: {
-        Row: {
-          account_code: string
-          credit: number
-          debit: number
-          entry_id: string
-          line_no: number
-        }
-        Insert: {
-          account_code: string
-          credit: number
-          debit: number
-          entry_id: string
-          line_no: number
-        }
-        Update: {
-          account_code?: string
-          credit?: number
-          debit?: number
-          entry_id?: string
-          line_no?: number
-        }
+        Row: { entry_id: string; line_no: number; account_code: string; debit: number; credit: number }
+        Insert: { entry_id: string; line_no: number; account_code: string; debit: number; credit: number }
+        Update: { debit?: number; credit?: number }
         Relationships: [
-          {
-            foreignKeyName: "platform_finance_lines_account_code_fkey"
-            columns: ["account_code"]
-            isOneToOne: false
-            referencedRelation: "platform_finance_accounts"
-            referencedColumns: ["code"]
-          },
           {
             foreignKeyName: "platform_finance_lines_entry_id_fkey"
             columns: ["entry_id"]
@@ -10825,6 +10010,13 @@ export type Database = {
             referencedRelation: "platform_finance_entries"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "platform_finance_lines_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "platform_finance_accounts"
+            referencedColumns: ["code"]
+          }
         ]
       }
       platform_roles: {
@@ -11246,53 +10438,6 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quote_version_snapshots: {
-        Row: {
-          content_hash: string
-          created_at: string
-          created_by: string
-          id: string
-          item_count: number
-          items_snapshot: Json
-          organization_id: string
-          quote_id: string
-          quote_snapshot: Json
-          version_number: number
-        }
-        Insert: {
-          content_hash: string
-          created_at?: string
-          created_by: string
-          id?: string
-          item_count: number
-          items_snapshot: Json
-          organization_id: string
-          quote_id: string
-          quote_snapshot: Json
-          version_number: number
-        }
-        Update: {
-          content_hash?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          item_count?: number
-          items_snapshot?: Json
-          organization_id?: string
-          quote_id?: string
-          quote_snapshot?: Json
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quote_version_snapshots_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -13649,16 +12794,12 @@ export type Database = {
           notes: string | null
           organization_id: string
           pilgrimage_b2b_agreement_id: string | null
-          planned_payment_date: string | null
           reference_number: string
           rejection_reason: string | null
-          schedule_date: string | null
           service_type: string
           source_id: string | null
           source_type: string | null
           status: string
-          supplier_due_at: string | null
-          supplier_due_timezone: string | null
           supplier_id: string | null
           updated_at: string
         }
@@ -13675,16 +12816,12 @@ export type Database = {
           notes?: string | null
           organization_id: string
           pilgrimage_b2b_agreement_id?: string | null
-          planned_payment_date?: string | null
           reference_number: string
           rejection_reason?: string | null
-          schedule_date?: string | null
           service_type: string
           source_id?: string | null
           source_type?: string | null
           status?: string
-          supplier_due_at?: string | null
-          supplier_due_timezone?: string | null
           supplier_id?: string | null
           updated_at?: string
         }
@@ -13701,16 +12838,12 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           pilgrimage_b2b_agreement_id?: string | null
-          planned_payment_date?: string | null
           reference_number?: string
           rejection_reason?: string | null
-          schedule_date?: string | null
           service_type?: string
           source_id?: string | null
           source_type?: string | null
           status?: string
-          supplier_due_at?: string | null
-          supplier_due_timezone?: string | null
           supplier_id?: string | null
           updated_at?: string
         }
@@ -14026,7 +13159,7 @@ export type Database = {
           created_by: string
           currency: string
           exchange_rate: number
-          follow_up_on?: string | null
+          follow_up_on: string | null
           id?: string
           organization_id: string
           reference: string
@@ -14651,210 +13784,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      trip_service_amendments: {
-        Row: {
-          additional_invoice_id: string | null
-          booking_id: string
-          customer_due_reduction: number
-          customer_invoice_id: string | null
-          customer_refund_id: string | null
-          decision: Json | null
-          id: string
-          organization_id: string
-          requested_at: string
-          requested_by: string
-          resolved_at: string | null
-          resolved_by: string | null
-          service_before: Json
-          service_id: string
-          service_kind: string
-          service_source: string
-          status: string
-          supplier_claim_id: string | null
-          supplier_order_id: string | null
-          terms: Json
-          ticket_number: string | null
-        }
-        Insert: {
-          additional_invoice_id?: string | null
-          booking_id: string
-          customer_due_reduction?: number
-          customer_invoice_id?: string | null
-          customer_refund_id?: string | null
-          decision?: Json | null
-          id: string
-          organization_id: string
-          requested_at?: string
-          requested_by: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          service_before: Json
-          service_id: string
-          service_kind: string
-          service_source: string
-          status?: string
-          supplier_claim_id?: string | null
-          supplier_order_id?: string | null
-          terms: Json
-          ticket_number?: string | null
-        }
-        Update: {
-          additional_invoice_id?: string | null
-          booking_id?: string
-          customer_due_reduction?: number
-          customer_invoice_id?: string | null
-          customer_refund_id?: string | null
-          decision?: Json | null
-          id?: string
-          organization_id?: string
-          requested_at?: string
-          requested_by?: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          service_before?: Json
-          service_id?: string
-          service_kind?: string
-          service_source?: string
-          status?: string
-          supplier_claim_id?: string | null
-          supplier_order_id?: string | null
-          terms?: Json
-          ticket_number?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_service_amendments_additional_invoice_id_fkey"
-            columns: ["additional_invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "car_rentals_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "flight_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "hotel_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "transport_bookings_unified"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_customer_invoice_id_fkey"
-            columns: ["customer_invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_customer_refund_id_fkey"
-            columns: ["customer_refund_id"]
-            isOneToOne: false
-            referencedRelation: "refund_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_supplier_claim_id_fkey"
-            columns: ["supplier_claim_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_refund_claims"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_service_amendments_supplier_order_id_fkey"
-            columns: ["supplier_order_id"]
-            isOneToOne: false
-            referencedRelation: "supplier_payment_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      umrah_rooming_groups: {
-        Row: {
-          city: string
-          created_at: string
-          created_by: string
-          gender: string
-          group_number: number
-          hotel_room_number: string | null
-          id: string
-          organization_id: string
-          program_id: string
-          room_type: string
-        }
-        Insert: {
-          city: string
-          created_at?: string
-          created_by: string
-          gender: string
-          group_number: number
-          hotel_room_number?: string | null
-          id?: string
-          organization_id: string
-          program_id: string
-          room_type: string
-        }
-        Update: {
-          city?: string
-          created_at?: string
-          created_by?: string
-          gender?: string
-          group_number?: number
-          hotel_room_number?: string | null
-          id?: string
-          organization_id?: string
-          program_id?: string
-          room_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "umrah_rooming_groups_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "umrah_rooming_groups_program_id_fkey"
-            columns: ["program_id"]
-            isOneToOne: false
-            referencedRelation: "pilgrimage_programs"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_creation_requests: {
         Row: {
@@ -17024,6 +15953,49 @@ export type Database = {
       }
     }
     Functions: {
+      add_platform_finance_account: {
+        Args: { p_code: string; p_name_ar: string; p_name_en: string; p_kind: string }
+        Returns: undefined
+      }
+      platform_company_activation: {
+        Args: { p_organization_id?: string; p_page?: number }
+        Returns: Json
+      }
+      platform_due_company_followups: {
+        Args: Record<PropertyKey, never>
+        Returns: { organization_id: string; company_name: string; next_followup_at: string; overdue: boolean; assigned_name: string | null; note: string; last_channel: string | null; last_outcome: string | null; last_recorded_at: string | null }[]
+      }
+      platform_company_contact_gaps: {
+        Args: Record<PropertyKey, never>
+        Returns: { organization_id: string; fields: string[] }[]
+      }
+      platform_billing_followup: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          kind: string; id: string; organization_id: string; company_name: string;
+          plan_name: string | null; plan_name_ar: string | null; event_at: string | null;
+          status: string; amount: number | null; currency: string | null; reference: string | null;
+        }[]
+      }
+      platform_company_contacts: {
+        Args: { p_organization_id: string }
+        Returns: Json
+      }
+      get_platform_finance_role: { Args: Record<PropertyKey, never>; Returns: string | null }
+      list_platform_finance_staff: { Args: Record<PropertyKey, never>; Returns: { email: string; role: string }[] }
+      set_platform_finance_staff: { Args: { p_email: string; p_role: string | null }; Returns: undefined }
+      post_platform_finance_entry: {
+        Args: { p_date: string; p_currency: string; p_memo: string; p_lines: Json; p_request_id: string }
+        Returns: string
+      }
+      reverse_platform_finance_entry: { Args: { p_entry_id: string; p_memo: string }; Returns: string }
+      platform_finance_trial_balance: {
+        Args: { p_from: string; p_to: string; p_currency: string }
+        Returns: { account_code: string; opening: number; debit: number; credit: number }[]
+      }
+      import_platform_paymob_receipts: { Args: { p_from: string; p_to: string }; Returns: number }
+      approve_platform_bank_transfer: { Args: { p_transfer_id: string }; Returns: string }
+
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }
@@ -17139,21 +16111,8 @@ export type Database = {
         }
         Returns: string
       }
-      add_platform_finance_account: {
-        Args: {
-          p_code: string
-          p_kind: string
-          p_name_ar: string
-          p_name_en: string
-        }
-        Returns: undefined
-      }
       advance_workflow: {
         Args: { p_booking_id: string; p_reason?: string; p_to_stage: string }
-        Returns: Json
-      }
-      apply_pilgrimage_operations: {
-        Args: { _organization_id: string; _program_id: string; _requests: Json }
         Returns: Json
       }
       approve_bank_reconciliation: {
@@ -17162,10 +16121,6 @@ export type Database = {
       }
       approve_pilgrimage_b2b_agreement: {
         Args: { _agreement_id: string }
-        Returns: string
-      }
-      approve_platform_bank_transfer: {
-        Args: { p_transfer_id: string }
         Returns: string
       }
       approve_quote_review: {
@@ -17225,17 +16180,6 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
-      }
-      assign_umrah_rooming_group: {
-        Args: {
-          _city: string
-          _group_id?: string
-          _new_group?: boolean
-          _organization_id: string
-          _pilgrim_id: string
-          _program_id: string
-        }
-        Returns: string
       }
       audit_historical_gaps: {
         Args: { _from?: string; _org: string; _to?: string }
@@ -17300,10 +16244,6 @@ export type Database = {
       booking_make_journal: {
         Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
         Returns: undefined
-      }
-      booking_supplier_cancellation_completed: {
-        Args: { _booking: string }
-        Returns: boolean
       }
       calculate_employee_bookings_profit:
         | {
@@ -17372,18 +16312,6 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: Json
       }
-      capture_quote_version_snapshot: {
-        Args: { p_quote_id: string }
-        Returns: Json
-      }
-      change_platform_account_role: {
-        Args: {
-          p_expected_role: Database["public"]["Enums"]["platform_role"]
-          p_new_role?: Database["public"]["Enums"]["platform_role"]
-          p_role_id: string
-        }
-        Returns: string
-      }
       check_customer_duplicate_contact: {
         Args: {
           _email?: string
@@ -17440,47 +16368,6 @@ export type Database = {
         Args: { _confirmation: string; _org: string; _year: number }
         Returns: Json
       }
-      close_unpaid_supplier_order: {
-        Args: { _confirmation: string; _order_id: string }
-        Returns: string
-      }
-      company_api_connection_read: {
-        Args: { _org_id: string; _provider: string }
-        Returns: {
-          credentials: Json
-          environment: string
-        }[]
-      }
-      company_api_connection_write: {
-        Args: {
-          _actor_id: string
-          _credentials?: Json
-          _environment?: string
-          _expected_revision: string
-          _org_id: string
-          _provider: string
-        }
-        Returns: boolean
-      }
-      company_api_connections_list: {
-        Args: { _org_id: string }
-        Returns: {
-          checked_at: string
-          environment: string
-          provider: string
-          revision: string
-        }[]
-      }
-      complete_organization_contacts: {
-        Args: {
-          _email: string
-          _organization_id: string
-          _owner_name: string
-          _owner_phone: string
-          _phone: string
-        }
-        Returns: string
-      }
       convert_pilgrimage_retail_group: {
         Args: { _sale_id: string }
         Returns: string
@@ -17518,20 +16405,6 @@ export type Database = {
       }
       create_booking_atomic: {
         Args: { _org: string; _payload: Json; _request_id: string }
-        Returns: Json
-      }
-      create_booking_change_request: {
-        Args: {
-          p_booking_id: string
-          p_change_kind: string
-          p_cost_delta?: number
-          p_currency?: string
-          p_description: string
-          p_request_key: string
-          p_selling_delta?: number
-          p_service_kind?: string
-          p_service_reference?: string
-        }
         Returns: Json
       }
       create_booking_commission: {
@@ -17580,17 +16453,8 @@ export type Database = {
         }
         Returns: string
       }
-      create_pilgrimage_quote_from_availability: {
-        Args: {
-          _customer_id: string
-          _expected_currency: string
-          _expected_unit_price: number
-          _organization_id: string
-          _party_size: number
-          _program_id: string
-          _request_id: string
-          _room_type: string
-        }
+      complete_organization_contacts: {
+        Args: { _organization_id: string; _owner_name: string; _owner_phone: string; _phone: string; _email: string }
         Returns: string
       }
       create_pilgrimage_supplier_obligation: {
@@ -17618,18 +16482,6 @@ export type Database = {
         }
         Returns: string
       }
-      create_trip_service_amendment: {
-        Args: {
-          _booking: string
-          _id: string
-          _kind: string
-          _service: string
-          _source: string
-          _terms: Json
-          _ticket: string
-        }
-        Returns: string
-      }
       crm_customer_booking_metrics: {
         Args: { _org_id: string }
         Returns: {
@@ -17639,10 +16491,6 @@ export type Database = {
           spend_by_currency: Json
           total_bookings: number
         }[]
-      }
-      decide_booking_change_request: {
-        Args: { p_approve: boolean; p_note?: string; p_request_id: string }
-        Returns: Json
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -17816,18 +16664,6 @@ export type Database = {
         Args: { _session: string }
         Returns: Json
       }
-      get_booking_cancellation_preview: {
-        Args: { _booking: string }
-        Returns: Json
-      }
-      get_booking_cancellation_with_supplier_preview: {
-        Args: { _booking: string }
-        Returns: Json
-      }
-      get_booking_cancellation_workflow: {
-        Args: { _booking: string }
-        Returns: Json
-      }
       get_booking_profit_cockpit: { Args: { _booking: string }; Returns: Json }
       get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_business_health_kpis: {
@@ -17992,15 +16828,6 @@ export type Database = {
           entry_date: string
           entry_type: string
           reference: string
-        }[]
-      }
-      get_customer_trip_invoice_credits: {
-        Args: { _customer: string; _org: string }
-        Returns: {
-          customer_due_reduction: number
-          customer_invoice_id: string
-          id: string
-          resolved_at: string
         }[]
       }
       get_data_quality_details: { Args: { _org_id: string }; Returns: Json }
@@ -18178,7 +17005,6 @@ export type Database = {
         Args: { _org_id: string }
         Returns: Json
       }
-      get_pilgrimage_agency_portal: { Args: never; Returns: Json }
       get_pilgrimage_b2b_receivables: {
         Args: {
           _invoice_id?: string
@@ -18191,14 +17017,6 @@ export type Database = {
         Args: { _org: string; _sale_id: string }
         Returns: Json
       }
-      get_pilgrimage_operation_refunds: {
-        Args: { _organization_id: string; _program_id: string }
-        Returns: {
-          pilgrim_id: string
-          reserved_amount: number
-        }[]
-      }
-      get_platform_finance_role: { Args: never; Returns: string }
       get_profit_analytics_dashboard: {
         Args: {
           _currency?: string
@@ -18309,20 +17127,6 @@ export type Database = {
           total_debit: number
         }[]
       }
-      get_trip_service_amendment_history: {
-        Args: { _booking: string }
-        Returns: {
-          applied_at: string
-          end_date: string
-          new_ticket: string
-          operation: string
-          service_id: string
-          service_kind: string
-          service_source: string
-          start_date: string
-          ticket_number: string
-        }[]
-      }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
@@ -18388,18 +17192,6 @@ export type Database = {
         Args: { _lines: Json; _session: string }
         Returns: Json
       }
-      import_open_hotel_bookings: {
-        Args: { _commit?: boolean; _org: string; _rows: Json }
-        Returns: Json
-      }
-      import_platform_paymob_receipts: {
-        Args: { p_from: string; p_to: string }
-        Returns: number
-      }
-      is_closed_booking_supplier_order: {
-        Args: { _order: string; _org: string }
-        Returns: boolean
-      }
       is_free_email: { Args: { _email: string }; Returns: boolean }
       is_org_expired: { Args: { _org_id: string }; Returns: boolean }
       is_org_in_grace_period: { Args: { _org_id: string }; Returns: boolean }
@@ -18408,14 +17200,6 @@ export type Database = {
       issue_pilgrimage_b2b_invoice: {
         Args: { _agreement_id: string; _vat_rate: number }
         Returns: string
-      }
-      link_booking_change_source_evidence: {
-        Args: {
-          p_request_id: string
-          p_source_id: string
-          p_source_type: string
-        }
-        Returns: Json
       }
       link_user_to_employee: {
         Args: { p_employee_id: string; p_user_id: string }
@@ -18473,13 +17257,6 @@ export type Database = {
           name: string
         }[]
       }
-      list_platform_finance_staff: {
-        Args: never
-        Returns: {
-          email: string
-          role: string
-        }[]
-      }
       log_admin_action: {
         Args: {
           p_action_type: string
@@ -18505,10 +17282,6 @@ export type Database = {
         }
         Returns: Json
       }
-      manage_pilgrimage_agency_portal: {
-        Args: { _agreement: string; _change?: boolean; _email?: string }
-        Returns: string
-      }
       manage_sop_department_member: {
         Args: {
           _assign?: boolean
@@ -18518,16 +17291,6 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
-      }
-      manage_supplier_allotment_usage: {
-        Args: {
-          _action: string
-          _allotment_id: string
-          _booking_reference?: string
-          _quantity?: number
-          _usage_id?: string
-        }
-        Returns: string
       }
       manage_supplier_refund_claim: {
         Args: {
@@ -18579,109 +17342,6 @@ export type Database = {
           _treasury_account_id: string
         }
         Returns: undefined
-      }
-      platform_audit_actions: {
-        Args: never
-        Returns: {
-          action: string
-        }[]
-      }
-      platform_audit_entries: {
-        Args: {
-          p_action?: string
-          p_from?: string
-          p_page?: number
-          p_scope?: string
-          p_to?: string
-        }
-        Returns: {
-          action: string
-          actor_email: string
-          actor_id: string
-          actor_name: string
-          id: string
-          new_role: string
-          occurred_at: string
-          old_role: string
-          organization_id: string
-          organization_name: string
-          setting_key: string
-          target_id: string
-          target_table: string
-        }[]
-      }
-      platform_billing_followup: {
-        Args: never
-        Returns: {
-          amount: number
-          company_name: string
-          currency: string
-          event_at: string
-          id: string
-          kind: string
-          organization_id: string
-          plan_name: string
-          plan_name_ar: string
-          reference: string
-          status: string
-        }[]
-      }
-      platform_company_activation: {
-        Args: { p_organization_id?: string; p_page?: number }
-        Returns: Json
-      }
-      platform_company_contact_gaps: {
-        Args: never
-        Returns: {
-          fields: string[]
-          organization_id: string
-        }[]
-      }
-      platform_company_contacts: {
-        Args: { p_organization_id: string }
-        Returns: Json
-      }
-      platform_due_company_followups: {
-        Args: never
-        Returns: {
-          assigned_name: string
-          company_name: string
-          last_channel: string
-          last_outcome: string
-          last_recorded_at: string
-          next_followup_at: string
-          note: string
-          organization_id: string
-          overdue: boolean
-        }[]
-      }
-      platform_finance_trial_balance: {
-        Args: { p_currency: string; p_from: string; p_to: string }
-        Returns: {
-          account_code: string
-          credit: number
-          debit: number
-          opening: number
-        }[]
-      }
-      platform_security_events: {
-        Args: never
-        Returns: {
-          action: string
-          created_at: string
-          id: string
-          setting_key: string
-          target_table: string
-        }[]
-      }
-      platform_support_booking_snapshot: {
-        Args: never
-        Returns: {
-          booking_number: string
-          booking_type: string
-          created_at: string
-          status: string
-        }[]
       }
       platform_table_counts: {
         Args: never
@@ -18736,16 +17396,6 @@ export type Database = {
             }
             Returns: string
           }
-      post_platform_finance_entry: {
-        Args: {
-          p_currency: string
-          p_date: string
-          p_lines: Json
-          p_memo: string
-          p_request_id: string
-        }
-        Returns: string
-      }
       post_rent_accrual: { Args: { _rent_id: string }; Returns: string }
       post_rent_payment: { Args: { _rent_id: string }; Returns: string }
       post_salary_accrual: { Args: { _salary_id: string }; Returns: string }
@@ -18802,15 +17452,6 @@ export type Database = {
         Returns: undefined
       }
       reconcile_bookings_for_org: { Args: { _org_id: string }; Returns: Json }
-      record_booking_change_handoff: {
-        Args: {
-          p_action: string
-          p_note?: string
-          p_reference?: string
-          p_request_id: string
-        }
-        Returns: Json
-      }
       record_customer_payment: {
         Args: {
           _amount: number
@@ -18836,15 +17477,6 @@ export type Database = {
           _payment_date: string
           _reference: string
           _treasury_account_id: string
-        }
-        Returns: string
-      }
-      record_pilgrimage_fit_supplier_confirmation: {
-        Args: {
-          _item_id: string
-          _reference: string
-          _sale_id: string
-          _supplier_id: string
         }
         Returns: string
       }
@@ -18882,17 +17514,6 @@ export type Database = {
         Args: { _invoice_id: string }
         Returns: undefined
       }
-      register_pilgrimage_b2b_passenger: {
-        Args: {
-          _bus_number?: string
-          _entry_id: string
-          _gender?: string
-          _madinah_room?: string
-          _makkah_room?: string
-          _room_type: string
-        }
-        Returns: string
-      }
       release_email_thread: {
         Args: { _close?: boolean; _thread: string }
         Returns: undefined
@@ -18928,17 +17549,6 @@ export type Database = {
         Args: { _org_id: string; _routing_key: string }
         Returns: undefined
       }
-      resolve_trip_service_amendment: {
-        Args: {
-          _approve: boolean
-          _customer_reference: string
-          _expected_customer_due_reduction: number
-          _id: string
-          _note: string
-          _supplier_reference: string
-        }
-        Returns: string
-      }
       restore_default_quick_replies: {
         Args: { _org_id: string }
         Returns: number
@@ -18955,10 +17565,6 @@ export type Database = {
         Args: { p_event_id: string; p_rule_id: string }
         Returns: undefined
       }
-      reverse_platform_finance_entry: {
-        Args: { p_entry_id: string; p_memo: string }
-        Returns: string
-      }
       review_pilgrimage_b2b_cancellation: {
         Args: { _approve: boolean; _id: string; _reason?: string }
         Returns: string
@@ -18974,34 +17580,6 @@ export type Database = {
           p_reason?: string
         }
         Returns: Json
-      }
-      schedule_refund_follow_up: {
-        Args: { _claim: string; _date: string; _org: string; _refund: string }
-        Returns: string
-      }
-      search_pilgrimage_availability: {
-        Args: {
-          _departure_from?: string
-          _departure_to?: string
-          _organization_id: string
-          _party_size?: number
-          _program_id?: string
-          _program_type?: string
-          _room_type?: string
-        }
-        Returns: {
-          available_seats: number
-          currency: string
-          departure_date: string
-          madinah_hotel: string
-          makkah_hotel: string
-          program_id: string
-          program_name: string
-          program_status: string
-          program_type: string
-          return_date: string
-          unit_price: number
-        }[]
       }
       seed_default_chart_of_accounts: {
         Args: { _org_id: string }
@@ -19068,47 +17646,14 @@ export type Database = {
         Args: { _org_id: string; _pin: string }
         Returns: undefined
       }
-      set_platform_finance_staff: {
-        Args: { p_email: string; p_role: string }
-        Returns: undefined
-      }
-      set_umrah_hotel_room_number: {
+      schedule_refund_follow_up: {
         Args: {
-          _group_id: string
-          _hotel_room_number: string
-          _organization_id: string
-          _program_id: string
+          _claim: string | null
+          _date: string | null
+          _org: string
+          _refund: string | null
         }
-        Returns: undefined
-      }
-      settle_booking_cancellation: {
-        Args: {
-          _booking: string
-          _expected: Json
-          _fees: Json
-          _reason: string
-        }
-        Returns: Json
-      }
-      settle_booking_cancellation_with_supplier: {
-        Args: {
-          _booking: string
-          _expected: Json
-          _fees: Json
-          _reason: string
-          _supplier_confirmations: Json
-        }
-        Returns: Json
-      }
-      settle_booking_cancellation_workflow: {
-        Args: {
-          _booking: string
-          _expected: Json
-          _fees: Json
-          _reason: string
-          _supplier_terms: Json
-        }
-        Returns: Json
+        Returns: string
       }
       settle_refund_balance: {
         Args: {
@@ -19364,10 +17909,6 @@ export type Database = {
         Args: { _lead?: string; _org: string; _payload?: Json }
         Returns: Json
       }
-      sop_save_whatsapp_lead: {
-        Args: { _conversation: string; _org: string; _payload: Json }
-        Returns: Json
-      }
       sop_search_leads: {
         Args: {
           _follow_up?: string
@@ -19480,8 +18021,16 @@ export type Database = {
         Returns: Json
       }
       start_impersonation: {
-        Args: { _org_pin: string; _reason: string; _target_org_id: string }
+        Args: {
+          _org_pin: string
+          _reason: string
+          _target_org_id: string
+        }
         Returns: string
+      }
+      platform_support_booking_snapshot: {
+        Args: never
+        Returns: { booking_number: string | null; booking_type: string | null; status: string | null; created_at: string | null }[]
       }
       stop_impersonation: { Args: never; Returns: undefined }
       supplier_org_match: { Args: { _supplier_id: string }; Returns: boolean }
@@ -19508,22 +18057,6 @@ export type Database = {
       transition_pilgrimage_seat_allocation: {
         Args: { _action: string; _hold_minutes?: number; _sale_id: string }
         Returns: string
-      }
-      unified_booking_list_summary: {
-        Args: {
-          _end_date: string
-          _org: string
-          _search: string
-          _start_date: string
-          _status: string
-          _type: string
-        }
-        Returns: {
-          confirmed: number
-          currency: string
-          pending: number
-          profit: number
-        }[]
       }
       unlink_user_from_employee: { Args: { p_user_id: string }; Returns: Json }
       unmatch_bank_reconciliation: {
@@ -19569,6 +18102,52 @@ export type Database = {
           p_status: string
         }
         Returns: Json
+      }
+      change_platform_account_role: {
+        Args: {
+          p_role_id: string
+          p_expected_role: Database["public"]["Enums"]["platform_role"]
+          p_new_role?: Database["public"]["Enums"]["platform_role"] | null
+        }
+        Returns: string
+      }
+      platform_audit_actions: {
+        Args: never
+        Returns: { action: string }[]
+      }
+      platform_audit_entries: {
+        Args: {
+          p_scope?: string
+          p_action?: string | null
+          p_from?: string | null
+          p_to?: string | null
+          p_page?: number
+        }
+        Returns: {
+          id: string
+          occurred_at: string | null
+          action: string
+          organization_id: string | null
+          organization_name: string | null
+          actor_id: string | null
+          actor_name: string | null
+          actor_email: string | null
+          target_table: string | null
+          target_id: string | null
+          setting_key: string | null
+          old_role: string | null
+          new_role: string | null
+        }[]
+      }
+      platform_security_events: {
+        Args: never
+        Returns: {
+          id: string
+          action: string
+          target_table: string | null
+          setting_key: string | null
+          created_at: string | null
+        }[]
       }
       update_system_setting: {
         Args: { setting_key_param: string; setting_value_param: string }

@@ -35,23 +35,8 @@ export async function loadPlatformCompanies(signal: AbortSignal) {
   return { total, active, memberships, latest: latest.data };
 }
 
-type BillingFollowupRow = {
-  amount: number;
-  company_name: string;
-  currency: string;
-  event_at: string;
-  id: string;
-  kind: string;
-  organization_id: string;
-  plan_name: string;
-  plan_name_ar: string;
-  reference: string;
-  status: string;
-};
-
 export function loadUpcomingRenewals(signal: AbortSignal) {
-  // Args type is `never` in generated types; the function takes no args but we need count option.
-  return listed<BillingFollowupRow>((supabase.rpc as any)('platform_billing_followup', undefined, { count: 'exact' })
+  return listed(supabase.rpc('platform_billing_followup', {}, { count: 'exact' })
     .eq('kind', 'renewal').order('event_at').order('id').limit(5).abortSignal(signal));
 }
 
