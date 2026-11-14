@@ -1,3 +1,5 @@
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { paymentOrderBalance } from '@/lib/paymentOrderBalance';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -48,6 +50,8 @@ const dayIndexFromJS = (jsDay: number) => (jsDay + 1) % 7;
 
 const TravelCalendar = () => {
   const orgId = useOrgId();
+  const { hasPermission } = useSupabasePermissions();
+  const canViewFinance = hasPermission('financial_view');
   const navigate = useNavigate();
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [cursor, setCursor] = useState(new Date());
@@ -61,8 +65,8 @@ const TravelCalendar = () => {
     return { start, end };
   }, [cursor, view]);
 
-  const { data: events = [] } = useQuery({
-    queryKey: ['travel-calendar', orgId, toISO(range.start), toISO(range.end)],
+  const { data: events = [], isError } = useQuery({
+    queryKey: ['travel-calendar', orgId, toISO(range.start), toISO(range.end), canViewFinance],
     enabled: !!orgId,
     queryFn: async () => {
       const out: CalEvent[] = [];
@@ -72,7 +76,9 @@ const TravelCalendar = () => {
         (supabase as any).from('bookings').select('id, booking_number, customer_name, start_date, end_date, booking_type').eq('organization_id', orgId).lte('start_date', to).or(`start_date.gte.${from},end_date.gte.${from}`).limit(500),
         (supabase as any).from('invoices').select('id, invoice_number, customer_name, due_date, final_amount, currency, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
         (supabase as any).from('customer_payments').select('id, amount, currency, payment_date, booking_id, customer_id').eq('organization_id', orgId).gte('payment_date', from).lte('payment_date', to).limit(500),
-        (supabase as any).from('supplier_payment_orders').select('id, amount, currency, due_date, supplier_id, booking_id, status').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
+        canViewFinance ? (supabase as any).from('supplier_payment_orders').select('id, amount, currency, schedule_date, planned_payment_date, status, supplier_payment_allocations(amount), refund_balance_settlements(amount)')
+          .eq('organization_id', orgId).gte('schedule_date', from).lte('schedule_date', to)
+          .in('status', ['draft', 'pending', 'approved', 'partially_paid']).neq('approval_status', 'rejected').limit(500) : { data: [], error: null },
         (supabase as any).from('booking_tasks').select('id, title, due_date, booking_id, status').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
       ]);
 
@@ -105,11 +111,16 @@ const TravelCalendar = () => {
         });
       });
 
+      if (poRes.error) throw poRes.error;
       (poRes.data ?? []).forEach((p: any) => {
+        const { remainingAmount } = paymentOrderBalance(p.amount, [
+          ...(p.supplier_payment_allocations ?? []), ...(p.refund_balance_settlements ?? []),
+        ]);
+        if (remainingAmount <= 0) return;
         out.push({
-          id: `spo-${p.id}`, kind: 'supplier_payment', date: p.due_date,
-          title: `أمر دفع مورّد (${p.status || ''})`, amount: Number(p.amount || 0), currency: p.currency,
-          href: p.booking_id ? `/bookings/${p.booking_id}/workspace` : `/suppliers`,
+          id: `spo-${p.id}`, kind: 'supplier_payment', date: p.schedule_date,
+          title: p.planned_payment_date ? 'سداد مورد مخطط' : 'استحقاق مورد', amount: remainingAmount, currency: p.currency,
+          href: `/payment-orders?id=${p.id}`,
         });
       });
 
@@ -170,6 +181,7 @@ const TravelCalendar = () => {
 
   return (
     <div className="p-6 space-y-4" dir="rtl">
+      {isError && <p role="alert" className="text-sm text-destructive">تعذر تحميل مواعيد التقويم.</p>}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">تقويم السفر الموحّد</h1>

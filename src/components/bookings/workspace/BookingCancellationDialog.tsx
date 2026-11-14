@@ -22,11 +22,11 @@ type SupplierLine = {
   id: string; order_id: string | null; supplier: string | null; reference: string | null; currency: string; amount: number; paid: number; refunded: number;
 };
 type SupplierResult = SupplierLine & {
-  fee: number; remaining: number; refund: number; refund_id: string | null; fee_order_id: string | null; confirmation: string;
+  fee: number; remaining: number; refund: number; refund_id: string | null; fee_order_id: string | null; confirmation: string; override_reason?: string | null;
 };
 type ClosedSupplierOrder = { id: string; number: string; supplier_name: string | null; confirmation: string };
-type Preview = { customer: CustomerPreview; suppliers: SupplierLine[]; supplier_result: SupplierResult[] | null; closed_supplier_orders: ClosedSupplierOrder[] };
-type SupplierTerms = Record<string, { fee: string; reference: string }>;
+type Preview = { policy_estimates?: { customer: Record<string, number>; suppliers: Record<string, number> }; customer: CustomerPreview; suppliers: SupplierLine[]; supplier_result: SupplierResult[] | null; closed_supplier_orders: ClosedSupplierOrder[] };
+type SupplierTerms = Record<string, { fee?: string; reference?: string; override_reason?: string }>;
 
 const money = (amount: number, currency: string) => `${amount.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ${currency}`;
 const cents = (amount: number) => Math.round(amount * 100);
@@ -67,28 +67,37 @@ export function BookingCancellationDialog({
   const supplierResult = (result ?? preview)?.supplier_result;
   const settled = !!customerResult && (!!supplierResult || preview?.suppliers.length === 0);
   const lines = (customer?.settled ? [] : customer?.invoices ?? []).map(invoice => {
-    const raw = fees[invoice.id] ?? '0';
+    const suggestedFee = preview?.policy_estimates?.customer[invoice.id];
+    const raw = fees[invoice.id] ?? (suggestedFee == null ? '' : String(suggestedFee));
     const fee = Number(raw);
     const due = cents(invoice.due);
     const paid = cents(invoice.paid);
     const valid = /^\d+(\.\d{1,2})?$/.test(raw) && Number.isFinite(fee) && cents(fee) <= due + paid;
-    return { invoice, fee, valid, remaining: Math.max(cents(fee) - paid, 0) / 100, refund: Math.max(paid - cents(fee), 0) / 100 };
+    return { invoice, fee, raw, suggestedFee, valid, remaining: Math.max(cents(fee) - paid, 0) / 100, refund: Math.max(paid - cents(fee), 0) / 100 };
   });
   const suppliers = (preview?.suppliers ?? []).map(line => {
-    const terms = supplierTerms[line.id] ?? { fee: '', reference: '' };
+    const suggestedFee = preview?.policy_estimates?.suppliers[line.id];
+    const entered = supplierTerms[line.id];
+    const terms = {
+      fee: entered?.fee ?? (suggestedFee == null ? '' : String(suggestedFee)),
+      reference: entered?.reference ?? '',
+      override_reason: entered?.override_reason ?? '',
+    };
     const fee = Number(terms.fee);
+    const requiresReason = suggestedFee != null && terms.fee !== '' && cents(suggestedFee) !== cents(fee);
     const netPaid = cents(line.paid) - cents(line.refunded);
     const valid = /^\d+(\.\d{1,2})?$/.test(terms.fee) && Number.isFinite(fee)
-      && cents(fee) <= cents(line.amount - line.refunded) && !!terms.reference.trim();
-    return { line, terms, fee, valid, remaining: Math.max(cents(fee) - netPaid, 0) / 100,
+      && cents(fee) <= cents(line.amount - line.refunded) && !!terms.reference.trim()
+      && (!requiresReason || terms.override_reason.trim().length >= 3);
+    return { line, terms, fee, valid, suggestedFee, requiresReason, remaining: Math.max(cents(fee) - netPaid, 0) / 100,
       refund: Math.max(netPaid - cents(fee), 0) / 100 };
   });
-  const missingRefundPermission = !customer?.can_refund && lines.some(line => line.refund > 0);
+  const missingRefundPermission = !customer?.can_refund && lines.some(line => line.valid && line.refund > 0);
   const mutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await callUntypedRpc<Preview>('settle_booking_cancellation_workflow', {
         _booking: bookingId, _reason: reason.trim(), _fees: Object.fromEntries(lines.map(({ invoice, fee }) => [invoice.id, fee])),
-        _supplier_terms: Object.fromEntries(suppliers.map(({ line, fee, terms }) => [line.id, { fee, reference: terms.reference.trim() }])),
+        _supplier_terms: Object.fromEntries(suppliers.map(({ line, fee, terms }) => [line.id, { fee, reference: terms.reference.trim(), override_reason: terms.override_reason.trim() || undefined }])),
         _expected: preview,
       });
       if (error) throw error;
@@ -102,7 +111,7 @@ export function BookingCancellationDialog({
       const keys = ['booking-cancellation', 'unified-bookings', 'booking-financials', 'booking-workspace',
         'booking-profit-cockpit', 'refund-balances', 'customer-ledger', 'invoices', 'workspace-invoices', 'workspace-timeline',
         'supplier-payment-orders', 'supplier-aging-details-v2', 'aging-control-totals-v2', 'supplier-ledger',
-        'supplier-payment-orders-all', 'supplier-ledger-rpc', 'sup360-bookings', 'sup360-pos', 'sup360-invoices'];
+        'supplier-payment-orders-all', 'travel-calendar', 'supplier-ledger-rpc', 'sup360-bookings', 'sup360-pos', 'sup360-invoices'];
       await Promise.all(keys.map(key => qc.invalidateQueries({ queryKey: [key] })));
       onSettled();
     },
@@ -142,6 +151,7 @@ export function BookingCancellationDialog({
               <div className="space-y-1 rounded-md border p-3 text-sm" key={line.id}>
                 <p className="font-medium">{line.supplier || line.reference || 'المورد'}</p>
                 <p>المتبقي للمورد {money(line.remaining, line.currency)}</p>
+                {line.override_reason && <p>سبب اختلاف الغرامة عن السياسة · {line.override_reason}</p>}
                 {line.order_id && <Link className="block underline" to={`/payment-orders?id=${line.order_id}`}>أمر الدفع الملغي</Link>}
                 {line.fee_order_id && <Link className="block underline" to={`/payment-orders?id=${line.fee_order_id}`}>أمر دفع غرامة المورد</Link>}
                 {line.refund_id && <p>رصيد الاسترداد من المورد {money(line.refund, line.currency)} · <Link className="underline" to="/refund-balances">فتح المحفظة</Link></p>}
@@ -162,13 +172,14 @@ export function BookingCancellationDialog({
         : (
           <form className="space-y-4" onSubmit={event => { event.preventDefault(); if (canSubmit) mutation.mutate(); }}>
             {!customer?.settled && lines.length === 0 && <p className="text-sm text-muted-foreground">الحجز لا توجد له فواتير صادرة مؤهلة للتسوية.</p>}
-            {lines.map(({ invoice, valid, remaining, refund }) => (
+            {lines.map(({ invoice, raw, suggestedFee, valid, remaining, refund }) => (
               <div className="space-y-2 rounded-md border p-3" key={invoice.id}>
                 <p className="text-sm font-semibold">{invoice.number}</p>
                 <p className="text-sm text-muted-foreground">المستحق حاليًا {money(invoice.due, invoice.currency)} · المدفوع المؤهل {money(invoice.paid, invoice.currency)}</p>
                 <Label htmlFor={`cancel-fee-${invoice.id}`}>غرامة الإلغاء على العميل ({invoice.currency})</Label>
                 <Input id={`cancel-fee-${invoice.id}`} type="number" min="0" max={(cents(invoice.due) + cents(invoice.paid)) / 100} step="0.01"
-                  required value={fees[invoice.id] ?? '0'} disabled={mutation.isPending} onChange={event => setFees({ ...fees, [invoice.id]: event.target.value })} />
+                  required value={raw} disabled={mutation.isPending} onChange={event => setFees({ ...fees, [invoice.id]: event.target.value })} />
+                <p className="text-xs text-muted-foreground">{suggestedFee == null ? 'أدخل الغرامة المتفق عليها، أو صفر للإلغاء المجاني.' : `حسب السياسة المسجلة · ${money(suggestedFee, invoice.currency)}`}</p>
                 {valid && <div className="grid gap-1 text-sm sm:grid-cols-2">
                   <p>المتبقي للتحصيل {money(remaining, invoice.currency)}</p>
                   <p>رصيد محفظة العميل {money(refund, invoice.currency)}</p>
@@ -179,7 +190,7 @@ export function BookingCancellationDialog({
             {suppliers.length > 0 && (
               <fieldset className="space-y-3">
                 <legend className="mb-2 text-sm font-semibold">تأكيد إلغاء المورد</legend>
-                {suppliers.map(({ line, terms, valid, remaining, refund }) => (
+                {suppliers.map(({ line, terms, valid, suggestedFee, requiresReason, remaining, refund }) => (
                   <div className="space-y-2 rounded-md border p-3" key={line.id}>
                     <p className="text-sm font-semibold">{line.supplier || 'المورد'} {line.reference && `· ${line.reference}`}</p>
                     <p className="text-sm text-muted-foreground">قيمة المستند {money(line.amount, line.currency)} · المدفوع {money(line.paid, line.currency)}</p>
@@ -187,11 +198,17 @@ export function BookingCancellationDialog({
                     <Label htmlFor={`supplier-fee-${line.id}`}>غرامة المورد المؤكدة ({line.currency})</Label>
                     <Input id={`supplier-fee-${line.id}`} type="number" min="0" max={line.amount - line.refunded} step="0.01"
                       placeholder="0 للإلغاء المجاني" value={terms.fee} required disabled={mutation.isPending}
-                      onChange={event => setSupplierTerms({ ...supplierTerms, [line.id]: { ...terms, fee: event.target.value } })} />
+                      onChange={event => setSupplierTerms({ ...supplierTerms, [line.id]: { ...supplierTerms[line.id], fee: event.target.value } })} />
+                    {suggestedFee != null && <p className="text-xs text-muted-foreground">حسب السياسة المسجلة · {money(suggestedFee, line.currency)}</p>}
+                    {requiresReason && <>
+                      <Label htmlFor={`supplier-override-${line.id}`}>سبب اختلاف الغرامة عن السياسة</Label>
+                      <Input id={`supplier-override-${line.id}`} required minLength={3} maxLength={500} value={terms.override_reason}
+                        disabled={mutation.isPending} onChange={event => setSupplierTerms({ ...supplierTerms, [line.id]: { ...supplierTerms[line.id], override_reason: event.target.value } })} />
+                    </>}
                     <Label htmlFor={`supplier-ref-${line.id}`}>مرجع تأكيد المورد</Label>
                     <Input id={`supplier-ref-${line.id}`} placeholder="رقم الإلغاء أو مرجع رسالة المورد" value={terms.reference} required
                       maxLength={150} disabled={mutation.isPending}
-                      onChange={event => setSupplierTerms({ ...supplierTerms, [line.id]: { ...terms, reference: event.target.value } })} />
+                      onChange={event => setSupplierTerms({ ...supplierTerms, [line.id]: { ...supplierTerms[line.id], reference: event.target.value } })} />
                     {valid && <div className="grid gap-1 text-sm sm:grid-cols-2">
                       <p>المتبقي للمورد {money(remaining, line.currency)}</p>
                       <p>رصيد الاسترداد من المورد {money(refund, line.currency)}</p>

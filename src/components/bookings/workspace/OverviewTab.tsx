@@ -1,3 +1,5 @@
+import { BookingCancellationTermsSummary } from '@/components/bookings/BookingCancellationTermsFields';
+import { type BookingTermsSnapshot } from '@/lib/bookingCancellationTerms';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,7 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
   const openTasks = workspace.tasks.filter((t) => t.status !== 'done' && t.status !== 'cancelled').length;
   const conversationId = workspace.conversation?.id;
   const booking = workspace.booking;
+  const terms = (booking?.cancellation_terms ?? []) as BookingTermsSnapshot[];
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -48,6 +51,18 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
         {booking?.notes && <Card>
           <CardHeader><CardTitle className="text-base">ملاحظات الحجز</CardTitle></CardHeader>
           <CardContent className="whitespace-pre-wrap text-sm">{booking.notes}</CardContent>
+        </Card>}
+        {terms.length > 0 && <Card>
+          <CardHeader><CardTitle className="text-base">سياسة الإلغاء وسداد المورد</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {terms.map((service, index) => (
+              <div key={index} className="space-y-2 rounded-md border p-3">
+                <p className="text-sm font-semibold">{service.label}</p>
+                {service.terms ? <BookingCancellationTermsSummary terms={service.terms} currency={service.currency} />
+                  : <p className="text-sm text-muted-foreground">بانتظار التأكيد</p>}
+              </div>
+            ))}
+          </CardContent>
         </Card>}
         <QuoteLinkPanel quoteId={booking?.quote_id} />
         {booking?.id && <CustomerHistoryPanel customerId={booking.customer_id} currentBookingId={booking.id} />}

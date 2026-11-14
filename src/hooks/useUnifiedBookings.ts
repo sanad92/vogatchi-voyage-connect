@@ -1,3 +1,4 @@
+import type { BookingCancellationTerms } from '@/lib/bookingCancellationTerms';
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
@@ -66,6 +67,7 @@ export interface NewBookingData {
   start_date?: string;
   end_date?: string;
   notes?: string;
+  cancellation_terms?: BookingCancellationTerms;
   // Detail data
   hotelDetails?: Record<string, unknown>;
   flightDetails?: Record<string, unknown>;
@@ -128,7 +130,7 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
     },
     onSuccess: async (booking) => {
       await Promise.all(['unified-bookings', 'bookings', 'invoices', 'supplier-payment-orders',
-        'supplier-invoices', 'customers', 'booking-workspace']
+        'supplier-invoices', 'customers', 'booking-workspace', 'supplier-payment-orders-all', 'travel-calendar']
         .map(key => queryClient.invalidateQueries({ queryKey: [key] })));
       toast.success(booking.already_created ? 'تم استرجاع نفس الحجز المحفوظ' : 'تم حفظ الحجز وتفاصيله ومستنداته');
     },
