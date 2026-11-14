@@ -36,7 +36,7 @@ export async function loadPlatformCompanies(signal: AbortSignal) {
 }
 
 export function loadUpcomingRenewals(signal: AbortSignal) {
-  return listed(supabase.rpc('platform_billing_followup', {}, { count: 'exact' })
+  return listed(supabase.rpc('platform_billing_followup', undefined, { count: 'exact' })
     .eq('kind', 'renewal').order('event_at').order('id').limit(5).abortSignal(signal));
 }
 
