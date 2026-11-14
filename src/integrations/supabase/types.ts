@@ -18776,6 +18776,10 @@ export type Database = {
         Args: { _org: string }
         Returns: Json
       }
+      preview_opening_party_balances: {
+        Args: { _as_of: string; _org: string; _rows: Json }
+        Returns: Json
+      }
       process_event_deliveries: { Args: { p_limit?: number }; Returns: number }
       process_journey_enrollments: {
         Args: { p_limit?: number }
