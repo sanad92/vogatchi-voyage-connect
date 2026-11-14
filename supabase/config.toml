@@ -22,6 +22,9 @@ verify_jwt = true
 [functions.trip-file-hotelbeds-status]
 verify_jwt = true
 
-# Trip File air PNR observation; signed-in user JWT required; disabled without provider secrets.
+# Trip File air PNR observation; signed-in user JWT and verified company connection required.
 [functions.trip-file-air-reservation-status]
+verify_jwt = true
+
+[functions.company-api-integrations]
 verify_jwt = true

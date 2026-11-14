@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { Shield, ClipboardList, BarChart3, Search, Building2 } from 'lucide-react';
+import { Shield, ClipboardList, BarChart3, Search, Building2, Plug } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,18 +9,20 @@ import { toast } from '@/hooks/use-toast';
 import AuditLogTab from '@/components/admin/AuditLogTab';
 import PerformanceMonitorTab from '@/components/admin/PerformanceMonitorTab';
 import OrganizationSettingsTab from '@/components/admin/OrganizationSettingsTab';
+import CompanyApiIntegrationsTab from '@/components/admin/CompanyApiIntegrationsTab';
 
 const tabs = [
   { value: 'org-settings', label: 'إعدادات المؤسسة', icon: Building2, description: 'لوجو، ألوان، بيانات التواصل' },
+  { value: 'integrations', label: 'التكاملات', icon: Plug, description: 'ربط أنظمة الطيران والفوترة والعمرة' },
   { value: 'audit', label: 'سجل العمليات', icon: ClipboardList, description: 'سجل مفصل لجميع العمليات' },
   { value: 'performance', label: 'مراقبة الأداء', icon: BarChart3, description: 'مراقبة أداء النظام والتحليلات' },
 ];
 
 const AdminSettings = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
-  const [activeTab, setActiveTab] = useState('org-settings');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'integrations' ? 'integrations' : 'org-settings');
   const navigate = useNavigate();
 
   // Redirect notice for old "unified-management" deep links
@@ -89,7 +91,7 @@ const AdminSettings = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {filteredTabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.value;
@@ -113,6 +115,7 @@ const AdminSettings = () => {
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <TabsContent value="org-settings" className="mt-0"><OrganizationSettingsTab /></TabsContent>
+          <TabsContent value="integrations" className="mt-0"><CompanyApiIntegrationsTab /></TabsContent>
           <TabsContent value="audit" className="mt-0"><AuditLogTab /></TabsContent>
           <TabsContent value="performance" className="mt-0"><PerformanceMonitorTab /></TabsContent>
         </div>

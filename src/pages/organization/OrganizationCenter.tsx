@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key, ClipboardCheck, ShieldCheck } from 'lucide-react';
+import { Building2, Users, GitBranch, Shield, Flag, Palette, ScrollText, Key, ClipboardCheck, ShieldCheck, Plug } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBranches, useDepartments } from '@/hooks/useBranchesDepartments';
 import { useOrgMembers } from '@/hooks/useOrgMembers';
@@ -15,6 +15,7 @@ const sections = [
   { to: '/organization/security', title: 'مركز الأمان', icon: Shield, desc: 'MFA، PIN، سياسات كلمات المرور' },
   { to: '/audit-log', title: 'سجل التدقيق', icon: ScrollText, desc: 'كل العمليات الحساسة' },
   { to: '/admin-settings', title: 'الإعدادات العامة', icon: Key, desc: 'إعدادات المؤسسة الأساسية' },
+  { to: '/admin-settings?tab=integrations', title: 'التكاملات', icon: Plug, desc: 'ربط أنظمة الطيران والفوترة والعمرة' },
 ];
 
 export default function OrganizationCenter() {
