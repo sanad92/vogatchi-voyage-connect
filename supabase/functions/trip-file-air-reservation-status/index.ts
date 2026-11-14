@@ -134,7 +134,7 @@ async function observeSabre(orgId: string, locator: string) {
         Accept: 'application/json',
         'Conversation-ID': crypto.randomUUID(),
       },
-      body: JSON.stringify({ confirmationId: locator }),
+      body: JSON.stringify({ confirmationId: locator, returnOnly: ['FLIGHTS'] }),
       redirect: 'error',
       signal: AbortSignal.timeout(9000),
     });

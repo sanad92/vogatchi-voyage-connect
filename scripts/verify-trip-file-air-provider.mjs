@@ -35,7 +35,7 @@ assert.match(edge,/method:'GET'/, 'Travelport uses GET for reservation retrieval
 assert.match(edge,/SABRE_VERIFY_ALLOWED_ORG_ID/);
 assert.match(edge,/SABRE_VERIFY_PRODUCTION_ACK/);
 assert.match(edge,/fetch\(sabreEndpoints\(environment\)\.retrieve/);
-assert.match(edge,/body: JSON.stringify\(\{ confirmationId: locator \}\)/);
+assert.match(edge,/body: JSON.stringify\(\{ confirmationId: locator, returnOnly: \['FLIGHTS'\] \}\)/);
 assert.match(shared,/retrieve: host \+ '\/v1\/trip\/orders\/getBooking'/);
 assert.match(edge,/if \(provider === 'sabre'\) return observeSabre\(change.organization_id, change.service_reference\)/);
 assert.match(edge,/redirect:'error'/, 'no provider redirects');
