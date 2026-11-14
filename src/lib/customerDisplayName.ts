@@ -1,7 +1,9 @@
-const quotedPrintableBytes = (value: string) =>
-  Uint8Array.from(value.matchAll(/=([\da-f]{2})|([^=])/gi), ([, hex, plain]) =>
+const quotedPrintableBytes = (value: string) => {
+  const bytes = Array.from(value.matchAll(/=([\da-f]{2})|([^=])/gi), ([, hex, plain]) =>
     hex ? parseInt(hex, 16) : plain.charCodeAt(0),
   );
+  return Uint8Array.from(bytes);
+};
 
 const decodeArabicNameRun = (run: string) => {
   const completeBytes = run.replace(/=[\da-f]?$/i, '');
