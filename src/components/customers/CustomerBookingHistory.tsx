@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,28 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Plane, Car, Bus, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { bookingStatusLabel } from "@/lib/bookingStatus";
+import { divideCurrencyTotals } from "@/lib/customerMetrics";
 import { toast } from "sonner";
 
 interface Props {
   customerId: string;
+  bookings: Array<{
+    id: string;
+    booking_number: string | null;
+    booking_type: string | null;
+    created_at: string;
+    status: string | null;
+    selling_price: number | null;
+    currency: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    supplier_name: string | null;
+    notes: string | null;
+  }>;
 }
 
 type BookingType = "hotel" | "flight" | "car_rental" | "transport";
-
-interface Row {
-  id: string;
-  type: BookingType;
-  reference: string;
-  created_at: string;
-  status: string;
-  total_amount: number;
-  currency: string;
-  start_date?: string | null;
-  end_date?: string | null;
-  supplier_name?: string | null;
-  notes?: string | null;
-}
 
 const typeMeta: Record<BookingType, { label: string; icon: JSX.Element }> = {
   hotel: { label: "حجز فندق", icon: <Package className="h-4 w-4" /> },
@@ -36,48 +35,31 @@ const typeMeta: Record<BookingType, { label: string; icon: JSX.Element }> = {
   transport: { label: "حجز نقل", icon: <Bus className="h-4 w-4" /> },
 };
 
-const CustomerBookingHistory = ({ customerId }: Props) => {
+const CustomerBookingHistory = ({ customerId, bookings }: Props) => {
   const [activeTab, setActiveTab] = useState("all");
 
-  const { data: bookings = [], isLoading } = useQuery({
-    queryKey: ["customer-bookings-unified", customerId],
-    enabled: !!customerId,
-    queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          "id, booking_number, booking_type, status, selling_price, currency, start_date, end_date, supplier_name, notes, created_at"
-        )
-        .eq("customer_id", customerId)
-        .order("created_at", { ascending: false });
+  const filtered = bookings.map(booking => ({
+    id: booking.id,
+    type: (booking.booking_type ?? "hotel") as BookingType,
+    reference: booking.booking_number ?? "—",
+    created_at: booking.created_at,
+    status: booking.status,
+    total_amount: Number(booking.selling_price) || 0,
+    currency: booking.currency?.trim().toUpperCase() || "EGP",
+    start_date: booking.start_date,
+    end_date: booking.end_date,
+    supplier_name: booking.supplier_name,
+    notes: booking.notes,
+  })).filter(booking => activeTab === "all" || booking.type === activeTab);
 
-      if (error) {
-        toast.error("حدث خطأ في تحميل سجل الحجوزات");
-        throw error;
-      }
-
-      return (data ?? []).map((b: any) => ({
-        id: b.id,
-        type: (b.booking_type as BookingType) ?? "hotel",
-        reference: b.booking_number ?? "—",
-        created_at: b.created_at,
-        status: b.status ?? "غير محدد",
-        total_amount: Number(b.selling_price) || 0,
-        currency: b.currency || "EGP",
-        start_date: b.start_date,
-        end_date: b.end_date,
-        supplier_name: b.supplier_name,
-        notes: b.notes,
-      }));
-    },
-  });
-
-  const filtered = activeTab === "all" ? bookings : bookings.filter((b) => b.type === activeTab);
-
-  const totalsByCurrency = filtered.reduce<Record<string, number>>((acc, b) => {
-    acc[b.currency] = (acc[b.currency] || 0) + b.total_amount;
-    return acc;
-  }, {});
+  const totalsByCurrency: Record<string, number> = {};
+  const countsByCurrency: Record<string, number> = {};
+  for (const booking of filtered) {
+    const currency = booking.currency;
+    totalsByCurrency[currency] = (totalsByCurrency[currency] ?? 0) + booking.total_amount;
+    countsByCurrency[currency] = (countsByCurrency[currency] ?? 0) + 1;
+  }
+  const averagesByCurrency = divideCurrencyTotals(totalsByCurrency, countsByCurrency);
 
   const exportBookingsData = () => {
     const exportData = {
@@ -100,26 +82,13 @@ const CustomerBookingHistory = ({ customerId }: Props) => {
     toast.success("تم تصدير سجل الحجوزات بنجاح");
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            <span className="mr-2">جاري تحميل سجل الحجوزات...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold">{filtered.length}</div>
-            <div className="text-sm text-muted-foreground">إجمالي الحجوزات</div>
+            <div className="text-sm text-muted-foreground">عدد الحجوزات في السجل</div>
           </CardContent>
         </Card>
         <Card>
@@ -135,17 +104,18 @@ const CustomerBookingHistory = ({ customerId }: Props) => {
                 ))
               )}
             </div>
-            <div className="text-sm text-muted-foreground">إجمالي المبلغ</div>
+            <div className="text-sm text-muted-foreground">إجمالي قيمة الحجوزات في السجل</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
-              {filtered.length > 0
-                ? Math.round(
-                    Object.values(totalsByCurrency).reduce((a, b) => a + b, 0) / filtered.length
-                  ).toLocaleString()
-                : 0}
+            <div className="space-y-1">
+              {Object.entries(averagesByCurrency).map(([currency, average]) => (
+                <div key={currency} className="text-lg font-bold">
+                  {average.toLocaleString(undefined, { maximumFractionDigits: 2 })} {currency}
+                </div>
+              ))}
+              {filtered.length === 0 && <div className="text-2xl font-bold">0</div>}
             </div>
             <div className="text-sm text-muted-foreground">متوسط قيمة الحجز</div>
           </CardContent>
@@ -206,7 +176,7 @@ const CustomerBookingHistory = ({ customerId }: Props) => {
                             {formatDate(b.created_at)}
                           </div>
                           <Badge variant="secondary" className="mt-1">
-                            {b.status}
+                            {bookingStatusLabel(b.status)}
                           </Badge>
                         </div>
                       </div>

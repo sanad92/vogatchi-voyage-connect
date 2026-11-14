@@ -6,6 +6,8 @@ import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
 import { ListLoadError } from '@/components/common/ListLoadError';
 import { Link, useNavigate } from 'react-router-dom';
+import { bookingStatusLabel } from '@/lib/bookingStatus';
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import { useUnifiedBookings, BookingType, BookingStatus } from '@/hooks/useUnifiedBookings';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,14 +32,6 @@ const statusVariants: Record<BookingStatus, 'default' | 'secondary' | 'destructi
   cancelled: 'destructive',
   completed: 'outline',
 };
-
-const statusLabelsAr: Record<BookingStatus, string> = {
-  pending: 'معلق',
-  confirmed: 'مؤكد',
-  cancelled: 'ملغي',
-  completed: 'مكتمل',
-};
-
 
 const UnifiedBookings = () => {
   usePageTitle('الحجوزات الموحدة');
@@ -217,7 +211,7 @@ const UnifiedBookings = () => {
                             {tc.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{b.customer_name || (b.customers as any)?.name || '—'}</TableCell>
+                        <TableCell>{customerDisplayName(b.customer_name || b.customers?.name) || '—'}</TableCell>
                         <TableCell>{b.supplier_name || '—'}</TableCell>
                         <TableCell>{b.selling_price?.toLocaleString()} {b.currency}</TableCell>
                         <TableCell>{b.cost_price?.toLocaleString()} {b.currency}</TableCell>
@@ -228,13 +222,7 @@ const UnifiedBookings = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {b.booking_statuses ? (
-                            <Badge style={{ backgroundColor: (b.booking_statuses as any).color, color: 'white' }}>
-                              {(b.booking_statuses as any).name_ar}
-                            </Badge>
-                          ) : (
-                            <Badge variant={statusVariants[b.status] || 'secondary'}>{statusLabelsAr[b.status] || b.status}</Badge>
-                          )}
+                          <Badge variant={statusVariants[b.status] || 'secondary'}>{bookingStatusLabel(b.status)}</Badge>
                         </TableCell>
                         <TableCell>{b.start_date || '—'}</TableCell>
                         <TableCell>

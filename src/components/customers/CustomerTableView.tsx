@@ -1,3 +1,4 @@
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -158,7 +159,7 @@ const CustomerTableView = ({
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-gray-400" />
             <Link to={`/customers/${customer.id}`} className="font-medium text-primary underline-offset-4 hover:underline">
-              {customer.name}
+              {customerDisplayName(customer.name)}
             </Link>
             {customer.archived_at && (
               <Badge variant="outline" className="border-amber-300 text-amber-700">مؤرشف</Badge>

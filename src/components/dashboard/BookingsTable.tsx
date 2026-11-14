@@ -1,3 +1,5 @@
+import { bookingStatusLabel } from '@/lib/bookingStatus';
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const bookingTypes: Record<string, string> = { hotel: 'فندق', flight: 'طيران', transport: 'انتقالات', car_rental: 'تأجير سيارة', package: 'باقة', tour: 'رحلة' };
-const statuses: Record<string, string> = { confirmed: 'مؤكد', completed: 'مكتمل', paid: 'مدفوع', pending: 'معلق', cancelled: 'ملغي', draft: 'مسودة' };
 export default function BookingsTable() {
   const orgId = useOrgId();
   const query = useQuery({
@@ -25,8 +26,8 @@ export default function BookingsTable() {
     {query.isLoading ? <p>جاري تحميل الحجوزات…</p> : query.error ? <p role="alert">تعذر تحميل الحجوزات. حاول مرة أخرى.</p> :
       <Table><TableHeader><TableRow><TableHead>المرجع</TableHead><TableHead>العميل</TableHead><TableHead>نوع الحجز</TableHead><TableHead>تاريخ الخدمة</TableHead><TableHead>الحالة</TableHead><TableHead>قيمة البيع</TableHead><TableHead>التفاصيل</TableHead></TableRow></TableHeader>
         <TableBody>{query.data?.map(booking => <TableRow key={booking.id}>
-          <TableCell>{booking.booking_number}</TableCell><TableCell>{booking.customer_name}</TableCell><TableCell>{bookingTypes[booking.booking_type] || booking.booking_type || '—'}</TableCell>
-          <TableCell>{booking.start_date || '—'}</TableCell><TableCell>{statuses[booking.status ?? ''] || booking.status || 'غير محدد'}</TableCell>
+          <TableCell>{booking.booking_number}</TableCell><TableCell>{customerDisplayName(booking.customer_name)}</TableCell><TableCell>{bookingTypes[booking.booking_type] || booking.booking_type || '—'}</TableCell>
+          <TableCell>{booking.start_date || '—'}</TableCell><TableCell>{bookingStatusLabel(booking.status)}</TableCell>
           <TableCell>{Number(booking.selling_price || 0).toLocaleString('ar-EG')} {booking.currency || 'EGP'}</TableCell>
           <TableCell><Button asChild variant="link"><Link to={`/bookings/${booking.id}/workspace`}>فتح الحجز</Link></Button></TableCell>
         </TableRow>)}{!query.data?.length && <TableRow><TableCell colSpan={7}>لا توجد حجوزات بعد.</TableCell></TableRow>}</TableBody>

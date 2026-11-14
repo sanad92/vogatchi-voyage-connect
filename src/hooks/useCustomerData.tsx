@@ -1,4 +1,5 @@
 
+import { bookingStatusLabel } from '@/lib/bookingStatus';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CurrencyTotals } from '@/lib/customerMetrics';
@@ -85,7 +86,7 @@ export const useCustomerData = (customerId: string) => {
 
       // Load unified bookings + supporting data in parallel
       const [
-        { data: unifiedBookings },
+        { data: unifiedBookings, error: bookingHistoryError },
         { data: loyaltyData },
         { data: communicationsData },
         { data: notesData },
@@ -95,6 +96,7 @@ export const useCustomerData = (customerId: string) => {
           .from('bookings')
           .select('id, booking_number, booking_type, status, workflow_stage, selling_price, cost_price, currency, start_date, end_date, supplier_name, notes, created_at')
           .eq('customer_id', customerId)
+          .eq('organization_id', basicData.organization_id)
           .order('created_at', { ascending: false }),
 
         supabase
@@ -127,6 +129,8 @@ export const useCustomerData = (customerId: string) => {
           .eq('customer_id', customerId)
       ]);
 
+      const bookingHistory = unifiedBookings ?? [];
+
       // Group unified bookings by booking_type and normalise fields
       // used by CustomerDetails (hotel_name, check_in_date, status.name_ar…).
       const byType: Record<BookingGroupKey, CustomerBookingSummary[]> = {
@@ -149,16 +153,19 @@ export const useCustomerData = (customerId: string) => {
           total_cost_customer: b.selling_price,
           total_cost: b.selling_price,
           total_rental_cost: b.selling_price,
-          status: { name_ar: b.status, name: b.status, color: '#64748b' },
+          status: { name_ar: bookingStatusLabel(b.status), name: b.status, color: '#64748b' },
         };
         const key = isBookingGroupKey(b.booking_type) ? b.booking_type : 'hotel';
         byType[key].push(normalised as CustomerBookingSummary);
       }
 
-      const confirmedBookings = ((unifiedBookings ?? []) as CustomerBookingRow[]).filter((booking) =>
-        ['confirmed', 'completed', 'paid'].includes(String(booking.status || '').toLowerCase())
-        || ['paid', 'operations', 'traveling', 'completed', 'post_travel'].includes(String(booking.workflow_stage || '')),
-      );
+      const confirmedBookings = bookingHistory.filter(booking => {
+        const status = booking.status?.toLowerCase() ?? '';
+        return !['cancelled', 'canceled'].includes(status) && booking.workflow_stage !== 'cancelled' && (
+          ['confirmed', 'completed', 'paid'].includes(status)
+          || ['paid', 'operations', 'traveling', 'completed', 'post_travel'].includes(booking.workflow_stage ?? '')
+        );
+      });
       const spendByCurrency = confirmedBookings.reduce<CurrencyTotals>((totals, booking) => {
         const currency = String(booking.currency || 'EGP').trim().toUpperCase();
         totals[currency] = (totals[currency] || 0) + Number(booking.selling_price || 0);
@@ -179,6 +186,8 @@ export const useCustomerData = (customerId: string) => {
         spend_by_currency: spendByCurrency,
         booking_count_by_currency: bookingCountByCurrency,
         last_booking_date: lastBookingDate,
+        booking_history: bookingHistory,
+        booking_history_available: !bookingHistoryError,
         hotel_bookings: byType.hotel,
         flight_bookings: byType.flight,
         transport_bookings: byType.transport,

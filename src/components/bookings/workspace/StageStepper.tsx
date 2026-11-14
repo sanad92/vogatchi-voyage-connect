@@ -2,28 +2,17 @@ import { Check, ChevronLeft } from 'lucide-react';
 import { WORKFLOW_STAGES, type WorkflowStage } from '@/hooks/useBookingWorkspace';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { STAGE_LABELS } from '@/lib/bookingWorkflow';
 import { cn } from '@/lib/utils';
-
-const STAGE_LABELS: Record<WorkflowStage, string> = {
-  lead: 'مهتم',
-  qualified: 'مؤهل',
-  quoted: 'تم التسعير',
-  confirmed: 'مؤكد',
-  paid: 'مدفوع',
-  operations: 'تشغيل',
-  traveling: 'مسافر',
-  completed: 'مكتمل',
-  post_travel: 'ما بعد السفر',
-  cancelled: 'ملغي',
-};
 
 interface Props {
   stage: WorkflowStage | undefined | null;
   editable?: boolean;
+  paymentVerified: boolean;
   onChange: (next: WorkflowStage) => void | Promise<unknown>;
 }
 
-export const StageStepper = ({ stage, onChange, editable = true }: Props) => {
+export const StageStepper = ({ stage, onChange, editable = true, paymentVerified }: Props) => {
   const current = (stage || 'lead') as WorkflowStage;
   const currentIdx = WORKFLOW_STAGES.indexOf(current);
   const isCancelled = current === 'cancelled';
@@ -40,7 +29,7 @@ export const StageStepper = ({ stage, onChange, editable = true }: Props) => {
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 p-1">
             <div className="grid gap-0.5">
-              {WORKFLOW_STAGES.map((s) => (
+              {WORKFLOW_STAGES.filter(s => s !== 'paid' || paymentVerified).map((s) => (
                 <Button
                   key={s}
                   variant={s === current ? 'secondary' : 'ghost'}
@@ -62,8 +51,9 @@ export const StageStepper = ({ stage, onChange, editable = true }: Props) => {
         <div className="overflow-x-auto">
           <ol className="flex items-center gap-1 min-w-max">
             {WORKFLOW_STAGES.map((s, i) => {
-              const done = i < currentIdx;
-              const active = i === currentIdx;
+              const available = s !== 'paid' || paymentVerified;
+              const done = i < currentIdx && available;
+              const active = i === currentIdx && available;
               return (
                 <li key={s} className="flex items-center gap-1">
                   <div
@@ -81,7 +71,7 @@ export const StageStepper = ({ stage, onChange, editable = true }: Props) => {
                         {i + 1}
                       </span>
                     )}
-                    <span>{STAGE_LABELS[s]}</span>
+                    <span>{s === 'paid' ? 'التحصيل' : STAGE_LABELS[s]}</span>
                   </div>
                   {i < WORKFLOW_STAGES.length - 1 && (
                     <span className="h-px w-4 bg-border" />

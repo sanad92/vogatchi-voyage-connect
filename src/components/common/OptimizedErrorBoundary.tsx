@@ -28,7 +28,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: ErrorFallbackProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600 font-mono break-all">
                 {error.message}

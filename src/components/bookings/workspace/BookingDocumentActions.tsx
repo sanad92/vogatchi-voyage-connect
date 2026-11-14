@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Ticket, Download, Loader2, Receipt, Eye } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { buildInvoiceModel, buildVoucherModel } from '@/lib/travelDocuments';
+import { useWorkspaceVouchers } from '@/hooks/useWorkspaceVouchers';
 import { useBookingDocumentSources } from '@/hooks/useBookingDocumentSources';
 import { InvoiceDocument } from '@/components/documents/travel/InvoiceDocument';
 import { VoucherDocument } from '@/components/documents/travel/VoucherDocument';
@@ -37,18 +38,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
   const [busy, setBusy] = useState<string | null>(null);
 
-  const vouchersQ = useQuery({
-    queryKey: ['workspace-vouchers', booking?.id],
-    enabled: !!booking?.id,
-    queryFn: async () => {
-      const { data } = await anyClient
-        .from('booking_vouchers')
-        .select('*')
-        .eq('booking_id', booking.id)
-        .order('issued_at', { ascending: false });
-      return data ?? [];
-    },
-  });
+  const vouchersQ = useWorkspaceVouchers(booking?.id);
 
   const invoiceModel = preview?.type === 'invoice' ? buildInvoiceModel(preview.invoice, getSource('invoice')) : null;
   const voucherModel =
@@ -111,13 +101,15 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     if (!booking?.id) return;
     setBusy('voucher');
     try {
-      const existing = (vouchersQ.data ?? [])[0];
+      const { data: vouchers, error } = await vouchersQ.refetch();
+      if (error) throw error;
+      const existing = vouchers?.[0];
       const voucherNumber =
         existing?.voucher_number ||
         `VCH-${(booking.booking_number || booking.id.slice(0, 8)).replace(/^BK-/, '')}`;
 
       if (!existing) {
-        await anyClient.from('booking_vouchers').insert({
+        const { error } = await anyClient.from('booking_vouchers').insert({
           organization_id: booking.organization_id,
           booking_id: booking.id,
           voucher_number: voucherNumber,
@@ -127,6 +119,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
             customer: customer?.name || booking?.customer_name || null,
           },
         });
+        if (error) throw error;
         qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
       }
 

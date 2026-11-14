@@ -34,6 +34,8 @@ import {
 import { useCustomerData } from "@/hooks/useCustomerData";
 import { formatDate } from "@/lib/utils";
 import CustomerEditDialog from "@/components/customers/CustomerEditDialog";
+import { bookingStatusLabel } from '@/lib/bookingStatus';
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import CustomerBookingHistory from "@/components/customers/CustomerBookingHistory";
 import CustomerInvoiceHistory from "@/components/customers/CustomerInvoiceHistory";
 import CustomerCommunicationLog from "@/components/customers/CustomerCommunicationLog";
@@ -101,15 +103,18 @@ const CustomerDetails = () => {
     );
   }
 
+  const bookingHistory = customerData.booking_history;
+  const bookingHistoryAvailable = customerData.booking_history_available;
+  const displayName = customerDisplayName(customerData.name);
   const customerStats = {
-    totalBookings: customerData.total_bookings || 0,
+    totalBookings: bookingHistoryAvailable ? bookingHistory.length : '—',
     spendByCurrency: getCustomerSpend(customerData),
     averageBookingValueByCurrency: divideCurrencyTotals(
       getCustomerSpend(customerData),
       parseCurrencyTotals(customerData.booking_count_by_currency),
     ),
     loyaltyPoints: customerData.loyalty_points || 0,
-    lastBookingDate: customerData.last_booking_date,
+    lastBookingDate: bookingHistory[0]?.created_at,
     registrationDate: customerData.created_at
   };
 
@@ -124,7 +129,7 @@ const CustomerDetails = () => {
       <BreadcrumbNav items={[
         { label: 'الرئيسية', href: '/dashboard' },
         { label: 'إدارة العملاء', href: '/customers' },
-        { label: customerData.name }
+        { label: displayName }
       ]} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
@@ -137,7 +142,7 @@ const CustomerDetails = () => {
             العودة
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{customerData.name}</h1>
+            <h1 className="text-3xl font-bold" data-no-translate>{displayName}</h1>
             <p className="text-muted-foreground">
               عميل منذ {formatDate(customerData.created_at)}
             </p>
@@ -163,7 +168,7 @@ const CustomerDetails = () => {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
+                <p className="text-sm text-muted-foreground">عدد الحجوزات في السجل</p>
                 <p className="text-2xl font-bold">{customerStats.totalBookings}</p>
               </div>
             </div>
@@ -177,8 +182,8 @@ const CustomerDetails = () => {
                 <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي الإنفاق</p>
-                <p className="text-lg font-bold leading-7">{formatCurrencyTotals(customerStats.spendByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">إجمالي قيمة الحجوزات المؤكدة</p>
+                <p className="text-lg font-bold leading-7">{bookingHistoryAvailable ? formatCurrencyTotals(customerStats.spendByCurrency) : '—'}</p>
               </div>
             </div>
           </CardContent>
@@ -207,10 +212,9 @@ const CustomerDetails = () => {
               <div>
                 <p className="text-sm text-muted-foreground">آخر حجز</p>
                 <p className="text-lg font-semibold">
-                  {customerStats.lastBookingDate 
-                    ? formatDate(customerStats.lastBookingDate)
-                    : 'لا يوجد'
-                  }
+                  {bookingHistoryAvailable
+                    ? customerStats.lastBookingDate ? formatDate(customerStats.lastBookingDate) : 'لا يوجد'
+                    : '—'}
                 </p>
               </div>
             </div>
@@ -220,7 +224,7 @@ const CustomerDetails = () => {
 
       {customerId && hasFeature(PLAN_FEATURES.FINANCE) && hasPermission('financial_view')
         && getPermissionScope('financial_view') === 'organization' && (
-          <RefundLedgerSummary kind="customer" partyId={customerId} partyName={customerData.name} showHistory />
+          <RefundLedgerSummary kind="customer" partyId={customerId} partyName={displayName} showHistory />
         )}
 
       {/* Main Content Tabs */}
@@ -266,7 +270,7 @@ const CustomerDetails = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">الاسم</label>
-                    <p className="font-medium">{customerData.name}</p>
+                    <p className="font-medium">{displayName}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">الهاتف</label>
@@ -328,9 +332,9 @@ const CustomerDetails = () => {
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">متوسط قيمة الحجز</label>
+                    <label className="text-sm font-medium text-muted-foreground">متوسط قيمة الحجز المؤكد</label>
                     <p className="text-lg font-semibold">
-                      {formatCurrencyTotals(customerStats.averageBookingValueByCurrency)}
+                      {bookingHistoryAvailable ? formatCurrencyTotals(customerStats.averageBookingValueByCurrency) : '—'}
                     </p>
                   </div>
                   <div>
@@ -357,14 +361,14 @@ const CustomerDetails = () => {
                     <Package className="h-4 w-4" />
                     آخر الحجوزات
                   </h4>
-                  {customerData.hotel_bookings?.slice(0, 3).map((booking: any) => (
+                  {bookingHistory.slice(0, 3).map(booking => (
                     <div key={booking.id} className="text-sm p-2 bg-muted rounded">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{booking.hotel_name}</span>
-                        <Badge variant="outline">{booking.status?.name_ar}</Badge>
+                        <span className="font-medium">{booking.booking_number || '—'}</span>
+                        <Badge variant="outline">{bookingStatusLabel(booking.status)}</Badge>
                       </div>
                       <p className="text-muted-foreground text-xs mt-1">
-                        {formatDate(booking.check_in_date)}
+                        {formatDate(booking.created_at)}
                       </p>
                     </div>
                   ))}
@@ -407,7 +411,9 @@ const CustomerDetails = () => {
         </TabsContent>
 
         <TabsContent value="bookings">
-          <CustomerBookingHistory customerId={customerId} />
+          {bookingHistoryAvailable
+            ? <CustomerBookingHistory customerId={customerId} bookings={bookingHistory} />
+            : <p role="alert" className="text-destructive">حدث خطأ في تحميل سجل الحجوزات</p>}
         </TabsContent>
 
         <TabsContent value="invoices">
