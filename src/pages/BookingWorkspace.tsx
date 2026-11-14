@@ -4,6 +4,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useBookingProfitCockpit } from '@/hooks/useBookingProfitCockpit';
+import { useWorkspaceVouchers } from '@/hooks/useWorkspaceVouchers';
 import { useBookingWorkspace } from '@/hooks/useBookingWorkspace';
 import { WorkspaceExecutiveHeader } from '@/components/bookings/workspace/WorkspaceExecutiveHeader';
 import { FinancialSummaryStrip } from '@/components/bookings/workspace/FinancialSummaryStrip';
@@ -23,9 +25,9 @@ import { BookingCancellationDialog, useBookingCancellation } from '@/components/
 import BookingLeadAudit from '@/components/bookings/workspace/BookingLeadAudit';
 import { AutomationCenter } from '@/components/bookings/workspace/automation/AutomationCenter';
 import { BookingSopTab } from '@/components/bookings/workspace/BookingSopTab';
-import { WorkflowProgressBar } from '@/components/workflow/WorkflowProgressBar';
 import {
-  derivePaymentStatus,
+  bookingCollectionStatus,
+  verifiedWorkflowStage,
   deriveProfitHealth,
   type WorkflowContext,
 } from '@/lib/bookingWorkflow';
@@ -57,6 +59,9 @@ const BookingWorkspace = () => {
   const { getPermissionScope } = useSupabasePermissions();
   const canSettleCancellation = (['bookings_view', 'bookings_cancel', 'financial_view', 'payments_process'] as const)
     .every(permission => getPermissionScope(permission) === 'organization');
+  const canViewFinance = getPermissionScope('financial_view') !== 'none';
+  const cockpit = useBookingProfitCockpit(canViewFinance ? id : undefined);
+  const vouchers = useWorkspaceVouchers(id);
   const canEditBooking = getPermissionScope('bookings_edit') === 'organization';
   const cancelled = workspace.booking?.workflow_stage === 'cancelled' || ['cancelled', 'canceled'].includes(workspace.booking?.status);
   const cancellation = useBookingCancellation(id, canSettleCancellation && (cancellationOpen || cancelled));
@@ -86,6 +91,29 @@ const BookingWorkspace = () => {
     );
   }
 
+  const summary = cockpit.isError ? undefined : cockpit.data?.summary;
+  const profitHealth = summary ? deriveProfitHealth(summary.gross_profit, summary.selling) : undefined;
+  const currency = cockpit.data?.booking.currency;
+  const activeInvoices = cockpit.data?.drilldowns.invoices.filter(inv =>
+    !['draft', 'cancelled', 'canceled', 'void'].includes(inv.status?.toLowerCase() ?? '')
+      && Number(inv.amount) > 0,
+  ) ?? [];
+  const hasInvoice = activeInvoices.length > 0;
+  const hasForeignCurrencyInvoice = activeInvoices.some(inv =>
+    (inv.currency?.trim().toUpperCase() || currency) !== currency,
+  );
+  const paymentStatus = hasForeignCurrencyInvoice ? 'unknown' : bookingCollectionStatus(summary, cancelled);
+  const stage = cancelled ? 'cancelled' : verifiedWorkflowStage(workspace.booking.workflow_stage, paymentStatus, workspace.booking.status);
+  const ctx: WorkflowContext = {
+    stage,
+    bookingId: id!,
+    hasInvoice,
+    hasVoucher: !vouchers.isSuccess || vouchers.data.length > 0 || Boolean(workspace.booking.voucher_number),
+    paymentStatus,
+    canCreateInvoice: getPermissionScope('invoices_create') !== 'none',
+    canRecordPayment: getPermissionScope('payments_process') !== 'none',
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-2 text-sm">
@@ -95,66 +123,45 @@ const BookingWorkspace = () => {
         <span className="text-muted-foreground">/</span>
         <span className="text-muted-foreground">مساحة العمل</span>
         <div className="flex-1" />
-        <Button variant="ghost" size="icon" onClick={() => workspace.refetch()} title="تحديث">
+        <Button variant="ghost" size="icon" onClick={() => { workspace.refetch(); if (canViewFinance) void cockpit.refetch(); }} title="تحديث">
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
 
-      {(() => {
-        const invoiced = workspace.financials.invoiced;
-        const paid = Math.max(0, invoiced - workspace.financials.outstanding);
-        const paymentStatus = derivePaymentStatus(invoiced, paid);
-        const profitHealth = deriveProfitHealth(workspace.financials.profit, workspace.financials.selling);
-        const hasVoucher = (workspace.invoices as any[]).some((inv: any) =>
-          /voucher|فاوتش/i.test(inv.document_type || inv.invoice_type || ''),
-        ) || Boolean((workspace.booking as any)?.voucher_number);
-        const ctx: WorkflowContext = {
-          stage: workspace.booking.workflow_stage,
-          bookingId: id!,
-          hasInvoice: (workspace.invoices ?? []).length > 0,
-          hasVoucher,
-          paymentStatus,
-          hasCustomerPhone: Boolean(workspace.customer?.phone),
-        };
-        return (
-          <>
-            <WorkspaceExecutiveHeader
-              workspace={workspace}
-              paymentStatus={paymentStatus}
-              profitHealth={profitHealth}
-            />
-            <StageStepper
-              stage={cancelled ? 'cancelled' : workspace.booking.workflow_stage}
-              onChange={(next) => workspace.setStage(next)}
-              editable={canEditBooking && !cancelled}
-            />
-            <WorkflowProgressBar bookingId={id!} />
-            <SmartNextActionCard workspace={workspace} ctx={ctx} />
-            {getPermissionScope('financial_view') !== 'none' && <FinancialSummaryStrip bookingId={id!} />}
+      <WorkspaceExecutiveHeader
+        workspace={workspace}
+        paymentStatus={canViewFinance ? paymentStatus : undefined}
+        profitHealth={profitHealth}
+      />
+      <StageStepper
+        stage={stage}
+        paymentVerified={paymentStatus === 'paid'}
+        onChange={next => void workspace.setStage(next).catch(() => undefined)}
+        editable={canEditBooking && !cancelled}
+      />
+      <SmartNextActionCard workspace={workspace} ctx={ctx} canEditBooking={canEditBooking} />
+      {canViewFinance && <FinancialSummaryStrip cockpit={cockpit} />}
 
-            <div className="flex flex-wrap gap-2">
-              {canSettleCancellation && !workspace.booking.is_demo && (
-                <Button size="sm" variant="outline" onClick={() => setCancellationOpen(true)}>
-                  <Ban className="h-4 w-4 ml-1" />
-                  {cancellation.data?.customer.settled && (cancellation.data.supplier_result || !cancellation.data.suppliers.length) ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
-                </Button>
-              )}
-              <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
-                <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
-              </Button>
-              {!cancelled && <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
-                <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
-              </Button>}
-              <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
-                <Wallet className="h-4 w-4 ml-1" /> تسجيل دفعة
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setTab('documents')}>
-                <Receipt className="h-4 w-4 ml-1" /> فاوتشر / مستندات
-              </Button>
-            </div>
-          </>
-        );
-      })()}
+      <div className="flex flex-wrap gap-2">
+        {canSettleCancellation && !workspace.booking.is_demo && (
+          <Button size="sm" variant="outline" onClick={() => setCancellationOpen(true)}>
+            <Ban className="h-4 w-4 ml-1" />
+            {cancellation.data?.customer.settled && (cancellation.data.supplier_result || !cancellation.data.suppliers.length) ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
+          </Button>
+        )}
+        <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
+          <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
+        </Button>
+        {!cancelled && <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
+          <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
+        </Button>}
+        <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
+          <Wallet className="h-4 w-4 ml-1" /> تسجيل دفعة
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setTab('documents')}>
+          <Receipt className="h-4 w-4 ml-1" /> فاوتشر / مستندات
+        </Button>
+      </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as TabKey)}>
         <div className="flex flex-wrap items-center gap-2">

@@ -1,3 +1,4 @@
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import { useState } from "react";
 import { Plus, Users, Star, Grid, Table, Archive, Upload } from "lucide-react";
 import { ImportContactsDialog } from "@/components/whatsapp/ImportContactsDialog";
@@ -89,7 +90,7 @@ const Customers = () => {
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(customer => 
-        customer.name.toLowerCase().includes(searchLower) ||
+        customerDisplayName(customer.name).toLowerCase().includes(searchLower) ||
         customer.phone?.includes(filters.searchTerm) ||
         customer.email?.toLowerCase().includes(searchLower) ||
         customer.passport_number?.toLowerCase().includes(searchLower)

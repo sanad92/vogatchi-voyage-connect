@@ -1,8 +1,9 @@
+import { bookingStatusLabel } from '@/lib/bookingStatus';
+import { customerDisplayName } from '@/lib/customerDisplayName';
 import { Badge } from '@/components/ui/badge';
 import { Hotel, Plane, Car, Truck, User, MapPin, Calendar, UserCheck, Gauge } from 'lucide-react';
 import type { Workspace } from './types';
 import {
-  STAGE_LABELS,
   PAYMENT_LABELS,
   PROFIT_LABELS,
   type PaymentStatus,
@@ -18,25 +19,16 @@ const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
 
 interface Props {
   workspace: Workspace;
-  paymentStatus: PaymentStatus;
-  profitHealth: ProfitHealth;
+  paymentStatus?: PaymentStatus;
+  profitHealth?: ProfitHealth;
 }
-
-const stageTone = (s?: string): string => {
-  if (!s) return 'bg-muted text-foreground';
-  if (s === 'completed' || s === 'post_travel') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200';
-  if (s === 'cancelled') return 'bg-destructive/10 text-destructive';
-  if (s === 'paid' || s === 'traveling') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200';
-  if (s === 'confirmed') return 'bg-primary/10 text-primary';
-  return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200';
-};
 
 const paymentTone = (p: PaymentStatus) =>
   p === 'paid'
     ? 'bg-emerald-100 text-emerald-800'
     : p === 'partial'
       ? 'bg-amber-100 text-amber-800'
-      : p === 'refunded'
+      : p === 'refunded' || p === 'no_balance' || p === 'unknown'
         ? 'bg-muted text-muted-foreground'
         : 'bg-destructive/10 text-destructive';
 
@@ -67,7 +59,6 @@ export const WorkspaceExecutiveHeader = ({ workspace, paymentStatus, profitHealt
   const b = workspace.booking;
   const ti = typeInfo[b?.booking_type as string] || typeInfo.hotel;
   const TypeIcon = ti.icon;
-  const stage = b?.workflow_stage as string | undefined;
   const sla = computeSLA(workspace);
   const dest = destinationOf(workspace);
   const dates =
@@ -90,16 +81,15 @@ export const WorkspaceExecutiveHeader = ({ workspace, paymentStatus, profitHealt
         </div>
         <div className="flex-1" />
         <div className="flex flex-wrap gap-1.5 items-center">
-          <Badge className={stageTone(stage)}>{STAGE_LABELS[stage as keyof typeof STAGE_LABELS] || stage || '—'}</Badge>
-          <Badge variant="outline">{b?.status || '—'}</Badge>
-          <Badge className={paymentTone(paymentStatus)}>{PAYMENT_LABELS[paymentStatus]}</Badge>
-          <Badge className={profitTone(profitHealth)}>{PROFIT_LABELS[profitHealth]}</Badge>
+          <Badge variant="outline">{bookingStatusLabel(b?.status)}</Badge>
+          {paymentStatus && <Badge className={paymentTone(paymentStatus)}>{PAYMENT_LABELS[paymentStatus]}</Badge>}
+          {profitHealth && <Badge className={profitTone(profitHealth)}>{PROFIT_LABELS[profitHealth]}</Badge>}
         </div>
       </div>
 
       {/* Row 2 */}
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground border-t pt-3">
-        <Meta icon={User} label="العميل" value={workspace.customer?.name || b?.customer_name || '—'} />
+        <Meta icon={User} label="العميل" value={customerDisplayName(workspace.customer?.name || b?.customer_name) || '—'} />
         <Meta icon={MapPin} label="الوجهة" value={dest} />
         <Meta icon={Calendar} label="التواريخ" value={dates} />
         <Meta icon={UserCheck} label="الاستشاري" value={b?.assigned_to_name || b?.created_by_name || '—'} />

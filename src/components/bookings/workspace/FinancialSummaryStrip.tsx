@@ -1,15 +1,14 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useBookingProfitCockpit } from '@/hooks/useBookingProfitCockpit';
+import type { useBookingProfitCockpit } from '@/hooks/useBookingProfitCockpit';
 
 interface Props {
-  bookingId: string;
+  cockpit: ReturnType<typeof useBookingProfitCockpit>;
 }
 
-const fmt = (n: number, ccy: string) => `${Math.round(n).toLocaleString()} ${ccy}`;
+const fmt = (n: number, ccy: string) => `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${ccy}`;
 
-export const FinancialSummaryStrip = ({ bookingId }: Props) => {
-  const { data, isLoading, error } = useBookingProfitCockpit(bookingId);
+export const FinancialSummaryStrip = ({ cockpit: { data, isLoading, error } }: Props) => {
 
   if (isLoading) {
     return <Card className="p-4 text-sm text-muted-foreground">جاري حساب المؤشرات المالية...</Card>;
@@ -27,6 +26,12 @@ export const FinancialSummaryStrip = ({ bookingId }: Props) => {
   const custBalTone = t.customer_remaining > 0 ? 'text-destructive' : 'text-emerald-600';
   const supBalTone = t.supplier_remaining > 0 ? 'text-amber-600' : 'text-emerald-600';
 
+  const supplierBalanceBasis = {
+    supplier_invoices: 'حسب فواتير المورد المسجلة',
+    cancelled_supplier_invoices: 'حسب فواتير المورد بعد الإلغاء',
+    booking_cost: 'حسب تكلفة الحجز',
+  }[t.supplier_due_basis];
+
   const cells = [
     { label: 'سعر البيع', value: fmt(t.selling, currency) },
     { label: 'تكلفة المورد', value: fmt(t.supplier_cost, currency) },
@@ -35,7 +40,7 @@ export const FinancialSummaryStrip = ({ bookingId }: Props) => {
     { label: 'محصل من العميل', value: fmt(t.customer_collected, currency), tone: 'text-emerald-600' },
     { label: 'رصيد العميل', value: fmt(t.customer_remaining, currency), tone: custBalTone },
     { label: 'مدفوع للمورد', value: fmt(t.supplier_paid, currency), tone: 'text-emerald-600' },
-    { label: 'رصيد المورد', value: fmt(t.supplier_remaining, currency), tone: supBalTone },
+    { label: 'رصيد المورد', value: fmt(t.supplier_remaining, currency), tone: supBalTone, basis: supplierBalanceBasis },
   ];
 
   return (
@@ -46,9 +51,16 @@ export const FinancialSummaryStrip = ({ bookingId }: Props) => {
           <div key={c.label} className="min-w-0">
             <p className="text-[11px] text-muted-foreground truncate">{c.label}</p>
             <p className={`text-sm md:text-base font-semibold truncate ${c.tone || ''}`}>{c.value}</p>
+            {c.basis && <p className="text-xs text-muted-foreground">{c.basis}</p>}
           </div>
         ))}
       </div>
+      {t.supplier_due_basis === 'supplier_invoices' && Math.abs(t.supplier_invoiced - t.supplier_cost) >= 0.01 && (
+        <div className="mt-3 flex flex-wrap gap-x-2 text-xs text-amber-700 dark:text-amber-300">
+          <span>الفرق بين تكلفة الحجز وفواتير المورد</span>
+          <span dir="ltr">{fmt(Math.abs(t.supplier_invoiced - t.supplier_cost), currency)}</span>
+        </div>
+      )}
     </Card>
   );
 };

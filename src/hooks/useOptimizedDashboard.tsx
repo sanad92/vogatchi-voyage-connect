@@ -41,7 +41,7 @@ export const useOptimizedDashboard = (currency = 'EGP') => {
       return {
         realStats: {
           totalBookings: summary?.bookings_count ?? 0, totalRevenue: summary?.selling ?? 0,
-          activeCustomers: 0, monthlyGrowth: finance.data?.comparison.selling_change_pct ?? 0,
+          activeCustomers: 0, monthlyGrowth: finance.data?.comparison?.selling_change_pct ?? 0,
           netProfit: summary?.net_contribution ?? 0, currency,
         },
         alerts: { outstandingAmount: summary?.customer_remaining ?? 0, outstandingCount: 0, checkoutsToday: checkouts.count ?? 0, currency },
@@ -51,5 +51,5 @@ export const useOptimizedDashboard = (currency = 'EGP') => {
     },
     staleTime: 30000,
   });
-  return { dashboardData: query.data, isLoading: query.isLoading || loading, error: query.error };
+  return { dashboardData: query.data, isLoading: query.isLoading || loading, error: query.error, refetch: query.refetch, isFetching: query.isFetching };
 };

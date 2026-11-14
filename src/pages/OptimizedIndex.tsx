@@ -55,24 +55,24 @@ const OptimizedIndex = () => {
     if (!screen || !canAccessScreen(screen)) return [];
     return [{ href, title: href.includes('followups') ? 'متابعات المبيعات' : screen.title }];
   });
-  const { dashboardData, isLoading, error } = useOptimizedDashboard(currency);
+  const { dashboardData, isLoading, error, refetch, isFetching } = useOptimizedDashboard(currency);
 
 
-  if (error) {
-    return (
-      <div className="p-4 lg:p-8 max-w-[1600px] mx-auto">
-        <Alert className="border-destructive/20 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <AlertDescription className="text-destructive mb-4">
-            حدث خطأ في تحميل بيانات الداشبورد. يرجى إعادة تحميل الصفحة.
-          </AlertDescription>
-          <Button onClick={() => window.location.reload()} variant="outline" size="sm" className="mt-2">
-            <RefreshCw className="h-4 w-4 ml-2" />
-            إعادة تحميل
-          </Button>
-        </Alert>
-      </div>
-    );
+  const loadError = error && (
+    <Alert className="border-destructive/20 bg-destructive/10">
+      <AlertTriangle className="h-4 w-4 text-destructive" />
+      <AlertDescription className="text-destructive mb-4">
+        تعذر تحميل بيانات لوحة التحكم. حاول مرة أخرى.
+      </AlertDescription>
+      <Button onClick={() => void refetch()} disabled={isFetching} variant="outline" size="sm" className="mt-2">
+        <RefreshCw className="h-4 w-4 ml-2" />
+        إعادة المحاولة
+      </Button>
+    </Alert>
+  );
+
+  if (!dashboardData && loadError) {
+    return <div className="p-4 lg:p-8 max-w-[1600px] mx-auto">{loadError}</div>;
   }
 
   if (isLoading) return <DashboardSkeleton />;
@@ -88,6 +88,7 @@ const OptimizedIndex = () => {
     <OptimizedErrorBoundary>
       <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
         <DashboardHeader />
+        {loadError}
         <OrganizationContactReminder />
         {dailyActions.length > 0 && <Card className="space-y-3 p-4">
           <h2 className="text-base font-semibold">متابعة الشغل اليوم</h2>

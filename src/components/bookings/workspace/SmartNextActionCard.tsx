@@ -8,9 +8,10 @@ import type { Workspace } from './types';
 interface Props {
   workspace: Workspace;
   ctx: WorkflowContext;
+  canEditBooking: boolean;
 }
 
-export const SmartNextActionCard = ({ workspace, ctx }: Props) => {
+export const SmartNextActionCard = ({ workspace, ctx, canEditBooking }: Props) => {
   const navigate = useNavigate();
   const rec = recommendNextAction(ctx);
   if (rec.key === 'none') return null;
@@ -38,7 +39,7 @@ export const SmartNextActionCard = ({ workspace, ctx }: Props) => {
           <p className="text-xs text-muted-foreground mt-0.5">{rec.rationale}</p>
         </div>
         <div className="flex gap-2">
-          {rec.advanceTo && (
+          {canEditBooking && rec.advanceTo && (
             <Button size="sm" variant="ghost" onClick={advance} title="تم بالفعل / تخطي">
               <Check className="h-4 w-4 ml-1" /> تم
             </Button>

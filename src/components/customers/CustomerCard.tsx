@@ -1,3 +1,4 @@
+import { customerDisplayName } from '@/lib/customerDisplayName';
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ const CustomerCard = ({ customer, onSelect, onCustomerUpdated, onArchive }: Cust
               <User className="h-4 w-4 text-blue-600" />
               <h3 className="min-w-0 text-lg font-semibold">
                 <Link to={`/customers/${customer.id}`} className="break-words text-primary underline-offset-4 hover:underline">
-                  {customer.name}
+                  {customerDisplayName(customer.name)}
                 </Link>
               </h3>
             </div>
