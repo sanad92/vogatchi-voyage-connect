@@ -37,6 +37,7 @@ const hook=await load('../src/hooks/useUnifiedBookings.ts',{
  react:{useRef:value=>({current:value})},
  '@tanstack/react-query':{useQuery:()=>({}),useMutation:x=>x,useQueryClient:()=>({invalidateQueries:async({queryKey})=>invalidations.push(queryKey)})},
  '@/integrations/supabase/client':{supabase:{}},
+ '@/lib/postgrest-safe':{sanitizeSearchTerm:value=>value},
  '@/hooks/useOrgId':{useOrgId:()=>org},
  './useOrgId':{useOrgId:()=>org},
  '@/hooks/useOptimizedAuth':{useOptimizedAuth:()=>({user:user?{id:user}:null})},
@@ -74,7 +75,15 @@ const navigations=[],effects=[];
 const form={booking_type:'hotel',customer_name:'QA Guest',customer_email:'qa@example.invalid',supplier_id:'supplier-a',
  selling_price:1500,cost_price:900,hotel_name:'Room',currency:'EGP',start_date:'2026-10-10',end_date:'2026-10-12'};
 const wizard={formData:form,currentStep:3,errors:{},updateField:()=>{},updateFields:()=>{},goBack:()=>{},goNext:()=>{},clearDraft:()=>cleared++};
+const termsModule=await load('../src/lib/bookingCancellationTerms.ts');
+assert.equal(termsModule.previousCalendarDay('2027-01-01T01:00'),'2026-12-31');
+assert.equal(termsModule.previousCalendarDay('2028-03-01T00:00'),'2028-02-29');
+form.cancellation_terms={...termsModule.emptyTerms,payment_due:'2027-01-18T18:00',planned_payment:'2027-01-18'};
+assert.equal(termsModule.termsError(form.cancellation_terms),undefined);
+assert.ok(termsModule.termsError({...form.cancellation_terms,planned_payment:'2027-01-19'}));
 const pageImports={
+ '@/lib/bookingCancellationTerms':termsModule,
+ '@/components/bookings/BookingCancellationTermsFields':{BookingCancellationTermsFields:'BookingCancellationTermsFields',BookingCancellationTermsSummary:'BookingCancellationTermsSummary'},
  react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect:fn=>effects.push(fn())},
  'react/jsx-runtime':{jsx,jsxs:jsx},
  'react-router-dom':{useNavigate:()=>x=>navigations.push(x)},
@@ -82,7 +91,7 @@ const pageImports={
  '@/hooks/useOptimizedAuth':{useOptimizedAuth:()=>({user:{id:user}})},
  '@/hooks/useSupabasePermissions':{useSupabasePermissions:()=>({hasAllPermissions:()=>allowed})},
  '@/hooks/useUnifiedBookings':{useUnifiedBookings:()=>({finishCreation:()=>{},createBooking:{isPending:pending,mutateAsync:async input=>{
-  mutations++;assert.equal(input.customer_email,'qa@example.invalid');assert.equal(input.hotelDetails.hotel_name,'Room');
+  mutations++;assert.equal(input.customer_email,'qa@example.invalid');assert.equal(input.hotelDetails.hotel_name,'Room');assert.equal(input.cancellation_terms.payment_due,'2027-01-18T18:00');
   if(hold)await hold;if(fail)throw Error('detail failure');return {id:'booking-a',invoice_id:'invoice-a'};
  }}})},
  '@/hooks/useWizardForm':{useWizardForm:()=>wizard},

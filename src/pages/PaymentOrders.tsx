@@ -43,6 +43,9 @@ type Order = {
   amount: number;
   currency: string;
   due_date: string | null;
+  supplier_due_at: string | null;
+  supplier_due_timezone: string | null;
+  schedule_date: string | null;
   status: string;
   approval_status: string;
   service_type: string;
@@ -92,6 +95,7 @@ export default function PaymentOrders() {
   const bookingId = params.get("booking_id");
   const [references, setReferences] = useState<Record<string, string>>({});
   const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
+  const [scheduledDay, setScheduledDay] = useState("");
   const [status, setStatus] = useState("all"),
     [search, setSearch] = useState(params.get("ref") ?? ""),
     [accounts, setAccounts] = useState<Record<string, string>>({});
@@ -100,16 +104,19 @@ export default function PaymentOrders() {
   const approve = useApproveSupplierPO();
   const pay = useRecordSupplierPayment();
   const query = useQuery({
-    queryKey: ["supplier-payment-orders-all", orgId, orderId, bookingId],
+    queryKey: ["supplier-payment-orders-all", orgId, orderId, bookingId, scheduledDay],
     enabled: !!orgId,
     queryFn: async () => {
       let request = (supabase as any)
         .from("supplier_payment_orders")
         .select("*, suppliers(name), bookings(booking_number, status, workflow_stage), supplier_payment_allocations(amount), refund_balance_settlements(amount)")
         .eq("organization_id", orgId!)
+        .order("schedule_date", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
       if (orderId) request = request.eq("id", orderId);
       if (bookingId) request = request.eq("booking_id", bookingId);
+      if (!orderId && scheduledDay) request = request.eq("schedule_date", scheduledDay)
+        .in("status", ["draft", "pending", "approved", "partially_paid"]).neq("approval_status", "rejected");
       const { data, error } = await request;
       if (error) throw error;
       return (data || []).map((order: Order & { refund_balance_settlements?: Array<{ amount: number }> }) => {
@@ -117,7 +124,7 @@ export default function PaymentOrders() {
           ...(order.supplier_payment_allocations ?? []), ...(order.refund_balance_settlements ?? []),
         ]);
         return { ...order, ...balance, remainingAmount: order.status === 'cancelled' ? 0 : balance.remainingAmount };
-      }) as Order[];
+      }).filter((order: Order) => !scheduledDay || !!orderId || order.remainingAmount > 0) as Order[];
     },
   });
   const rows = useMemo(
@@ -187,6 +194,11 @@ export default function PaymentOrders() {
                 <SelectItem value="partially_paid">مدفوع جزئيًا</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2">
+              <label htmlFor="scheduled-day" className="text-sm">موعد الدفع المخطط</label>
+              <Input id="scheduled-day" type="date" dir="ltr" value={scheduledDay} onChange={event => setScheduledDay(event.target.value)} />
+              {scheduledDay && <Button type="button" variant="ghost" onClick={() => setScheduledDay('')}>مسح</Button>}
+            </div>
           </>}
         </CardContent>
       </Card>
@@ -218,7 +230,8 @@ export default function PaymentOrders() {
                     <TableHead>الحجز</TableHead>
                     <TableHead>المورد</TableHead>
                     <TableHead>المبلغ</TableHead>
-                    <TableHead>الاستحقاق</TableHead>
+                    <TableHead>استحقاق المورد</TableHead>
+                    <TableHead>موعد الدفع المخطط</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>الإجراء</TableHead>
                   </TableRow>
@@ -242,7 +255,17 @@ export default function PaymentOrders() {
                       <TableCell>
                         {Number(r.amount).toLocaleString("ar-EG")} {r.currency}
                       </TableCell>
-                      <TableCell>{r.due_date || "—"}</TableCell>
+                      <TableCell>
+                        {r.supplier_due_at && r.supplier_due_timezone ? (
+                          <div className="whitespace-nowrap">
+                            <span>{new Date(r.supplier_due_at).toLocaleString('ar-EG', {
+                              timeZone: r.supplier_due_timezone, dateStyle: 'short', timeStyle: 'short',
+                            })}</span>
+                            <span dir="ltr" className="block text-xs text-muted-foreground">{r.supplier_due_timezone}</span>
+                          </div>
+                        ) : r.due_date || "—"}
+                      </TableCell>
+                      <TableCell>{r.schedule_date || "—"}</TableCell>
                       <TableCell>
                         <Badge
                           variant={

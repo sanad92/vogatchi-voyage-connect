@@ -1,3 +1,5 @@
+import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
+import { emptyTerms, readTerms, termsError } from '@/lib/bookingCancellationTerms';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuotes, type QuoteFormData } from '@/hooks/useQuotes';
@@ -29,7 +31,11 @@ const quoteSteps: WizardStepConfig[] = [
     title: 'عناصر العرض',
     validate: (data) => {
       const errors: Record<string, string> = {};
-      if (!data.items || data.items.length === 0) errors.items = 'يرجى إضافة عنصر واحد على الأقل';
+      if (!data.items?.length) errors.items = 'يرجى إضافة عنصر واحد على الأقل';
+      for (const [index, item] of (data.items ?? []).entries()) {
+        const error = termsError(readTerms(item.details?.cancellation_terms), Number(item.total_cost), Number(item.total_selling));
+        if (error) { errors.items = `${index + 1}. ${error}`; break; }
+      }
       return errors;
     },
   },
@@ -58,6 +64,7 @@ export default function NewQuote() {
 }
 
 function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuoteSource }) {
+  const { settings } = useOrganizationSettings();
   const navigate = useNavigate();
   const { createQuote } = useQuotes();
 
@@ -131,10 +138,14 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
       valid_until: wizard.formData.valid_until,
       assigned_employee_id: wizard.formData.assigned_employee_id,
       status,
-      items: sameContact ? items.map((item: QuoteFormData['items'][number]) => ({
+      items: items.map((item: QuoteFormData['items'][number]) => ({
         ...item,
-        details: { ...item.details, source_whatsapp_conversation_id: whatsapp.conversationId },
-      })) : items,
+        details: {
+          ...item.details,
+          cancellation_terms: readTerms(item.details?.cancellation_terms) ?? emptyTerms,
+          ...(sameContact ? { source_whatsapp_conversation_id: whatsapp.conversationId } : {}),
+        },
+      })),
     };
     const quote = await createQuote.mutateAsync(formData);
     wizard.clearDraft();
@@ -249,7 +260,7 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
         {wizard.currentStep === 1 && (
           <Card>
             <CardContent className="pt-6">
-              <QuoteItemsEditor items={items} onChange={newItems => wizard.updateField('items', newItems)} />
+              <QuoteItemsEditor items={items} currency={settings?.currency || 'EGP'} onChange={newItems => wizard.updateField('items', newItems)} />
               <FieldError error={wizard.errors.items} />
               <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextLabel="مراجعة" />
             </CardContent>

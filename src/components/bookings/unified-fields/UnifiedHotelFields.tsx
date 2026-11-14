@@ -168,7 +168,7 @@ const UnifiedHotelFields = ({ formData, updateField, updateFields, errors }: Uni
 
       {/* سياسة الإلغاء */}
       <div>
-        <Label>سياسة الإلغاء</Label>
+        <Label>ملاحظات إضافية عن الإلغاء والتعديل</Label>
         <Textarea value={formData.cancellation_policy || ''} onChange={e => updateField('cancellation_policy', e.target.value)} placeholder="سياسة الإلغاء والتعديل" rows={2} />
       </div>
     </div>

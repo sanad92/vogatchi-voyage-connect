@@ -31,7 +31,7 @@ export const useQuoteConversion = () => {
     },
     onSuccess: async (result) => {
       await Promise.all(['quotes', 'quote', 'quote-bookings', 'unified-bookings', 'bookings',
-        'invoices', 'supplier-payment-orders', 'supplier-invoices', 'booking-workspace']
+        'invoices', 'supplier-payment-orders', 'supplier-invoices', 'booking-workspace', 'supplier-payment-orders-all', 'travel-calendar']
         .map(key => queryClient.invalidateQueries({ queryKey: [key] })));
       toast.success(result.already_converted ? 'العرض محوّل بالفعل؛ تم استرجاع نفس الحجز' :
         'تم إنشاء الحجز وفاتورة العميل ومستحقات الموردين');

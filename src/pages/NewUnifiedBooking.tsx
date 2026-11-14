@@ -1,3 +1,5 @@
+import { BookingCancellationTermsFields, BookingCancellationTermsSummary } from '@/components/bookings/BookingCancellationTermsFields';
+import { emptyTerms, termsError } from '@/lib/bookingCancellationTerms';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedBookings, BookingType } from '@/hooks/useUnifiedBookings';
@@ -56,6 +58,8 @@ const wizardSteps: WizardStepConfig[] = [
       if (!Number.isFinite(Number(data.selling_price)) || Number(data.selling_price) <= 0) errors.selling_price = 'سعر البيع مطلوب';
       if (data.cost_price == null || data.cost_price === '' || !Number.isFinite(Number(data.cost_price)) || Number(data.cost_price) < 0) errors.cost_price = 'أدخل تكلفة غير سالبة';
       if (Number(data.cost_price) > 0 && !data.supplier_id) errors.supplier_id = 'اختر المورد لتسجيل المستحقات';
+      const policyError = termsError(data.cancellation_terms, Number(data.cost_price), Number(data.selling_price));
+      if (policyError) errors.cancellation_terms = policyError;
       if (data.booking_type === 'hotel' && !data.hotel_name) errors.hotel_name = 'اسم الفندق مطلوب';
       if (data.booking_type === 'flight' && !data.airline) errors.airline = 'شركة الطيران مطلوبة';
       if (data.booking_type === 'car_rental' && !data.car_type) errors.car_type = 'نوع السيارة مطلوب';
@@ -145,6 +149,7 @@ export const NewUnifiedBookingForm = () => {
         start_date: wizard.formData.start_date || undefined,
         end_date: wizard.formData.end_date || undefined,
         notes: wizard.formData.notes || undefined,
+        cancellation_terms: wizard.formData.cancellation_terms ?? emptyTerms,
         [detailKeyMap[bookingType]]: Object.keys(details).length > 0 ? details : undefined,
       });
 
@@ -397,6 +402,9 @@ export const NewUnifiedBookingForm = () => {
                   </div>
                 </div>
               </div>
+              <BookingCancellationTermsFields value={wizard.formData.cancellation_terms} currency={wizard.formData.currency}
+                onChange={terms => wizard.updateField('cancellation_terms', terms)} />
+              <FieldError error={wizard.errors.cancellation_terms} />
               <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextLabel="مراجعة" />
             </CardContent>
           </Card>
@@ -447,6 +455,8 @@ export const NewUnifiedBookingForm = () => {
                   </div>
                 </div>
               )}
+
+              <BookingCancellationTermsSummary terms={wizard.formData.cancellation_terms ?? emptyTerms} currency={wizard.formData.currency} />
 
               {wizard.formData.notes && (
                 <div className="p-4 rounded-lg bg-muted/50">

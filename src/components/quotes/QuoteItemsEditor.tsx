@@ -1,3 +1,6 @@
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { BookingCancellationTermsFields } from '@/components/bookings/BookingCancellationTermsFields';
+import { readTerms } from '@/lib/bookingCancellationTerms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,9 +19,11 @@ const itemTypes = [
 interface Props {
   items: QuoteItem[];
   onChange: (items: QuoteItem[]) => void;
+  currency: string;
 }
 
-export default function QuoteItemsEditor({ items, onChange }: Props) {
+export default function QuoteItemsEditor({ items, onChange, currency }: Props) {
+  const { suppliers } = useSuppliers();
   const addItem = () => {
     onChange([
       ...items,
@@ -40,7 +45,7 @@ export default function QuoteItemsEditor({ items, onChange }: Props) {
 
   const updateItem = (idx: number, field: string, value: any) => {
     const updated = [...items];
-    (updated[idx] as any)[field] = value;
+    updated[idx] = { ...updated[idx], [field]: value };
 
     // Recalculate totals
     const item = updated[idx];
@@ -138,6 +143,16 @@ export default function QuoteItemsEditor({ items, onChange }: Props) {
               </div>
             </div>
           </div>
+          <div className="space-y-1">
+            <Label htmlFor={`quote-item-supplier-${idx}`}>المورد</Label>
+            <select id={`quote-item-supplier-${idx}`} value={item.supplier_id || ''} className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+              onChange={event => updateItem(idx, 'supplier_id', event.target.value || null)}>
+              <option value="">اختر المورد</option>
+              {suppliers?.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
+            </select>
+          </div>
+          <BookingCancellationTermsFields currency={currency} value={readTerms(item.details?.cancellation_terms)}
+            onChange={terms => updateItem(idx, 'details', { ...item.details, cancellation_terms: terms })} />
         </div>
       ))}
 
