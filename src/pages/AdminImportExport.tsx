@@ -4,6 +4,7 @@ import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import DataImportExport from '@/components/admin/DataImportExport';
 import EnhancedReportExporter from '@/components/admin/EnhancedReportExporter';
 import OpenHotelBookingImport from '@/components/admin/OpenHotelBookingImport';
+import OpeningPartyBalancePreview from '@/components/admin/OpeningPartyBalancePreview';
 
 const AdminImportExport = () => {
   const { hasRole, isSuperAdmin } = useOptimizedAuth();
@@ -31,6 +32,7 @@ const AdminImportExport = () => {
           <div className="space-y-8">
             <DataImportExport />
             <OpenHotelBookingImport />
+            <OpeningPartyBalancePreview />
           </div>
           <EnhancedReportExporter />
         </div>
