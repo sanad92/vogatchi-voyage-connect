@@ -28,7 +28,7 @@ const SubscriptionExpiredPage = () => {
             </h1>
             <p className="text-muted-foreground">
               {isTrialExpired 
-                ? 'انتهت فترة التجربة المجانية (14 يوم). يرجى ترقية خطتك للاستمرار.'
+                ? 'انتهت فترة التجربة المجانية. يرجى ترقية خطتك للاستمرار.'
                 : <>انتهت صلاحية اشتراكك
                   {subscription?.expires_at && (
                     <> بتاريخ <strong>{new Date(subscription.expires_at).toLocaleDateString('ar-EG')}</strong></>

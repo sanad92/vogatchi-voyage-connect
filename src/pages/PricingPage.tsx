@@ -270,7 +270,7 @@ const PricingPage = () => {
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
             <Badge className="border border-border/30 bg-primary/15 px-4 py-1.5 text-brand-gold hover:bg-primary/15">
               <Sparkles className="ml-1.5 h-4 w-4" />
-              تجربة مجانية لمدة 14 يومًا
+              تجربة مجانية لمدة 7 أيام
             </Badge>
             <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
               خطط وأسعار SafarERP
@@ -363,7 +363,7 @@ const PricingPage = () => {
                           <Button asChild size="lg" className="w-full rounded-xl font-bold"
                             variant={recommended ? 'default' : 'outline'}>
                             <Link to={user ? checkoutUrl : '/signup'}>
-                              {user ? 'اشترك الآن' : 'ابدأ تجربة 14 يومًا'}
+                              {user ? 'اشترك الآن' : 'ابدأ تجربة 7 أيام'}
                               <ArrowLeft className="ms-2 h-4 w-4" aria-hidden="true" />
                             </Link>
                           </Button>
@@ -552,7 +552,7 @@ const PricingPage = () => {
             {[
               {
                 question: 'هل توجد خطة مجانية؟',
-                answer: 'تقدر تبدأ بتجربة مجانية لمدة 14 يومًا، وبعدها تختار إحدى الباقات المدفوعة للاستمرار.',
+                answer: 'تقدر تبدأ بتجربة مجانية لمدة 7 أيام، وبعدها تختار إحدى الباقات المدفوعة للاستمرار.',
               },
               {
                 question: 'هل السعر لكل مستخدم؟',

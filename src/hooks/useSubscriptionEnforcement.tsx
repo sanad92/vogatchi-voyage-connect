@@ -5,6 +5,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 export interface SubscriptionStatus {
   active: boolean;
   expired: boolean;
+  starts_at?: string;
   expires_at: string | null;
   status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'none';
   is_trialing: boolean;

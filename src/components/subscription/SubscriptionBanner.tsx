@@ -11,9 +11,14 @@ const SubscriptionBanner = () => {
   if (loading || !subscription) return null;
 
   // Trial banner
-  if (isTrialing && trialDaysRemaining !== null) {
-    const urgency = trialDaysRemaining <= 3 ? 'destructive' : trialDaysRemaining <= 7 ? 'warning' : 'info';
-    const trialPercent = ((14 - trialDaysRemaining) / 14) * 100;
+  if (isTrialing && !isExpired && trialDaysRemaining !== null) {
+    const urgency = trialDaysRemaining <= 1 ? 'destructive' : trialDaysRemaining <= 3 ? 'warning' : 'info';
+    const startsAt = Date.parse(subscription.starts_at ?? '');
+    const expiresAt = Date.parse(subscription.expires_at ?? '');
+    const duration = expiresAt - startsAt;
+    const trialPercent = duration > 0
+      ? Math.min(100, Math.max(0, ((Date.now() - startsAt) / duration) * 100))
+      : null;
 
     return (
       <Alert className={`mx-4 mt-4 ${
@@ -46,7 +51,7 @@ const SubscriptionBanner = () => {
               </Button>
             </Link>
           </div>
-          <Progress value={trialPercent} className="h-2" />
+          {trialPercent !== null && <Progress value={trialPercent} className="h-2" />}
           <p className="text-xs text-muted-foreground">
             {trialDaysRemaining <= 3
               ? 'ستفقد إمكانية التعديل على البيانات بعد انتهاء التجربة!'

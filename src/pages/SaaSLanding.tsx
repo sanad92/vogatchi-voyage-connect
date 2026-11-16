@@ -160,7 +160,7 @@ const faqs = [
   {
     question: 'كيف أبدأ التجربة؟',
     answer:
-      'أنشئ حساب شركتك، أضف أعضاء الفريق وحدد الأدوار، ثم ابدأ بتسجيل أول عميل أو طلب. فترة التجربة المتاحة هي 14 يومًا.',
+      'أنشئ حساب شركتك، أضف أعضاء الفريق وحدد الأدوار، ثم ابدأ بتسجيل أول عميل أو طلب. فترة التجربة المتاحة هي 7 أيام.',
   },
 ];
 
@@ -445,7 +445,7 @@ const SaaSLanding = () => {
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
                 <Link to="/signup">
                   <Button size="lg" className="h-[52px] w-full rounded-lg bg-brand-gold px-7 text-base font-semibold text-brand-navy hover:bg-brand-gold/90 sm:w-auto">
-                    ابدأ تجربة 14 يومًا
+                    ابدأ تجربة 7 أيام
                     <ArrowLeft className="mr-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -618,7 +618,7 @@ const SaaSLanding = () => {
             <div className="overflow-hidden rounded-lg border border-border bg-gradient-to-l from-primary via-white to-primary p-7 sm:p-10 lg:p-12">
               <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
                 <div>
-                  <span className="text-xs font-extrabold uppercase tracking-normal text-brand-gold">14 يومًا للتجربة</span>
+                  <span className="text-xs font-extrabold uppercase tracking-normal text-brand-gold">7 أيام للتجربة</span>
                   <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
                     اختبر دورة عملك الحقيقية داخل SafarERP.
                   </h2>
@@ -678,7 +678,7 @@ const SaaSLanding = () => {
             </div>
             <h2 className="text-3xl font-black sm:text-4xl lg:text-5xl">خلّي فريقك يشتغل كنظام واحد.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-brand-gold sm:text-lg">
-              ابدأ تجربة SafarERP لمدة 14 يومًا واختبر الفرق على دورة عمل شركتك الفعلية.
+              ابدأ تجربة SafarERP لمدة 7 أيام واختبر الفرق على دورة عمل شركتك الفعلية.
             </p>
             <Link to="/signup" className="mt-8 inline-flex">
               <Button size="lg" className="h-[52px] rounded-xl bg-card px-8 text-base font-black text-brand-gold shadow-xl hover:bg-muted">
