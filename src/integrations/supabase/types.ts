@@ -5622,6 +5622,7 @@ export type Database = {
           payment_date: string | null
           payment_status: string | null
           updated_at: string | null
+          workflow_managed: boolean
         }
         Insert: {
           booking_amount?: number | null
@@ -5639,6 +5640,7 @@ export type Database = {
           payment_date?: string | null
           payment_status?: string | null
           updated_at?: string | null
+          workflow_managed?: boolean
         }
         Update: {
           booking_amount?: number | null
@@ -5656,6 +5658,7 @@ export type Database = {
           payment_date?: string | null
           payment_status?: string | null
           updated_at?: string | null
+          workflow_managed?: boolean
         }
         Relationships: [
           {
@@ -9909,6 +9912,7 @@ export type Database = {
           departure_date: string | null
           flight_details: string | null
           id: string
+          inventory_private_prices: Json
           madinah_hotel: string | null
           madinah_nights: number
           makkah_hotel: string | null
@@ -9929,6 +9933,7 @@ export type Database = {
           transport_details: string | null
           travel_scope: string
           updated_at: string
+          uses_room_inventory: boolean
         }
         Insert: {
           airline?: string | null
@@ -9939,6 +9944,7 @@ export type Database = {
           departure_date?: string | null
           flight_details?: string | null
           id?: string
+          inventory_private_prices?: Json
           madinah_hotel?: string | null
           madinah_nights?: number
           makkah_hotel?: string | null
@@ -9959,6 +9965,7 @@ export type Database = {
           transport_details?: string | null
           travel_scope?: string
           updated_at?: string
+          uses_room_inventory?: boolean
         }
         Update: {
           airline?: string | null
@@ -9969,6 +9976,7 @@ export type Database = {
           departure_date?: string | null
           flight_details?: string | null
           id?: string
+          inventory_private_prices?: Json
           madinah_hotel?: string | null
           madinah_nights?: number
           makkah_hotel?: string | null
@@ -9989,6 +9997,7 @@ export type Database = {
           transport_details?: string | null
           travel_scope?: string
           updated_at?: string
+          uses_room_inventory?: boolean
         }
         Relationships: [
           {
@@ -10492,6 +10501,8 @@ export type Database = {
           full_name: string
           gender: string | null
           id: string
+          inventory_booking_id: string | null
+          inventory_passenger_no: number | null
           madinah_room: string | null
           madinah_rooming_group_id: string | null
           mahram_name: string | null
@@ -10532,6 +10543,8 @@ export type Database = {
           full_name: string
           gender?: string | null
           id?: string
+          inventory_booking_id?: string | null
+          inventory_passenger_no?: number | null
           madinah_room?: string | null
           madinah_rooming_group_id?: string | null
           mahram_name?: string | null
@@ -10572,6 +10585,8 @@ export type Database = {
           full_name?: string
           gender?: string | null
           id?: string
+          inventory_booking_id?: string | null
+          inventory_passenger_no?: number | null
           madinah_room?: string | null
           madinah_rooming_group_id?: string | null
           mahram_name?: string | null
@@ -10612,6 +10627,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilgrims_inventory_booking_id_fkey"
+            columns: ["inventory_booking_id"]
+            isOneToOne: false
+            referencedRelation: "umrah_inventory_bookings"
             referencedColumns: ["id"]
           },
           {
@@ -14802,6 +14824,160 @@ export type Database = {
           },
         ]
       }
+      umrah_booking_invoice_credits: {
+        Row: {
+          amount: number
+          created_at: string
+          invoice_id: string
+          operation_id: string
+          organization_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          invoice_id: string
+          operation_id: string
+          organization_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          invoice_id?: string
+          operation_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "umrah_booking_invoice_credits_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_booking_invoice_credits_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: true
+            referencedRelation: "pilgrimage_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_booking_invoice_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      umrah_inventory_bookings: {
+        Row: {
+          booking_id: string | null
+          booking_number: number
+          created_at: string
+          created_by: string
+          currency: string
+          customer_id: string
+          id: string
+          mode: string
+          organization_id: string
+          passenger_count: number
+          program_id: string
+          request_fingerprint: string
+          room_type: string
+          total_price: number
+        }
+        Insert: {
+          booking_id?: string | null
+          booking_number?: never
+          created_at?: string
+          created_by: string
+          currency: string
+          customer_id: string
+          id: string
+          mode: string
+          organization_id: string
+          passenger_count: number
+          program_id: string
+          request_fingerprint: string
+          room_type: string
+          total_price: number
+        }
+        Update: {
+          booking_id?: string | null
+          booking_number?: never
+          created_at?: string
+          created_by?: string
+          currency?: string
+          customer_id?: string
+          id?: string
+          mode?: string
+          organization_id?: string
+          passenger_count?: number
+          program_id?: string
+          request_fingerprint?: string
+          room_type?: string
+          total_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "umrah_inventory_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "car_rentals_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "hotel_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "transport_bookings_unified"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umrah_inventory_bookings_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pilgrimage_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       umrah_rooming_groups: {
         Row: {
           city: string
@@ -14811,6 +14987,7 @@ export type Database = {
           group_number: number
           hotel_room_number: string | null
           id: string
+          inventory_room: boolean
           organization_id: string
           program_id: string
           room_type: string
@@ -14823,6 +15000,7 @@ export type Database = {
           group_number: number
           hotel_room_number?: string | null
           id?: string
+          inventory_room?: boolean
           organization_id: string
           program_id: string
           room_type: string
@@ -14835,6 +15013,7 @@ export type Database = {
           group_number?: number
           hotel_room_number?: string | null
           id?: string
+          inventory_room?: boolean
           organization_id?: string
           program_id?: string
           room_type?: string
@@ -17160,9 +17339,17 @@ export type Database = {
         Args: { _session: string; _tolerance?: number }
         Returns: Json
       }
+      approve_booking_commission_cost: {
+        Args: { _booking: string; _cost: number }
+        Returns: undefined
+      }
       approve_pilgrimage_b2b_agreement: {
         Args: { _agreement_id: string }
         Returns: string
+      }
+      approve_pilgrimage_booking_cost: {
+        Args: { _booking: string; _cost: number }
+        Returns: undefined
       }
       approve_platform_bank_transfer: {
         Args: { p_transfer_id: string }
@@ -17297,6 +17484,10 @@ export type Database = {
           supplier_payments_posted: number
         }[]
       }
+      booking_commission_policy: {
+        Args: { _operations: boolean; _org: string; _sales: boolean }
+        Returns: Json
+      }
       booking_make_journal: {
         Args: { b: Database["public"]["Tables"]["bookings"]["Row"] }
         Returns: undefined
@@ -17375,6 +17566,24 @@ export type Database = {
       capture_quote_version_snapshot: {
         Args: { p_quote_id: string }
         Returns: Json
+      }
+      change_booking_edit_request: {
+        Args: {
+          _action: string
+          _booking: string
+          _reason: string
+          _request: string
+        }
+        Returns: string
+      }
+      change_pilgrimage_edit_request: {
+        Args: {
+          _action: string
+          _booking: string
+          _reason: string
+          _request: string
+        }
+        Returns: string
       }
       change_platform_account_role: {
         Args: {
@@ -17481,14 +17690,27 @@ export type Database = {
         }
         Returns: string
       }
+      configure_umrah_room_inventory: {
+        Args: {
+          _city: string
+          _organization_id: string
+          _private_rule: Json
+          _program_id: string
+          _quantity: number
+          _room_type: string
+        }
+        Returns: undefined
+      }
       convert_pilgrimage_retail_group: {
         Args: { _sale_id: string }
         Returns: string
       }
-      convert_quote_atomic: {
-        Args: { _org: string; _quote: string }
-        Returns: Json
-      }
+      convert_quote_atomic:
+        | { Args: { _org: string; _quote: string }; Returns: Json }
+        | {
+            Args: { _org: string; _quote: string; _seller: string }
+            Returns: Json
+          }
       convert_quote_to_bookings: {
         Args: { p_quote_id: string }
         Returns: {
@@ -17580,6 +17802,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_pilgrimage_inventory_booking: {
+        Args: {
+          _customer_id: string
+          _expected_total: number
+          _id: string
+          _mode: string
+          _organization_id: string
+          _passengers: Json
+          _program_id: string
+          _room_type: string
+          _sales_employee_id: string
+        }
+        Returns: string
+      }
       create_pilgrimage_quote_from_availability: {
         Args: {
           _customer_id: string
@@ -17627,6 +17863,19 @@ export type Database = {
           _source: string
           _terms: Json
           _ticket: string
+        }
+        Returns: string
+      }
+      create_umrah_inventory_booking: {
+        Args: {
+          _customer_id: string
+          _expected_total: number
+          _id: string
+          _mode: string
+          _organization_id: string
+          _passengers: Json
+          _program_id: string
+          _room_type: string
         }
         Returns: string
       }
@@ -17829,6 +18078,7 @@ export type Database = {
         Returns: Json
       }
       get_booking_profit_cockpit: { Args: { _booking: string }; Returns: Json }
+      get_booking_staff: { Args: { _booking: string }; Returns: Json }
       get_booking_status_id: { Args: { _name: string }; Returns: string }
       get_business_health_kpis: {
         Args: { p_from?: string; p_to?: string }
@@ -18191,6 +18441,10 @@ export type Database = {
         Args: { _org: string; _sale_id: string }
         Returns: Json
       }
+      get_pilgrimage_booking_staff: {
+        Args: { _booking: string }
+        Returns: Json
+      }
       get_pilgrimage_operation_refunds: {
         Args: { _organization_id: string; _program_id: string }
         Returns: {
@@ -18323,6 +18577,17 @@ export type Database = {
           ticket_number: string
         }[]
       }
+      get_umrah_room_inventory: {
+        Args: { _organization_id: string; _program_id: string }
+        Returns: {
+          city: string
+          contracted: number
+          empty_rooms: number
+          female_beds: number
+          male_beds: number
+          room_type: string
+        }[]
+      }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
@@ -18425,6 +18690,27 @@ export type Database = {
         Args: { _bank_account?: string; _org: string }
         Returns: Json
       }
+      list_booking_sales_staff: {
+        Args: { _org: string }
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
+      list_booking_workflow_commissions: {
+        Args: { _org: string }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          booking_type: string
+          commission_amount: number
+          commission_rate: number
+          currency: string
+          employee_name: string
+          id: string
+          payment_status: string
+        }[]
+      }
       list_org_account_routing: {
         Args: { _org_id: string }
         Returns: {
@@ -18471,6 +18757,27 @@ export type Database = {
           inherits_base_role: boolean
           is_active: boolean
           name: string
+        }[]
+      }
+      list_pilgrimage_booking_commissions: {
+        Args: { _org: string }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          booking_type: string
+          commission_amount: number
+          commission_rate: number
+          currency: string
+          employee_name: string
+          id: string
+          payment_status: string
+        }[]
+      }
+      list_pilgrimage_sales_staff: {
+        Args: { _org: string }
+        Returns: {
+          full_name: string
+          id: string
         }[]
       }
       list_platform_finance_staff: {
@@ -18579,6 +18886,10 @@ export type Database = {
           _treasury_account_id: string
         }
         Returns: undefined
+      }
+      pilgrimage_commission_policy: {
+        Args: { _operations: boolean; _org: string; _sales: boolean }
+        Returns: Json
       }
       platform_audit_actions: {
         Args: never
@@ -18978,6 +19289,10 @@ export type Database = {
           p_reason?: string
         }
         Returns: Json
+      }
+      save_booking_edit_notes: {
+        Args: { _booking: string; _notes: string }
+        Returns: undefined
       }
       schedule_refund_follow_up: {
         Args: { _claim: string; _date: string; _org: string; _refund: string }
