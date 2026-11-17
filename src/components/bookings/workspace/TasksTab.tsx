@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Check, ListChecks, StickyNote, Plus, AlertTriangle, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 import type { Workspace } from './types';
-import type { BookingTask } from '@/hooks/useBookingWorkspace';
+import { isBookingTaskCompleted, isBookingTaskOpen, type BookingTask } from '@/hooks/useBookingWorkspace';
 
 interface Props {
   workspace: Workspace;
@@ -61,11 +61,11 @@ export const TasksTab = ({ workspace }: Props) => {
     const endOfToday = startOfToday + 86400000;
     const groups: Record<Bucket, BookingTask[]> = { overdue: [], today: [], upcoming: [], completed: [] };
     for (const t of workspace.tasks) {
-      if (t.status === 'done') {
+      if (isBookingTaskCompleted(t)) {
         groups.completed.push(t);
         continue;
       }
-      if (t.status === 'cancelled') continue;
+      if (!isBookingTaskOpen(t)) continue;
       const due = t.due_at ? new Date(t.due_at).getTime() : null;
       if (due !== null && due < startOfToday) groups.overdue.push(t);
       else if (due !== null && due < endOfToday) groups.today.push(t);

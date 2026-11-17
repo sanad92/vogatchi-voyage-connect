@@ -7,6 +7,7 @@ import { User, Phone, Mail, Building2, ListChecks, MessageCircle, ExternalLink }
 import { useNavigate } from 'react-router-dom';
 import { useWhatsAppMessages } from '@/hooks/useWhatsAppMessages';
 import { useWhatsAppWindow } from '@/hooks/useWhatsAppWindow';
+import { isBookingTaskOpen } from '@/hooks/useBookingWorkspace';
 import QuoteLinkPanel from '@/components/bookings/QuoteLinkPanel';
 import CustomerHistoryPanel from '@/components/bookings/CustomerHistoryPanel';
 import { ProfitWidget } from './ProfitWidget';
@@ -19,8 +20,8 @@ interface Props {
 
 export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
   const navigate = useNavigate();
-  const nextTask = workspace.tasks.find((t) => t.status !== 'done' && t.status !== 'cancelled');
-  const openTasks = workspace.tasks.filter((t) => t.status !== 'done' && t.status !== 'cancelled').length;
+  const openTasks = workspace.tasks.filter(isBookingTaskOpen);
+  const nextTask = openTasks[0];
   const conversationId = workspace.conversation?.id;
   const booking = workspace.booking;
   const terms = (booking?.cancellation_terms ?? []) as BookingTermsSnapshot[];
@@ -72,7 +73,7 @@ export const OverviewTab = ({ workspace, onOpenTab }: Props) => {
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <ListChecks className="h-4 w-4" /> المهام
-            {openTasks > 0 && <Badge variant="secondary" className="mr-1">{openTasks}</Badge>}
+            {openTasks.length > 0 && <Badge variant="secondary" className="mr-1">{openTasks.length}</Badge>}
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => onOpenTab('tasks')}>عرض الكل</Button>
         </CardHeader>

@@ -24,7 +24,7 @@ export interface OpsCommandCenter {
   } | null;
 }
 
-export type QueueFilter = 'today' | 'overdue' | 'assigned_to_me' | 'edit_requests'
+export type QueueFilter = 'today' | 'overdue' | 'unscheduled' | 'assigned_to_me' | 'edit_requests'
   | 'waiting_customer' | 'waiting_supplier' | 'waiting_payment' | 'completed_today';
 export type TaskWaiting = 'customer' | 'supplier' | 'payment';
 export const opsQueuePageSize = 30;
@@ -81,11 +81,11 @@ export function useOpsQueue(filter: QueueFilter, page: number) {
   });
 }
 
-export function useUpdateOpsTask() {
-  const orgId = useOrgId();
+export function useUpdateOpsTask(orgId: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, action, waiting }: { id: string; action: 'complete' | 'waiting'; waiting?: TaskWaiting | null }) => {
+      if (!orgId) throw new Error('تعذر تحديد الشركة');
       const { data, error } = await callUntypedRpc<string>('update_operations_task', {
         _org: orgId, _task: id, _action: action, _waiting: waiting ?? null,
       });

@@ -1,5 +1,6 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "بدون موعد": "Unscheduled",
   "حالة التحصيل غير متاحة": "Collection status unavailable",
   "لا يوجد مبلغ متبقٍ للتحصيل": "No balance to collect",
   "أصدر فاتورة العميل لتوثيق المبلغ المطلوب تحصيله.": "Issue the customer invoice to document the amount due.",

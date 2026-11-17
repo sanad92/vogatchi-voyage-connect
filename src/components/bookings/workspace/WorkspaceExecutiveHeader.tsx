@@ -1,6 +1,7 @@
 import { bookingStatusLabel } from '@/lib/bookingStatus';
 import { customerDisplayName } from '@/lib/customerDisplayName';
 import { Badge } from '@/components/ui/badge';
+import { isBookingTaskOpen } from '@/hooks/useBookingWorkspace';
 import { Hotel, Plane, Car, Truck, User, MapPin, Calendar, UserCheck, Gauge, Moon } from 'lucide-react';
 import type { Workspace } from './types';
 import {
@@ -38,7 +39,7 @@ const profitTone = (h: ProfitHealth) =>
   h === 'healthy' ? 'bg-emerald-100 text-emerald-800' : h === 'thin' ? 'bg-amber-100 text-amber-800' : 'bg-destructive/10 text-destructive';
 
 const computeSLA = (workspace: Workspace): { color: string; label: string } => {
-  const openTasks = workspace.tasks.filter((t) => t.status !== 'done' && t.status !== 'cancelled');
+  const openTasks = workspace.tasks.filter(isBookingTaskOpen);
   const now = Date.now();
   const overdue = openTasks.filter((t) => t.due_at && new Date(t.due_at).getTime() < now).length;
   const travelStart = workspace.booking?.start_date ? new Date(workspace.booking.start_date).getTime() : null;

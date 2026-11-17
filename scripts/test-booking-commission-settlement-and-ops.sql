@@ -50,6 +50,9 @@ DECLARE
  recovery uuid := gen_random_uuid();
  owner_request uuid;
  operations_task uuid := gen_random_uuid();
+ legacy_task uuid := gen_random_uuid();
+ prior_queue_task uuid := gen_random_uuid();
+ unscheduled_task uuid := gen_random_uuid();
  timing_egypt date := (now() AT TIME ZONE 'Africa/Cairo')::date;
  dashboard jsonb;
  prior_balance numeric;
@@ -239,6 +242,21 @@ BEGIN
  IF (dashboard->>'date')::date IS DISTINCT FROM timing_egypt OR (dashboard->>'today_tasks')::int<1
    OR NOT EXISTS(SELECT FROM public.list_operations_queue(org,'today',20,0) WHERE id=operations_task AND can_act)
  THEN RAISE EXCEPTION 'Egypt day task disagrees between dashboard and queue'; END IF;
+ INSERT INTO public.booking_tasks(id,organization_id,booking_id,title,status,due_at,completed_at,created_by)
+ VALUES
+   (legacy_task,org,hotel,'QA workspace-completed task','done',
+    (timing_egypt::timestamp - interval '1 hour') AT TIME ZONE 'Africa/Cairo',now(),creator),
+   (prior_queue_task,org,hotel,'QA previously completed operations task','completed',
+    (timing_egypt::timestamp + interval '15 minutes') AT TIME ZONE 'Africa/Cairo',NULL,creator),
+   (unscheduled_task,org,hotel,'QA automatic task without a deadline','pending',NULL,NULL,NULL);
+ IF (public.get_ops_command_center_for_org(org,NULL)->>'today_tasks') IS DISTINCT FROM (dashboard->>'today_tasks')
+   OR (public.get_ops_command_center_for_org(org,NULL)->>'overdue_tasks') IS DISTINCT FROM (dashboard->>'overdue_tasks')
+   OR EXISTS(SELECT FROM public.list_operations_queue(org,'today',20,0) WHERE id IN (legacy_task,prior_queue_task))
+   OR (SELECT count(*) FROM public.list_operations_queue(org,'completed_today',20,0)
+       WHERE id IN (legacy_task,prior_queue_task) AND completed_at IS NOT NULL AND NOT can_act)<>2
+   OR NOT EXISTS(SELECT FROM public.list_operations_queue(org,'unscheduled',20,0) WHERE id=unscheduled_task AND can_act)
+ THEN RAISE EXCEPTION 'Existing completions or the unscheduled automatic task were misclassified'; END IF;
+ PERFORM public.update_operations_task(org,operations_task,'waiting','supplier');
  PERFORM public.update_operations_task(org,operations_task,'waiting','supplier');
  IF NOT EXISTS(SELECT FROM public.list_operations_queue(org,'waiting_supplier',20,0) WHERE id=operations_task)
  THEN RAISE EXCEPTION 'Structured supplier waiting was ignored'; END IF;
@@ -261,6 +279,11 @@ BEGIN
  PERFORM public.update_operations_task(org,operations_task,'complete',NULL);
  IF NOT EXISTS(SELECT FROM public.list_operations_queue(org,'completed_today',20,0) WHERE id=operations_task)
    OR EXISTS(SELECT FROM public.list_operations_queue(org,'today',20,0) WHERE id=operations_task)
+   OR NOT EXISTS(SELECT FROM public.booking_tasks WHERE id=operations_task AND status='done' AND waiting_on IS NULL)
+   OR (SELECT count(*) FROM public.booking_timeline_events e WHERE e.booking_id=hotel
+       AND e.kind='task_completed' AND e.payload->>'task_id'=operations_task::text)<>1
+   OR (SELECT count(*) FROM public.booking_timeline_events e WHERE e.booking_id=hotel
+       AND e.kind='operations_task_waiting' AND e.payload->>'task_id'=operations_task::text)<>1
  THEN RAISE EXCEPTION 'Completed task did not move to the correct queue'; END IF;
 
  result:=public.create_quote_atomic(org,gen_random_uuid(),jsonb_build_object('customer_id',customer,

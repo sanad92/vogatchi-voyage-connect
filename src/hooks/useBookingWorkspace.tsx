@@ -3,6 +3,8 @@ import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOptimizedAuth } from './useOptimizedAuth';
+import { useUpdateOpsTask } from './useOpsCommandCenter';
 
 /**
  * Unified Booking Workspace data layer (Phase 1 foundation).
@@ -46,7 +48,7 @@ export interface BookingTask {
   title: string;
   description: string | null;
   due_at: string | null;
-  status: 'open' | 'in_progress' | 'done' | 'cancelled';
+  status: 'open' | 'pending' | 'in_progress' | 'done' | 'completed' | 'cancelled' | 'canceled';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   assignee_id: string | null;
   source: string | null;
@@ -54,6 +56,14 @@ export interface BookingTask {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export function isBookingTaskCompleted(task: BookingTask) {
+  return task.status === 'done' || task.status === 'completed';
+}
+
+export function isBookingTaskOpen(task: BookingTask) {
+  return !isBookingTaskCompleted(task) && task.status !== 'cancelled' && task.status !== 'canceled';
 }
 
 export interface TimelineEvent {
@@ -73,6 +83,7 @@ const anyClient = supabase as any;
 
 export const useBookingWorkspace = (bookingId: string | undefined) => {
   const qc = useQueryClient();
+  const { user } = useOptimizedAuth();
 
   // 1. Core booking
   const bookingQ = useQuery({
@@ -90,6 +101,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   });
 
   const booking = bookingQ.data;
+  const { mutateAsync: updateTask } = useUpdateOpsTask(booking?.organization_id);
   const pilgrimageDeparture = useQuery<{ program_id: string } | null>({
     queryKey: ['workspace-pilgrimage-departure', bookingId, booking?.organization_id],
     enabled: !!bookingId && isPilgrimageBookingType(booking?.booking_type),
@@ -303,7 +315,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   const addTask = useMutation({
     mutationFn: async (input: Partial<BookingTask> & { title: string }) => {
-      if (!bookingId || !booking?.organization_id) throw new Error('No booking');
+      if (!bookingId || !booking?.organization_id || !user?.id) throw new Error('تعذر تحديد الحجز أو المستخدم');
       const { error } = await anyClient.from('booking_tasks').insert({
         booking_id: bookingId,
         organization_id: booking.organization_id,
@@ -314,22 +326,17 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
         description: input.description ?? null,
         due_at: input.due_at ?? null,
         assignee_id: input.assignee_id ?? null,
+        created_by: user.id,
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success('تمت إضافة المهمة'),
-    onError: (e: any) => toast.error(e?.message || 'تعذر إضافة المهمة'),
-  });
-
-  const completeTask = useMutation({
-    mutationFn: async (taskId: string) => {
-      const { error } = await anyClient
-        .from('booking_tasks')
-        .update({ status: 'done', completed_at: new Date().toISOString() })
-        .eq('id', taskId);
-      if (error) throw error;
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workspace-tasks', bookingId] });
+      qc.invalidateQueries({ queryKey: ['ops-queue', booking.organization_id] });
+      qc.invalidateQueries({ queryKey: ['ops-command-center', booking.organization_id] });
+      toast.success('تمت إضافة المهمة');
     },
-    onError: (e: any) => toast.error(e?.message || 'تعذر إغلاق المهمة'),
+    onError: (e: any) => toast.error(e?.message || 'تعذر إضافة المهمة'),
   });
 
   const logEvent = useMutation({
@@ -392,7 +399,14 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       tasksQ.isLoading,
     setStage: (s: WorkflowStage) => setStage.mutateAsync(s),
     addTask: (t: Partial<BookingTask> & { title: string }) => addTask.mutateAsync(t),
-    completeTask: (id: string) => completeTask.mutateAsync(id),
+    completeTask: async (id: string) => {
+      try {
+        await updateTask({ id, action: 'complete' });
+        toast.success('تم إنجاز المهمة');
+      } catch {
+        toast.error('تعذر حفظ المهمة. حدّث القائمة وراجع صلاحيتك.');
+      }
+    },
     logEvent: (input: { kind: string; summary?: string; payload?: Record<string, unknown> }) =>
       logEvent.mutateAsync(input),
     refetch: () => {

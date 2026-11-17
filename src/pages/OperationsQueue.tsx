@@ -11,6 +11,7 @@ import { opsQueuePageSize, useOpsQueue, useUpdateOpsTask, type QueueFilter, type
 const filters: { key: QueueFilter; label: string }[] = [
   { key: 'today', label: 'اليوم' },
   { key: 'overdue', label: 'المتأخرة' },
+  { key: 'unscheduled', label: 'بدون موعد' },
   { key: 'assigned_to_me', label: 'مهامي' },
   { key: 'edit_requests', label: 'طلبات فتح التعديل' },
   { key: 'waiting_customer', label: 'بانتظار العميل' },
@@ -19,7 +20,7 @@ const filters: { key: QueueFilter; label: string }[] = [
   { key: 'completed_today', label: 'مكتملة اليوم' },
 ];
 const waitingLabels = { customer: 'العميل', supplier: 'المورد', payment: 'الدفع' };
-const statusLabels: Record<string, string> = { completed: 'مكتملة', pending: 'مفتوحة', open: 'مفتوحة', in_progress: 'قيد التنفيذ' };
+const statusLabels: Record<string, string> = { done: 'مكتملة', completed: 'مكتملة', pending: 'مفتوحة', open: 'مفتوحة', in_progress: 'قيد التنفيذ' };
 const time = new Intl.DateTimeFormat('ar-EG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Cairo' });
 
 export default function OperationsQueue() {
@@ -29,7 +30,7 @@ export default function OperationsQueue() {
   const [page, setPage] = useState(1);
   useEffect(() => { setPage(1); }, [filter, orgId]);
   const queue = useOpsQueue(filter, page);
-  const update = useUpdateOpsTask();
+  const update = useUpdateOpsTask(orgId);
   const rows = queue.data ?? [];
   const total = rows[0]?.total_count ?? 0;
   const change = async (id: string, action: 'complete' | 'waiting', waiting?: TaskWaiting | null) => {
