@@ -21,7 +21,7 @@ interface Customer {
 
 interface CustomerSearchProps {
   onCustomerSelect: (customer: Customer) => void;
-  onNewCustomer: () => void;
+  onNewCustomer?: () => void;
   selectedCustomer?: Customer | null;
 }
 
@@ -102,7 +102,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
             />
           </div>
 
-          <div className="flex gap-2">
+          {onNewCustomer && <div className="flex gap-2">
             <Button 
               onClick={onNewCustomer} 
               variant="outline" 
@@ -111,7 +111,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
               <UserPlus className="h-4 w-4 mr-2" />
               إضافة عميل جديد
             </Button>
-          </div>
+          </div>}
         </>
       )}
 
@@ -243,7 +243,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
                   <Search className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p>لا توجد نتائج للبحث "{debouncedSearchTerm}"</p>
                 </div>
-                <Button 
+                {onNewCustomer && <Button
                   onClick={onNewCustomer} 
                   variant="outline" 
                   size="sm" 
@@ -251,7 +251,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   إضافة "{debouncedSearchTerm}" كعميل جديد
-                </Button>
+                </Button>}
               </div>
             )}
           </CardContent>

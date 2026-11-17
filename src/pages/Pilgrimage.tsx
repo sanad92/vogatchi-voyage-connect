@@ -24,6 +24,7 @@ import PilgrimageSales from '@/components/pilgrimage/PilgrimageSales';
 import PilgrimageAvailabilitySearch from '@/components/pilgrimage/PilgrimageAvailabilitySearch';
 import PilgrimageInterest from '@/components/pilgrimage/PilgrimageInterest';
 import PilgrimageOperations from '@/components/pilgrimage/PilgrimageOperations';
+import UmrahDepartureInventory from '@/components/pilgrimage/UmrahDepartureInventory';
 import UmrahRooming, { umrahRoomGroupLabel, type UmrahRoomGroup } from '@/components/pilgrimage/UmrahRooming';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { canRegisterPilgrim, isActivePilgrim, pilgrimageTotals, pilgrimDue, outstanding, refundable, readinessIssues, validatePilgrimageProgram, pilgrimageSalesIssues, salesConfirmationRequired } from '@/lib/pilgrimage/operations';
@@ -94,6 +95,7 @@ const Pilgrimage = () => {
   });
   const [salesOpen, setSalesOpen] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
+  const [inventoryBookingOpen, setInventoryBookingOpen] = useState(false);
   const [confirmSales, setConfirmSales] = useState(false);
   const [editingProgram, setEditingProgram] = useState(false);
   const [pilgrimOpen, setPilgrimOpen] = useState(false);
@@ -116,7 +118,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -135,7 +137,7 @@ const Pilgrimage = () => {
     enabled: Boolean(orgId && operationalUmrah),
     queryFn: async () => {
       const { data, error } = await sb.from('umrah_rooming_groups')
-        .select('id,city,gender,room_type,group_number,hotel_room_number')
+        .select('*')
         .eq('organization_id', orgId).eq('program_id', programId)
         .order('room_type').order('group_number');
       if (error) throw error;
@@ -357,7 +359,7 @@ const Pilgrimage = () => {
     const capacity = program.capacity || 'بانتظار التأكيد';
     const registrationBlock = canRegisterPilgrim(program, programPilgrims);
     const requestedTab = params.get('tab');
-    const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (requestedTab === 'operations' && operationalUmrah))
+    const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (['operations', 'inventory'].includes(requestedTab) && operationalUmrah))
       ? requestedTab : 'pilgrims';
     const goToProgramTab = (value: string) => setParams((current) => {
       const next = new URLSearchParams(current);
@@ -406,9 +408,16 @@ const Pilgrimage = () => {
           icon={Moon}
           badge={<Badge variant="outline">{programStatusLabel(program)}</Badge>}
           actions={<div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={openAvailability}><Search className="h-4 w-4 me-1" />بحث التوافر</Button>
+            <Button variant="outline" onClick={program.uses_room_inventory ? () => goToProgramTab('inventory') : openAvailability}>
+              <Search className="h-4 w-4 me-1" />بحث التوافر
+            </Button>
             {canManage && <Button variant="outline" onClick={editProgram}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
-            <Button disabled={!!registrationBlock} title={registrationBlock || undefined} onClick={() => { setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: operationalUmrah ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true); }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>
+            {program.uses_room_inventory ? hasPermission('bookings_create') && <Button disabled={!!registrationBlock}
+              title={registrationBlock || undefined} onClick={() => { goToProgramTab('inventory'); setInventoryBookingOpen(true); }}>
+              <Plus className="h-4 w-4 me-1" />حجز من الرصيد
+            </Button> : <Button disabled={!!registrationBlock} title={registrationBlock || undefined} onClick={() => {
+              setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: operationalUmrah ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true);
+            }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>}
           </div>}
         />
         <Card className="space-y-3 p-4">
@@ -418,7 +427,7 @@ const Pilgrimage = () => {
             {canManage && needsSalesApproval && <Button size="sm" onClick={editProgram}>مراجعة اعتماد البيع</Button>}
             {interestTab && <Button size="sm" variant={needsSalesApproval && !canManage ? 'default' : 'outline'}
               onClick={() => goToProgramTab('interest')}>طلبات الاهتمام</Button>}
-            <Button size="sm" variant="outline" onClick={() => setSalesOpen(true)}>العروض والمقاعد</Button>
+            {!program.uses_room_inventory && <Button size="sm" variant="outline" onClick={() => setSalesOpen(true)}>العروض والمقاعد</Button>}
             {active.length > 0 && <Button size="sm" variant="outline" onClick={() => goToProgramTab('rooming')}>تسكين المسافرين</Button>}
           </div>
         </Card>
@@ -448,8 +457,14 @@ const Pilgrimage = () => {
         )}
 
         <Tabs value={tab} onValueChange={goToProgramTab}>
-          <TabsList className="h-auto flex-wrap"><TabsTrigger value="pilgrims">المسجلون</TabsTrigger>{interestTab && <TabsTrigger value="interest">طلبات الاهتمام</TabsTrigger>}<TabsTrigger value="rooming">التسكين</TabsTrigger>{operationalUmrah && <TabsTrigger value="operations">التعديلات والإلغاء</TabsTrigger>}<TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
+          <TabsList className="h-auto flex-wrap"><TabsTrigger value="pilgrims">المسجلون</TabsTrigger>{interestTab && <TabsTrigger value="interest">طلبات الاهتمام</TabsTrigger>}<TabsTrigger value="rooming">التسكين</TabsTrigger>{operationalUmrah && (canManage || program.uses_room_inventory) && <TabsTrigger value="inventory">رصيد الدفعة</TabsTrigger>}{operationalUmrah && <TabsTrigger value="operations">التعديلات والإلغاء</TabsTrigger>}<TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
 
+          {operationalUmrah && orgId && (canManage || program.uses_room_inventory) && <TabsContent value="inventory">
+            <UmrahDepartureInventory key={`${orgId}:${program.id}`} orgId={orgId} program={program}
+              passengers={programPilgrims} canManage={canManage && hasPermission('bookings_edit') && ['draft', 'open', 'full'].includes(program.status)}
+              canBook={hasPermission('bookings_create')} canCreateCustomer={hasPermission('customers_create')} registrationOpen={!registrationBlock}
+              openBooking={inventoryBookingOpen} onOpenBooking={setInventoryBookingOpen} onChange={refresh} />
+          </TabsContent>}
           {interestTab && orgId && <TabsContent value="interest">
             <PilgrimageInterest key={`${orgId}:${program.id}`} organizationId={orgId} program={program} canCreate={canCreateCRM() && ['draft', 'open', 'full'].includes(program.status)} />
           </TabsContent>}
@@ -618,7 +633,7 @@ const Pilgrimage = () => {
                 <F key={k} label={l}><Input type={kind === 'date' ? 'date' : 'text'} dir={kind === 'ltr' ? 'ltr' : undefined} value={gf[k] ?? ''} onChange={(e) => setGf({ ...gf, [k]: e.target.value })} /></F>
               ))}
               <F label="النوع">
-                <Select value={gf.gender || '__none__'} onValueChange={(v) => setGf({ ...gf, gender: v === '__none__' ? null : v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <Select disabled={!!programPilgrims.find((person) => person.id === editingPilgrim)?.inventory_booking_id} value={gf.gender || '__none__'} onValueChange={(v) => setGf({ ...gf, gender: v === '__none__' ? null : v })}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="__none__">غير محدد</SelectItem><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select>
               </F>
               <F label="نوع الغرفة">

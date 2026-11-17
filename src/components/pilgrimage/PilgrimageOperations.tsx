@@ -25,6 +25,7 @@ type Program = {
   program_type: string;
   travel_scope: string;
   departure_date: string | null;
+  uses_room_inventory?: boolean;
 } & Record<`price_${Room}`, number>;
 type Passenger = {
   id: string;
@@ -103,7 +104,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     },
   });
   const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status));
-  const targets = programs.filter((option) => option.id !== program.id && option.status === 'open'
+  const targets = programs.filter((option) => option.id !== program.id && !option.uses_room_inventory && option.status === 'open'
     && option.program_type === program.program_type && option.currency === program.currency && option.travel_scope === program.travel_scope);
   const destination = action === 'transfer' ? targets.find((option) => option.id === targetId) : program;
   const newPrice = action === 'cancel' ? 0 : amount(destination?.[`price_${room}`]);
@@ -172,8 +173,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         <h2 className="font-semibold">تعديلات وإلغاءات المعتمرين</h2>
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={!active.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>
-            {canCancel && <Button variant="outline" disabled={!active.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {!program.uses_room_inventory && <Button variant="outline" disabled={!active.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
+            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!active.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
             {canCancel && <Button variant="destructive" disabled={!active.length} onClick={() => open('cancel')}>{ACTIONS.cancel}</Button>}
           </div>
         )}

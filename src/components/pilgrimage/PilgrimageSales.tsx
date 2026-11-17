@@ -86,7 +86,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     ()=>sb.from('suppliers').select('id,name').eq('organization_id',orgId)
       .eq('is_active',true).order('name').limit(200),canManage);
   const programsQ=useRows('pilgrimage-sale-programs',orgId,null,
-    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date,sales_confirmed_at,price_quad,price_triple,price_double,price_single')
+    ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date,sales_confirmed_at,price_quad,price_triple,price_double,price_single,uses_room_inventory')
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
   const b2bAgreementQ=useQuery({
@@ -150,7 +150,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const customers=customersQ.data||[];
   const agencies=partnersQ.data||[];
   const suppliers=suppliersQ.data||[];
-  const programs=programsQ.data||[];
+  const programs=(programsQ.data||[]).filter((program:any)=>!program.uses_room_inventory);
   const travelers=travelersQ.data||[];
   const metrics=quoteMetrics(items,costs);
   const canEdit=canManage&&selected?.status==='draft';
@@ -163,6 +163,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const canExportQuote = !selected?.program_id || selected.status === 'quoted';
   const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:({
     pilgrimage_sales_confirmation_required: salesConfirmationRequired,
+    umrah_inventory_booking_required: 'الحجز للدفعة دي من تبويب رصيد الدفعة.',
     pilgrimage_quote_dates_changed: 'تواريخ العرض تختلف عن البرنامج المعتمد. أنشئ مسودة بالتواريخ الحالية.',
     pilgrimage_quote_room_price_required: 'يلزم سعر معتمد وسعر بيع موجب لكل فئة غرفة في العرض.',
   } as Record<string, string>)[error?.message] || error?.message || 'راجع البيانات والصلاحيات',variant:'destructive'});

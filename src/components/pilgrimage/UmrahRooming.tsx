@@ -13,7 +13,7 @@ import { ROOM, ROOM_SIZE } from './pilgrimage-documents';
 
 type City = 'makkah' | 'madinah';
 const CITIES: Record<City, string> = { makkah: 'مكة', madinah: 'المدينة' };
-const GENDERS = { male: 'رجالي', female: 'حريمي' } as const;
+const GENDERS = { male: 'رجالي', female: 'حريمي', family: 'خاصة' } as const;
 const CITY_KEYS = ['makkah', 'madinah'] as const;
 type Passenger = {
   id: string;
@@ -21,6 +21,7 @@ type Passenger = {
   gender: string | null;
   room_type: string;
   status: string;
+  inventory_booking_id?: string | null;
   makkah_room?: string | null;
   madinah_room?: string | null;
   makkah_rooming_group_id?: string | null;
@@ -33,6 +34,7 @@ export type UmrahRoomGroup = {
   room_type: string;
   group_number: number;
   hotel_room_number: string | null;
+  inventory_room?: boolean;
 };
 export const umrahRoomGroupLabel = (group: UmrahRoomGroup) =>
   `${GENDERS[group.gender]} · ${ROOM[group.room_type]} · مجموعة ${group.group_number}`;
@@ -117,23 +119,23 @@ export default function UmrahRooming({ orgId, programId, hotels, passengers, gro
           {!group && person[`${city}_room`] && ` · غرفة الفندق ${person[`${city}_room`]}`}
         </p>
       </div>
-      {canEdit && person.gender && !['traveled', 'completed'].includes(person.status) && <Button
+      {canEdit && !person.inventory_booking_id && person.gender && !['traveled', 'completed'].includes(person.status) && <Button
         size="sm" variant="outline"
         aria-label={`${group ? 'نقل' : 'تسكين'} ${person.full_name} في ${CITIES[city]}`}
         onClick={() => setEditing({ kind: 'assign', person, city, choice: group || 'new', newGroupId: crypto.randomUUID() })}
       >{group ? 'نقل' : 'تسكين'}</Button>}
-      {canEdit && !person.gender && !['traveled', 'completed'].includes(person.status) && <Button size="sm" variant="outline"
+      {canEdit && !person.inventory_booking_id && !person.gender && !['traveled', 'completed'].includes(person.status) && <Button size="sm" variant="outline"
         onClick={() => onEditPassenger(person.id)}>تحديد النوع</Button>}
     </div>;
   }
 
   const options = editing?.kind === 'assign'
-    ? groups.filter((group) => group.city === editing.city && group.gender === editing.person.gender && group.room_type === editing.person.room_type)
+    ? groups.filter((group) => !group.inventory_room && group.city === editing.city && group.gender === editing.person.gender && group.room_type === editing.person.room_type)
     : [];
 
   return <div className="space-y-4">
     {CITY_KEYS.map((city) => {
-      const cityGroups = groups.filter((group) => group.city === city);
+      const cityGroups = groups.filter((group) => group.city === city && (!group.inventory_room || members.has(group.id)));
       const unmatched = active.filter((person) => !person[`${city}_rooming_group_id`]);
       return <section key={city} className="space-y-3 rounded-lg border p-4">
         <h3 className="font-semibold">{CITIES[city]}{hotels[city] && ` · ${hotels[city]}`}</h3>
@@ -143,7 +145,7 @@ export default function UmrahRooming({ orgId, programId, hotels, passengers, gro
           {unmatched.map((person) => personRow(person, city))}
         </Card>}
         <div className="grid gap-4 lg:grid-cols-2">
-          {(Object.entries(GENDERS) as [keyof typeof GENDERS, string][]).map(([gender, title]) => (
+          {(Object.entries(GENDERS) as [keyof typeof GENDERS, string][]).filter(([gender]) => gender !== 'family' || cityGroups.some((group) => group.gender === 'family')).map(([gender, title]) => (
             <div key={gender} className="space-y-2">
               <h4 className="text-sm font-semibold">غرف {title}</h4>
               {cityGroups.filter((group) => group.gender === gender).map((group) => {
