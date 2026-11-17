@@ -1,3 +1,4 @@
+import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -21,6 +22,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 
 const typeConfig: Record<BookingType, { label: string; icon: React.ElementType; className: string }> = {
   umrah: { label: 'عمرة', icon: Moon, className: 'bg-primary/10 text-primary border-primary/20' },
+  hajj: { label: 'حج', icon: Moon, className: 'bg-secondary text-secondary-foreground border-border' },
   hotel: { label: 'فندق', icon: Hotel, className: 'bg-primary/10 text-primary border-primary/20' },
   flight: { label: 'طيران', icon: Plane, className: 'bg-accent text-accent-foreground border-border' },
   car_rental: { label: 'تأجير سيارات', icon: Car, className: 'bg-muted text-foreground border-border' },
@@ -81,7 +83,7 @@ const UnifiedBookings = () => {
     <div className="space-y-6 p-4 md:p-6">
       <PageHeader
         title="الحجوزات الموحدة"
-        description="حجوزات الفنادق والطيران والسيارات والنقل والعمرة"
+        description="حجوزات الفنادق والطيران والسيارات والنقل والحج والعمرة"
         icon={CalendarDays}
         actions={canCreateBookings() && (
           <Button onClick={() => navigate('/bookings/new')}>
@@ -155,6 +157,7 @@ const UnifiedBookings = () => {
                 <SelectItem value="car_rental">تأجير سيارات</SelectItem>
                 <SelectItem value="transport">نقل</SelectItem>
                 <SelectItem value="umrah">عمرة</SelectItem>
+                <SelectItem value="hajj">حج</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
@@ -216,7 +219,7 @@ const UnifiedBookings = () => {
                         <TableCell>{customerDisplayName(b.customer_name || b.customers?.name) || '—'}</TableCell>
                         <TableCell>{b.supplier_name || '—'}</TableCell>
                         <TableCell>{b.selling_price?.toLocaleString()} {b.currency}</TableCell>
-                        <TableCell>{b.booking_type === 'umrah' && !b.cost_price ? 'بانتظار التكلفة' : `${b.cost_price?.toLocaleString()} ${b.currency}`}</TableCell>
+                        <TableCell>{isPilgrimageBookingType(b.booking_type) && !b.cost_price ? 'بانتظار التكلفة' : `${b.cost_price?.toLocaleString()} ${b.currency}`}</TableCell>
                         <TableCell>
                           <div className={`flex items-center gap-1 font-semibold ${b.profit >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                             {b.profit === null ? null : b.profit >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}

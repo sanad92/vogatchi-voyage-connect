@@ -1,3 +1,4 @@
+import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,7 +35,7 @@ export const BookingFinancialWorkspace: React.FC<Props> = ({ bookingId }) => {
 
   const { booking, invoice, supplierInvoices, paymentOrders, supplierPayments, totals, timeline, warnings } = data;
   const ccy = totals.currency;
-  const umrahCostPending = booking.booking_type === 'umrah' && booking.profit === null;
+  const pilgrimageCostPending = isPilgrimageBookingType(booking.booking_type) && booking.profit === null;
 
   return (
     <Card className="border-primary/20">
@@ -81,8 +82,8 @@ export const BookingFinancialWorkspace: React.FC<Props> = ({ bookingId }) => {
         {/* Financial totals */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KPI label="سعر البيع" value={fmt(totals.selling, ccy)} />
-          <KPI label="تكلفة المورد" value={umrahCostPending ? 'بانتظار التكلفة' : fmt(totals.cost, ccy)} tone="warn" />
-          {umrahCostPending ? <KPI label="الربح المقدّر" value="—" />
+          <KPI label="تكلفة المورد" value={pilgrimageCostPending ? 'بانتظار التكلفة' : fmt(totals.cost, ccy)} tone="warn" />
+          {pilgrimageCostPending ? <KPI label="الربح المقدّر" value="—" />
             : <KPI label="الربح المقدّر" value={fmt(totals.profit, ccy)} tone={totals.profit >= 0 ? 'good' : 'bad'} sub={`${totals.profitMargin.toFixed(1)}%`} />}
           <KPI label="عملة الحجز" value={ccy} />
         </div>

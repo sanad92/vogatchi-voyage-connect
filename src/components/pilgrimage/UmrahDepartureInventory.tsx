@@ -51,7 +51,7 @@ const messages: Record<string, string> = {
   umrah_inventory_private_price_required: 'اعتمد سعر الغرفة الخاصة لهذه الفئة أولًا.',
   umrah_inventory_price_changed: 'السعر اتغير. راجع السعر الحالي قبل الحفظ.',
   umrah_inventory_denied: 'صلاحية المستخدم لا تسمح بهذا الإجراء.',
-  umrah_unified_invoice_permission: 'إنشاء حجز العمرة وفاتورته يحتاج صلاحية إنشاء الفواتير.',
+  umrah_unified_invoice_permission: 'إنشاء الحجز وفاتورته يحتاج صلاحية إنشاء الفواتير.',
   umrah_unified_invoice_not_created: 'تعذر إنشاء فاتورة الحجز. راجع إعدادات الحسابات قبل الحجز.',
   umrah_inventory_invalid_configuration: 'راجع المدينة وعدد الغرف والأسعار المدخلة.',
   umrah_inventory_invalid_customer: 'اختر عميلًا مسجلًا في شركتك.',

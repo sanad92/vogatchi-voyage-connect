@@ -26,10 +26,11 @@ interface Props {
   }>;
 }
 
-type BookingType = "hotel" | "flight" | "car_rental" | "transport" | "umrah";
+type BookingType = "hotel" | "flight" | "car_rental" | "transport" | "umrah" | "hajj";
 
 const typeMeta: Record<BookingType, { label: string; icon: JSX.Element }> = {
   umrah: { label: "عمرة", icon: <Moon className="h-4 w-4" /> },
+  hajj: { label: "حج", icon: <Moon className="h-4 w-4" /> },
   hotel: { label: "حجز فندق", icon: <Package className="h-4 w-4" /> },
   flight: { label: "حجز طيران", icon: <Plane className="h-4 w-4" /> },
   car_rental: { label: "تأجير سيارة", icon: <Car className="h-4 w-4" /> },
@@ -131,12 +132,13 @@ const CustomerBookingHistory = ({ customerId, bookings }: Props) => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid h-auto w-full grid-cols-3 sm:grid-cols-6">
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:grid-cols-7">
           <TabsTrigger value="all">جميع الحجوزات</TabsTrigger>
           <TabsTrigger value="hotel">الفنادق</TabsTrigger>
           <TabsTrigger value="flight">الطيران</TabsTrigger>
           <TabsTrigger value="car_rental">السيارات</TabsTrigger>
           <TabsTrigger value="umrah">العمرة</TabsTrigger>
+          <TabsTrigger value="hajj">الحج</TabsTrigger>
           <TabsTrigger value="transport">النقل</TabsTrigger>
         </TabsList>
 

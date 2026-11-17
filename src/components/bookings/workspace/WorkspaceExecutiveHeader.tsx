@@ -12,6 +12,7 @@ import {
 
 const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
   umrah: { label: 'حجز عمرة', icon: Moon },
+  hajj: { label: 'حجز حج', icon: Moon },
   hotel: { label: 'حجز فندق', icon: Hotel },
   flight: { label: 'حجز طيران', icon: Plane },
   car_rental: { label: 'تأجير سيارات', icon: Car },

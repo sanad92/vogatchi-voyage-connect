@@ -105,6 +105,7 @@ const CustomerInvoiceHistory = ({ customerId }: CustomerInvoiceHistoryProps) => 
   const getBookingTypeLabel = (type: string) => {
     const types = {
       umrah: "عمرة",
+      hajj: "حج",
       hotel: 'حجز فندق',
       flight: 'حجز طيران',
       transport: 'حجز نقل',

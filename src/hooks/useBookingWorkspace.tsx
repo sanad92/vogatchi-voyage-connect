@@ -1,3 +1,4 @@
+import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,9 +90,9 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   });
 
   const booking = bookingQ.data;
-  const umrahDeparture = useQuery<{ program_id: string } | null>({
-    queryKey: ['workspace-umrah-departure', bookingId, booking?.organization_id],
-    enabled: !!bookingId && booking?.booking_type === 'umrah',
+  const pilgrimageDeparture = useQuery<{ program_id: string } | null>({
+    queryKey: ['workspace-pilgrimage-departure', bookingId, booking?.organization_id],
+    enabled: !!bookingId && isPilgrimageBookingType(booking?.booking_type),
     queryFn: async () => {
       const { data, error } = await anyClient.from('umrah_inventory_bookings')
         .select('program_id').eq('organization_id', booking.organization_id)
@@ -372,7 +373,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   return {
     booking,
-    umrahDeparture: umrahDeparture.data,
+    pilgrimageDeparture: pilgrimageDeparture.data,
     customer: customerQ.data,
     supplier: supplierQ.data,
     itinerary: itineraryQ.data,

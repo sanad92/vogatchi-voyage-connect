@@ -1,4 +1,5 @@
 -- Run against a disposable copy of the production migration chain; all fixtures roll back.
+-- Set test.pilgrimage_booking_type to hajj to exercise the same workflow for Hajj.
 BEGIN;
 INSERT INTO public.organizations(id,name,slug) VALUES
  ('791ba310-0a00-4000-8000-000000000001','Inventory verification','inventory-qa-791ba310'),
@@ -16,7 +17,8 @@ INSERT INTO public.pilgrimage_programs(
  id,organization_id,program_type,name,capacity,departure_date,return_date,makkah_hotel,madinah_hotel,
  makkah_nights,madinah_nights,price_quad,price_double,price_triple,status,sales_confirmed_at
 ) VALUES (
- '791ba310-0a00-4000-8000-000000000006','791ba310-0a00-4000-8000-000000000001','umrah','Inventory verification',
+ '791ba310-0a00-4000-8000-000000000006','791ba310-0a00-4000-8000-000000000001',
+ coalesce(nullif(current_setting('test.pilgrimage_booking_type', true), ''), 'umrah'),'Inventory verification',
  45,current_date+30,current_date+37,'Test Mecca','Test Madinah',4,3,26000,30000,28000,'open',now()
 );
 SET LOCAL ROLE authenticated;
@@ -30,6 +32,9 @@ DECLARE
   solo_id uuid := '791ba310-0a00-4000-8000-000000000007';
   family_id uuid := '791ba310-0a00-4000-8000-000000000008';
   wrong_customer uuid := '791ba310-0a00-4000-8000-000000000009';
+  pilgrimage_type text := coalesce(nullif(current_setting('test.pilgrimage_booking_type', true), ''), 'umrah');
+  booking_prefix text := CASE pilgrimage_type WHEN 'hajj' THEN 'HAJ-%' ELSE 'UMR-%' END;
+  receipt_reference text := 'synthetic-' || pilgrimage_type || '-40000';
   p record;
   invoice_id uuid;
   receipt_id uuid;
@@ -45,12 +50,19 @@ BEGIN
   PERFORM public.create_umrah_inventory_booking(org,program_id,solo_id,customer_id,'quad','shared',single_passenger,26000);
   PERFORM public.create_umrah_inventory_booking(org,program_id,family_id,customer_id,'quad','private',family,58000);
   PERFORM public.create_umrah_inventory_booking(org,program_id,family_id,customer_id,'quad','private',family,58000);
-  IF NOT EXISTS (SELECT 1 FROM public.bookings WHERE id=family_id AND booking_type='umrah'
-      AND selling_price=58000 AND status='confirmed' AND booking_number LIKE 'UMR-%')
+  IF NOT EXISTS (SELECT 1 FROM public.bookings WHERE id=family_id AND booking_type=pilgrimage_type
+      AND selling_price=58000 AND status='confirmed' AND booking_number LIKE booking_prefix)
     OR NOT EXISTS (SELECT 1 FROM public.umrah_inventory_bookings WHERE id=family_id AND booking_id=family_id) THEN
     RAISE EXCEPTION 'Family missing one unified reference';
   END IF;
-  SELECT i.id INTO STRICT invoice_id FROM public.invoices i WHERE booking_id=family_id;
+  SELECT i.id INTO STRICT invoice_id FROM public.invoices i WHERE booking_id=family_id AND i.booking_type=pilgrimage_type;
+  PERFORM public.set_umrah_hotel_room_number(org,program_id,
+    (SELECT makkah_rooming_group_id FROM public.pilgrims WHERE inventory_booking_id=family_id AND inventory_passenger_no=1),'501');
+  IF NOT EXISTS (SELECT 1 FROM public.umrah_rooming_groups
+    WHERE id=(SELECT makkah_rooming_group_id FROM public.pilgrims WHERE inventory_booking_id=family_id AND inventory_passenger_no=1)
+      AND hotel_room_number='501') THEN
+    RAISE EXCEPTION 'Physical room number did not save on the shared group';
+  END IF;
   BEGIN
     INSERT INTO public.customer_payments (organization_id, booking_id, customer_id, invoice_id, amount,
       currency, exchange_rate, amount_base, payment_method, payment_date, status)
@@ -65,8 +77,8 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN
     IF SQLERRM <> 'umrah_use_departure_operations' THEN RAISE; END IF;
   END;
-  receipt_id := public.record_customer_payment(invoice_id,40000,'EGP',1,'cash',NULL,current_date,NULL,NULL,'synthetic-umrah-40000',family_id,customer_id);
-  IF public.record_customer_payment(invoice_id,40000,'EGP',1,'cash',NULL,current_date,NULL,NULL,'synthetic-umrah-40000',family_id,customer_id) <> receipt_id
+  receipt_id := public.record_customer_payment(invoice_id,40000,'EGP',1,'cash',NULL,current_date,NULL,NULL,receipt_reference,family_id,customer_id);
+  IF public.record_customer_payment(invoice_id,40000,'EGP',1,'cash',NULL,current_date,NULL,NULL,receipt_reference,family_id,customer_id) <> receipt_id
     OR (SELECT count(*) FROM public.customer_payments WHERE booking_id=family_id) <> 1
     OR (SELECT count(*) FROM public.journal_entries WHERE source_type='customer_payment' AND source_id=receipt_id) <> 1
     OR (SELECT remaining_amount FROM public.invoices i WHERE i.id=invoice_id) <> 18000 THEN
@@ -157,5 +169,6 @@ BEGIN
   END;
 END;
 $test$;
-SELECT 'canonical booking, one invoice and payment journal, partial AR credit and wallet, full cancellation and inventory passed' AS result;
+SELECT coalesce(nullif(current_setting('test.pilgrimage_booking_type', true), ''), 'umrah')
+  || ': canonical booking, invoice, payment journal, partial AR credit and wallet, full cancellation and inventory passed' AS result;
 ROLLBACK;

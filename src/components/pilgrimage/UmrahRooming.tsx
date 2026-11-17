@@ -41,9 +41,9 @@ export const umrahRoomGroupLabel = (group: UmrahRoomGroup) =>
 
 const ERRORS: Record<string, string> = {
   room_capacity_exceeded: 'المجموعة مكتملة. اختر مجموعة تانية.',
-  room_category_conflict: 'فئة المجموعة تختلف عن فئة غرفة المعتمر.',
-  umrah_rooming_gender_mismatch: 'نوع المجموعة لا يطابق النوع المسجل للمعتمر.',
-  umrah_rooming_gender_required: 'حدد النوع في ملف المعتمر الأول.',
+  room_category_conflict: 'فئة المجموعة تختلف عن فئة غرفة المسافر.',
+  umrah_rooming_gender_mismatch: 'نوع المجموعة لا يطابق النوع المسجل للمسافر.',
+  umrah_rooming_gender_required: 'حدد النوع في ملف المسافر الأول.',
   umrah_rooming_group_mismatch: 'المجموعة لا تتبع هذه المدينة أو البرنامج.',
   umrah_hotel_room_in_use: 'رقم الفندق مستخدم في تسكين آخر في نفس المدينة.',
   pilgrimage_passenger_not_changeable: 'التسكين مقفل في الحالة الحالية.',
@@ -139,7 +139,7 @@ export default function UmrahRooming({ orgId, programId, hotels, passengers, gro
       const unmatched = active.filter((person) => !person[`${city}_rooming_group_id`]);
       return <section key={city} className="space-y-3 rounded-lg border p-4">
         <h3 className="font-semibold">{CITIES[city]}{hotels[city] && ` · ${hotels[city]}`}</h3>
-        {active.length === 0 && <p className="text-sm text-muted-foreground">لا يوجد معتمرون للتسكين.</p>}
+        {active.length === 0 && <p className="text-sm text-muted-foreground">لا يوجد مسافرون للتسكين.</p>}
         {unmatched.length > 0 && <Card className="divide-y p-3">
           <h4 className="pb-2 text-sm font-medium">بانتظار التوزيع على مجموعات</h4>
           {unmatched.map((person) => personRow(person, city))}

@@ -65,7 +65,7 @@ const ERRORS: Record<string, string> = {
   pilgrimage_refund_payment_required: 'راجع الدفعات الأصلية وسعر التحويل مع المالية.',
   program_capacity_reached: 'البرنامج البديل مكتمل.',
   program_capacity_reserved_by_existing_allocations: 'المقاعد المتاحة محجوزة مؤقتًا لطلبات أخرى.',
-  umrah_unified_cancellation_permission: 'إلغاء حجز العمرة المرتبط بفاتورة يحتاج صلاحية الإلغاء ومعالجة المدفوعات.',
+  umrah_unified_cancellation_permission: 'إلغاء حجز مرتبط بفاتورة يحتاج صلاحية الإلغاء ومعالجة المدفوعات.',
   umrah_unified_refund_review_required: 'راجع مستحقات الحجز وصلاحية اعتماد الاسترداد قبل الإلغاء.',
   umrah_unified_refund_fx_review_required: 'راجع سعر صرف الدفعات مع الحسابات قبل تسوية الإلغاء.',
   pilgrimage_operation_denied: 'لا توجد صلاحية لتنفيذ الإجراء على البرنامج.',
@@ -174,7 +174,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
-        <h2 className="font-semibold">تعديلات وإلغاءات المعتمرين</h2>
+        <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
             {!program.uses_room_inventory && <Button variant="outline" disabled={!active.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
@@ -192,7 +192,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         {history.data?.map((item) => (
           <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3 text-sm">
             <div>
-              <p className="font-medium">{ACTIONS[item.action]} · {passengers.find((person) => person.id === item.pilgrim_id)?.full_name || 'معتمر'}</p>
+              <p className="font-medium">{ACTIONS[item.action]} · {passengers.find((person) => person.id === item.pilgrim_id)?.full_name || 'مسافر'}</p>
               <p className="text-muted-foreground">{item.reason} · {new Date(item.created_at).toLocaleString('ar-EG')}</p>
               <p>{item.action === 'room_category' ? `${money(item.old_price, program.currency)} ← ${money(item.new_price, program.currency)}`
                 : `غرامة ${money(item.cancellation_fee, program.currency)}`}</p>
@@ -210,8 +210,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
             <DialogDescription>{action === 'transfer'
               ? 'يُغلق التسجيل القديم ويُنشأ تسجيل جديد. مستحقات القديم تُراجع في المالية، والتسجيل البديل يبدأ من دون دفعة.'
               : action === 'room_category'
-                ? 'تتغير تعرفة المعتمر، وتقدر توزعه على مجموعة من الفئة الجديدة من تبويب التسكين.'
-                : 'تتحرر مقاعد المعتمرين المختارين ويُسجل أي مبلغ زائد عن الغرامة كطلب استرداد.'}</DialogDescription>
+                ? 'تتغير تعرفة المسافر، وتقدر توزعه على مجموعة من الفئة الجديدة من تبويب التسكين.'
+                : 'تتحرر مقاعد المسافرين المختارين ويُسجل أي مبلغ زائد عن الغرامة كطلب استرداد.'}</DialogDescription>
           </DialogHeader>
           <fieldset disabled={Boolean(submission)} className="space-y-3 disabled:opacity-60">
           <div className="max-h-52 space-y-2 overflow-y-auto rounded-md border p-2">

@@ -127,3 +127,7 @@ export function readinessIssues(p: PilgrimRecord, program: ProgramRecord) {
     issues.push('غرفة المدينة غير محددة');
   return issues;
 }
+
+export function isPilgrimageBookingType(type: unknown): type is 'umrah' | 'hajj' {
+  return type === 'umrah' || type === 'hajj';
+}
