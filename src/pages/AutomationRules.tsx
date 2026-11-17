@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAutomationRules, useAutomationLogs, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
+import { useAutomationRules, useAutomationLogs, useStarterAutomationRules, STARTER_AUTOMATION_RULES, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, Zap, History, Settings2, Play, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 
 const AutomationRules = () => {
-  const { rules, isLoading, createRule, updateRule, deleteRule, toggleRule } = useAutomationRules();
+  const { rules, isLoading, createRule, deleteRule, toggleRule } = useAutomationRules();
+  const { hasPermission } = usePermissionCheck();
+  const canEdit = hasPermission('automation_edit');
+  const { settings, setEnabled } = useStarterAutomationRules();
   const { data: logs = [], isLoading: logsLoading } = useAutomationLogs();
   const [showCreate, setShowCreate] = useState(false);
   const [formData, setFormData] = useState({
@@ -91,7 +96,8 @@ const AutomationRules = () => {
     }
   };
 
-  const activeRulesCount = rules.filter(r => r.is_active).length;
+  const starterCount = settings.data?.length ?? 0;
+  const activeRulesCount = rules.filter(r => r.is_active).length + starterCount;
   const completedCount = (logs as any[]).filter((l: any) => l.status === 'completed').length;
   const failedCount = (logs as any[]).filter((l: any) => l.status === 'failed').length;
   const [logFilter, setLogFilter] = useState<string>('all');
@@ -106,7 +112,7 @@ const AutomationRules = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-primary">{rules.length}</div>
+            <div className="text-3xl font-bold text-primary">{rules.length + STARTER_AUTOMATION_RULES.length}</div>
             <div className="text-sm text-muted-foreground">إجمالي القواعد</div>
           </CardContent>
         </Card>
@@ -135,10 +141,12 @@ const AutomationRules = () => {
           <h1 className="text-2xl font-bold text-foreground">نظام الأتمتة</h1>
           <p className="text-muted-foreground text-sm mt-1">إدارة القواعد التلقائية للحجوزات والإشعارات</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          قاعدة جديدة
-        </Button>
+        {canEdit && (
+          <Button onClick={() => setShowCreate(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            قاعدة جديدة
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="rules" className="space-y-4">
@@ -154,18 +162,68 @@ const AutomationRules = () => {
         </TabsList>
 
         <TabsContent value="rules" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">قواعد الأتمتة الأساسية</CardTitle>
+              <p className="text-sm text-muted-foreground">تظهر المهام في قائمة المهام اليومية. إيقاف القاعدة يوقف إنشاء مهام جديدة.</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {settings.isPending ? (
+                <p className="text-sm text-muted-foreground">جاري التحميل...</p>
+              ) : settings.isError ? (
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-destructive">تعذّر تحميل قواعد الأتمتة الأساسية.</p>
+                  <Button variant="outline" size="sm" onClick={() => void settings.refetch()}>إعادة المحاولة</Button>
+                </div>
+              ) : (
+                <ul className="divide-y">
+                  {STARTER_AUTOMATION_RULES.map(rule => {
+                    const enabled = settings.data.some(setting => setting.rule_key === rule.key);
+                    return (
+                      <li key={rule.key} className="flex items-center justify-between gap-4 py-3">
+                        <div>
+                          <h3 className="text-sm font-medium">{rule.name}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
+                        </div>
+                        {canEdit ? (
+                          <Switch
+                            aria-label={rule.name}
+                            checked={enabled}
+                            disabled={setEnabled.isPending}
+                            onCheckedChange={checked => setEnabled.mutate({ key: rule.key, enabled: checked })}
+                          />
+                        ) : <Badge variant="outline">{enabled ? 'نشط' : 'معطل'}</Badge>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {hasPermission('quotes_view') && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                  <div>
+                    <h3 className="text-sm font-medium">متابعة عروض الأسعار</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">اضبط مواعيد المتابعة من إعدادات عروض الأسعار.</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/quotes">عروض الأسعار</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
           ) : rules.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">لا توجد قواعد أتمتة</h3>
-                <p className="text-muted-foreground mb-4">أنشئ قاعدة جديدة لأتمتة عملياتك</p>
-                <Button onClick={() => setShowCreate(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  إنشاء قاعدة
-                </Button>
+                <h3 className="text-lg font-medium mb-2">لا توجد قواعد مخصصة</h3>
+                {canEdit && (
+                  <Button onClick={() => setShowCreate(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    إنشاء قاعدة
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -196,7 +254,7 @@ const AutomationRules = () => {
                           ))}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      {canEdit && <div className="flex items-center gap-3">
                         <Switch
                           checked={rule.is_active}
                           onCheckedChange={(checked) => toggleRule.mutate({ id: rule.id, is_active: checked })}
@@ -209,7 +267,7 @@ const AutomationRules = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
+                      </div>}
                     </div>
                   </CardContent>
                 </Card>
@@ -271,8 +329,8 @@ const AutomationRules = () => {
                               <span>{statusLabel(log.status)}</span>
                             </div>
                           </td>
-                          <td className="p-3">{TRIGGER_LABELS[log.trigger_type as TriggerType] || log.trigger_type}</td>
-                          <td className="p-3">{ACTION_LABELS[log.action_type as ActionType] || log.action_type}</td>
+                          <td className="p-3">{STARTER_AUTOMATION_RULES.find(rule => rule.key === log.trigger_type)?.name ?? (TRIGGER_LABELS[log.trigger_type as TriggerType] || log.trigger_type)}</td>
+                          <td className="p-3">{log.action_type === 'create_operations_task' ? 'إنشاء مهمة عمليات' : (ACTION_LABELS[log.action_type as ActionType] || log.action_type)}</td>
                           <td className="p-3">{log.booking_type || '-'}</td>
                           <td className="p-3 whitespace-nowrap">
                             {log.created_at ? format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ar }) : '-'}

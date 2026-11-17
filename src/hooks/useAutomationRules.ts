@@ -6,6 +6,62 @@ import { toast } from 'sonner';
 export type TriggerType = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed' | 'invoice_created' | 'customer_registered';
 export type ActionType = 'send_email' | 'send_whatsapp' | 'create_invoice' | 'send_reminder';
 
+export const STARTER_AUTOMATION_RULES = [
+  {
+    key: 'confirmed_booking',
+    name: 'مراجعة الحجز المؤكد',
+    description: 'مهمة لفريق العمليات عند تأكيد الحجز، موعدها بعد ساعتين.',
+  },
+  {
+    key: 'payment_due',
+    name: 'متابعة تحصيل فاتورة مستحقة',
+    description: 'مهمة يوم الاستحقاق إذا كان على الفاتورة مبلغ متبقٍ. تُغلق تلقائياً بعد السداد أو الإلغاء.',
+  },
+  {
+    key: 'pre_travel',
+    name: 'مراجعة تجهيزات ما قبل السفر',
+    description: 'مهمة قبل السفر بثلاثة أيام لمراجعة الوثائق والفوتشرات ومواعيد الرحلة.',
+  },
+] as const;
+
+type StarterRuleKey = typeof STARTER_AUTOMATION_RULES[number]['key'];
+
+export function useStarterAutomationRules() {
+  const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const queryKey = ['starter-automation-settings', orgId];
+  const settings = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.from('starter_automation_settings')
+        .select('rule_key').eq('organization_id', orgId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const setEnabled = useMutation({
+    mutationFn: async ({ key, enabled }: { key: StarterRuleKey; enabled: boolean }) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      const { error } = await supabase.rpc('set_starter_automation', {
+        _org: orgId,
+        _rule: key,
+        _enabled: enabled,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async (_, { enabled }) => {
+      await queryClient.invalidateQueries({ queryKey });
+      toast.success(enabled ? 'تم تشغيل القاعدة' : 'تم إيقاف القاعدة');
+    },
+    onError: () => toast.error('تعذّر تحديث القاعدة'),
+  });
+
+  return { settings, setEnabled };
+}
+
 export interface AutomationAction {
   id?: string;
   rule_id?: string;
